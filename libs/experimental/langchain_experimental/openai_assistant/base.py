@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from time import sleep
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from langchain.pydantic_v1 import root_validator
 from langchain.schema.agent import AgentAction, AgentFinish
@@ -40,11 +40,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[Union[List[dict], str], list]
         client: Optional[openai.OpenAI] = None,
         **kwargs: Any,
     ) -> OpenAIAssistantRunnable:
-        assistant = self.client.beta.assistants.create(
-            name=self.name,
-            instructions=self.instructions,
-            tools=self.tools,
-            model=self.model,
+        assistant = client.beta.assistants.create(
+            name=name,
+            instructions=instructions,
+            tools=tools,
+            model=model,
         )
         return cls(assistant_id=assistant.id, **kwargs)
 
@@ -59,52 +59,65 @@ class OpenAIAssistantRunnable(RunnableSerializable[Union[List[dict], str], list]
             values["client"] = openai.OpenAI()
         return values
 
-    def create(self) -> None:
-        if not self.assistant_id:
-            assistant = self.client.beta.assistants.create(
-                name=self.name,
-                instructions=self.instructions,
-                tools=self.tools,
-                model=self.model,
+    def invoke(self, input: dict, config: Optional[RunnableConfig] = None) -> List:
+        input = self._parse_input(input)
+        if "thread_id" not in input:
+            run = self._create_thread_and_run(input)
+            _ = self.client.beta.threads.messages.create(
+                run.thread_id, content=input["content"], role="user"
             )
-            self.assistant_id = assistant.id
-        if not self.thread_id:
-            thread = self.client.beta.threads.create()
-            self.thread_id = thread.id
+        elif "run_id" not in input:
+            _ = self.client.beta.threads.messages.create(
+                input["thread_id"], content=input["content"], role="user"
+            )
+            run = self._create_run(input)
+        else:
+            run = self.client.beta.threads.runs.submit_tool_outputs(
+                thread_id=input["thread_id"], **input
+            )
+        return self._get_response(run.id)
 
-    def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> List:
-        if input.get("intermediate_steps"):
+    def _parse_input(self, input: dict) -> dict:
+        if self.as_agent and input.get("intermediate_steps"):
             last_action, last_output = input["intermediate_steps"][-1]
             input = {
                 "tool_outputs": [
                     {"output": last_output, "tool_call_id": last_action.tool_call_id}
-                 ],
-                "run_id": last_action.run_id
+                ],
+                "run_id": last_action.run_id,
+                "thread_id": last_action.thread_id,
             }
-        if "run_id" not in input :
-            msg = self.client.beta.threads.messages.create(
-                self.thread_id, content=input["content"], role="user"
-            )
-            run = self.client.beta.threads.runs.create(
-                self.thread_id,
-                assistant_id=self.assistant_id,
-                instructions=input.get("run_instructions"),
-            )
+        return input
 
-        else:
-            run = self.client.beta.threads.runs.submit_tool_outputs(
-                thread_id=self.thread_id, **input
-            )
-        return self._get_response(run.id)
+    def _create_run(self, input: dict) -> Any:
+        params = {
+            k: v
+            for k, v in input.items()
+            if k in ("instructions", "model", "tools", "metadata")
+        }
+        return self.client.beta.threads.runs.create(
+            input["thread_id"],
+            assistant_id=self.assistant_id,
+            **params,
+        )
 
-    def _get_response(self, run_id: str) -> List:
+    def _create_thread_and_run(self, input: dict) -> Any:
+        params = {
+            k: v
+            for k, v in input.items()
+            if k in ("instructions", "thread", "model", "tools", "metadata")
+        }
+        run = self.client.beta.threads.create_and_run(
+            assistant_id=self.assistant_id,
+            **params,
+        )
+        return run
+
+    def _get_response(
+        self, run_id: str, thread_id: str
+    ) -> Union[List[OpenAIAssistantAction], OpenAIAssistantFinish]:
         # TODO: Pagination
-        in_progress = True
-        while in_progress:
-            run = self._retrieve_run(run_id)
-            in_progress = run.status in ("in_progress", "queued")
-            if in_progress:
-                sleep(1000 * self.check_every_ms)
+        run = self._wait_for_run(run_id, thread_id)
         if run.status == "completed":
             messages = self.client.beta.threads.messages.list(
                 self.thread_id, order="asc"
@@ -118,7 +131,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[Union[List[dict], str], list]
                 for msg_content in msg.content
             )
             return OpenAIAssistantFinish(
-                return_values={"output": answer}, log="", run_id=run_id
+                return_values={"output": answer},
+                log="",
+                run_id=run_id,
+                thread_id=thread_id,
             )
         elif run.status == "requires_action":
             if not self.as_agent:
@@ -134,11 +150,21 @@ class OpenAIAssistantRunnable(RunnableSerializable[Union[List[dict], str], list]
                         tool_call_id=tool_call.id,
                         log="",
                         run_id=run_id,
+                        thread_id=thread_id,
                     )
                 )
             return actions
         else:
-            raise ValueError(run.dict())
+            run_info = json.dumps(run.dict(), indent=2)
+            raise ValueError(
+                f"Unknown run status {run.status}. Full run info:\n\n{run_info})"
+            )
 
-    def _retrieve_run(self, run_id: str) -> Any:
-        return self.client.beta.threads.runs.retrieve(run_id, thread_id=self.thread_id)
+    def _wait_for_run(self, run_id: str, thread_id) -> Any:
+        in_progress = True
+        while in_progress:
+            run = self.client.beta.threads.runs.retrieve(run_id, thread_id=thread_id)
+            in_progress = run.status in ("in_progress", "queued")
+            if in_progress:
+                sleep(self.check_every_ms / 1000)
+        return run
