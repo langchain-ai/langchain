@@ -80,7 +80,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, Any]):
         openai_tools: List = []
         for tool in tools:
             if isinstance(tool, BaseTool):
-                tool = {"type": "function", "function": format_tool_to_openai_function(tool)}
+                tool = {
+                    "type": "function",
+                    "function": format_tool_to_openai_function(tool),
+                }
             openai_tools.append(tool)
         assistant = client.beta.assistants.create(
             name=name,
