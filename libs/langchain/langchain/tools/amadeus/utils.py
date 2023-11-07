@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 def authenticate() -> Client:
     """Authenticate using the Amadeus API"""
     try:
