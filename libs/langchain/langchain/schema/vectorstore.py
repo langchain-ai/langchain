@@ -386,7 +386,6 @@ class VectorStore(ABC):
         func = partial(self.similarity_search, query, k=k, **kwargs)
         return await asyncio.get_event_loop().run_in_executor(None, func)
 
-
     def similarity_search_by_vector_with_relevance_scores(
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
@@ -405,19 +404,16 @@ class VectorStore(ABC):
         relevance_score_fn = self._select_relevance_score_fn()
 
         docs_and_similarities = self.similarity_search_with_score_by_vector(
-            embedding=embedding, 
-            k=k, 
-            **kwargs)
-        
-        docs_and_scores = [(doc, relevance_score_fn(score)) for doc, score in docs_and_similarities]
+            embedding=embedding, k=k, **kwargs
+        )
 
-        if any(
-            score < 0.0 or score > 1.0
-            for _, score in docs_and_scores
-        ):
+        docs_and_scores = [
+            (doc, relevance_score_fn(score)) for doc, score in docs_and_similarities
+        ]
+
+        if any(score < 0.0 or score > 1.0 for _, score in docs_and_scores):
             warnings.warn(
-                "Relevance scores must be between"
-                f" 0 and 1, got {docs_and_scores}"
+                "Relevance scores must be between" f" 0 and 1, got {docs_and_scores}"
             )
 
         if score_threshold is not None:
@@ -432,7 +428,7 @@ class VectorStore(ABC):
                     f" threshold {score_threshold}"
                 )
         return docs_and_scores
-    
+
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -447,7 +443,7 @@ class VectorStore(ABC):
 
         Returns:
             List of (Documents, Scores) most similar to the query vector.
-        """        
+        """
 
         raise NotImplementedError
 
