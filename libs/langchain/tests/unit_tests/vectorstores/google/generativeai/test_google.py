@@ -115,26 +115,45 @@ def test_create_document(
 
 
 @pytest.mark.requires("google.ai.generativelanguage")
-@patch("google.ai.generativelanguage.RetrieverServiceClient.create_chunk")
+@patch("google.ai.generativelanguage.RetrieverServiceClient.batch_create_chunks")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.get_document")
 def test_from_texts(
     mock_get_document: MagicMock,
-    mock_create_chunk: MagicMock,
+    mock_batch_create_chunks: MagicMock,
 ) -> None:
     # Arrange
+    # We will use a max requests per batch to be 2.
+    # Then, we send 3 requests.
+    # We expect to have 2 batches where the last batch has only 1 request.
+    genaix._MAX_REQUEST_PER_BATCH = 2
     mock_get_document.return_value = genai.Document(
         name="corpora/123/documents/456", display_name="My Document"
     )
+    mock_batch_create_chunks.side_effect = [
+        genai.BatchCreateChunksResponse(
+            chunks=[
+                genai.Chunk(name="corpora/123/documents/456/chunks/777"),
+                genai.Chunk(name="corpora/123/documents/456/chunks/888"),
+            ]
+        ),
+        genai.BatchCreateChunksResponse(
+            chunks=[
+                genai.Chunk(name="corpora/123/documents/456/chunks/999"),
+            ]
+        ),
+    ]
 
     # Act
     store = GoogleVectorStore.from_texts(
         texts=[
-            "Hello, my darling",
-            "Goodbye, my baby",
+            "Hello my baby",
+            "Hello my honey",
+            "Hello my ragtime gal",
         ],
         metadatas=[
-            {"author": "Alice"},
-            {"author": "Bob"},
+            {"position": 100},
+            {"position": 200},
+            {"position": 300},
         ],
         corpus_id="123",
         document_id="456",
@@ -144,35 +163,56 @@ def test_from_texts(
     assert store.corpus_id == "123"
     assert store.document_id == "456"
 
-    assert mock_create_chunk.call_count == 2
-    create_chunk_requests = mock_create_chunk.call_args_list
+    assert mock_batch_create_chunks.call_count == 2
 
-    first_create_chunk_request = create_chunk_requests[0].args[0]
-    assert first_create_chunk_request == genai.CreateChunkRequest(
+    first_batch_request = mock_batch_create_chunks.call_args_list[0].args[0]
+    assert first_batch_request == genai.BatchCreateChunksRequest(
         parent="corpora/123/documents/456",
-        chunk=genai.Chunk(
-            data=genai.ChunkData(string_value="Hello, my darling"),
-            custom_metadata=[
-                genai.CustomMetadata(
-                    key="author",
-                    string_value="Alice",
+        requests=[
+            genai.CreateChunkRequest(
+                parent="corpora/123/documents/456",
+                chunk=genai.Chunk(
+                    data=genai.ChunkData(string_value="Hello my baby"),
+                    custom_metadata=[
+                        genai.CustomMetadata(
+                            key="position",
+                            numeric_value=100,
+                        ),
+                    ],
                 ),
-            ],
-        ),
+            ),
+            genai.CreateChunkRequest(
+                parent="corpora/123/documents/456",
+                chunk=genai.Chunk(
+                    data=genai.ChunkData(string_value="Hello my honey"),
+                    custom_metadata=[
+                        genai.CustomMetadata(
+                            key="position",
+                            numeric_value=200,
+                        ),
+                    ],
+                ),
+            ),
+        ],
     )
 
-    second_create_chunk_request = create_chunk_requests[1].args[0]
-    assert second_create_chunk_request == genai.CreateChunkRequest(
+    second_batch_request = mock_batch_create_chunks.call_args_list[1].args[0]
+    assert second_batch_request == genai.BatchCreateChunksRequest(
         parent="corpora/123/documents/456",
-        chunk=genai.Chunk(
-            data=genai.ChunkData(string_value="Goodbye, my baby"),
-            custom_metadata=[
-                genai.CustomMetadata(
-                    key="author",
-                    string_value="Bob",
+        requests=[
+            genai.CreateChunkRequest(
+                parent="corpora/123/documents/456",
+                chunk=genai.Chunk(
+                    data=genai.ChunkData(string_value="Hello my ragtime gal"),
+                    custom_metadata=[
+                        genai.CustomMetadata(
+                            key="position",
+                            numeric_value=300,
+                        ),
+                    ],
                 ),
-            ],
-        ),
+            ),
+        ],
     )
 
 

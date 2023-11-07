@@ -211,6 +211,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
+google = ["google-ai-generativelanguage"]
 javascript = ["esprima"]
 azure = [
     "azure-identity",
