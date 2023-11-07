@@ -88,13 +88,24 @@ def _create_retry_decorator(
 ) -> Callable[[Any], Any]:
     import openai
 
-    errors = [
-        openai.error.Timeout,
-        openai.error.APIError,
-        openai.error.APIConnectionError,
-        openai.error.RateLimitError,
-        openai.error.ServiceUnavailableError,
-    ]
+    try:
+        check_package_version("openai", gte_version="1.0.0")
+        errors = [
+            openai.APITimeoutError,
+            openai.APIError,
+            openai.APIConnectionError,
+            openai.RateLimitError,
+            openai.InternalServerError,
+        ]
+    except ValueError:
+        errors = [
+            openai.error.Timeout,
+            openai.error.APIError,
+            openai.error.APIConnectionError,
+            openai.error.RateLimitError,
+            openai.error.ServiceUnavailableError,
+        ]
+    
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
@@ -110,6 +121,16 @@ def completion_with_retry(
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
+        try:
+            check_package_version("openai", gte_version="1.0.0")
+            # Temporality remove the unsupported keys in v1 package.
+            del kwargs['api_key']
+            del kwargs['api_base']
+            del kwargs['organization']
+            kwargs['timeout'] = kwargs['request_timeout']
+            del kwargs['request_timeout']
+        except ValueError:
+            pass
         return llm.client.create(**kwargs)
 
     return _completion_with_retry(**kwargs)
@@ -270,7 +291,7 @@ class BaseOpenAI(BaseLLM):
 
         try:
             check_package_version("openai", gte_version="1.0.0")
-            values["client"] = openai.completions.Completions
+            values["client"] = openai.completions
         except ValueError:
             values["client"] = openai.Completion
 
@@ -406,6 +427,13 @@ class BaseOpenAI(BaseLLM):
                 response = completion_with_retry(
                     self, prompt=_prompts, run_manager=run_manager, **params
                 )
+                try:
+                    check_package_version("openai", gte_version="1.0.0")
+                    response = dict(response)
+                    response["choices"] = [dict(c) for c in response["choices"]]
+                except ValueError:
+                    pass
+
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
