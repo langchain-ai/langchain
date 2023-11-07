@@ -316,7 +316,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     base_url=values.get("openai_api_base") or None,
                 ).embeddings
             else:
-                values["client"] = openai.Embedding
+                values["client"] = openai.embeddings
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
