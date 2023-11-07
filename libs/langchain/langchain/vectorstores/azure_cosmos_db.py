@@ -17,7 +17,13 @@ from typing import (
 
 import numpy as np
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
+
 from langchain.docstore.document import Document
+from langchain.schema import BaseRetriever
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -424,3 +430,32 @@ class AzureCosmosDBVectorSearch(VectorStore):
             embeddings, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult
         )
         return docs
+
+
+class AzureCosmosDBVectorSearchRetriever(BaseRetriever):
+    """Retriever that uses `AzureCosmosDBVectorSearch`."""
+
+    vectorStore: AzureCosmosDBVectorSearch
+    """Azure CosmosDB Vector Search instance used to find similar documents."""
+    k: int = 3
+    """Number of documents to return"""
+
+    def _get_relevant_documents(
+            self,
+            query: str,
+            *,
+            run_manager: CallbackManagerForRetrieverRun,
+    ) -> List[Document]:
+        docs = self.vectorStore.similarity_search(query, k=self.k)
+        return docs
+
+    async def _aget_relevant_documents(
+            self,
+            query: str,
+            *,
+            run_manager: AsyncCallbackManagerForRetrieverRun,
+    ) -> List[Document]:
+        raise NotImplementedError(
+            "AzureCosmosDBVectorSearchRetriever does not support async"
+        )
+
