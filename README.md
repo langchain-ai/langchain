@@ -81,7 +81,7 @@ pip install gigachain
 Основной особенностью библиотеки является наличие модуля [`gigachat`](#описание-объекта-gigachain), который позволяет обращаться к нейросетевой модели GigaChat.
 
 > [!NOTE]
-> О том как подключить GigaChat читайте в [официальной документации](https://developers.sber.ru/docs/ru/gigachat/api/integration).
+> О том как получить авторизационные данные для доступа к GigaChat читайте в [официальной документации](https://developers.sber.ru/docs/ru/gigachat/api/integration).
 
 Вот простой пример работы с чатом с помощью модуля:
 
