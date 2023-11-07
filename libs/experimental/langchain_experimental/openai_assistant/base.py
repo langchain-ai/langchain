@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from time import sleep
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union
 
 from langchain.pydantic_v1 import root_validator
 from langchain.schema.agent import AgentAction, AgentFinish
@@ -14,24 +14,39 @@ if TYPE_CHECKING:
 
 class OpenAIAssistantFinish(AgentFinish):
     run_id: str
+    thread_id: str
 
 
 class OpenAIAssistantAction(AgentAction):
     tool_call_id: str
     run_id: str
+    thread_id: str
 
 
 class OpenAIAssistantRunnable(RunnableSerializable[Union[List[dict], str], list]):
     client: Optional[openai.OpenAI] = None
-    name: str
-    instructions: str
-    tools: list
-    model: str
-    thread_id: Optional[str] = None
-    assistant_id: Optional[str] = None
-    run_id: Optional[str] = None
-    poll_rate: int = 1
+    assistant_id: str
+    check_every_ms: float = 1_000.0
     as_agent: bool = False
+
+    @classmethod
+    def create(
+        cls,
+        name: str,
+        instructions: str,
+        tools: Sequence,
+        model: str,
+        *,
+        client: Optional[openai.OpenAI] = None,
+        **kwargs: Any,
+    ) -> OpenAIAssistantRunnable:
+        assistant = self.client.beta.assistants.create(
+            name=self.name,
+            instructions=self.instructions,
+            tools=self.tools,
+            model=self.model,
+        )
+        return cls(assistant_id=assistant.id, **kwargs)
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -89,7 +104,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Union[List[dict], str], list]
             run = self._retrieve_run(run_id)
             in_progress = run.status in ("in_progress", "queued")
             if in_progress:
-                sleep(self.poll_rate)
+                sleep(1000 * self.check_every_ms)
         if run.status == "completed":
             messages = self.client.beta.threads.messages.list(
                 self.thread_id, order="asc"
