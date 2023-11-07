@@ -82,8 +82,8 @@ class Qdrant(VectorStore):
             qdrant = Qdrant(client, collection_name, embedding_function)
     """
 
-    CONTENT_KEY = "page_content"
-    METADATA_KEY = "metadata"
+    CONTENT_KEY = ["page_content"]
+    METADATA_KEY = ["metadata"]
     VECTOR_NAME = None
 
     def __init__(
@@ -91,8 +91,8 @@ class Qdrant(VectorStore):
         client: Any,
         collection_name: str,
         embeddings: Optional[Embeddings] = None,
-        content_payload_key: str = CONTENT_KEY,
-        metadata_payload_key: str = METADATA_KEY,
+        content_payload_key: Union[list, str] = CONTENT_KEY,
+        metadata_payload_key: Union[list, str] = METADATA_KEY,
         distance_strategy: str = "COSINE",
         vector_name: Optional[str] = VECTOR_NAME,
         embedding_function: Optional[Callable] = None,  # deprecated
@@ -111,6 +111,12 @@ class Qdrant(VectorStore):
                 f"client should be an instance of qdrant_client.QdrantClient, "
                 f"got {type(client)}"
             )
+
+        if type(content_payload_key) == str:  # Ensuring Backward compatibility
+            content_payload_key = [content_payload_key]
+
+        if type(metadata_payload_key) == str:  # Ensuring Backward compatibility
+            metadata_payload_key = [metadata_payload_key]
 
         if embeddings is None and embedding_function is None:
             raise ValueError(
@@ -1915,27 +1921,63 @@ class Qdrant(VectorStore):
     def _document_from_scored_point(
         cls,
         scored_point: Any,
-        content_payload_key: str,
-        metadata_payload_key: str,
+        content_payload_key: list,
+        metadata_payload_key: list,
     ) -> Document:
-        return Document(
-            page_content=scored_point.payload.get(content_payload_key),
-            metadata=scored_point.payload.get(metadata_payload_key) or {},
+        payload = scored_point.payload
+        return Qdrant._document_from_payload(
+            cls=cls,
+            payload=payload,
+            content_payload_key=content_payload_key,
+            metadata_payload_key=metadata_payload_key,
         )
 
     @classmethod
     def _document_from_scored_point_grpc(
         cls,
         scored_point: Any,
-        content_payload_key: str,
-        metadata_payload_key: str,
+        content_payload_key: list,
+        metadata_payload_key: list,
     ) -> Document:
         from qdrant_client.conversions.conversion import grpc_to_payload
 
         payload = grpc_to_payload(scored_point.payload)
+        return Qdrant._document_from_payload(
+            cls=cls,
+            payload=payload,
+            content_payload_key=content_payload_key,
+            metadata_payload_key=metadata_payload_key,
+        )
+
+    def _document_from_payload(
+        cls, payload: Any, content_payload_key: list, metadata_payload_key: list
+    ) -> Document:
+        if len(content_payload_key) == 1:
+            content = payload.get(
+                content_payload_key
+            )  # Ensuring backward compatibility
+        elif len(content_payload_key) > 1:
+            content = {
+                content_key: payload.get(content_key)
+                for content_key in content_payload_key
+            }
+            content = str(content)  # Ensuring str type output
+        else:
+            content = ""
+        if len(metadata_payload_key) == 1:
+            metadata = payload.get(
+                metadata_payload_key
+            )  # Ensuring backward compatibility
+        elif len(metadata_payload_key) > 1:
+            metadata = {
+                metadata_key: payload.get(metadata_key)
+                for metadata_key in metadata_payload_key
+            }
+        else:
+            metadata = {}
         return Document(
-            page_content=payload[content_payload_key],
-            metadata=payload.get(metadata_payload_key) or {},
+            page_content=content,
+            metadata=metadata,
         )
 
     def _build_condition(self, key: str, value: Any) -> List[rest.FieldCondition]:
