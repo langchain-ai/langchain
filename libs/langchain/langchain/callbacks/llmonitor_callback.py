@@ -20,6 +20,7 @@ DEFAULT_API_URL = "https://app.llmonitor.com"
 user_ctx = ContextVar[Union[str, None]]("user_ctx", default=None)
 user_props_ctx = ContextVar[Union[str, None]]("user_props_ctx", default=None)
 
+PARAMS_TO_CAPTURE = ['temperature', 'top_p', 'top_k', 'stop','presence_penalty', 'frequence_penalty', 'seed', 'function_call', 'functions', 'tools', 'response_format', 'max_tokens', 'logit_bias', 'tool_choice']
 
 class UserContextManager:
     """Context manager for LLMonitor user context."""
@@ -115,17 +116,11 @@ def _parse_output(raw_output: dict) -> Any:
 
 def _parse_lc_role(
     role: str,
-) -> Union[Literal["user", "ai", "system", "function"], None]:
+) -> Union[Literal["user", "ai", "system", "function", "tool"], None]:
     if role == "human":
         return "user"
-    elif role == "ai":
-        return "ai"
-    elif role == "system":
-        return "system"
-    elif role == "function":
-        return "function"
     else:
-        return None
+        return role
 
 
 def _get_user_id(metadata: Any) -> Any:
@@ -273,7 +268,14 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         try:
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
-            name = kwargs.get("invocation_params", {}).get("model_name")
+            
+            params = kwargs.get("invocation_params", {})
+            params.update(serialized.get('kwargs', {})) # Sometimes, for example with ChatAnthropic, `invocation_params` is empty 
+    
+            name = params.get("model") or params.get("model_name")
+
+            extra = {param: params.get(param) for param in PARAMS_TO_CAPTURE if params.get(param) is not None}
+
             input = _parse_input(prompts)
 
             self.__track_event(
@@ -285,6 +287,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 name=name,
                 input=input,
                 tags=tags,
+                extra=extra,
                 metadata=metadata,
                 user_props=user_props,
             )
@@ -304,10 +307,21 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     ) -> Any:
         if self.__has_valid_config is False:
             return
+
         try:
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
-            name = kwargs.get("invocation_params", {}).get("model_name")
+
+            params = kwargs.get("invocation_params", {})
+            params.update(serialized.get('kwargs', {})) # Sometimes, for example with ChatAnthropic, `invocation_params` is empty 
+        
+            name = params.get("model") or params.get("model_name")
+
+            if not name and params.get("_type") == 'anthropic-chat':
+                name = 'claude-2'
+
+            extra = {param: params.get(param) for param in PARAMS_TO_CAPTURE if params.get(param) is not None}
+
             input = _parse_lc_messages(messages[0])
 
             self.__track_event(
@@ -319,6 +333,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 name=name,
                 input=input,
                 tags=tags,
+                extra=extra,
                 metadata=metadata,
                 user_props=user_props,
             )
@@ -337,6 +352,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     ) -> None:
         if self.__has_valid_config is False:
             return
+
+        print(response, kwargs)
 
         try:
             token_usage = (response.llm_output or {}).get("token_usage", {})
