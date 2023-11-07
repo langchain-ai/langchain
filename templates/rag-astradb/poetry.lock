@@ -145,13 +145,13 @@ trio = ["trio (<0.22)"]
 
 [[package]]
 name = "astrapy"
-version = "0.5.3"
+version = "0.5.4"
 description = "AstraPy is a Pythonic SDK for DataStax Astra"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "astrapy-0.5.3-py3-none-any.whl", hash = "sha256:559cafce14c9a19a7337fa29b8f6b111fd8e9d07a13fd1f63ecaab70296e6167"},
-    {file = "astrapy-0.5.3.tar.gz", hash = "sha256:b89e6f8fb1ec25bf08c53a6e4ab604083e66c8d527c4ad7d0f032690d329e2f8"},
+    {file = "astrapy-0.5.4-py3-none-any.whl", hash = "sha256:a73b5d86ace3055d6c8e426722a8bd1527bdd597e4259ebd705b6a82f9cdd010"},
+    {file = "astrapy-0.5.4.tar.gz", hash = "sha256:51fd6bc17519b3821a5885d0750c5b3e7c4447f881a90087cb4b9513f70672c3"},
 ]
 
 [package.dependencies]
@@ -881,13 +881,13 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.0.330"
+version = "0.0.331"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain-0.0.330-py3-none-any.whl", hash = "sha256:ed557f4d680e02d9a05b175cae1ba146b7239d4d429d1d5271d4578b4956dbd6"},
-    {file = "langchain-0.0.330.tar.gz", hash = "sha256:5bed52769b63d76eb63589193e2efb66f5c7c429726af608e658f635335bd46a"},
+    {file = "langchain-0.0.331-py3-none-any.whl", hash = "sha256:64e6e1a57b8deafc1c4e914820b2b8e22a5eed60d49432cadc3b8cca9d613694"},
+    {file = "langchain-0.0.331.tar.gz", hash = "sha256:b1ac365faf7fe413d5aa38329f70f23589ed07152c1a1398a5f16319eb32beb6"},
 ]
 
 [package.dependencies]
@@ -964,13 +964,13 @@ server = ["fastapi (>=0.90.1)", "sse-starlette (>=1.3.0,<2.0.0)"]
 
 [[package]]
 name = "langsmith"
-version = "0.0.57"
+version = "0.0.60"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.57-py3-none-any.whl", hash = "sha256:d9d466cc45ce5224096ffb820d019b6f83678fc1f1021076ed75728aba60ec2b"},
-    {file = "langsmith-0.0.57.tar.gz", hash = "sha256:34929afd84cbfd46a8469229e3befc14c7e89186a0bee8ce9d084c7b8b271005"},
+    {file = "langsmith-0.0.60-py3-none-any.whl", hash = "sha256:94f9ef9898fa5fb5afed72538bb3ccca9a92a841b37654d699c732a76c623379"},
+    {file = "langsmith-0.0.60.tar.gz", hash = "sha256:f63513398d8d4530e3aa552926924c8443ac9d21c3812f303fa20fa2c44a9a42"},
 ]
 
 [package.dependencies]
