@@ -185,7 +185,7 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
         if self.ScoreAttributes is not None:
             return self.ScoreAttributes["ScoreConfidence"]
         else:
-            return "LOW"
+            return "NOT_AVAILABLE"
 
     def to_doc(
         self, page_content_formatter: Callable[["ResultItem"], str] = combined_text
@@ -345,8 +345,14 @@ class AmazonKendraRetriever(BaseRetriever):
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
     user_context: Optional[Dict] = None
-    score_confidence: Optional[str] = "LOW"
-    score_confidence_dict = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "VERY_HIGH": 4}
+    score_confidence: float = 0
+    score_confidence_dict = {
+        "NOT_AVAILABLE": 0,
+        "LOW": 0.25,
+        "MEDIUM": 0.50,
+        "HIGH": 0.75,
+        "VERY_HIGH": 1,
+    }
 
     @validator("top_k")
     def validate_top_k(cls, value: int) -> int:
@@ -355,11 +361,8 @@ class AmazonKendraRetriever(BaseRetriever):
         return value
 
     def validate_score_confidence(self) -> None:
-        if self.score_confidence not in self.score_confidence_dict.keys():
-            raise ValueError(
-                f"""Invalid input ({self.score_confidence}) valid choices are 
-                {list(self.score_confidence_dict.keys())}"""
-            )
+        if self.score_confidence > 1 or self.score_confidence < 0:
+            raise ValueError("score_confidence must lie between 0 and 1.")
 
     @root_validator(pre=True)
     def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -432,8 +435,8 @@ class AmazonKendraRetriever(BaseRetriever):
             if (
                 item.metadata.get("score") is not None
                 and isinstance(item.metadata["score"], str)
-                and self.score_confidence_dict.get(str(item.metadata["score"]), 1)
-                >= self.score_confidence_dict.get(str(self.score_confidence), 1)
+                and self.score_confidence_dict.get(str(item.metadata["score"]), 0)
+                >= self.score_confidence
             )
         ]
         return filtered_docs
