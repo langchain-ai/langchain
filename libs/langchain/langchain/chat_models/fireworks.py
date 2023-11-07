@@ -97,8 +97,6 @@ class ChatFireworks(BaseChatModel):
     use_retry: bool = True
     streaming: bool = False
     """Whether to stream the results or not."""
-    n: int = 1
-    """Number of chat completions to generate for each prompt."""
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -122,10 +120,6 @@ class ChatFireworks(BaseChatModel):
             get_from_dict_or_env(values, "fireworks_api_key", "FIREWORKS_API_KEY")
         )
         fireworks.client.api_key = fireworks_api_key.get_secret_value()
-        if values["n"] < 1:
-            raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
-            raise ValueError("n must be 1 when streaming.")
         return values
 
     @property
