@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, List, Optional, Union
+
+from boto.s3.connection import Key
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -27,6 +30,7 @@ class S3DirectoryLoader(BaseLoader):
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
         boto_config: Optional[botocore.client.Config] = None,
+        processed_documents_strategy: Optional[str] = None,
     ):
         """Initialize with bucket and key name.
 
@@ -82,7 +86,14 @@ class S3DirectoryLoader(BaseLoader):
             object is set on the session, the config object used when creating
             the client will be the result of calling ``merge()`` on the
             default config with the config provided to this call.
+
+        :param processed_documents_strategy: strategy to use for processed documents.
+            The only valid value at the moment is 'delete'. The default value, None
+            means that processed documents will not be deleted.
+
         """
+        self.document_references = {}
+        self.bucket_handle = None
         self.bucket = bucket
         self.prefix = prefix
         self.region_name = region_name
@@ -94,6 +105,7 @@ class S3DirectoryLoader(BaseLoader):
         self.aws_secret_access_key = aws_secret_access_key
         self.aws_session_token = aws_session_token
         self.boto_config = boto_config
+        self.processed_documents_strategy = processed_documents_strategy
 
     def load(self) -> List[Document]:
         """Load documents."""
@@ -116,9 +128,9 @@ class S3DirectoryLoader(BaseLoader):
             aws_session_token=self.aws_session_token,
             config=self.boto_config,
         )
-        bucket = s3.Bucket(self.bucket)
+        self.bucket_handle = s3.Bucket(self.bucket)
         docs = []
-        for obj in bucket.objects.filter(Prefix=self.prefix):
+        for obj in self.bucket_handle.objects.filter(Prefix=self.prefix):
             loader = S3FileLoader(
                 self.bucket,
                 obj.key,
@@ -132,5 +144,33 @@ class S3DirectoryLoader(BaseLoader):
                 aws_session_token=self.aws_session_token,
                 boto_config=self.boto_config,
             )
-            docs.extend(loader.load())
+            parts = loader.load()
+
+            if self.processed_documents_strategy == "delete":
+                document_parts = []
+
+                for part in parts:
+                    document_parts.append(part)
+
+                self.document_references[obj.key] = document_parts
+
+            docs.extend(parts)
         return docs
+
+    def document_processed(self, document: Document) -> None:
+        if self.processed_documents_strategy == "delete":
+            key = document.metadata["key"]
+            parts = self.document_references.get(key)
+            parts.remove(document)
+            if len(parts) == 0:
+                self.delete_document(key)
+
+    def delete_document(self, key: str) -> None:
+        logging.info("Document %s fully processed. Deleting", key)
+        self.bucket_handle.delete_objects(
+            Delete={
+                "Objects": [
+                    {"Key": key},
+                ]
+            }
+        )

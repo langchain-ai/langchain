@@ -1,4 +1,5 @@
 """Abstract interface for document loader implementations."""
+import logging
 from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional
 
@@ -52,6 +53,16 @@ class BaseLoader(ABC):
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement lazy_load()"
         )
+
+    def document_processed(self, document: Document) -> None:
+        """Callback to notify the loader that a document has been processed.
+           by implementing this feature it is possible to implement at least once
+           processing on Documents. The default implementation does nothing.
+
+        Args:
+            document: Document instance.
+        """
+        logging.info("Loader %s does not implement document_processed()", self)
 
 
 class BaseBlobParser(ABC):
