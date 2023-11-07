@@ -24,6 +24,7 @@ import sqlalchemy
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Session
+from sqlalchemy import Float
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -541,25 +542,25 @@ class PGVector(VectorStore):
                     #{"key":{">":"value"}} case
                     filter_by_metadata = self.EmbeddingStore.cmetadata[
                         key
-                    ].astext > (value[GREATER_THAN])
+                    ].astext.cast(Float) > (value[GREATER_THAN])
                     filter_clauses.append(filter_by_metadata)
                 if GREATER_THAN_OR_EQUAL in map(str.lower, value):
                     #{"key":{">=":"value"}} case
                     filter_by_metadata = self.EmbeddingStore.cmetadata[
                         key
-                    ].astext >= (value[GREATER_THAN])
+                    ].astext.cast(Float) >= (value[GREATER_THAN_OR_EQUAL])
                     filter_clauses.append(filter_by_metadata)
                 if LESS_THAN in map(str.lower, value):
                     #{"key":{"<":"value"}} case
                     filter_by_metadata = self.EmbeddingStore.cmetadata[
                         key
-                    ].astext < (value[GREATER_THAN])
+                    ].astext.cast(Float) < (value[LESS_THAN])
                     filter_clauses.append(filter_by_metadata)
                 if LESS_THAN_OR_EQUAL in map(str.lower, value):
                     #{"key":{"<=":"value"}} case
                     filter_by_metadata = self.EmbeddingStore.cmetadata[
                         key
-                    ].astext <= (value[GREATER_THAN])
+                    ].astext.cast(Float) <= (value[LESS_THAN_OR_EQUAL])
                     filter_clauses.append(filter_by_metadata)
 
             else:
