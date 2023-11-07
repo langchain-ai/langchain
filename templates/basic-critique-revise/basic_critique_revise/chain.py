@@ -9,7 +9,6 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain.schema.runnable import (
-    ConfigurableField,
     Runnable,
     RunnableBranch,
     RunnableConfig,
@@ -109,7 +108,7 @@ def revise_loop(input: IntermediateType, config: RunnableConfig) -> Intermediate
         revise_step | validation_step,
     ).with_types(input_type=IntermediateType)
 
-    max_iters = config.configurable.get("max_revisions", 5)  # WRONG
+    max_iters: int = config.get("recursion_limit", 5)
     for _ in range(max(0, max_iters - 1)):
         else_step = RunnableBranch(
             (lambda x: x["error"] is None, RunnablePassthrough()),
@@ -118,12 +117,7 @@ def revise_loop(input: IntermediateType, config: RunnableConfig) -> Intermediate
     return else_step.invoke(input)
 
 
-revise_lambda = RunnableLambda(revise_loop).configurable_fields(
-    max_iterations=ConfigurableField(
-        id="max_revisions",
-        name="Max Revisions",
-    )  # I think wrong?
-)  # configurable_fields doesn't exist on lambda?
+revise_lambda = RunnableLambda(revise_loop).with_config(recursion_limit=5)
 
 
 class InputType(BaseModel):
@@ -137,6 +131,6 @@ chain = (
         completion=task_function_call_model | output_parser,
     )
     | validation_step
-    | else_step
+    | revise_lambda
     | RunnableLambda(itemgetter("completion"))
 ).with_types(input_type=InputType)
