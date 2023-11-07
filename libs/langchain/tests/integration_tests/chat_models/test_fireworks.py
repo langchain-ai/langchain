@@ -1,12 +1,15 @@
 """Test ChatFireworks wrapper."""
 import sys
-from typing import cast
+from typing import cast, Any
 
 import pytest
 
+from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.fireworks import ChatFireworks
 from langchain.schema import ChatGeneration, ChatResult, LLMResult
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
+
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 if sys.version_info < (3, 9):
     pytest.skip("fireworks-ai requires Python > 3.8", allow_module_level=True)
@@ -73,6 +76,52 @@ def test_chat_fireworks_multiple_completions() -> None:
 
 
 @pytest.mark.scheduled
+def test_chat_fireworks_streaming() -> None:
+    """Test that streaming correctly invokes on_llm_new_token callback."""
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+    chat = ChatFireworks(
+        max_tokens=10,
+        streaming=True,
+        temperature=0,
+        callback_manager=callback_manager,
+        verbose=True,
+    )
+    message = HumanMessage(content="Hello")
+    response = chat([message])
+    assert callback_handler.llm_streams > 0
+    assert isinstance(response, BaseMessage)
+
+
+@pytest.mark.scheduled
+def test_chat_fireworks_streaming_generation_info() -> None:
+    """Test that generation info is preserved when streaming."""
+
+    class _FakeCallback(FakeCallbackHandler):
+        saved_things: dict = {}
+
+        def on_llm_end(
+            self,
+            *args: Any,
+            **kwargs: Any,
+        ) -> Any:
+            # Save the generation
+            self.saved_things["generation"] = args[0]
+
+    callback = _FakeCallback()
+    callback_manager = CallbackManager([callback])
+    chat = ChatFireworks(
+        max_tokens=2,
+        temperature=0,
+        callback_manager=callback_manager,
+    )
+    list(chat.stream("say 'Hello!' only"))
+    generation = callback.saved_things["generation"]
+    # `Hello!` is two tokens, assert that that is what is returned
+    assert generation.generations[0][0].text == "Hello!"
+
+
+@pytest.mark.scheduled
 def test_chat_fireworks_llm_output_contains_model_id(chat: ChatFireworks) -> None:
     """Test llm_output contains model_id."""
     message = HumanMessage(content="Hello")
@@ -96,6 +145,32 @@ async def test_fireworks_ainvoke(chat: ChatFireworks) -> None:
     result = await chat.ainvoke("How is the weather in New York today?", stop=[","])
     assert isinstance(result.content, str)
     assert result.content[-1] == ","
+
+
+@pytest.mark.scheduled
+@pytest.mark.asyncio
+async def test_async_chat_fireworks_streaming() -> None:
+    """Test that streaming correctly invokes on_llm_new_token callback."""
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+    chat = ChatFireworks(
+        max_tokens=10,
+        streaming=True,
+        temperature=0,
+        callback_manager=callback_manager,
+        verbose=True,
+    )
+    message = HumanMessage(content="Hello")
+    response = await chat.agenerate([[message], [message]])
+    assert callback_handler.llm_streams > 0
+    assert isinstance(response, LLMResult)
+    assert len(response.generations) == 2
+    for generations in response.generations:
+        assert len(generations) == 1
+        for generation in generations:
+            assert isinstance(generation, ChatGeneration)
+            assert isinstance(generation.text, str)
+            assert generation.text == generation.message.content
 
 
 @pytest.mark.scheduled

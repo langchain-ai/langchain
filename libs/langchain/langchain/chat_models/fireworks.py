@@ -15,7 +15,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _agenerate_from_stream,
+    _generate_from_stream
+)
 from langchain.llms.base import create_base_retry_decorator
 from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema.messages import (
@@ -91,6 +95,10 @@ class ChatFireworks(BaseChatModel):
     fireworks_api_key: Optional[SecretStr] = None
     max_retries: int = 20
     use_retry: bool = True
+    streaming: bool = False
+    """Whether to stream the results or not."""
+    n: int = 1
+    """Number of chat completions to generate for each prompt."""
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -114,6 +122,10 @@ class ChatFireworks(BaseChatModel):
             get_from_dict_or_env(values, "fireworks_api_key", "FIREWORKS_API_KEY")
         )
         fireworks.client.api_key = fireworks_api_key.get_secret_value()
+        if values["n"] < 1:
+            raise ValueError("n must be at least 1.")
+        if values["n"] > 1 and values["streaming"]:
+            raise ValueError("n must be 1 when streaming.")
         return values
 
     @property
@@ -126,8 +138,16 @@ class ChatFireworks(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return _generate_from_stream(stream_iter)
+
         message_dicts = self._create_message_dicts(messages)
 
         params = {
@@ -149,9 +169,17 @@ class ChatFireworks(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await _agenerate_from_stream(stream_iter)
         message_dicts = self._create_message_dicts(messages)
+
         params = {
             "model": self.model,
             "messages": message_dicts,
