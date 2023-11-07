@@ -160,6 +160,7 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
         from google.protobuf.json_format import MessageToDict
 
         documents: List[Document] = []
+        chunk_type = "extractive_answers"
 
         for result in results:
             document_dict = MessageToDict(
@@ -172,8 +173,6 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
             doc_metadata = document_dict.get("struct_data", {})
             doc_metadata["id"] = document_dict["id"]
             doc_metadata["source"] = derived_struct_data.get("link", "")
-
-            chunk_type = "extractive_answers"
 
             if chunk_type not in derived_struct_data:
                 continue
