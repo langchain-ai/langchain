@@ -28,6 +28,7 @@ from langchain.memory.chat_message_histories.upstash_redis import (
 )
 from langchain.memory.chat_message_histories.xata import XataChatMessageHistory
 from langchain.memory.chat_message_histories.zep import ZepChatMessageHistory
+from langchain.memory.chat_message_histories.neo4j import Neo4jChatMessageHistory
 
 __all__ = [
     "ChatMessageHistory",
@@ -48,4 +49,5 @@ __all__ = [
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
     "UpstashRedisChatMessageHistory",
+    "Neo4jChatMessageHistory",
 ]
