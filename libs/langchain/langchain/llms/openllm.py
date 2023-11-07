@@ -90,7 +90,7 @@ class OpenLLM(LLM):
     llm_kwargs: Dict[str, Any]
     """Keyword arguments to be passed to openllm.LLM"""
 
-    _runner: Optional[openllm.LLMRunner] = PrivateAttr(default=None)
+    _llm: Optional[openllm.LLM[Any, Any]] = PrivateAttr(default=None)
     _client: Union[
         openllm.client.HTTPClient, openllm.client.GrpcClient, None
     ] = PrivateAttr(default=None)
@@ -158,23 +158,22 @@ class OpenLLM(LLM):
                     "llm_kwargs": llm_kwargs,
                 }
             )
-            self._runner = None  # type: ignore
+            self._llm = None  # type: ignore
             self._client = client
         else:
             assert model_name is not None, "Must provide 'model_name' or 'server_url'"
+            config = openllm.AutoConfig.for_model(model_name, **llm_kwargs)
+            model_id = model_id or config["default_id"]
             # since the LLM are relatively huge, we don't actually want to convert the
             # Runner with embedded when running the server. Instead, we will only set
             # the init_local here so that LangChain users can still use the LLM
             # in-process. Wrt to BentoML users, setting embedded=False is the expected
             # behaviour to invoke the runners remotely.
             # We need to also enable ensure_available to download and setup the model.
-            runner = openllm.Runner(
-                model_name=model_name,
-                model_id=model_id,
-                init_local=embedded,
-                ensure_available=True,
-                **llm_kwargs,
-            )
+            llm = openllm.LLM[Any, Any](model_id, llm_config=config)
+            llm.save_pretrained()  # ensure_available backward compatibility
+            if embedded:
+                llm.runner.init_local(quiet=True)
             super().__init__(
                 **{
                     "model_name": model_name,
@@ -184,10 +183,10 @@ class OpenLLM(LLM):
                 }
             )
             self._client = None  # type: ignore
-            self._runner = runner
+            self._llm = llm
 
     @property
-    def runner(self) -> openllm.LLMRunner:
+    def runner(self) -> openllm.LLMRunner[Any, Any]:
         """
         Get the underlying openllm.LLMRunner instance for integration with BentoML.
 
@@ -209,9 +208,9 @@ class OpenLLM(LLM):
             def chat(input_text: str):
                 return agent.run(input_text)
         """
-        if self._runner is None:
+        if self._llm is None:
             raise ValueError("OpenLLM must be initialized locally with 'model_name'")
-        return self._runner
+        return self._llm.runner
 
     @property
     def _identifying_params(self) -> IdentifyingParams:
@@ -221,13 +220,13 @@ class OpenLLM(LLM):
             model_name = self._client._metadata()["model_name"]
             model_id = self._client._metadata()["model_id"]
         else:
-            if self._runner is None:
-                raise ValueError("Runner must be initialized.")
+            if self._llm is None:
+                raise ValueError("LLM must be initialized.")
             model_name = self.model_name
             model_id = self.model_id
             try:
                 self.llm_kwargs.update(
-                    json.loads(self._runner.identifying_params["configuration"])
+                    json.loads(self._llm.identifying_params["configuration"])
                 )
             except (TypeError, json.JSONDecodeError):
                 pass
@@ -251,6 +250,8 @@ class OpenLLM(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
+        import asyncio
+
         try:
             import openllm
         except ImportError as e:
@@ -265,20 +266,17 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            res = self._client.generate(
-                prompt, **config.model_dump(flatten=True)
-            ).responses[0]
+            res = self._client.generate(prompt, llm_config=config, stop=stop)
         else:
-            assert self._runner is not None
-            res = self._runner(prompt, **config.model_dump(flatten=True))
-        if isinstance(res, dict) and "text" in res:
-            return res["text"]
-        elif isinstance(res, str):
-            return res
+            assert self._llm is not None
+            res = asyncio.run(
+                self._llm.generate(prompt, stop=stop, **config.model_dump(flatten=True))
+            )
+        if hasattr(res, "outputs"):
+            return res.outputs[0].text
         else:
             raise ValueError(
-                "Expected result to be a dict with key 'text' or a string. "
-                f"Received {res}"
+                f"Expected result to be either a 'openllm.GenerationOutput' or 'openllm_client.Response' output. Received '{res}' instead"
             )
 
     async def _acall(
@@ -303,29 +301,18 @@ class OpenLLM(LLM):
         )
         if self._client:
             async_client = openllm.client.AsyncHTTPClient(self.server_url)
-            res = (
-                await async_client.generate(prompt, **config.model_dump(flatten=True))
-            ).responses[0]
-        else:
-            assert self._runner is not None
-            (
-                prompt,
-                generate_kwargs,
-                postprocess_kwargs,
-            ) = self._runner.llm.sanitize_parameters(prompt, **kwargs)
-            generated_result = await self._runner.generate.async_run(
-                prompt, **generate_kwargs
+            res = await async_client.generate(
+                prompt, stop=stop, **config.model_dump(flatten=True)
             )
-            res = self._runner.llm.postprocess_generate(
-                prompt, generated_result, **postprocess_kwargs
+        else:
+            assert self._llm is not None
+            res = await self._llm.generate(
+                prompt, stop=stop, **config.model_dump(flatten=True)
             )
 
-        if isinstance(res, dict) and "text" in res:
-            return res["text"]
-        elif isinstance(res, str):
-            return res
+        if hasattr(res, "outputs"):
+            return res.outputs[0].text
         else:
             raise ValueError(
-                "Expected result to be a dict with key 'text' or a string. "
-                f"Received {res}"
+                f"Expected result to be either a 'openllm.GenerationOutput' or 'openllm_client.Response' output. Received '{res}' instead"
             )
