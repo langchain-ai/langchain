@@ -14,7 +14,6 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
 )
 
 import numpy as np
@@ -22,6 +21,7 @@ import numpy as np
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
+from langchain.utils.iter import batch_iterate
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 ADBVST = TypeVar("ADBVST", bound="AstraDB")
@@ -52,17 +52,6 @@ def _unique_list(lst: List[T], key: Callable[[T], U]) -> List[T]:
     return new_lst
 
 
-def _batch_iterable(iterable: Iterable[T], batch_size: int) -> Iterable[Iterable[T]]:
-    this_batch = []
-    for entry in iterable:
-        this_batch.append(entry)
-        if len(this_batch) == batch_size:
-            yield this_batch
-            this_batch = []
-    if this_batch:
-        yield this_batch
-
-
 class AstraDB(VectorStore):
     """Wrapper around DataStax Astra DB for vector-store workloads.
 
@@ -90,21 +79,12 @@ class AstraDB(VectorStore):
                 results = vectorstore.similarity_search("Everything's ok", k=1)
     """
 
-    _embedding_dimension: Union[int, None]
-
     @staticmethod
     def _filter_to_metadata(filter_dict: Optional[Dict[str, str]]) -> Dict[str, Any]:
         if filter_dict is None:
             return {}
         else:
             return {f"metadata.{mdk}": mdv for mdk, mdv in filter_dict.items()}
-
-    def _get_embedding_dimension(self) -> int:
-        if self._embedding_dimension is None:
-            self._embedding_dimension = len(
-                self.embedding.embed_query("This is a sample sentence.")
-            )
-        return self._embedding_dimension
 
     def __init__(
         self,
@@ -187,7 +167,7 @@ class AstraDB(VectorStore):
             bulk_delete_concurrency or DEFAULT_BULK_DELETE_CONCURRENCY
         )
         # "vector-related" settings
-        self._embedding_dimension = None
+        self._embedding_dimension: Optional[int] = None
         self.metric = metric
 
         if astra_db_client is not None:
@@ -204,6 +184,13 @@ class AstraDB(VectorStore):
             collection_name=self.collection_name,
             astra_db=self.astra_db,
         )
+
+    def _get_embedding_dimension(self) -> int:
+        if self._embedding_dimension is None:
+            self._embedding_dimension = len(
+                self.embedding.embed_query("This is a sample sentence.")
+            )
+        return self._embedding_dimension
 
     def _drop_collection(self) -> None:
         """
@@ -443,9 +430,9 @@ class AstraDB(VectorStore):
         with ThreadPoolExecutor(max_workers=_b_max_workers) as tpe:
             all_ids_nested = tpe.map(
                 _handle_batch,
-                _batch_iterable(
-                    uniqued_documents_to_insert,
+                batch_iterate(
                     batch_size or self.batch_size,
+                    uniqued_documents_to_insert,
                 ),
             )
 
@@ -761,11 +748,4 @@ class AstraDB(VectorStore):
         Returns:
             an `AstraDB` vectorstore.
         """
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return cls.from_texts(
-            texts=texts,
-            embedding=embedding,
-            metadatas=metadatas,
-            **kwargs,
-        )
+        return super().from_documents(documents, embedding, **kwargs)
