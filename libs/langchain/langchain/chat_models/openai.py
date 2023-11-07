@@ -345,6 +345,7 @@ class ChatOpenAI(BaseChatModel):
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
         system_fingerprint = None
+        combined = {}
         for output in llm_outputs:
             if output is None:
                 # Happens in streaming
@@ -357,7 +358,14 @@ class ChatOpenAI(BaseChatModel):
                     overall_token_usage[k] = v
             if system_fingerprint is None:
                 system_fingerprint = output.get("system_fingerprint")
-        combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
+            for k, v in output.items():
+                if k in {"token_usage", "system_fingerprint"}:
+                    continue
+                if k not in combined:
+                    combined[k] = v
+        combined.update(
+            {"token_usage": overall_token_usage, "model_name": self.model_name}
+        )
         if system_fingerprint:
             combined["system_fingerprint"] = system_fingerprint
         return combined
@@ -438,10 +446,16 @@ class ChatOpenAI(BaseChatModel):
             )
             generations.append(gen)
         token_usage = response.get("usage", {})
+        output_kwargs = {
+            k: v
+            for k, v in response.items()
+            if k not in {"choices", "system_fingerprint", "usage"}
+        }
         llm_output = {
             "token_usage": token_usage,
             "model_name": self.model_name,
             "system_fingerprint": response.get("system_fingerprint", ""),
+            **output_kwargs,
         }
         return ChatResult(generations=generations, llm_output=llm_output)
 

@@ -100,7 +100,7 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         raise TypeError(f"Got unknown type {message}")
     if "name" in message.additional_kwargs:
         message_dict["name"] = message.additional_kwargs["name"]
-    return message_dict
+    return {**message.additional_kwargs, **message_dict}
 
 
 def convert_openai_messages(messages: Sequence[Dict[str, Any]]) -> List[BaseMessage]:
@@ -171,12 +171,18 @@ class ChatCompletion:
         **kwargs: Any,
     ) -> Union[dict, Iterable]:
         models = importlib.import_module("langchain.chat_models")
+        callbacks = importlib.import_module("langchain.callbacks.manager")
         model_cls = getattr(models, provider)
         model_config = model_cls(**kwargs)
         converted_messages = convert_openai_messages(messages)
         if not stream:
-            result = model_config.invoke(converted_messages)
-            return {"choices": [{"message": convert_message_to_dict(result)}]}
+            with callbacks.collect_runs() as cb:
+                result = model_config.invoke(converted_messages, {"callbacks": [cb]})
+                run = cb.traced_runs[0]
+            return {
+                **(run.outputs.get("llm_output") or {}),
+                "choices": [{"message": convert_message_to_dict(result)}],
+            }
         else:
             return (
                 _convert_message_chunk_to_delta(c, i)
