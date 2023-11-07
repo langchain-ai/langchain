@@ -15,10 +15,8 @@ import os
 
 import pytest
 
-from langchain.retrievers.google_cloud_enterprise_search import (
-    GoogleCloudEnterpriseSearchRetriever,
-)
 from langchain.retrievers.google_vertex_ai_search import (
+    GoogleCloudEnterpriseSearchRetriever,
     GoogleVertexAIMultiTurnSearchRetriever,
     GoogleVertexAISearchRetriever,
 )

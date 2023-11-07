@@ -1,15 +1,12 @@
 import time
 from typing import List
 
-from libs.langchain.tests.integration_tests.vectorstores.fake_embeddings import (
-    FakeEmbeddings,
-)
-
 from langchain.schema import Document
 from langchain.vectorstores.alibabacloud_opensearch import (
     AlibabaCloudOpenSearch,
     AlibabaCloudOpenSearchSettings,
 )
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 OS_TOKEN_COUNT = 1536
 

@@ -18,6 +18,7 @@ and retrieve the data that are 'most similar' to the embedded query.
 
     Embeddings, Document
 """  # noqa: E501
+
 from typing import Any
 
 from langchain.schema.vectorstore import VectorStore
@@ -89,6 +90,12 @@ def _import_bageldb() -> Any:
     from langchain.vectorstores.bageldb import Bagel
 
     return Bagel
+
+
+def _import_baiducloud_vector_search() -> Any:
+    from langchain.vectorstores.baiducloud_vector_search import BESVectorStore
+
+    return BESVectorStore
 
 
 def _import_cassandra() -> Any:
@@ -343,6 +350,12 @@ def _import_tencentvectordb() -> Any:
     return TencentVectorDB
 
 
+def _import_tiledb() -> Any:
+    from langchain.vectorstores.tiledb import TileDB
+
+    return TileDB
+
+
 def _import_tigris() -> Any:
     from langchain.vectorstores.tigris import Tigris
 
@@ -426,6 +439,8 @@ def __getattr__(name: str) -> Any:
         return _import_azuresearch()
     elif name == "Bagel":
         return _import_bageldb()
+    elif name == "BESVectorStore":
+        return _import_baiducloud_vector_search()
     elif name == "Cassandra":
         return _import_cassandra()
     elif name == "Chroma":
@@ -508,6 +523,8 @@ def __getattr__(name: str) -> Any:
         return _import_tair()
     elif name == "TencentVectorDB":
         return _import_tencentvectordb()
+    elif name == "TileDB":
+        return _import_tiledb()
     elif name == "Tigris":
         return _import_tigris()
     elif name == "TimescaleVector":
@@ -585,6 +602,7 @@ __all__ = [
     "StarRocks",
     "SupabaseVectorStore",
     "Tair",
+    "TileDB",
     "Tigris",
     "TimescaleVector",
     "Typesense",
@@ -592,11 +610,11 @@ __all__ = [
     "Vald",
     "Vearch",
     "Vectara",
-    "VectorStore",
     "VespaStore",
     "Weaviate",
     "ZepVectorStore",
     "Zilliz",
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
+    "VectorStore",
 ]

@@ -33,11 +33,11 @@ See [MLflow AI Gateway](/docs/integrations/providers/mlflow_ai_gateway).
 Databricks as an LLM provider
 -----------------------------
 
-The notebook [Wrap Databricks endpoints as LLMs](/docs/integrations/llms/databricks.html) illustrates the method to wrap Databricks endpoints as LLMs in LangChain. It supports two types of endpoints: the serving endpoint, which is recommended for both production and development, and the cluster driver proxy app, which is recommended for interactive development. 
+The notebook [Wrap Databricks endpoints as LLMs](/docs/integrations/llms/databricks) illustrates the method to wrap Databricks endpoints as LLMs in LangChain. It supports two types of endpoints: the serving endpoint, which is recommended for both production and development, and the cluster driver proxy app, which is recommended for interactive development. 
 
 Databricks endpoints support Dolly, but are also great for hosting models like MPT-7B or any other models from the Hugging Face ecosystem. Databricks endpoints can also be used with proprietary models like OpenAI to provide a governance layer for enterprises.
 
 Databricks Dolly
 ----------------
 
-Databricks’ Dolly is an instruction-following large language model trained on the Databricks machine learning platform that is licensed for commercial use. The model is available on Hugging Face Hub as databricks/dolly-v2-12b. See the notebook [Hugging Face Hub](/docs/integrations/llms/huggingface_hub.html) for instructions to access it through the Hugging Face Hub integration with LangChain. 
+Databricks’ Dolly is an instruction-following large language model trained on the Databricks machine learning platform that is licensed for commercial use. The model is available on Hugging Face Hub as databricks/dolly-v2-12b. See the notebook [Hugging Face Hub](/docs/integrations/llms/huggingface_hub) for instructions to access it through the Hugging Face Hub integration with LangChain. 

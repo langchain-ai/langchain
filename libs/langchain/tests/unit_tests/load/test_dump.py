@@ -57,7 +57,7 @@ def test_person(snapshot: Any) -> None:
     assert dumps(p, pretty=True) == snapshot
     sp = SpecialPerson(another_secret="Wooo", secret="Hmm")
     assert dumps(sp, pretty=True) == snapshot
-    assert Person.lc_id() == ["test_dump", "Person"]
+    assert Person.lc_id() == ["tests", "unit_tests", "load", "test_dump", "Person"]
 
 
 @pytest.mark.requires("openai")

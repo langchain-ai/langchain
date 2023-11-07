@@ -25,6 +25,7 @@ from langchain.schema import (
 )
 from langchain.schema.output import GenerationChunk
 from langchain.utilities.vertexai import (
+    get_client_info,
     init_vertexai,
     raise_vertex_import_error,
 )
@@ -275,6 +276,27 @@ class VertexAI(_VertexAICommon, BaseLLM):
             raise ValueError("Only one candidate can be generated with streaming!")
         return values
 
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text.
+
+        Useful for checking if an input will fit in a model's context window.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            The integer number of tokens in the text.
+        """
+        try:
+            result = self.client.count_tokens(text)
+        except AttributeError:
+            raise NotImplementedError(
+                "Your google-cloud-aiplatform version didn't implement count_tokens."
+                "Please, install it with pip install google-cloud-aiplatform>=1.35.0"
+            )
+
+        return result.total_tokens
+
     def _generate(
         self,
         prompts: List[str],
@@ -298,7 +320,12 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 res = completion_with_retry(
                     self, prompt, run_manager=run_manager, **params
                 )
-                generations.append([_response_to_generation(r) for r in res.candidates])
+                if self.is_codey_model:
+                    generations.append([_response_to_generation(res)])
+                else:
+                    generations.append(
+                        [_response_to_generation(r) for r in res.candidates]
+                    )
         return LLMResult(generations=generations)
 
     async def _agenerate(
@@ -370,9 +397,12 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         client_options = ClientOptions(
             api_endpoint=f"{values['location']}-aiplatform.googleapis.com"
         )
-        values["client"] = PredictionServiceClient(client_options=client_options)
+        client_info = get_client_info(module="vertex-ai-model-garden")
+        values["client"] = PredictionServiceClient(
+            client_options=client_options, client_info=client_info
+        )
         values["async_client"] = PredictionServiceAsyncClient(
-            client_options=client_options
+            client_options=client_options, client_info=client_info
         )
         return values
 

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
@@ -23,26 +23,21 @@ class LlamaContentFormatter(ContentFormatterBase):
     @staticmethod
     def _convert_message_to_dict(message: BaseMessage) -> Dict:
         """Converts message to a dict according to role"""
+        content = cast(str, message.content)
         if isinstance(message, HumanMessage):
             return {
                 "role": "user",
-                "content": ContentFormatterBase.escape_special_characters(
-                    message.content
-                ),
+                "content": ContentFormatterBase.escape_special_characters(content),
             }
         elif isinstance(message, AIMessage):
             return {
                 "role": "assistant",
-                "content": ContentFormatterBase.escape_special_characters(
-                    message.content
-                ),
+                "content": ContentFormatterBase.escape_special_characters(content),
             }
         elif isinstance(message, SystemMessage):
             return {
                 "role": "system",
-                "content": ContentFormatterBase.escape_special_characters(
-                    message.content
-                ),
+                "content": ContentFormatterBase.escape_special_characters(content),
             }
         elif (
             isinstance(message, ChatMessage)
@@ -50,9 +45,7 @@ class LlamaContentFormatter(ContentFormatterBase):
         ):
             return {
                 "role": message.role,
-                "content": ContentFormatterBase.escape_special_characters(
-                    message.content
-                ),
+                "content": ContentFormatterBase.escape_special_characters(content),
             }
         else:
             supported = ",".join(
@@ -76,7 +69,7 @@ class LlamaContentFormatter(ContentFormatterBase):
         return self.format_request_payload(prompt=prompt, model_kwargs=model_kwargs)
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
-        """Formats the request according the the chosen api"""
+        """Formats the request according to the chosen api"""
         return str.encode(prompt)
 
     def format_response_payload(self, output: bytes) -> str:
@@ -118,7 +111,7 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
     @validator("http_client", always=True, allow_reuse=True)
     @classmethod
     def validate_client(cls, field_value: Any, values: Dict) -> AzureMLEndpointClient:
-        """Validate that api key and python package exists in environment."""
+        """Validate that api key and python package exist in environment."""
         endpoint_key = get_from_dict_or_env(
             values, "endpoint_api_key", "AZUREML_ENDPOINT_API_KEY"
         )
