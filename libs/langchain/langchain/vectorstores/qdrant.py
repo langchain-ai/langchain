@@ -112,10 +112,10 @@ class Qdrant(VectorStore):
                 f"got {type(client)}"
             )
 
-        if type(content_payload_key) == str:  # Ensuring Backward compatibility
+        if isinstance(content_payload_key, str):  # Ensuring Backward compatibility
             content_payload_key = [content_payload_key]
 
-        if type(metadata_payload_key) == str:  # Ensuring Backward compatibility
+        if isinstance(metadata_payload_key, str):  # Ensuring Backward compatibility
             metadata_payload_key = [metadata_payload_key]
 
         if embeddings is None and embedding_function is None:
@@ -133,8 +133,14 @@ class Qdrant(VectorStore):
         self._embeddings_function = embedding_function
         self.client: qdrant_client.QdrantClient = client
         self.collection_name = collection_name
-        self.content_payload_key = content_payload_key or self.CONTENT_KEY
-        self.metadata_payload_key = metadata_payload_key or self.METADATA_KEY
+        self.content_payload_key = (
+            content_payload_key if content_payload_key is not None else self.CONTENT_KEY
+        )
+        self.metadata_payload_key = (
+            metadata_payload_key
+            if metadata_payload_key is not None
+            else self.METADATA_KEY
+        )
         self.vector_name = vector_name or self.VECTOR_NAME
 
         if embedding_function is not None:
@@ -1184,8 +1190,8 @@ class Qdrant(VectorStore):
         path: Optional[str] = None,
         collection_name: Optional[str] = None,
         distance_func: str = "Cosine",
-        content_payload_key: str = CONTENT_KEY,
-        metadata_payload_key: str = METADATA_KEY,
+        content_payload_key: List[str] = CONTENT_KEY,
+        metadata_payload_key: List[str] = METADATA_KEY,
         vector_name: Optional[str] = VECTOR_NAME,
         batch_size: int = 64,
         shard_number: Optional[int] = None,
@@ -1360,8 +1366,8 @@ class Qdrant(VectorStore):
         path: Optional[str] = None,
         collection_name: Optional[str] = None,
         distance_func: str = "Cosine",
-        content_payload_key: str = CONTENT_KEY,
-        metadata_payload_key: str = METADATA_KEY,
+        content_payload_key: List[str] = CONTENT_KEY,
+        metadata_payload_key: List[str] = METADATA_KEY,
         vector_name: Optional[str] = VECTOR_NAME,
         batch_size: int = 64,
         shard_number: Optional[int] = None,
@@ -1533,8 +1539,8 @@ class Qdrant(VectorStore):
         path: Optional[str] = None,
         collection_name: Optional[str] = None,
         distance_func: str = "Cosine",
-        content_payload_key: str = CONTENT_KEY,
-        metadata_payload_key: str = METADATA_KEY,
+        content_payload_key: List[str] = CONTENT_KEY,
+        metadata_payload_key: List[str] = METADATA_KEY,
         vector_name: Optional[str] = VECTOR_NAME,
         shard_number: Optional[int] = None,
         replication_factor: Optional[int] = None,
@@ -1697,8 +1703,8 @@ class Qdrant(VectorStore):
         path: Optional[str] = None,
         collection_name: Optional[str] = None,
         distance_func: str = "Cosine",
-        content_payload_key: str = CONTENT_KEY,
-        metadata_payload_key: str = METADATA_KEY,
+        content_payload_key: List[str] = CONTENT_KEY,
+        metadata_payload_key: List[str] = METADATA_KEY,
         vector_name: Optional[str] = VECTOR_NAME,
         shard_number: Optional[int] = None,
         replication_factor: Optional[int] = None,
@@ -1894,11 +1900,11 @@ class Qdrant(VectorStore):
 
     @classmethod
     def _build_payloads(
-        cls,
+        cls: Type[Qdrant],
         texts: Iterable[str],
         metadatas: Optional[List[dict]],
-        content_payload_key: str,
-        metadata_payload_key: str,
+        content_payload_key: list[str],
+        metadata_payload_key: list[str],
     ) -> List[dict]:
         payloads = []
         for i, text in enumerate(texts):
@@ -1919,14 +1925,13 @@ class Qdrant(VectorStore):
 
     @classmethod
     def _document_from_scored_point(
-        cls,
+        cls: Type[Qdrant],
         scored_point: Any,
-        content_payload_key: list,
-        metadata_payload_key: list,
+        content_payload_key: list[str],
+        metadata_payload_key: list[str],
     ) -> Document:
         payload = scored_point.payload
         return Qdrant._document_from_payload(
-            cls=cls,
             payload=payload,
             content_payload_key=content_payload_key,
             metadata_payload_key=metadata_payload_key,
@@ -1934,23 +1939,26 @@ class Qdrant(VectorStore):
 
     @classmethod
     def _document_from_scored_point_grpc(
-        cls,
+        cls: Type[Qdrant],
         scored_point: Any,
-        content_payload_key: list,
-        metadata_payload_key: list,
+        content_payload_key: list[str],
+        metadata_payload_key: list[str],
     ) -> Document:
         from qdrant_client.conversions.conversion import grpc_to_payload
 
         payload = grpc_to_payload(scored_point.payload)
         return Qdrant._document_from_payload(
-            cls=cls,
             payload=payload,
             content_payload_key=content_payload_key,
             metadata_payload_key=metadata_payload_key,
         )
 
+    @classmethod
     def _document_from_payload(
-        cls, payload: Any, content_payload_key: list, metadata_payload_key: list
+        cls: Type[Qdrant],
+        payload: Any,
+        content_payload_key: list[str],
+        metadata_payload_key: list[str],
     ) -> Document:
         if len(content_payload_key) == 1:
             content = payload.get(
