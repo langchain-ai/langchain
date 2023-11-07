@@ -109,16 +109,24 @@ def test_chroma_search_where_document() -> None:
     output = docsearch.similarity_search_with_score("anything", k=4)
     assert len(output) == 4
 
-    output = docsearch.similarity_search("anything", k=4, where_document={"$contains": "fizz"})
+    output = docsearch.similarity_search(
+        "anything", k=4, where_document={"$contains": "fizz"}
+    )
     assert len(output) == 3
 
-    output = docsearch.similarity_search("anything", k=4,
-                                         where_document={"$and": [{"$contains": "bar"}, {"$contains": "fizz"}]})
+    output = docsearch.similarity_search(
+        "anything",
+        k=4,
+        where_document={"$and": [{"$contains": "bar"}, {"$contains": "fizz"}]},
+    )
     assert len(output) == 1
     assert output == [Document(page_content="bar fizz", metadata={})]
 
-    output = docsearch.similarity_search("anything", k=4,
-                                         where_document={"$or": [{"$contains": "far"}, {"$contains": "fizz"}]})
+    output = docsearch.similarity_search(
+        "anything",
+        k=4,
+        where_document={"$or": [{"$contains": "far"}, {"$contains": "fizz"}]},
+    )
     assert len(output) == 4
 
 
