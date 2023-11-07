@@ -27,7 +27,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """Cohere async client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
-    input_type: str = None
+    input_type: Optional[str] = None
     """
     This applies to embed v3 models only and is required by them.
 
