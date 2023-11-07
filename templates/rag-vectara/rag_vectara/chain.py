@@ -1,8 +1,6 @@
 import os
 
 from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import WebBaseLoader
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
@@ -17,7 +15,8 @@ if os.environ.get("VECTARA_API_KEY", None) is None:
     raise Exception("Missing `VECTARA_API_KEY` environment variable.")
 
 # If you want to ingest data then use this code.
-# Note that no document chunkinig is needed, as this is done efficiently in the Vectara backend.
+# Note that no document chunking is needed, as this is
+# done efficiently in the Vectara backend.
 #   loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
 #   docs = loader.load()
 #   vec_store = Vectara.from_document(docs)
