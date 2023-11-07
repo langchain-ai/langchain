@@ -28,7 +28,7 @@ from langchain.llms.base import BaseLLM, create_base_retry_decorator
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import get_from_dict_or_env, get_pydantic_field_names, check_package_version
 from langchain.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
@@ -262,13 +262,18 @@ class BaseOpenAI(BaseLLM):
         )
         try:
             import openai
-
-            values["client"] = openai.Completion
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
+
+        try:
+            check_package_version("openai", gte_version="1.0.0")
+            values["client"] = openai.completions.Completions
+        except ValueError:
+            values["client"] = openai.Completion
+
         if values["streaming"] and values["n"] > 1:
             raise ValueError("Cannot stream results when n > 1.")
         if values["streaming"] and values["best_of"] > 1:
