@@ -17,9 +17,9 @@
 - Ознакомьтесь и примите условия пользовательского соглашения.
 - В открывшемся окне введите название проекта.
 - Нажмите кнопку "Сгенерировать новый `Client Secret`".
-  ![Создание нового Client Secret](docs/extras/integrations/chat/giga_reg_cs.png?raw=true)
+  ![Создание нового Client Secret](giga_reg_cs.png?raw=true)
 - Сохраните `Client Secret` и `Авторизационные данные` в надежном месте.
-  ![Сохранение ключей](docs/extras/integrations/chat/giga_reg_cs_2.png?raw=true)
+  ![Сохранение ключей](giga_reg_cs_2.png?raw=true)
 
 > [!NOTE]
 > Обратите внимание на поле Scope. GigaChat по-умолчанию использует значение `GIGACHAT_API_PERS`. Если вам нужно использовать другое значение, то его нужно задать явно с помощью параметра 
