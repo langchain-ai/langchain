@@ -314,7 +314,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     max_retries=values.get("max_retries"),
                     organization=values.get("openai_organization"),
                     base_url=values.get("openai_api_base") or None,
-                ).chat.completions
+                ).embeddings
             else:
                 values["client"] = openai.Embedding
         except ImportError:
