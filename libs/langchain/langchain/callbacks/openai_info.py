@@ -6,6 +6,7 @@ from langchain.schema import LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
     # GPT-4 input
+    "gpt-4-1106-preview": 0.01,
     "gpt-4": 0.03,
     "gpt-4-0314": 0.03,
     "gpt-4-0613": 0.03,
@@ -13,6 +14,7 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4-32k-0314": 0.06,
     "gpt-4-32k-0613": 0.06,
     # GPT-4 output
+    "gpt-4-1106-preview": 0.03,
     "gpt-4-completion": 0.06,
     "gpt-4-0314-completion": 0.06,
     "gpt-4-0613-completion": 0.06,
@@ -20,6 +22,7 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4-32k-0314-completion": 0.12,
     "gpt-4-32k-0613-completion": 0.12,
     # GPT-3.5 input
+    "gpt-3.5-turbo-1106": 0.001,
     "gpt-3.5-turbo": 0.0015,
     "gpt-3.5-turbo-0301": 0.0015,
     "gpt-3.5-turbo-0613": 0.0015,
@@ -27,6 +30,7 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-3.5-turbo-16k": 0.003,
     "gpt-3.5-turbo-16k-0613": 0.003,
     # GPT-3.5 output
+    "gpt-3.5-turbo-1106": 0.002,
     "gpt-3.5-turbo-completion": 0.002,
     "gpt-3.5-turbo-0301-completion": 0.002,
     "gpt-3.5-turbo-0613-completion": 0.002,
