@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import typer
-from langserve.packages import get_langserve_export
 from typing_extensions import Annotated
 
 from langchain_cli.utils.events import create_events
@@ -19,7 +18,15 @@ from langchain_cli.utils.git import (
     parse_dependencies,
     update_repo,
 )
-from langchain_cli.utils.packages import get_package_root
+from langchain_cli.utils.packages import (
+    LangServeExport,
+    get_langserve_export,
+    get_package_root,
+)
+from langchain_cli.utils.pyproject import (
+    add_dependencies_to_pyproject_toml,
+    remove_dependencies_from_pyproject_toml,
+)
 
 REPO_DIR = Path(typer.get_app_dir("langchain")) / "git_repos"
 
@@ -98,7 +105,8 @@ def add(
         grouped[key_tup] = lst
 
     installed_destination_paths: List[Path] = []
-    installed_exports: List[Dict] = []
+    installed_destination_names: List[str] = []
+    installed_exports: List[LangServeExport] = []
 
     for (git, ref), group_deps in grouped.items():
         if len(group_deps) == 1:
@@ -131,23 +139,38 @@ def add(
             copy_repo(source_path, destination_path)
             typer.echo(f" - Downloaded {dep['subdirectory']} to {inner_api_path}")
             installed_destination_paths.append(destination_path)
+            installed_destination_names.append(inner_api_path)
             installed_exports.append(langserve_export)
 
     if len(installed_destination_paths) == 0:
         typer.echo("No packages installed. Exiting.")
         return
 
-    cwd = Path.cwd()
-    installed_desination_strs = [
-        str(p.relative_to(cwd)) for p in installed_destination_paths
-    ]
-    cmd = ["pip", "install", "-e"] + installed_desination_strs
-    cmd_str = " \\\n  ".join(installed_desination_strs)
-    install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
-    typer.echo(install_str)
+    try:
+        add_dependencies_to_pyproject_toml(
+            project_root / "pyproject.toml",
+            zip(installed_destination_names, installed_destination_paths),
+        )
+    except Exception:
+        # Can fail if user modified/removed pyproject.toml
+        typer.echo("Failed to add dependencies to pyproject.toml, continuing...")
 
-    if typer.confirm("Run it?"):
-        subprocess.run(cmd, cwd=cwd)
+    try:
+        cwd = Path.cwd()
+        installed_destination_strs = [
+            str(p.relative_to(cwd)) for p in installed_destination_paths
+        ]
+    except ValueError:
+        # Can fail if the cwd is not a parent of the package
+        typer.echo("Failed to print install command, continuing...")
+    else:
+        cmd = ["pip", "install", "-e"] + installed_destination_strs
+        cmd_str = " \\\n  ".join(installed_destination_strs)
+        install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
+        typer.echo(install_str)
+
+        if typer.confirm("Run it?"):
+            subprocess.run(cmd, cwd=cwd)
 
     if typer.confirm("\nGenerate route code for these packages?", default=True):
         chain_names = []
@@ -187,20 +210,43 @@ def add(
 @app_cli.command()
 def remove(
     api_paths: Annotated[List[str], typer.Argument(help="The API paths to remove")],
+    *,
+    project_dir: Annotated[
+        Optional[Path], typer.Option(help="The project directory")
+    ] = None,
 ):
     """
     Removes the specified package from the current LangServe app.
     """
-    for api_path in api_paths:
-        package_dir = Path.cwd() / "packages" / api_path
-        if not package_dir.exists():
-            typer.echo(f"Endpoint {api_path} does not exist. Skipping...")
-            continue
-        pyproject = package_dir / "pyproject.toml"
-        langserve_export = get_langserve_export(pyproject)
-        typer.echo(f"Removing {langserve_export['package_name']}...")
 
-        shutil.rmtree(package_dir)
+    project_root = get_package_root(project_dir)
+
+    project_pyproject = project_root / "pyproject.toml"
+
+    package_root = project_root / "packages"
+
+    remove_deps: List[str] = []
+
+    for api_path in api_paths:
+        package_dir = package_root / api_path
+        if not package_dir.exists():
+            typer.echo(f"Package {api_path} does not exist. Skipping...")
+            continue
+        try:
+            pyproject = package_dir / "pyproject.toml"
+            langserve_export = get_langserve_export(pyproject)
+            typer.echo(f"Removing {langserve_export['package_name']}...")
+
+            shutil.rmtree(package_dir)
+            remove_deps.append(api_path)
+        except Exception:
+            pass
+
+    try:
+        remove_dependencies_from_pyproject_toml(project_pyproject, remove_deps)
+    except Exception:
+        # Can fail if user modified/removed pyproject.toml
+        typer.echo("Failed to remove dependencies from pyproject.toml.")
 
 
 @app_cli.command()
