@@ -52,8 +52,8 @@ def _get_openai_client() -> openai.OpenAI:
 OutputType = Union[
     List[OpenAIAssistantAction],
     OpenAIAssistantFinish,
-    List[ThreadMessage],
-    List[RequiredActionFunctionToolCall],
+    List["ThreadMessage"],
+    List["RequiredActionFunctionToolCall"],
 ]
 
 
