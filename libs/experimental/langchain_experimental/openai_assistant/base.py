@@ -58,7 +58,15 @@ class OpenAIAssistantRunnable(RunnableSerializable[Union[List[dict], str], list]
             self.thread_id = thread.id
 
     def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> List:
-        if "run_id" not in input:
+        if input.get("intermediate_steps"):
+            last_action, last_output = input["intermediate_steps"][-1]
+            input = {
+                "tool_outputs": [
+                    {"output": last_output, "tool_call_id": last_action.tool_call_id}
+                 ],
+                "run_id": last_action.run_id
+            }
+        if "run_id" not in input :
             msg = self.client.beta.threads.messages.create(
                 self.thread_id, content=input["content"], role="user"
             )
