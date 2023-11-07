@@ -11,7 +11,7 @@
 Чтобы использовать этот пакет, у вас должен быть установлен CLI для GigaChain:
 
 ```shell
-pip install -U "gigachain-cli[serve]"
+pip install -U gigachain-cli
 ```
 
 Чтобы создать новый проект GigaChain и установить этот пакет как единственный, вы можете сделать следующее:
@@ -28,7 +28,7 @@ gigachain app add pirate-speak
 
 И добавьте следующий код в файл `server.py`:
 ```python
-from pirate_speak import chain as pirate_speak_chain
+from pirate_speak.chain import chain as pirate_speak_chain
 
 add_routes(app, pirate_speak_chain, path="/pirate-speak")
 ```

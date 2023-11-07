@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-cli"
-version = "0.0.13"
+version = "0.0.15"
 description = "CLI for interacting with GigaChain"
 authors = ["Erick Friis <erick@langchain.dev>", "Konstantin Krestnikov <k.krestnikov@gmail.com>"]
 readme = "README.md"
@@ -13,7 +13,7 @@ python = ">=3.8.1,<4.0"
 typer = {extras = ["all"], version = "^0.9.0"}
 tomli = "^2.0.1"
 gitpython = "^3.1.40"
-gigaserve = {extras = ["all"], version = ">=0.0.16", optional = true}
+gigaserve = {extras = ["all"], version = ">=0.0.16"}
 fastapi = "^0.104.0"
 uvicorn = "^0.23.2"
 
@@ -34,8 +34,8 @@ ruff = "^0.1.3"
 [tool.poetry.group.typing.dependencies]
 
 [tool.poetry.extras]
-# For gigaserve
-serve = ["gigaserve"]
+# For langserve
+serve = []
 
 [tool.ruff]
 select = [
