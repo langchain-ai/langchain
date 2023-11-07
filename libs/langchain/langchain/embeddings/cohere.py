@@ -89,7 +89,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        input_type = "search_document" if self.input_type is not None else self.input_type
+        input_type = "search_document" if self.input_type is None else self.input_type
 
         """Call out to Cohere's embedding endpoint.
 
@@ -108,7 +108,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         return [list(map(float, e)) for e in embeddings]
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        input_type = "search_document" if self.input_type is not None else self.input_type
+        input_type = "search_document" if self.input_type is None else self.input_type
         
         """Async call out to Cohere's embedding endpoint.
 
@@ -127,7 +127,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         return [list(map(float, e)) for e in embeddings.embeddings]
 
     def embed_query(self, text: str) -> List[float]:
-        input_type = "search_query" if self.input_type is not None else self.input_type
+        input_type = "search_query" if self.input_type is None else self.input_type
 
         """Call out to Cohere's embedding endpoint.
 
@@ -146,7 +146,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         return [list(map(float, e)) for e in embeddings][0]
 
     async def aembed_query(self, text: str) -> List[float]:
-        input_type = "search_query" if self.input_type is not None else self.input_type
+        input_type = "search_query" if self.input_type is None else self.input_type
 
         """Async call out to Cohere's embedding endpoint.
 
