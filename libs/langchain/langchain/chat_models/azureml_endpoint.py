@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
@@ -23,26 +23,21 @@ class LlamaContentFormatter(ContentFormatterBase):
     @staticmethod
     def _convert_message_to_dict(message: BaseMessage) -> Dict:
         """Converts message to a dict according to role"""
+        content = cast(str, message.content)
         if isinstance(message, HumanMessage):
             return {
                 "role": "user",
-                "content": ContentFormatterBase.escape_special_characters(
-                    message.content
-                ),
+                "content": ContentFormatterBase.escape_special_characters(content),
             }
         elif isinstance(message, AIMessage):
             return {
                 "role": "assistant",
-                "content": ContentFormatterBase.escape_special_characters(
-                    message.content
-                ),
+                "content": ContentFormatterBase.escape_special_characters(content),
             }
         elif isinstance(message, SystemMessage):
             return {
                 "role": "system",
-                "content": ContentFormatterBase.escape_special_characters(
-                    message.content
-                ),
+                "content": ContentFormatterBase.escape_special_characters(content),
             }
         elif (
             isinstance(message, ChatMessage)
@@ -50,9 +45,7 @@ class LlamaContentFormatter(ContentFormatterBase):
         ):
             return {
                 "role": message.role,
-                "content": ContentFormatterBase.escape_special_characters(
-                    message.content
-                ),
+                "content": ContentFormatterBase.escape_special_characters(content),
             }
         else:
             supported = ",".join(
