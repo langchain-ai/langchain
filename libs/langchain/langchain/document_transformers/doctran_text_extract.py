@@ -85,7 +85,7 @@ class DoctranPropertyExtractor(BaseDocumentTransformer):
         properties = [ExtractProperty(**property) for property in self.properties]
         for d in documents:
             doctran_doc = (
-                await doctran.parse(content=d.page_content)
+                doctran.parse(content=d.page_content)
                 .extract(properties=properties)
                 .execute()
             )
