@@ -17,19 +17,19 @@ Also, ensure the following environment variables are set:
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U langchain-cli
+pip install -U gigachain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package rag-vectara
+gigachain app new my-app --package rag-vectara
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add rag-vectara
+gigachain app add rag-vectara
 ```
 
 And add the following code to your `server.py` file:
@@ -54,7 +54,7 @@ export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "vectar
 If you are inside this directory, then you can spin up a LangServe instance directly by:
 
 ```shell
-langchain serve
+gigachain serve
 ```
 
 This will start the FastAPI app with a server is running locally at 
