@@ -15,7 +15,7 @@ Be sure that `OPENAI_API_KEY` is set in your environment.
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
@@ -32,7 +32,7 @@ langchain app add solo-performance-prompting-agent
 
 And add the following code to your `server.py` file:
 ```python
-from solo_performance_prompting_agent import chain as solo_performance_prompting_agent_chain
+from solo_performance_prompting_agent.agent import agent_executor as solo_performance_prompting_agent_chain
 
 add_routes(app, solo_performance_prompting_agent_chain, path="/solo-performance-prompting-agent")
 ```

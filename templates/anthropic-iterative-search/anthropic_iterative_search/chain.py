@@ -2,6 +2,7 @@ from langchain.chat_models import ChatAnthropic
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
+from langchain.schema.runnable import ConfigurableField
 
 from .prompts import answer_prompt
 from .retriever_agent import executor
@@ -25,3 +26,10 @@ class Inputs(BaseModel):
 
 
 chain = chain.with_types(input_type=Inputs)
+
+chain = chain.configurable_alternatives(
+    ConfigurableField(id="chain"),
+    default_key="response",
+    # This adds a new option, with name `openai` that is equal to `ChatOpenAI()`
+    retrieve=executor,
+)

@@ -36,19 +36,19 @@ This script will populate the database with sample movie data.
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package neo4j_cypher
+langchain app new my-app --package neo4j-cypher
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add neo4j_cypher
+langchain app add neo4j-cypher
 ```
 
 And add the following code to your `server.py` file:
@@ -86,5 +86,5 @@ We can access the template from code with:
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/neo4j_cypher")
+runnable = RemoteRunnable("http://localhost:8000/neo4j-cypher")
 ```
