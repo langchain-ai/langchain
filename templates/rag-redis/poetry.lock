@@ -1374,27 +1374,22 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 
 [[package]]
 name = "langchain-cli"
-version = "0.0.1"
-description = ""
+version = "0.0.15"
+description = "CLI for interacting with LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
-files = []
-develop = false
+files = [
+    {file = "langchain_cli-0.0.15-py3-none-any.whl", hash = "sha256:88102d2bb9d7c9cc99a1da13302a7f95d60cb37b2dab264b808aa6e3887b046f"},
+    {file = "langchain_cli-0.0.15.tar.gz", hash = "sha256:b7ff1a8338922aadbc3b1a141ea92c0a33aaaa72124dfbfd12049fe9a4a95cec"},
+]
 
 [package.dependencies]
-fastapi = "^0.104.0"
-gitpython = "^3.1.40"
-langserve = {git = "https://github.com/langchain-ai/langserve"}
-tomli = "^2.0.1"
-typer = {version = "^0.9.0", extras = ["all"]}
-uvicorn = "^0.23.2"
-
-[package.source]
-type = "git"
-url = "https://github.com/langchain-ai/langchain.git"
-reference = "erick/cli"
-resolved_reference = "1ed00fd2c8d408f96d2bfeaa6ea11f4ebcb7f605"
-subdirectory = "libs/cli"
+fastapi = ">=0.104.0,<0.105.0"
+gitpython = ">=3.1.40,<4.0.0"
+langserve = {version = ">=0.0.16", extras = ["all"]}
+tomli = ">=2.0.1,<3.0.0"
+typer = {version = ">=0.9.0,<0.10.0", extras = ["all"]}
+uvicorn = ">=0.23.2,<0.24.0"
 
 [[package]]
 name = "langdetect"
@@ -4134,4 +4129,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f3ec0f17d874aaabe3b2297d4120cd83426c1ab074e33860ed3874c32a7c18aa"
+content-hash = "3dd640a85da3c4ab6d5ad92730be85132e6e26fd761e87ffea579596b3dbb22b"
