@@ -1,6 +1,6 @@
 """Test ChatFireworks wrapper."""
 import sys
-from typing import cast, Any
+from typing import Any, cast
 
 import pytest
 
@@ -8,7 +8,6 @@ from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.fireworks import ChatFireworks
 from langchain.schema import ChatGeneration, ChatResult, LLMResult
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
-
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 if sys.version_info < (3, 9):

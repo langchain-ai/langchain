@@ -18,7 +18,7 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.base import (
     BaseChatModel,
     _agenerate_from_stream,
-    _generate_from_stream
+    _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
 from langchain.pydantic_v1 import Field, SecretStr, root_validator
