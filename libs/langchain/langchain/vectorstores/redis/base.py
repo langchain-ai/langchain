@@ -830,9 +830,11 @@ class Redis(VectorStore):
                 metadata = {"id": result.id}
                 metadata.update(self._collect_metadata(result))
 
-            doc = Document(page_content=result.prompt, metadata=metadata)
-            distance = self._calculate_fp_distance(result.distance)
-            docs_with_scores.append((doc, distance))
+            content_key = self._schema.content_key
+            docs_with_scores.append((
+                Document(page_content=getattr(result, content_key), metadata=metadata),
+                self._calculate_fp_distance(result.distance),
+            ))
 
         return docs_with_scores
 
