@@ -13,14 +13,17 @@ def test_logging(
     logger.setLevel(logging.INFO)
     logger.addHandler(logging.StreamHandler(sys.stdout))
 
-    handler = LoggingCallbackHandler(logger)
+    handler = LoggingCallbackHandler(logger, extra={"test": "test_extra"})
     handler.on_text("test", color="red")
 
     # Assert logging actually took place
     assert len(caplog.record_tuples) == 1
-    assert caplog.record_tuples[0][0] == logger.name
-    assert caplog.record_tuples[0][1] == logging.INFO
-    assert caplog.record_tuples[0][2] == "\x1b[31;1m\x1b[1;3mtest\x1b[0m"
+    record = caplog.records[0]
+    assert record.name == logger.name
+    assert record.levelno == logging.INFO
+    assert record.msg == "\x1b[31;1m\x1b[1;3mtest\x1b[0m"
+    # Check the extra shows up
+    assert record.test == "test_extra"  # type: ignore[attr-defined]
 
     # Assert log handlers worked
     cap_result = capsys.readouterr()

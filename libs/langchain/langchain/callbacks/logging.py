@@ -10,7 +10,10 @@ class LoggingCallbackHandler(BaseCallbackHandler):
     """Callback handler that logs to the input Logger."""
 
     def __init__(
-        self, logger: Logger, method_levels: Optional[Dict[str, int]] = None
+        self,
+        logger: Logger,
+        method_levels: Optional[Dict[str, int]] = None,
+        extra: Optional[Dict] = None,
     ) -> None:
         """
         Initialize.
@@ -21,9 +24,11 @@ class LoggingCallbackHandler(BaseCallbackHandler):
                 logging.INFO) used within each method. For example, passing
                 {"on_chain_start": logging.DEBUG} will lead to
                 LoggingCallbackHandler.on_chain_start logging at a debug level.
+            extra: Optional extra to pass to each log invocation.
         """
         self._logger = logger
         self._method_levels = method_levels or {}
+        self._extra = extra
 
     def _log_text(
         self, method_name: str, text: str, color: Optional[str] = None
@@ -33,7 +38,7 @@ class LoggingCallbackHandler(BaseCallbackHandler):
             text = get_colored_text(text, color)
         log_level: int = self._method_levels.get(method_name, INFO)
         log_method_name = getLevelName(level=log_level).lower()
-        getattr(self._logger, log_method_name)(text)
+        getattr(self._logger, log_method_name)(text, extra=self._extra)
 
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
