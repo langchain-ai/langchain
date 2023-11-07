@@ -54,7 +54,83 @@ OutputType = Union[
 
 
 class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
-    """Run an OpenAI Assistant."""
+    """Run an OpenAI Assistant.
+
+    Example using OpenAI tools:
+        .. code-block:: python
+
+            from langchain_experimental.openai_assistant import OpenAIAssistantRunnable
+
+            interpreter_assistant = OpenAIAssistantRunnable.create_assistant(
+                name="langchain assistant",
+                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                tools=[{"type": "code_interpreter"}],
+                model="gpt-4-1106-preview"
+            )
+            output = interpreter_assistant.invoke({"content": "What's 10 - 4 raised to the 2.7"})
+
+    Example using custom tools and AgentExecutor:
+        .. code-block:: python
+
+            from langchain_experimental.openai_assistant import OpenAIAssistantRunnable
+            from langchain.agents import AgentExecutor
+            from langchain.tools import E2BDataAnalysisTool
+
+
+            tools = [E2BDataAnalysisTool(api_key="...")]
+            agent = OpenAIAssistantRunnable.create_assistant(
+                name="langchain assistant e2b tool",
+                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                tools=tools,
+                model="gpt-4-1106-preview",
+                as_agent=True
+            )
+
+            agent_executor = AgentExecutor(agent=agent, tools=tools)
+            agent_executor.invoke({"content": "What's 10 - 4 raised to the 2.7"})
+
+
+    Example using custom tools and custom execution:
+        .. code-block:: python
+
+            from langchain_experimental.openai_assistant import OpenAIAssistantRunnable
+            from langchain.agents import AgentExecutor
+            from langchain.schema.agent import AgentFinish
+            from langchain.tools import E2BDataAnalysisTool
+
+
+            tools = [E2BDataAnalysisTool(api_key="...")]
+            agent = OpenAIAssistantRunnable.create_assistant(
+                name="langchain assistant e2b tool",
+                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                tools=tools,
+                model="gpt-4-1106-preview",
+                as_agent=True
+            )
+
+            def execute_agent(agent, tools, input):
+                tool_map = {tool.name: tool for tool in tools}
+                response = agent.invoke(input)
+                while not isinstance(response, AgentFinish):
+                    tool_outputs = []
+                    for action in response:
+                        tool_output = tool_map[action.tool].invoke(action.tool_input)
+                        print(action.tool, action.tool_input, tool_output, end="\n\n")
+                        tool_outputs.append({"output": tool_output, "tool_call_id": action.tool_call_id})
+                    response = agent.invoke(
+                        {
+                            "tool_outputs": tool_outputs,
+                            "run_id": action.run_id,
+                            "thread_id": action.thread_id
+                        }
+                    )
+
+                return response
+
+            response = execute_agent(agent, tools, {"content": "What's 10 - 4 raised to the 2.7"})
+            next_response = execute_agent(agent, tools, {"content": "now add 17.241", "thread_id": response.thread_id})
+
+    """  # noqa: E501
 
     client: openai.OpenAI = Field(default_factory=_get_openai_client)
     """OpenAI client."""
@@ -122,11 +198,26 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         """Invoke assistant.
 
         Args:
-            input: Runnable input.
+            input: Runnable input dict that can have:
+                content: User message when starting a new run.
+                thread_id: Existing thread to use.
+                run_id: Existing run to use. Should only be supplied when providing
+                    the tool output for a required action after an initial invocation.
+                file_ids: File ids to include in new run. Used for retrieval.
+                message_metadata: Metadata to associate with new message.
+                thread_metadata: Metadata to associate with new thread. Only relevant
+                    when new thread being created.
+                instructions: Additional run instructions.
+                model: Override Assistant model for this run.
+                tools: Override Assistant tools for this run.
+                run_metadata: Metadata to associate with new run.
             config: Runnable config:
 
         Return:
             If self.as_agent, will return
+                Union[List[OpenAIAssistantAction], OpenAIAssistantFinish]. Otherwise
+                will return OpenAI types
+                Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
         input = self._parse_input(input)
         if "thread_id" not in input:
