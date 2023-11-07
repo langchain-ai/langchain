@@ -9,8 +9,10 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain.schema.runnable import (
+    ConfigurableField,
     Runnable,
     RunnableBranch,
+    RunnableConfig,
     RunnableLambda,
     RunnableParallel,
     RunnablePassthrough,
@@ -98,17 +100,30 @@ class IntermediateType(BaseModel):
 
 validation_step = RunnablePassthrough().assign(error=RunnableLambda(output_validator))
 
-revise_step = RunnablePassthrough().assign(completion=revise_chain)
-else_step: Runnable[IntermediateType, IntermediateType] = RunnableBranch(
-    (lambda x: x["error"] is None, RunnablePassthrough()),
-    revise_step | validation_step,
-).with_types(input_type=IntermediateType)
 
-for _ in range(4):
-    else_step = RunnableBranch(
+def revise_loop(input: IntermediateType, config: RunnableConfig) -> IntermediateType:
+    revise_step = RunnablePassthrough().assign(completion=revise_chain)
+
+    else_step: Runnable[IntermediateType, IntermediateType] = RunnableBranch(
         (lambda x: x["error"] is None, RunnablePassthrough()),
-        revise_step | validation_step | else_step,
-    )
+        revise_step | validation_step,
+    ).with_types(input_type=IntermediateType)
+
+    max_iters = config.configurable.get("max_revisions", 5)  # WRONG
+    for _ in range(max(0, max_iters - 1)):
+        else_step = RunnableBranch(
+            (lambda x: x["error"] is None, RunnablePassthrough()),
+            revise_step | validation_step | else_step,
+        )
+    return else_step.invoke(input)
+
+
+revise_lambda = RunnableLambda(revise_loop).configurable_fields(
+    max_iterations=ConfigurableField(
+        id="max_revisions",
+        name="Max Revisions",
+    )  # I think wrong?
+)  # configurable_fields doesn't exist on lambda?
 
 
 class InputType(BaseModel):
