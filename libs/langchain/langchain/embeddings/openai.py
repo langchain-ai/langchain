@@ -118,6 +118,9 @@ def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
 async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
 
+    if _is_openai_v1():
+        return await embeddings.async_client.create(**kwargs)
+
     @_async_retry_decorator(embeddings)
     async def _async_embed_with_retry(**kwargs: Any) -> Any:
         response = await embeddings.client.acreate(**kwargs)
@@ -173,6 +176,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model  # to support Azure OpenAI Service custom deployment names
     openai_api_version: Optional[str] = None
@@ -304,6 +308,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     organization=values["openai_organization"],
                     base_url=values["openai_api_base"] or None,
                 ).embeddings
+                values["async_client"] = openai.AsyncOpenAI(
+                    api_key=values["openai_api_key"],
+                    timeout=values["request_timeout"],
+                    max_retries=values["max_retries"],
+                    organization=values["openai_organization"],
+                    base_url=values["openai_api_base"] or None,
+                ).chat.completions
             else:
                 values["client"] = openai.Embedding
         except ImportError:
@@ -315,17 +326,21 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     @property
     def _invocation_params(self) -> Dict:
-        openai_args = {
-            "model": self.model,
-            "request_timeout": self.request_timeout,
-            "headers": self.headers,
-            "api_key": self.openai_api_key,
-            "organization": self.openai_organization,
-            "api_base": self.openai_api_base,
-            "api_type": self.openai_api_type,
-            "api_version": self.openai_api_version,
-            **self.model_kwargs,
-        }
+        openai_args = (
+            {"model": self.model, **self.model_kwargs}
+            if _is_openai_v1()
+            else {
+                "model": self.model,
+                "request_timeout": self.request_timeout,
+                "headers": self.headers,
+                "api_key": self.openai_api_key,
+                "organization": self.openai_organization,
+                "api_base": self.openai_api_base,
+                "api_type": self.openai_api_type,
+                "api_version": self.openai_api_version,
+                **self.model_kwargs,
+            }
+        )
         if self.openai_api_type in ("azure", "azure_ad", "azuread"):
             openai_args["engine"] = self.deployment
         if self.openai_proxy:
@@ -400,7 +415,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
             )
-            batched_embeddings.extend(r["embedding"] for r in response["data"])
+            if _is_openai_v1():
+                batched_embeddings.extend(r.embedding for r in response.data)
+            else:
+                batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
@@ -413,13 +431,16 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
-                average = embed_with_retry(
+                average_embedded = embed_with_retry(
                     self,
                     input="",
                     **self._invocation_params,
-                )[
-                    "data"
-                ][0]["embedding"]
+                )
+                average = (
+                    average_embedded.data[0].embedding
+                    if _is_openai_v1()
+                    else average_embedded["data"][0]["embedding"]
+                )
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
@@ -472,7 +493,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
             )
-            batched_embeddings.extend(r["embedding"] for r in response["data"])
+
+            if _is_openai_v1():
+                batched_embeddings.extend(r.embedding for r in response.data)
+            else:
+                batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
@@ -483,13 +508,16 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
+                average_embedded = embed_with_retry(
+                    self,
+                    input="",
+                    **self._invocation_params,
+                )
                 average = (
-                    await async_embed_with_retry(
-                        self,
-                        input="",
-                        **self._invocation_params,
-                    )
-                )["data"][0]["embedding"]
+                    average_embedded.data[0].embedding
+                    if _is_openai_v1()
+                    else average_embedded["data"][0]["embedding"]
+                )
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
