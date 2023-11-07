@@ -358,6 +358,9 @@ class Vearch(VectorStore):
         vearch_db._load()
         return vearch_db
 
+    def _get_field_list_from_c(self):
+        
+        pass
     def similarity_search(
         self,
         query: str,
@@ -390,8 +393,11 @@ class Vearch(VectorStore):
             0 is dissimilar, 1 is the most similar.
         """
         embed = np.array(embedding)
-        meta_field_list = [i["field"] for i in self.field_list]
-        query_fields = meta_field_list+["text"]
+       
+        meta_field_list = self.vearch.get_space(self.using_db_name, 
+                                                        self.using_table_name)
+        meta_field_list.remove("text_embedding")
+        
         if self.flag:
             query_data = {
                 "query": {
@@ -404,7 +410,7 @@ class Vearch(VectorStore):
                 },
                 "retrieval_param": {"metric_type": "InnerProduct", "efSearch": 64},
                 "size": k,
-                "fields": query_fields,
+                "fields": meta_field_list,
                 
             }
             query_result = self.vearch.search(
@@ -461,8 +467,9 @@ class Vearch(VectorStore):
             raise ValueError("embedding_func is None!!!")
         embeddings = self.embedding_func.embed_query(query)
         embed = np.array(embeddings)
-        meta_field_list = [i["field"] for i in self.field_list]
-        query_fields = meta_field_list + ["text"]
+        meta_field_list = self.vearch.get_space(self.using_db_name, 
+                                                        self.using_table_name)
+        meta_field_list.remove("text_embedding")
         if self.flag:
             query_data = {
                 "query": {
@@ -474,7 +481,7 @@ class Vearch(VectorStore):
                     ],
                 },
                 "size": k,
-                "fields":  query_fields,
+                "fields": meta_field_list,
                 "retrieval_param": {"metric_type": "InnerProduct", "efSearch": 64},
 
             }
@@ -568,7 +575,9 @@ class Vearch(VectorStore):
         """
 
         results: Dict[str, Document] = {}
-        meta_field_list = [i["field"] for i in self.field_list]
+        meta_field_list = self.vearch.get_space(self.using_db_name, 
+                                                        self.using_table_name)
+        meta_field_list.remove("text_embedding")
         if ids is None or ids.__len__() == 0:
             return results
         if self.flag:
