@@ -27,7 +27,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """Cohere async client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
-    input_type: str = "search_document"
+    input_type: str = None
     """
     This applies to embed v3 models only and is required by them.
 
@@ -89,6 +89,8 @@ class CohereEmbeddings(BaseModel, Embeddings):
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        input_type = "search_document" if self.input_type is not None else self.input_type
+
         """Call out to Cohere's embedding endpoint.
 
         Args:
@@ -100,12 +102,14 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.embed(
             model=self.model,
             texts=texts,
+            input_type=input_type,
             truncate=self.truncate,
-            input_type=self.input_type,
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        input_type = "search_document" if self.input_type is not None else self.input_type
+        
         """Async call out to Cohere's embedding endpoint.
 
         Args:
@@ -117,12 +121,14 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = await self.async_client.embed(
             model=self.model,
             texts=texts,
+            input_type=input_type,
             truncate=self.truncate,
-            input_type=self.input_type,
         )
         return [list(map(float, e)) for e in embeddings.embeddings]
 
     def embed_query(self, text: str) -> List[float]:
+        input_type = "search_query" if self.input_type is not None else self.input_type
+
         """Call out to Cohere's embedding endpoint.
 
         Args:
@@ -131,9 +137,17 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return self.embed_documents([text])[0]
+        embeddings = self.client.embed(
+            model=self.model,
+            texts=[text],
+            input_type=input_type,
+            truncate=self.truncate,
+        ).embeddings
+        return [list(map(float, e)) for e in embeddings][0]
 
     async def aembed_query(self, text: str) -> List[float]:
+        input_type = "search_query" if self.input_type is not None else self.input_type
+
         """Async call out to Cohere's embedding endpoint.
 
         Args:
@@ -142,5 +156,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embeddings = await self.aembed_documents([text])
-        return embeddings[0]
+        embeddings = await self.async_client.embed(
+            model=self.model,
+            texts=[text],
+            input_type=input_type,
+            truncate=self.truncate,
+        )
+        return [list(map(float, e)) for e in embeddings.embeddings][0]
