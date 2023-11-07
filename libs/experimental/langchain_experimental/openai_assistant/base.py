@@ -4,7 +4,7 @@ import json
 from time import sleep
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field
 from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 from langchain.tools import format_tool_to_openai_function
