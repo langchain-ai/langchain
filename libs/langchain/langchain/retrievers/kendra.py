@@ -181,7 +181,7 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
         return {attr.Key: attr.Value.value for attr in (self.DocumentAttributes or [])}
 
     def get_score_attribute(self) -> str:
-        """Document attributes dict."""
+        """Document Score Confidence"""
         if self.ScoreAttributes is not None:
             return self.ScoreAttributes["ScoreConfidence"]
         else:
