@@ -12,6 +12,10 @@ from langchain.tools.base import BaseTool
 
 if TYPE_CHECKING:
     import openai
+    from openai.types.beta.threads import ThreadMessage
+    from openai.types.beta.threads.required_action_function_tool_call import (
+        RequiredActionFunctionToolCall,
+    )
 
 
 class OpenAIAssistantFinish(AgentFinish):
@@ -41,7 +45,15 @@ def _get_openai_client() -> openai.OpenAI:
         ) from e
 
 
-class OpenAIAssistantRunnable(RunnableSerializable[Dict, Any]):
+OutputType = Union[
+    List[OpenAIAssistantAction],
+    OpenAIAssistantFinish,
+    List[ThreadMessage],
+    List[RequiredActionFunctionToolCall],
+]
+
+
+class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
     """Run an OpenAI Assistant."""
 
     client: openai.OpenAI = Field(default_factory=_get_openai_client)
@@ -104,8 +116,18 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, Any]):
             values["client"] = openai.OpenAI()
         return values
 
-    def invoke(self, input: dict, config: Optional[RunnableConfig] = None) -> Any:
-        """"""
+    def invoke(
+        self, input: dict, config: Optional[RunnableConfig] = None
+    ) -> OutputType:
+        """Invoke assistant.
+
+        Args:
+            input: Runnable input.
+            config: Runnable config:
+
+        Return:
+            If self.as_agent, will return
+        """
         input = self._parse_input(input)
         if "thread_id" not in input:
             thread = {
@@ -196,7 +218,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, Any]):
             )
         elif run.status == "requires_action":
             if not self.as_agent:
-                return run.required_action.submit_tool_outputs
+                return run.required_action.submit_tool_outputs.tool_calls
             actions = []
             for tool_call in run.required_action.submit_tool_outputs.tool_calls:
                 function = tool_call.function
