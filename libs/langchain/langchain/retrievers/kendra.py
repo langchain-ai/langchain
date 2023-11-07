@@ -185,7 +185,7 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
         if self.ScoreAttributes is not None:
             return self.ScoreAttributes["ScoreConfidence"]
         else:
-            return "Low"
+            return "LOW"
 
     def to_doc(
         self, page_content_formatter: Callable[["ResultItem"], str] = combined_text
@@ -354,6 +354,13 @@ class AmazonKendraRetriever(BaseRetriever):
             raise ValueError(f"top_k ({value}) cannot be negative.")
         return value
 
+    def validate_score_confidence(self) -> None:
+        if self.score_confidence not in self.score_confidence_dict.keys():
+            raise ValueError(
+                f"""Invalid input ({self.score_confidence}) valid choices are 
+                {list(self.score_confidence_dict.keys())}"""
+            )
+
     @root_validator(pre=True)
     def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if values.get("client") is not None:
@@ -447,5 +454,8 @@ class AmazonKendraRetriever(BaseRetriever):
         """
         result_items = self._kendra_query(query)
         top_k_docs = self._get_top_k_docs(result_items)
-        filtered_doc = self._filter_by_score_confidence(top_k_docs)
-        return filtered_doc
+        if self.score_confidence != "LOW":
+            # Filter results only if confidence higher than "LOW".
+            self.validate_score_confidence()
+            return self._filter_by_score_confidence(top_k_docs)
+        return top_k_docs
