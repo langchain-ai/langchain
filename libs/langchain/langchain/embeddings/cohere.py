@@ -31,12 +31,18 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """
     This applies to embed v3 models only and is required by them.
 
-    input_type="search_document": Use this for texts (documents) you want to store in your vector database
-    input_type="search_query": Use this for search queries to find the most relevant documents in your vector database
-    input_type="classification": Use this if you use the embeddings as an input for a classification system
-    input_type="clustering": Use this if you use the embeddings for text clustering
+    input_type="search_document": Use this for texts (documents) you want to
+    store in your vector database
+    input_type="search_query": Use this for search queries to find the most
+    relevant documents in your vector database
+    input_type="classification": Use this if you use the embeddings as an input
+    for a classification system
+    input_type="clustering": Use this if you use the embeddings for text
+    clustering
 
-    Using these input types ensures the highest possible quality for the respective tasks. If you want to use the embeddings for multiple use cases, we recommend using input_type="search_document".
+    Using these input types ensures the highest possible quality for the
+    respective tasks. If you want to use the embeddings for multiple use
+    cases, we recommend using input_type="search_document".
     """
 
     truncate: Optional[str] = None
