@@ -32,7 +32,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Union[List[dict], str], list]
             values["client"] = openai.OpenAI()
         return values
 
-    def create(self, run_instructions: Optional[str] = None) -> None:
+    def create(self) -> None:
         if not self.assistant_id:
             assistant = self.client.beta.assistants.create(
                 name=self.name,
