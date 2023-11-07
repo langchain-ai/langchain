@@ -87,7 +87,9 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
             final_tools.append(_tool)
         return final_tools
 
-    return AgentFinish(return_values={"output": message.content}, log=message.content)
+    return AgentFinish(
+        return_values={"output": message.content}, log=str(message.content)
+    )
 
 
 class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):

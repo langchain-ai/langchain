@@ -11,6 +11,9 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 gigachain = ">=0.0.325"
 
+[tool.poetry.group.dev.dependencies]
+gigachain-cli = ">=0.0.15"
+
 [tool.gigaserve]
 export_module = "sql_ollama"
 export_attr = "chain"

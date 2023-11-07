@@ -18,7 +18,7 @@ Set the `TAVILY_API_KEY` environment variable to access Tavily.
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "gigachain-cli[serve]"
+pip install -U gigachain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
@@ -35,7 +35,7 @@ gigachain app add openai-functions-agent
 
 And add the following code to your `server.py` file:
 ```python
-from openai_functions_agent import chain as openai_functions_agent_chain
+from openai_functions_agent import agent_executor as openai_functions_agent_chain
 
 add_routes(app, openai_functions_agent_chain, path="/openai-functions-agent")
 ```

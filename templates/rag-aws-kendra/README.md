@@ -31,7 +31,7 @@ The following environment variables need to be set:
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "gigachain-cli[serve]"
+pip install -U gigachain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
