@@ -19,11 +19,15 @@ if TYPE_CHECKING:
 
 
 class OpenAIAssistantFinish(AgentFinish):
+    """AgentFinish with run and thread metadata."""
+
     run_id: str
     thread_id: str
 
 
 class OpenAIAssistantAction(AgentAction):
+    """AgentAction with info needed to submit custom tool output to existing run."""
+
     tool_call_id: str
     run_id: str
     thread_id: str
@@ -181,17 +185,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         )
         return cls(assistant_id=assistant.id, **kwargs)
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        if not values["client"]:
-            try:
-                import openai
-            except ImportError as e:
-                raise ImportError() from e
-
-            values["client"] = openai.OpenAI()
-        return values
-
     def invoke(
         self, input: dict, config: Optional[RunnableConfig] = None
     ) -> OutputType:
@@ -300,7 +293,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 isinstance(content, openai.types.beta.threads.MessageContentText)
                 for content in answer
             ):
-                answer = "".join(content.text.value for content in answer)
+                answer = "\n".join(content.text.value for content in answer)
             return OpenAIAssistantFinish(
                 return_values={"output": answer},
                 log="",
