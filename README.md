@@ -107,6 +107,8 @@ while(True):
     print("Bot: ", res.content)
 ```
 
+Инструкцию о получении ключей доступа к GigaChat вы можете посмотреть [здесь](docs/extras/integrations/chat/README.md).
+
 Развернутую версию примера смотрите в notebook [Работа с GigaChat](docs/extras/integrations/chat/gigachat.ipynb).
 
 Больше примеров в [коллекции](#коллекция-примеров). 
