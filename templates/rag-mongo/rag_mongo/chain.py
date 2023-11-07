@@ -1,11 +1,17 @@
 import os
 
 from langchain.chat_models import ChatOpenAI
+from langchain.document_loaders import PyPDFLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
+from langchain.schema.runnable import (
+    RunnableLambda,
+    RunnableParallel,
+    RunnablePassthrough,
+)
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import MongoDBAtlasVectorSearch
 from pymongo import MongoClient
 
@@ -54,3 +60,24 @@ class Question(BaseModel):
 
 
 chain = chain.with_types(input_type=Question)
+
+
+def _ingest(url: str) -> dict:
+    loader = PyPDFLoader(url)
+    data = loader.load()
+
+    # Split docs
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
+    docs = text_splitter.split_documents(data)
+
+    # Insert the documents in MongoDB Atlas Vector Search
+    _ = MongoDBAtlasVectorSearch.from_documents(
+        documents=docs,
+        embedding=OpenAIEmbeddings(disallowed_special=()),
+        collection=MONGODB_COLLECTION,
+        index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME,
+    )
+    return {}
+
+
+ingest = RunnableLambda(_ingest)
