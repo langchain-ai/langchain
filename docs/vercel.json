@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/modules/model_io/chat/llm_chain",
+      "destination":  "/docs/modules/chains/foundational/llm_chain"
+    },
+    {
       "source": "/docs/modules/data_connection/retrievers/self_query/:path*",
       "destination": "/docs/integrations/retrievers/self_query/:path*"
     },

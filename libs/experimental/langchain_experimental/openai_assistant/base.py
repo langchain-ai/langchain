@@ -119,7 +119,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     tool_outputs = []
                     for action in response:
                         tool_output = tool_map[action.tool].invoke(action.tool_input)
-                        print(action.tool, action.tool_input, tool_output, end="\n\n")
                         tool_outputs.append({"output": tool_output, "tool_call_id": action.tool_call_id})
                     response = agent.invoke(
                         {
