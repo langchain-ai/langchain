@@ -276,7 +276,8 @@ class OpenLLM(LLM):
             return res.outputs[0].text
         else:
             raise ValueError(
-                f"Expected result to be either a 'openllm.GenerationOutput' or 'openllm_client.Response' output. Received '{res}' instead"
+                "Expected result to be either a 'openllm.GenerationOutput' or "
+                f"'openllm_client.Response' output. Received '{res}' instead"
             )
 
     async def _acall(
@@ -314,5 +315,6 @@ class OpenLLM(LLM):
             return res.outputs[0].text
         else:
             raise ValueError(
-                f"Expected result to be either a 'openllm.GenerationOutput' or 'openllm_client.Response' output. Received '{res}' instead"
+                "Expected result to be either a 'openllm.GenerationOutput' or "
+                f"'openllm_client.Response' output. Received '{res}' instead"
             )
