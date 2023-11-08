@@ -77,6 +77,25 @@ def add(
     branch: Annotated[
         List[str], typer.Option(help="Install templates from a specific branch")
     ] = [],
+    pip: Annotated[
+        bool,
+        typer.Option(
+            "--pip/--no-pip",
+            help="Pip install the template(s) as editable dependencies",
+            is_flag=True,
+            prompt="Would you like to `pip install -e` the template(s)?",
+        ),
+    ],
+    code: Annotated[
+        bool,
+        typer.Option(
+            "--code/--no-code",
+            help="Generate code to add to your app",
+            is_flag=True,
+            default=True,
+            prompt="Would you like to generate code to add to your app?",
+        ),
+    ],
 ):
     """
     Adds the specified template to the current LangServe app.
@@ -164,15 +183,13 @@ def add(
         # Can fail if the cwd is not a parent of the package
         typer.echo("Failed to print install command, continuing...")
     else:
-        cmd = ["pip", "install", "-e"] + installed_destination_strs
-        cmd_str = " \\\n  ".join(installed_destination_strs)
-        install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
-        typer.echo(install_str)
-
-        if typer.confirm("Run it?"):
+        if pip:
+            cmd = ["pip", "install", "-e"] + installed_destination_strs
+            cmd_str = " \\\n  ".join(installed_destination_strs)
+            typer.echo(f"Running: pip install -e \\\n  {cmd_str}")
             subprocess.run(cmd, cwd=cwd)
 
-    if typer.confirm("\nGenerate route code for these packages?", default=True):
+    if code:
         chain_names = []
         for e in installed_exports:
             original_candidate = f'{e["package_name"].replace("-", "_")}_chain'
