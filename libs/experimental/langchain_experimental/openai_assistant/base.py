@@ -212,7 +212,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
-        if "thread_id" not in input:
+        # Being run within AgentExecutor and there are tool outputs to submit.
+        if self.as_agent and input.get("intermediate_steps"):
+            tool_outputs = self._parse_intermediate_steps(input["intermediate_steps"])
+            run = self.client.beta.threads.runs.submit_tool_outputs(**tool_outputs)
+        # Starting a new thread and a new run.
+        elif "thread_id" not in input:
             thread = {
                 "messages": [
                     {
@@ -225,6 +230,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 "metadata": input.get("thread_metadata"),
             }
             run = self._create_thread_and_run(input, thread)
+        # Starting a new run in an existing thread.
         elif "run_id" not in input:
             _ = self.client.beta.threads.messages.create(
                 input["thread_id"],
@@ -234,9 +240,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 metadata=input.get("message_metadata"),
             )
             run = self._create_run(input)
-        elif self.as_agent and input.get("intermediate_steps"):
-            tool_outputs = self._parse_intermediate_steps(input["intermediate_steps"])
-            run = self.client.beta.threads.runs.submit_tool_outputs(**tool_outputs)
+        # Submitting tool outputs to an existing run, outside the AgentExecutor
+        # framework.
         else:
             run = self.client.beta.threads.runs.submit_tool_outputs(**input)
         return self._get_response(run.id, run.thread_id)
@@ -247,7 +252,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         last_action, last_output = intermediate_steps[-1]
         run = self._wait_for_run(last_action.run_id, last_action.thread_id)
         required_tool_call_ids = {
-            tc.id for tc in run.required_action.submit_tool_outputs.tool_calls()
+            tc.id for tc in run.required_action.submit_tool_outputs.tool_calls
         }
         tool_outputs = [
             {"output": output, "tool_call_id": action.tool_call_id}
@@ -331,7 +336,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         else:
             run_info = json.dumps(run.dict(), indent=2)
             raise ValueError(
-                f"Unknown run status {run.status}. Full run info:\n\n{run_info})"
+                f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
             )
 
     def _wait_for_run(self, run_id: str, thread_id: str) -> Any:
