@@ -2,9 +2,11 @@
 
 
 import pytest
+from pytest import MonkeyPatch
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.jinachat import JinaChat
+from langchain.pydantic_v1 import SecretStr
 from langchain.schema import (
     BaseMessage,
     ChatGeneration,
@@ -125,3 +127,17 @@ def test_jinachat_extra_kwargs() -> None:
     # Test that if explicit param is specified in kwargs it errors
     with pytest.raises(ValueError):
         JinaChat(model_kwargs={"temperature": 0.2})
+
+
+def test_jinachat_api_key(monkeypatch: MonkeyPatch) -> None:
+    """Test that cohere api key is a secret key."""
+    # test initialization from init
+    chat1 = JinaChat(jinachat_api_key="secret-api-key1")
+    assert isinstance(chat1.jinachat_api_key, SecretStr)
+    assert chat1.jinachat_api_key.get_secret_value() == "secret-api-key1"
+
+    # test initialization from env variable
+    monkeypatch.setenv("JINACHAT_API_KEY", "secret-api-key2")
+    chat2 = JinaChat()
+    assert isinstance(chat2.jinachat_api_key, SecretStr)
+    assert chat2.jinachat_api_key.get_secret_value() == "secret-api-key2"

@@ -14,6 +14,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from tenacity import (
@@ -33,7 +34,7 @@ from langchain.chat_models.base import (
     _agenerate_from_stream,
     _generate_from_stream,
 )
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -52,7 +53,11 @@ from langchain.schema.messages import (
     SystemMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +180,7 @@ class JinaChat(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    jinachat_api_key: Optional[str] = None
+    jinachat_api_key: Optional[SecretStr] = None
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
@@ -221,8 +226,8 @@ class JinaChat(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["jinachat_api_key"] = get_from_dict_or_env(
-            values, "jinachat_api_key", "JINACHAT_API_KEY"
+        values["jinachat_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "jinachat_api_key", "JINACHAT_API_KEY")
         )
         try:
             import openai
@@ -398,7 +403,7 @@ class JinaChat(BaseChatModel):
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
         jinachat_creds: Dict[str, Any] = {
-            "api_key": self.jinachat_api_key,
+            "api_key": cast(SecretStr, self.jinachat_api_key).get_secret_value(),
             "api_base": "https://api.chat.jina.ai/v1",
             "model": "jinachat",
         }
