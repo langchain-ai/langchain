@@ -2435,22 +2435,90 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
 
 
 class RunnableBinding(RunnableSerializable[Input, Output]):
-    """
-    A runnable that delegates calls to another runnable with a set of kwargs.
+    """Wrap a runnable with additional functionality.
+
+    A RunnableBinding can be thought of as a "runnable decorator" that
+    preserves the essential features of Runnable; i.e., batching, streaming,
+    and async support, while adding additional functionality.
+
+    Any class that inherits from Runnable can be bound to a `RunnableBinding`.
+
+    Runnables expose a standard set of methods for creating `RunnableBindings`
+    or sub-classes of `RunnableBindings` (e.g., `RunnableRetry`,
+    `RunnableWithFallbacks`) that add additional functionality.
+
+    These methods include:
+
+    - `bind`: Bind kwargs to pass to the underlying runnable when running it.
+    - `with_config`: Bind config to pass to the underlying runnable when running it.
+    - `with_listeners`:  Bind lifecycle listeners to the underlying runnable.
+    - `with_types`: Override the input and output types of the underlying runnable.
+    - `with_retry`: Bind a retry policy to the underlying runnable.
+    - `with_fallbacks`: Bind a fallback policy to the underlying runnable.
+
+
+    Example:
+
+    `bind`: Bind kwargs to pass to the underlying runnable when running it.
+
+        .. code-block:: python
+
+            # Create a runnable binding that invokes the ChatModel with the
+            # additional kwarg `stop=['-']` when running it.
+            from langchain.chat_models import ChatOpenAI
+
+            model = ChatOpenAI()
+            model.invoke('Say "Parrot-MAGIC"', stop=['-']) # Should return `Parrot`
+
+            # Using it the easy way via `bind` method which returns a new
+            # RunnableBinding
+            runnable_binding = model.bind(stop=['-'])
+            runnable_binding.invoke('Say "Parrot-MAGIC"') # Should return `Parrot`
+
+
+        Can also be done by instantiating a RunnableBinding directly (not recommended):
+
+        .. code-block:: python
+
+            from langchain.schema.runnable import RunnableBinding
+
+            runnable_binding = RunnableBinding(
+                bound=model,
+                kwargs={'stop': ['-']} # <-- Note the additional kwargs
+            )
+
+            runnable_binding.invoke('Say "Parrot-MAGIC"') # Should return `Parrot`
     """
 
     bound: Runnable[Input, Output]
+    """The underlying runnable that this runnable delegates to."""
 
     kwargs: Mapping[str, Any] = Field(default_factory=dict)
+    """kwargs to pass to the underlying runnable when running.
+    
+    For example, when the runnable binding is invoked the underlying
+    runnable will be invoked with the same input but with these additional
+    kwargs.
+    """
 
     config: RunnableConfig = Field(default_factory=dict)
+    """The config to bind to the underlying runnable."""
 
     config_factories: List[Callable[[], RunnableConfig]] = Field(default_factory=list)
+    """The config factories to bind to the underlying runnable."""
 
     # Union[Type[Input], BaseModel] + things like List[str]
     custom_input_type: Optional[Any] = None
+    """Override the input type of the underlying runnable with a custom type.
+    
+    The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
+    """
     # Union[Type[Output], BaseModel] + things like List[str]
     custom_output_type: Optional[Any] = None
+    """Override the input type of the underlying runnable with a custom type.
+
+    The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
+    """
 
     class Config:
         arbitrary_types_allowed = True
@@ -2466,6 +2534,20 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         custom_output_type: Optional[Union[Type[Output], BaseModel]] = None,
         **other_kwargs: Any,
     ) -> None:
+        """Create a RunnableBinding from a runnable and kwargs.
+
+        Args:
+            bound: The underlying runnable that this runnable delegates calls to.
+            kwargs: optional kwargs to pass to the underlying runnable, when running
+                    the underlying runnable (e.g., via `invoke`, `batch`,
+                    `transform`, or `stream` or async variants)
+            config: config_factories:
+            custom_input_type: Specify to override the input type of the underlying
+                               runnable with a custom type.
+            custom_output_type: Specify to override the output type of the underlying
+                runnable with a custom type.
+            **other_kwargs: Unpacked into the base class.
+        """
         config = config or {}
         # config_specs contains the list of valid `configurable` keys
         if configurable := config.get("configurable", None):
@@ -2534,6 +2616,15 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         return cls.__module__.split(".")[:-1]
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
+        """Bind additional kwargs to a Runnable, returning a new Runnable.
+
+        Args:
+            **kwargs: The kwargs to bind to the Runnable.
+
+        Returns:
+            A new Runnable with the same type and config as the original,
+            but with the additional kwargs bound.
+        """
         return self.__class__(
             bound=self.bound,
             config=self.config,
@@ -2563,16 +2654,17 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         on_end: Optional[Callable[[Run], None]] = None,
         on_error: Optional[Callable[[Run], None]] = None,
     ) -> Runnable[Input, Output]:
-        """
-        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+        """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
-        on_start: Called before the runnable starts running, with the Run object.
-        on_end: Called after the runnable finishes running, with the Run object.
-        on_error: Called if the runnable throws an error, with the Run object.
+        Args:
+            on_start: Called before the runnable starts running, with the Run object.
+            on_end: Called after the runnable finishes running, with the Run object.
+            on_error: Called if the runnable throws an error, with the Run object.
 
-        The Run object contains information about the run, including its id,
-        type, input, output, error, start_time, end_time, and any tags or metadata
-        added to the run.
+        Returns:
+            The Run object contains information about the run, including its id,
+            type, input, output, error, start_time, end_time, and any tags or metadata
+            added to the run.
         """
         from langchain.callbacks.tracers.root_listeners import RootListenersTracer
 
@@ -2618,6 +2710,20 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         )
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
+        """Merge configs; merging is order sensitive.
+
+        The precedence is:
+
+        1. The config passed to this runnable at run time
+        2. The config factories passed to this runnable at instantiation
+        3. The configs passed to this runnable at instantiation
+
+        Args:
+            *configs: Run time configs to merge (these have the highest precedence).
+
+        Returns:
+            The merged config.
+        """
         return merge_configs(
             self.config, *(f() for f in self.config_factories), *configs
         )
