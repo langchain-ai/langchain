@@ -1,13 +1,14 @@
 import threading
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
 
-
-class VocodeCallbackHandler(BaseCallbackHandler):
+if TYPE_CHECKING:
     from vocode.turn_based.output_device.base_output_device import BaseOutputDevice
     from vocode.turn_based.synthesizer.base_synthesizer import BaseSynthesizer
 
+
+class VocodeCallbackHandler(BaseCallbackHandler):
     def __init__(
         self,
         synthesizer: BaseSynthesizer,
