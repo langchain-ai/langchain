@@ -41,10 +41,25 @@ def new(
         Optional[List[str]],
         typer.Option(help="Packages to seed the project with"),
     ] = None,
+    pip: Annotated[
+        Optional[bool],
+        typer.Option(
+            "--pip/--no-pip",
+            help="Pip install the template(s) as editable dependencies",
+            is_flag=True,
+        ),
+    ] = None,
 ):
     """
     Create a new LangServe application.
     """
+    has_packages = package is not None and len(package) > 0
+    pip_bool = False
+    if pip is None and has_packages:
+        pip_bool = typer.confirm(
+            "Would you like to `pip install -e` the template(s)?",
+            default=False,
+        )
     # copy over template from ../project_template
     project_template_dir = Path(__file__).parents[1] / "project_template"
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
@@ -56,8 +71,8 @@ def new(
     readme.write_text(readme_contents.replace("__app_name__", app_name))
 
     # add packages if specified
-    if package is not None and len(package) > 0:
-        add(package, project_dir=destination_dir)
+    if has_packages:
+        add(package, project_dir=destination_dir, pip=pip_bool)
 
 
 @app_cli.command()
@@ -85,7 +100,7 @@ def add(
             is_flag=True,
             prompt="Would you like to `pip install -e` the template(s)?",
         ),
-    ] = False,
+    ],
 ):
     """
     Adds the specified template to the current LangServe app.
