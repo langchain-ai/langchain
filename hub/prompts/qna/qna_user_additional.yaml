@@ -1,0 +1,6 @@
+input_variables: [question]
+output_parser: null
+template: "QUESTION: {question}
+FINAL ANSWER:"
+template_format: f-string
+_type: prompt
