@@ -5,6 +5,14 @@
       "destination":  "/docs/modules/chains/foundational/llm_chain"
     },
     {
+      "source": "/docs/guides/langsmith(/?)",
+      "destination": "/docs/langsmith/"
+    },
+    {
+      "source": "/docs/guides/langsmith/walkthrough",
+      "destination": "/docs/langsmith/walkthrough"
+    },
+    {
       "source": "/docs/modules/data_connection/retrievers/self_query/:path*",
       "destination": "/docs/integrations/retrievers/self_query/:path*"
     },
