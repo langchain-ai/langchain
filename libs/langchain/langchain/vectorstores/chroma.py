@@ -124,6 +124,7 @@ class Chroma(VectorStore):
         self._embedding_function = embedding_function
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
+            embedding_function=None,
             metadata=collection_metadata,
         )
         self.override_relevance_score_fn = relevance_score_fn
@@ -187,7 +188,6 @@ class Chroma(VectorStore):
                 print(type(embeddings))
                 print(len(embeddings))
             if metadatas:
-                print("metadatas!")
                 # fill metadatas with empty dicts if somebody
                 # did not specify metadata for all images
                 length_diff = len(images) - len(metadatas)
