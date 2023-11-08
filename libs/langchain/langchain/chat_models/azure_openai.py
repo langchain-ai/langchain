@@ -24,9 +24,9 @@ class AzureChatOpenAI(ChatOpenAI):
 
     In addition, you should have the ``openai`` python package installed, and the
     following environment variables set or passed in constructor in lower case:
-    - ``OPENAI_API_TYPE`` (default: ``azure``)
-    - ``OPENAI_API_KEY``
-    - ``OPENAI_API_BASE``
+    - ``AZURE_OPENAI_API_KEY``
+    - ``AZURE_OPENAI_API_ENDPOINT``
+    - ``AZURE_OPENAI_AD_TOKEN``
     - ``OPENAI_API_VERSION``
     - ``OPENAI_PROXY``
 
@@ -36,7 +36,7 @@ class AzureChatOpenAI(ChatOpenAI):
     .. code-block:: python
 
         AzureChatOpenAI(
-            deployment_name="35-turbo-dev",
+            azure_deployment="35-turbo-dev",
             openai_api_version="2023-05-15",
         )
 
