@@ -6,8 +6,8 @@
 const { ProvidePlugin } = require("webpack");
 const path = require("path");
 
-const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
-const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
+const {themes} = require('prism-react-renderer');
+const {vsLight: baseLightCodeBlockTheme, vsDark: baseDarkCodeBlockTheme} = themes;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
