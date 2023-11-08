@@ -1,14 +1,13 @@
 import json
 
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableMap
-from langchain.schema.messages import SystemMessage
-from datetime import datetime
-from langchain.utilities import DuckDuckGoSearchAPIWrapper
 import requests
 from bs4 import BeautifulSoup
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema.messages import SystemMessage
+from langchain.schema.output_parser import StrOutputParser
+from langchain.schema.runnable import RunnableMap
+from langchain.utilities import DuckDuckGoSearchAPIWrapper
 
 ddg_search = DuckDuckGoSearchAPIWrapper()
 
