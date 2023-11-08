@@ -180,10 +180,14 @@ class Chroma(VectorStore):
             if ids is None:
                 ids = [str(uuid.uuid1()) for _ in images]
             embeddings = None
-            images = list(images)
+            # images = list(images)
             if self._embedding_function is not None:
                 embeddings = self._embedding_function.embed_image(images)
+                print("Img EMBD")
+                print(type(embeddings))
+                print(len(embeddings))
             if metadatas:
+                print("metadatas!")
                 # fill metadatas with empty dicts if somebody
                 # did not specify metadata for all images
                 length_diff = len(images) - len(metadatas)
@@ -262,6 +266,9 @@ class Chroma(VectorStore):
         texts = list(texts)
         if self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(texts)
+            print("Text EMBD")
+            print(type(embeddings))
+            print(len(embeddings))
         if metadatas:
             # fill metadatas with empty dicts if somebody
             # did not specify metadata for all texts

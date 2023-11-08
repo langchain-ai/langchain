@@ -5,7 +5,6 @@ import numpy as np
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
 
-
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
     model: Any
     preprocess: Any
@@ -35,9 +34,18 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        text_features = [
-            self.model.encode_text(self.tokenizer(text)).tolist() for text in texts
-        ]
+        text_features = []
+        for text in texts:
+            # Tokenize the text
+            tokenized_text = self.tokenizer(text)
+
+            # Encode the text to get the embeddings
+            embeddings_tensor = self.model.encode_text(tokenized_text)
+
+            # Convert tensor to list and add to the text_features list
+            embeddings_list = embeddings_tensor.squeeze(0).tolist()  # Squeeze is used to remove batch dimension
+            text_features.append(embeddings_list)
+
         return text_features
 
     def embed_query(self, text: str) -> List[float]:
@@ -48,9 +56,20 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
             from PIL import Image as _PILImage
         except ImportError:
             raise ImportError("Please install the PIL library: pip install pillow")
+        
+        # Convert numpy arrays to PIL images
         pil_images = [_PILImage.fromarray(image) for image in images]
-        image_features = [
-            [feature for sublist in self.model.encode_image(self.preprocess(pil_image).unsqueeze(0)).tolist() for feature in sublist]
-            for pil_image in pil_images
-        ]
+        
+        image_features = []
+        for pil_image in pil_images:
+            # Preprocess the image for the model
+            preprocessed_image = self.preprocess(pil_image).unsqueeze(0)
+
+            # Encode the image to get the embeddings
+            embeddings_tensor = self.model.encode_image(preprocessed_image)
+
+            # Convert tensor to list and add to the image_features list
+            embeddings_list = embeddings_tensor.squeeze(0).tolist()  # Squeeze is used to remove batch dimension
+            image_features.append(embeddings_list)
+
         return image_features
