@@ -42,7 +42,7 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
 
     def embed_query(self, text: str) -> List[float]:
         return self.embed_documents([text])[0]
-
+    
     def embed_image(self, images: List[np.ndarray]) -> List[List[float]]:
         try:
             from PIL import Image as _PILImage
@@ -50,7 +50,7 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
             raise ImportError("Please install the PIL library: pip install pillow")
         pil_images = [_PILImage.fromarray(image) for image in images]
         image_features = [
-            self.model.encode_image(self.preprocess(pil_image).unsqueeze(0)).tolist()
+            [feature for sublist in self.model.encode_image(self.preprocess(pil_image).unsqueeze(0)).tolist() for feature in sublist]
             for pil_image in pil_images
         ]
         return image_features

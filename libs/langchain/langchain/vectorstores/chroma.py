@@ -124,9 +124,6 @@ class Chroma(VectorStore):
         self._embedding_function = embedding_function
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=self._embedding_function.embed_documents
-            if self._embedding_function is not None
-            else None,
             metadata=collection_metadata,
         )
         self.override_relevance_score_fn = relevance_score_fn
@@ -161,6 +158,85 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
+
+    def add_images(
+            self,
+            images: List[np.ndarray],
+            metadatas: Optional[List[dict]] = None,
+            ids: Optional[List[str]] = None,
+            **kwargs: Any,
+        ) -> List[str]:
+            """Run more images through the embeddings and add to the vectorstore.
+
+            Args:
+                images (List[List[float]]): Images to add to the vectorstore.
+                metadatas (Optional[List[dict]], optional): Optional list of metadatas.
+                ids (Optional[List[str]], optional): Optional list of IDs.
+
+            Returns:
+                List[str]: List of IDs of the added images.
+            """
+            # TODO: Handle the case where the user doesn't provide ids on the Collection
+            if ids is None:
+                ids = [str(uuid.uuid1()) for _ in images]
+            embeddings = None
+            images = list(images)
+            if self._embedding_function is not None:
+                embeddings = self._embedding_function.embed_image(images)
+            if metadatas:
+                # fill metadatas with empty dicts if somebody
+                # did not specify metadata for all images
+                length_diff = len(images) - len(metadatas)
+                if length_diff:
+                    metadatas = metadatas + [{}] * length_diff
+                empty_ids = []
+                non_empty_ids = []
+                for idx, m in enumerate(metadatas):
+                    if m:
+                        non_empty_ids.append(idx)
+                    else:
+                        empty_ids.append(idx)
+                if non_empty_ids:
+                    metadatas = [metadatas[idx] for idx in non_empty_ids]
+                    images_with_metadatas = [images[idx] for idx in non_empty_ids]
+                    embeddings_with_metadatas = (
+                        [embeddings[idx] for idx in non_empty_ids] if embeddings else None
+                    )
+                    ids_with_metadata = [ids[idx] for idx in non_empty_ids]
+                    try:
+                        self._collection.upsert(
+                            metadatas=metadatas,
+                            embeddings=embeddings_with_metadatas,
+                            documents=images_with_metadatas,
+                            ids=ids_with_metadata,
+                        )
+                    except ValueError as e:
+                        if "Expected metadata value to be" in str(e):
+                            msg = (
+                                "Try filtering complex metadata from the document using "
+                                "langchain.vectorstores.utils.filter_complex_metadata."
+                            )
+                            raise ValueError(e.args[0] + "\n\n" + msg)
+                        else:
+                            raise e
+                if empty_ids:
+                    images_without_metadatas = [images[j] for j in empty_ids]
+                    embeddings_without_metadatas = (
+                        [embeddings[j] for j in empty_ids] if embeddings else None
+                    )
+                    ids_without_metadatas = [ids[j] for j in empty_ids]
+                    self._collection.upsert(
+                        embeddings=embeddings_without_metadatas,
+                        documents=images_without_metadatas,
+                        ids=ids_without_metadatas,
+                    )
+            else:
+                self._collection.upsert(
+                    embeddings=embeddings,
+                    documents=images,
+                    ids=ids,
+                )
+            return ids
 
     def add_texts(
         self,
