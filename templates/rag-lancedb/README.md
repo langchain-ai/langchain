@@ -1,10 +1,13 @@
 # rag-lancedb
 
-TODO: What does this package do
+This template performs RAG using lancedb and OpenAI.
+
+The vectorstore is created in chain.py and & you can find different lancedb-based projects, applications here https://github.com/lancedb/vectordb-recipes.
 
 ## Environment Setup
 
-TODO: What environment variables need to be set (if any)
+Set the OPENAI_API_KEY environment variable to access the OpenAI models.
+
 
 ## Usage
 
