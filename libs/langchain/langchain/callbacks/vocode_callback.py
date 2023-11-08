@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 class VocodeCallbackHandler(BaseCallbackHandler):
     def __init__(
         self,
-        synthesizer: BaseSynthesizer,
-        output_device: Optional[BaseOutputDevice] = None,
+        synthesizer: "BaseSynthesizer",
+        output_device: Optional["BaseOutputDevice"] = None,
     ) -> None:
         from vocode.turn_based.output_device.speaker_output import SpeakerOutput
 
