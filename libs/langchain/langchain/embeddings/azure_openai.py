@@ -17,6 +17,8 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     azure_endpoint: Union[str, None] = None
     """Your Azure endpoint, including the resource.
 
+        Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
+        
         Example: `https://example-resource.azure.openai.com/`
     """
     azure_deployment: Optional[str] = None
