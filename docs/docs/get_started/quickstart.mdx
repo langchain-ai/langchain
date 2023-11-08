@@ -44,7 +44,7 @@ from langchain.llms import OpenAI
 llm = OpenAI(openai_api_key="...")
 ```
 
-## LangSmith Setup
+## LangSmith setup
 
 Many of the applications you build with LangChain will contain multiple steps with multiple invocations of LLM calls.
 As these applications get more and more complex, it becomes crucial to be able to inspect what exactly is going on inside your chain or agent.
@@ -74,30 +74,29 @@ Most LangChain applications allow you to configure the LLM and/or the prompt use
 
 ## LLMs
 
-There are two types of language models, which in LangChain are called:
+There are two types of language models:
 
-- LLMs: this is a language model which takes a string as input and returns a string
-- ChatModels: this is a language model which takes a list of messages as input and returns a message
+- LLMs: takes a string as input and returns a string
+- ChatModels: takes a list of messages as input and returns a message
 
-The input/output for LLMs is simple and easy to understand - a string.
-But what about ChatModels? The input there is a list of `ChatMessages`, and the output is a single `ChatMessage`.
-A `ChatMessage` has two required components:
+The input/output for LLMs is easy to understand - a string.
+But what about ChatModels? The input there is a list of `BaseMessages`, and the output is a single `BaseMessage`.
+A `BaseMessage` has two required components:
 
-- `content`: This is the content of the message.
-- `role`: This is the role of the entity from which the `ChatMessage` is coming from.
+- `content`: The content of the message. Usually a string.
+- `role`: The entity from which the `BaeMessage` is coming.
 
 LangChain provides several objects to easily distinguish between different roles:
 
-- `HumanMessage`: A `ChatMessage` coming from a human/user.
-- `AIMessage`: A `ChatMessage` coming from an AI/assistant.
-- `SystemMessage`: A `ChatMessage` coming from the system.
-- `FunctionMessage`: A `ChatMessage` coming from a function call.
+- `HumanMessage`: A `BaseMessage` coming from a human/user.
+- `AIMessage`: A `BaseMessage` coming from an AI/assistant.
+- `SystemMessage`: A `BaseMessage` coming from the system.
+- `FunctionMessage`: A `BsaseMessage` coming from a function call.
 
 If none of those roles sound right, there is also a `ChatMessage` class where you can specify the role manually.
-For more information on how to use these different messages most effectively, see our prompting guide.
 
-Langchain provides a common interface that's shared by both LLMs and ChatModels. 
-However it's useful to understand this difference in order to construct prompts for a given language model.
+Langchain provides a common interface that's shared by both LLMs and ChatModels.
+However it's useful to understand the difference in order to most effectively construct prompts for a given language model.
 
 The standard interface that LangChain provides has two methods:
 - `predict`: Takes in a string, returns a string
@@ -112,15 +111,9 @@ from langchain.chat_models import ChatOpenAI
 
 llm = OpenAI()
 chat_model = ChatOpenAI()
-
-llm.predict("hi!")
->>> "Hi"
-
-chat_model.predict("hi!")
->>> "Hi"
 ```
 
-The `OpenAI` and `ChatOpenAI` objects are basically just configuration objects.
+`LLM` and `ChatModel` objects are effectively configuration objects.
 You can initialize them with parameters like `temperature` and others, and pass them around.
 
 Next, let's use the `predict` method to run over a string input.
@@ -135,24 +128,23 @@ chat_model.predict(text)
 # >> Socks O'Color
 ```
 
-Finally, let's use the `predict_messages` method to run over a list of messages.
+And the `predict_messages` method to run over a list of messages.
 
 ```python
 from langchain.schema import HumanMessage
 
-text = "What would be a good company name for a company that makes colorful socks?"
 messages = [HumanMessage(content=text)]
 
 llm.predict_messages(messages)
-# >> Feetful of Fun
+# >> AIMessage(content="Feetful of Fun")
 
 chat_model.predict_messages(messages)
-# >> Socks O'Color
+# >> AIMessage(content="Socks O'Color")
 ```
 
-For both these methods, you can also pass in parameters as keyword arguments.
-For example, you could pass in `temperature=0` to adjust the temperature that is used from what the object was configured with.
-Whatever values are passed in during run time will always override what the object was configured with.
+For both these methods, you can also pass in parameters as runtime arguments.
+For example, you could pass in `llm.predict(text, temperature=0)` to adjust the temperature for this invocation.
+Runtime arguments always override parameters the object was configured with.
 
 
 ## Prompt templates
@@ -280,13 +272,12 @@ To learn more about this syntax, read the documentation [here](/docs/expression_
 
 ## Next steps
 
-This is it!
-We've now gone over how to create the core building block of LangChain applications.
-There is a lot more nuance in all these components (LLMs, prompts, output parsers) and a lot more different components to learn about as well.
+We've gone over how to create the core building block of LangChain applications.
+There are a lot of features in all these components (LLMs, prompts, output parsers) we didn't cover and a lot of other components to learn about.
 To continue on your journey:
 
+- Read up on [LangChain Expression Language](/docs/expression_language) to learn how to chain these components together
 - [Dive deeper](/docs/modules/model_io) into LLMs, prompts, and output parsers
 - Learn the other [key components](/docs/modules)
-- Read up on [LangChain Expression Language](/docs/expression_language) to learn how to chain these components together
-- Check out our [helpful guides](/docs/guides) for detailed walkthroughs on particular topics
 - Explore [end-to-end use cases](/docs/use_cases/qa_structured/sql)
+- Check out our [helpful guides](/docs/guides) for detailed walkthroughs on particular topics
