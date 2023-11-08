@@ -170,7 +170,8 @@ class OpenLLM(LLM):
             # in-process. Wrt to BentoML users, setting embedded=False is the expected
             # behaviour to invoke the runners remotely.
             # We need to also enable ensure_available to download and setup the model.
-            llm = openllm.LLM[Any, Any](model_id, llm_config=config)  # ensure_available will now always call
+            llm = openllm.LLM[Any, Any](model_id, llm_config=config)
+            llm.save_pretrained()  # ensure_available backward compatibility
             if embedded:
                 llm.runner.init_local(quiet=True)
             super().__init__(
