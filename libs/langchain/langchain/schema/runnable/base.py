@@ -377,9 +377,7 @@ class Runnable(Generic[Input, Output], ABC):
     """ --- Public API --- """
 
     @abstractmethod
-    def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> Output:
+    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         """Transform a single input into an output. Override to implement.
 
         Args:
@@ -389,7 +387,6 @@ class Runnable(Generic[Input, Output], ABC):
                purposes, 'max_concurrency' for controlling how much work to do
                in parallel, and other keys. Please refer to the RunnableConfig
                for more details.
-            kwargs: Additional keyword arguments to pass to the runnable.
 
         Returns:
             The output of the runnable.
