@@ -322,6 +322,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             for tool_call in run.required_action.submit_tool_outputs.tool_calls:
                 function = tool_call.function
                 args = json.loads(function.arguments)
+                if len(args) == 1 and "__arg1" in args:
+                    args = args["__arg1"]
                 actions.append(
                     OpenAIAssistantAction(
                         tool=function.name,
