@@ -340,7 +340,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         if _is_openai_v1():
-            openai_args = {"model": self.model, **self.model_kwargs}
+            openai_args: Dict = {"model": self.model, **self.model_kwargs}
         else:
             openai_args = {
                 "model": self.model,
