@@ -85,17 +85,7 @@ def add(
             is_flag=True,
             prompt="Would you like to `pip install -e` the template(s)?",
         ),
-    ],
-    code: Annotated[
-        bool,
-        typer.Option(
-            "--code/--no-code",
-            help="Generate code to add to your app",
-            is_flag=True,
-            default=True,
-            prompt="Would you like to generate code to add to your app?",
-        ),
-    ],
+    ] = False,
 ):
     """
     Adds the specified template to the current LangServe app.
@@ -189,39 +179,43 @@ def add(
             typer.echo(f"Running: pip install -e \\\n  {cmd_str}")
             subprocess.run(cmd, cwd=cwd)
 
-    if code:
-        chain_names = []
-        for e in installed_exports:
-            original_candidate = f'{e["package_name"].replace("-", "_")}_chain'
-            candidate = original_candidate
-            i = 2
-            while candidate in chain_names:
-                candidate = original_candidate + "_" + str(i)
-                i += 1
-            chain_names.append(candidate)
+    chain_names = []
+    for e in installed_exports:
+        original_candidate = f'{e["package_name"].replace("-", "_")}_chain'
+        candidate = original_candidate
+        i = 2
+        while candidate in chain_names:
+            candidate = original_candidate + "_" + str(i)
+            i += 1
+        chain_names.append(candidate)
 
-        api_paths = [
-            str(Path("/") / path.relative_to(package_dir))
-            for path in installed_destination_paths
-        ]
+    api_paths = [
+        str(Path("/") / path.relative_to(package_dir))
+        for path in installed_destination_paths
+    ]
 
-        imports = [
-            f"from {e['module']} import {e['attr']} as {name}"
-            for e, name in zip(installed_exports, chain_names)
-        ]
-        routes = [
-            f'add_routes(app, {name}, path="{path}")'
-            for name, path in zip(chain_names, api_paths)
-        ]
+    imports = [
+        f"from {e['module']} import {e['attr']} as {name}"
+        for e, name in zip(installed_exports, chain_names)
+    ]
+    routes = [
+        f'add_routes(app, {name}, path="{path}")'
+        for name, path in zip(chain_names, api_paths)
+    ]
 
-        lines = (
-            ["", "Great! Add the following to your app:\n\n```", ""]
-            + imports
-            + [""]
-            + routes
-            + ["```"]
-        )
-        typer.echo("\n".join(lines))
+    t = (
+        "this template"
+        if len(chain_names) == 1
+        else f"these {len(chain_names)} templates"
+    )
+    lines = (
+        ["", f"To use {t}, add the following to your app:\n\n```", ""]
+        + imports
+        + [""]
+        + routes
+        + ["```"]
+    )
+    typer.echo("\n".join(lines))
 
 
 @app_cli.command()
