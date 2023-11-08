@@ -634,7 +634,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             _stop = list(stop)
         result = self([HumanMessage(content=text)], stop=_stop, **kwargs)
-        return result.content
+        if isinstance(result.content, str):
+            return result.content
+        else:
+            raise ValueError("Cannot use predict when output is not a string.")
 
     def predict_messages(
         self,
@@ -659,7 +662,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         result = await self._call_async(
             [HumanMessage(content=text)], stop=_stop, **kwargs
         )
-        return result.content
+        if isinstance(result.content, str):
+            return result.content
+        else:
+            raise ValueError("Cannot use predict when output is not a string.")
 
     async def apredict_messages(
         self,

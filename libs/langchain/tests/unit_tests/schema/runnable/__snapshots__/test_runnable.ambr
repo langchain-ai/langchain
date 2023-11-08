@@ -1798,8 +1798,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -1829,8 +1846,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -1904,8 +1938,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'name': dict({
             'title': 'Name',
@@ -1935,8 +1986,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -1991,8 +2059,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'type': dict({
             'default': 'system',
@@ -2057,8 +2142,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2088,8 +2190,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -2163,8 +2282,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'name': dict({
             'title': 'Name',
@@ -2194,8 +2330,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2250,8 +2403,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'type': dict({
             'default': 'system',
@@ -2300,8 +2470,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2331,8 +2518,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -2362,8 +2566,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'name': dict({
             'title': 'Name',
@@ -2393,8 +2614,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2427,8 +2665,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'type': dict({
             'default': 'system',
@@ -2468,8 +2723,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2499,8 +2771,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -2574,8 +2863,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'name': dict({
             'title': 'Name',
@@ -2605,8 +2911,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2661,8 +2984,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'type': dict({
             'default': 'system',
@@ -2702,8 +3042,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2733,8 +3090,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -2808,8 +3182,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'name': dict({
             'title': 'Name',
@@ -2839,8 +3230,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2895,8 +3303,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'type': dict({
             'default': 'system',
@@ -2928,8 +3353,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -2959,8 +3401,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -3034,8 +3493,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'name': dict({
             'title': 'Name',
@@ -3065,8 +3541,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -3132,8 +3625,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'type': dict({
             'default': 'system',
@@ -3189,8 +3699,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -3220,8 +3747,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -3251,8 +3795,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'name': dict({
             'title': 'Name',
@@ -3282,8 +3843,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'example': dict({
             'default': False,
@@ -3316,8 +3894,25 @@
             'type': 'object',
           }),
           'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
             'title': 'Content',
-            'type': 'string',
           }),
           'type': dict({
             'default': 'system',
