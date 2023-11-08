@@ -17,6 +17,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -182,7 +183,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     async_client: Any = None  #: :meta private:
     model: str = "text-embedding-ada-002"
     # to support Azure OpenAI Service custom deployment names
-    deployment: str = model
+    deployment: Optional[str] = model
     # TODO: Move to AzureOpenAIEmbeddings.
     openai_api_version: Optional[str] = Field(default=None, alias="api_version")
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
@@ -546,7 +547,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        return self._get_len_safe_embeddings(texts, engine=self.deployment)
+        engine = cast(str, self.deployment)
+        return self._get_len_safe_embeddings(texts, engine=engine)
 
     async def aembed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
@@ -563,7 +565,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        return await self._aget_len_safe_embeddings(texts, engine=self.deployment)
+        engine = cast(str, self.deployment)
+        return await self._aget_len_safe_embeddings(texts, engine=engine)
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
