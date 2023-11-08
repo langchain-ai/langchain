@@ -21,7 +21,7 @@ TAG_KEY = "tag"
 PROJECTS_KEY = "projects"
 
 DEFAULT_API_ENDPOINT = "https://api.docugami.com/v1preview1"
-DEFAULT_MAX_METADATA_LENGTH = 1024
+DEFAULT_MAX_TEXT_LENGTH = 1024
 DEFAULT_MIN_CHUNK_SIZE = 32
 
 logger = logging.getLogger(__name__)
@@ -39,14 +39,17 @@ class DocugamiLoader(BaseLoader, BaseModel):
     access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY")
     """The Docugami API access token to use."""
 
-    max_metadata_length = DEFAULT_MAX_METADATA_LENGTH
-    """Max length of metadata values."""
+    max_text_length = DEFAULT_MAX_TEXT_LENGTH
+    """Max length of chunk and metadata values."""
 
     min_chunk_size: int = DEFAULT_MIN_CHUNK_SIZE
     """Threshold under which chunks are appended to next chunk to avoid over-chunking."""
 
     include_xml_tags: bool = False
     """Set to true for XML tags in chunk output text."""
+
+    xml_hierarchy_levels: int = 0
+    """Set appropriately to get parent chunks using the XML hierarchy. Must be 0 if include_xml_tags is False."""
 
     sub_chunk_tables: bool = False
     """Set to True to return sub-chunks within tables."""
@@ -97,11 +100,30 @@ class DocugamiLoader(BaseLoader, BaseModel):
             )
 
         try:
+            from dgml_utils.models import Chunk
             from dgml_utils.segmentation import get_leaf_structural_chunks
         except ImportError:
             raise ValueError(
                 "Could not import from dgml-utils python package. "
                 "Please install it with `pip install dgml-utils`."
+            )
+
+        def _build_framework_chunk(dg_chunk: Chunk) -> Document:
+            metadata = {
+                XPATH_KEY: dg_chunk.xpath,
+                DOCUMENT_ID_KEY: document[DOCUMENT_ID_KEY],
+                DOCUMENT_NAME_KEY: document[DOCUMENT_NAME_KEY],
+                DOCUMENT_SOURCE_KEY: document[DOCUMENT_NAME_KEY],
+                STRUCTURE_KEY: dg_chunk.structure,
+                TAG_KEY: dg_chunk.tag,
+            }
+
+            if doc_metadata:
+                metadata.update(doc_metadata)
+
+            return Document(
+                page_content=dg_chunk.text,
+                metadata=metadata,
             )
 
         # parse the tree and return chunks
@@ -115,27 +137,14 @@ class DocugamiLoader(BaseLoader, BaseModel):
             whitespace_normalize_text=self.whitespace_normalize_text,
             sub_chunk_tables=self.sub_chunk_tables,
             include_xml_tags=self.include_xml_tags,
+            xml_hierarchy_levels=self.xml_hierarchy_levels,
         )
 
         for dg_chunk in dg_chunks:
-            metadata = {
-                XPATH_KEY: dg_chunk.xpath,
-                DOCUMENT_ID_KEY: document[DOCUMENT_ID_KEY],
-                DOCUMENT_NAME_KEY: document[DOCUMENT_NAME_KEY],
-                DOCUMENT_SOURCE_KEY: document[DOCUMENT_NAME_KEY],
-                STRUCTURE_KEY: dg_chunk.structure,
-                TAG_KEY: dg_chunk.tag,
-            }
-
-            if doc_metadata:
-                metadata.update(doc_metadata)
-
-            framework_chunks.append(
-                Document(
-                    page_content=dg_chunk.text,
-                    metadata=metadata,
-                )
-            )
+            framework_chunk = _build_framework_chunk(dg_chunk)
+            if hasattr(dg_chunk, "parent") and dg_chunk.parent:
+                framework_chunk.parent = _build_framework_chunk(dg_chunk.parent)
+            framework_chunks.append(framework_chunk)
 
         return framework_chunks
 
@@ -241,7 +250,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                         value = " ".join(
                             entry.xpath("./pr:Value", namespaces=ns)[0].itertext()
                         ).strip()
-                        metadata[heading] = value
+                        metadata[heading] = value[: self.max_text_length]
                     per_file_metadata[doc_id] = metadata
                 else:
                     raise Exception(
@@ -321,15 +330,11 @@ class DocugamiLoader(BaseLoader, BaseModel):
         if not self.access_token and self.docset_id:
             raise Exception(f"Please specify a docset ID to use agent executor")
 
-        # from langchain.agents import create_sql_agent
-        # from langchain.agents.agent_toolkits import SQLDatabaseToolkit
         from langchain.sql_database import SQLDatabase
         from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
         from langchain.agents.agent_toolkits.sql.base import create_sql_agent
         from langchain.agents.agent_types import AgentType
 
-        # from langchain_experimental.sql import SQLDatabaseChain
-        # from langchain.schema.runnable.base import Runnable
         import sqlite3
         import pandas as pd
         import tempfile
@@ -407,54 +412,6 @@ class DocugamiLoader(BaseLoader, BaseModel):
                         f"sqlite:///{temp_db_file.name}", sample_rows_in_table_info=3
                     )
 
-                    # def get_schema(_):
-                    #     return db.get_table_info()
-
-                    # from langchain.schema.output_parser import StrOutputParser
-                    # from langchain.schema.runnable import RunnablePassthrough
-                    # from langchain.prompts import ChatPromptTemplate
-
-                    # template = """Based on the table schema below, write a SQL query that would answer the user's question:
-                    # {schema}
-
-                    # Question: {question}
-                    # SQL Query:"""
-                    # prompt = ChatPromptTemplate.from_template(template)
-
-                    # model = ChatOpenAI()
-
-                    # sql_response = (
-                    #     RunnablePassthrough.assign(schema=get_schema)
-                    #     | prompt
-                    #     | model.bind(stop=["\nSQLResult:"])
-                    #     | StrOutputParser()
-                    # )
-
-                    # template = """Based on the table schema below, question, sql query, and sql response, write a natural language response:
-                    # {schema}
-
-                    # Question: {question}
-                    # SQL Query: {query}
-                    # SQL Response: {response}"""
-                    # prompt_response = ChatPromptTemplate.from_template(template)
-
-                    # full_chain = (
-                    #     RunnablePassthrough.assign(query=sql_response)
-                    #     | RunnablePassthrough.assign(
-                    #         schema=get_schema,
-                    #         response=lambda x: db.run(x["query"]),
-                    #     )
-                    #     | prompt_response
-                    #     | model
-                    # )
-
-                    # return full_chain
-
-                    # *****
-                    # llm=OpenAI(temperature=0)
-                    # return SQLDatabaseChain.from_llm(llm, db, verbose=True)
-
-                    # *****
                     toolkit = SQLDatabaseToolkit(db=db, llm=llm)
                     return create_sql_agent(
                         llm=llm,
