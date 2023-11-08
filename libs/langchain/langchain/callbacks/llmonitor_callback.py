@@ -33,10 +33,10 @@ PARAMS_TO_CAPTURE = [
     "function_call",
     "functions",
     "tools",
+    "tool_choice",
     "response_format",
     "max_tokens",
     "logit_bias",
-    "tool_choice",
 ]
 
 
@@ -84,6 +84,10 @@ def _serialize(obj: Any) -> Union[Dict[str, Any], List[Any], Any]:
 def _parse_input(raw_input: Any) -> Any:
     if not raw_input:
         return None
+
+    # if it's an array of 1, just parse the first element
+    if isinstance(raw_input, list) and len(raw_input) == 1:
+        return _parse_input(raw_input[0])
 
     if not isinstance(raw_input, dict):
         return _serialize(raw_input)
@@ -159,21 +163,11 @@ def _get_user_props(metadata: Any) -> Any:
     metadata = metadata or {}
     return metadata.get("user_props", None)
 
-
 def _parse_lc_message(message: BaseMessage) -> Dict[str, Any]:
+    keys = ["function_call", "tool_calls", "tool_call_id", "name"]
     parsed = {"text": message.content, "role": _parse_lc_role(message.type)}
-
-    function_call = (message.additional_kwargs or {}).get("function_call")
-    tool_calls = (message.additional_kwargs or {}).get("tool_calls")
-
-    if function_call is not None:
-        parsed["functionCall"] = function_call
-
-    if tool_calls is not None:
-        parsed["toolCalls"] = tool_calls
-
+    parsed.update({key: message.additional_kwargs.get(key) for key in keys if message.additional_kwargs.get(key) is not None})
     return parsed
-
 
 def _parse_lc_messages(messages: Union[List[BaseMessage], Any]) -> List[Dict[str, Any]]:
     return [_parse_lc_message(message) for message in messages]
@@ -296,6 +290,9 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
             name = params.get("model") or params.get("model_name")
 
+            if not name and "anthropic" in params.get("_type"):
+                name = "claude-2"
+
             extra = {
                 param: params.get(param)
                 for param in PARAMS_TO_CAPTURE
@@ -346,7 +343,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
             name = params.get("model") or params.get("model_name")
 
-            if not name and params.get("_type") == "anthropic-chat":
+            if not name and "anthropic" in params.get("_type"):
                 name = "claude-2"
 
             extra = {
@@ -389,17 +386,15 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
         try:
             token_usage = (response.llm_output or {}).get("token_usage", {})
+
             parsed_output = [
-                {
-                    "text": generation.text,
-                    "role": "ai",
-                    "functionCall": getattr(getattr(generation, "message", None), "additional_kwargs", {}).get("function_call", None),
-                    "toolCalls": getattr(getattr(generation, "message", None), "additional_kwargs", {}).get("tool_calls", None),
-                }
+                _parse_lc_message(generation.message) if hasattr(generation, 'message') else generation.text
                 for generation in response.generations[0]
             ]
 
-
+            # if it's an array of 1, just parse the first element
+            if len(parsed_output) == 1:
+                parsed_output = parsed_output[0]
 
             self.__track_event(
                 "llm",
