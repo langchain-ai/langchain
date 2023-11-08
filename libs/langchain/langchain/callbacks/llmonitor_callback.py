@@ -15,6 +15,8 @@ from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.messages import BaseMessage
 from langchain.schema.output import LLMResult
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_API_URL = "https://app.llmonitor.com"
 
 user_ctx = ContextVar[Union[str, None]]("user_ctx", default=None)
@@ -162,9 +164,13 @@ def _parse_lc_message(message: BaseMessage) -> Dict[str, Any]:
     parsed = {"text": message.content, "role": _parse_lc_role(message.type)}
 
     function_call = (message.additional_kwargs or {}).get("function_call")
+    tool_calls = (message.additional_kwargs or {}).get("tool_calls")
 
     if function_call is not None:
         parsed["functionCall"] = function_call
+
+    if tool_calls is not None:
+        parsed["toolCalls"] = tool_calls
 
     return parsed
 
@@ -224,7 +230,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             self.__track_event = llmonitor.track_event
 
         except ImportError:
-            warnings.warn(
+            logger.warning(
                 """[LLMonitor] To use the LLMonitor callback handler you need to 
                 have the `llmonitor` Python package installed. Please install it 
                 with `pip install llmonitor`"""
@@ -232,11 +238,10 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             self.__has_valid_config = False
 
         if parse(self.__llmonitor_version) < parse("0.0.32"):
-            warnings.warn(
-                f"""[LLMonitor] The installed `llmonitor` version is 
-                {self.__llmonitor_version} but `LLMonitorCallbackHandler` requires 
-                at least version 0.0.20 upgrade `llmonitor` with `pip install 
-                --upgrade llmonitor`"""
+            logger.warning(
+                f"""[LLMonitor] The installed `llmonitor` version is {self.__llmonitor_version} 
+                but `LLMonitorCallbackHandler` requires at least version 0.0.32 
+                upgrade `llmonitor` with `pip install --upgrade llmonitor`"""
             )
             self.__has_valid_config = False
 
@@ -247,9 +252,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
         _app_id = app_id or os.getenv("LLMONITOR_APP_ID")
         if _app_id is None:
-            warnings.warn(
-                """[LLMonitor] app_id must be provided either as an argument or as 
-                an environment variable"""
+            logger.warning(
+                """[LLMonitor] app_id must be provided either as an argument or as an environment variable"""
             )
             self.__has_valid_config = False
         else:
@@ -263,7 +267,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             if not res.ok:
                 raise ConnectionError()
         except Exception:
-            warnings.warn(
+            logger.warning(
                 f"""[LLMonitor] Could not connect to the LLMonitor API at 
                 {self.__api_url}"""
             )
@@ -368,7 +372,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logging.warning(
+            logger.error(
                 f"[LLMonitor] An error occurred in on_chat_model_start: {e}"
             )
 
@@ -389,20 +393,13 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 {
                     "text": generation.text,
                     "role": "ai",
-                    **(
-                        {
-                            "functionCall": generation.message.additional_kwargs[
-                                "function_call"
-                            ]
-                        }
-                        if hasattr(generation, "message")
-                        and hasattr(generation.message, "additional_kwargs")
-                        and "function_call" in generation.message.additional_kwargs
-                        else {}
-                    ),
+                    "functionCall": getattr(getattr(generation, "message", None), "additional_kwargs", {}).get("function_call", None),
+                    "toolCalls": getattr(getattr(generation, "message", None), "additional_kwargs", {}).get("tool_calls", None),
                 }
                 for generation in response.generations[0]
             ]
+
+
 
             self.__track_event(
                 "llm",
@@ -417,7 +414,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            warnings.warn(f"[LLMonitor] An error occurred in on_llm_end: {e}")
+            logger.error(f"[LLMonitor] An error occurred in on_llm_end: {e}")
 
     def on_tool_start(
         self,
@@ -451,7 +448,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            warnings.warn(f"[LLMonitor] An error occurred in on_tool_start: {e}")
+            logger.error(f"[LLMonitor] An error occurred in on_tool_start: {e}")
 
     def on_tool_end(
         self,
@@ -474,7 +471,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            warnings.warn(f"[LLMonitor] An error occurred in on_tool_end: {e}")
+            logger.error(f"[LLMonitor] An error occurred in on_tool_end: {e}")
 
     def on_chain_start(
         self,
@@ -524,7 +521,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            warnings.warn(f"[LLMonitor] An error occurred in on_chain_start: {e}")
+            logger.error(f"[LLMonitor] An error occurred in on_chain_start: {e}")
 
     def on_chain_end(
         self,
@@ -548,7 +545,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_chain_end: {e}")
+            logger.error(f"[LLMonitor] An error occurred in on_chain_end: {e}")
 
     def on_agent_action(
         self,
@@ -574,7 +571,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_agent_action: {e}")
+            logger.error(f"[LLMonitor] An error occurred in on_agent_action: {e}")
 
     def on_agent_finish(
         self,
@@ -598,7 +595,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_agent_finish: {e}")
+            logger.error(f"[LLMonitor] An error occurred in on_agent_finish: {e}")
 
     def on_chain_error(
         self,
@@ -620,7 +617,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_chain_error: {e}")
+            logger.error(f"[LLMonitor] An error occurred in on_chain_error: {e}")
 
     def on_tool_error(
         self,
@@ -642,7 +639,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_tool_error: {e}")
+            logger.error(f"[LLMonitor] An error occurred in on_tool_error: {e}")
 
     def on_llm_error(
         self,
@@ -664,7 +661,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logging.warning(f"[LLMonitor] An error occurred in on_llm_error: {e}")
+            logger.error(f"[LLMonitor] An error occurred in on_llm_error: {e}")
 
 
 __all__ = ["LLMonitorCallbackHandler", "identify"]

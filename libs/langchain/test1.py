@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from langchain.chat_models import ChatLiteLLM, ChatAnthropic, ChatGooglePalm
+from langchain.chat_models import ChatLiteLLM, ChatAnthropic, ChatGooglePalm, ChatOpenAI
 
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -7,7 +7,7 @@ from langchain.prompts.chat import (
     AIMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain.schema import AIMessage, HumanMessage, SystemMessage, FunctionMessage
 from langchain.callbacks import LLMonitorCallbackHandler
 
 
@@ -15,10 +15,11 @@ load_dotenv()
 
 handler = LLMonitorCallbackHandler()
 
+chat = ChatOpenAI(callbacks=[handler])
 # chat = ChatLiteLLM(model="gpt-3.5-turbo", callbacks=[handler])
 # chat = ChatLiteLLM(model="gpt-4", callbacks=[handler], temperature=1)
 # chat = ChatAnthropic(model='claude-instant-1', callbacks=[handler])
-chat = ChatGooglePalm(callbacks=[handler])
+# chat = ChatGooglePalm(callbacks=[handler])
 
 
 
