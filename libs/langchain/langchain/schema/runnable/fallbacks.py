@@ -46,6 +46,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     of a chain of runnables. Fallbacks are tried in order until one succeeds or
     all fail.
 
+    While you can instantiate a ``RunnableWithFallbacks`` directly, it is usually
+    more convenient to use the ``with_fallbacks`` method on a runnable.
+
     Example:
 
         .. code-block:: python
