@@ -66,6 +66,9 @@ class DocugamiLoader(BaseLoader, BaseModel):
     file_paths: Optional[Sequence[Union[Path, str]]]
     """The local file paths to use."""
 
+    fetch_metadata: bool = True
+    """Set to False if you don't want to fetch project metadata."""
+
     @root_validator
     def validate_local_or_remote(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that either local file paths are given, or remote API docset ID.
@@ -296,7 +299,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
             _project_details = self._project_details_for_docset_id(self.docset_id)
             combined_project_metadata = {}
-            if _project_details:
+            if _project_details and self.fetch_metadata:
                 # if there are any projects for this docset, load project metadata
                 for project in _project_details:
                     metadata = self._metadata_for_project(project)
