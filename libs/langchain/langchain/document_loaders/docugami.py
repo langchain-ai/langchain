@@ -138,6 +138,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             sub_chunk_tables=self.sub_chunk_tables,
             include_xml_tags=self.include_xml_tags,
             xml_hierarchy_levels=self.xml_hierarchy_levels,
+            max_text_size=self.max_text_length,
         )
 
         for dg_chunk in dg_chunks:
