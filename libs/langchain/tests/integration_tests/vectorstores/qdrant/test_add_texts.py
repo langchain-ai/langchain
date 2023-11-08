@@ -54,10 +54,11 @@ def test_qdrant_add_texts_returns_all_ids(batch_size: int) -> None:
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) -> None:
     """Test end to end Qdrant.add_texts stores duplicated texts separately."""
-    from qdrant_client import QdrantClient
+    from qdrant_client import AsyncQdrantClient, QdrantClient
     from qdrant_client.http import models as rest
 
     client = QdrantClient(":memory:")
+    async_client = AsyncQdrantClient(":memory:")
     collection_name = uuid.uuid4().hex
     vectors_config = rest.VectorParams(size=10, distance=rest.Distance.COSINE)
     if vector_name is not None:
@@ -66,6 +67,7 @@ def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) ->
 
     vec_store = Qdrant(
         client,
+        async_client,
         collection_name,
         embeddings=ConsistentFakeEmbeddings(),
         vector_name=vector_name,
@@ -79,7 +81,7 @@ def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) ->
 @pytest.mark.parametrize("batch_size", [1, 64])
 def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     """Test end to end Qdrant.add_texts stores provided ids."""
-    from qdrant_client import QdrantClient
+    from qdrant_client import AsyncQdrantClient, QdrantClient
     from qdrant_client.http import models as rest
 
     ids = [
@@ -88,13 +90,16 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     ]
 
     client = QdrantClient(":memory:")
+    async_client = AsyncQdrantClient(":memory:")
     collection_name = uuid.uuid4().hex
     client.recreate_collection(
         collection_name,
         vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE),
     )
 
-    vec_store = Qdrant(client, collection_name, ConsistentFakeEmbeddings())
+    vec_store = Qdrant(
+        client, async_client, collection_name, ConsistentFakeEmbeddings()
+    )
     returned_ids = vec_store.add_texts(["abc", "def"], ids=ids, batch_size=batch_size)
 
     assert all(first == second for first, second in zip(ids, returned_ids))
@@ -106,12 +111,13 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
 @pytest.mark.parametrize("vector_name", ["custom-vector"])
 def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -> None:
     """Test end to end Qdrant.add_texts stores named vectors if name is provided."""
-    from qdrant_client import QdrantClient
+    from qdrant_client import AsyncQdrantClient, QdrantClient
     from qdrant_client.http import models as rest
 
     collection_name = uuid.uuid4().hex
 
     client = QdrantClient(":memory:")
+    async_client = AsyncQdrantClient(":memory:")
     client.recreate_collection(
         collection_name,
         vectors_config={
@@ -121,6 +127,7 @@ def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -
 
     vec_store = Qdrant(
         client,
+        async_client,
         collection_name,
         ConsistentFakeEmbeddings(),
         vector_name=vector_name,

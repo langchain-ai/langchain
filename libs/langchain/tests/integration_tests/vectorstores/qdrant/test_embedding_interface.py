@@ -22,13 +22,15 @@ def test_qdrant_embedding_interface(
     embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
 ) -> None:
     """Test Qdrant may accept different types for embeddings."""
-    from qdrant_client import QdrantClient
+    from qdrant_client import AsyncQdrantClient, QdrantClient
 
     client = QdrantClient(":memory:")
+    async_client = AsyncQdrantClient(":memory:")
     collection_name = uuid.uuid4().hex
 
     Qdrant(
         client,
+        async_client,
         collection_name,
         embeddings=embeddings,
         embedding_function=embedding_function,
@@ -46,14 +48,16 @@ def test_qdrant_embedding_interface_raises_value_error(
     embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
 ) -> None:
     """Test Qdrant requires only one method for embeddings."""
-    from qdrant_client import QdrantClient
+    from qdrant_client import AsyncQdrantClient, QdrantClient
 
     client = QdrantClient(":memory:")
+    async_client = AsyncQdrantClient(":memory:")
     collection_name = uuid.uuid4().hex
 
     with pytest.raises(ValueError):
         Qdrant(
             client,
+            async_client,
             collection_name,
             embeddings=embeddings,
             embedding_function=embedding_function,

@@ -38,10 +38,11 @@ async def test_qdrant_aadd_texts_stores_duplicated_texts(
     vector_name: Optional[str], qdrant_location: str
 ) -> None:
     """Test end to end Qdrant.aadd_texts stores duplicated texts separately."""
-    from qdrant_client import QdrantClient
+    from qdrant_client import AsyncQdrantClient, QdrantClient
     from qdrant_client.http import models as rest
 
     client = QdrantClient(location=qdrant_location)
+    async_client = AsyncQdrantClient(location=qdrant_location)
     collection_name = uuid.uuid4().hex
     vectors_config = rest.VectorParams(size=10, distance=rest.Distance.COSINE)
     if vector_name is not None:
@@ -50,6 +51,7 @@ async def test_qdrant_aadd_texts_stores_duplicated_texts(
 
     vec_store = Qdrant(
         client,
+        async_client,
         collection_name,
         embeddings=ConsistentFakeEmbeddings(),
         vector_name=vector_name,
@@ -67,7 +69,7 @@ async def test_qdrant_aadd_texts_stores_ids(
     batch_size: int, qdrant_location: str
 ) -> None:
     """Test end to end Qdrant.aadd_texts stores provided ids."""
-    from qdrant_client import QdrantClient
+    from qdrant_client import AsyncQdrantClient, QdrantClient
     from qdrant_client.http import models as rest
 
     ids = [
@@ -76,13 +78,16 @@ async def test_qdrant_aadd_texts_stores_ids(
     ]
 
     client = QdrantClient(location=qdrant_location)
+    async_client = AsyncQdrantClient(location=qdrant_location)
     collection_name = uuid.uuid4().hex
     client.recreate_collection(
         collection_name,
         vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE),
     )
 
-    vec_store = Qdrant(client, collection_name, ConsistentFakeEmbeddings())
+    vec_store = Qdrant(
+        client, async_client, collection_name, ConsistentFakeEmbeddings()
+    )
     returned_ids = await vec_store.aadd_texts(
         ["abc", "def"], ids=ids, batch_size=batch_size
     )
@@ -100,12 +105,13 @@ async def test_qdrant_aadd_texts_stores_embeddings_as_named_vectors(
     vector_name: str, qdrant_location: str
 ) -> None:
     """Test end to end Qdrant.aadd_texts stores named vectors if name is provided."""
-    from qdrant_client import QdrantClient
+    from qdrant_client import AsyncQdrantClient, QdrantClient
     from qdrant_client.http import models as rest
 
     collection_name = uuid.uuid4().hex
 
     client = QdrantClient(location=qdrant_location)
+    async_client = AsyncQdrantClient(location=qdrant_location)
     client.recreate_collection(
         collection_name,
         vectors_config={
@@ -115,6 +121,7 @@ async def test_qdrant_aadd_texts_stores_embeddings_as_named_vectors(
 
     vec_store = Qdrant(
         client,
+        async_client,
         collection_name,
         ConsistentFakeEmbeddings(),
         vector_name=vector_name,
