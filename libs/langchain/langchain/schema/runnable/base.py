@@ -46,7 +46,6 @@ if TYPE_CHECKING:
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import BaseModel, Field, create_model
-from langchain.schema.chat_history import BaseChatMessageHistory
 from langchain.schema.runnable.config import (
     RunnableConfig,
     acall_func_with_variable_args,
@@ -689,24 +688,6 @@ class Runnable(Generic[Input, Output], ABC):
             runnable=self,
             fallbacks=fallbacks,
             exceptions_to_handle=exceptions_to_handle,
-        )
-
-    def with_message_history(
-        self,
-        factory: Callable[[str], BaseChatMessageHistory],
-        input_key: str,
-        *,
-        output_key: Optional[str] = None,
-        history_key: str = "history",
-    ) -> Runnable[Input, Output]:
-        from langchain.schema.runnable.message_history import RunnableWithMessageHistory
-
-        return RunnableWithMessageHistory(
-            runnable=self,
-            factory=factory,
-            input_key=input_key,
-            output_key=output_key,
-            history_key=history_key,
         )
 
     """ --- Helper methods for Subclasses --- """
