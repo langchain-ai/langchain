@@ -432,6 +432,12 @@ def _import_symblai_nebula() -> Any:
     return Nebula
 
 
+def _import_tensorrt() -> Any:
+    from langchain.llms.tensorrt import TensorRTLLM
+    
+    return TensorRTLLM
+
+
 def _import_textgen() -> Any:
     from langchain.llms.textgen import TextGen
 
@@ -448,12 +454,6 @@ def _import_titan_takeoff_pro() -> Any:
     from langchain.llms.titan_takeoff_pro import TitanTakeoffPro
 
     return TitanTakeoffPro
-
-
-def _import_trt_llm() -> Any:
-    from langchain.llms.trt_llm import TritonRTLLM
-    
-    return TritonRTLLM
 
 
 def _import_together() -> Any:
@@ -647,6 +647,8 @@ def __getattr__(name: str) -> Any:
         return _import_stochasticai()
     elif name == "Nebula":
         return _import_symblai_nebula()
+    elif name == "TensorRT":
+        return _import_tensorrt()
     elif name == "TextGen":
         return _import_textgen()
     elif name == "TitanTakeoff":
@@ -748,10 +750,10 @@ __all__ = [
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "StochasticAI",
+    "TensorRT",
     "TitanTakeoff",
     "TitanTakeoffPro",
     "Tongyi",
-    "TritonRTLLM",
     "VertexAI",
     "VertexAIModelGarden",
     "VLLM",
@@ -830,7 +832,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "tongyi": _import_tongyi,
         "titan_takeoff": _import_titan_takeoff,
         "titan_takeoff_pro": _import_titan_takeoff_pro,
-        "trt_llm": _import_trt_llm,
+        "tensor_rt": _import_tensorrt,
         "vertexai": _import_vertex,
         "vertexai_model_garden": _import_vertex_model_garden,
         "openllm": _import_openllm,

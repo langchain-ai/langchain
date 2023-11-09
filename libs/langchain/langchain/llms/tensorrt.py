@@ -1,12 +1,11 @@
-"""A Langchain LLM component for connecting to Triton + TensorRT LLM backend."""
-# pylint: disable=too-many-lines
+from typing import Any, Callable, Dict, List, Optional, Type, Union
+
 import abc
 import json
 import queue
 import random
 import time
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import google.protobuf.json_format
 import numpy as np
@@ -30,7 +29,7 @@ RANDOM_SEED = 0
 
 if USE_LANGCHAIN:
     # pylint: disable-next=too-few-public-methods  # Interface is defined by LangChain
-    class TensorRTLLM(LLM):  # type: ignore  # LLM class not typed in langchain
+    class TensorRT(LLM):  # type: ignore  # LLM class not typed in langchain
         """A custom Langchain LLM class that integrates with TRTLLM triton models.
 
         Arguments:
