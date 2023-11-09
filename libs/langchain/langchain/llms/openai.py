@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import sys
 import warnings
+from importlib.metadata import version
 from typing import (
     AbstractSet,
     Any,
@@ -19,6 +20,8 @@ from typing import (
     Tuple,
     Union,
 )
+
+from packaging.version import Version, parse
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -88,13 +91,22 @@ def _create_retry_decorator(
 ) -> Callable[[Any], Any]:
     import openai
 
-    errors = [
-        openai.error.Timeout,
-        openai.error.APIError,
-        openai.error.APIConnectionError,
-        openai.error.RateLimitError,
-        openai.error.ServiceUnavailableError,
-    ]
+    if _is_openai_v1():
+        errors = [
+            openai.APITimeoutError,
+            openai.APIError,
+            openai.APIConnectionError,
+            openai.RateLimitError,
+            openai.InternalServerError,
+        ]
+    else:
+        errors = [
+            openai.error.Timeout,
+            openai.error.APIError,
+            openai.error.APIConnectionError,
+            openai.error.RateLimitError,
+            openai.error.ServiceUnavailableError,
+        ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
@@ -262,13 +274,23 @@ class BaseOpenAI(BaseLLM):
         )
         try:
             import openai
-
-            values["client"] = openai.Completion
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
+        
+        if _is_openai_v1():
+            values["client"] = openai.OpenAI(
+                api_key=values["openai_api_key"],
+                timeout=values["request_timeout"],
+                max_retries=values["max_retries"],
+                organization=values["openai_organization"],
+                base_url=values["openai_api_base"] or None,
+            ).completions
+        else:
+            values["client"] = openai.Completion
+
         if values["streaming"] and values["n"] > 1:
             raise ValueError("Cannot stream results when n > 1.")
         if values["streaming"] and values["best_of"] > 1:
@@ -285,9 +307,21 @@ class BaseOpenAI(BaseLLM):
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "n": self.n,
-            "request_timeout": self.request_timeout,
             "logit_bias": self.logit_bias,
         }
+
+        if _is_openai_v1():
+            normal_params.update(
+                {
+                    "timeout": self.request_timeout,
+                }
+            )
+        else:
+            normal_params.update(
+                {
+                    "request_timeout": self.request_timeout,
+                }
+            )
 
         # Azure gpt-35-turbo doesn't support best_of
         # don't specify best_of if it is 1
@@ -401,6 +435,12 @@ class BaseOpenAI(BaseLLM):
                 response = completion_with_retry(
                     self, prompt=_prompts, run_manager=run_manager, **params
                 )
+                if _is_openai_v1():
+                    # V1 client returns the response in an PyDantic object instead of dict.
+                    # For the transition period, we convert it to dict.
+                    response = dict(response)
+                    response["choices"] = [dict(c) for c in response["choices"]]
+                
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
@@ -502,11 +542,13 @@ class BaseOpenAI(BaseLLM):
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
-        openai_creds: Dict[str, Any] = {
-            "api_key": self.openai_api_key,
-            "api_base": self.openai_api_base,
-            "organization": self.openai_organization,
-        }
+        openai_creds: Dict[str, Any] = {}
+        if not _is_openai_v1():
+            openai_creds.update({
+                "api_key": self.openai_api_key,
+                "api_base": self.openai_api_base,
+                "organization": self.openai_organization,
+            })
         if self.openai_proxy:
             import openai
 
@@ -630,6 +672,9 @@ class BaseOpenAI(BaseLLM):
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens
 
+def _is_openai_v1() -> bool:
+    _version = parse(version("openai"))
+    return _version >= Version("1.0.0")
 
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
