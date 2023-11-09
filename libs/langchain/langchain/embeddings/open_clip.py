@@ -42,8 +42,12 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
             # Encode the text to get the embeddings
             embeddings_tensor = self.model.encode_text(tokenized_text)
 
-            # Convert tensor to list and add to the text_features list
-            embeddings_list = embeddings_tensor.squeeze(0).tolist()  # Squeeze is used to remove batch dimension
+            # Normalize the embeddings
+            norm = embeddings_tensor.norm(p=2, dim=1, keepdim=True)
+            normalized_embeddings_tensor = embeddings_tensor.div(norm)
+
+            # Convert normalized tensor to list and add to the text_features list
+            embeddings_list = normalized_embeddings_tensor.squeeze(0).tolist()  # Squeeze is used to remove batch dimension
             text_features.append(embeddings_list)
 
         return text_features
@@ -67,9 +71,14 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
     
             # Encode the image to get the embeddings
             embeddings_tensor = self.model.encode_image(preprocessed_image)
-    
+
+             # Normalize the embeddings tensor
+            norm = embeddings_tensor.norm(p=2, dim=1, keepdim=True)
+            normalized_embeddings_tensor = embeddings_tensor.div(norm)
+
             # Convert tensor to list and add to the image_features list
-            embeddings_list = embeddings_tensor.squeeze(0).tolist()  # Squeeze is used to remove batch dimension
+            embeddings_list = normalized_embeddings_tensor.squeeze(0).tolist()  # Squeeze is used to remove batch dimension
+
             image_features.append(embeddings_list)
     
         return image_features
