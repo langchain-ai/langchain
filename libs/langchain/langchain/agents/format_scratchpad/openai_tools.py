@@ -1,8 +1,13 @@
 import json
 from typing import List, Sequence, Tuple
 
-from langchain.schema.agent import AgentAction, AgentActionMessageLog
-from langchain.schema.messages import AIMessage, BaseMessage, FunctionMessage
+from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
+from langchain.schema.agent import AgentAction
+from langchain.schema.messages import (
+    AIMessage,
+    BaseMessage,
+    ToolMessage,
+)
 
 
 def _convert_agent_action_to_messages(
@@ -18,17 +23,17 @@ def _convert_agent_action_to_messages(
     Returns:
         AIMessage that corresponds to the original tool invocation.
     """
-    if isinstance(agent_action, AgentActionMessageLog):
+    if isinstance(agent_action, OpenAIToolAgentAction):
         return list(agent_action.message_log) + [
-            _create_function_message(agent_action, observation)
+            _create_tool_message(agent_action, observation)
         ]
     else:
         return [AIMessage(content=agent_action.log)]
 
 
-def _create_function_message(
-    agent_action: AgentAction, observation: str
-) -> FunctionMessage:
+def _create_tool_message(
+    agent_action: OpenAIToolAgentAction, observation: str
+) -> ToolMessage:
     """Convert agent action and observation into a function message.
     Args:
         agent_action: the tool invocation request from the agent
@@ -43,13 +48,13 @@ def _create_function_message(
             content = str(observation)
     else:
         content = observation
-    return FunctionMessage(
-        name=agent_action.tool,
+    return ToolMessage(
+        tool_call_id=agent_action.tool_call_id,
         content=content,
     )
 
 
-def format_to_openai_function_messages(
+def format_to_openai_tool_messages(
     intermediate_steps: Sequence[Tuple[AgentAction, str]],
 ) -> List[BaseMessage]:
     """Convert (AgentAction, tool output) tuples into FunctionMessages.
@@ -67,7 +72,3 @@ def format_to_openai_function_messages(
         messages.extend(_convert_agent_action_to_messages(agent_action, observation))
 
     return messages
-
-
-# Backwards compatibility
-format_to_openai_functions = format_to_openai_function_messages

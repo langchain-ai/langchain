@@ -327,6 +327,14 @@ class AgentOutputParser(BaseOutputParser):
         """Parse text into agent action/finish."""
 
 
+class MultiActionAgentOutputParser(BaseOutputParser):
+    """Base class for parsing agent output into agent actions/finish."""
+
+    @abstractmethod
+    def parse(self, text: str) -> Union[List[AgentAction], AgentFinish]:
+        """Parse text into agent actions/finish."""
+
+
 class RunnableAgent(BaseSingleActionAgent):
     """Agent powered by runnables."""
 
