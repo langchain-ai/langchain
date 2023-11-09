@@ -811,13 +811,21 @@ class OpenAIChat(BaseLLM):
     """
 
     client: Any  #: :meta private:
+
+    # this is for compatibility with Union types in helper functions
     async_client: Any  #: :meta private:
     model_name: str = "gpt-3.5-turbo"
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[str] = None
-    openai_api_base: Optional[str] = None
+    # When updating this to use a SecretStr
+    # Check for classes that derive from this class (as some of them
+    # may assume openai_api_key is a str)
+    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
+    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    """Base URL path for API requests, leave blank if not using a proxy or service 
+        emulator."""
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
     max_retries: int = 6
