@@ -14,5 +14,16 @@ readmes = list(glob.glob(str(TEMPLATES_DIR) + "/*/README.md"))
 destinations = [readme[35:-10] + ".md" for readme in readmes]
 for source, destination in zip(readmes, destinations):
     shutil.copyfile(source, DOCS_TEMPLATES_DIR / destination)
-shutil.copyfile(TEMPLATES_DIR / "docs" / "INDEX.MD", DOCS_TEMPLATES_DIR / "index.md")
+
+sidebar_hidden = """---
+sidebar_class_name: hidden
+---
+
+"""
+TEMPLATES_INDEX_DESTINATION = DOCS_TEMPLATES_DIR / "index.md"
+shutil.copyfile(TEMPLATES_DIR / "docs" / "INDEX.MD", TEMPLATES_INDEX_DESTINATION)
+with open(TEMPLATES_INDEX_DESTINATION, "r") as f:
+    contents = f.read()
+with open(TEMPLATES_INDEX_DESTINATION, "w") as f:
+    f.write(sidebar_hidden + contents)
 
