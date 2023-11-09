@@ -4,7 +4,7 @@ import os
 import traceback
 import warnings
 from contextvars import ContextVar
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, cast, Union
 from uuid import UUID
 
 import requests
@@ -138,7 +138,7 @@ def _parse_output(raw_output: dict) -> Any:
 
 def _parse_lc_role(
     role: str,
-) -> Union[Literal["user", "ai", "system", "function", "tool"], None]:
+) -> str:
     if role == "human":
         return "user"
     else:
@@ -169,7 +169,7 @@ def _parse_lc_message(message: BaseMessage) -> Dict[str, Any]:
     parsed = {"text": message.content, "role": _parse_lc_role(message.type)}
     parsed.update(
         {
-            key: message.additional_kwargs.get(key)
+            key: cast(Any, message.additional_kwargs.get(key))
             for key in keys
             if message.additional_kwargs.get(key) is not None
         }
@@ -395,7 +395,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         try:
             token_usage = (response.llm_output or {}).get("token_usage", {})
 
-            parsed_output = [
+            parsed_output: Any = [
                 _parse_lc_message(generation.message)
                 if hasattr(generation, "message")
                 else generation.text
