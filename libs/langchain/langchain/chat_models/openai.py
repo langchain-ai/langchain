@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
-from importlib.metadata import version
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,8 +19,6 @@ from typing import (
     Type,
     Union,
 )
-
-from packaging.version import Version, parse
 
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
@@ -51,6 +49,7 @@ from langchain.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
+from langchain.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
     import httpx
@@ -98,7 +97,7 @@ async def acompletion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
-    if _is_openai_v1():
+    if is_openai_v1():
         return await llm.async_client.create(**kwargs)
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
@@ -140,11 +139,6 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-def _is_openai_v1() -> bool:
-    _version = parse(version("openai"))
-    return _version >= Version("1.0.0")
-
-
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
 
@@ -169,13 +163,13 @@ class ChatOpenAI(BaseChatModel):
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
 
-        if self.openai_organization != "":
+        if self.openai_organization:
             attributes["openai_organization"] = self.openai_organization
 
-        if self.openai_api_base != "":
+        if self.openai_api_base:
             attributes["openai_api_base"] = self.openai_api_base
 
-        if self.openai_proxy != "":
+        if self.openai_proxy:
             attributes["openai_proxy"] = self.openai_proxy
 
         return attributes
@@ -197,10 +191,12 @@ class ChatOpenAI(BaseChatModel):
     # Check for classes that derive from this class (as some of them
     # may assume openai_api_key is a str)
     openai_api_key: Optional[str] = Field(default=None, alias="api_key")
-    """Base URL path for API requests, 
-    leave blank if not using a proxy or service emulator."""
+    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    """Base URL path for API requests, leave blank if not using a proxy or service 
+        emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
+    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
     request_timeout: Union[float, Tuple[float, float], httpx.Timeout, None] = Field(
@@ -225,6 +221,11 @@ class ChatOpenAI(BaseChatModel):
     when using one of the many model providers that expose an OpenAI-like 
     API but with different models. In those cases, in order to avoid erroring 
     when tiktoken is called, you can specify a model name to use here."""
+    default_headers: Union[Mapping[str, str], None] = None
+    default_query: Union[Mapping[str, object], None] = None
+    # Configure a custom httpx client. See the
+    # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
+    http_client: Union[httpx.Client, None] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -260,20 +261,22 @@ class ChatOpenAI(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
+        if values["n"] < 1:
+            raise ValueError("n must be at least 1.")
+        if values["n"] > 1 and values["streaming"]:
+            raise ValueError("n must be 1 when streaming.")
+
         values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        values["openai_organization"] = get_from_dict_or_env(
-            values,
-            "openai_organization",
-            "OPENAI_ORGANIZATION",
-            default="",
+        # Check OPENAI_ORGANIZATION for backwards compatibility.
+        values["openai_organization"] = (
+            values["openai_organization"]
+            or os.getenv("OPENAI_ORG_ID")
+            or os.getenv("OPENAI_ORGANIZATION")
         )
-        values["openai_api_base"] = get_from_dict_or_env(
-            values,
-            "openai_api_base",
-            "OPENAI_API_BASE",
-            default="",
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+            "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values,
@@ -285,32 +288,28 @@ class ChatOpenAI(BaseChatModel):
             import openai
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
 
-        if _is_openai_v1():
-            values["client"] = openai.OpenAI(
-                api_key=values["openai_api_key"],
-                timeout=values["request_timeout"],
-                max_retries=values["max_retries"],
-                organization=values["openai_organization"],
-                base_url=values["openai_api_base"] or None,
-            ).chat.completions
+        if is_openai_v1():
+            client_params = {
+                "api_key": values["openai_api_key"],
+                "organization": values["openai_organization"],
+                "base_url": values["openai_api_base"],
+                "timeout": values["request_timeout"],
+                "max_retries": values["max_retries"],
+                "default_headers": values["default_headers"],
+                "default_query": values["default_query"],
+                "http_client": values["http_client"],
+            }
+            values["client"] = openai.OpenAI(**client_params).chat.completions
             values["async_client"] = openai.AsyncOpenAI(
-                api_key=values["openai_api_key"],
-                timeout=values["request_timeout"],
-                max_retries=values["max_retries"],
-                organization=values["openai_organization"],
-                base_url=values["openai_api_base"] or None,
+                **client_params
             ).chat.completions
         else:
             values["client"] = openai.ChatCompletion
-        if values["n"] < 1:
-            raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
-            raise ValueError("n must be 1 when streaming.")
         return values
 
     @property
@@ -331,7 +330,7 @@ class ChatOpenAI(BaseChatModel):
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
-        if _is_openai_v1():
+        if is_openai_v1():
             return self.client.create(**kwargs)
 
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
@@ -510,7 +509,7 @@ class ChatOpenAI(BaseChatModel):
         openai_creds: Dict[str, Any] = {
             "model": self.model_name,
         }
-        if not _is_openai_v1():
+        if not is_openai_v1():
             openai_creds.update(
                 {
                     "api_key": self.openai_api_key,
