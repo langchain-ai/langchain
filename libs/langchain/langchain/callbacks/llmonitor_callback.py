@@ -238,6 +238,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 with `pip install llmonitor`"""
             )
             self.__has_valid_config = False
+            return
 
         if parse(self.__llmonitor_version) < parse("0.0.32"):
             logger.warning(
@@ -392,7 +393,6 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         if self.__has_valid_config is False:
             return
 
-        print(response)
         try:
             token_usage = (response.llm_output or {}).get("token_usage", {})
 
