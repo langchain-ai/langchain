@@ -153,13 +153,13 @@ class BaseOpenAI(BaseLLM):
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
-        if self.openai_api_base != "":
+        if self.openai_api_base:
             attributes["openai_api_base"] = self.openai_api_base
 
-        if self.openai_organization != "":
+        if self.openai_organization:
             attributes["openai_organization"] = self.openai_organization
 
-        if self.openai_proxy != "":
+        if self.openai_proxy:
             attributes["openai_proxy"] = self.openai_proxy
 
         return attributes
@@ -329,9 +329,9 @@ class BaseOpenAI(BaseLLM):
         }
 
         if self.max_tokens is not None:
-            params["max_tokens"] = self.max_tokens
+            normal_params["max_tokens"] = self.max_tokens
         if self.request_timeout is not None and not is_openai_v1():
-            params["request_timeout"] = self.request_timeout
+            normal_params["request_timeout"] = self.request_timeout
 
         # Azure gpt-35-turbo doesn't support best_of
         # don't specify best_of if it is 1
@@ -352,6 +352,8 @@ class BaseOpenAI(BaseLLM):
         for stream_resp in completion_with_retry(
             self, prompt=prompt, run_manager=run_manager, **params
         ):
+            if not isinstance(stream_resp, dict):
+                stream_resp = stream_resp.dict()
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
             if run_manager:
@@ -376,6 +378,8 @@ class BaseOpenAI(BaseLLM):
         async for stream_resp in await acompletion_with_retry(
             self, prompt=prompt, run_manager=run_manager, **params
         ):
+            if not isinstance(stream_resp, dict):
+                stream_resp = stream_resp.dict()
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
             if run_manager:
@@ -418,6 +422,7 @@ class BaseOpenAI(BaseLLM):
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
+        system_fingerprint: Optional[str] = None
         for _prompts in sub_prompts:
             if self.streaming:
                 if len(_prompts) > 1:
@@ -445,15 +450,21 @@ class BaseOpenAI(BaseLLM):
                 response = completion_with_retry(
                     self, prompt=_prompts, run_manager=run_manager, **params
                 )
-                if is_openai_v1():
+                if not isinstance(response, dict):
                     # V1 client returns the response in an PyDantic object instead of
-                    # dict. For the transition period, we convert it to dict.
-                    response = dict(response)
-                    response["choices"] = [dict(c) for c in response["choices"]]
+                    # dict. For the transition period, we deep convert it to dict.
+                    response = response.dict()
 
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
-        return self.create_llm_result(choices, prompts, token_usage)
+                if not system_fingerprint:
+                    system_fingerprint = response.get("system_fingerprint")
+        return self.create_llm_result(
+            choices,
+            prompts,
+            token_usage,
+            system_fingerprint=system_fingerprint,
+        )
 
     async def _agenerate(
         self,
@@ -471,6 +482,7 @@ class BaseOpenAI(BaseLLM):
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
+        system_fingerprint: Optional[str] = None
         for _prompts in sub_prompts:
             if self.streaming:
                 if len(_prompts) > 1:
@@ -500,9 +512,16 @@ class BaseOpenAI(BaseLLM):
                 response = await acompletion_with_retry(
                     self, prompt=_prompts, run_manager=run_manager, **params
                 )
+                if not isinstance(response, dict):
+                    response = response.dict()
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
-        return self.create_llm_result(choices, prompts, token_usage)
+        return self.create_llm_result(
+            choices,
+            prompts,
+            token_usage,
+            system_fingerprint=system_fingerprint,
+        )
 
     def get_sub_prompts(
         self,
@@ -528,7 +547,12 @@ class BaseOpenAI(BaseLLM):
         return sub_prompts
 
     def create_llm_result(
-        self, choices: Any, prompts: List[str], token_usage: Dict[str, int]
+        self,
+        choices: Any,
+        prompts: List[str],
+        token_usage: Dict[str, int],
+        *,
+        system_fingerprint: Optional[str] = None,
     ) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
@@ -547,6 +571,8 @@ class BaseOpenAI(BaseLLM):
                 ]
             )
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}
+        if system_fingerprint:
+            llm_output["system_fingerprint"] = system_fingerprint
         return LLMResult(generations=generations, llm_output=llm_output)
 
     @property
@@ -785,6 +811,7 @@ class OpenAIChat(BaseLLM):
     """
 
     client: Any  #: :meta private:
+    async_client: Any  #: :meta private:
     model_name: str = "gpt-3.5-turbo"
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -904,6 +931,8 @@ class OpenAIChat(BaseLLM):
         for stream_resp in completion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
+            if not isinstance(stream_resp, dict):
+                stream_resp = stream_resp.dict()
             token = stream_resp["choices"][0]["delta"].get("content", "")
             chunk = GenerationChunk(text=token)
             yield chunk
@@ -922,6 +951,8 @@ class OpenAIChat(BaseLLM):
         async for stream_resp in await acompletion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
+            if not isinstance(stream_resp, dict):
+                stream_resp = stream_resp.dict()
             token = stream_resp["choices"][0]["delta"].get("content", "")
             chunk = GenerationChunk(text=token)
             yield chunk
@@ -950,6 +981,8 @@ class OpenAIChat(BaseLLM):
         full_response = completion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         )
+        if not isinstance(full_response, dict):
+            full_response = full_response.dict()
         llm_output = {
             "token_usage": full_response["usage"],
             "model_name": self.model_name,
@@ -983,6 +1016,8 @@ class OpenAIChat(BaseLLM):
         full_response = await acompletion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         )
+        if not isinstance(full_response, dict):
+            full_response = full_response.dict()
         llm_output = {
             "token_usage": full_response["usage"],
             "model_name": self.model_name,
