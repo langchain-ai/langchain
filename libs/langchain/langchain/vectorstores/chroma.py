@@ -208,8 +208,8 @@ class Chroma(VectorStore):
                 if non_empty_ids:
                     metadatas = [metadatas[idx] for idx in non_empty_ids]
                     images_with_metadatas = [uris[idx] for idx in non_empty_ids]
-                    embeddings_with_metadatas = ([embeddings[idx] for idx in non_empty_ids] 
-                             if embeddings else None)
+                    embeddings_with_metadatas = ([embeddings[idx] for idx 
+                                in non_empty_ids] if embeddings else None)
                     ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                     try:
                         self._collection.upsert(

@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
 
-
+   
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
     model: Any
     preprocess: Any
