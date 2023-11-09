@@ -166,7 +166,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
                 if run_manager:
                     await run_manager.on_llm_new_token(delta)
 
-    def _get_generation_info(response) -> Dict[str, Any]:
+    def _get_generation_info(self, response: Any) -> Dict[str, Any]:
         """Get the generation info from cohere API response."""
         return {
             "documents": response.documents,
