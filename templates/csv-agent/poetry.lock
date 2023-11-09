@@ -817,13 +817,13 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 
 [[package]]
 name = "langchain-experimental"
-version = "0.0.37"
+version = "0.0.38"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain_experimental-0.0.37-py3-none-any.whl", hash = "sha256:5cf5b26f142766596a1e313cabbfceb9cbd5cd2cf46f4a21e92c66ed11466dac"},
-    {file = "langchain_experimental-0.0.37.tar.gz", hash = "sha256:c30fae03702ab071b7040ff6a0fdedd4b4d1028c6c2d8481db0921d7a216e078"},
+    {file = "langchain_experimental-0.0.38-py3-none-any.whl", hash = "sha256:14135fab4a35424e09d404110b71b197b05af6ab896a43d50d1152516dc7865e"},
+    {file = "langchain_experimental-0.0.38.tar.gz", hash = "sha256:a954362963e9874e5f6dffd5deae543c8bf73e4f523a12f4b3297624a6303cd7"},
 ]
 
 [package.dependencies]
