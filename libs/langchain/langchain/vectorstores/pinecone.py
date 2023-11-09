@@ -46,6 +46,8 @@ class Pinecone(VectorStore):
         text_key: str,
         namespace: Optional[str] = None,
         distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
+        sparse_encoder: Any = None,
+        hybrid_convex_scale_alpha: float = 0.5,
     ):
         """Initialize with Pinecone client."""
         try:
@@ -70,6 +72,8 @@ class Pinecone(VectorStore):
         self._text_key = text_key
         self._namespace = namespace
         self.distance_strategy = distance_strategy
+        self.sparse_encoder = sparse_encoder
+        self.hybrid_convex_scale_alpha = hybrid_convex_scale_alpha
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -135,6 +139,21 @@ class Pinecone(VectorStore):
             chunk_ids = ids[i : i + embedding_chunk_size]
             chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
+            if self.sparse_encoder:
+                sparse_embeds = self.sparse_encoder.encode_documents(chunk_texts)
+                iter: Iterable = (
+                    {
+                        "id": id_,
+                        "sparse_values": sparse,
+                        "values": dense,
+                        "metadata": meta,
+                    }
+                    for id_, sparse, dense, meta in zip(
+                        chunk_ids, sparse_embeds, embeddings, chunk_metadatas
+                    )
+                )
+            else:
+                iter = zip(chunk_ids, embeddings, chunk_metadatas)
             async_res = [
                 self._index.upsert(
                     vectors=batch,
@@ -142,9 +161,7 @@ class Pinecone(VectorStore):
                     async_req=True,
                     **kwargs,
                 )
-                for batch in batch_iterate(
-                    batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
-                )
+                for batch in batch_iterate(batch_size, iter)
             ]
             [res.get() for res in async_res]
 
@@ -156,6 +173,7 @@ class Pinecone(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
         namespace: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return pinecone documents most similar to query, along with scores.
 
@@ -168,9 +186,58 @@ class Pinecone(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        return self.similarity_search_by_vector_with_score(
-            self._embed_query(query), k=k, filter=filter, namespace=namespace
+        if self.sparse_encoder:
+            return self.hybrid_search(
+                query, k=k, filter=filter, namespace=namespace, **kwargs
+            )
+        else:
+            return self.similarity_search_by_vector_with_score(
+                self._embed_query(query), k=k, filter=filter, namespace=namespace
+            )
+
+    def hybrid_search(
+        self,
+        query: str,
+        *,
+        k: int = 4,
+        filter: Optional[dict] = None,
+        namespace: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        if not self.sparse_encoder:
+            raise ValueError()
+        from pinecone_text.hybrid import hybrid_convex_scale
+
+        sparse_vec = self.sparse_encoder.encode_queries(query)
+        # convert the question into a dense vector
+        dense_vec = self._embed_query(query)
+        # scale alpha with hybrid_scale
+        dense_vec, sparse_vec = hybrid_convex_scale(
+            dense_vec, sparse_vec, self.hybrid_convex_scale_alpha
         )
+        sparse_vec["values"] = [float(s1) for s1 in sparse_vec["values"]]
+        # query pinecone with the query parameters
+        results = self._index.query(
+            vector=dense_vec,
+            sparse_vector=sparse_vec,
+            top_k=k,
+            include_metadata=True,
+            namespace=namespace,
+            filter=filter,
+            **kwargs,
+        )
+        docs = []
+        for res in results["matches"]:
+            metadata = res["metadata"]
+            if self._text_key in metadata:
+                text = metadata.pop(self._text_key)
+                score = res["score"]
+                docs.append((Document(page_content=text, metadata=metadata), score))
+            else:
+                logger.warning(
+                    f"Found document with no `{self._text_key}` key. Skipping."
+                )
+        return docs
 
     def similarity_search_by_vector_with_score(
         self,
