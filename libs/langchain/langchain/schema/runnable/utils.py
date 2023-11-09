@@ -273,7 +273,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
     description: Optional[str] = None
 
     def __hash__(self) -> int:
-        return hash((self.id, tuple(self.options.items()), self.default))
+        return hash((self.id, tuple(self.options.keys()), self.default))
 
 
 class ConfigurableFieldMultiOption(NamedTuple):
@@ -287,7 +287,7 @@ class ConfigurableFieldMultiOption(NamedTuple):
     description: Optional[str] = None
 
     def __hash__(self) -> int:
-        return hash((self.id, tuple(self.options.items()), tuple(self.default)))
+        return hash((self.id, tuple(self.options.keys()), tuple(self.default)))
 
 
 AnyConfigurableField = Union[

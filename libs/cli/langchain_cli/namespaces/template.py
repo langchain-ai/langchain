@@ -9,10 +9,9 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-from langserve.packages import get_langserve_export
 from typing_extensions import Annotated
 
-from langchain_cli.utils.packages import get_package_root
+from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 package_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
