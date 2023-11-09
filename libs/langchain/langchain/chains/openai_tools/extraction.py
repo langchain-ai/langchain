@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Union
+from typing import List, Type, Union
 
 from langchain.output_parsers import PydanticToolsParser
 from langchain.prompts import ChatPromptTemplate
