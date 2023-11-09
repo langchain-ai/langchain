@@ -279,7 +279,7 @@ class BaseOpenAI(BaseLLM):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        
+
         if _is_openai_v1():
             values["client"] = openai.OpenAI(
                 api_key=values["openai_api_key"],
@@ -311,17 +311,9 @@ class BaseOpenAI(BaseLLM):
         }
 
         if _is_openai_v1():
-            normal_params.update(
-                {
-                    "timeout": self.request_timeout,
-                }
-            )
+            normal_params["timeout"] = self.request_timeout  # type: ignore[assignment]
         else:
-            normal_params.update(
-                {
-                    "request_timeout": self.request_timeout,
-                }
-            )
+            normal_params["request_timeout"] = self.request_timeout  # type: ignore[assignment]
 
         # Azure gpt-35-turbo doesn't support best_of
         # don't specify best_of if it is 1
@@ -440,7 +432,7 @@ class BaseOpenAI(BaseLLM):
                     # dict. For the transition period, we convert it to dict.
                     response = dict(response)
                     response["choices"] = [dict(c) for c in response["choices"]]
-                
+
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
@@ -544,11 +536,13 @@ class BaseOpenAI(BaseLLM):
         """Get the parameters used to invoke the model."""
         openai_creds: Dict[str, Any] = {}
         if not _is_openai_v1():
-            openai_creds.update({
-                "api_key": self.openai_api_key,
-                "api_base": self.openai_api_base,
-                "organization": self.openai_organization,
-            })
+            openai_creds.update(
+                {
+                    "api_key": self.openai_api_key,
+                    "api_base": self.openai_api_base,
+                    "organization": self.openai_organization,
+                }
+            )
         if self.openai_proxy:
             import openai
 
@@ -672,9 +666,11 @@ class BaseOpenAI(BaseLLM):
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens
 
+
 def _is_openai_v1() -> bool:
     _version = parse(version("openai"))
     return _version >= Version("1.0.0")
+
 
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
