@@ -16,7 +16,7 @@ from langchain.schema.output_parser import (
 class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
     """Parse tools from OpenAI response."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = ...) -> Any:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             raise OutputParserException(
