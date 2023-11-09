@@ -53,7 +53,6 @@ from langchain.utils import (
 from langchain.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
-    import httpx
     import tiktoken
 
 
@@ -201,10 +200,11 @@ class ChatOpenAI(BaseChatModel):
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
-    request_timeout: Union[float, Tuple[float, float], httpx.Timeout, None] = Field(
+    request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+        None."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
     streaming: bool = False
@@ -227,7 +227,8 @@ class ChatOpenAI(BaseChatModel):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[httpx.Client, None] = None
+    http_client: Union[Any, None] = None
+    """Optional httpx.Client."""
 
     class Config:
         """Configuration for this pydantic object."""
