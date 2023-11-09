@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/modules/model_io/chat/llm_chain",
+      "destination":  "/docs/modules/chains/foundational/llm_chain"
+    },
+    {
       "source": "/docs/guides/langsmith(/?)",
       "destination": "/docs/langsmith/"
     },
