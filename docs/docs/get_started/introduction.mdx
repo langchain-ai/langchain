@@ -45,6 +45,13 @@ These docs focus on the Python LangChain library. [Head here](https://js.langcha
 
 ## LangChain Expression Language (LCEL)
 
+LCEL is a declarative way to compose chains. LCEL was designed from day 1 to support putting prototypes in production, with no code changes, from the simplest “prompt + LLM” chain to the most complex chains.
+
+- **[Overview](/docs/expression_language/)**: LCEL and its benefits
+- **[Interface](/docs/expression_language/interface)**: The standard interface for LCEL objects
+- **[How-to](/docs/expression_language/interface)**: Key features of LCEL
+- **[Cookbook](/docs/expression_language/cookbook)**: Example code for accomplishing common tasks
+
 
 ## Modules
 
@@ -52,18 +59,16 @@ LangChain provides standard, extendable interfaces and integrations for the foll
 
 #### [Model I/O](/docs/modules/model_io/)
 Interface with language models
+
 #### [Retrieval](/docs/modules/data_connection/)
 Interface with application-specific data
+
 #### [Agents](/docs/modules/agents/)
-Let chains choose which tools to use given high-level directives
+Let models choose which tools to use given high-level directives
 
-## LangServe
-...
-
-## LangSmith
-...
 
 ## Examples, ecosystem, and resources
+
 ### [Use cases](/docs/use_cases/question_answering/)
 Walkthroughs and techniques for common end-to-end use cases, like:
 - [Document question answering](/docs/use_cases/question_answering/)
