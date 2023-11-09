@@ -25,6 +25,7 @@ from typing import (
 )
 from uuid import UUID
 
+from langsmith import utils as ls_utils
 from langsmith.run_helpers import get_run_tree_context
 from tenacity import RetryCallState
 
@@ -1933,9 +1934,7 @@ def _get_tracer_project() -> str:
             # tree structure.
             tracing_v2_callback_var.get(),
             "project",
-            os.environ.get(
-                "LANGCHAIN_PROJECT", os.environ.get("LANGCHAIN_SESSION", "default")
-            ),
+            ls_utils.get_tracer_project(),
         ),
     )
 

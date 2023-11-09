@@ -114,7 +114,7 @@ rdflib = {version = "^6.3.2", optional = true}
 sympy = {version = "^1.12", optional = true}
 rapidfuzz = {version = "^3.1.1", optional = true}
 jsonschema = {version = ">1", optional = true}
-langsmith = "~0.0.52"
+langsmith = "~0.0.62"
 rank-bm25 = {version = "^0.2.2", optional = true}
 amadeus = {version = ">=8.1.0", optional = true}
 geopandas = {version = "^0.13.1", optional = true}
