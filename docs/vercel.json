@@ -13,6 +13,10 @@
       "destination": "/docs/langsmith/"
     },
     {
+      "source": "/docs/use_cases/graph/:path*",
+      "destination": "/docs/integrations/graph/:path*"
+    },
+    {
       "source": "/docs/guides/langsmith/walkthrough",
       "destination": "/docs/langsmith/walkthrough"
     },
