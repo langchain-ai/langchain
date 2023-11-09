@@ -214,7 +214,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 data = response.json()
                 all_artifacts.extend(data["artifacts"])
                 url = data.get("next", None)
-            else:
+            elif response.status_code != 404:  # Not found is ok, just means no published projects
                 raise Exception(
                     f"Failed to download {url} (status: {response.status_code})"
                 )
