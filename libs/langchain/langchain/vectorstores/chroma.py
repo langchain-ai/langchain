@@ -15,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-
+import base64
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
@@ -160,9 +160,14 @@ class Chroma(VectorStore):
             **kwargs,
         )
 
+    def encode_image(self, uri: str) -> str:
+        """Get base64 string from image URI."""
+        with open(uri, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode('utf-8')
+
     def add_images(
             self,
-            images: List[np.ndarray],
+            uris: List[str],
             metadatas: Optional[List[dict]] = None,
             ids: Optional[List[str]] = None,
             **kwargs: Any,
@@ -177,16 +182,15 @@ class Chroma(VectorStore):
             Returns:
                 List[str]: List of IDs of the added images.
             """
-            # TODO: Handle the case where the user doesn't provide ids on the Collection
+            # Map from uris to b64 encoded strings
+            b64_texts = [self.encode_image(uri=uri) for uri in uris]
+            # Populate IDs
             if ids is None:
-                ids = [str(uuid.uuid1()) for _ in images]
+                ids = [str(uuid.uuid1()) for _ in uris]
             embeddings = None
-            # images = list(images)
+            # Set embeddings
             if self._embedding_function is not None:
-                embeddings = self._embedding_function.embed_image(images)
-                print("Img EMBD")
-                print(type(embeddings))
-                print(len(embeddings))
+                embeddings = self._embedding_function.embed_image(uris=uris)
             if metadatas:
                 # fill metadatas with empty dicts if somebody
                 # did not specify metadata for all images
@@ -237,7 +241,7 @@ class Chroma(VectorStore):
             else:
                 self._collection.upsert(
                     embeddings=embeddings,
-                    documents=images,
+                    documents=b64_texts,
                     ids=ids,
                 )
             return ids
@@ -266,9 +270,6 @@ class Chroma(VectorStore):
         texts = list(texts)
         if self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(texts)
-            print("Text EMBD")
-            print(type(embeddings))
-            print(len(embeddings))
         if metadatas:
             # fill metadatas with empty dicts if somebody
             # did not specify metadata for all texts

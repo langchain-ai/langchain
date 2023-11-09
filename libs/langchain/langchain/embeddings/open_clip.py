@@ -51,25 +51,25 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
     def embed_query(self, text: str) -> List[float]:
         return self.embed_documents([text])[0]
     
-    def embed_image(self, images: List[np.ndarray]) -> List[List[float]]:
+    def embed_image(self, uris: List[str]) -> List[List[float]]:
         try:
             from PIL import Image as _PILImage
         except ImportError:
             raise ImportError("Please install the PIL library: pip install pillow")
         
-        # Convert numpy arrays to PIL images
-        pil_images = [_PILImage.fromarray(image) for image in images]
+        # Open images directly as PIL images
+        pil_images = [_PILImage.open(uri) for uri in uris]
         
         image_features = []
         for pil_image in pil_images:
             # Preprocess the image for the model
             preprocessed_image = self.preprocess(pil_image).unsqueeze(0)
-
+    
             # Encode the image to get the embeddings
             embeddings_tensor = self.model.encode_image(preprocessed_image)
-
+    
             # Convert tensor to list and add to the image_features list
             embeddings_list = embeddings_tensor.squeeze(0).tolist()  # Squeeze is used to remove batch dimension
             image_features.append(embeddings_list)
-
+    
         return image_features
