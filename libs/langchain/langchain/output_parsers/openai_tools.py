@@ -16,7 +16,7 @@ from langchain.schema.output_parser import (
 class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
     """Parse tools from OpenAI response."""
 
-    def parse_result(self, result: List[Generation]) -> List[dict]:
+    def parse_result(self, result: List[Generation]) -> Any:
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             raise OutputParserException(
@@ -48,7 +48,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
     key_name: str
     """The type of tools to return."""
 
-    def parse_result(self, result: List[Generation]) -> List[dict]:
+    def parse_result(self, result: List[Generation]) -> Any:
         results = super().parse_result(result)
         return [res["args"] for res in results if results["type"] == self.key_name]
 
@@ -58,7 +58,7 @@ class PydanticToolsParser(JsonOutputToolsParser):
 
     tools: List[Type[BaseModel]]
 
-    def parse_result(self, result: List[Generation]) -> List[dict]:
+    def parse_result(self, result: List[Generation]) -> Any:
         results = super().parse_result(result)
         name_dict = {tool.__name__: tool for tool in self.tools}
         return [name_dict[res["type"]](**res["args"]) for res in results]
