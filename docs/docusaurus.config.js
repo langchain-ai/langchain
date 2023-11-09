@@ -177,7 +177,6 @@ const config = {
             items: [
               {
                 type: "docSidebar",
-                position: "left",
                 sidebarId: "templates",
                 label: "Templates",
               },
