@@ -21,12 +21,13 @@ def _get_docs(response: Any) -> List[Document]:
     ]
     docs.append(
         Document(
-            page_content=response.message,
+            page_content=response.message.content,
             metadata={
                 "type": "model_response",
                 "citations": response.generation_info["citations"],
                 "search_results": response.generation_info["search_results"],
                 "search_queries": response.generation_info["search_queries"],
+                "token_count": response.generation_info["token_count"],
             },
         )
     )
