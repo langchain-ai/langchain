@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
