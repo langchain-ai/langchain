@@ -42,6 +42,7 @@ from langchain.schema.messages import (
     FunctionMessageChunk,
     HumanMessageChunk,
     SystemMessageChunk,
+    ToolMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
 from langchain.schema.runnable import Runnable
@@ -115,15 +116,14 @@ def _convert_delta_to_message_chunk(
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
+    additional_kwargs: Dict = {}
     if _dict.get("function_call"):
-        additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        if (
-            "name" in additional_kwargs["function_call"]
-            and additional_kwargs["function_call"]["name"] is None
-        ):
-            additional_kwargs["function_call"]["name"] = ""
-    else:
-        additional_kwargs = {}
+        function_call = dict(_dict["function_call"])
+        if "name" in function_call and function_call["name"] is None:
+            function_call["name"] = ""
+        additional_kwargs["function_call"] = function_call
+    if _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = _dict["tool_calls"]
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
@@ -133,6 +133,8 @@ def _convert_delta_to_message_chunk(
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"])
+    elif role == "tool" or default_class == ToolMessageChunk:
+        return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
@@ -630,7 +632,6 @@ class ChatOpenAI(BaseChatModel):
         from langchain.chains.openai_functions.base import convert_to_openai_function
 
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
-        function_call_ = None
         if function_call is not None:
             if len(formatted_functions) != 1:
                 raise ValueError(
