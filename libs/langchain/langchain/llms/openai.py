@@ -5,7 +5,6 @@ import os
 import sys
 import warnings
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     AsyncIterator,
@@ -35,9 +34,6 @@ from langchain.utils.openai import is_openai_v1
 from langchain.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-    import httpx
 
 
 def update_token_usage(
@@ -204,10 +200,11 @@ class BaseOpenAI(BaseLLM):
     openai_proxy: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
-    request_timeout: Union[float, Tuple[float, float], httpx.Timeout, None] = Field(
+    request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+        None."""
     logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
     """Adjust the probability of specific tokens being generated."""
     max_retries: int = 2
@@ -232,7 +229,8 @@ class BaseOpenAI(BaseLLM):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[httpx.Client, None] = None
+    http_client: Union[Any, None] = None
+    """Optional httpx.Client."""
 
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
