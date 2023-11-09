@@ -163,11 +163,19 @@ def _get_user_props(metadata: Any) -> Any:
     metadata = metadata or {}
     return metadata.get("user_props", None)
 
+
 def _parse_lc_message(message: BaseMessage) -> Dict[str, Any]:
     keys = ["function_call", "tool_calls", "tool_call_id", "name"]
     parsed = {"text": message.content, "role": _parse_lc_role(message.type)}
-    parsed.update({key: message.additional_kwargs.get(key) for key in keys if message.additional_kwargs.get(key) is not None})
+    parsed.update(
+        {
+            key: message.additional_kwargs.get(key)
+            for key in keys
+            if message.additional_kwargs.get(key) is not None
+        }
+    )
     return parsed
+
 
 def _parse_lc_messages(messages: Union[List[BaseMessage], Any]) -> List[Dict[str, Any]]:
     return [_parse_lc_message(message) for message in messages]
@@ -233,7 +241,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
         if parse(self.__llmonitor_version) < parse("0.0.32"):
             logger.warning(
-                f"""[LLMonitor] The installed `llmonitor` version is {self.__llmonitor_version} 
+                f"""[LLMonitor] The installed `llmonitor` version is 
+                {self.__llmonitor_version} 
                 but `LLMonitorCallbackHandler` requires at least version 0.0.32 
                 upgrade `llmonitor` with `pip install --upgrade llmonitor`"""
             )
@@ -247,7 +256,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         _app_id = app_id or os.getenv("LLMONITOR_APP_ID")
         if _app_id is None:
             logger.warning(
-                """[LLMonitor] app_id must be provided either as an argument or as an environment variable"""
+                """[LLMonitor] app_id must be provided either as an argument or 
+                as an environment variable"""
             )
             self.__has_valid_config = False
         else:
@@ -369,9 +379,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logger.error(
-                f"[LLMonitor] An error occurred in on_chat_model_start: {e}"
-            )
+            logger.error(f"[LLMonitor] An error occurred in on_chat_model_start: {e}")
 
     def on_llm_end(
         self,
@@ -388,7 +396,9 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             token_usage = (response.llm_output or {}).get("token_usage", {})
 
             parsed_output = [
-                _parse_lc_message(generation.message) if hasattr(generation, 'message') else generation.text
+                _parse_lc_message(generation.message)
+                if hasattr(generation, "message")
+                else generation.text
                 for generation in response.generations[0]
             ]
 
