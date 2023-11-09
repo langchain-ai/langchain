@@ -21,7 +21,7 @@ def create_extraction_chain_pydantic(
     if not isinstance(pydantic_schemas, list):
         pydantic_schemas = [pydantic_schemas]
     prompt = ChatPromptTemplate.from_messages(
-        [("system", _EXTRACTION_TEMPLATE), ("user", "{input}")]
+        [("system", system_message), ("user", "{input}")]
     )
     functions = [convert_pydantic_to_openai_function(p) for p in pydantic_schemas]
     tools = [{"type": "function", "function": d} for d in functions]
