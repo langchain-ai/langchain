@@ -327,10 +327,21 @@ class AgentOutputParser(BaseOutputParser):
         """Parse text into agent action/finish."""
 
 
-class RunnableAgent(BaseSingleActionAgent):
+class MultiActionAgentOutputParser(BaseOutputParser):
+    """Base class for parsing agent output into agent actions/finish."""
+
+    @abstractmethod
+    def parse(self, text: str) -> Union[List[AgentAction], AgentFinish]:
+        """Parse text into agent actions/finish."""
+
+
+class RunnableAgent(BaseMultiActionAgent):
     """Agent powered by runnables."""
 
-    runnable: Runnable[dict, Union[AgentAction, AgentFinish]]
+    runnable: Union[
+        Runnable[dict, Union[AgentAction, AgentFinish]],
+        Runnable[dict, Union[List[AgentAction], AgentFinish]],
+    ]
     """Runnable to call to get agent action."""
     _input_keys: List[str] = []
     """Input keys."""
@@ -359,7 +370,10 @@ class RunnableAgent(BaseSingleActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> Union[
+        List[AgentAction],
+        AgentFinish,
+    ]:
         """Given input, decided what to do.
 
         Args:
@@ -373,6 +387,8 @@ class RunnableAgent(BaseSingleActionAgent):
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
         output = self.runnable.invoke(inputs, config={"callbacks": callbacks})
+        if isinstance(output, AgentAction):
+            output = [output]
         return output
 
     async def aplan(
@@ -380,7 +396,10 @@ class RunnableAgent(BaseSingleActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> Union[
+        List[AgentAction],
+        AgentFinish,
+    ]:
         """Given input, decided what to do.
 
         Args:
@@ -394,6 +413,8 @@ class RunnableAgent(BaseSingleActionAgent):
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
         output = await self.runnable.ainvoke(inputs, config={"callbacks": callbacks})
+        if isinstance(output, AgentAction):
+            output = [output]
         return output
 
 
