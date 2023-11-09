@@ -327,6 +327,8 @@ class ChatOpenAI(BaseChatModel):
         }
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
+        if self.request_timeout is not None and not is_openai_v1():
+            params["request_timeout"] = self.request_timeout
         return params
 
     def completion_with_retry(
