@@ -36,13 +36,13 @@ def parse_ai_message_to_openai_tool_action(
 
     actions: List = []
     for tool_call in message.additional_kwargs["tool_calls"]:
-        function_call = tool_call["function_call"]
-        function_name = function_call["name"]
+        function = tool_call["function"]
+        function_name = function["name"]
         try:
-            _tool_input = json.loads(function_call["arguments"])
+            _tool_input = json.loads(function["arguments"])
         except JSONDecodeError:
             raise OutputParserException(
-                f"Could not parse tool input: {function_call} because "
+                f"Could not parse tool input: {function} because "
                 f"the `arguments` is not valid JSON."
             )
 
@@ -65,7 +65,7 @@ def parse_ai_message_to_openai_tool_action(
                 tool_input=tool_input,
                 log=log,
                 message_log=[message],
-                tool_call_id=tool_call["tool_call_id"],
+                tool_call_id=tool_call["id"],
             )
         )
     return actions
@@ -85,7 +85,7 @@ class OpenAIToolsAgentOutputParser(MultiActionAgentOutputParser):
 
     @property
     def _type(self) -> str:
-        return "openai-functions-agent"
+        return "openai-tools-agent-output-parser"
 
     def parse_result(
         self, result: List[Generation], *, partial: bool = False
