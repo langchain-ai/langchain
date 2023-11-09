@@ -52,9 +52,9 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
             from huggingface_hub.inference_api import InferenceApi
 
             repo_id = values["repo_id"]
-            if not repo_id.startswith("sentence-transformers"):
+            if not repo_id.startswith(("sentence-transformers", "intfloat", "BAAI")):
                 raise ValueError(
-                    "Currently only 'sentence-transformers' embedding models "
+                    "Currently only 'sentence-transformers', 'intfloat' and 'BAAI' embedding models "
                     f"are supported. Got invalid 'repo_id' {repo_id}."
                 )
             client = InferenceApi(
