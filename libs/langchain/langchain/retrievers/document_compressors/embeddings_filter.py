@@ -67,4 +67,6 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 similarity[included_idxs] > self.similarity_threshold
             )
             included_idxs = included_idxs[similar_enough]
+        for i in included_idxs:
+            stateful_documents[i].state["query_similarity_score"] = similarity[i]
         return [stateful_documents[i] for i in included_idxs]
