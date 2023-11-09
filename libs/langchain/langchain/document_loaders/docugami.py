@@ -203,6 +203,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         url = f"{self.api}/projects/{project_id}/artifacts/latest"
         all_artifacts = []
 
+        per_file_metadata = {}
         while url:
             response = requests.request(
                 "GET",
@@ -214,12 +215,14 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 data = response.json()
                 all_artifacts.extend(data["artifacts"])
                 url = data.get("next", None)
-            elif response.status_code != 404:  # Not found is ok, just means no published projects
+            elif response.status_code == 404:
+                # Not found is ok, just means no published projects
+                return per_file_metadata
+            else:
                 raise Exception(
                     f"Failed to download {url} (status: {response.status_code})"
                 )
 
-        per_file_metadata = {}
         for artifact in all_artifacts:
             artifact_name = artifact.get("name")
             artifact_url = artifact.get("url")
