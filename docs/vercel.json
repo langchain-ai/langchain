@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/expression_language/why",
+      "destination": "/docs/expression_language/"
+    },
+    {
       "source": "/docs/modules/model_io/chat/llm_chain",
       "destination":  "/docs/modules/chains/foundational/llm_chain"
     },
