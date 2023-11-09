@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 import warnings
-from importlib.metadata import version
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     AsyncIterator,
@@ -21,8 +22,6 @@ from typing import (
     Union,
 )
 
-from packaging.version import Version, parse
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -32,9 +31,13 @@ from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils.openai import is_openai_v1
 from langchain.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    import httpx
 
 
 def update_token_usage(
@@ -91,22 +94,13 @@ def _create_retry_decorator(
 ) -> Callable[[Any], Any]:
     import openai
 
-    if _is_openai_v1():
-        errors = [
-            openai.APITimeoutError,
-            openai.APIError,
-            openai.APIConnectionError,
-            openai.RateLimitError,
-            openai.InternalServerError,
-        ]
-    else:
-        errors = [
-            openai.error.Timeout,
-            openai.error.APIError,
-            openai.error.APIConnectionError,
-            openai.error.RateLimitError,
-            openai.error.ServiceUnavailableError,
-        ]
+    errors = [
+        openai.error.Timeout,
+        openai.error.APIError,
+        openai.error.APIConnectionError,
+        openai.error.RateLimitError,
+        openai.error.ServiceUnavailableError,
+    ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
@@ -118,6 +112,9 @@ def completion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
+    if is_openai_v1():
+        return llm.client.create(**kwargs)
+
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
@@ -133,6 +130,9 @@ async def acompletion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
+    if is_openai_v1():
+        return await llm.async_client.create(**kwargs)
+
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
@@ -169,6 +169,7 @@ class BaseOpenAI(BaseLLM):
         return True
 
     client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     model_name: str = Field(default="text-davinci-003", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -189,18 +190,27 @@ class BaseOpenAI(BaseLLM):
     """Generates best_of completions server-side and returns the "best"."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[str] = None
-    openai_api_base: Optional[str] = None
-    openai_organization: Optional[str] = None
+    # When updating this to use a SecretStr
+    # Check for classes that derive from this class (as some of them
+    # may assume openai_api_key is a str)
+    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
+    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    """Base URL path for API requests, leave blank if not using a proxy or service 
+        emulator."""
+    openai_organization: Optional[str] = Field(default=None, alias="organization")
+    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    request_timeout: Union[float, Tuple[float, float], httpx.Timeout, None] = Field(
+        default=None, alias="timeout"
+    )
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
     """Adjust the probability of specific tokens being generated."""
-    max_retries: int = 6
+    max_retries: int = 2
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
@@ -218,6 +228,11 @@ class BaseOpenAI(BaseLLM):
     when using one of the many model providers that expose an OpenAI-like 
     API but with different models. In those cases, in order to avoid erroring 
     when tiktoken is called, you can specify a model name to use here."""
+    default_headers: Union[Mapping[str, str], None] = None
+    default_query: Union[Mapping[str, object], None] = None
+    # Configure a custom httpx client. See the
+    # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
+    http_client: Union[httpx.Client, None] = None
 
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
@@ -251,14 +266,18 @@ class BaseOpenAI(BaseLLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
+        if values["n"] < 1:
+            raise ValueError("n must be at least 1.")
+        if values["streaming"] and values["n"] > 1:
+            raise ValueError("Cannot stream results when n > 1.")
+        if values["streaming"] and values["best_of"] > 1:
+            raise ValueError("Cannot stream results when best_of > 1.")
+
         values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        values["openai_api_base"] = get_from_dict_or_env(
-            values,
-            "openai_api_base",
-            "OPENAI_API_BASE",
-            default="",
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+            "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values,
@@ -266,11 +285,10 @@ class BaseOpenAI(BaseLLM):
             "OPENAI_PROXY",
             default="",
         )
-        values["openai_organization"] = get_from_dict_or_env(
-            values,
-            "openai_organization",
-            "OPENAI_ORGANIZATION",
-            default="",
+        values["openai_organization"] = (
+            values["openai_organization"]
+            or os.getenv("OPENAI_ORG_ID")
+            or os.getenv("OPENAI_ORGANIZATION")
         )
         try:
             import openai
@@ -280,21 +298,22 @@ class BaseOpenAI(BaseLLM):
                 "Please install it with `pip install openai`."
             )
 
-        if _is_openai_v1():
-            values["client"] = openai.OpenAI(
-                api_key=values["openai_api_key"],
-                timeout=values["request_timeout"],
-                max_retries=values["max_retries"],
-                organization=values["openai_organization"],
-                base_url=values["openai_api_base"] or None,
-            ).completions
+        if is_openai_v1():
+            client_params = {
+                "api_key": values["openai_api_key"],
+                "organization": values["openai_organization"],
+                "base_url": values["openai_api_base"],
+                "timeout": values["request_timeout"],
+                "max_retries": values["max_retries"],
+                "default_headers": values["default_headers"],
+                "default_query": values["default_query"],
+                "http_client": values["http_client"],
+            }
+            values["client"] = openai.OpenAI(**client_params).completions
+            values["async_client"] = openai.AsyncOpenAI(**client_params).completions
         else:
             values["client"] = openai.Completion
 
-        if values["streaming"] and values["n"] > 1:
-            raise ValueError("Cannot stream results when n > 1.")
-        if values["streaming"] and values["best_of"] > 1:
-            raise ValueError("Cannot stream results when best_of > 1.")
         return values
 
     @property
@@ -302,7 +321,6 @@ class BaseOpenAI(BaseLLM):
         """Get the default parameters for calling OpenAI API."""
         normal_params = {
             "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
             "top_p": self.top_p,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
@@ -310,10 +328,10 @@ class BaseOpenAI(BaseLLM):
             "logit_bias": self.logit_bias,
         }
 
-        if _is_openai_v1():
-            normal_params["timeout"] = self.request_timeout  # type: ignore[assignment]
-        else:
-            normal_params["request_timeout"] = self.request_timeout  # type: ignore[assignment]
+        if self.max_tokens is not None:
+            params["max_tokens"] = self.max_tokens
+        if self.request_timeout is not None and not is_openai_v1():
+            params["request_timeout"] = self.request_timeout
 
         # Azure gpt-35-turbo doesn't support best_of
         # don't specify best_of if it is 1
@@ -427,7 +445,7 @@ class BaseOpenAI(BaseLLM):
                 response = completion_with_retry(
                     self, prompt=_prompts, run_manager=run_manager, **params
                 )
-                if _is_openai_v1():
+                if is_openai_v1():
                     # V1 client returns the response in an PyDantic object instead of
                     # dict. For the transition period, we convert it to dict.
                     response = dict(response)
@@ -535,7 +553,7 @@ class BaseOpenAI(BaseLLM):
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
         openai_creds: Dict[str, Any] = {}
-        if not _is_openai_v1():
+        if not is_openai_v1():
             openai_creds.update(
                 {
                     "api_key": self.openai_api_key,
@@ -665,11 +683,6 @@ class BaseOpenAI(BaseLLM):
         """
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens
-
-
-def _is_openai_v1() -> bool:
-    _version = parse(version("openai"))
-    return _version >= Version("1.0.0")
 
 
 class OpenAI(BaseOpenAI):
