@@ -80,7 +80,7 @@ There are two types of language models:
 - `LLM`: underlying model takes a string as input and returns a string
 - `ChatModel`: underlying model takes a list of messages as input and returns a message
 
-Strings are simple, but what exactly are messages? The base message interface defined by `BaseMessage`, which has two required attributes:
+Strings are simple, but what exactly are messages? The base message interface is defined by `BaseMessage`, which has two required attributes:
 
 - `content`: The content of the message. Usually a string.
 - `role`: The entity from which the `BaeMessage` is coming.
@@ -100,6 +100,7 @@ However it's useful to understand the difference in order to most effectively co
 The simplest way to call an `LLM` or `ChatModel` is using `.invoke()`, the universal synchronous call method for all LangChain Expression Language (LCEL) objects:
 - `LLM.invoke`: Takes in a string, returns a string.
 - `ChatModel.invoke`: Takes in a list of `BaseMessage`, returns a `BaseMessage`.
+
 The input types for these methods are actually more general than this, but for simplicity here we can assume LLMs only take strings and Chat models only takes lists of messages.
 Check out the "Go deeper" section below to learn more about model invocation.
 
