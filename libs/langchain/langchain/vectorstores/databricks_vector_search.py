@@ -8,6 +8,7 @@ from langchain.schema.vectorstore import VectorStore, VST
 
 if TYPE_CHECKING:
     from databricks.vector_search.client import VectorSearchClient
+    from databricks.vector_search.client import VectorSearchIndex
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +25,8 @@ class DatabricksVectorSearch(VectorStore):
 
     def __init__(
         self,
+        index: VectorSearchIndex,
         *,
-        endpoint_name: str,
-        index_name: str,
         text_column: Optional[str] = None,
         columns: Optional[
             List[str]
@@ -41,18 +41,8 @@ class DatabricksVectorSearch(VectorStore):
                 "Could not import databricks-vectorsearch python package. "
                 "Please install it with `pip install databricks-vectorsearch`."
             )
-        # VS client
-        self.client = VectorSearchClient(**kwargs)
-
-        # endpoint
-        self.endpoint_name = endpoint_name
-        self._endpoint_health_check()
-
         # index
-        self.index_name = index_name
-        self.index = self.client.get_index(
-            endpoint_name=self.endpoint_name, index_name=self.index_name
-        )
+        self.index = index
         self.index_details = self.index.describe()
 
         # text_column
@@ -330,10 +320,3 @@ class DatabricksVectorSearch(VectorStore):
     def _is_managed_embedding(self) -> bool:
         """Return whether the embedding is managed by Databricks Vector Search."""
         return self._embedding_source_column_name() is not None
-
-    def _endpoint_health_check(self) -> None:
-        """Check if the endpoint exists and is in ONLINE state."""
-        resp = self.client.get_endpoint(self.endpoint_name)
-        state = resp["endpoint_status"]["state"]
-        if not state == "ONLINE":
-            raise ValueError(f"Endpoint is not in ONLINE state. Current state: {state}")
