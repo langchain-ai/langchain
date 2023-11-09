@@ -4,7 +4,7 @@ import os
 import traceback
 import warnings
 from contextvars import ContextVar
-from typing import Any, Dict, List, cast, Union
+from typing import Any, Dict, List, Union, cast
 from uuid import UUID
 
 import requests
@@ -392,6 +392,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         if self.__has_valid_config is False:
             return
 
+        print(response)
         try:
             token_usage = (response.llm_output or {}).get("token_usage", {})
 
