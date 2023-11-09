@@ -363,7 +363,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ChatMessage": {
                 "title": "ChatMessage",
-                "description": "A Message that can be assigned an arbitrary speaker (i.e. role).",
+                "description": "A Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -394,7 +394,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "SystemMessage": {
                 "title": "SystemMessage",
-                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
+                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -424,7 +424,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "FunctionMessage": {
                 "title": "FunctionMessage",
-                "description": "A Message for passing the result of executing a function back to a model.",
+                "description": "A Message for passing the result of executing a function back to a model.",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -455,7 +455,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ToolMessage": {
                 "title": "ToolMessage",
-                "description": "A Message for passing the result of executing a tool back to a model.",
+                "description": "A Message for passing the result of executing a tool back to a model.",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
