@@ -436,8 +436,8 @@ class BaseOpenAI(BaseLLM):
                     self, prompt=_prompts, run_manager=run_manager, **params
                 )
                 if _is_openai_v1():
-                    # V1 client returns the response in an PyDantic object instead of dict.
-                    # For the transition period, we convert it to dict.
+                    # V1 client returns the response in an PyDantic object instead of
+                    # dict. For the transition period, we convert it to dict.
                     response = dict(response)
                     response["choices"] = [dict(c) for c in response["choices"]]
                 
