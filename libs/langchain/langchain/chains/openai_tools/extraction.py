@@ -16,7 +16,7 @@ If a property is not present and is not required in the function parameters, do 
 def create_extraction_chain_pydantic(
     pydantic_schemas: Union[List[Type[BaseModel]], Type[BaseModel]],
     llm: BaseLanguageModel,
-    system_message: Optional[str] = _EXTRACTION_TEMPLATE,
+    system_message: str = _EXTRACTION_TEMPLATE,
 ) -> Runnable:
     if not isinstance(pydantic_schemas, list):
         pydantic_schemas = [pydantic_schemas]
