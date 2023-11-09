@@ -62,11 +62,13 @@ agent = (
 
 class AgentInput(BaseModel):
     input: str
-    chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat"}})
+    chat_history: List[Tuple[str, str]] = Field(
+        ..., extra={"widget": {"type": "chat", "input": "input"}}
+    )
 
 
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True).with_types(
     input_type=AgentInput
 )
 
-agent_executor = agent_executor | (lambda x: x["output"])
+agent_executor = agent_executor
