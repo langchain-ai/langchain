@@ -35,7 +35,13 @@ app_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
 @app_cli.command()
 def new(
-    name: Annotated[str, typer.Argument(help="The name of the folder to create")],
+    name: Annotated[
+        str,
+        typer.Option(
+            help="The name of the folder to create",
+            prompt="What folder would you like to create?",
+        ),
+    ],
     *,
     package: Annotated[
         Optional[List[str]],
