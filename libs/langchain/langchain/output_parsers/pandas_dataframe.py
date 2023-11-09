@@ -49,6 +49,7 @@ class PandasDataFrameOutputParser(BaseOutputParser):
         return parsed_array, original_request_params.split('[')[0]
 
     def parse(self, request: str) -> Dict[str, Any]:
+        stripped_request_params = None
         splitted_request: Tuple[str, str] = request.strip().split(':')
         if len(splitted_request) != 2:
             raise OutputParserException(
@@ -92,6 +93,12 @@ class PandasDataFrameOutputParser(BaseOutputParser):
                         result[request_type] = getattr(filtered_df[stripped_request_params], request_type)()
                     else:
                         result[request_type] = getattr(self.dataframe[request_params], request_type)()
+        except IndexError:
+            raise OutputParserException(
+                    f"""Requested index 
+                        {request_params if stripped_request_params is None else stripped_request_params} 
+                        out of bounds. Please refer to the format instructions."""
+                )
         except AttributeError:
             raise OutputParserException(
                 f"Request type '{request_type}' is possibly not supported. Please refer to the format instructions."
