@@ -319,7 +319,7 @@ class BaseOpenAI(BaseLLM):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        normal_params = {
+        normal_params: Dict[str, Any] = {
             "temperature": self.temperature,
             "top_p": self.top_p,
             "frequency_penalty": self.frequency_penalty,
