@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import logging
 import uuid
 from typing import (
@@ -15,7 +16,7 @@ from typing import (
 )
 
 import numpy as np
-import base64
+
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
@@ -194,7 +195,7 @@ class Chroma(VectorStore):
             if metadatas:
                 # fill metadatas with empty dicts if somebody
                 # did not specify metadata for all images
-                length_diff = len(images) - len(metadatas)
+                length_diff = len(uris) - len(metadatas)
                 if length_diff:
                     metadatas = metadatas + [{}] * length_diff
                 empty_ids = []
@@ -206,10 +207,9 @@ class Chroma(VectorStore):
                         empty_ids.append(idx)
                 if non_empty_ids:
                     metadatas = [metadatas[idx] for idx in non_empty_ids]
-                    images_with_metadatas = [images[idx] for idx in non_empty_ids]
-                    embeddings_with_metadatas = (
-                        [embeddings[idx] for idx in non_empty_ids] if embeddings else None
-                    )
+                    images_with_metadatas = [uris[idx] for idx in non_empty_ids]
+                    embeddings_with_metadatas = ([embeddings[idx] for idx in non_empty_ids] 
+                             if embeddings else None)
                     ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                     try:
                         self._collection.upsert(
@@ -221,14 +221,14 @@ class Chroma(VectorStore):
                     except ValueError as e:
                         if "Expected metadata value to be" in str(e):
                             msg = (
-                                "Try filtering complex metadata from the document using "
+                                "Try filtering complex metadata using "
                                 "langchain.vectorstores.utils.filter_complex_metadata."
                             )
                             raise ValueError(e.args[0] + "\n\n" + msg)
                         else:
                             raise e
                 if empty_ids:
-                    images_without_metadatas = [images[j] for j in empty_ids]
+                    images_without_metadatas = [uris[j] for j in empty_ids]
                     embeddings_without_metadatas = (
                         [embeddings[j] for j in empty_ids] if embeddings else None
                     )

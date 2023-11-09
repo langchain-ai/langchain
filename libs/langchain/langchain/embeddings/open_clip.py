@@ -1,9 +1,8 @@
 from typing import Any, Dict, List
 
-import numpy as np
-
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
+
 
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
     model: Any
@@ -47,7 +46,7 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
             normalized_embeddings_tensor = embeddings_tensor.div(norm)
 
             # Convert normalized tensor to list and add to the text_features list
-            embeddings_list = normalized_embeddings_tensor.squeeze(0).tolist()  # Squeeze is used to remove batch dimension
+            embeddings_list = normalized_embeddings_tensor.squeeze(0).tolist() 
             text_features.append(embeddings_list)
 
         return text_features
@@ -77,7 +76,7 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
             normalized_embeddings_tensor = embeddings_tensor.div(norm)
 
             # Convert tensor to list and add to the image_features list
-            embeddings_list = normalized_embeddings_tensor.squeeze(0).tolist()  # Squeeze is used to remove batch dimension
+            embeddings_list = normalized_embeddings_tensor.squeeze(0).tolist() 
 
             image_features.append(embeddings_list)
     
