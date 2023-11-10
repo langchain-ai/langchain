@@ -93,16 +93,22 @@ class PandasDataFrameOutputParser(BaseOutputParser):
                         result[request_type] = getattr(filtered_df[stripped_request_params], request_type)()
                     else:
                         result[request_type] = getattr(self.dataframe[request_params], request_type)()
-        except IndexError:
-            raise OutputParserException(
-                    f"""Requested index 
-                        {request_params if stripped_request_params is None else stripped_request_params} 
-                        out of bounds. Please refer to the format instructions."""
-                )
         except AttributeError:
             raise OutputParserException(
                 f"Request type '{request_type}' is possibly not supported. Please refer to the format instructions."
             )
+        except IndexError:
+            raise OutputParserException(
+                f"""Requested index 
+                    {request_params if stripped_request_params is None else stripped_request_params} 
+                    out of bounds. Please refer to the format instructions."""
+            )
+        except KeyError:
+            raise OutputParserException(
+                f"""Requested row or column from {request_params} is not in the provided DataFrame.
+                    Please verify that it is in the DataFrame."""
+            )
+
         return result
 
     def get_format_instructions(self) -> str:
