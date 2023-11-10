@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/modules/agents/toolkits(/?)",
+      "destination": "/docs/modules/agents/tools/toolkits"
+    },
+    {
       "source": "/docs/modules/model_io/models(/?)",
       "destination": "/docs/modules/model_io/"
     },
