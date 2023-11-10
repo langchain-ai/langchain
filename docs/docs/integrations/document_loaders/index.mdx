@@ -4,6 +4,30 @@ sidebar_class_name: hidden
 
 # Document loaders
 
+## What is the document loader
+
 **Document loaders** load documents from different sources.
 
 See more in [Docs](/docs/modules/data_connection/document_loaders/).
+
+## How to add a new document loader
+
+Please, use the following steps to add a new document loader:
+1. **Names**. Imagine this document loader loads documents from the `MySystem`. 
+   In this case we use the name `my_system` for the document loader artifacts.
+2. **Develop** the document loader. We recommend using the `langchain/document_loaders/twitter.yp` as a template.
+   1. Create a new file as the `langchain/document_loaders/my_system.py`.
+   2. Create a class `MySystemLoader` that inherits from `DocumentLoader`.
+   3. Implement the `load` and `lazy_load` methods. See the `langchain/document_loaders/brave_search.py` as an example.
+   4. If `load_and_split` is needed, implement it as well. It needed if the original text 
+      has specifics that can be used to split it into smaller parts. If the text splitting 
+      can be done with existing text splitters do not implement this method.
+   5. Add **docstrings** to the class. Docstrings are used to generate API Reference documentation.
+3. Create **documentation**:
+   1. Create an **example notebook** as `docs/docs/integrations/document_loaders/my_system.ipynb`.
+      It shows all details of the document loader usage. The quality of this notebook is very important.
+   2. Create an **Integration Card** as `docs/docs/integrations/providers/my_system.mdx`. 
+      Please, follow the [example](docs/integrations/providers/twitter.mdx) format.
+   3. The **API Reference** documentation is generated automatically from the docstrings.
+      
+
