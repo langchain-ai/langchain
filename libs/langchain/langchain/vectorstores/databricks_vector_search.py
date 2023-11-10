@@ -54,7 +54,7 @@ class DatabricksVectorSearch(VectorStore):
             vs_client = VectorSearchClient()
             vs_index = vs_client.get_index(
               endpoint_name="vs_endpoint",
-              index_name="delta_sync_unmanaged_embeddings_index"
+              index_name="delta_sync_self_managed_embeddings_index"
             )
             vectorstore = DatabricksVectorSearch(
               index=vs_index,
@@ -142,6 +142,7 @@ class DatabricksVectorSearch(VectorStore):
         if not self._is_databricks_managed_embeddings():
             # embedding model is required for direct-access index or delta-sync index with self-managed embedding
             self._require_arg(embedding, "embedding")
+            self._embedding = embedding
             # validate dimension matches
             index_embedding_dimension = self._embedding_vector_column_dimension()
             if index_embedding_dimension is not None:
@@ -151,7 +152,6 @@ class DatabricksVectorSearch(VectorStore):
                         f"embedding model's dimension '{inferred_embedding_dimension}' does not match with "
                         f"the index's dimension '{index_embedding_dimension}'"
                     )
-            self._embedding = embedding
 
     @classmethod
     def from_texts(
@@ -363,7 +363,7 @@ class DatabricksVectorSearch(VectorStore):
             if self._is_delta_sync_index()
             else self._direct_access_index_spec()
         )
-        return index_spec.get("embedding_vector_columns", list())[0] or dict()
+        return next(iter(index_spec.get("embedding_vector_columns") or list()), dict())
 
     def _embedding_source_column_name(self) -> Optional[str]:
         """Return the name of the embedding source column.
@@ -376,7 +376,7 @@ class DatabricksVectorSearch(VectorStore):
         Empty if the index is not a Databricks-managed embedding index.
         """
         index_spec = self._delta_sync_index_spec()
-        return index_spec.get("embedding_source_columns", list())[0] or dict()
+        return next(iter(index_spec.get("embedding_source_columns") or list()), dict())
 
     def _delta_sync_index_spec(self) -> dict:
         """Return the delta-sync index configs as a dictionary.
