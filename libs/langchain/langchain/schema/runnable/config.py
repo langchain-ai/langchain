@@ -209,9 +209,7 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
             if key == "metadata":
                 base[key] = {  # type: ignore
                     **base.get(key, {}),  # type: ignore
-                    **(
-                        config.get(key) or {}  # type: ignore
-                    ),
+                    **(config.get(key) or {}),  # type: ignore
                 }
             elif key == "tags":
                 base[key] = list(  # type: ignore
@@ -220,9 +218,7 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
             elif key == "configurable":
                 base[key] = {  # type: ignore
                     **base.get(key, {}),  # type: ignore
-                    **(
-                        config.get(key) or {}  # type: ignore
-                    ),
+                    **(config.get(key) or {}),  # type: ignore
                 }
             elif key == "callbacks":
                 base_callbacks = base.get("callbacks")
