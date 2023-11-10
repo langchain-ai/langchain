@@ -299,6 +299,15 @@ class RetrieveResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """The result items."""
 
 
+KENDRA_CONFIDENCE_MAPPING = {
+    "NOT_AVAILABLE": 0.0,
+    "LOW": 0.25,
+    "MEDIUM": 0.50,
+    "HIGH": 0.75,
+    "VERY_HIGH": 1.0,
+}
+
+
 class AmazonKendraRetriever(BaseRetriever):
     """`Amazon Kendra Index` retriever.
 
@@ -346,13 +355,6 @@ class AmazonKendraRetriever(BaseRetriever):
     client: Any
     user_context: Optional[Dict] = None
     score_confidence: float = 0
-    score_confidence_dict = {
-        "NOT_AVAILABLE": 0,
-        "LOW": 0.25,
-        "MEDIUM": 0.50,
-        "HIGH": 0.75,
-        "VERY_HIGH": 1,
-    }
 
     @validator("top_k")
     def validate_top_k(cls, value: int) -> int:
@@ -435,7 +437,7 @@ class AmazonKendraRetriever(BaseRetriever):
             if (
                 item.metadata.get("score") is not None
                 and isinstance(item.metadata["score"], str)
-                and self.score_confidence_dict.get(str(item.metadata["score"]), 0)
+                and KENDRA_CONFIDENCE_MAPPING.get(str(item.metadata["score"]), 0.0)
                 >= self.score_confidence
             )
         ]
