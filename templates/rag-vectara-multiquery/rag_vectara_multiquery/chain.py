@@ -18,13 +18,18 @@ if os.environ.get("VECTARA_API_KEY", None) is None:
 # If you want to ingest data then use this code.
 # Note that no document chunking is needed, as this is
 # done efficiently in the Vectara backend.
-#   loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
-#   docs = loader.load()
-#   vec_store = Vectara.from_document(docs)
-#   retriever = vec_store.as_retriever()
+# Note: you will need to install beautifulsoup4 to ingest
+
+# from langchain.document_loaders import WebBaseLoader
+# from langchain.embeddings import OpenAIEmbeddings
+# loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
+# docs = loader.load()
+# vec_store = Vectara.from_documents(docs, embedding=OpenAIEmbeddings())
+# retriever = vec_store.as_retriever()
+
 # Otherwise, if data is already loaded into Vectara then use this code:
 llm = ChatOpenAI(temperature=0)
-retriever = MultiQueryRetriever.from_llm(llm, retriever=Vectara().as_retriever())
+retriever = MultiQueryRetriever.from_llm(retriever=Vectara().as_retriever(), llm=llm)
 
 # RAG prompt
 template = """Answer the question based only on the following context:
