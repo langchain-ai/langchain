@@ -64,10 +64,6 @@ class ComprehendPromptSafety:
             Text=prompt_value, EndpointArn=endpoint_arn
         )
 
-        if self.callback and self.callback.prompt_safety_callback:
-            self.moderation_beacon["moderation_input"] = prompt_value
-            self.moderation_beacon["moderation_output"] = response
-
         for class_result in response["Classes"]:
             if (
                 class_result["Score"] >= threshold
@@ -76,12 +72,15 @@ class ComprehendPromptSafety:
                 unsafe_prompt = True
                 break
 
-        if self.callback and self.callback.intent_callback:
+        if self.callback and self.callback.prompt_safety_callback:
+            self.moderation_beacon["moderation_input"] = prompt_value
+            self.moderation_beacon["moderation_output"] = response
             if unsafe_prompt:
                 self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
             asyncio.create_task(
-                self.callback.on_after_intent(self.moderation_beacon, self.unique_id)
+                self.callback.on_after_prompt_safety(self.moderation_beacon, self.unique_id)
             )
+
         if unsafe_prompt:
             raise ModerationPromptSafetyError
         return prompt_value
