@@ -190,7 +190,9 @@ class Chroma(VectorStore):
             ids = [str(uuid.uuid1()) for _ in uris]
         embeddings = None
         # Set embeddings
-        if self._embedding_function is not None:
+        if self._embedding_function is not None and hasattr(
+            self._embedding_function, "embed_image"
+        ):
             embeddings = self._embedding_function.embed_image(uris=uris)
         if metadatas:
             # fill metadatas with empty dicts if somebody
