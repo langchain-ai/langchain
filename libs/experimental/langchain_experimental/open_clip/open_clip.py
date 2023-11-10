@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
 
-   
+
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
     model: Any
     preprocess: Any
@@ -14,8 +14,9 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
         """Validate that open_clip and torch libraries are installed."""
         try:
             import open_clip
+
             ### Smaller, less performant
-            # model_name = "ViT-B-32" 
+            # model_name = "ViT-B-32"
             # checkpoint = "laion2b_s34b_b79k"
             ### Larger, more performant
             model_name = "ViT-g-14"
@@ -49,38 +50,38 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
             normalized_embeddings_tensor = embeddings_tensor.div(norm)
 
             # Convert normalized tensor to list and add to the text_features list
-            embeddings_list = normalized_embeddings_tensor.squeeze(0).tolist() 
+            embeddings_list = normalized_embeddings_tensor.squeeze(0).tolist()
             text_features.append(embeddings_list)
 
         return text_features
 
     def embed_query(self, text: str) -> List[float]:
         return self.embed_documents([text])[0]
-    
+
     def embed_image(self, uris: List[str]) -> List[List[float]]:
         try:
             from PIL import Image as _PILImage
         except ImportError:
             raise ImportError("Please install the PIL library: pip install pillow")
-        
+
         # Open images directly as PIL images
         pil_images = [_PILImage.open(uri) for uri in uris]
-        
+
         image_features = []
         for pil_image in pil_images:
             # Preprocess the image for the model
             preprocessed_image = self.preprocess(pil_image).unsqueeze(0)
-    
+
             # Encode the image to get the embeddings
             embeddings_tensor = self.model.encode_image(preprocessed_image)
 
-             # Normalize the embeddings tensor
+            # Normalize the embeddings tensor
             norm = embeddings_tensor.norm(p=2, dim=1, keepdim=True)
             normalized_embeddings_tensor = embeddings_tensor.div(norm)
 
             # Convert tensor to list and add to the image_features list
-            embeddings_list = normalized_embeddings_tensor.squeeze(0).tolist() 
+            embeddings_list = normalized_embeddings_tensor.squeeze(0).tolist()
 
             image_features.append(embeddings_list)
-    
+
         return image_features
