@@ -16,6 +16,7 @@ documents that were derived from parent documents by chunking.)
 from langchain.indexes._api import IndexingResult, aindex, index
 from langchain.indexes._sql_record_manager import SQLRecordManager
 from langchain.indexes.graph import GraphIndexCreator
+from langchain.indexes.memory_recordmanager import MemoryRecordManager
 from langchain.indexes.vectorstore import VectorstoreIndexCreator
 
 __all__ = [
@@ -24,6 +25,7 @@ __all__ = [
     "GraphIndexCreator",
     "index",
     "IndexingResult",
+    "MemoryRecordManager",
     "SQLRecordManager",
     "VectorstoreIndexCreator",
 ]
