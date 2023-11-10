@@ -25,7 +25,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """Cohere client."""
     async_client: Any  #: :meta private:
     """Cohere async client."""
-    model: str = "embed-english-v3.0"
+    model: str = "embed-english-v2.0"
     """Model name to use."""
 
     truncate: Optional[str] = None
