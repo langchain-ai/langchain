@@ -1,4 +1,5 @@
-"""This package contains reporters that send toke usage reports to a metrics repository."""
+"""This package contains reporters that send toke usage reports to a metrics
+repository."""
 
 from .base import TokenUsageReport, TokenUsageReporter
 from .cloudwatch import CloudWatchTokenUsageReporter

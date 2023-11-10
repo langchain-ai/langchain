@@ -32,8 +32,8 @@ class OpenAITokenUsageCallbackHandler(BaseCallbackHandler):
         """Collects metrics about the token usage of OpenAI LLM runs.
 
         Args:
-            reporter (TokenUsageReporter): The reporter that will be used to send the metrics
-                to the metrics repository.
+            reporter (TokenUsageReporter): The reporter that will be used to send the
+                metrics to the metrics repository.
         """
         try:
             import openai

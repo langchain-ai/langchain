@@ -3,13 +3,11 @@
 import datetime
 from typing import Protocol
 
-from pydantic import BaseModel, ConfigDict, Field
+from langchain.pydantic_v1 import BaseModel, Field
 
 
 class TokenUsageReport(BaseModel):
     """Token usage report data class."""
-
-    model_config = ConfigDict(protected_namespaces=())
 
     timestamp: datetime.datetime = Field(
         default=..., description="The timestamp of the llm run."

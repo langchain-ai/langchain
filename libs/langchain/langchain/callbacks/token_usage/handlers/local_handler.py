@@ -1,4 +1,5 @@
-"""This token usage callback handler can be used for LLMs that does not provide usage info.
+"""This token usage callback handler can be used for LLMs that does not provide usage
+info.
 
 It counts the consumed tokens locally.
 """
@@ -16,7 +17,8 @@ from .timer import TokenUsageTimer
 
 
 class LocalTokenUsageCallbackHandler(BaseCallbackHandler):
-    """This token usage callback handler can be used for LLMs that does not provide usage info.
+    """This token usage callback handler can be used for LLMs that does not provide
+    usage info.
 
     It counts the consumed tokens locally.
     """
@@ -36,20 +38,23 @@ class LocalTokenUsageCallbackHandler(BaseCallbackHandler):
         token_counter_func: Callable[[str], int],
         cost_func: Callable[[int, int], float] | None = None,
     ) -> None:
-        """This token usage callback handler can be used for LLMs that does not provide usage info.
+        """This token usage callback handler can be used for LLMs that does not
+        provide usage info.
 
         It counts the consumed tokens locally.
 
         Args:
-            reporter (TokenUsageReporter): The reporter that will be used to send the metrics
-                to the metrics repository.
+            reporter (TokenUsageReporter): The reporter that will be used to send the
+                metrics to the metrics repository.
             model_name (str): The name of the model being used.
             caller_id (str): Identifies the caller in the metrics repository.
-            token_counter_func (Callable[[str], int]): The token counter function specific to the
-                model being used. It should return the number of tokens of the text it receives.
-            cost_func (Callable[[int, int], float] | None, optional): Optional cost function.
-                It will be called with the number of tokens in the prompt and the number of
-                generated tokens, and it should return the cost of the run. Defaults to None.
+            token_counter_func (Callable[[str], int]): The token counter function
+                specific to the model being used. It should return the number of
+                tokens of the text it receives.
+            cost_func (Callable[[int, int], float] | None, optional): Optional cost
+                function. It will be called with the number of tokens in the prompt
+                and the number of generated tokens, and it should return the cost of
+                the run. Defaults to None.
         """
         self.reporter = reporter
         self.model_name = model_name

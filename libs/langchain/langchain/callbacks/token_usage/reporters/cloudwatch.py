@@ -30,13 +30,16 @@ class CloudWatchMetrics(NamedTuple):
 
 
 class CloudWatchTokenUsageReporter(TokenUsageReporter):
-    """A token usage reporter implementation that sends the metrics data to Amazon CloudWatch.
+    """A token usage reporter implementation that sends the metrics data to Amazon
+    CloudWatch.
 
     Example usage:
 
         from langchain.chains import LLMChain
 
-        reporter = CloudWatchTokenUsageReporter("openai_token_usage", {"project": "test_project"})
+        reporter = CloudWatchTokenUsageReporter(
+            "openai_token_usage", {"project": "test_project"}
+        )
         handler = OpenAITokenUsageCallbackHandler(reporter)
 
         llm = AnyLLM(..., callbacks=[handler])
@@ -54,15 +57,17 @@ class CloudWatchTokenUsageReporter(TokenUsageReporter):
         dimensions: Dict[str, str] | None = None,
         boto3_session: Any | None = None,
     ) -> None:
-        """A token usage reporter implementation that sends the metrics data to Amazon CloudWatch.
+        """A token usage reporter implementation that sends the metrics data to Amazon
+        CloudWatch.
 
         Args:
             namespace (str): The Amazon CloudWatch namespace of the metrics.
-            dimensions (Dict[str, str] | None, optional): Additional CloudWatch dimensions of the
-                metrics. Defaults to None. The model name, if present in the callback, will be
-                added to these dimensions.
-            boto3_session (boto3.Session | None, optional): Optional pre-configured boto3 session.
-                If left to the default None, the default boto3 session will be used.
+            dimensions (Dict[str, str] | None, optional): Additional CloudWatch
+                dimensions of the metrics. Defaults to None. The model name, if
+                present in the callback, will be added to these dimensions.
+            boto3_session (boto3.Session | None, optional): Optional pre-configured
+                boto3 session. If left to the default None, the default boto3
+                session will be used.
         """
         try:
             import boto3
