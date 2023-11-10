@@ -6,9 +6,8 @@ from typing import Sequence
 
 from fastapi import FastAPI
 from langserve import add_routes
-from langserve.packages import get_langserve_export
 
-from langchain_cli.utils.packages import get_package_root
+from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 
 def create_demo_server(

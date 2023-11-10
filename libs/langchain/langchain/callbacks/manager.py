@@ -25,6 +25,7 @@ from typing import (
 )
 from uuid import UUID
 
+from langsmith import utils as ls_utils
 from langsmith.run_helpers import get_run_tree_context
 from tenacity import RetryCallState
 
@@ -64,14 +65,20 @@ logger = logging.getLogger(__name__)
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
 )
-tracing_callback_var: ContextVar[Optional[LangChainTracerV1]] = ContextVar(  # noqa: E501
+tracing_callback_var: ContextVar[
+    Optional[LangChainTracerV1]
+] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
-wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(  # noqa: E501
+wandb_tracing_callback_var: ContextVar[
+    Optional[WandbTracer]
+] = ContextVar(  # noqa: E501
     "tracing_wandb_callback", default=None
 )
 
-tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
+tracing_v2_callback_var: ContextVar[
+    Optional[LangChainTracer]
+] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
 )
 run_collector_var: ContextVar[
@@ -1933,9 +1940,11 @@ def _get_tracer_project() -> str:
             # tree structure.
             tracing_v2_callback_var.get(),
             "project",
-            os.environ.get(
-                "LANGCHAIN_PROJECT", os.environ.get("LANGCHAIN_SESSION", "default")
-            ),
+            # Have to set this to a string even though it always will return
+            # a string because `get_tracer_project` technically can return
+            # None, but only when a specific argument is supplied.
+            # Therefore, this just tricks the mypy type checker
+            str(ls_utils.get_tracer_project()),
         ),
     )
 

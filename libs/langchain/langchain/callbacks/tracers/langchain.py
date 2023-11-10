@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
@@ -10,7 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
-from langsmith.utils import LangSmithError
+from langsmith import utils as ls_utils
 from tenacity import (
     Retrying,
     retry_if_exception_type,
@@ -91,9 +90,7 @@ class LangChainTracer(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.project_name = project_name or os.getenv(
-            "LANGCHAIN_PROJECT", os.getenv("LANGCHAIN_SESSION", "default")
-        )
+        self.project_name = project_name or ls_utils.get_tracer_project()
         self.client = client or get_client()
         self._futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.tags = tags or []
@@ -152,7 +149,7 @@ class LangChainTracer(BaseTracer):
         for attempt in Retrying(
             stop=stop_after_attempt(5),
             wait=wait_exponential_jitter(),
-            retry=retry_if_exception_type(LangSmithError),
+            retry=retry_if_exception_type(ls_utils.LangSmithError),
         ):
             with attempt:
                 return self.client.get_run_url(

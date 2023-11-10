@@ -6,3 +6,8 @@ test:
 
 format:
 	poetry run poe format
+
+lock:
+	for d in $$(find . -name pyproject.toml -exec dirname {} \;); do \
+		(cd $$d && poetry lock --no-update); \
+	done
