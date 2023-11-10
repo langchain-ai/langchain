@@ -5,7 +5,7 @@ from langchain.indexes.base import RecordManager
 
 
 class MemoryRecordManager(RecordManager):
-    datas: List[Dict[str, Any]] = []
+    data: List[Dict[str, Any]] = []
 
     def __init__(self, namespace: str):
         super().__init__(namespace=namespace)
@@ -49,11 +49,11 @@ class MemoryRecordManager(RecordManager):
             for key, group_id in zip(keys, group_ids)
         ]
         self.delete_keys(keys)
-        self.datas.extend(records_to_upsert)
+        self.data.extend(records_to_upsert)
 
     def exists(self, keys: Sequence[str]) -> List[bool]:
         return [
-            len(list(filter(lambda record: record["key"] == key, self.datas))) == 1
+            len(list(filter(lambda record: record["key"] == key, self.data))) == 1
             for key in keys
         ]
 
@@ -72,17 +72,17 @@ class MemoryRecordManager(RecordManager):
                 and (not group_ids or record["group_id"] in group_ids)
                 and (not before or record["updated_at"] < before)
                 and (not after or record["updated_at"] > after),
-                self.datas,
+                self.data,
             )
         ]
         return keys[:limit]
 
     def delete_keys(self, keys: Sequence[str]) -> None:
-        self.datas = list(
+        self.data = list(
             filter(
                 lambda record: record["namespace"] != self.namespace
                 or record["key"] not in keys,
-                self.datas,
+                self.data,
             )
         )
 
