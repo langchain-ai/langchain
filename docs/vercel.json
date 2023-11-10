@@ -1,23 +1,23 @@
 {
   "redirects": [
     {
-      "source": "/docs/model_io/models(/?)",
-      "destination": "/docs/model_io/"
+      "source": "/docs/modules/model_io/models(/?)",
+      "destination": "/docs/modules/model_io/"
     },
     {
-      "source": "/docs/model_io/models/:path*",
-      "destination": "/docs/model_io/:path*"
+      "source": "/docs/modules/model_io/models/:path*",
+      "destination": "/docs/modules/model_io/:path*"
     },
     {
-      "source": "/docs/model_io/models/llms/fake_llm",
+      "source": "/docs/modules/model_io/models/llms/fake_llm",
       "destination": "/cookbook"
     },
     {
-      "source": "/docs/model_io/models/llms/human_input_llm",
+      "source": "/docs/modules/model_io/models/llms/human_input_llm",
       "destination": "/cookbook"
     },
     {
-      "source": "/docs/model_io/models/chat/human_input_chat_model",
+      "source": "/docs/modules/model_io/models/chat/human_input_chat_model",
       "destination": "/cookbook"
     },
     {
