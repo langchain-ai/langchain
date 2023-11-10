@@ -8,7 +8,10 @@ from langchain.utils import get_from_dict_or_env
 class DallEAPIWrapper(BaseModel):
     """Wrapper for OpenAI's DALL-E Image Generator.
 
+    https://platform.openai.com/docs/guides/images/generations?context=node
+
     Usage instructions:
+
     1. `pip install openai`
     2. save your OPENAI_API_KEY in an environment variable
     """
