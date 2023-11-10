@@ -1,11 +1,31 @@
 {
   "redirects": [
     {
+      "source": "/docs/model_io/models(/?)",
+      "destination": "/docs/model_io/"
+    },
+    {
+      "source": "/docs/model_io/models/:path*",
+      "destination": "/docs/model_io/:path*"
+    },
+    {
+      "source": "/docs/model_io/models/llms/fake_llm",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/model_io/models/llms/human_input_llm",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/model_io/models/chat/human_input_chat_model",
+      "destination": "/cookbook"
+    },
+    {
       "source": "/docs/expression_language/why",
       "destination": "/docs/expression_language/"
     },
     {
-      "source": "/docs/modules/model_io/chat/llm_chain",
+      "source": "/docs/modules/model_io/models/chat/llm_chain",
       "destination":  "/docs/modules/chains/foundational/llm_chain"
     },
     {
