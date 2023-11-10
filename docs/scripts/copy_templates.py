@@ -30,7 +30,7 @@ TEMPLATES_INDEX_DESTINATION = DOCS_TEMPLATES_DIR / "index.md"
 with open(TEMPLATES_INDEX_DESTINATION, "r") as f:
     content = f.read()
 # replace relative links
-content = re.sub("\]\(\.\.\/", "\]\(\/docs\/templates\/", content)
+content = re.sub("\]\(\.\.\/", "](/docs/templates/", content)
 with open(TEMPLATES_INDEX_DESTINATION, "w") as f:
     f.write(sidebar_hidden + content)
 
