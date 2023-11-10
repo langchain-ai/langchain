@@ -1,0 +1,8 @@
+input_variables: [context]
+output_parser: null
+template: 'Используй следующие части контекста, чтобы ответить на вопрос пользователя. 
+Если ты не знаешь ответа, просто скажи, что не знаешь, не пытайся придумать ответ.
+----------------
+{context}'
+template_format: f-string
+_type: prompt

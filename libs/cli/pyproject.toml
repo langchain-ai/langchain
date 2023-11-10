@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-cli"
-version = "0.0.15"
+version = "0.0.16"
 description = "CLI for interacting with GigaChain"
 authors = ["Erick Friis <erick@langchain.dev>", "Konstantin Krestnikov <k.krestnikov@gmail.com>"]
 readme = "README.md"
@@ -11,11 +11,10 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 typer = {extras = ["all"], version = "^0.9.0"}
-tomli = "^2.0.1"
 gitpython = "^3.1.40"
 gigaserve = {extras = ["all"], version = ">=0.0.16"}
-fastapi = "^0.104.0"
 uvicorn = "^0.23.2"
+tomlkit = "^0.12.2"
 
 [tool.poetry.scripts]
 gigachain = "langchain_cli.cli:app"

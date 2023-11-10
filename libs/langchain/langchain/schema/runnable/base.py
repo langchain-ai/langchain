@@ -644,6 +644,17 @@ class Runnable(Generic[Input, Output], ABC):
         wait_exponential_jitter: bool = True,
         stop_after_attempt: int = 3,
     ) -> Runnable[Input, Output]:
+        """Create a new Runnable that retries the original runnable on exceptions.
+
+        Args:
+            retry_if_exception_type: A tuple of exception types to retry on
+            wait_exponential_jitter: Whether to add jitter to the wait time
+                                     between retries
+            stop_after_attempt: The maximum number of attempts to make before giving up
+
+        Returns:
+            A new Runnable that retries the original runnable on exceptions.
+        """
         from langchain.schema.runnable.retry import RunnableRetry
 
         return RunnableRetry(
