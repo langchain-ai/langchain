@@ -2,7 +2,6 @@
 import uuid
 
 import chromadb
-import numpy as np
 import pytest
 import requests
 
@@ -324,7 +323,7 @@ def test_chroma_add_documents_mixed_metadata() -> None:
 
 def test_multiple_inputs_fails() -> None:
     with pytest.raises(ValueError):
-        db = Chroma(
+        Chroma(
             embedding_function=FakeEmbeddings(),
             persist_directory="foo",
             client_settings={},
