@@ -176,6 +176,11 @@ const config = {
             position: "left",
             items: [
               {
+                type: "docSidebar",
+                sidebarId: "templates",
+                label: "Templates",
+              },
+              {
                 to: "/docs/community",
                 label: "Community",
               },
