@@ -1125,6 +1125,7 @@ def test_compatible_vectorstore_documentation() -> None:
     # These are mentioned in the indexing.ipynb documentation
     documented = {
         "AnalyticDB",
+        "AstraDB",
         "AzureCosmosDBVectorSearch",
         "AwaDB",
         "Bagel",
