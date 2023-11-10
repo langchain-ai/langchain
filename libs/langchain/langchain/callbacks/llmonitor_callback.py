@@ -299,7 +299,11 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 serialized.get("kwargs", {})
             )  # Sometimes, for example with ChatAnthropic, `invocation_params` is empty
 
-            name = params.get("model") or params.get("model_name") or params.get("model_id")
+            name = (
+                params.get("model")
+                or params.get("model_name")
+                or params.get("model_id")
+            )
 
             if not name and "anthropic" in params.get("_type"):
                 name = "claude-2"
@@ -352,7 +356,11 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 serialized.get("kwargs", {})
             )  # Sometimes, for example with ChatAnthropic, `invocation_params` is empty
 
-            name = params.get("model") or params.get("model_name") or params.get("model_id")
+            name = (
+                params.get("model")
+                or params.get("model_name")
+                or params.get("model_id")
+            )
 
             if not name and "anthropic" in params.get("_type"):
                 name = "claude-2"
