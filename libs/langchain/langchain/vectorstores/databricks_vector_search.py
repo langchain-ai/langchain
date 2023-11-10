@@ -92,7 +92,7 @@ class DatabricksVectorSearch(VectorStore):
 
     def __init__(
         self,
-        index: VectorSearchIndex,
+        index: "VectorSearchIndex",
         *,
         embedding: Optional[Embeddings] = None,
         text_column: Optional[str] = None,
