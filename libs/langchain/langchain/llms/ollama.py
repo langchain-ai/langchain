@@ -93,7 +93,7 @@ class _OllamaCommon(BaseLanguageModel):
     """system prompt (overrides what is defined in the Modelfile)"""
 
     template: Optional[str] = None
-    """the full prompt or prompt template (overrides what is defined in the Modelfile)"""
+    """full prompt or prompt template (overrides what is defined in the Modelfile)"""
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -116,7 +116,7 @@ class _OllamaCommon(BaseLanguageModel):
                 "top_p": self.top_p,
             },
             "system": self.system,
-            "template": self.template
+            "template": self.template,
         }
 
     @property
