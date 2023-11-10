@@ -1,20 +1,12 @@
 {
   "redirects": [
     {
-      "source": "/docs/modules/model_io(/?)",
+      "source": "/docs/modules/model_io/models(/?)",
       "destination": "/docs/modules/model_io/"
     },
     {
-      "source": "/docs/modules/model_io/:path*(/?)",
+      "source": "/docs/modules/model_io/models/:path*(/?)",
       "destination": "/docs/modules/model_io/:path*"
-    },
-    {
-      "source": "/docs/modules/model_io/chat/",
-      "destination": "/docs/modules/model_io/chat"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/",
-      "destination": "/docs/modules/model_io/llms"
     },
     {
       "source": "/docs/modules/model_io/llms/fake_llm",
