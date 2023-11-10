@@ -217,6 +217,10 @@ const config = {
                 label: "LangServe GitHub",
               },
               {
+                href: "https://github.com/langchain-ai/langchain/tree/master/templates",
+                label: "Templates GitHub",
+              },
+              {
                 href: "https://smith.langchain.com/hub",
                 label: "LangChain Hub",
               },
