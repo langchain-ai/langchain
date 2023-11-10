@@ -47,7 +47,7 @@ class YouTubeSearchTool(BaseTool):
         values = query.split(",")
         query = values[0]
         if not num_results and len(values) > 1:
-            # if num_results was None and the number of results was passed in the query string
+            # if num_results was passed in the query string
             num_results = int(values[1])
         elif not num_results:
             # if num_results was not provided
