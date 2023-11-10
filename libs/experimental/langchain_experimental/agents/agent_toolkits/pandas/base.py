@@ -33,6 +33,7 @@ def _get_multi_prompt(
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
+    extra_tools: Sequence[BaseTool] = (),
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     num_dfs = len(dfs)
     if suffix is not None:
@@ -58,7 +59,10 @@ def _get_multi_prompt(
     tools = [PythonAstREPLTool(locals=df_locals)]
 
     prompt = ZeroShotAgent.create_prompt(
-        tools, prefix=prefix, suffix=suffix_to_use, input_variables=input_variables
+        tools + extra_tools,
+        prefix=prefix,
+        suffix=suffix_to_use,
+        input_variables=input_variables,
     )
 
     partial_prompt = prompt.partial()
@@ -77,6 +81,7 @@ def _get_single_prompt(
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
+    extra_tools: Sequence[BaseTool] = (),
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     if suffix is not None:
         suffix_to_use = suffix
@@ -99,7 +104,10 @@ def _get_single_prompt(
     tools = [PythonAstREPLTool(locals={"df": df})]
 
     prompt = ZeroShotAgent.create_prompt(
-        tools, prefix=prefix, suffix=suffix_to_use, input_variables=input_variables
+        tools + extra_tools,
+        prefix=prefix,
+        suffix=suffix_to_use,
+        input_variables=input_variables,
     )
 
     partial_prompt = prompt.partial()
@@ -117,6 +125,7 @@ def _get_prompt_and_tools(
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
+    extra_tools: Sequence[BaseTool] = (),
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     try:
         import pandas as pd
@@ -141,6 +150,7 @@ def _get_prompt_and_tools(
             input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
+            extra_tools=extra_tools,
         )
     else:
         if not isinstance(df, pd.DataFrame):
@@ -152,6 +162,7 @@ def _get_prompt_and_tools(
             input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
+            extra_tools=extra_tools,
         )
 
 
@@ -295,6 +306,7 @@ def create_pandas_dataframe_agent(
             input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
+            extra_tools=extra_tools,
         )
         tools = base_tools + list(extra_tools)
         llm_chain = LLMChain(
