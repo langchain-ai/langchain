@@ -2,6 +2,7 @@ from langchain.chains import __all__
 
 EXPECTED_ALL = [
     "APIChain",
+    "AmazonPersonalizeChain",
     "AnalyzeDocumentChain",
     "ArangoGraphQAChain",
     "ChatVectorDBChain",

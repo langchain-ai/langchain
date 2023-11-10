@@ -2,6 +2,7 @@ from langchain.utilities import __all__
 
 EXPECTED_ALL = [
     "AlphaVantageAPIWrapper",
+    "AmazonPersonalize",
     "ApifyWrapper",
     "ArceeWrapper",
     "ArxivAPIWrapper",

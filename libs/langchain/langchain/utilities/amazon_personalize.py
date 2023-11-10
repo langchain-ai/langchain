@@ -1,8 +1,5 @@
 from typing import Any, List, Mapping, Optional, Sequence
 
-import botocore.config
-
-
 class AmazonPersonalize:
     """Amazon Personalize Runtime wrapper for executing real-time operations:
     https://docs.aws.amazon.com/personalize/latest/dg/API_Operations_Amazon_Personalize_Runtime.html
@@ -55,6 +52,7 @@ class AmazonPersonalize:
                 self.client = client
             else:
                 import boto3
+                import botocore.config
 
                 if credentials_profile_name is not None:
                     session = boto3.Session(profile_name=credentials_profile_name)
