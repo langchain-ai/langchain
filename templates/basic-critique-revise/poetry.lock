@@ -672,20 +672,19 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 
 [[package]]
 name = "langchain-cli"
-version = "0.0.15"
+version = "0.0.16"
 description = "CLI for interacting with LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain_cli-0.0.15-py3-none-any.whl", hash = "sha256:88102d2bb9d7c9cc99a1da13302a7f95d60cb37b2dab264b808aa6e3887b046f"},
-    {file = "langchain_cli-0.0.15.tar.gz", hash = "sha256:b7ff1a8338922aadbc3b1a141ea92c0a33aaaa72124dfbfd12049fe9a4a95cec"},
+    {file = "langchain_cli-0.0.16-py3-none-any.whl", hash = "sha256:24fb537f29bde36daf69d59d8b8c5363b8fc6cf437380fc20a2cbe71a5dbc286"},
+    {file = "langchain_cli-0.0.16.tar.gz", hash = "sha256:6f7ef032cf0b26f0563c4793189389955b396cbb2465cdf7519a7cd61d2dcb20"},
 ]
 
 [package.dependencies]
-fastapi = ">=0.104.0,<0.105.0"
 gitpython = ">=3.1.40,<4.0.0"
 langserve = {version = ">=0.0.16", extras = ["all"]}
-tomli = ">=2.0.1,<3.0.0"
+tomlkit = ">=0.12.2,<0.13.0"
 typer = {version = ">=0.9.0,<0.10.0", extras = ["all"]}
 uvicorn = ">=0.23.2,<0.24.0"
 
@@ -1265,14 +1264,14 @@ files = [
 doc = ["reno", "sphinx", "tornado (>=4.5)"]
 
 [[package]]
-name = "tomli"
-version = "2.0.1"
-description = "A lil' TOML parser"
+name = "tomlkit"
+version = "0.12.2"
+description = "Style preserving TOML library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
-    {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
+    {file = "tomlkit-0.12.2-py3-none-any.whl", hash = "sha256:eeea7ac7563faeab0a1ed8fe12c2e5a51c61f933f2502f7e9db0241a65163ad0"},
+    {file = "tomlkit-0.12.2.tar.gz", hash = "sha256:df32fab589a81f0d7dc525a4267b6d7a64ee99619cbd1eeb0fae32c1dd426977"},
 ]
 
 [[package]]

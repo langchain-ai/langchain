@@ -2,12 +2,12 @@ import json
 from datetime import datetime
 from enum import Enum
 from operator import itemgetter
-from typing import Dict, Sequence
+from typing import Dict, Sequence, Any
 
 from langchain.chains.openai_functions import convert_to_openai_function
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field, ValidationError
+from langchain.pydantic_v1 import BaseModel, Field, ValidationError, conint
 from langchain.schema.runnable import (
     Runnable,
     RunnableBranch,
@@ -54,7 +54,9 @@ function_args = {"functions": [convert_to_openai_function(Tasks)]}
 task_function_call_model = ChatOpenAI(model="gpt-3.5-turbo").bind(**function_args)
 
 output_parser = RunnableLambda(
-    lambda x: json.loads(x.additional_kwargs["function_call"]["arguments"])
+    lambda x: json.loads(
+        x.additional_kwargs.get("function_call", {}).get("arguments", '""')
+    )
 )
 
 
@@ -95,12 +97,13 @@ class IntermediateType(BaseModel):
     error: str
     completion: Dict
     original_prompt: str
+    max_revisions: int
 
 
 validation_step = RunnablePassthrough().assign(error=RunnableLambda(output_validator))
 
 
-def revise_loop(input: IntermediateType, config: RunnableConfig) -> IntermediateType:
+def revise_loop(input: IntermediateType) -> IntermediateType:
     revise_step = RunnablePassthrough().assign(completion=revise_chain)
 
     else_step: Runnable[IntermediateType, IntermediateType] = RunnableBranch(
@@ -108,27 +111,33 @@ def revise_loop(input: IntermediateType, config: RunnableConfig) -> Intermediate
         revise_step | validation_step,
     ).with_types(input_type=IntermediateType)
 
-    max_iters: int = config.get("recursion_limit", 5)
-    for _ in range(max(0, max_iters - 1)):
+    for _ in range(max(0, input["max_revisions"] - 1)):
         else_step = RunnableBranch(
             (lambda x: x["error"] is None, RunnablePassthrough()),
             revise_step | validation_step | else_step,
         )
-    return else_step.invoke(input)
+    return else_step
 
 
-revise_lambda = RunnableLambda(revise_loop).with_config(recursion_limit=5)
+revise_lambda = RunnableLambda(revise_loop)
 
 
 class InputType(BaseModel):
     query: str
+    max_revisions: conint(ge=1, le=10) = 5
 
 
-chain = (
-    generate_prompt
-    | RunnableParallel(
-        original_prompt=RunnablePassthrough(),
-        completion=task_function_call_model | output_parser,
+chain: Runnable[Any, Any] = (
+    {
+        "original_prompt": generate_prompt,
+        "max_revisions": itemgetter("max_revisions"),
+    }
+    | RunnablePassthrough().assign(
+        completion=(
+            RunnableLambda(itemgetter("original_prompt"))
+            | task_function_call_model
+            | output_parser
+        )
     )
     | validation_step
     | revise_lambda
