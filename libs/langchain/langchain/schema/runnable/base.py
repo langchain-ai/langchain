@@ -37,7 +37,7 @@ if TYPE_CHECKING:
         CallbackManagerForChainRun,
     )
     from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
-    from langchain.callbacks.tracers.schemas import Run
+    from langchain.callbacks.tracers.root_listeners import Listener
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
@@ -258,7 +258,7 @@ class Runnable(Generic[Input, Output], ABC):
             Callable[[Iterator[Any]], Iterator[Other]],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
-    ) -> Runnable[Input, Other]:
+    ) -> RunnableSerializable[Input, Other]:
         """Compose this runnable with another object to create a RunnableSequence."""
         return RunnableSequence(first=self, last=coerce_to_runnable(other))
 
@@ -270,7 +270,7 @@ class Runnable(Generic[Input, Output], ABC):
             Callable[[Iterator[Other]], Iterator[Any]],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
-    ) -> Runnable[Other, Output]:
+    ) -> RunnableSerializable[Other, Output]:
         """Compose this runnable with another object to create a RunnableSequence."""
         return RunnableSequence(first=coerce_to_runnable(other), last=self)
 
@@ -591,9 +591,9 @@ class Runnable(Generic[Input, Output], ABC):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Callable[[Run], None]] = None,
-        on_end: Optional[Callable[[Run], None]] = None,
-        on_error: Optional[Callable[[Run], None]] = None,
+        on_start: Optional[Listener] = None,
+        on_end: Optional[Listener] = None,
+        on_error: Optional[Listener] = None,
     ) -> Runnable[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -611,10 +611,13 @@ class Runnable(Generic[Input, Output], ABC):
         return RunnableBinding(
             bound=self,
             config_factories=[
-                lambda: {
+                lambda config: {
                     "callbacks": [
                         RootListenersTracer(
-                            on_start=on_start, on_end=on_end, on_error=on_error
+                            config=config,
+                            on_start=on_start,
+                            on_end=on_end,
+                            on_error=on_error,
                         )
                     ],
                 }
@@ -644,6 +647,17 @@ class Runnable(Generic[Input, Output], ABC):
         wait_exponential_jitter: bool = True,
         stop_after_attempt: int = 3,
     ) -> Runnable[Input, Output]:
+        """Create a new Runnable that retries the original runnable on exceptions.
+
+        Args:
+            retry_if_exception_type: A tuple of exception types to retry on
+            wait_exponential_jitter: Whether to add jitter to the wait time
+                                     between retries
+            stop_after_attempt: The maximum number of attempts to make before giving up
+
+        Returns:
+            A new Runnable that retries the original runnable on exceptions.
+        """
         from langchain.schema.runnable.retry import RunnableRetry
 
         return RunnableRetry(
@@ -1151,7 +1165,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             Callable[[Iterator[Any]], Iterator[Other]],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
-    ) -> Runnable[Input, Other]:
+    ) -> RunnableSerializable[Input, Other]:
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 first=self.first,
@@ -1173,7 +1187,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             Callable[[Iterator[Other]], Iterator[Any]],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
-    ) -> Runnable[Other, Output]:
+    ) -> RunnableSerializable[Other, Output]:
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 first=other.first,
@@ -2380,9 +2394,9 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Callable[[Run], None]] = None,
-        on_end: Optional[Callable[[Run], None]] = None,
-        on_error: Optional[Callable[[Run], None]] = None,
+        on_start: Optional[Listener] = None,
+        on_end: Optional[Listener] = None,
+        on_error: Optional[Listener] = None,
     ) -> RunnableEach[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -2445,7 +2459,9 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
 
     config: RunnableConfig = Field(default_factory=dict)
 
-    config_factories: List[Callable[[], RunnableConfig]] = Field(default_factory=list)
+    config_factories: List[Callable[[RunnableConfig], RunnableConfig]] = Field(
+        default_factory=list
+    )
 
     # Union[Type[Input], BaseModel] + things like List[str]
     custom_input_type: Optional[Any] = None
@@ -2461,7 +2477,9 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         bound: Runnable[Input, Output],
         kwargs: Optional[Mapping[str, Any]] = None,
         config: Optional[RunnableConfig] = None,
-        config_factories: Optional[List[Callable[[], RunnableConfig]]] = None,
+        config_factories: Optional[
+            List[Callable[[RunnableConfig], RunnableConfig]]
+        ] = None,
         custom_input_type: Optional[Union[Type[Input], BaseModel]] = None,
         custom_output_type: Optional[Union[Type[Output], BaseModel]] = None,
         **other_kwargs: Any,
@@ -2559,9 +2577,9 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Callable[[Run], None]] = None,
-        on_end: Optional[Callable[[Run], None]] = None,
-        on_error: Optional[Callable[[Run], None]] = None,
+        on_start: Optional[Listener] = None,
+        on_end: Optional[Listener] = None,
+        on_error: Optional[Listener] = None,
     ) -> Runnable[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -2581,10 +2599,13 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
             kwargs=self.kwargs,
             config=self.config,
             config_factories=[
-                lambda: {
+                lambda config: {
                     "callbacks": [
                         RootListenersTracer(
-                            on_start=on_start, on_end=on_end, on_error=on_error
+                            config=config,
+                            on_start=on_start,
+                            on_end=on_end,
+                            on_error=on_error,
                         )
                     ],
                 }
@@ -2618,9 +2639,8 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
         )
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
-        return merge_configs(
-            self.config, *(f() for f in self.config_factories), *configs
-        )
+        config = merge_configs(self.config, *configs)
+        return merge_configs(config, *(f(config) for f in self.config_factories))
 
     def invoke(
         self,
