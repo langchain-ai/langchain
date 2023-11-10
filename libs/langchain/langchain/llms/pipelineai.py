@@ -1,11 +1,10 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -23,7 +22,7 @@ class PipelineAI(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import PipelineAI
+            from langchain.llms import PipelineAI
             pipeline = PipelineAI(pipeline_key="")
     """
 
@@ -92,7 +91,7 @@ class PipelineAI(LLM, BaseModel):
         try:
             from pipeline import PipelineCloud
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import pipeline-ai python package. "
                 "Please install it with `pip install pipeline-ai`."
             )

@@ -2,17 +2,15 @@
 from __future__ import annotations
 
 from pathlib import Path
-from string import Formatter
-from typing import Any, Dict, List, Optional, Union
-
-from pydantic import root_validator
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
-    _get_jinja2_variables_from_template,
     check_valid_template,
+    get_template_variables,
 )
+from langchain.pydantic_v1 import root_validator
 
 
 class PromptTemplate(StringPromptTemplate):
@@ -23,11 +21,23 @@ class PromptTemplate(StringPromptTemplate):
 
     The template can be formatted using either f-strings (default) or jinja2 syntax.
 
+    *Security warning*: Prefer using `template_format="f-string"` instead of
+        `template_format="jinja2"`, or make sure to NEVER accept jinja2 templates
+        from untrusted sources as they may lead to arbitrary Python code execution.
+
+        As of LangChain 0.0.329, Jinja2 templates will be rendered using
+        Jinja2's SandboxedEnvironment by default. This sand-boxing should
+        be treated as a best-effort approach rather than a guarantee of security,
+        as it is an opt-out rather than opt-in approach.
+
+        Despite the sand-boxing, we recommend to never use jinja2 templates
+        from untrusted sources.
+
     Example:
 
         .. code-block:: python
 
-            from langchain import PromptTemplate
+            from langchain.prompts import PromptTemplate
 
             # Instantiation using from_template (recommended)
             prompt = PromptTemplate.from_template("Say {foo}")
@@ -49,10 +59,10 @@ class PromptTemplate(StringPromptTemplate):
     template: str
     """The prompt template."""
 
-    template_format: str = "f-string"
+    template_format: Union[Literal["f-string"], Literal["jinja2"]] = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
-    validate_template: bool = True
+    validate_template: bool = False
     """Whether or not to try validating the template."""
 
     def __add__(self, other: Any) -> PromptTemplate:
@@ -123,6 +133,14 @@ class PromptTemplate(StringPromptTemplate):
             check_valid_template(
                 values["template"], values["template_format"], all_inputs
             )
+        elif values.get("template_format"):
+            values["input_variables"] = [
+                var
+                for var in get_template_variables(
+                    values["template"], values["template_format"]
+                )
+                if var not in values["partial_variables"]
+            ]
         return values
 
     @classmethod
@@ -185,6 +203,18 @@ class PromptTemplate(StringPromptTemplate):
     ) -> PromptTemplate:
         """Load a prompt template from a template.
 
+        *Security warning*: Prefer using `template_format="f-string"` instead of
+            `template_format="jinja2"`, or make sure to NEVER accept jinja2 templates
+            from untrusted sources as they may lead to arbitrary Python code execution.
+
+            As of LangChain 0.0.329, Jinja2 templates will be rendered using
+            Jinja2's SandboxedEnvironment by default. This sand-boxing should
+            be treated as a best-effort approach rather than a guarantee of security,
+            as it is an opt-out rather than opt-in approach.
+
+            Despite the sand-boxing, we recommend to never use jinja2 templates
+            from untrusted sources.
+
         Args:
             template: The template to load.
             template_format: The format of the template. Use `jinja2` for jinja2,
@@ -198,25 +228,17 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt template loaded from the template.
         """
-        if template_format == "jinja2":
-            # Get the variables for the template
-            input_variables = _get_jinja2_variables_from_template(template)
-        elif template_format == "f-string":
-            input_variables = {
-                v for _, v, _, _ in Formatter().parse(template) if v is not None
-            }
-        else:
-            raise ValueError(f"Unsupported template format: {template_format}")
 
+        input_variables = get_template_variables(template, template_format)
         _partial_variables = partial_variables or {}
 
         if _partial_variables:
-            input_variables = {
+            input_variables = [
                 var for var in input_variables if var not in _partial_variables
-            }
+            ]
 
         return cls(
-            input_variables=sorted(input_variables),
+            input_variables=input_variables,
             template=template,
             template_format=template_format,
             partial_variables=_partial_variables,

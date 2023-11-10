@@ -28,7 +28,7 @@ class ChatGLM(LLM):
     endpoint_url: str = "http://127.0.0.1:8000/"
     """Endpoint URL to use."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
     max_token: int = 20000
     """Max token allowed to pass to the model."""
     temperature: float = 0.1

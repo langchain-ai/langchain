@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class EverNoteLoader(BaseLoader):
-    """EverNote Loader.
+    """Load from `EverNote`.
 
     Loads an EverNote notebook export file e.g. my_notebook.enex into Documents.
     Instructions on producing this file can be found at

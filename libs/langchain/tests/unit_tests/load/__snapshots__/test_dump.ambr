@@ -5,6 +5,9 @@
     "lc": 1,
     "type": "constructor",
     "id": [
+      "tests",
+      "unit_tests",
+      "load",
       "test_dump",
       "Person"
     ],
@@ -27,6 +30,9 @@
     "lc": 1,
     "type": "constructor",
     "id": [
+      "tests",
+      "unit_tests",
+      "load",
       "test_dump",
       "SpecialPerson"
     ],
@@ -229,7 +235,8 @@
               "api_resources",
               "completion",
               "Completion"
-            ]
+            ],
+            "repr": "<class 'openai.api_resources.completion.Completion'>"
           }
         }
       },

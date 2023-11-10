@@ -1,9 +1,13 @@
 """Test Chroma functionality."""
+import uuid
+
 import pytest
 import chromadb
 import numpy as np
+import requests
 
 from langchain.docstore.document import Document
+from langchain.embeddings import FakeEmbeddings as Fak
 from langchain.vectorstores import Chroma
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -320,7 +324,11 @@ def test_chroma_add_documents_mixed_metadata() -> None:
 
 def test_multiple_inputs_fails() -> None:
     with pytest.raises(ValueError):
-        db = Chroma(embedding_function=FakeEmbeddings(), persist_directory="foo", client_settings={})
+        db = Chroma(
+            embedding_function=FakeEmbeddings(),
+            persist_directory="foo",
+            client_settings={},
+        )
 
 
 def test_no_config_uses_ephemeral() -> None:
@@ -334,12 +342,17 @@ def test_persist_dir_uses_persist() -> None:
 
 
 def test_client_settings_uses_persist() -> None:
-    db = Chroma(embedding_function=FakeEmbeddings(), client_settings=chromadb.config.Settings(is_persistent=True))
+    db = Chroma(
+        embedding_function=FakeEmbeddings(),
+        client_settings=chromadb.config.Settings(is_persistent=True),
+    )
     assert db._collection._client.get_settings().is_persistent is True
 
 
 def test_client_settings_uses_no_persist() -> None:
-    db = Chroma(embedding_function=FakeEmbeddings(), client_settings=chromadb.config.Settings())
+    db = Chroma(
+        embedding_function=FakeEmbeddings(), client_settings=chromadb.config.Settings()
+    )
     assert db._collection._client.get_settings().is_persistent is False
 
 
@@ -355,3 +368,115 @@ def test_respects_client_persistent() -> None:
     db = Chroma(embedding_function=FakeEmbeddings(), client=chromaClient)
     assert db._collection._client == chromaClient
     assert db._collection._client.get_settings().is_persistent is True
+
+
+def is_api_accessible(url: str) -> bool:
+    try:
+        response = requests.get(url)
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
+def batch_support_chroma_version() -> bool:
+    try:
+        import chromadb
+    except Exception:
+        return False
+
+    major, minor, patch = chromadb.__version__.split(".")
+    if int(major) == 0 and int(minor) >= 4 and int(patch) >= 10:
+        return True
+    return False
+
+
+@pytest.mark.requires("chromadb")
+@pytest.mark.skipif(
+    not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
+    reason="API not accessible",
+)
+@pytest.mark.skipif(
+    not batch_support_chroma_version(),
+    reason="ChromaDB version does not support batching",
+)
+def test_chroma_large_batch() -> None:
+    import chromadb
+
+    client = chromadb.HttpClient()
+    embedding_function = Fak(size=255)
+    col = client.get_or_create_collection(
+        "my_collection",
+        embedding_function=embedding_function.embed_documents,  # type: ignore
+    )
+    docs = ["This is a test document"] * (client.max_batch_size + 100)
+    Chroma.from_texts(
+        client=client,
+        collection_name=col.name,
+        texts=docs,
+        embedding=embedding_function,
+        ids=[str(uuid.uuid4()) for _ in range(len(docs))],
+    )
+
+
+@pytest.mark.requires("chromadb")
+@pytest.mark.skipif(
+    not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
+    reason="API not accessible",
+)
+@pytest.mark.skipif(
+    not batch_support_chroma_version(),
+    reason="ChromaDB version does not support batching",
+)
+def test_chroma_large_batch_update() -> None:
+    import chromadb
+
+    client = chromadb.HttpClient()
+    embedding_function = Fak(size=255)
+    col = client.get_or_create_collection(
+        "my_collection",
+        embedding_function=embedding_function.embed_documents,  # type: ignore
+    )
+    docs = ["This is a test document"] * (client.max_batch_size + 100)
+    ids = [str(uuid.uuid4()) for _ in range(len(docs))]
+    db = Chroma.from_texts(
+        client=client,
+        collection_name=col.name,
+        texts=docs,
+        embedding=embedding_function,
+        ids=ids,
+    )
+    new_docs = [
+        Document(
+            page_content="This is a new test document", metadata={"doc_id": f"{i}"}
+        )
+        for i in range(len(docs) - 10)
+    ]
+    new_ids = [_id for _id in ids[: len(new_docs)]]
+    db.update_documents(ids=new_ids, documents=new_docs)
+
+
+@pytest.mark.requires("chromadb")
+@pytest.mark.skipif(
+    not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
+    reason="API not accessible",
+)
+@pytest.mark.skipif(
+    batch_support_chroma_version(), reason="ChromaDB version does not support batching"
+)
+def test_chroma_legacy_batching() -> None:
+    import chromadb
+
+    client = chromadb.HttpClient()
+    embedding_function = Fak(size=255)
+    col = client.get_or_create_collection(
+        "my_collection",
+        embedding_function=embedding_function.embed_documents,  # type: ignore
+    )
+    docs = ["This is a test document"] * 100
+    Chroma.from_texts(
+        client=client,
+        collection_name=col.name,
+        texts=docs,
+        embedding=embedding_function,
+        ids=[str(uuid.uuid4()) for _ in range(len(docs))],
+    )

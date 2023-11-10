@@ -3,20 +3,53 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from pydantic import Field
-
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import (
     CYPHER_QA_PROMPT,
     NEPTUNE_OPENCYPHER_GENERATION_PROMPT,
+    NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT,
 )
 from langchain.chains.llm import LLMChain
+from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.graphs import NeptuneGraph
 from langchain.prompts.base import BasePromptTemplate
+from langchain.pydantic_v1 import Field
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
+
+
+def trim_query(query: str) -> str:
+    """Trim the query to only include Cypher keywords."""
+    keywords = (
+        "CALL",
+        "CREATE",
+        "DELETE",
+        "DETACH",
+        "LIMIT",
+        "MATCH",
+        "MERGE",
+        "OPTIONAL",
+        "ORDER",
+        "REMOVE",
+        "RETURN",
+        "SET",
+        "SKIP",
+        "UNWIND",
+        "WITH",
+        "WHERE",
+        "//",
+    )
+
+    lines = query.split("\n")
+    new_query = ""
+
+    for line in lines:
+        if line.strip().upper().startswith(keywords):
+            new_query += line + "\n"
+
+    return new_query
 
 
 def extract_cypher(text: str) -> str:
@@ -30,9 +63,38 @@ def extract_cypher(text: str) -> str:
     return matches[0] if matches else text
 
 
+def use_simple_prompt(llm: BaseLanguageModel) -> bool:
+    """Decides whether to use the simple prompt"""
+    if llm._llm_type and "anthropic" in llm._llm_type:  # type: ignore
+        return True
+
+    # Bedrock anthropic
+    if hasattr(llm, "model_id") and "anthropic" in llm.model_id:  # type: ignore
+        return True
+
+    return False
+
+
+PROMPT_SELECTOR = ConditionalPromptSelector(
+    default_prompt=NEPTUNE_OPENCYPHER_GENERATION_PROMPT,
+    conditionals=[(use_simple_prompt, NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT)],
+)
+
+
 class NeptuneOpenCypherQAChain(Chain):
     """Chain for question-answering against a Neptune graph
     by generating openCypher statements.
+
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
 
     Example:
         .. code-block:: python
@@ -78,12 +140,14 @@ class NeptuneOpenCypherQAChain(Chain):
         llm: BaseLanguageModel,
         *,
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
-        cypher_prompt: BasePromptTemplate = NEPTUNE_OPENCYPHER_GENERATION_PROMPT,
+        cypher_prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> NeptuneOpenCypherQAChain:
         """Initialize from LLM."""
         qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
-        cypher_generation_chain = LLMChain(llm=llm, prompt=cypher_prompt)
+
+        _cypher_prompt = cypher_prompt or PROMPT_SELECTOR.get_prompt(llm)
+        cypher_generation_chain = LLMChain(llm=llm, prompt=_cypher_prompt)
 
         return cls(
             qa_chain=qa_chain,
@@ -109,6 +173,7 @@ class NeptuneOpenCypherQAChain(Chain):
 
         # Extract Cypher code if it is wrapped in backticks
         generated_cypher = extract_cypher(generated_cypher)
+        generated_cypher = trim_query(generated_cypher)
 
         _run_manager.on_text("Generated Cypher:", end="\n", verbose=self.verbose)
         _run_manager.on_text(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,21 +13,20 @@ from typing import (
     Union,
 )
 
-from langchain.load.serializable import Serializable
-from langchain.schema.messages import BaseMessage, get_buffer_string
+from typing_extensions import TypeAlias
+
+from langchain.schema.messages import AnyMessage, BaseMessage, get_buffer_string
 from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
-from langchain.schema.runnable import Runnable
+from langchain.schema.runnable import RunnableSerializable
 from langchain.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import Callbacks
 
 
-def _get_token_ids_default_method(text: str) -> List[int]:
-    """Encode the text into token IDs."""
-    # TODO: this method may not be exact.
-    # TODO: this method may differ based on model (eg codex).
+@lru_cache(maxsize=None)  # Cache the tokenizer
+def get_tokenizer() -> Any:
     try:
         from transformers import GPT2TokenizerFast
     except ImportError:
@@ -36,7 +36,13 @@ def _get_token_ids_default_method(text: str) -> List[int]:
             "Please install it with `pip install transformers`."
         )
     # create a GPT-2 tokenizer instance
-    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+    return GPT2TokenizerFast.from_pretrained("gpt2")
+
+
+def _get_token_ids_default_method(text: str) -> List[int]:
+    """Encode the text into token IDs."""
+    # get the cached tokenizer
+    tokenizer = get_tokenizer()
 
     # tokenize the text using the GPT-2 tokenizer
     return tokenizer.encode(text)
@@ -47,7 +53,7 @@ LanguageModelOutput = TypeVar("LanguageModelOutput")
 
 
 class BaseLanguageModel(
-    Serializable, Runnable[LanguageModelInput, LanguageModelOutput], ABC
+    RunnableSerializable[LanguageModelInput, LanguageModelOutput], ABC
 ):
     """Abstract base class for interfacing with language models.
 
@@ -64,6 +70,21 @@ class BaseLanguageModel(
 
     Each of these has an equivalent asynchronous method.
     """
+
+    @property
+    def InputType(self) -> TypeAlias:
+        """Get the input type for this runnable."""
+        from langchain.prompts.base import StringPromptValue
+        from langchain.prompts.chat import ChatPromptValueConcrete
+
+        # This is a version of LanguageModelInput which replaces the abstract
+        # base class BaseMessage with a union of its subclasses, which makes
+        # for a much better schema.
+        return Union[
+            str,
+            Union[StringPromptValue, ChatPromptValueConcrete],
+            List[AnyMessage],
+        ]
 
     @abstractmethod
     def generate_prompt(

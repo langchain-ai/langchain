@@ -1,8 +1,7 @@
-"""Wrapper around Elasticsearch vector database."""
 from __future__ import annotations
 
 import uuid
-from abc import ABC
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -15,10 +14,11 @@ from typing import (
     Union,
 )
 
+from langchain._api import deprecated
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -50,24 +50,28 @@ def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> 
     }
 
 
-# ElasticVectorSearch is a concrete implementation of the abstract base class
-# VectorStore, which defines a common interface for all vector database
-# implementations. By inheriting from the ABC class, ElasticVectorSearch can be
-# defined as an abstract base class itself, allowing the creation of subclasses with
-# their own specific implementations. If you plan to subclass ElasticVectorSearch,
-# you can inherit from it and define your own implementation of the necessary methods
-# and attributes.
-class ElasticVectorSearch(VectorStore, ABC):
-    """Wrapper around Elasticsearch as a vector database.
+class ElasticVectorSearch(VectorStore):
+    """
 
-    To connect to an Elasticsearch instance that does not require
+    ElasticVectorSearch uses the brute force method of searching on vectors.
+
+    Recommended to use ElasticsearchStore instead, which gives you the option
+    to uses the approx  HNSW algorithm which performs better on large datasets.
+
+    ElasticsearchStore also supports metadata filtering, customising the
+    query retriever and much more!
+
+    You can read more on ElasticsearchStore:
+    https://python.langchain.com/docs/integrations/vectorstores/elasticsearch
+
+    To connect to an `Elasticsearch` instance that does not require
     login credentials, pass the Elasticsearch URL and index name along with the
     embedding object to the constructor.
 
     Example:
         .. code-block:: python
 
-            from langchain import ElasticVectorSearch
+            from langchain.vectorstores import ElasticVectorSearch
             from langchain.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
@@ -103,7 +107,7 @@ class ElasticVectorSearch(VectorStore, ABC):
     Example:
         .. code-block:: python
 
-            from langchain import ElasticVectorSearch
+            from langchain.vectorstores import ElasticVectorSearch
             from langchain.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
@@ -136,6 +140,11 @@ class ElasticVectorSearch(VectorStore, ABC):
         ssl_verify: Optional[Dict[str, Any]] = None,
     ):
         """Initialize with necessary components."""
+        warnings.warn(
+            "ElasticVectorSearch will be removed in a future release. See"
+            "Elasticsearch integration docs on how to upgrade."
+        )
+
         try:
             import elasticsearch
         except ImportError:
@@ -147,11 +156,21 @@ class ElasticVectorSearch(VectorStore, ABC):
         self.index_name = index_name
         _ssl_verify = ssl_verify or {}
         try:
-            self.client = elasticsearch.Elasticsearch(elasticsearch_url, **_ssl_verify)
+            self.client = elasticsearch.Elasticsearch(
+                elasticsearch_url,
+                **_ssl_verify,
+                headers={"user-agent": self.get_user_agent()},
+            )
         except ValueError as e:
             raise ValueError(
                 f"Your elasticsearch client string is mis-formatted. Got error: {e} "
             )
+
+    @staticmethod
+    def get_user_agent() -> str:
+        from langchain import __version__
+
+        return f"langchain-py-dvs/{__version__}"
 
     @property
     def embeddings(self) -> Embeddings:
@@ -282,7 +301,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         Example:
             .. code-block:: python
 
-                from langchain import ElasticVectorSearch
+                from langchain.vectorstores import ElasticVectorSearch
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 elastic_vector_search = ElasticVectorSearch.from_texts(
@@ -339,12 +358,18 @@ class ElasticVectorSearch(VectorStore, ABC):
             self.client.delete(index=self.index_name, id=id)
 
 
-class ElasticKnnSearch(VectorStore, ABC):
-    """
-    ElasticKnnSearch is a class for performing k-nearest neighbor
-    (k-NN) searches on text data using Elasticsearch.
+@deprecated("0.0.265", alternative="ElasticsearchStore class.", pending=True)
+class ElasticKnnSearch(VectorStore):
+    """[DEPRECATED] `Elasticsearch` with k-nearest neighbor search
+    (`k-NN`) vector store.
 
-    This class is used to create an Elasticsearch index of text data that
+    Recommended to use ElasticsearchStore instead, which supports
+    metadata filtering, customising the query retriever and much more!
+
+    You can read more on ElasticsearchStore:
+    https://python.langchain.com/docs/integrations/vectorstores/elasticsearch
+
+    It creates an Elasticsearch index of text data that
     can be searched using k-NN search. The text data is transformed into
     vector embeddings using a provided embedding model, and these embeddings
     are stored in the Elasticsearch index.
@@ -392,6 +417,11 @@ class ElasticKnnSearch(VectorStore, ABC):
                 "Please install it with `pip install elasticsearch`."
             )
 
+        warnings.warn(
+            "ElasticKnnSearch will be removed in a future release."
+            "Use ElasticsearchStore instead. See Elasticsearch "
+            "integration docs on how to upgrade."
+        )
         self.embedding = embedding
         self.index_name = index_name
         self.query_field = query_field

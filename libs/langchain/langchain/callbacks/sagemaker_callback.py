@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
@@ -121,9 +121,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
                     f"llm_end_{llm_ends}_generation_{idx}",
                 )
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when LLM errors."""
         self.metrics["step"] += 1
         self.metrics["errors"] += 1
@@ -164,9 +162,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
 
         self.jsonf(resp, self.temp_dir, f"chain_end_{chain_ends}")
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when chain errors."""
         self.metrics["step"] += 1
         self.metrics["errors"] += 1
@@ -202,9 +198,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
 
         self.jsonf(resp, self.temp_dir, f"tool_end_{tool_ends}")
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when tool errors."""
         self.metrics["step"] += 1
         self.metrics["errors"] += 1

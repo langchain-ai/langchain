@@ -7,8 +7,8 @@ import sys
 from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
-from pydantic import BaseModel, Extra, Field, root_validator
 
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env
 
 
@@ -129,42 +129,93 @@ class SerpAPIWrapper(BaseModel):
         """Process response from SerpAPI."""
         if "error" in res.keys():
             raise ValueError(f"Got error from SerpAPI: {res['error']}")
-        if "answer_box" in res.keys() and type(res["answer_box"]) == list:
-            res["answer_box"] = res["answer_box"][0]
-        if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
-            toret = res["answer_box"]["answer"]
-        elif "answer_box" in res.keys() and "snippet" in res["answer_box"].keys():
-            toret = res["answer_box"]["snippet"]
-        elif (
-            "answer_box" in res.keys()
-            and "snippet_highlighted_words" in res["answer_box"].keys()
-        ):
-            toret = res["answer_box"]["snippet_highlighted_words"][0]
-        elif (
-            "sports_results" in res.keys()
-            and "game_spotlight" in res["sports_results"].keys()
-        ):
-            toret = res["sports_results"]["game_spotlight"]
+        if "answer_box_list" in res.keys():
+            res["answer_box"] = res["answer_box_list"]
+        if "answer_box" in res.keys():
+            answer_box = res["answer_box"]
+            if isinstance(answer_box, list):
+                answer_box = answer_box[0]
+            if "result" in answer_box.keys():
+                return answer_box["result"]
+            elif "answer" in answer_box.keys():
+                return answer_box["answer"]
+            elif "snippet" in answer_box.keys():
+                return answer_box["snippet"]
+            elif "snippet_highlighted_words" in answer_box.keys():
+                return answer_box["snippet_highlighted_words"]
+            else:
+                answer = {}
+                for key, value in answer_box.items():
+                    if not isinstance(value, (list, dict)) and not (
+                        isinstance(value, str) and value.startswith("http")
+                    ):
+                        answer[key] = value
+                return str(answer)
+        elif "events_results" in res.keys():
+            return res["events_results"][:10]
+        elif "sports_results" in res.keys():
+            return res["sports_results"]
+        elif "top_stories" in res.keys():
+            return res["top_stories"]
+        elif "news_results" in res.keys():
+            return res["news_results"]
+        elif "jobs_results" in res.keys() and "jobs" in res["jobs_results"].keys():
+            return res["jobs_results"]["jobs"]
         elif (
             "shopping_results" in res.keys()
             and "title" in res["shopping_results"][0].keys()
         ):
-            toret = res["shopping_results"][:3]
+            return res["shopping_results"][:3]
+        elif "questions_and_answers" in res.keys():
+            return res["questions_and_answers"]
         elif (
-            "knowledge_graph" in res.keys()
-            and "description" in res["knowledge_graph"].keys()
+            "popular_destinations" in res.keys()
+            and "destinations" in res["popular_destinations"].keys()
         ):
-            toret = res["knowledge_graph"]["description"]
-        elif "snippet" in res["organic_results"][0].keys():
-            toret = res["organic_results"][0]["snippet"]
-        elif "link" in res["organic_results"][0].keys():
-            toret = res["organic_results"][0]["link"]
+            return res["popular_destinations"]["destinations"]
+        elif "top_sights" in res.keys() and "sights" in res["top_sights"].keys():
+            return res["top_sights"]["sights"]
         elif (
             "images_results" in res.keys()
             and "thumbnail" in res["images_results"][0].keys()
         ):
-            thumbnails = [item["thumbnail"] for item in res["images_results"][:10]]
-            toret = thumbnails
+            return str([item["thumbnail"] for item in res["images_results"][:10]])
+
+        snippets = []
+        if "knowledge_graph" in res.keys():
+            knowledge_graph = res["knowledge_graph"]
+            title = knowledge_graph["title"] if "title" in knowledge_graph else ""
+            if "description" in knowledge_graph.keys():
+                snippets.append(knowledge_graph["description"])
+            for key, value in knowledge_graph.items():
+                if (
+                    isinstance(key, str)
+                    and isinstance(value, str)
+                    and key not in ["title", "description"]
+                    and not key.endswith("_stick")
+                    and not key.endswith("_link")
+                    and not value.startswith("http")
+                ):
+                    snippets.append(f"{title} {key}: {value}.")
+
+        for organic_result in res.get("organic_results", []):
+            if "snippet" in organic_result.keys():
+                snippets.append(organic_result["snippet"])
+            elif "snippet_highlighted_words" in organic_result.keys():
+                snippets.append(organic_result["snippet_highlighted_words"])
+            elif "rich_snippet" in organic_result.keys():
+                snippets.append(organic_result["rich_snippet"])
+            elif "rich_snippet_table" in organic_result.keys():
+                snippets.append(organic_result["rich_snippet_table"])
+            elif "link" in organic_result.keys():
+                snippets.append(organic_result["link"])
+
+        if "buying_guide" in res.keys():
+            snippets.append(res["buying_guide"])
+        if "local_results" in res.keys() and "places" in res["local_results"].keys():
+            snippets.append(res["local_results"]["places"])
+
+        if len(snippets) > 0:
+            return str(snippets)
         else:
-            toret = "No good search result found"
-        return toret
+            return "No good search result found"

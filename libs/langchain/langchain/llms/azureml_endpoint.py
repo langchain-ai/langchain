@@ -4,10 +4,9 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import BaseModel, validator
 from langchain.utils import get_from_dict_or_env
 
 
@@ -181,7 +180,7 @@ class LlamaContentFormatter(ContentFormatterBase):
     """Content formatter for LLaMa"""
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
-        """Formats the request according the the chosen api"""
+        """Formats the request according to the chosen api"""
         prompt = ContentFormatterBase.escape_special_characters(prompt)
         request_payload = json.dumps(
             {
@@ -231,7 +230,7 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
     the endpoint"""
 
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     @validator("http_client", always=True, allow_reuse=True)
     @classmethod

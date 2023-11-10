@@ -3,11 +3,10 @@ import logging
 import pickle
 from typing import Any, Callable, List, Mapping, Optional
 
-from pydantic import Extra
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +132,7 @@ class SelfHostedPipeline(LLM):
     model_load_fn: Callable
     """Function to load the model remotely on the server."""
     load_fn_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model load function."""
+    """Keyword arguments to pass to the model load function."""
     model_reqs: List[str] = ["./", "torch"]
     """Requirements to install on hardware to inference the model."""
 

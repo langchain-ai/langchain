@@ -2,7 +2,7 @@
 import os
 import tempfile
 from pathlib import Path
-from typing import Generator, Sequence
+from typing import Generator
 
 import pytest
 
@@ -42,56 +42,98 @@ def toy_dir() -> Generator[Path, None, None]:
         yield Path(temp_dir)
 
 
-@pytest.mark.parametrize(
-    "glob, suffixes, relative_filenames",
-    [
-        (
-            "**/[!.]*",
-            None,
-            [
-                "test.html",
-                "test.txt",
-                "some_dir/nested_file.txt",
-                "some_dir/other_dir/more_nested.txt",
-            ],
-        ),
-        ("*", None, ["test.html", "test.txt", ".hidden_file"]),
-        ("**/*.html", None, ["test.html"]),
-        ("*/*.txt", None, ["some_dir/nested_file.txt"]),
-        (
-            "**/*.txt",
-            None,
-            [
-                "test.txt",
-                "some_dir/nested_file.txt",
-                "some_dir/other_dir/more_nested.txt",
-            ],
-        ),
-        (
-            "**/*",
-            [".txt"],
-            [
-                "test.txt",
-                "some_dir/nested_file.txt",
-                "some_dir/other_dir/more_nested.txt",
-            ],
-        ),
-        ("meeeeeeow", None, []),
-        ("*", [".html", ".txt"], ["test.html", "test.txt"]),
-    ],
-)
-def test_file_names_exist(
-    toy_dir: str,
-    glob: str,
-    suffixes: Sequence[str],
-    relative_filenames: Sequence[str],
-) -> None:
+_TEST_CASES = [
+    {
+        "glob": "**/[!.]*",
+        "suffixes": None,
+        "exclude": (),
+        "relative_filenames": [
+            "test.html",
+            "test.txt",
+            "some_dir/nested_file.txt",
+            "some_dir/other_dir/more_nested.txt",
+        ],
+    },
+    {
+        "glob": "*",
+        "suffixes": None,
+        "exclude": (),
+        "relative_filenames": ["test.html", "test.txt", ".hidden_file"],
+    },
+    {
+        "glob": "**/*.html",
+        "suffixes": None,
+        "exclude": (),
+        "relative_filenames": ["test.html"],
+    },
+    {
+        "glob": "*/*.txt",
+        "suffixes": None,
+        "exclude": (),
+        "relative_filenames": ["some_dir/nested_file.txt"],
+    },
+    {
+        "glob": "**/*.txt",
+        "suffixes": None,
+        "exclude": (),
+        "relative_filenames": [
+            "test.txt",
+            "some_dir/nested_file.txt",
+            "some_dir/other_dir/more_nested.txt",
+        ],
+    },
+    {
+        "glob": "**/*",
+        "suffixes": [".txt"],
+        "exclude": (),
+        "relative_filenames": [
+            "test.txt",
+            "some_dir/nested_file.txt",
+            "some_dir/other_dir/more_nested.txt",
+        ],
+    },
+    {
+        "glob": "meeeeeeow",
+        "suffixes": None,
+        "exclude": (),
+        "relative_filenames": [],
+    },
+    {
+        "glob": "*",
+        "suffixes": [".html", ".txt"],
+        "exclude": (),
+        "relative_filenames": ["test.html", "test.txt"],
+    },
+    # Using exclude patterns
+    {
+        "glob": "**/*",
+        "suffixes": [".txt"],
+        "exclude": ("some_dir/*",),
+        "relative_filenames": ["test.txt", "some_dir/other_dir/more_nested.txt"],
+    },
+    # Using 2 exclude patterns, one of which is recursive
+    {
+        "glob": "**/*",
+        "suffixes": None,
+        "exclude": ("**/*.txt", ".hidden*"),
+        "relative_filenames": ["test.html"],
+    },
+]
+
+
+@pytest.mark.parametrize("params", _TEST_CASES)
+def test_file_names_exist(toy_dir: str, params: dict) -> None:
     """Verify that the file names exist."""
 
-    loader = FileSystemBlobLoader(toy_dir, glob=glob, suffixes=suffixes)
-    blobs = list(loader.yield_blobs())
+    glob_pattern = params["glob"]
+    suffixes = params["suffixes"]
+    exclude = params["exclude"]
+    relative_filenames = params["relative_filenames"]
 
-    assert loader.count_matching_files() == len(relative_filenames)
+    loader = FileSystemBlobLoader(
+        toy_dir, glob=glob_pattern, suffixes=suffixes, exclude=exclude
+    )
+    blobs = list(loader.yield_blobs())
 
     file_names = sorted(str(blob.path) for blob in blobs)
 
@@ -101,6 +143,7 @@ def test_file_names_exist(
     )
 
     assert file_names == expected_filenames
+    assert loader.count_matching_files() == len(relative_filenames)
 
 
 @pytest.mark.requires("tqdm")

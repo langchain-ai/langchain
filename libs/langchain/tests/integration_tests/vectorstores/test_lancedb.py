@@ -1,10 +1,10 @@
-import lancedb
-
 from langchain.vectorstores import LanceDB
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
 def test_lancedb() -> None:
+    import lancedb
+
     embeddings = FakeEmbeddings()
     db = lancedb.connect("/tmp/lancedb")
     texts = ["text 1", "text 2", "item 3"]
@@ -24,6 +24,8 @@ def test_lancedb() -> None:
 
 
 def test_lancedb_add_texts() -> None:
+    import lancedb
+
     embeddings = FakeEmbeddings()
     db = lancedb.connect("/tmp/lancedb")
     texts = ["text 1"]

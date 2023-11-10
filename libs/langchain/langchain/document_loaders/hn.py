@@ -1,4 +1,3 @@
-"""Loads HN."""
 from typing import Any, List
 
 from langchain.docstore.document import Document
@@ -6,7 +5,9 @@ from langchain.document_loaders.web_base import WebBaseLoader
 
 
 class HNLoader(WebBaseLoader):
-    """Load Hacker News data from either main page results or the comments page."""
+    """Load `Hacker News` data.
+
+    It loads data from either main page results or the comments page."""
 
     def load(self) -> List[Document]:
         """Get important HN webpage information.

@@ -1,5 +1,3 @@
-"""Loads data from Google Drive."""
-
 # Prerequisites:
 # 1. Create a Google Cloud project
 # 2. Enable the Google Drive API:
@@ -13,16 +11,15 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from pydantic import BaseModel, root_validator, validator
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.pydantic_v1 import BaseModel, root_validator, validator
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
 class GoogleDriveLoader(BaseLoader, BaseModel):
-    """Loads Google Docs from Google Drive."""
+    """Load Google Docs from `Google Drive`."""
 
     service_account_key: Path = Path.home() / ".credentials" / "keys.json"
     """Path to the service account key file."""
@@ -169,6 +166,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 .execute()
             )
             values = result.get("values", [])
+            if not values:
+                continue  # empty sheet
 
             header = values[0]
             for i, row in enumerate(values[1:], start=1):
@@ -201,7 +200,11 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
 
-        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
+        file = (
+            service.files()
+            .get(fileId=id, supportsAllDrives=True, fields="modifiedTime,name")
+            .execute()
+        )
         request = service.files().export_media(fileId=id, mimeType="text/plain")
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
@@ -220,6 +223,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         metadata = {
             "source": f"https://docs.google.com/document/d/{id}/edit",
             "title": f"{file.get('name')}",
+            "when": f"{file.get('modifiedTime')}",
         }
         return Document(page_content=text, metadata=metadata)
 
