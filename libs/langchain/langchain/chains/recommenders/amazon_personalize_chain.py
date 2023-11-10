@@ -25,14 +25,15 @@ SUMMARIZE_PROMPT = PromptTemplate(
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
-USER_ID_INPUT_KEY_NAME = "user_id"
-ITEM_ID_INPUT_KEY_NAME = "item_id"
-INPUT_LIST_INPUT_KEY_NAME = "input_list"
-FILTER_ARN_INPUT_KEY_NAME = "filter_arn"
-FILTER_VALUES_INPUT_KEY_NAME = "filter_values"
-CONTEXT_INPUT_KEY_NAME = "context"
-PROMOTIONS_INPUT_KEY_NAME = "promotions"
-RESULT_OUTPUT_KEY_NAME = "result"
+# Input Key Names to be used
+USER_ID_INPUT_KEY = "user_id"
+ITEM_ID_INPUT_KEY = "item_id"
+INPUT_LIST_INPUT_KEY = "input_list"
+FILTER_ARN_INPUT_KEY = "filter_arn"
+FILTER_VALUES_INPUT_KEY = "filter_values"
+CONTEXT_INPUT_KEY = "context"
+PROMOTIONS_INPUT_KEY = "promotions"
+RESULT_OUTPUT_KEY = "result"
 
 
 class AmazonPersonalizeChain(Chain):
@@ -56,10 +57,12 @@ class AmazonPersonalizeChain(Chain):
     summarization_chain: LLMChain
     return_direct: bool = False
     return_intermediate_steps: bool = False
+    is_ranking_recipe: bool = False
 
     @property
     def input_keys(self) -> List[str]:
-        """Will be whatever keys the prompt expects.
+        """This returns an empty list since not there are optional
+        input_keys and none is required.
 
         :meta private:
         """
@@ -67,11 +70,11 @@ class AmazonPersonalizeChain(Chain):
 
     @property
     def output_keys(self) -> List[str]:
-        """Will always return text key.
+        """Will always return result key.
 
         :meta private:
         """
-        return [RESULT_OUTPUT_KEY_NAME]
+        return [RESULT_OUTPUT_KEY]
 
     @classmethod
     def from_llm(
@@ -79,6 +82,7 @@ class AmazonPersonalizeChain(Chain):
         llm: BaseLanguageModel,
         client: AmazonPersonalize,
         prompt_template: PromptTemplate = SUMMARIZE_PROMPT,
+        is_ranking_recipe: bool = False,
         **kwargs: Any,
     ) -> AmazonPersonalizeChain:
         """Initializes the Personalize Chain with LLMAgent, Personalize Client,
@@ -90,6 +94,8 @@ class AmazonPersonalizeChain(Chain):
                                             invoking AmazonPersonalize
                 prompt_template: PromptTemplate: The prompt template which can be
                                 invoked with the output from Amazon Personalize
+                is_ranking_recipe: bool: default: False: specifies
+                                if the trained recipe is USER_PERSONALIZED_RANKING
 
         Example:
             .. code-block:: python
@@ -105,7 +111,12 @@ class AmazonPersonalizeChain(Chain):
         """
         summarization_chain = LLMChain(llm=llm, prompt=prompt_template)
 
-        return cls(summarization_chain=summarization_chain, client=client, **kwargs)
+        return cls(
+            summarization_chain=summarization_chain,
+            client=client,
+            is_ranking_recipe=is_ranking_recipe,
+            **kwargs,
+        )
 
     def _call(
         self,
@@ -126,18 +137,18 @@ class AmazonPersonalizeChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
 
-        user_id = inputs.get(USER_ID_INPUT_KEY_NAME)
-        item_id = inputs.get(ITEM_ID_INPUT_KEY_NAME)
-        input_list = inputs.get(INPUT_LIST_INPUT_KEY_NAME)
-        filter_arn = inputs.get(FILTER_ARN_INPUT_KEY_NAME)
-        filter_values = inputs.get(FILTER_VALUES_INPUT_KEY_NAME)
-        promotions = inputs.get(PROMOTIONS_INPUT_KEY_NAME)
-        context = inputs.get(CONTEXT_INPUT_KEY_NAME)
+        user_id = inputs.get(USER_ID_INPUT_KEY)
+        item_id = inputs.get(ITEM_ID_INPUT_KEY)
+        input_list = inputs.get(INPUT_LIST_INPUT_KEY)
+        filter_arn = inputs.get(FILTER_ARN_INPUT_KEY)
+        filter_values = inputs.get(FILTER_VALUES_INPUT_KEY)
+        promotions = inputs.get(PROMOTIONS_INPUT_KEY)
+        context = inputs.get(CONTEXT_INPUT_KEY)
 
         intermediate_steps: List = []
         intermediate_steps.append({"Calling Amazon Personalize"})
 
-        if self.client.is_ranking_recipe:
+        if self.is_ranking_recipe:
             response = self.client.get_personalized_ranking(
                 user_id=str(user_id),
                 input_list=cast(List[str], input_list),
@@ -161,12 +172,12 @@ class AmazonPersonalizeChain(Chain):
             final_result = response
         else:
             result = self.summarization_chain(
-                {RESULT_OUTPUT_KEY_NAME: response}, callbacks=callbacks
+                {RESULT_OUTPUT_KEY: response}, callbacks=callbacks
             )
             final_result = result[self.summarization_chain.output_key]
 
         intermediate_steps.append({"context": response})
-        chain_result: Dict[str, Any] = {RESULT_OUTPUT_KEY_NAME: final_result}
+        chain_result: Dict[str, Any] = {RESULT_OUTPUT_KEY: final_result}
         if self.return_intermediate_steps:
             chain_result[INTERMEDIATE_STEPS_KEY] = intermediate_steps
         return chain_result

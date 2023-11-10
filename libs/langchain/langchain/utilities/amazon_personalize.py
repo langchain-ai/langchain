@@ -13,8 +13,6 @@ class AmazonPersonalize:
         client: Optional:  boto3 client
         credentials_profile_name: str, Optional :AWS profile name
         region_name: str, Optional:  AWS region, e.g., us-west-2
-        is_ranking_recipe: bool: default: False: specifies
-                                if the trained recipe is USER_PERSONALIZED_RANKING
 
     Example:
         .. code-block:: python
@@ -30,11 +28,9 @@ class AmazonPersonalize:
         client: Optional[Any] = None,
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
-        is_ranking_recipe: bool = False,
     ):
         self.campaign_arn = campaign_arn
         self.recommender_arn = recommender_arn
-        self.is_ranking_recipe = is_ranking_recipe
 
         if campaign_arn and recommender_arn:
             raise ValueError(
