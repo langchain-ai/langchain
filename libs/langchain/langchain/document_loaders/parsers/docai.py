@@ -66,10 +66,10 @@ class DocAIParser(BaseBlobParser):
                 "a client."
             )
 
-        pattern = "projects\/[0-9]+\/locations\/[a-z\-0-9]+\/processors\/[a-z0-9]+"
+        pattern = r"projects\/[0-9]+\/locations\/[a-z\-0-9]+\/processors\/[a-z0-9]+"
         if processor_name and not re.fullmatch(pattern, processor_name):
             raise ValueError(
-                f"Processor name {processor_name} has a wrong format. If your "
+                f"Processor name {processor_name} has the wrong format. If your "
                 "prediction endpoint looks like https://us-documentai.googleapis.com"
                 "/v1/projects/PROJECT_ID/locations/us/processors/PROCESSOR_ID:process,"
                 " use only projects/PROJECT_ID/locations/us/processors/PROCESSOR_ID "
