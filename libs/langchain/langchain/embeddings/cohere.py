@@ -17,7 +17,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import CohereEmbeddings
             cohere = CohereEmbeddings(
-                model="embed-english-light-v2.0", cohere_api_key="my-api-key"
+                model="embed-english-light-v3.0", cohere_api_key="my-api-key"
             )
     """
 
@@ -25,7 +25,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """Cohere client."""
     async_client: Any  #: :meta private:
     """Cohere async client."""
-    model: str = "embed-english-v2.0"
+    model: str = "embed-english-v3.0"
     """Model name to use."""
 
     truncate: Optional[str] = None
