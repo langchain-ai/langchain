@@ -1239,13 +1239,16 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     is the method that implements the logic to map a streaming input to a streaming
     output -- then the sequence will be able to stream input to output!
 
-    If any component of the sequence does not implement `transform` then the sequence
-    will have to wait for all the components input to be generated, then wait
-    for the component generate output, before it can stream this component's output.
+    If any component of the sequence does not implement transform then the
+    streaming will only begin after this component is run. If there are
+    multiple blocking components, streaming begins after the last one.
 
     Please note: RunnableLambdas do not support `transform` by default! So if
         you need to use a RunnableLambdas be careful about where you place them in a
         RunnableSequence (if you need to use the .stream()/.astream() methods).
+
+        If you need arbitrary logic and need streaming, you can subclass
+        Runnable, and implement `transform` for whatever logic you need.
 
     Here is a simple example that uses simple functions to illustrate the use of
     RunnableSequence:
