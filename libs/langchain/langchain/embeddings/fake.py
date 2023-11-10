@@ -23,7 +23,7 @@ class FakeEmbeddings(Embeddings, BaseModel):
         return self._get_embedding()
 
 
-class DeterministicFakeEmbedding(Embeddings, BaseModel):
+class DeterministicFakeEmbeddings(Embeddings, BaseModel):
     """
     Fake embedding model that always returns
     the same embedding vector for the same text.
