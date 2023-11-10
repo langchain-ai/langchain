@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, List, Literal, Set
 from langchain.schema.messages import BaseMessage, HumanMessage
 from langchain.schema.prompt import PromptValue
 from langchain.schema.prompt_template import BasePromptTemplate
+from langchain.types.image import ImageURL
 from langchain.utils.formatting import formatter
 
 
@@ -171,3 +172,19 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
         return StringPromptValue(text=self.format(**kwargs))
+
+
+class ImagePromptValue(PromptValue):
+    """Image prompt value."""
+
+    image: ImageURL
+    """Prompt image."""
+    type: Literal["ImagePromptValue"] = "ImagePromptValue"
+
+    def to_string(self) -> str:
+        """Return prompt as string."""
+        return self.image["url"]
+
+    def to_messages(self) -> List[BaseMessage]:
+        """Return prompt as messages."""
+        return [HumanMessage(content=[self.image])]

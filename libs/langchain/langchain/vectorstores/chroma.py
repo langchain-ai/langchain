@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import logging
 import uuid
 from typing import (
@@ -21,6 +20,7 @@ from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
 from langchain.utils import xor_args
+from langchain.utils.image import encode_image
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -161,11 +161,6 @@ class Chroma(VectorStore):
             **kwargs,
         )
 
-    def encode_image(self, uri: str) -> str:
-        """Get base64 string from image URI."""
-        with open(uri, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode("utf-8")
-
     def add_images(
         self,
         uris: List[str],
@@ -184,7 +179,7 @@ class Chroma(VectorStore):
             List[str]: List of IDs of the added images.
         """
         # Map from uris to b64 encoded strings
-        b64_texts = [self.encode_image(uri=uri) for uri in uris]
+        b64_texts = [encode_image(uri) for uri in uris]
         # Populate IDs
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in uris]

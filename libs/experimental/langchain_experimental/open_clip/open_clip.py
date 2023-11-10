@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
+from langchain.utils.image import encode_image
 
 
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
@@ -73,7 +74,7 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
             preprocessed_image = self.preprocess(pil_image).unsqueeze(0)
 
             # Encode the image to get the embeddings
-            embeddings_tensor = self.model.encode_image(preprocessed_image)
+            embeddings_tensor = encode_image(preprocessed_image)
 
             # Normalize the embeddings tensor
             norm = embeddings_tensor.norm(p=2, dim=1, keepdim=True)
