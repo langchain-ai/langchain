@@ -9,7 +9,7 @@ from langchain.schema.embeddings import Embeddings
 class FastEmbedEmbeddings(BaseModel, Embeddings):
     """Qdrant FastEmbedding models.
     FastEmbed is a lightweight, fast, Python library built for embedding generation.
-    See more documentation at: 
+    See more documentation at:
     * https://github.com/qdrant/fastembed/
     * https://qdrant.github.io/fastembed/
 
