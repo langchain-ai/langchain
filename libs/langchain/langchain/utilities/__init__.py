@@ -14,6 +14,12 @@ def _import_alpha_vantage() -> Any:
     return AlphaVantageAPIWrapper
 
 
+def _import_amazon_personalize() -> Any:
+    from langchain.utilities.amazon_personalize import AmazonPersonalize
+
+    return AmazonPersonalize
+
+
 def _import_apify() -> Any:
     from langchain.utilities.apify import ApifyWrapper
 
@@ -215,6 +221,8 @@ def _import_zapier() -> Any:
 def __getattr__(name: str) -> Any:
     if name == "AlphaVantageAPIWrapper":
         return _import_alpha_vantage()
+    elif name == "AmazonPersonalize":
+        return _import_amazon_personalize()
     elif name == "ApifyWrapper":
         return _import_apify()
     elif name == "ArceeWrapper":
@@ -287,6 +295,7 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "AlphaVantageAPIWrapper",
+    "AmazonPersonalize",
     "ApifyWrapper",
     "ArceeWrapper",
     "ArxivAPIWrapper",

@@ -65,6 +65,9 @@ from langchain.chains.qa_generation.base import QAGenerationChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
+from langchain.chains.recommenders.amazon_personalize_chain import (
+    AmazonPersonalizeChain,
+)
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 from langchain.chains.router import (
     LLMRouterChain,
@@ -79,6 +82,7 @@ from langchain.chains.transform import TransformChain
 
 __all__ = [
     "APIChain",
+    "AmazonPersonalizeChain",
     "AnalyzeDocumentChain",
     "ArangoGraphQAChain",
     "ChatVectorDBChain",
