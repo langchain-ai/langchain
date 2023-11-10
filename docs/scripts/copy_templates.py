@@ -9,8 +9,6 @@ TEMPLATES_DIR = Path(os.path.abspath(__file__)).parents[2] / "templates"
 DOCS_TEMPLATES_DIR = Path(os.path.abspath(__file__)).parents[1] / "docs" / "templates"
 
 
-# os.mkdir(DOCS_TEMPLATES_DIR)
-
 readmes = list(glob.glob(str(TEMPLATES_DIR) + "/*/README.md"))
 destinations = [readme[len(str(TEMPLATES_DIR)) + 1:-10] + ".md" for readme in readmes]
 for source, destination in zip(readmes, destinations):
@@ -29,9 +27,10 @@ sidebar_class_name: hidden
 
 """
 TEMPLATES_INDEX_DESTINATION = DOCS_TEMPLATES_DIR / "index.md"
-# shutil.copyfile(TEMPLATES_DIR / "docs" / "INDEX.MD", TEMPLATES_INDEX_DESTINATION)
 with open(TEMPLATES_INDEX_DESTINATION, "r") as f:
     contents = f.read()
+# replace relative links
+content = re.sub("\]\(\.\.\/", "\]\(\/docs\/templates\/", content)
 with open(TEMPLATES_INDEX_DESTINATION, "w") as f:
     f.write(sidebar_hidden + contents)
 
