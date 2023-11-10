@@ -97,6 +97,7 @@ class _OllamaCommon(BaseLanguageModel):
         """Get the default parameters for calling Ollama."""
         return {
             "model": self.model,
+            "format": self.format,
             "options": {
                 "mirostat": self.mirostat,
                 "mirostat_eta": self.mirostat_eta,
@@ -111,14 +112,13 @@ class _OllamaCommon(BaseLanguageModel):
                 "tfs_z": self.tfs_z,
                 "top_k": self.top_k,
                 "top_p": self.top_p,
-                "format": self.format,
             },
         }
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
+        return {**{"model": self.model,"format": self.format}, **self._default_params}
 
     def _create_stream(
         self,
