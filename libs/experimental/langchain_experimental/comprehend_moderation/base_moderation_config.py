@@ -29,7 +29,7 @@ class ModerationToxicityConfig(BaseModel):
 
 
 class ModerationPromptSafetyConfig(BaseModel):
-    threshold: float = 0.5
+    threshold: float = 0.8
     """
     Threshold for Prompt Safety classification
     confidence score, defaults to 0.5 i.e. 50%
