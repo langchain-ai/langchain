@@ -166,7 +166,7 @@ class StringPromptValue(PromptValue):
         return [HumanMessage(content=self.text)]
 
 
-class StringPromptTemplate(BasePromptTemplate, ABC):
+class StringPromptTemplate(BasePromptTemplate[str], ABC):
     """String prompt that exposes the format method, returning a prompt."""
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
@@ -177,14 +177,14 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
 class ImagePromptValue(PromptValue):
     """Image prompt value."""
 
-    image: ImageURL
+    image_url: ImageURL
     """Prompt image."""
     type: Literal["ImagePromptValue"] = "ImagePromptValue"
 
     def to_string(self) -> str:
         """Return prompt as string."""
-        return self.image["url"]
+        return self.image_url["url"]
 
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
-        return [HumanMessage(content=[self.image])]
+        return [HumanMessage(content=[self.image_url])]

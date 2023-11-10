@@ -3,7 +3,18 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import yaml
 
@@ -13,8 +24,12 @@ from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
+FormatOutputType = TypeVar("FormatOutputType")
 
-class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
+
+class BasePromptTemplate(
+    RunnableSerializable[Dict, PromptValue], Generic[FormatOutputType], ABC
+):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
@@ -111,7 +126,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
         return {**partial_kwargs, **kwargs}
 
     @abstractmethod
-    def format(self, **kwargs: Any) -> str:
+    def format(self, **kwargs: Any) -> FormatOutputType:
         """Format the prompt with the inputs.
 
         Args:
@@ -179,7 +194,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
+def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
     """Format a document into a string based on a prompt template.
 
     First, this pulls information from the document from two sources:

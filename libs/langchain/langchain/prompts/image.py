@@ -7,7 +7,7 @@ from langchain.types.image import ImageURL
 from langchain.utils.image import image_to_data_url
 
 
-class ImagePromptTemplate(BasePromptTemplate):
+class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     """An image prompt template for a language model."""
 
     variable_name: Union[str, None] = None
@@ -34,13 +34,10 @@ class ImagePromptTemplate(BasePromptTemplate):
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
-        return ImagePromptValue(image=self.format(**kwargs))
+        return ImagePromptValue(image_url=self.format(**kwargs))
 
     def format(
         self,
-        url: Union[str, None] = None,
-        path: Union[str, None] = None,
-        detail: Union[str, None] = None,
         **kwargs: Any,
     ) -> ImageURL:
         """Format the prompt with the inputs.
@@ -61,10 +58,11 @@ class ImagePromptTemplate(BasePromptTemplate):
         if isinstance(var, str):
             var = {"url": var}
         var = {**self.template, **var}
-        url = url or var.get("url")
-        path = path or var.get("path")
-        output = {"url": url or image_to_data_url(path)}
-        detail = detail or var.get("detail")
+        url = kwargs.get("url") or var.get("url")
+        path = kwargs.get("path") or var.get("path")
+        detail = kwargs.get("detail") or var.get("detail")
+
+        output: ImageURL = {"url": url or image_to_data_url(path)}
         if detail:
             output["detail"] = detail
         return output

@@ -38,6 +38,7 @@ from langchain.schema.messages import (
     SystemMessage,
     get_buffer_string,
 )
+from langchain.types.image import ImageURL
 
 
 class BaseMessagePromptTemplate(Serializable, ABC):
@@ -120,8 +121,8 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         return [self.variable_name]
 
 
-MessagePromptTemplateT = TypeVar(
-    "MessagePromptTemplateT", bound="BaseStringMessagePromptTemplate"
+_StringMessagePromptTemplateT = TypeVar(
+    "_StringMessagePromptTemplateT", bound="BaseStringMessagePromptTemplate"
 )
 """Type variable for message prompt templates."""
 
@@ -136,11 +137,11 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     @classmethod
     def from_template(
-        cls: Type[MessagePromptTemplateT],
+        cls: Type[_StringMessagePromptTemplateT],
         template: str,
         template_format: str = "f-string",
         **kwargs: Any,
-    ) -> MessagePromptTemplateT:
+    ) -> _StringMessagePromptTemplateT:
         """Create a class from a string template.
 
         Args:
@@ -156,11 +157,11 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     @classmethod
     def from_template_file(
-        cls: Type[MessagePromptTemplateT],
+        cls: Type[_StringMessagePromptTemplateT],
         template_file: Union[str, Path],
         input_variables: List[str],
         **kwargs: Any,
-    ) -> MessagePromptTemplateT:
+    ) -> _StringMessagePromptTemplateT:
         """Create a class from a template file.
 
         Args:
@@ -228,23 +229,30 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
         )
 
 
-class HumanMessagePromptTemplate(BaseMessagePromptTemplate):
+_StringImageMessagePromptTemplateT = TypeVar(
+    "_StringImageMessagePromptTemplateT", bound="_StringImageMessagePromptTemplate"
+)
+
+
+class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
     prompt: Union[
         StringPromptTemplate, List[Union[StringPromptTemplate, ImagePromptTemplate]]
     ]
-    """String prompt template."""
+    """Prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
 
+    _msg_class: Type[BaseMessage]
+
     @classmethod
     def from_template(
-        cls,
+        cls: Type[_StringImageMessagePromptTemplateT],
         template: Union[str, List[Union[str, Dict[str, Any]]]],
         template_format: str = "f-string",
         **kwargs: Any,
-    ) -> HumanMessagePromptTemplate:
+    ) -> _StringImageMessagePromptTemplateT:
         """Create a class from a string template.
 
         Args:
@@ -256,40 +264,49 @@ class HumanMessagePromptTemplate(BaseMessagePromptTemplate):
             A new instance of this class.
         """
         if isinstance(template, str):
-            prompt = PromptTemplate.from_template(
+            prompt: Union[StringPromptTemplate, List] = PromptTemplate.from_template(
                 template, template_format=template_format
             )
             return cls(prompt=prompt, **kwargs)
-        else:
+        elif isinstance(template, list):
             prompt = []
-            for template_ in template:
-                if isinstance(template_, str):
+            for tmpl in template:
+                if isinstance(tmpl, str):
                     prompt.append(
                         PromptTemplate.from_template(
-                            template_, template_format=template_format
+                            tmpl, template_format=template_format
                         )
                     )
-                else:
-                    if isinstance(template_["image"], str):
-                        img_template = ImagePromptTemplate(
-                            variable_name=template_["image"]
+                elif isinstance(tmpl, dict) and (
+                    "image" in tmpl or "image_url" in tmpl
+                ):
+                    img_template = tmpl.get("image") or tmpl.get("image_url")
+                    if isinstance(img_template, str):
+                        img_template_obj = ImagePromptTemplate(
+                            variable_name=img_template
+                        )
+                    elif isinstance(img_template, dict):
+                        img_template = dict(img_template)
+                        variable_name = img_template.pop("variable_name", None)
+                        img_template_obj = ImagePromptTemplate(
+                            variable_name=variable_name, template=img_template
                         )
                     else:
-                        template_copy = dict(template_["image"])
-                        variable_name = template_copy.pop("variable_name", None)
-                        img_template = ImagePromptTemplate(
-                            variable_name=variable_name, template=template_copy
-                        )
-                    prompt.append(img_template)
-            return cls(prompt=prompt, **kwargs)
+                        raise ValueError()
+                    prompt.append(img_template_obj)
+                else:
+                    raise ValueError()
+                return cls(prompt=prompt, **kwargs)
+            else:
+                raise ValueError()
 
     @classmethod
     def from_template_file(
-        cls,
+        cls: Type[_StringImageMessagePromptTemplateT],
         template_file: Union[str, Path],
         input_variables: List[str],
         **kwargs: Any,
-    ) -> HumanMessagePromptTemplate:
+    ) -> _StringImageMessagePromptTemplateT:
         """Create a class from a template file.
 
         Args:
@@ -338,54 +355,42 @@ class HumanMessagePromptTemplate(BaseMessagePromptTemplate):
         """
         if isinstance(self.prompt, StringPromptTemplate):
             text = self.prompt.format(**kwargs)
-            return HumanMessage(content=text, additional_kwargs=self.additional_kwargs)
+            return self._msg_class(
+                content=text, additional_kwargs=self.additional_kwargs
+            )
         else:
             content = []
             for prompt in self.prompt:
                 inputs = {var: kwargs[var] for var in prompt.input_variables}
                 if isinstance(prompt, StringPromptTemplate):
-                    formatted = prompt.format(**inputs)
+                    formatted: Union[str, ImageURL] = prompt.format(**inputs)
                     content.append({"type": "text", "text": formatted})
                 elif isinstance(prompt, ImagePromptTemplate):
                     formatted = prompt.format(**inputs)
                     content.append({"type": "image_url", "image_url": formatted})
-            return HumanMessage(
+            return self._msg_class(
                 content=content, additional_kwargs=self.additional_kwargs
             )
 
 
-class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
+class HumanMessagePromptTemplate(_StringImageMessagePromptTemplate):
+    """Human message prompt template. This is a message sent from the user."""
+
+    _msg_class: Type[BaseMessage] = HumanMessage
+
+
+class AIMessagePromptTemplate(_StringImageMessagePromptTemplate):
     """AI message prompt template. This is a message sent from the AI."""
 
-    def format(self, **kwargs: Any) -> BaseMessage:
-        """Format the prompt template.
-
-        Args:
-            **kwargs: Keyword arguments to use for formatting.
-
-        Returns:
-            Formatted message.
-        """
-        text = self.prompt.format(**kwargs)
-        return AIMessage(content=text, additional_kwargs=self.additional_kwargs)
+    _msg_class: Type[BaseMessage] = AIMessage
 
 
-class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
+class SystemMessagePromptTemplate(_StringImageMessagePromptTemplate):
     """System message prompt template.
     This is a message that is not sent to the user.
     """
 
-    def format(self, **kwargs: Any) -> BaseMessage:
-        """Format the prompt template.
-
-        Args:
-            **kwargs: Keyword arguments to use for formatting.
-
-        Returns:
-            Formatted message.
-        """
-        text = self.prompt.format(**kwargs)
-        return SystemMessage(content=text, additional_kwargs=self.additional_kwargs)
+    _msg_class: Type[BaseMessage] = SystemMessage
 
 
 class ChatPromptValue(PromptValue):
