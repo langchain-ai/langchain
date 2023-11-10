@@ -89,6 +89,9 @@ class _OllamaCommon(BaseLanguageModel):
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
 
+    format: Optional[str] = None
+    """Specify the format of the output (e.g., JSON)"""
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -108,6 +111,7 @@ class _OllamaCommon(BaseLanguageModel):
                 "tfs_z": self.tfs_z,
                 "top_k": self.top_k,
                 "top_p": self.top_p,
+                "format": self.format,
             },
         }
 
