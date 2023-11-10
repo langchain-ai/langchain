@@ -1,9 +1,9 @@
 """Test Chroma functionality."""
 import uuid
 
-import pytest
 import chromadb
 import numpy as np
+import pytest
 import requests
 
 from langchain.docstore.document import Document
