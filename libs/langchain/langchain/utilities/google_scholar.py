@@ -1,16 +1,16 @@
 """Util that calls Google Scholar Search."""
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, cast
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class GoogleScholarAPIWrapper(BaseModel):
-    """Wrapper for Google Scholar API
+    """Wrapper for SerpApi's Google Scholar API
 
-    You can create serpapi key by signing up at: https://serpapi.com/users/sign_up.
+    You can create SerpApi.com key by signing up at: https://serpapi.com/users/sign_up.
 
-    The wrapper uses the serpapi python package:
+    The wrapper uses the SerpApi.com python package:
     https://serpapi.com/integrations/python#search-google-scholar
 
     To use, you should have the environment variable ``SERP_API_KEY``
@@ -40,10 +40,12 @@ class GoogleScholarAPIWrapper(BaseModel):
         google_scholar.run('langchain')
     """
 
+    search_engine: Any  #: :meta private:
+
     top_k_results: int = 10
     hl: str = "en"
     lr: str = "lang_en"
-    serp_api_key: Optional[str] = None
+    serp_api_key: Optional[SecretStr] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -53,11 +55,12 @@ class GoogleScholarAPIWrapper(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        serp_api_key = get_from_dict_or_env(values, "serp_api_key", "SERP_API_KEY")
-        values["SERP_API_KEY"] = serp_api_key
+        values["serp_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "serp_api_key", "SERPAPI_API_KEY")
+        )
 
         try:
-            from serpapi import GoogleScholarSearch
+            from serpapi import SerpApiClient
 
         except ImportError:
             raise ImportError(
@@ -65,60 +68,34 @@ class GoogleScholarAPIWrapper(BaseModel):
                 "Please install it with `pip install google-search-results"
                 ">=2.4.2`"
             )
-        GoogleScholarSearch.SERP_API_KEY = serp_api_key
-        values["google_scholar_engine"] = GoogleScholarSearch
+
+        values["search_engine"] = SerpApiClient
 
         return values
 
     def run(self, query: str) -> str:
-        """Run query through GoogleSearchScholar and parse result"""
+        """Run query through SerpApi.com and parse result"""
         total_results = []
-        page = 0
-        while page < max((self.top_k_results - 20), 1):
-            # We are getting 20 results from every page
-            # which is the max in order to reduce the number of API CALLS.
-            # 0 is the first page of results, 20 is the 2nd page of results,
-            # 40 is the 3rd page of results, etc.
-            results = (
-                self.google_scholar_engine(  # type: ignore
-                    {
-                        "q": query,
-                        "start": page,
-                        "hl": self.hl,
-                        "num": min(
-                            self.top_k_results, 20
-                        ),  # if top_k_result is less than 20.
-                        "lr": self.lr,
-                    }
-                )
-                .get_dict()
-                .get("organic_results", [])
-            )
+
+        serpapi_api_key = cast(SecretStr, self.serp_api_key)
+        params = {
+            "engine": "google_scholar",
+            "api_key": serpapi_api_key.get_secret_value(),
+            "q": query,
+            "hl": self.hl,
+            "num": min(self.top_k_results, 20),  # if top_k_result is less than 20.
+            "lr": self.lr,
+        }
+
+        client = self.search_engine(params)
+
+        for page in client.pagination():
+            results = page.get("organic_results", [])
             total_results.extend(results)
-            if not results:  # No need to search for more pages if current page
-                # has returned no results
-                break
-            page += 20
-        if (
-            self.top_k_results % 20 != 0 and page > 20 and total_results
-        ):  # From the last page we would only need top_k_results%20 results
-            # if k is not divisible by 20.
-            results = (
-                self.google_scholar_engine(  # type: ignore
-                    {
-                        "q": query,
-                        "start": page,
-                        "num": self.top_k_results % 20,
-                        "hl": self.hl,
-                        "lr": self.lr,
-                    }
-                )
-                .get_dict()
-                .get("organic_results", [])
-            )
-            total_results.extend(results)
+
         if not total_results:
             return "No good Google Scholar Result was found"
+
         docs = [
             f"Title: {result.get('title','')}\n"
             f"Authors: {','.join([author.get('name') for author in result.get('publication_info',{}).get('authors',[])])}\n"  # noqa: E501

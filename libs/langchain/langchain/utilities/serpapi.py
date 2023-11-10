@@ -1,33 +1,17 @@
-"""Chain that calls SerpAPI.
+"""Chain that calls SerpApi.
 
 Heavily borrowed from https://github.com/ofirpress/self-ask
 """
-import os
-import sys
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, cast
 
 import aiohttp
 
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain.utils import get_from_dict_or_env
-
-
-class HiddenPrints:
-    """Context manager to hide prints."""
-
-    def __enter__(self) -> None:
-        """Open file to pipe stdout to."""
-        self._original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, "w")
-
-    def __exit__(self, *_: Any) -> None:
-        """Close file that stdout was piped to."""
-        sys.stdout.close()
-        sys.stdout = self._original_stdout
+from langchain.pydantic_v1 import BaseModel, Extra, Field, SecretStr, root_validator
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class SerpAPIWrapper(BaseModel):
-    """Wrapper around SerpAPI.
+    """Wrapper around SerpApi.
 
     To use, you should have the ``google-search-results`` python package installed,
     and the environment variable ``SERPAPI_API_KEY`` set with your API key, or pass
@@ -49,7 +33,7 @@ class SerpAPIWrapper(BaseModel):
             "hl": "en",
         }
     )
-    serpapi_api_key: Optional[str] = None
+    serpapi_api_key: Optional[SecretStr] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
@@ -61,14 +45,13 @@ class SerpAPIWrapper(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        serpapi_api_key = get_from_dict_or_env(
-            values, "serpapi_api_key", "SERPAPI_API_KEY"
+        values["serpapi_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "serpapi_api_key", "SERPAPI_API_KEY")
         )
-        values["serpapi_api_key"] = serpapi_api_key
         try:
-            from serpapi import GoogleSearch
+            from serpapi import SerpApiClient
 
-            values["search_engine"] = GoogleSearch
+            values["search_engine"] = SerpApiClient
         except ImportError:
             raise ValueError(
                 "Could not import serpapi python package. "
@@ -77,29 +60,31 @@ class SerpAPIWrapper(BaseModel):
         return values
 
     async def arun(self, query: str, **kwargs: Any) -> str:
-        """Run query through SerpAPI and parse result async."""
+        """Run query through SerpApi and parse result async."""
         return self._process_response(await self.aresults(query))
 
     def run(self, query: str, **kwargs: Any) -> str:
-        """Run query through SerpAPI and parse result."""
+        """Run query through SerpApi and parse result."""
         return self._process_response(self.results(query))
 
     def results(self, query: str) -> dict:
-        """Run query through SerpAPI and return the raw result."""
+        """Run query through SerpApi and return the raw result."""
         params = self.get_params(query)
-        with HiddenPrints():
-            search = self.search_engine(params)
-            res = search.get_dict()
+        search = self.search_engine(params)
+        res = search.get_dict()
         return res
 
+    @staticmethod
+    def get_user_agent() -> str:
+        from langchain import __version__
+
+        return f"langchain-py/{__version__}"
+
     async def aresults(self, query: str) -> dict:
-        """Use aiohttp to run query through SerpAPI and return the results async."""
+        """Use aiohttp to run query through SerpApi and return the results async."""
 
         def construct_url_and_params() -> Tuple[str, Dict[str, str]]:
             params = self.get_params(query)
-            params["source"] = "python"
-            if self.serpapi_api_key:
-                params["serp_api_key"] = self.serpapi_api_key
             params["output"] = "json"
             url = "https://serpapi.com/search"
             return url, params
@@ -116,9 +101,10 @@ class SerpAPIWrapper(BaseModel):
         return res
 
     def get_params(self, query: str) -> Dict[str, str]:
-        """Get parameters for SerpAPI."""
+        """Get parameters for SerpApi."""
         _params = {
-            "api_key": self.serpapi_api_key,
+            "api_key": cast(SecretStr, self.serpapi_api_key).get_secret_value(),
+            "source": self.get_user_agent(),
             "q": query,
         }
         params = {**self.params, **_params}
@@ -126,9 +112,9 @@ class SerpAPIWrapper(BaseModel):
 
     @staticmethod
     def _process_response(res: dict) -> str:
-        """Process response from SerpAPI."""
+        """Process response from SerpApi."""
         if "error" in res.keys():
-            raise ValueError(f"Got error from SerpAPI: {res['error']}")
+            raise ValueError(f"Got error from SerpApi: {res['error']}")
         if "answer_box_list" in res.keys():
             res["answer_box"] = res["answer_box_list"]
         if "answer_box" in res.keys():

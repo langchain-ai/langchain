@@ -3,7 +3,7 @@
 from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
+from langchain.tools.base import BaseTool, Field
 from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
 
 
@@ -17,7 +17,9 @@ class GoogleScholarQueryRun(BaseTool):
         "research papers from Google Scholar"
         "Input should be a search query."
     )
-    api_wrapper: GoogleScholarAPIWrapper
+    api_wrapper: GoogleScholarAPIWrapper = Field(
+        default_factory=GoogleScholarAPIWrapper
+    )
 
     def _run(
         self,
