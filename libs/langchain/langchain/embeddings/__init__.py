@@ -19,6 +19,7 @@ from langchain.embeddings.aleph_alpha import (
     AlephAlphaSymmetricSemanticEmbedding,
 )
 from langchain.embeddings.awa import AwaEmbeddings
+from langchain.embeddings.azure_openai import AzureOpenAIEmbeddings
 from langchain.embeddings.baidu_qianfan_endpoint import QianfanEmbeddingsEndpoint
 from langchain.embeddings.bedrock import BedrockEmbeddings
 from langchain.embeddings.cache import CacheBackedEmbeddings
@@ -72,6 +73,7 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "OpenAIEmbeddings",
+    "AzureOpenAIEmbeddings",
     "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
