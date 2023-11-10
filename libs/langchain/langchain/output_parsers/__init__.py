@@ -23,6 +23,11 @@ from langchain.output_parsers.list import (
     MarkdownListOutputParser,
     NumberedListOutputParser,
 )
+from langchain.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    JsonOutputToolsParser,
+    PydanticToolsParser,
+)
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.output_parsers.rail_parser import GuardrailsOutputParser
 from langchain.output_parsers.regex import RegexParser
@@ -50,4 +55,7 @@ __all__ = [
     "RetryWithErrorOutputParser",
     "StructuredOutputParser",
     "XMLOutputParser",
+    "JsonOutputToolsParser",
+    "PydanticToolsParser",
+    "JsonOutputKeyToolsParser",
 ]

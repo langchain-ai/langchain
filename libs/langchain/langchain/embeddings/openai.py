@@ -5,7 +5,6 @@ import os
 import warnings
 from importlib.metadata import version
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -34,9 +33,6 @@ from tenacity import (
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
-
-if TYPE_CHECKING:
-    import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -207,10 +203,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
-    request_timeout: Optional[Union[float, Tuple[float, float], httpx.Timeout]] = Field(
+    request_timeout: Optional[Union[float, Tuple[float, float], Any]] = Field(
         default=None, alias="timeout"
     )
-    """Timeout in seconds for the OpenAPI request."""
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+        None."""
     headers: Any = None
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
@@ -233,7 +230,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[httpx.Client, None] = None
+    http_client: Union[Any, None] = None
+    """Optional httpx.Client."""
 
     class Config:
         """Configuration for this pydantic object."""
