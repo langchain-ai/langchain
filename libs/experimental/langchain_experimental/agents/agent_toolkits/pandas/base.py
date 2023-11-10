@@ -56,15 +56,16 @@ def _get_multi_prompt(
     df_locals = {}
     for i, dataframe in enumerate(dfs):
         df_locals[f"df{i + 1}"] = dataframe
-    tools = [PythonAstREPLTool(locals=df_locals)]
-
+    if len(extra_tools) > 0:
+        tools = [PythonAstREPLTool(locals=df_locals)] + extra_tools
+    else:
+        tools = [PythonAstREPLTool(locals=df_locals)]
     prompt = ZeroShotAgent.create_prompt(
-        tools + extra_tools,
+        tools,
         prefix=prefix,
         suffix=suffix_to_use,
         input_variables=input_variables,
     )
-
     partial_prompt = prompt.partial()
     if "dfs_head" in input_variables:
         dfs_head = "\n\n".join([d.head(number_of_head_rows).to_markdown() for d in dfs])
@@ -101,10 +102,13 @@ def _get_single_prompt(
     if prefix is None:
         prefix = PREFIX
 
-    tools = [PythonAstREPLTool(locals={"df": df})]
+    if len(extra_tools) > 0:
+        tools = [PythonAstREPLTool(locals={"df": df})] + extra_tools
+    else:
+        tools = [PythonAstREPLTool(locals={"df": df})]
 
     prompt = ZeroShotAgent.create_prompt(
-        tools + extra_tools,
+        tools,
         prefix=prefix,
         suffix=suffix_to_use,
         input_variables=input_variables,
@@ -126,7 +130,7 @@ def _get_prompt_and_tools(
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
     extra_tools: Sequence[BaseTool] = (),
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
+) -> Tuple[BasePromptTemplate, List[BaseTool]]:
     try:
         import pandas as pd
 
@@ -308,7 +312,7 @@ def create_pandas_dataframe_agent(
             number_of_head_rows=number_of_head_rows,
             extra_tools=extra_tools,
         )
-        tools = base_tools + list(extra_tools)
+        tools = base_tools
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
