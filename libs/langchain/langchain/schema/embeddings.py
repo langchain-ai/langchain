@@ -25,3 +25,16 @@ class Embeddings(ABC):
         return await asyncio.get_running_loop().run_in_executor(
             None, self.embed_query, text
         )
+
+    def embed_image(self, uris: List[str]) -> List[List[float]]:
+        """Embed images.
+
+        Args:
+            uris (List[str]): List of image URIs.
+
+        Returns:
+            Optional[List[List[float]]]: List of image embeddings or None
+        """
+        # Default implementation could return None or raise NotImplementedError
+        # return None
+        raise NotImplementedError("embed_image method is not implemented.")
