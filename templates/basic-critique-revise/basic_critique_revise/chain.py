@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from enum import Enum
 from operator import itemgetter
-from typing import Dict, Sequence, Any
+from typing import Any, Dict, Sequence
 
 from langchain.chains.openai_functions import convert_to_openai_function
 from langchain.chat_models import ChatOpenAI
@@ -11,9 +11,7 @@ from langchain.pydantic_v1 import BaseModel, Field, ValidationError, conint
 from langchain.schema.runnable import (
     Runnable,
     RunnableBranch,
-    RunnableConfig,
     RunnableLambda,
-    RunnableParallel,
     RunnablePassthrough,
 )
 
