@@ -5,7 +5,6 @@ import os
 import warnings
 from importlib.metadata import version
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -17,6 +16,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -33,9 +33,6 @@ from tenacity import (
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
-
-if TYPE_CHECKING:
-    import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -182,7 +179,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     async_client: Any = None  #: :meta private:
     model: str = "text-embedding-ada-002"
     # to support Azure OpenAI Service custom deployment names
-    deployment: str = model
+    deployment: Optional[str] = model
     # TODO: Move to AzureOpenAIEmbeddings.
     openai_api_version: Optional[str] = Field(default=None, alias="api_version")
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
@@ -206,10 +203,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
-    request_timeout: Optional[Union[float, Tuple[float, float], httpx.Timeout]] = Field(
+    request_timeout: Optional[Union[float, Tuple[float, float], Any]] = Field(
         default=None, alias="timeout"
     )
-    """Timeout in seconds for the OpenAPI request."""
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+        None."""
     headers: Any = None
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
@@ -232,7 +230,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[httpx.Client, None] = None
+    http_client: Union[Any, None] = None
+    """Optional httpx.Client."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -546,7 +545,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        return self._get_len_safe_embeddings(texts, engine=self.deployment)
+        engine = cast(str, self.deployment)
+        return self._get_len_safe_embeddings(texts, engine=engine)
 
     async def aembed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
@@ -563,7 +563,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        return await self._aget_len_safe_embeddings(texts, engine=self.deployment)
+        engine = cast(str, self.deployment)
+        return await self._aget_len_safe_embeddings(texts, engine=engine)
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
