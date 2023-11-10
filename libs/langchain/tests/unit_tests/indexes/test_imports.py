@@ -6,6 +6,7 @@ EXPECTED_ALL = [
     "GraphIndexCreator",
     "index",
     "IndexingResult",
+    "MemoryRecordManager",
     "SQLRecordManager",
     "VectorstoreIndexCreator",
 ]
