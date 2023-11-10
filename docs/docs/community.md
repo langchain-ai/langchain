@@ -48,6 +48,6 @@ If you’re working on something you’re proud of, and think the LangChain comm
 Here’s where our team hangs out, talks shop, spotlights cool work, and shares what we’re up to. We’d love to see you there too.
 
 - **[Twitter](https://twitter.com/LangChainAI):** We post about what we’re working on and what cool things we’re seeing in the space. If you tag @langchainai in your post, we’ll almost certainly see it, and can show you some love!
-- **[Discord](https://discord.gg/6adMQxSpJS):** connect with >30k developers who are building with LangChain
+- **[Discord](https://discord.gg/6adMQxSpJS):** connect with over 30,000 developers who are building with LangChain.
 - **[GitHub](https://github.com/langchain-ai/langchain):** Open pull requests, contribute to a discussion, and/or contribute
 - **[Subscribe to our bi-weekly Release Notes](https://6w1pwbss0py.typeform.com/to/KjZB1auB):** a twice/month email roundup of the coolest things going on in our orbit

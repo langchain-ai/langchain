@@ -141,6 +141,8 @@ class LLMInputOutputAdapter:
 
 
 class BedrockBase(BaseModel, ABC):
+    """Base class for Bedrock models."""
+
     client: Any  #: :meta private:
 
     region_name: Optional[str] = None

@@ -24,9 +24,9 @@ from typing import (
     Union,
 )
 
-Input = TypeVar("Input")
+Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
-Output = TypeVar("Output")
+Output = TypeVar("Output", covariant=True)
 
 
 async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
@@ -192,7 +192,11 @@ class AddableDict(Dict[str, Any]):
             if key not in chunk or chunk[key] is None:
                 chunk[key] = other[key]
             elif other[key] is not None:
-                chunk[key] = chunk[key] + other[key]
+                try:
+                    added = chunk[key] + other[key]
+                except TypeError:
+                    added = other[key]
+                chunk[key] = added
         return chunk
 
     def __radd__(self, other: AddableDict) -> AddableDict:
@@ -201,7 +205,11 @@ class AddableDict(Dict[str, Any]):
             if key not in chunk or chunk[key] is None:
                 chunk[key] = self[key]
             elif self[key] is not None:
-                chunk[key] = chunk[key] + self[key]
+                try:
+                    added = chunk[key] + self[key]
+                except TypeError:
+                    added = self[key]
+                chunk[key] = added
         return chunk
 
 
@@ -250,6 +258,9 @@ class ConfigurableField(NamedTuple):
     description: Optional[str] = None
     annotation: Optional[Any] = None
 
+    def __hash__(self) -> int:
+        return hash((self.id, self.annotation))
+
 
 class ConfigurableFieldSingleOption(NamedTuple):
     """A field that can be configured by the user with a default value."""
@@ -261,6 +272,9 @@ class ConfigurableFieldSingleOption(NamedTuple):
     name: Optional[str] = None
     description: Optional[str] = None
 
+    def __hash__(self) -> int:
+        return hash((self.id, tuple(self.options.keys()), self.default))
+
 
 class ConfigurableFieldMultiOption(NamedTuple):
     """A field that can be configured by the user with multiple default values."""
@@ -271,6 +285,9 @@ class ConfigurableFieldMultiOption(NamedTuple):
 
     name: Optional[str] = None
     description: Optional[str] = None
+
+    def __hash__(self) -> int:
+        return hash((self.id, tuple(self.options.keys()), tuple(self.default)))
 
 
 AnyConfigurableField = Union[

@@ -101,7 +101,7 @@ class BaseGenerationOutputParser(
     async def ainvoke(
         self,
         input: str | BaseMessage,
-        config: RunnableConfig | None = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
@@ -190,7 +190,7 @@ class BaseOutputParser(
     async def ainvoke(
         self,
         input: str | BaseMessage,
-        config: RunnableConfig | None = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
@@ -298,7 +298,10 @@ class BaseOutputParser(
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().dict(**kwargs)
-        output_parser_dict["_type"] = self._type
+        try:
+            output_parser_dict["_type"] = self._type
+        except NotImplementedError:
+            pass
         return output_parser_dict
 
 

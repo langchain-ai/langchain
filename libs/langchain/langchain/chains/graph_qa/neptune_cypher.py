@@ -85,6 +85,17 @@ class NeptuneOpenCypherQAChain(Chain):
     """Chain for question-answering against a Neptune graph
     by generating openCypher statements.
 
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
+
     Example:
         .. code-block:: python
 

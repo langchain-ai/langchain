@@ -1,8 +1,8 @@
 # Microsoft
 
-All functionality related to Microsoft Azure
+All functionality related to `Microsoft Azure` and other `Microsoft` products.
 
-## LLM
+## Chat Models
 ### Azure OpenAI
 
 >[Microsoft Azure](https://en.wikipedia.org/wiki/Microsoft_Azure), often referred to as `Azure` is a cloud computing platform run by `Microsoft`, which offers access, management, and development of applications and services through global data centers. It provides a range of capabilities, including software as a service (SaaS), platform as a service (PaaS), and infrastructure as a service (IaaS). `Microsoft Azure` supports many programming languages, tools, and frameworks, including Microsoft-specific and third-party software and systems.
@@ -18,16 +18,15 @@ Set the environment variables to get access to the `Azure OpenAI` service.
 ```python
 import os
 
-os.environ["OPENAI_API_TYPE"] = "azure"
-os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
-os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
-os.environ["OPENAI_API_VERSION"] = "2023-05-15"
+os.environ["AZURE_OPENAI_ENDPOINT"] = "https://<your-endpoint.openai.azure.com/"
+os.environ["AZURE_OPENAI_API_KEY"] = "your AzureOpenAI key"
 ```
 
-See a [usage example](/docs/integrations/llms/azure_openai_example).
+See a [usage example](/docs/integrations/chat/azure_chat_openai)
+
 
 ```python
-from langchain.llms import AzureOpenAI
+from langchain.chat_models import AzureChatOpenAI
 ```
 
 ## Text Embedding Models
@@ -36,16 +35,16 @@ from langchain.llms import AzureOpenAI
 See a [usage example](/docs/integrations/text_embedding/azureopenai)
 
 ```python
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.embeddings import AzureOpenAIEmbeddings
 ```
 
-## Chat Models
+## LLMs
 ### Azure OpenAI
 
-See a [usage example](/docs/integrations/chat/azure_chat_openai)
+See a [usage example](/docs/integrations/llms/azure_openai_example).
 
 ```python
-from langchain.chat_models import AzureChatOpenAI
+from langchain.llms import AzureOpenAI
 ```
 
 ## Document loaders
@@ -70,13 +69,13 @@ from langchain.chat_models import AzureChatOpenAI
 pip install azure-storage-blob
 ```
 
-See a [usage example for the Azure Blob Storage](/docs/integrations/document_loaders/azure_blob_storage_container.html).
+See a [usage example for the Azure Blob Storage](/docs/integrations/document_loaders/azure_blob_storage_container).
 
 ```python
 from langchain.document_loaders import AzureBlobStorageContainerLoader
 ```
 
-See a [usage example for the Azure Files](/docs/integrations/document_loaders/azure_blob_storage_file.html).
+See a [usage example for the Azure Files](/docs/integrations/document_loaders/azure_blob_storage_file).
 
 ```python
 from langchain.document_loaders import AzureBlobStorageFileLoader
@@ -160,4 +159,60 @@ See a [usage example](/docs/integrations/retrievers/azure_cognitive_search).
 ```python
 from langchain.retrievers import AzureCognitiveSearchRetriever
 ```
+
+## Utilities
+
+### Bing Search API
+
+See a [usage example](/docs/integrations/tools/bing_search).
+
+```python
+from langchain.utilities import BingSearchAPIWrapper
+```
+
+## Toolkits
+
+### Azure Cognitive Services
+
+We need to install several python packages.
+
+```bash
+pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision
+```
+
+See a [usage example](/docs/integrations/toolkits/azure_cognitive_services).
+
+```python
+from langchain.agents.agent_toolkits import O365Toolkit
+```
+### Microsoft Office 365 email and calendar
+
+We need to install `O365` python package.
+
+```bash
+pip install O365
+```
+
+
+See a [usage example](/docs/integrations/toolkits/office365).
+
+```python
+from langchain.agents.agent_toolkits import O365Toolkit
+```
+
+### Microsoft Azure PowerBI
+
+We need to install `azure-identity` python package.
+
+```bash
+pip install azure-identity
+```
+
+See a [usage example](/docs/integrations/toolkits/powerbi).
+
+```python
+from langchain.agents.agent_toolkits import PowerBIToolkit
+from langchain.utilities.powerbi import PowerBIDataset
+```
+
 
