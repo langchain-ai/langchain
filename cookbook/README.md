@@ -52,3 +52,4 @@ Notebook | Description
 [two_agent_debate_tools.ipynb](https://github.com/langchain-ai/langchain/tree/master/cookbook/two_agent_debate_tools.ipynb) | Simulate multi-agent dialogues where the agents can utilize various tools.
 [two_player_dnd.ipynb](https://github.com/langchain-ai/langchain/tree/master/cookbook/two_player_dnd.ipynb) | Simulate a two-player dungeons & dragons game, where a dialogue simulator class is used to coordinate the dialogue between the protagonist and the dungeon master.
 [wikibase_agent.ipynb](https://github.com/langchain-ai/langchain/tree/master/cookbook/wikibase_agent.ipynb) | Create a simple wikibase agent that utilizes sparql generation, with testing done on http://wikidata.org.
+[extraction_openai_tools.ipynb](https://github.com/langchain-ai/langchain/blob/master/cookbook/extraction_openai_tools.ipynb) | Parallel Function Calling for Structured Data Extraction
