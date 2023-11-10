@@ -1,4 +1,6 @@
-from typing import Literal, TypedDict
+from typing import Literal
+
+from typing_extensions import TypedDict
 
 
 class ImageURL(TypedDict, total=False):
