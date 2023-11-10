@@ -350,7 +350,7 @@ class OpenSearchVectorSearch(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
-        index_name = kwargs.get("index_name" self.index_name)
+        index_name = kwargs.get("index_name", self.index_name)
         text_field = kwargs.get("text_field", "text")
         dim = len(embeddings[0])
         engine = kwargs.get("engine", "nmslib")
