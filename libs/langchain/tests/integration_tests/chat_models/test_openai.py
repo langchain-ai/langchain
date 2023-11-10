@@ -25,7 +25,19 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 @pytest.mark.scheduled
 def test_chat_openai() -> None:
     """Test ChatOpenAI wrapper."""
-    chat = ChatOpenAI(max_tokens=10)
+    chat = ChatOpenAI(
+        temperature=0.7,
+        base_url=None,
+        organization=None,
+        openai_proxy=None,
+        timeout=10.0,
+        max_retries=3,
+        http_client=None,
+        n=1,
+        max_tokens=10,
+        default_headers=None,
+        default_query=None,
+    )
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, BaseMessage)
