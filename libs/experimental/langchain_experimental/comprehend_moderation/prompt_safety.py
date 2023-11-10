@@ -78,7 +78,9 @@ class ComprehendPromptSafety:
             if unsafe_prompt:
                 self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
             asyncio.create_task(
-                self.callback.on_after_prompt_safety(self.moderation_beacon, self.unique_id)
+                self.callback.on_after_prompt_safety(
+                    self.moderation_beacon, self.unique_id
+                )
             )
 
         if unsafe_prompt:
