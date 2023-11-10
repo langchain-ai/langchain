@@ -1671,6 +1671,9 @@
             dict({
               '$ref': '#/definitions/FunctionMessage',
             }),
+            dict({
+              '$ref': '#/definitions/ToolMessage',
+            }),
           ]),
         }),
         'type': 'array',
@@ -1796,6 +1799,9 @@
                 }),
                 dict({
                   '$ref': '#/definitions/FunctionMessage',
+                }),
+                dict({
+                  '$ref': '#/definitions/ToolMessage',
                 }),
               ]),
             }),
@@ -1979,6 +1985,54 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolMessage': dict({
+        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'tool_call_id': dict({
+            'title': 'Tool Call Id',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'tool',
+            'enum': list([
+              'tool',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'tool_call_id',
+        ]),
+        'title': 'ToolMessage',
         'type': 'object',
       }),
     }),
@@ -2015,6 +2069,9 @@
             dict({
               '$ref': '#/definitions/FunctionMessage',
             }),
+            dict({
+              '$ref': '#/definitions/ToolMessage',
+            }),
           ]),
         }),
         'type': 'array',
@@ -2140,6 +2197,9 @@
                 }),
                 dict({
                   '$ref': '#/definitions/FunctionMessage',
+                }),
+                dict({
+                  '$ref': '#/definitions/ToolMessage',
                 }),
               ]),
             }),
@@ -2325,6 +2385,54 @@
         'title': 'SystemMessage',
         'type': 'object',
       }),
+      'ToolMessage': dict({
+        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'tool_call_id': dict({
+            'title': 'Tool Call Id',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'tool',
+            'enum': list([
+              'tool',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'tool_call_id',
+        ]),
+        'title': 'ToolMessage',
+        'type': 'object',
+      }),
     }),
     'title': 'FakeListChatModelInput',
   })
@@ -2346,6 +2454,9 @@
       }),
       dict({
         '$ref': '#/definitions/FunctionMessage',
+      }),
+      dict({
+        '$ref': '#/definitions/ToolMessage',
       }),
     ]),
     'definitions': dict({
@@ -2585,6 +2696,54 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolMessage': dict({
+        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'tool_call_id': dict({
+            'title': 'Tool Call Id',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'tool',
+            'enum': list([
+              'tool',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'tool_call_id',
+        ]),
+        'title': 'ToolMessage',
         'type': 'object',
       }),
     }),
@@ -2722,6 +2881,9 @@
                 dict({
                   '$ref': '#/definitions/FunctionMessage',
                 }),
+                dict({
+                  '$ref': '#/definitions/ToolMessage',
+                }),
               ]),
             }),
             'title': 'Messages',
@@ -2904,6 +3066,54 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolMessage': dict({
+        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'tool_call_id': dict({
+            'title': 'Tool Call Id',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'tool',
+            'enum': list([
+              'tool',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'tool_call_id',
+        ]),
+        'title': 'ToolMessage',
         'type': 'object',
       }),
     }),
@@ -3041,6 +3251,9 @@
                 dict({
                   '$ref': '#/definitions/FunctionMessage',
                 }),
+                dict({
+                  '$ref': '#/definitions/ToolMessage',
+                }),
               ]),
             }),
             'title': 'Messages',
@@ -3225,6 +3438,54 @@
         'title': 'SystemMessage',
         'type': 'object',
       }),
+      'ToolMessage': dict({
+        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'tool_call_id': dict({
+            'title': 'Tool Call Id',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'tool',
+            'enum': list([
+              'tool',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'tool_call_id',
+        ]),
+        'title': 'ToolMessage',
+        'type': 'object',
+      }),
     }),
     'title': 'PromptTemplateOutput',
   })
@@ -3351,6 +3612,9 @@
                 }),
                 dict({
                   '$ref': '#/definitions/FunctionMessage',
+                }),
+                dict({
+                  '$ref': '#/definitions/ToolMessage',
                 }),
               ]),
             }),
@@ -3547,6 +3811,54 @@
         'title': 'SystemMessage',
         'type': 'object',
       }),
+      'ToolMessage': dict({
+        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'tool_call_id': dict({
+            'title': 'Tool Call Id',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'tool',
+            'enum': list([
+              'tool',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'tool_call_id',
+        ]),
+        'title': 'ToolMessage',
+        'type': 'object',
+      }),
     }),
     'items': dict({
       '$ref': '#/definitions/PromptTemplateOutput',
@@ -3575,6 +3887,9 @@
       }),
       dict({
         '$ref': '#/definitions/FunctionMessage',
+      }),
+      dict({
+        '$ref': '#/definitions/ToolMessage',
       }),
     ]),
     'definitions': dict({
@@ -3814,6 +4129,54 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolMessage': dict({
+        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'tool_call_id': dict({
+            'title': 'Tool Call Id',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'tool',
+            'enum': list([
+              'tool',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'tool_call_id',
+        ]),
+        'title': 'ToolMessage',
         'type': 'object',
       }),
     }),

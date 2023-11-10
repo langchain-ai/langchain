@@ -21,7 +21,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         
         Example: `https://example-resource.azure.openai.com/`
     """
-    azure_deployment: Optional[str] = None
+    deployment: Optional[str] = Field(default=None, alias="azure_deployment")
     """A model deployment. 
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
@@ -104,15 +104,15 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                         f"(or alias `base_url`). Updating `openai_api_base` from "
                         f"{openai_api_base} to {values['openai_api_base']}."
                     )
-                if values["azure_deployment"]:
+                if values["deployment"]:
                     warnings.warn(
-                        "As of openai>=1.0.0, if `azure_deployment` (or alias "
+                        "As of openai>=1.0.0, if `deployment` (or alias "
                         "`azure_deployment`) is specified then "
                         "`openai_api_base` (or alias `base_url`) should not be. "
-                        "Instead use `azure_deployment` (or alias `azure_deployment`) "
+                        "Instead use `deployment` (or alias `azure_deployment`) "
                         "and `azure_endpoint`."
                     )
-                    if values["azure_deployment"] not in values["openai_api_base"]:
+                    if values["deployment"] not in values["openai_api_base"]:
                         warnings.warn(
                             "As of openai>=1.0.0, if `openai_api_base` "
                             "(or alias `base_url`) is specified it is expected to be "
@@ -122,13 +122,13 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                             f"{values['openai_api_base']}."
                         )
                         values["openai_api_base"] += (
-                            "/deployments/" + values["azure_deployment"]
+                            "/deployments/" + values["deployment"]
                         )
-                    values["azure_deployment"] = None
+                    values["deployment"] = None
             client_params = {
                 "api_version": values["openai_api_version"],
                 "azure_endpoint": values["azure_endpoint"],
-                "azure_deployment": values["azure_deployment"],
+                "azure_deployment": values["deployment"],
                 "api_key": values["openai_api_key"],
                 "azure_ad_token": values["azure_ad_token"],
                 "azure_ad_token_provider": values["azure_ad_token_provider"],

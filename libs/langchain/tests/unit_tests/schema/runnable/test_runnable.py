@@ -285,6 +285,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         {"$ref": "#/definitions/ChatMessage"},
                         {"$ref": "#/definitions/SystemMessage"},
                         {"$ref": "#/definitions/FunctionMessage"},
+                        {"$ref": "#/definitions/ToolMessage"},
                     ]
                 },
             }
@@ -362,7 +363,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ChatMessage": {
                 "title": "ChatMessage",
-                "description": "A Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
+                "description": "A Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -393,7 +394,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "SystemMessage": {
                 "title": "SystemMessage",
-                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
+                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -423,7 +424,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "FunctionMessage": {
                 "title": "FunctionMessage",
-                "description": "A Message for passing the result of executing a function back to a model.",  # noqa: E501
+                "description": "A Message for passing the result of executing a function back to a model.",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -451,6 +452,37 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     "name": {"title": "Name", "type": "string"},
                 },
                 "required": ["content", "name"],
+            },
+            "ToolMessage": {
+                "title": "ToolMessage",
+                "description": "A Message for passing the result of executing a tool back to a model.",  # noqa
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "title": "Content",
+                        "anyOf": [
+                            {"type": "string"},
+                            {
+                                "type": "array",
+                                "items": {
+                                    "anyOf": [{"type": "string"}, {"type": "object"}]
+                                },
+                            },
+                        ],
+                    },
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "type": {
+                        "title": "Type",
+                        "default": "tool",
+                        "enum": ["tool"],
+                        "type": "string",
+                    },
+                    "tool_call_id": {"title": "Tool Call Id", "type": "string"},
+                },
+                "required": ["content", "tool_call_id"],
             },
         },
     }
