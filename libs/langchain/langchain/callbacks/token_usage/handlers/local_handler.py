@@ -68,7 +68,7 @@ class LocalTokenUsageCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         tags: List[str] | None = None,
         metadata: Dict[str, Any] | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Called when the LLM starts processing the request."""
         self._timers[run_id].start()
@@ -82,13 +82,18 @@ class LocalTokenUsageCallbackHandler(BaseCallbackHandler):
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
         parent_run_id: UUID | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         """Called when the LLM emits a new token."""
         self._timers[run_id].new_token()
 
     def on_llm_end(
-        self, response: LLMResult, *, run_id: UUID, parent_run_id: UUID | None = None, **kwargs: Any
+        self,
+        response: LLMResult,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
     ) -> None:
         """Called when the LLM finishes processing the request."""
         timer = self._timers.pop(run_id, None)
@@ -97,7 +102,9 @@ class LocalTokenUsageCallbackHandler(BaseCallbackHandler):
         timestamp = datetime.datetime.now()
         prompt_tokens = self._prompt_tokens_by_run.pop(run_id, 0)
         completion_tokens = sum(
-            self.token_counter_func(gen.text) for gens in response.generations for gen in gens
+            self.token_counter_func(gen.text)
+            for gens in response.generations
+            for gen in gens
         )
         total_tokens = prompt_tokens + completion_tokens
         total_cost: float | None = None

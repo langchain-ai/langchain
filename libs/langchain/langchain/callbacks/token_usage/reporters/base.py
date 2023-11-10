@@ -11,12 +11,18 @@ class TokenUsageReport(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    timestamp: datetime.datetime = Field(default=..., description="The timestamp of the llm run.")
-    prompt_tokens: int | None = Field(default=None, description="Number of prompt tokens consumed.")
+    timestamp: datetime.datetime = Field(
+        default=..., description="The timestamp of the llm run."
+    )
+    prompt_tokens: int | None = Field(
+        default=None, description="Number of prompt tokens consumed."
+    )
     completion_tokens: int | None = Field(
         default=None, description="Number of completion tokens consumed."
     )
-    total_tokens: int | None = Field(default=None, description="Number of total tokens consumed.")
+    total_tokens: int | None = Field(
+        default=None, description="Number of total tokens consumed."
+    )
     total_cost: float | None = Field(default=None, description="Estimated total cost.")
     first_token_time: float | None = Field(
         default=None,
@@ -25,7 +31,9 @@ class TokenUsageReport(BaseModel):
     completion_time: float | None = Field(
         default=None, description="Elapsed time in seconds of the completion."
     )
-    model_name: str | None = Field(default=None, description="Name and variant of the model used.")
+    model_name: str | None = Field(
+        default=None, description="Name and variant of the model used."
+    )
     caller_id: str | None = Field(
         default=None,
         description="Identifier of the caller (eg. API key fraction, org name, etc.)",

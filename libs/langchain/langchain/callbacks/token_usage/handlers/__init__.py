@@ -3,5 +3,4 @@
 from .local_handler import LocalTokenUsageCallbackHandler
 from .openai_handler import OpenAITokenUsageCallbackHandler
 
-
 __all__ = ["LocalTokenUsageCallbackHandler", "OpenAITokenUsageCallbackHandler"]

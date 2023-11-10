@@ -4,7 +4,6 @@ from .base import TokenUsageReport, TokenUsageReporter
 from .cloudwatch import CloudWatchTokenUsageReporter
 from .localstats import LocalStatsReporter
 
-
 __all__ = [
     "TokenUsageReport",
     "TokenUsageReporter",

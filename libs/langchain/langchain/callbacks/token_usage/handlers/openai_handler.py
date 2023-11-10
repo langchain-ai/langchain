@@ -7,7 +7,10 @@ from typing import Any, Dict, List
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.openai_info import get_openai_token_cost_for_model, standardize_model_name
+from langchain.callbacks.openai_info import (
+    get_openai_token_cost_for_model,
+    standardize_model_name,
+)
 from langchain.schema.output import ChatGenerationChunk, GenerationChunk, LLMResult
 
 from ..reporters import TokenUsageReport, TokenUsageReporter
@@ -53,7 +56,7 @@ class OpenAITokenUsageCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         tags: List[str] | None = None,
         metadata: Dict[str, Any] | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Called when the LLM starts processing the request."""
         self._timers[run_id].start()
@@ -65,13 +68,18 @@ class OpenAITokenUsageCallbackHandler(BaseCallbackHandler):
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
         parent_run_id: UUID | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         """Called when the LLM emits a new token."""
         self._timers[run_id].new_token()
 
     def on_llm_end(
-        self, response: LLMResult, *, run_id: UUID, parent_run_id: UUID | None = None, **kwargs: Any
+        self,
+        response: LLMResult,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
     ) -> None:
         """Called when the LLM finishes processing the request."""
         timer = self._timers.pop(run_id)
@@ -90,7 +98,9 @@ class OpenAITokenUsageCallbackHandler(BaseCallbackHandler):
         total_cost: float | None = None
         try:
             completion_cost = (
-                get_openai_token_cost_for_model(model_name, completion_tokens, is_completion=True)
+                get_openai_token_cost_for_model(
+                    model_name, completion_tokens, is_completion=True
+                )
                 if completion_tokens is not None
                 else 0.0
             )

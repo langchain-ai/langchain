@@ -6,7 +6,6 @@ from typing import Any, Dict, List, NamedTuple
 
 from . import TokenUsageReport, TokenUsageReporter
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -132,7 +131,9 @@ class CloudWatchTokenUsageReporter(TokenUsageReporter):
             extra_dimensions=extra_dimensions,
         )
         try:
-            self.cloudwatch.put_metric_data(Namespace=self.namespace, MetricData=metrics)
+            self.cloudwatch.put_metric_data(
+                Namespace=self.namespace, MetricData=metrics
+            )
         except self._botocore.exceptions.ClientError as error:
             logger.warning("Couldn't put metrics data in namespace %s", self.namespace)
             logger.warning(str(error))
