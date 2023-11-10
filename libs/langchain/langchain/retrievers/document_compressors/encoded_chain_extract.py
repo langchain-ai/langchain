@@ -9,7 +9,6 @@ import re
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain.callbacks.manager import Callbacks
-from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.encoded_chain_extract_prompt import (
@@ -17,6 +16,7 @@ from langchain.retrievers.document_compressors.encoded_chain_extract_prompt impo
 )
 from langchain.schema import BaseOutputParser, Document, OutputParserException
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 from langchain.text_splitter import _make_spacy_pipeline_for_splitting
 
 NO_OUTPUT_STR: str = "NO_OUTPUT"
@@ -151,7 +151,7 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
     to optimize the extraction process.
     """
 
-    llm_chain: LLMChain
+    llm_chain: RunnableSerializable[dict[str, str], List[int]]
     """LLM wrapper to use for compressing documents."""
 
     get_input: Callable[[str, str], dict] = default_get_input
@@ -177,10 +177,11 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
             list of compressed Documents
         """
         compressed_docs: List[Document] = []
+        _config = RunnableConfig(callbacks=callbacks)
         for doc in documents:
             doc_content = number_sequences(doc.page_content, tokenizer=self.tokenizer)
             _input = self.get_input(query, doc_content)
-            sequence_list = self.llm_chain.predict(**_input, callbacks=callbacks)
+            sequence_list = self.llm_chain.invoke(_input, _config)
             assert isinstance(sequence_list, list)
             if len(sequence_list) == 0:
                 continue
@@ -208,6 +209,7 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
         Returns:
             list of compressed Documents
         """
+        _config = RunnableConfig(callbacks=callbacks)
         numbered_sequence_docs = [
             Document(
                 page_content=number_sequences(
@@ -219,9 +221,7 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
         ]
         sequence_lists = await asyncio.gather(
             *[
-                self.llm_chain.apredict(
-                    **self.get_input(query, doc.page_content), callbacks=callbacks
-                )
+                self.llm_chain.ainvoke(self.get_input(query, doc.page_content), _config)
                 for doc in numbered_sequence_docs
             ]
         )
@@ -242,7 +242,6 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
         llm: BaseLanguageModel,
         get_input: Optional[Callable[[str, str], dict[str, str]]] = None,
         pipeline: str = "en_core_web_sm",
-        llm_chain_kwargs: Optional[dict] = None,
     ) -> LLMEncodedChainExtractor:
         """Initialize from LLM.
 
@@ -263,10 +262,5 @@ class LLMEncodedChainExtractor(BaseDocumentCompressor):
             if pipeline
             else get_default_tokenizer()
         )
-        llm_chain = LLMChain(
-            llm=llm,
-            prompt=_prompt,
-            output_parser=_output_parser,
-            **(llm_chain_kwargs or {}),
-        )
+        llm_chain = _prompt | llm | _output_parser
         return cls(llm_chain=llm_chain, get_input=_get_input, tokenizer=tokenizer)
