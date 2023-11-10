@@ -1,7 +1,6 @@
 """Test Chroma functionality."""
 import uuid
 
-import chromadb
 import pytest
 import requests
 
@@ -341,6 +340,8 @@ def test_persist_dir_uses_persist() -> None:
 
 
 def test_client_settings_uses_persist() -> None:
+    import chromadb
+
     db = Chroma(
         embedding_function=FakeEmbeddings(),
         client_settings=chromadb.config.Settings(is_persistent=True),
@@ -349,6 +350,8 @@ def test_client_settings_uses_persist() -> None:
 
 
 def test_client_settings_uses_no_persist() -> None:
+    import chromadb
+
     db = Chroma(
         embedding_function=FakeEmbeddings(), client_settings=chromadb.config.Settings()
     )
@@ -356,6 +359,8 @@ def test_client_settings_uses_no_persist() -> None:
 
 
 def test_respects_client_ephemeral() -> None:
+    import chromadb
+
     chromaClient = chromadb.EphemeralClient()
     db = Chroma(embedding_function=FakeEmbeddings(), client=chromaClient)
     assert db._collection._client == chromaClient
@@ -363,6 +368,8 @@ def test_respects_client_ephemeral() -> None:
 
 
 def test_respects_client_persistent() -> None:
+    import chromadb
+
     chromaClient = chromadb.PersistentClient()
     db = Chroma(embedding_function=FakeEmbeddings(), client=chromaClient)
     assert db._collection._client == chromaClient
