@@ -179,19 +179,23 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         self.successful_requests += 1
         if "token_usage" not in response.llm_output:
             return None
+
         token_usage = response.llm_output["token_usage"]
-        completion_tokens = token_usage.get("completion_tokens", 0)
-        prompt_tokens = token_usage.get("prompt_tokens", 0)
-        model_name = standardize_model_name(response.llm_output.get("model_name", ""))
-        if model_name in MODEL_COST_PER_1K_TOKENS:
-            completion_cost = get_openai_token_cost_for_model(
-                model_name, completion_tokens, is_completion=True
-            )
-            prompt_cost = get_openai_token_cost_for_model(model_name, prompt_tokens)
-            self.total_cost += prompt_cost + completion_cost
+        model_name = response.llm_output.get("model_name", "")
+
         self.total_tokens += token_usage.get("total_tokens", 0)
-        self.prompt_tokens += prompt_tokens
+
+        completion_tokens = token_usage.get("completion_tokens", 0)
+        completion_cost = get_openai_token_cost_for_model(
+            model_name, completion_tokens, is_completion=True
+        )
         self.completion_tokens += completion_tokens
+        self.total_cost += completion_cost
+
+        prompt_tokens = token_usage.get("prompt_tokens", 0)
+        self.prompt_tokens += prompt_tokens
+        prompt_cost = get_openai_token_cost_for_model(model_name, prompt_tokens)
+        self.total_cost += prompt_cost 
 
     def __copy__(self) -> "OpenAICallbackHandler":
         """Return a copy of the callback handler."""
