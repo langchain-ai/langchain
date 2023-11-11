@@ -31,6 +31,9 @@ def test_message_chunks() -> None:
             content="", additional_kwargs={"function_call": {"name": "web_search"}}
         )
         + AIMessageChunk(
+            content="", additional_kwargs={"function_call": {"arguments": None}}
+        )
+        + AIMessageChunk(
             content="", additional_kwargs={"function_call": {"arguments": "{\n"}}
         )
         + AIMessageChunk(
