@@ -2,7 +2,7 @@
 from typing import Any, Dict, List
 
 from langchain.agents.format_scratchpad.openai_functions import (
-    format_to_openai_functions,
+    format_to_openai_function_messages,
 )
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.pydantic_v1 import PrivateAttr
@@ -80,7 +80,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
 
         input_str, output_str = self._get_input_output(inputs, outputs)
         self._add_user_message(input_str)
-        steps = format_to_openai_functions(outputs[self.intermediate_steps_key])
+        steps = format_to_openai_function_messages(outputs[self.intermediate_steps_key])
         for msg in steps:
             self._add_message(msg)
         self._add_ai_message(output_str)
