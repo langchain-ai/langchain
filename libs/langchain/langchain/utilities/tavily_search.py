@@ -84,7 +84,6 @@ class TavilySearchAPIWrapper(BaseModel):
             include_answer=include_answer,
             include_raw_content=include_raw_content,
             include_images=include_images,
-            return_only_results=return_only_results,
         )
         return self.clean_results(raw_search_results["results"])
 
@@ -135,7 +134,6 @@ class TavilySearchAPIWrapper(BaseModel):
         include_answer: Optional[bool] = False,
         include_raw_content: Optional[bool] = False,
         include_images: Optional[bool] = False,
-        return_only_results: bool = True,
     ) -> List[Dict]:
         results_json = await self.raw_results_async(
             query=query,
