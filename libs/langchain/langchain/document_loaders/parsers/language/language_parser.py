@@ -63,10 +63,32 @@ class LanguageParser(BaseBlobParser):
 
     This approach can potentially improve the accuracy of QA models over source code.
 
-    Currently, the supported languages for code parsing are Python and JavaScript.
+    The supported languages for code parsing are:
+
+    - C (*)
+    - C++ (*)
+    - C# (*)
+    - COBOL
+    - Go (*)
+    - JavaScript (requires package `esprima`)
+    - Kotlin (*)
+    - Lua (*)
+    - Perl (*)
+    - Python
+    - Ruby (*)
+    - Rust (*)
+    - Scala (*)
+    - TypeScript (*)
+
+    Items marked with (*) require the packages `tree_sitter` and `tree_sitter_languages`.
+    It is straightforward to add support for additional languages using `tree_sitter`,
+    although this currently requires modifying LangChain.
 
     The language used for parsing can be configured, along with the minimum number of
     lines required to activate the splitting based on syntax.
+
+    If a language is not explicitly specified, `LanguageParser` will infer one from
+    filename extensions, if present.
 
     Examples:
 
