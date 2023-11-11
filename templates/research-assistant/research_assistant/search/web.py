@@ -78,7 +78,7 @@ response:
     "agent:  "🌍 Travel Agent",
     "agent_role_prompt": "You are a world-travelled AI tour guide assistant. Your main purpose is to draft engaging, insightful, unbiased, and well-structured travel reports on given locations, including history, attractions, and cultural insights."
 }
-"""
+"""  # noqa: E501
 CHOOSE_AGENT_PROMPT = ChatPromptTemplate.from_messages(
     [SystemMessage(content=AUTO_AGENT_INSTRUCTIONS), ("user", "task: {task}")]
 )
@@ -92,7 +92,7 @@ Using the above text, answer in short the following question:
 > {question}
  
 -----------
-if the question cannot be answered using the text, imply summarize the text. Include all factual information, numbers, stats etc if available."""
+if the question cannot be answered using the text, imply summarize the text. Include all factual information, numbers, stats etc if available."""  # noqa: E501
 SUMMARY_PROMPT = ChatPromptTemplate.from_template(SUMMARY_TEMPLATE)
 
 scrape_and_summarize: Runnable[Any, Any] = (
