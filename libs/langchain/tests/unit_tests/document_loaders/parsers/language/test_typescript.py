@@ -15,15 +15,15 @@ class TestTypeScriptSegmenter(unittest.TestCase):
 
 class Autumn
 {
-    const leafCount = 45;
-    reduceTemperature(desiredTemperature: number): number newTemperature {
+    leafCount = 45;
+    reduceTemperature(desiredTemperature: number): number {
         return desiredTemperature * 0.6;
     }
 }
 
 interface Season
 {
-    void change();
+    change(): void;
 }
 
 enum Colors
@@ -43,10 +43,10 @@ enum Colors
 
         self.expected_extracted_code = [
             "function foo(): number\n{\n    return 1;\n}",
-            "class Autumn\n{\n    const leafCount = 45;\n    "
-            'reduceTemperature(desiredTemperature: number): number newTemperature {\n        '
+            "class Autumn\n{\n    leafCount = 45;\n    "
+            'reduceTemperature(desiredTemperature: number): number {\n        '
             "return desiredTemperature * 0.6;\n    }\n}",
-            "interface Season\n{\n    void change();\n}",
+            "interface Season\n{\n    change(): void;\n}",
             "enum Colors\n{\n    Green = 'green',\n    Red = 'red',\n}",
         ]
 
