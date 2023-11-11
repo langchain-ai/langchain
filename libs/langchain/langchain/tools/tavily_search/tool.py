@@ -80,7 +80,7 @@ class TavilyAnswer(BaseTool):
             return self.api_wrapper.raw_results(
                 query,
                 max_results=5,
-                include_answer="True",
+                include_answer=True,
                 search_depth="basic",
             )["answer"]
         except Exception as e:
@@ -96,7 +96,7 @@ class TavilyAnswer(BaseTool):
             result = await self.api_wrapper.raw_results_async(
                 query,
                 max_results=5,
-                include_answer="True",
+                include_answer=True,
                 search_depth="basic",
             )
             return result["answer"]

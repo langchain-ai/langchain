@@ -44,7 +44,7 @@ class TavilySearchAPIWrapper(BaseModel):
         include_answer: Optional[bool] = False,
         include_raw_content: Optional[bool] = False,
         include_images: Optional[bool] = False,
-    ) -> List[Dict]:
+    ) -> Dict:
         params = {
             "api_key": self.tavily_api_key,
             "query": query,
@@ -97,7 +97,7 @@ class TavilySearchAPIWrapper(BaseModel):
         include_answer: Optional[bool] = False,
         include_raw_content: Optional[bool] = False,
         include_images: Optional[bool] = False,
-    ) -> List[Dict]:
+    ) -> Dict:
         """Get results from the Tavily Search API asynchronously."""
 
         # Function to perform the API call
