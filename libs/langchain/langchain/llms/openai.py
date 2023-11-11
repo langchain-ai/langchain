@@ -809,7 +809,10 @@ class AzureOpenAI(BaseOpenAI):
                 "http_client": values["http_client"],
             }
             values["client"] = openai.AzureOpenAI(**client_params).completions
-            values["async_client"] = openai.AsyncAzureOpenAI(**client_params).completions
+            values["async_client"] = openai.AsyncAzureOpenAI(
+                **client_params
+            ).completions
+
         else:
             values["client"] = openai.Completion
         return values
