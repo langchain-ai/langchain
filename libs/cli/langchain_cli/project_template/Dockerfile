@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-RUN pip install poetry==1.5.1
+RUN pip install poetry==1.6.1
 
 RUN poetry config virtualenvs.create false
 
@@ -10,9 +10,9 @@ COPY ./pyproject.toml ./poetry.lock* ./
 
 COPY ./packages ./packages
 
-RUN poetry install --no-interaction --no-ansi --no-root
+RUN poetry install  --no-interaction --no-ansi --no-root
 
-COPY ./ ./
+COPY ./app ./app
 
 RUN poetry install --no-interaction --no-ansi
 
