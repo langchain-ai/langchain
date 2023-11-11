@@ -1,10 +1,15 @@
 # research-assistant
 
-TODO: What does this package do
+This template implements a version of  
+[GPT Researcher](https://github.com/assafelovic/gpt-researcher) that you can use
+as a starting point for a research agent.
 
 ## Environment Setup
 
-TODO: What environment variables need to be set (if any)
+The default template relies on ChatOpenAI and DuckDuckGo, so you will need the 
+following environment variable:
+
+- `OPENAI_API_KEY`
 
 ## Usage
 
