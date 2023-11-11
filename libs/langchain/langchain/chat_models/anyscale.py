@@ -13,9 +13,9 @@ from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema.messages import BaseMessage
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 if TYPE_CHECKING:
     import tiktoken
@@ -29,6 +29,8 @@ DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
 class ChatAnyscale(ChatOpenAI):
     """`Anyscale` Chat large language models.
+
+    See https://www.anyscale.com/ for information about Anyscale.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``ANYSCALE_API_KEY`` set with your API key.
@@ -53,7 +55,7 @@ class ChatAnyscale(ChatOpenAI):
     def lc_secrets(self) -> Dict[str, str]:
         return {"anyscale_api_key": "ANYSCALE_API_KEY"}
 
-    anyscale_api_key: Optional[str] = None
+    anyscale_api_key: SecretStr
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
@@ -103,6 +105,13 @@ class ChatAnyscale(ChatOpenAI):
             "anyscale_api_key",
             "ANYSCALE_API_KEY",
         )
+        values["anyscale_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "anyscale_api_key",
+                "ANYSCALE_API_KEY",
+            )
+        )
         values["openai_api_base"] = get_from_dict_or_env(
             values,
             "anyscale_api_base",
@@ -138,7 +147,7 @@ class ChatAnyscale(ChatOpenAI):
         model_name = values["model_name"]
 
         available_models = cls.get_available_models(
-            values["openai_api_key"],
+            values["openai_api_key"].get_secret_value(),
             values["openai_api_base"],
         )
 

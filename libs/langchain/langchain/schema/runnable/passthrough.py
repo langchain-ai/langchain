@@ -326,6 +326,10 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
                     for k, v in s.__fields__.items()
                 },
             )
+        elif not map_output_schema.__custom_root_type__:
+            # ie. only map output is a dict
+            # ie. input type is either unknown or inferred incorrectly
+            return map_output_schema
 
         return super().get_output_schema(config)
 

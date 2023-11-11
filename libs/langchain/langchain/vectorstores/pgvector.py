@@ -130,6 +130,7 @@ class PGVector(VectorStore):
         self.engine_args = engine_args or {}
         # Create a connection if not provided, otherwise use the provided connection
         self._conn = connection if connection else self.connect()
+        self.__post_init__()
 
     def __post_init__(
         self,
@@ -158,7 +159,17 @@ class PGVector(VectorStore):
     def create_vector_extension(self) -> None:
         try:
             with Session(self._conn) as session:
-                statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
+                # The advisor lock fixes issue arising from concurrent
+                # creation of the vector extension.
+                # https://github.com/langchain-ai/langchain/issues/12933
+                # For more information see:
+                # https://www.postgresql.org/docs/16/explicit-locking.html#ADVISORY-LOCKS
+                statement = sqlalchemy.text(
+                    "BEGIN;"
+                    "SELECT pg_advisory_xact_lock(1573678846307946496);"
+                    "CREATE EXTENSION IF NOT EXISTS vector;"
+                    "COMMIT;"
+                )
                 session.execute(statement)
                 session.commit()
         except Exception as e:

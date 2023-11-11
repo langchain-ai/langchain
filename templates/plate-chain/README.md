@@ -16,7 +16,7 @@ Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 To utilize plate-chain, you must have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 Creating a new LangChain project and installing plate-chain as the only package can be done with:
@@ -34,9 +34,9 @@ langchain app add plate-chain
 Then add the following code to your `server.py` file:
 
 ```python
-from plate_chain import chain as plate_chain_chain
+from plate_chain import chain as plate_chain
 
-add_routes(app, plate_chain_chain, path="/plate-chain")
+add_routes(app, plate_chain, path="/plate-chain")
 ```
 
 (Optional) For configuring LangSmith, which helps trace, monitor and debug LangChain applications, use the following code:
