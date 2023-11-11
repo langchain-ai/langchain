@@ -296,9 +296,9 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     prompt.append(img_template_obj)
                 else:
                     raise ValueError()
-                return cls(prompt=prompt, **kwargs)
-            else:
-                raise ValueError()
+            return cls(prompt=prompt, **kwargs)
+        else:
+            raise ValueError()
 
     @classmethod
     def from_template_file(
