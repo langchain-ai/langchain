@@ -10,8 +10,9 @@ if TYPE_CHECKING:
 
 CHUNK_QUERY = """
     [
-        (function_declaration) @function
         (class_declaration) @class
+        (method_declaration) @method
+        (interface_declaration) @interface
     ]
 """.strip()
 
