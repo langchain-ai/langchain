@@ -407,6 +407,11 @@ def _import_sagemaker_endpoint() -> Any:
 
     return SagemakerEndpoint
 
+def _import_sagemaker_async_endpoint() -> Any:
+    from langchain.llms.sagemaker_endpoint import SagemakerAsyncEndpoint
+
+    return SagemakerAsyncEndpoint
+
 
 def _import_self_hosted() -> Any:
     from langchain.llms.self_hosted import SelfHostedPipeline
@@ -633,6 +638,8 @@ def __getattr__(name: str) -> Any:
         return _import_rwkv()
     elif name == "SagemakerEndpoint":
         return _import_sagemaker_endpoint()
+    elif name == "SagemakerAsyncEndpoint":
+        return _import_sagemaker_async_endpoint()
     elif name == "SelfHostedPipeline":
         return _import_self_hosted()
     elif name == "SelfHostedHuggingFaceLLM":
@@ -739,6 +746,7 @@ __all__ = [
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
+    "SagemakerAsyncEndpoint",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "StochasticAI",
@@ -816,6 +824,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "replicate": _import_replicate,
         "rwkv": _import_rwkv,
         "sagemaker_endpoint": _import_sagemaker_endpoint,
+        "sagemaker_async_endpoint": _import_sagemaker_async_endpoint,
         "self_hosted": _import_self_hosted,
         "self_hosted_hugging_face": _import_self_hosted_hugging_face,
         "stochasticai": _import_stochasticai,
