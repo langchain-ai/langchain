@@ -407,6 +407,7 @@ def _import_sagemaker_endpoint() -> Any:
 
     return SagemakerEndpoint
 
+
 def _import_sagemaker_async_endpoint() -> Any:
     from langchain.llms.sagemaker_endpoint import SagemakerAsyncEndpoint
 
