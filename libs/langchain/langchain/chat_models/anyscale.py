@@ -102,9 +102,9 @@ class ChatAnyscale(ChatOpenAI):
     def validate_environment_override(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
-                values,
-                "anyscale_api_key",
-                "ANYSCALE_API_KEY",
+            values,
+            "anyscale_api_key",
+            "ANYSCALE_API_KEY",
         )
         values["anyscale_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
