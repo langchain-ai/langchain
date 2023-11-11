@@ -77,12 +77,11 @@ class TavilyAnswer(BaseTool):
     ) -> Union[List[Dict], str]:
         """Use the tool."""
         try:
-            return self.api_wrapper.results(
+            return self.api_wrapper.raw_results(
                 query,
                 max_results=5,
                 include_answer="True",
                 search_depth="basic",
-                return_only_results=False,
             )["answer"]
         except Exception as e:
             return repr(e)
@@ -94,12 +93,11 @@ class TavilyAnswer(BaseTool):
     ) -> Union[List[Dict], str]:
         """Use the tool asynchronously."""
         try:
-            result = await self.api_wrapper.results_async(
+            result = await self.api_wrapper.raw_results_async(
                 query,
                 max_results=5,
                 include_answer="True",
                 search_depth="basic",
-                return_only_results=False,
             )
             return result["answer"]
         except Exception as e:
