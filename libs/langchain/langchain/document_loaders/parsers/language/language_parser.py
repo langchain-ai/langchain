@@ -17,6 +17,8 @@ from langchain.document_loaders.parsers.language.ruby import RubySegmenter
 from langchain.document_loaders.parsers.language.rust import RustSegmenter
 from langchain.document_loaders.parsers.language.scala import ScalaSegmenter
 from langchain.document_loaders.parsers.language.typescript import TypeScriptSegmenter
+from langchain.document_loaders.parsers.language.java import javaSegmenter
+
 from langchain.text_splitter import Language
 
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
@@ -34,6 +36,8 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "lua": Language.LUA,
     "pl": Language.PERL,
     "ts": Language.TS,
+    "java": Language.JAVA,
+
 }
 
 LANGUAGE_SEGMENTERS: Dict[str, Any] = {
@@ -50,7 +54,9 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     Language.KOTLIN: KotlinSegmenter,
     Language.LUA: LuaSegmenter,
     Language.PERL: PerlSegmenter,
-    Language.TS: TypeScriptSegmenter
+    Language.TS: TypeScriptSegmenter,
+    Language.Java: JavaSegmenter
+
 }
 
 
@@ -79,6 +85,7 @@ class LanguageParser(BaseBlobParser):
     - Rust (*)
     - Scala (*)
     - TypeScript (*)
+    - Java (*)
 
     Items marked with (*) require the packages `tree_sitter` and `tree_sitter_languages`.
     It is straightforward to add support for additional languages using `tree_sitter`,
