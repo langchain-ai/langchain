@@ -24,7 +24,7 @@ class DallEAPIWrapper(BaseModel):
     """Size of image to generate"""
     separator: str = "\n"
     """Separator to use when multiple URLs are returned."""
-    model: str = "dall-e-3"
+    model: Optional[str] = None
     """Model to use for image generation."""
 
     class Config:
