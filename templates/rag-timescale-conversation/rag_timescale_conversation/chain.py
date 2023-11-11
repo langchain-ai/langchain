@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 
 from .load_sample_dataset import load_ts_git_dataset
 
-_ = load_dotenv(find_dotenv())
+load_dotenv(find_dotenv())
 
 if os.environ.get("TIMESCALE_SERVICE_URL", None) is None:
     raise Exception("Missing `TIMESCALE_SERVICE_URL` environment variable.")
