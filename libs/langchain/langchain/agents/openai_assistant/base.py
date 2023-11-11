@@ -4,11 +4,13 @@ import json
 from time import sleep
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
+from langchain.callbacks.manager import CallbackManager
+from langchain.load import dumpd
 from langchain.pydantic_v1 import Field
 from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.runnable import RunnableConfig, RunnableSerializable
-from langchain.tools import format_tool_to_openai_function
 from langchain.tools.base import BaseTool
+from langchain.tools.render import format_tool_to_openai_tool
 
 if TYPE_CHECKING:
     import openai
@@ -170,12 +172,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         client = client or _get_openai_client()
         openai_tools: List = []
         for tool in tools:
-            if isinstance(tool, BaseTool):
-                tool = {
-                    "type": "function",
-                    "function": format_tool_to_openai_function(tool),
-                }
-            openai_tools.append(tool)
+            oai_tool = (
+                tool if isinstance(tool, dict) else format_tool_to_openai_tool(tool)
+            )
+            openai_tools.append(oai_tool)
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
@@ -211,39 +211,63 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
-        # Being run within AgentExecutor and there are tool outputs to submit.
-        if self.as_agent and input.get("intermediate_steps"):
-            tool_outputs = self._parse_intermediate_steps(input["intermediate_steps"])
-            run = self.client.beta.threads.runs.submit_tool_outputs(**tool_outputs)
-        # Starting a new thread and a new run.
-        elif "thread_id" not in input:
-            thread = {
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": input["content"],
-                        "file_ids": input.get("file_ids", []),
-                        "metadata": input.get("message_metadata"),
-                    }
-                ],
-                "metadata": input.get("thread_metadata"),
-            }
-            run = self._create_thread_and_run(input, thread)
-        # Starting a new run in an existing thread.
-        elif "run_id" not in input:
-            _ = self.client.beta.threads.messages.create(
-                input["thread_id"],
-                content=input["content"],
-                role="user",
-                file_ids=input.get("file_ids", []),
-                metadata=input.get("message_metadata"),
-            )
-            run = self._create_run(input)
-        # Submitting tool outputs to an existing run, outside the AgentExecutor
-        # framework.
+
+        config = config or {}
+        callback_manager = CallbackManager.configure(
+            inheritable_callbacks=config.get("callbacks"),
+            inheritable_tags=config.get("tags"),
+            inheritable_metadata=config.get("metadata"),
+        )
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self), input, name=config.get("run_name")
+        )
+        try:
+            # Being run within AgentExecutor and there are tool outputs to submit.
+            if self.as_agent and input.get("intermediate_steps"):
+                tool_outputs = self._parse_intermediate_steps(
+                    input["intermediate_steps"]
+                )
+                run = self.client.beta.threads.runs.submit_tool_outputs(**tool_outputs)
+            # Starting a new thread and a new run.
+            elif "thread_id" not in input:
+                thread = {
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": input["content"],
+                            "file_ids": input.get("file_ids", []),
+                            "metadata": input.get("message_metadata"),
+                        }
+                    ],
+                    "metadata": input.get("thread_metadata"),
+                }
+                run = self._create_thread_and_run(input, thread)
+            # Starting a new run in an existing thread.
+            elif "run_id" not in input:
+                _ = self.client.beta.threads.messages.create(
+                    input["thread_id"],
+                    content=input["content"],
+                    role="user",
+                    file_ids=input.get("file_ids", []),
+                    metadata=input.get("message_metadata"),
+                )
+                run = self._create_run(input)
+            # Submitting tool outputs to an existing run, outside the AgentExecutor
+            # framework.
+            else:
+                run = self.client.beta.threads.runs.submit_tool_outputs(**input)
+            run = self._wait_for_run(run.id, run.thread_id)
+        except BaseException as e:
+            run_manager.on_chain_error(e)
+            raise e
+        try:
+            response = self._get_response(run)
+        except BaseException as e:
+            run_manager.on_chain_error(e, metadata=run.dict())
+            raise e
         else:
-            run = self.client.beta.threads.runs.submit_tool_outputs(**input)
-        return self._get_response(run.id, run.thread_id)
+            run_manager.on_chain_end(response)
+            return response
 
     def _parse_intermediate_steps(
         self, intermediate_steps: List[Tuple[OpenAIAssistantAction, str]]
@@ -290,14 +314,16 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         )
         return run
 
-    def _get_response(self, run_id: str, thread_id: str) -> Any:
+    def _get_response(self, run: Any) -> Any:
         # TODO: Pagination
-        import openai
 
-        run = self._wait_for_run(run_id, thread_id)
         if run.status == "completed":
-            messages = self.client.beta.threads.messages.list(thread_id, order="asc")
-            new_messages = [msg for msg in messages if msg.run_id == run_id]
+            import openai
+
+            messages = self.client.beta.threads.messages.list(
+                run.thread_id, order="asc"
+            )
+            new_messages = [msg for msg in messages if msg.run_id == run.id]
             if not self.as_agent:
                 return new_messages
             answer: Any = [
@@ -311,8 +337,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             return OpenAIAssistantFinish(
                 return_values={"output": answer},
                 log="",
-                run_id=run_id,
-                thread_id=thread_id,
+                run_id=run.id,
+                thread_id=run.thread_id,
             )
         elif run.status == "requires_action":
             if not self.as_agent:
@@ -329,8 +355,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                         tool_input=args,
                         tool_call_id=tool_call.id,
                         log="",
-                        run_id=run_id,
-                        thread_id=thread_id,
+                        run_id=run.id,
+                        thread_id=run.thread_id,
                     )
                 )
             return actions
