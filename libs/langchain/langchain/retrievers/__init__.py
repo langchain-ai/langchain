@@ -18,18 +18,26 @@ the backbone of a retriever, but there are other types of retrievers as well.
     CallbackManagerForRetrieverRun, AsyncCallbackManagerForRetrieverRun
 """
 
+from langchain.retrievers.arcee import ArceeRetriever
 from langchain.retrievers.arxiv import ArxivRetriever
 from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
 from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.chaindesk import ChaindeskRetriever
 from langchain.retrievers.chatgpt_plugin_retriever import ChatGPTPluginRetriever
+from langchain.retrievers.cohere_rag_retriever import CohereRagRetriever
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.docarray import DocArrayRetriever
 from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
 from langchain.retrievers.ensemble import EnsembleRetriever
-from langchain.retrievers.google_cloud_enterprise_search import (
-    GoogleCloudEnterpriseSearchRetriever,
+from langchain.retrievers.google_cloud_documentai_warehouse import (
+    GoogleDocumentAIWarehouseRetriever,
 )
+from langchain.retrievers.google_vertex_ai_search import (
+    GoogleCloudEnterpriseSearchRetriever,
+    GoogleVertexAIMultiTurnSearchRetriever,
+    GoogleVertexAISearchRetriever,
+)
+from langchain.retrievers.kay import KayAiRetriever
 from langchain.retrievers.kendra import AmazonKendraRetriever
 from langchain.retrievers.knn import KNNRetriever
 from langchain.retrievers.llama_index import (
@@ -48,6 +56,7 @@ from langchain.retrievers.re_phraser import RePhraseQueryRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.svm import SVMRetriever
+from langchain.retrievers.tavily_search_api import TavilySearchAPIRetriever
 from langchain.retrievers.tfidf import TFIDFRetriever
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
@@ -61,13 +70,19 @@ from langchain.retrievers.zilliz import ZillizRetriever
 
 __all__ = [
     "AmazonKendraRetriever",
+    "ArceeRetriever",
     "ArxivRetriever",
     "AzureCognitiveSearchRetriever",
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
     "ChaindeskRetriever",
+    "CohereRagRetriever",
     "ElasticSearchBM25Retriever",
+    "GoogleDocumentAIWarehouseRetriever",
     "GoogleCloudEnterpriseSearchRetriever",
+    "GoogleVertexAIMultiTurnSearchRetriever",
+    "GoogleVertexAISearchRetriever",
+    "KayAiRetriever",
     "KNNRetriever",
     "LlamaIndexGraphRetriever",
     "LlamaIndexRetriever",
@@ -80,6 +95,7 @@ __all__ = [
     "RemoteLangChainRetriever",
     "SVMRetriever",
     "SelfQueryRetriever",
+    "TavilySearchAPIRetriever",
     "TFIDFRetriever",
     "BM25Retriever",
     "TimeWeightedVectorStoreRetriever",

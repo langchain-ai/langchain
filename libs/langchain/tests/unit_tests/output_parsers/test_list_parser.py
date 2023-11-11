@@ -1,5 +1,6 @@
 from langchain.output_parsers.list import (
     CommaSeparatedListOutputParser,
+    MarkdownListOutputParser,
     NumberedListOutputParser,
 )
 
@@ -24,6 +25,22 @@ def test_numbered_list() -> None:
     )
 
     text2 = "Items:\n\n1. apple\n\n2. banana\n\n3. cherry"
+
+    text3 = "No items in the list."
+
+    assert parser.parse(text1) == ["foo", "bar", "baz"]
+    assert parser.parse(text2) == ["apple", "banana", "cherry"]
+    assert parser.parse(text3) == []
+
+
+def test_markdown_list() -> None:
+    parser = MarkdownListOutputParser()
+    text1 = (
+        "Your response should be a numbered list with each item on a new line."
+        "For example: \n- foo\n- bar\n- baz"
+    )
+
+    text2 = "Items:\n- apple\n- banana\n- cherry"
 
     text3 = "No items in the list."
 

@@ -6,7 +6,7 @@ from typing import Any, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.vectorstore import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +151,7 @@ class Rockset(VectorStore):
         This is intended as a quicker way to get started.
         """
 
-        # Sanitize imputs
+        # Sanitize inputs
         assert client is not None, "Rockset Client cannot be None"
         assert collection_name, "Collection name cannot be empty"
         assert text_key, "Text key name cannot be empty"
@@ -268,20 +268,16 @@ class Rockset(VectorStore):
             )
             for k, v in document.items():
                 if k == self._text_key:
-                    assert isinstance(
-                        v, str
-                    ), "page content stored in column `{}` must be of type `str`. \
-                        But found: `{}`".format(
-                        self._text_key, type(v)
-                    )
+                    assert isinstance(v, str), (
+                        "page content stored in column `{}` must be of type `str`. "
+                        "But found: `{}`"
+                    ).format(self._text_key, type(v))
                     page_content = v
                 elif k == "dist":
-                    assert isinstance(
-                        v, float
-                    ), "Computed distance between vectors must of type `float`. \
-                        But found {}".format(
-                        type(v)
-                    )
+                    assert isinstance(v, float), (
+                        "Computed distance between vectors must of type `float`. "
+                        "But found {}"
+                    ).format(type(v))
                     score = v
                 elif k not in ["_id", "_event_time", "_meta"]:
                     # These columns are populated by Rockset when documents are

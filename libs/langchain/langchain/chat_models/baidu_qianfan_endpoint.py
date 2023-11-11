@@ -1,15 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import (
-    Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-)
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, cast
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -22,10 +14,10 @@ from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    BaseMessageChunk,
     ChatMessage,
     FunctionMessage,
     HumanMessage,
+    SystemMessage,
 )
 from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env
@@ -33,14 +25,8 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-def _convert_resp_to_message_chunk(resp: Mapping[str, Any]) -> BaseMessageChunk:
-    return AIMessageChunk(
-        content=resp["result"],
-        role="assistant",
-    )
-
-
 def convert_message_to_dict(message: BaseMessage) -> dict:
+    """Convert a message to a dictionary that can be passed to the API."""
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -49,7 +35,7 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
         if "function_call" in message.additional_kwargs:
-            message_dict["functions"] = message.additional_kwargs["function_call"]
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
@@ -63,6 +49,21 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         raise TypeError(f"Got unknown type {message}")
 
     return message_dict
+
+
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
+    content = _dict.get("result", "") or ""
+    if _dict.get("function_call"):
+        additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        if "thoughts" in additional_kwargs["function_call"]:
+            # align to api sample, which affects the llm function_call output
+            additional_kwargs["function_call"].pop("thoughts")
+    else:
+        additional_kwargs = {}
+    return AIMessage(
+        content=content,
+        additional_kwargs={**_dict.get("body", {}), **additional_kwargs},
+    )
 
 
 class QianfanChatEndpoint(BaseChatModel):
@@ -80,7 +81,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
             from langchain.chat_models import QianfanChatEndpoint
             qianfan_chat = QianfanChatEndpoint(model="ERNIE-Bot",
-                endpoint="your_endpoint", ak="your_ak", sk="your_sk")
+                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
     """
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -104,11 +105,12 @@ class QianfanChatEndpoint(BaseChatModel):
     """
 
     model: str = "ERNIE-Bot-turbo"
-    """Model name. 
+    """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
-    `model` will be ignored if `endpoint` is set
+    `model` will be ignored if `endpoint` is set.
+    Default is ERNIE-Bot-turbo.
     """
 
     endpoint: Optional[str] = None
@@ -159,8 +161,10 @@ class QianfanChatEndpoint(BaseChatModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
+        """Get the default parameters for calling Qianfan API."""
         normal_params = {
+            "model": self.model,
+            "endpoint": self.endpoint,
             "stream": self.streaming,
             "request_timeout": self.request_timeout,
             "top_p": self.top_p,
@@ -174,9 +178,35 @@ class QianfanChatEndpoint(BaseChatModel):
         self,
         messages: List[BaseMessage],
         **kwargs: Any,
-    ) -> dict:
+    ) -> Dict[str, Any]:
+        """
+        Converts a list of messages into a dictionary containing the message content
+        and default parameters.
+
+        Args:
+            messages (List[BaseMessage]): The list of messages.
+            **kwargs (Any): Optional arguments to add additional parameters to the
+            resulting dictionary.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the message content and default
+            parameters.
+
+        """
+        messages_dict: Dict[str, Any] = {
+            "messages": [
+                convert_message_to_dict(m)
+                for m in messages
+                if not isinstance(m, SystemMessage)
+            ]
+        }
+        for i in [i for i, m in enumerate(messages) if isinstance(m, SystemMessage)]:
+            if "system" not in messages_dict:
+                messages_dict["system"] = ""
+            messages_dict["system"] += cast(str, messages[i].content) + "\n"
+
         return {
-            **{"messages": [convert_message_to_dict(m) for m in messages]},
+            **messages_dict,
             **self._default_params,
             **kwargs,
         }
@@ -206,7 +236,7 @@ class QianfanChatEndpoint(BaseChatModel):
             lc_msg = AIMessage(content=completion, additional_kwargs={})
             gen = ChatGeneration(
                 message=lc_msg,
-                generation_info=dict(finish_reason="finished"),
+                generation_info=dict(finish_reason="stop"),
             )
             return ChatResult(
                 generations=[gen],
@@ -214,10 +244,13 @@ class QianfanChatEndpoint(BaseChatModel):
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
         response_payload = self.client.do(**params)
-        lc_msg = AIMessage(content=response_payload["result"], additional_kwargs={})
+        lc_msg = _convert_dict_to_message(response_payload)
         gen = ChatGeneration(
             message=lc_msg,
-            generation_info=dict(finish_reason="finished"),
+            generation_info={
+                "finish_reason": "stop",
+                **response_payload.get("body", {}),
+            },
         )
         token_usage = response_payload.get("usage", {})
         llm_output = {"token_usage": token_usage, "model_name": self.model}
@@ -232,12 +265,14 @@ class QianfanChatEndpoint(BaseChatModel):
     ) -> ChatResult:
         if self.streaming:
             completion = ""
+            token_usage = {}
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
                 completion += chunk.text
+
             lc_msg = AIMessage(content=completion, additional_kwargs={})
             gen = ChatGeneration(
                 message=lc_msg,
-                generation_info=dict(finish_reason="finished"),
+                generation_info=dict(finish_reason="stop"),
             )
             return ChatResult(
                 generations=[gen],
@@ -245,11 +280,14 @@ class QianfanChatEndpoint(BaseChatModel):
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
         response_payload = await self.client.ado(**params)
-        lc_msg = AIMessage(content=response_payload["result"], additional_kwargs={})
+        lc_msg = _convert_dict_to_message(response_payload)
         generations = []
         gen = ChatGeneration(
             message=lc_msg,
-            generation_info=dict(finish_reason="finished"),
+            generation_info={
+                "finish_reason": "stop",
+                **response_payload.get("body", {}),
+            },
         )
         generations.append(gen)
         token_usage = response_payload.get("usage", {})
@@ -266,14 +304,18 @@ class QianfanChatEndpoint(BaseChatModel):
         params = self._convert_prompt_msg_params(messages, **kwargs)
         for res in self.client.do(**params):
             if res:
+                msg = _convert_dict_to_message(res)
                 chunk = ChatGenerationChunk(
                     text=res["result"],
-                    message=_convert_resp_to_message_chunk(res),
-                    generation_info={"finish_reason": "finished"},
+                    message=AIMessageChunk(
+                        content=msg.content,
+                        role="assistant",
+                        additional_kwargs=msg.additional_kwargs,
+                    ),
                 )
                 yield chunk
                 if run_manager:
-                    run_manager.on_llm_new_token(chunk.text)
+                    run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     async def _astream(
         self,
@@ -285,9 +327,15 @@ class QianfanChatEndpoint(BaseChatModel):
         params = self._convert_prompt_msg_params(messages, **kwargs)
         async for res in await self.client.ado(**params):
             if res:
+                msg = _convert_dict_to_message(res)
                 chunk = ChatGenerationChunk(
-                    text=res["result"], message=_convert_resp_to_message_chunk(res)
+                    text=res["result"],
+                    message=AIMessageChunk(
+                        content=msg.content,
+                        role="assistant",
+                        additional_kwargs=msg.additional_kwargs,
+                    ),
                 )
                 yield chunk
                 if run_manager:
-                    await run_manager.on_llm_new_token(chunk.text)
+                    await run_manager.on_llm_new_token(chunk.text, chunk=chunk)

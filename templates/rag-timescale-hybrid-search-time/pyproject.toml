@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "rag-timescale-hybrid-search-time"
+version = "0.0.1"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.313, <0.1"
+openai = "^0.28.1"
+fastapi = "^0.104.0"
+sse-starlette = "^1.6.5"
+timescale-vector = "^0.0.3"
+lark = "^1.1.8"
+tiktoken = "^0.5.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+
+[tool.langserve]
+export_module = "rag_timescale_hybrid_search_time.chain"
+export_attr = "chain"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

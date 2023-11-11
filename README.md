@@ -16,17 +16,18 @@
 [![Open Issues](https://img.shields.io/github/issues-raw/langchain-ai/langchain)](https://github.com/langchain-ai/langchain/issues)
 
 
-Looking for the JS/TS version? Check out [LangChain.js](https://github.com/hwchase17/langchainjs).
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
-**Production Support:** As you move your LangChains into production, we'd love to offer more hands-on support.
-Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) to share more about what you're building, and our team will get in touch.
+To help you ship LangChain apps to production faster, check out [LangSmith](https://smith.langchain.com). 
+[LangSmith](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications. 
+Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) to get off the waitlist or speak with our sales team
 
 ## 🚨Breaking Changes for select chains (SQLDatabase) on 7/28/23
 
 In an effort to make `langchain` leaner and safer, we are moving select chains to `langchain_experimental`.
 This migration has already started, but we are remaining backwards compatible until 7/28.
 On that date, we will remove functionality from `langchain`.
-Read more about the motivation and the progress [here](https://github.com/hwchase17/langchain/discussions/8043).
+Read more about the motivation and the progress [here](https://github.com/langchain-ai/langchain/discussions/8043).
 Read how to migrate your code [here](MIGRATE.md).
 
 ## Quick Install
@@ -49,7 +50,7 @@ This library aims to assist in the development of those types of applications. C
 **💬 Chatbots**
 
 - [Documentation](https://python.langchain.com/docs/use_cases/chatbots/)
-- End-to-end Example: [Chat-LangChain](https://github.com/hwchase17/chat-langchain)
+- End-to-end Example: [Chat-LangChain](https://github.com/langchain-ai/chat-langchain)
 
 **🤖 Agents**
 
@@ -92,7 +93,7 @@ Memory refers to persisting state between calls of a chain/agent. LangChain prov
 
 **🧐 Evaluation:**
 
-[BETA] Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
+[BETA] Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is by using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
 
 For more information on these concepts, please see our [full documentation](https://python.langchain.com).
 

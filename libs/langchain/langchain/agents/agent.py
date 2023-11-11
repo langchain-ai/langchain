@@ -145,10 +145,13 @@ class BaseSingleActionAgent(BaseModel):
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
-        _type = self._agent_type
+        try:
+            _type = self._agent_type
+        except NotImplementedError:
+            _type = None
         if isinstance(_type, AgentType):
             _dict["_type"] = str(_type.value)
-        else:
+        elif _type is not None:
             _dict["_type"] = _type
         return _dict
 
@@ -175,6 +178,8 @@ class BaseSingleActionAgent(BaseModel):
 
         # Fetch dictionary to save
         agent_dict = self.dict()
+        if "_type" not in agent_dict:
+            raise NotImplementedError(f"Agent {self} does not support saving")
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
@@ -269,7 +274,10 @@ class BaseMultiActionAgent(BaseModel):
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
-        _dict["_type"] = str(self._agent_type)
+        try:
+            _dict["_type"] = str(self._agent_type)
+        except NotImplementedError:
+            pass
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -290,11 +298,13 @@ class BaseMultiActionAgent(BaseModel):
         else:
             save_path = file_path
 
-        directory_path = save_path.parent
-        directory_path.mkdir(parents=True, exist_ok=True)
-
         # Fetch dictionary to save
         agent_dict = self.dict()
+        if "_type" not in agent_dict:
+            raise NotImplementedError(f"Agent {self} does not support saving.")
+
+        directory_path = save_path.parent
+        directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
@@ -317,10 +327,21 @@ class AgentOutputParser(BaseOutputParser):
         """Parse text into agent action/finish."""
 
 
-class RunnableAgent(BaseSingleActionAgent):
+class MultiActionAgentOutputParser(BaseOutputParser):
+    """Base class for parsing agent output into agent actions/finish."""
+
+    @abstractmethod
+    def parse(self, text: str) -> Union[List[AgentAction], AgentFinish]:
+        """Parse text into agent actions/finish."""
+
+
+class RunnableAgent(BaseMultiActionAgent):
     """Agent powered by runnables."""
 
-    runnable: Runnable[dict, Union[AgentAction, AgentFinish]]
+    runnable: Union[
+        Runnable[dict, Union[AgentAction, AgentFinish]],
+        Runnable[dict, Union[List[AgentAction], AgentFinish]],
+    ]
     """Runnable to call to get agent action."""
     _input_keys: List[str] = []
     """Input keys."""
@@ -329,6 +350,11 @@ class RunnableAgent(BaseSingleActionAgent):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+
+    @property
+    def return_values(self) -> List[str]:
+        """Return values of the agent."""
+        return []
 
     @property
     def input_keys(self) -> List[str]:
@@ -344,7 +370,10 @@ class RunnableAgent(BaseSingleActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> Union[
+        List[AgentAction],
+        AgentFinish,
+    ]:
         """Given input, decided what to do.
 
         Args:
@@ -358,6 +387,8 @@ class RunnableAgent(BaseSingleActionAgent):
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
         output = self.runnable.invoke(inputs, config={"callbacks": callbacks})
+        if isinstance(output, AgentAction):
+            output = [output]
         return output
 
     async def aplan(
@@ -365,7 +396,10 @@ class RunnableAgent(BaseSingleActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> Union[
+        List[AgentAction],
+        AgentFinish,
+    ]:
         """Given input, decided what to do.
 
         Args:
@@ -379,6 +413,8 @@ class RunnableAgent(BaseSingleActionAgent):
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
         output = await self.runnable.ainvoke(inputs, config={"callbacks": callbacks})
+        if isinstance(output, AgentAction):
+            output = [output]
         return output
 
 
@@ -745,7 +781,6 @@ class AgentExecutor(Chain):
     ] = False
     """How to handle errors raised by the agent's output parser.
     Defaults to `False`, which raises the error.
-s
     If `true`, the error will be sent back to the LLM as an observation.
     If a string, the string itself will be sent to the LLM as an observation.
     If a callable function, the function will be called with the exception
@@ -927,7 +962,12 @@ s
             else:
                 raise_error = False
             if raise_error:
-                raise e
+                raise ValueError(
+                    "An output parsing error occurred. "
+                    "In order to pass this error back to the agent and have it try "
+                    "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
+                    f"This is the error: {str(e)}"
+                )
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
                 if e.send_to_llm:
@@ -1023,7 +1063,12 @@ s
             else:
                 raise_error = False
             if raise_error:
-                raise e
+                raise ValueError(
+                    "An output parsing error occurred. "
+                    "In order to pass this error back to the agent and have it try "
+                    "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
+                    f"This is the error: {str(e)}"
+                )
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
                 if e.send_to_llm:
@@ -1215,11 +1260,14 @@ s
         """Check if the tool is a returning tool."""
         agent_action, observation = next_step_output
         name_to_tool_map = {tool.name: tool for tool in self.tools}
+        return_value_key = "output"
+        if len(self.agent.return_values) > 0:
+            return_value_key = self.agent.return_values[0]
         # Invalid tools won't be in the map, so we return False.
         if agent_action.tool in name_to_tool_map:
             if name_to_tool_map[agent_action.tool].return_direct:
                 return AgentFinish(
-                    {self.agent.return_values[0]: observation},
+                    {return_value_key: observation},
                     "",
                 )
         return None
