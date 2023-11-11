@@ -1,13 +1,23 @@
-"""Sagemaker InvokeEndpoint API."""
+"""Sagemaker InvokeEndpoint API using either Realtime Inference or Async Inference Endpoints."""
+import datetime
 import io
 import json
+import logging
+import os
+import time
+import uuid
 from abc import abstractmethod
-from typing import Any, Dict, Generic, Iterator, List, Mapping, Optional, TypeVar, Union
+from typing import (Any, Dict, Generic, Iterator, List, Mapping, Optional,
+                    TypeVar, Union)
+
+from botocore.exceptions import WaiterError
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, root_validator
+
+logger = logging.getLogger(__file__)
 
 INPUT_TYPE = TypeVar("INPUT_TYPE", bound=Union[str, List[str]])
 OUTPUT_TYPE = TypeVar("OUTPUT_TYPE", bound=Union[str, List[List[float]], Iterator])
@@ -122,7 +132,145 @@ class LLMContentHandler(ContentHandlerBase[str, str]):
     """Content handler for LLM class."""
 
 
-class SagemakerEndpoint(LLM):
+class _BaseSagemakerEndpoint(LLM):
+    """Base Class for Sagemaker Inference Endpoint models."""
+    client: Any = None
+    """Boto3 client for sagemaker runtime"""
+
+    endpoint_name: str = ""
+    """The name of the endpoint from the deployed Sagemaker model.
+    Must be unique within an AWS Region."""
+
+    region_name: str = ""
+    """The aws region where the Sagemaker model is deployed, eg. `us-west-2`."""
+
+    credentials_profile_name: Optional[str] = None
+    """The name of the profile in the ~/.aws/credentials or ~/.aws/config files, which
+    has either access keys or role information specified.
+    If not specified, the default credential profile or, if on an EC2 instance,
+    credentials from IMDS will be used.
+    See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
+    """
+
+    content_handler: LLMContentHandler
+    """The content handler class that provides an input and
+    output transform functions to handle formats between LLM
+    and the endpoint.
+    """
+
+    """
+     Example:
+        .. code-block:: python
+
+        from langchain.llms.sagemaker_endpoint import LLMContentHandler
+
+        class ContentHandler(LLMContentHandler):
+                content_type = "application/json"
+                accepts = "application/json"
+
+                def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
+                    input_str = json.dumps({prompt: prompt, **model_kwargs})
+                    return input_str.encode('utf-8')
+                
+                def transform_output(self, output: bytes) -> str:
+                    response_json = json.loads(output.read().decode("utf-8"))
+                    return response_json[0]["generated_text"]
+    """
+
+    model_kwargs: Optional[Dict] = None
+    """Keyword arguments to pass to the model."""
+
+    endpoint_kwargs: Optional[Dict] = None
+    """Optional attributes passed to the invoke_endpoint
+    function. See `boto3`_. docs for more info.
+    .. _boto3: <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>
+    """
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Dont do anything if client provided externally"""
+        if values.get("client") is not None:
+            return values
+        values["client"] = cls._validate_boto_client(values, "sagemaker-runtime")
+        return values
+    
+    @staticmethod
+    def _validate_boto_client(values: Dict, client: str) -> Any:
+        """Validate that AWS credentials to and python package exists in environment."""
+        try:
+            import boto3
+
+            try:
+                if values["credentials_profile_name"] is not None:
+                    session = boto3.Session(
+                        profile_name=values["credentials_profile_name"]
+                    )
+                else:
+                    # use default credentials
+                    session = boto3.Session()
+
+                service_client = session.client(
+                    client, region_name=values["region_name"]
+                )
+
+            except Exception as e:
+                raise ValueError(
+                    "Could not load credentials to authenticate with AWS client. "
+                    "Please check that credentials in the specified "
+                    "profile name are valid."
+                ) from e
+
+        except ImportError:
+            raise ImportError(
+                "Could not import boto3 python package. "
+                "Please install it with `pip install boto3`."
+            )
+        return service_client
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        _model_kwargs = self.model_kwargs or {}
+        return {
+            **{"endpoint_name": self.endpoint_name},
+            **{"model_kwargs": _model_kwargs},
+        }
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "sagemaker_endpoint"
+
+    @abstractmethod
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Call out to Sagemaker inference endpoint.
+
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            The string generated by the model.
+
+        Example:
+            .. code-block:: python
+
+                response = se("Tell me a joke.")
+        """
+
+    
+class SagemakerEndpoint(_BaseSagemakerEndpoint):
     """Sagemaker Inference Endpoint models.
 
     To use, you must supply the endpoint name from your deployed
@@ -188,116 +336,11 @@ class SagemakerEndpoint(LLM):
             )
 
     """
-    client: Any = None
-    """Boto3 client for sagemaker runtime"""
-
-    endpoint_name: str = ""
-    """The name of the endpoint from the deployed Sagemaker model.
-    Must be unique within an AWS Region."""
-
-    region_name: str = ""
-    """The aws region where the Sagemaker model is deployed, eg. `us-west-2`."""
-
-    credentials_profile_name: Optional[str] = None
-    """The name of the profile in the ~/.aws/credentials or ~/.aws/config files, which
-    has either access keys or role information specified.
-    If not specified, the default credential profile or, if on an EC2 instance,
-    credentials from IMDS will be used.
-    See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
-    """
-
-    content_handler: LLMContentHandler
-    """The content handler class that provides an input and
-    output transform functions to handle formats between LLM
-    and the endpoint.
-    """
 
     streaming: bool = False
     """Whether to stream the results."""
+   
 
-    """
-     Example:
-        .. code-block:: python
-
-        from langchain.llms.sagemaker_endpoint import LLMContentHandler
-
-        class ContentHandler(LLMContentHandler):
-                content_type = "application/json"
-                accepts = "application/json"
-
-                def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
-                    input_str = json.dumps({prompt: prompt, **model_kwargs})
-                    return input_str.encode('utf-8')
-                
-                def transform_output(self, output: bytes) -> str:
-                    response_json = json.loads(output.read().decode("utf-8"))
-                    return response_json[0]["generated_text"]
-    """
-
-    model_kwargs: Optional[Dict] = None
-    """Keyword arguments to pass to the model."""
-
-    endpoint_kwargs: Optional[Dict] = None
-    """Optional attributes passed to the invoke_endpoint
-    function. See `boto3`_. docs for more info.
-    .. _boto3: <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>
-    """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Dont do anything if client provided externally"""
-        if values.get("client") is not None:
-            return values
-
-        """Validate that AWS credentials to and python package exists in environment."""
-        try:
-            import boto3
-
-            try:
-                if values["credentials_profile_name"] is not None:
-                    session = boto3.Session(
-                        profile_name=values["credentials_profile_name"]
-                    )
-                else:
-                    # use default credentials
-                    session = boto3.Session()
-
-                values["client"] = session.client(
-                    "sagemaker-runtime", region_name=values["region_name"]
-                )
-
-            except Exception as e:
-                raise ValueError(
-                    "Could not load credentials to authenticate with AWS client. "
-                    "Please check that credentials in the specified "
-                    "profile name are valid."
-                ) from e
-
-        except ImportError:
-            raise ImportError(
-                "Could not import boto3 python package. "
-                "Please install it with `pip install boto3`."
-            )
-        return values
-
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        """Get the identifying parameters."""
-        _model_kwargs = self.model_kwargs or {}
-        return {
-            **{"endpoint_name": self.endpoint_name},
-            **{"model_kwargs": _model_kwargs},
-        }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "sagemaker_endpoint"
 
     def _call(
         self,
@@ -368,3 +411,250 @@ class SagemakerEndpoint(LLM):
                 text = enforce_stop_tokens(text, stop)
 
             return text
+
+
+class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
+    """Sagemaker Async Inference Endpoint models.
+
+    To use, you must supply the endpoint name from your deployed
+    Sagemaker model & the region where it is deployed.
+
+    To authenticate, the AWS client uses the following methods to
+    automatically load credentials:
+    https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
+
+    If a specific credential profile should be used, you must pass
+    the name of the profile from the ~/.aws/credentials file that is to be used.
+
+    Make sure the credentials / roles used have the required policies to
+    access the Sagemaker endpoint.
+    See: https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
+    """
+
+    """
+    Args:        
+
+        region_name: The aws region e.g., `us-west-2`.
+            Fallsback to AWS_DEFAULT_REGION env variable
+            or region specified in ~/.aws/config.
+
+        credentials_profile_name: The name of the profile in the ~/.aws/credentials
+            or ~/.aws/config files, which has either access keys or role information
+            specified. If not specified, the default credential profile or, if on an
+            EC2 instance, credentials from IMDS will be used.
+
+        client: boto3 client for Sagemaker Endpoint
+
+        content_handler: Implementation for model specific LLMContentHandler 
+
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import SagemakerAsyncEndpoint
+            endpoint_name = (
+                "my-endpoint-name"
+            )
+            region_name = (
+                "us-west-2"
+            )
+            credentials_profile_name = (
+                "default"
+            )
+            se = SagemakerAsyncEndpoint(
+                endpoint_name=endpoint_name,
+                region_name=region_name,
+                credentials_profile_name=credentials_profile_name
+            )
+
+            #Use with boto3 client
+            client = boto3.client(
+                        "sagemaker-runtime",
+                        region_name=region_name
+                    )
+
+            se = SagemakerAsyncEndpoint(
+                endpoint_name=endpoint_name,
+                client=client
+            )
+
+    """
+
+    input_bucket: Optional[str] = None
+    """Whether to stream the results."""
+
+    input_prefix: Optional[str] = None
+    """Whether to stream the results."""
+
+    max_request_timeout: int = 90
+    """Whether to stream the results."""
+
+    s3_client: Optional[Any] = None
+    """Whether to stream the results."""
+
+    sm_client: Optional[Any] = None
+    """Whether to stream the results."""
+
+    max_retries: int = 2
+    """Maximum retries during polling of async inference results. A try polls every 5 seconds for 20 times.
+    See: https://boto3.amazonaws.com/v1/documentation/api/1.9.42/reference/services/s3.html#waiters."""
+    
+    wake_up_endpoint: bool = True
+    """Whether to wake up the endpoint if it is not running."""
+
+    wake_up_wait: int = 500
+    """If the endpoint is not running how long to wait for scale up before requesting results."""
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate aws environment (boto3 and access) and set inferred defaults."""
+        if values.get("sm_client") is None:
+            values["sm_client"] = cls._validate_boto_client(values, "sagemaker")
+        if values.get("s3_client") is None:
+            values["s3_client"] = cls._validate_boto_client(values, "s3")
+        if values.get("client") is None:
+            values["client"] = cls._validate_boto_client(values, "sagemaker-runtime")
+
+        # Also set defaults based on dynamic values
+        if values["input_bucket"] is None or values["input_prefix"] is None:
+            account_id = cls._validate_boto_client(values, "sts").get_caller_identity()["Account"]
+            if values["input_bucket"] is None:
+                values["input_bucket"] = f"s3://sagemaker-{values['region_name']}-{account_id}"
+            else:
+                if not values["input_bucket"].startswith("s3://"):
+                    raise ValueError("Input bucket is not a valid s3 bucket. Must start with s3://")
+            if values["input_prefix"] is None:
+                values["input_prefix"] = f"async-endpoint-outputs/{values['endpoint_name']}"
+        return values
+
+    def _wait_inference_file(
+        self,
+        output_url: str,
+        failure_url: str,
+    ) -> Any:
+        """Wait for an inference output file to become available on S3.
+        Args:
+            output_url (str): S3 URL of the expected output file
+            failure_url (str): S3 URL to check for inference failure file
+        Raises:
+            Exception: If failure file exists    
+        """
+        bucket = output_url.split("/")[2]
+        output_prefix = "/".join(output_url.split("/")[3:])
+        failure_prefix = "/".join(failure_url.split("/")[3:])
+        
+        tries = 0
+        while tries < self.max_retries:
+            try:
+                waiter = self.s3_client.get_waiter('object_exists')
+                result = waiter.wait(Bucket=bucket, Key=output_prefix)
+                return result
+            except WaiterError:
+                tries += 1
+                logger.info("Output file not found yet.")
+                
+        # Output file still not available, check failure file
+        try:
+            waiter = self.s3_client.get_waiter('object_exists')
+            result = waiter.wait(Bucket=bucket, Key=failure_prefix)
+            return result
+        except WaiterError:
+            logger.error("Could also find no error log in failure bucket.")
+        raise ValueError("Could not fetch a result or error from the Sagemaker Async Endpoint.")
+    
+
+    def _invoke_endpoint(
+        self, 
+        input_key: str,
+        content_type: str,
+        accepts: str,
+        **kwargs
+    ) -> Any:
+        """Invoke SageMaker endpoint asynchronously.
+
+        Args:
+            input_key: S3 key for input data 
+            content_type: MIME type for input data
+            accepts: Expected response MIME type
+            **kwargs: Additional parameters for client.invoke_endpoint_async()
+
+        Returns:
+            Response dictionary containing InferenceId
+        """
+        response = self.client.invoke_endpoint_async(
+            EndpointName=self.endpoint_name, 
+            InputLocation=f"{self.input_bucket}/{input_key}",
+            ContentType=content_type,
+            Accept=accepts,
+            InvocationTimeoutSeconds=self.max_request_timeout,
+            **kwargs
+        )
+        return response
+        
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any
+    ) -> str:
+        """
+        Call out to Sagemaker asynchronous inference endpoint.
+        
+        Streaming is not supported for async endpoints.
+        
+        Args:
+            prompt: The prompt to use for the inference.
+            stop: The stop tokens to use for the inference.
+            run_manager: The run manager to use for the inference.
+            kwargs: Keyword arguments to pass to the SagemakerEndpoint class.
+        Returns:
+            The output from the Sagemaker asynchronous inference endpoint.
+        """
+        # Parse the SagemakerEndpoint class arguments
+        _model_kwargs = self.model_kwargs or {}
+        _model_kwargs = {**_model_kwargs, **kwargs}
+        _endpoint_kwargs = self.endpoint_kwargs or {}
+
+        # Transform the input to match SageMaker expectations
+        body = self.content_handler.transform_input(prompt, _model_kwargs)
+        content_type = self.content_handler.content_type
+        accepts = self.content_handler.accepts
+
+        # Verify if the endpoint is running
+        response = self.sm_client.describe_endpoint(EndpointName=self.endpoint_name)
+        endpoint_is_running = response["ProductionVariants"][0]["CurrentInstanceCount"] > 0
+
+        # If the endpoint is not running and no wake up is configured raise error
+        if not endpoint_is_running and not self.wake_up_endpoint:
+            raise ConnectionError("Endpoint is not running.")
+            
+        # Send request to the async endpoint
+        now = datetime.datetime.now()
+        timestamp = now.strftime("%Y%m%d%H%M%S")  # including timestamp to avoid collision in a multi-user scenario
+        request_key = os.path.join(
+            self.input_prefix, 
+            f"request-{timestamp}-{str(uuid.uuid4())}"
+        )
+        self.s3_client.put_object(Body=body, Bucket=self.input_bucket, Key=request_key)
+        response = self._invoke_endpoint(
+            request_key, 
+            content_type, 
+            accepts, 
+            **_endpoint_kwargs)
+
+        # Read the bytes of the file from S3 in output_url with boto3
+        output_url = response["OutputLocation"]
+        failure_url = response["FailureLocation"]
+        
+        if not endpoint_is_running:
+            logging.warning("Endpoint need's to scale up. Probably will not fetch result.")
+            time.sleep(self.wake_up_wait)
+            
+        response = self._wait_inference_file(output_url, failure_url)
+        # TODO: check if error or "normal" response
+        text = self.content_handler.transform_output(response["Body"])
+        if stop is not None:
+            text = enforce_stop_tokens(text, stop)
+
+        return text
