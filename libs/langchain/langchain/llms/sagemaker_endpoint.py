@@ -15,7 +15,7 @@ from botocore.exceptions import WaiterError
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain.pydantic_v1 import Extra, root_validator, Field
 
 logger = logging.getLogger(__file__)
 
@@ -134,8 +134,6 @@ class LLMContentHandler(ContentHandlerBase[str, str]):
 
 class _BaseSagemakerEndpoint(LLM):
     """Base Class for Sagemaker Inference Endpoint models."""
-    client: Any = None
-    """Boto3 client for sagemaker runtime"""
 
     endpoint_name: str = ""
     """The name of the endpoint from the deployed Sagemaker model.
@@ -190,17 +188,9 @@ class _BaseSagemakerEndpoint(LLM):
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Dont do anything if client provided externally"""
-        if values.get("client") is not None:
-            return values
-        values["client"] = cls._validate_boto_client(values, "sagemaker-runtime")
-        return values
-    
+        
     @staticmethod
-    def _validate_boto_client(values: Dict, client: str) -> Any:
+    def _validate_boto_session(values: Dict) -> Any:
         """Validate that AWS credentials to and python package exists in environment."""
         try:
             import boto3
@@ -214,10 +204,6 @@ class _BaseSagemakerEndpoint(LLM):
                     # use default credentials
                     session = boto3.Session()
 
-                service_client = session.client(
-                    client, region_name=values["region_name"]
-                )
-
             except Exception as e:
                 raise ValueError(
                     "Could not load credentials to authenticate with AWS client. "
@@ -230,7 +216,7 @@ class _BaseSagemakerEndpoint(LLM):
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
-        return service_client
+        return session
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -336,11 +322,20 @@ class SagemakerEndpoint(_BaseSagemakerEndpoint):
             )
 
     """
+    
+    _client: Any = Field(None, alias="client")
+    """Boto3 client for sagemaker runtime"""
 
     streaming: bool = False
     """Whether to stream the results."""
-   
-
+    
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Dont do anything if client provided externally"""
+        if values.get("client") is not None:
+            return values
+        values["client"] = cls._validate_boto_session.client("sagemaker-runtime")
+        return values
 
     def _call(
         self,
@@ -489,12 +484,18 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
     max_request_timeout: int = 90
     """Whether to stream the results."""
 
-    s3_client: Optional[Any] = None
-    """Whether to stream the results."""
-
-    sm_client: Optional[Any] = None
-    """Whether to stream the results."""
-
+    session: Optional[Any] = None
+    """boto3 session."""
+    
+    _s3_client: Any = Field(None, alias="s3_client")
+    """boto3 s3 client"""
+    
+    _sm_client: Any = Field(None, alias="sm_client")
+    """boto3 sm client"""
+    
+    _smr_client: Any = Field(None, alias="smr_client")
+    """boto3 smr client"""
+    
     max_retries: int = 2
     """Maximum retries during polling of async inference results. A try polls every 5 seconds for 20 times.
     See: https://boto3.amazonaws.com/v1/documentation/api/1.9.42/reference/services/s3.html#waiters."""
@@ -504,20 +505,19 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
 
     wake_up_wait: int = 500
     """If the endpoint is not running how long to wait for scale up before requesting results."""
-
+    
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate aws environment (boto3 and access) and set inferred defaults."""
-        if values.get("sm_client") is None:
-            values["sm_client"] = cls._validate_boto_client(values, "sagemaker")
-        if values.get("s3_client") is None:
-            values["s3_client"] = cls._validate_boto_client(values, "s3")
-        if values.get("client") is None:
-            values["client"] = cls._validate_boto_client(values, "sagemaker-runtime")
+        if values.get("session") is None:
+            values["session"] = cls._validate_boto_session(values)
+        values["_s3_client"] = values["session"].client("s3")
+        values["_sm_client"] = values["session"].client("sagemaker")
+        values["_smr_client"] = values["session"].client(values, "sagemaker-runtime")
 
         # Also set defaults based on dynamic values
         if values["input_bucket"] is None or values["input_prefix"] is None:
-            account_id = cls._validate_boto_client(values, "sts").get_caller_identity()["Account"]
+            account_id = values["session"].client("sts").get_caller_identity()["Account"]
             if values["input_bucket"] is None:
                 values["input_bucket"] = f"s3://sagemaker-{values['region_name']}-{account_id}"
             else:
@@ -581,7 +581,7 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         Returns:
             Response dictionary containing InferenceId
         """
-        response = self.client.invoke_endpoint_async(
+        response = self.smr_client.invoke_endpoint_async(
             EndpointName=self.endpoint_name, 
             InputLocation=f"{self.input_bucket}/{input_key}",
             ContentType=content_type,
