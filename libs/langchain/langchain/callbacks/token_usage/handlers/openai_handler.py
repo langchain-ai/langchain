@@ -3,7 +3,7 @@
 import datetime
 import os
 from collections import defaultdict
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -17,7 +17,7 @@ from ..reporters import TokenUsageReport, TokenUsageReporter
 from .timer import TokenUsageTimer
 
 
-def _get_caller_id(val: str | None) -> str | None:
+def _get_caller_id(val: Optional[str]) -> Optional[str]:
     return val[-4:] if val is not None and len(val) >= 4 else None
 
 
@@ -26,7 +26,7 @@ class OpenAITokenUsageCallbackHandler(BaseCallbackHandler):
 
     reporter: TokenUsageReporter
     _timers: Dict[UUID, TokenUsageTimer]
-    _caller_id: str | None = None
+    _caller_id: Optional[str] = None
 
     def __init__(self, reporter: TokenUsageReporter) -> None:
         """Collects metrics about the token usage of OpenAI LLM runs.
@@ -53,9 +53,9 @@ class OpenAITokenUsageCallbackHandler(BaseCallbackHandler):
         prompts: List[str],
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
-        tags: List[str] | None = None,
-        metadata: Dict[str, Any] | None = None,
+        parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Called when the LLM starts processing the request."""
@@ -65,9 +65,9 @@ class OpenAITokenUsageCallbackHandler(BaseCallbackHandler):
         self,
         token: str,
         *,
-        chunk: GenerationChunk | ChatGenerationChunk | None = None,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Called when the LLM emits a new token."""
@@ -78,7 +78,7 @@ class OpenAITokenUsageCallbackHandler(BaseCallbackHandler):
         response: LLMResult,
         *,
         run_id: UUID,
-        parent_run_id: UUID | None = None,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Called when the LLM finishes processing the request."""
@@ -95,7 +95,7 @@ class OpenAITokenUsageCallbackHandler(BaseCallbackHandler):
         completion_tokens = token_usage.get("completion_tokens")
         prompt_tokens = token_usage.get("prompt_tokens")
         model_name = standardize_model_name(response.llm_output.get("model_name", ""))
-        total_cost: float | None = None
+        total_cost: Optional[float] = None
         try:
             completion_cost = (
                 get_openai_token_cost_for_model(
@@ -112,7 +112,7 @@ class OpenAITokenUsageCallbackHandler(BaseCallbackHandler):
             total_cost = prompt_cost + completion_cost
         except ValueError:
             pass
-        total_tokens: int | None = token_usage.get("total_tokens")
+        total_tokens: Optional[int] = token_usage.get("total_tokens")
 
         self.reporter.send_report(
             TokenUsageReport(

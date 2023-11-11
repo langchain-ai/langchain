@@ -1,14 +1,15 @@
 """This module contains a helper class to measure LLM token response timing."""
 
 import time
+from typing import Optional
 
 
 class TokenUsageTimer:
     """Helper class to measure LLM token response timing."""
 
-    start_timestamp: float | None = None
-    first_token_timestamp: float | None = None
-    end_timestamp: float | None = None
+    start_timestamp: Optional[float] = None
+    first_token_timestamp: Optional[float] = None
+    end_timestamp: Optional[float] = None
 
     def start(self) -> None:
         """Call this method when the LLM starts processing your request."""
@@ -24,14 +25,14 @@ class TokenUsageTimer:
         self.end_timestamp = time.perf_counter()
 
     @property
-    def first_token_elapsed(self) -> float | None:
+    def first_token_elapsed(self) -> Optional[float]:
         """Returns the time elapsed until the first token was generated."""
         if self.first_token_timestamp is None or self.start_timestamp is None:
             return None
         return self.first_token_timestamp - self.start_timestamp
 
     @property
-    def completion_elapsed(self) -> float | None:
+    def completion_elapsed(self) -> Optional[float]:
         """Returns the total time elapsed to elaborate the request."""
         if self.end_timestamp is None or self.start_timestamp is None:
             return None
