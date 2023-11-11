@@ -746,10 +746,34 @@ class AzureOpenAI(BaseOpenAI):
             openai = AzureOpenAI(model_name="text-davinci-003")
     """
 
-    deployment_name: str = ""
-    """Deployment name to use."""
+    azure_endpoint: Union[str, None] = None
+    """Your Azure endpoint, including the resource.
+
+        Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
+
+        Example: `https://example-resource.azure.openai.com/`
+    """
+    deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
+    """A model deployment. 
+
+        If given sets the base client URL to include `/deployments/{azure_deployment}`.
+        Note: this means you won't be able to use non-deployment endpoints.
+    """
     openai_api_type: str = ""
     openai_api_version: str = ""
+    azure_ad_token: Union[str, None] = None
+    """Your Azure Active Directory token.
+
+        Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
+
+        For more: 
+        https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
+    """  # noqa: E501
+    azure_ad_token_provider: Union[str, None] = None
+    """A function that returns an Azure Active Directory token.
+
+        Will be invoked on every request.
+    """
 
     @root_validator()
     def validate_azure_settings(cls, values: Dict) -> Dict:
@@ -759,8 +783,35 @@ class AzureOpenAI(BaseOpenAI):
             "OPENAI_API_VERSION",
         )
         values["openai_api_type"] = get_from_dict_or_env(
-            values, "openai_api_type", "OPENAI_API_TYPE", "azure"
+            values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
+        try:
+            import openai
+        except ImportError:
+            raise ImportError(
+                "Could not import openai python package. "
+                "Please install it with `pip install openai`."
+            )
+        if is_openai_v1():
+            client_params = {
+                "api_version": values["openai_api_version"],
+                "azure_endpoint": values["azure_endpoint"],
+                "azure_deployment": values["deployment_name"],
+                "api_key": values["openai_api_key"],
+                "azure_ad_token": values["azure_ad_token"],
+                "azure_ad_token_provider": values["azure_ad_token_provider"],
+                "organization": values["openai_organization"],
+                "base_url": values["openai_api_base"],
+                "timeout": values["request_timeout"],
+                "max_retries": values["max_retries"],
+                "default_headers": values["default_headers"],
+                "default_query": values["default_query"],
+                "http_client": values["http_client"],
+            }
+            values["client"] = openai.AzureOpenAI(**client_params).completions
+            values["async_client"] = openai.AsyncAzureOpenAI(**client_params).completions
+        else:
+            values["client"] = openai.Completion
         return values
 
     @property
@@ -772,11 +823,14 @@ class AzureOpenAI(BaseOpenAI):
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
-        openai_params = {
-            "engine": self.deployment_name,
-            "api_type": self.openai_api_type,
-            "api_version": self.openai_api_version,
-        }
+        if is_openai_v1():
+            openai_params = {"model": self.deployment_name}
+        else:
+            openai_params = {
+                "engine": self.deployment_name,
+                "api_type": self.openai_api_type,
+                "api_version": self.openai_api_version,
+            }
         return {**openai_params, **super()._invocation_params}
 
     @property
