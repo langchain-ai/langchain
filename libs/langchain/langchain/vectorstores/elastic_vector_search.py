@@ -33,20 +33,17 @@ def _default_text_mapping(dim: int) -> Dict:
     }
 
 
-def _default_script_query(
-    query_vector: List[float], filter: Optional[dict], field_name: str = "vector"
-) -> Dict:
+def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> Dict:
     if filter:
         ((key, value),) = filter.items()
         filter = {"match": {f"metadata.{key}.keyword": f"{value}"}}
     else:
         filter = {"match_all": {}}
-    src = f"cosineSimilarity(params.query_vector, '{field_name}') + 1.0"
     return {
         "script_score": {
             "query": filter,
             "script": {
-                "source": src,
+                "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
                 "params": {"query_vector": query_vector},
             },
         }
@@ -249,9 +246,7 @@ class ElasticVectorSearch(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        docs_and_scores = self.similarity_search_with_score(
-            query, k, filter=filter, **kwargs
-        )
+        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter)
         documents = [d[0] for d in docs_and_scores]
         return documents
 
@@ -266,9 +261,7 @@ class ElasticVectorSearch(VectorStore):
             List of Documents most similar to the query.
         """
         embedding = self.embedding.embed_query(query)
-        script_query = kwargs.get("script_query_impl", _default_script_query)(
-            embedding, filter, **kwargs.get("script_query_kwargs", {})
-        )
+        script_query = _default_script_query(embedding, filter)
         response = self.client_search(
             self.client, self.index_name, script_query, size=k
         )
@@ -276,12 +269,8 @@ class ElasticVectorSearch(VectorStore):
         docs_and_scores = [
             (
                 Document(
-                    page_content=kwargs.get(
-                        "content_builder", lambda hit: hit["_source"]["text"]
-                    )(hit),
-                    metadata=kwargs.get(
-                        "metadata_builder", lambda hit: hit["_source"]["metadata"]
-                    )(hit),
+                    page_content=hit["_source"]["text"],
+                    metadata=hit["_source"]["metadata"],
                 ),
                 hit["_score"],
             )
