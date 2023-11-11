@@ -34,6 +34,7 @@ class TavilySearchAPIWrapper(BaseModel):
         include_answer: Optional[bool] = False,
         include_raw_content: Optional[bool] = False,
         include_images: Optional[bool] = False,
+        return_only_results: bool = True,
     ) -> List[dict]:
         params = {
             "api_key": self.tavily_api_key,
@@ -54,7 +55,10 @@ class TavilySearchAPIWrapper(BaseModel):
 
         response.raise_for_status()
         search_results = response.json()
-        return self.clean_results(search_results["results"])
+        if return_only_results:
+            return self.clean_results(search_results["results"])
+        else:
+            return search_results
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -76,6 +80,7 @@ class TavilySearchAPIWrapper(BaseModel):
         include_answer: Optional[bool] = False,
         include_raw_content: Optional[bool] = False,
         include_images: Optional[bool] = False,
+        return_only_results: bool = True,
     ) -> List[Dict]:
         """Run query through Tavily Search and return metadata.
 
@@ -106,13 +111,14 @@ class TavilySearchAPIWrapper(BaseModel):
         """  # noqa: E501
         raw_search_results = self._tavily_search_results(
             query,
-            max_results,
-            search_depth,
-            include_domains,
-            exclude_domains,
-            include_answer,
-            include_raw_content,
-            include_images,
+            max_results=max_results,
+            search_depth=search_depth,
+            include_domains=include_domains,
+            exclude_domains=exclude_domains,
+            include_answer=include_answer,
+            include_raw_content=include_raw_content,
+            include_images=include_images,
+            return_only_results=return_only_results,
         )
         return raw_search_results
 
@@ -126,6 +132,7 @@ class TavilySearchAPIWrapper(BaseModel):
         include_answer: Optional[bool] = False,
         include_raw_content: Optional[bool] = False,
         include_images: Optional[bool] = False,
+        return_only_results: bool = True,
     ) -> List[Dict]:
         """Get results from the Tavily Search API asynchronously."""
 
@@ -152,7 +159,10 @@ class TavilySearchAPIWrapper(BaseModel):
 
         results_json_str = await fetch()
         results_json = json.loads(results_json_str)
-        return self.clean_results(results_json["results"])
+        if return_only_results:
+            return self.clean_results(results_json["results"])
+        else:
+            return results_json
 
     def clean_results(self, results: List[Dict]) -> List[Dict]:
         """Clean results from Tavily Search API."""
