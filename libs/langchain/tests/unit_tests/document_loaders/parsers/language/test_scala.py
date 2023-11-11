@@ -5,7 +5,7 @@ import pytest
 from langchain.document_loaders.parsers.language.scala import ScalaSegmenter
 
 
-@pytest.mark.requires("tree-sitter", "tree-sitter-languages")
+@pytest.mark.requires("tree_sitter", "tree_sitter_languages")
 class TestScalaSegmenter(unittest.TestCase):
     def setUp(self) -> None:
         self.example_code = """def foo() {
