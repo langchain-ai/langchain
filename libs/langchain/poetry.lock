@@ -4119,18 +4119,17 @@ all = ["datasets (>=2.12.0,<3.0.0)", "evaluate (>=0.4.0,<0.5.0)", "faiss-cpu (>=
 
 [[package]]
 name = "langsmith"
-version = "0.0.62"
+version = "0.0.63"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.62-py3-none-any.whl", hash = "sha256:d50fe00eee06001ac5f705d4ff09c6b4a2f20688d57de5fbd6974a510da672fa"},
-    {file = "langsmith-0.0.62.tar.gz", hash = "sha256:196b16bea6856a83c8d95f3f709beebc6c72ea82c113021d3f62ac7cbde51bfe"},
+    {file = "langsmith-0.0.63-py3-none-any.whl", hash = "sha256:43a521dd10d8405ac21a0b959e3de33e2270e4abe6c73cc4036232a6990a0793"},
+    {file = "langsmith-0.0.63.tar.gz", hash = "sha256:ddb2dfadfad3e05151ed8ba1643d1c516024b80fbd0c6263024400ced06a3768"},
 ]
 
 [package.dependencies]
 pydantic = ">=1,<3"
-pytest-subtests = ">=0.11.0,<0.12.0"
 requests = ">=2,<3"
 
 [[package]]
@@ -7467,21 +7466,6 @@ files = [
 
 [package.dependencies]
 pytest = ">=3.6.3"
-
-[[package]]
-name = "pytest-subtests"
-version = "0.11.0"
-description = "unittest subTest() support and subtests fixture"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "pytest-subtests-0.11.0.tar.gz", hash = "sha256:51865c88457545f51fb72011942f0a3c6901ee9e24cbfb6d1b9dc1348bafbe37"},
-    {file = "pytest_subtests-0.11.0-py3-none-any.whl", hash = "sha256:453389984952eec85ab0ce0c4f026337153df79587048271c7fd0f49119c07e4"},
-]
-
-[package.dependencies]
-attrs = ">=19.2.0"
-pytest = ">=7.0"
 
 [[package]]
 name = "pytest-vcr"
@@ -11043,4 +11027,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "848dec58677b6a2885f0e540b21bb2f9e3bd0e3354fa37209276763ef40efdd5"
+content-hash = "0be6b5d7a730743eb6b593b03347ec84bc14d17de1009905817eae05e8a4ea22"
