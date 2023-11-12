@@ -514,7 +514,10 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
             values["session"] = cls._validate_boto_session(values)
         values["_s3_client"] = values["session"].client("s3")
         values["_sm_client"] = values["session"].client("sagemaker")
-        values["_smr_client"] = values["session"].client(values, "sagemaker-runtime")
+        values["_smr_client"] = values["session"].client("sagemaker-runtime")
+        
+        if values.get("region_name") == "":
+            values["region_name"] = values["session"].region_name
 
         # Also set defaults based on dynamic values
         if values["input_bucket"] == "" or values["input_prefix"] == "":
@@ -523,11 +526,11 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
             if values["input_bucket"] == "":
                 values[
                     "input_bucket"
-                ] = f"s3://sagemaker-{values['region_name']}-{account_id}"
+                ] = f"sagemaker-{values['region_name']}-{account_id}"
             else:
-                if not values["input_bucket"].startswith("s3://"):
+                if values["input_bucket"].startswith("s3://"):
                     raise ValueError(
-                        "Input bucket is not a valid s3 bucket." "Must start with s3://"
+                        "Input bucket is not a valid s3 bucket." "Must not start with s3://"
                     )
             if values["input_prefix"] == "":
                 values["input_prefix"] = "async-endpoint-outputs/"
@@ -554,7 +557,9 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         while tries < self.max_retries:
             try:
                 waiter = self._s3_client.get_waiter("object_exists")
-                result = waiter.wait(Bucket=bucket, Key=output_prefix)
+                waiter.wait(Bucket=bucket, Key=output_prefix)
+                result = self._s3_client.get_object(Bucket=bucket, Key=output_prefix)
+                result["failure"] = False
                 return result
             except WaiterError:
                 tries += 1
@@ -563,12 +568,14 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         # Output file still not available, check failure file
         try:
             waiter = self._s3_client.get_waiter("object_exists")
-            result = waiter.wait(Bucket=bucket, Key=failure_prefix)
+            waiter.wait(Bucket=bucket, Key=failure_prefix)
+            result = self._s3_client.get_object(Bucket=bucket, Key=failure_prefix)
+            result["failure"] = True
             return result
         except WaiterError:
             logger.error("Could also find no error log in failure bucket.")
         raise ValueError(
-            "Could not fetch a result or error from" "the Sagemaker Async Endpoint."
+            "Could not fetch a result or error from the Sagemaker Async Endpoint."
         )
 
     def _invoke_endpoint(
@@ -590,7 +597,7 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         """
         response = self._smr_client.invoke_endpoint_async(
             EndpointName=self.endpoint_name,
-            InputLocation=f"{self.input_bucket}/{input_key}",
+            InputLocation=f"s3://{self.input_bucket}/{input_key}",
             ContentType=content_type,
             Accept=accepts,
             InvocationTimeoutSeconds=self.max_request_timeout,
@@ -655,11 +662,16 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         failure_url = response["FailureLocation"]
 
         if not endpoint_is_running:
-            logging.warning("Endpoint need's to scale up. Timeout possible.")
+            logger.warning("Endpoint need's to scale up. Timeout possible.")
             time.sleep(self.wake_up_wait)
 
         response = self._wait_inference_file(output_url, failure_url)
-        # TODO: check if error or "normal" response
+        
+        # if failure but info on it give a verbose exception
+        if response["failure"]:
+            failure_description = response["Body"].read().decode("utf-8")
+            raise ValueError(f"Endoint failed. Reason: {failure_description}")
+        
         text = self.content_handler.transform_output(response["Body"])
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
