@@ -37,29 +37,8 @@ class SlackSendMessage(SlackBaseTool):
         self,
         text: str,
         channel_id:str,
-        # to: List[str],
-        # subject: str,
-        # cc: Optional[List[str]] = None,
-        # bcc: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        # # Get mailbox object
-        # mailbox = self.account.mailbox()
-        # message = mailbox.new_message()
-
-        # # Assign message values
-        # message.body = body
-        # message.subject = subject
-        # message.to.add(to)
-        # if cc is not None:
-        #     message.cc.add(cc)
-        # if bcc is not None:
-        #     message.bcc.add(cc)
-
-        # message.send()
-        # ID of the channel you want to send the message to
-
-
         result = self.client.chat_postMessage(
                 channel=channel_id, 
                 text="test post msg user with .py"
@@ -68,27 +47,6 @@ class SlackSendMessage(SlackBaseTool):
         output = "Message sent: " + str(text)
         return output
     
-
-        # try:
-        # # Call the chat.postMessage method using the WebClient
-        #     result = self.client.chat_postMessage(
-        #         channel=channel_id, 
-        #         text="test post msg user with .py"
-        #     )
-        #     # logger.info(result)
-        #     output = "Message sent: " + str(text)
-        #     return output
-
-
-        # except SlackApiError as e:
-        #     return "Message sent failed"
-        #     # logger.error(f"Error posting message: {e}")
-
-
-        
-
-
-
 
 
 

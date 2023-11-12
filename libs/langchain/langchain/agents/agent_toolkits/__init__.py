@@ -45,7 +45,7 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
 )
 from langchain.agents.agent_toolkits.xorbits.base import create_xorbits_agent
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
-
+from langchain.agents.agent_toolkits.slack.toolkit import SlackToolkit
 __all__ = [
     "AINetworkToolkit",
     "AmadeusToolkit",
@@ -81,4 +81,5 @@ __all__ = [
     "create_vectorstore_router_agent",
     "create_xorbits_agent",
     "create_conversational_retrieval_agent",
+    "SlackToolkit",
 ]
