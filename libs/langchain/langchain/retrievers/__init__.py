@@ -47,6 +47,7 @@ from langchain.retrievers.llama_index import (
 from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.milvus import MilvusRetriever
+from langchain.retrievers.multi_field import MultiFieldRetriever
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
@@ -110,4 +111,5 @@ __all__ = [
     "EnsembleRetriever",
     "ParentDocumentRetriever",
     "MultiVectorRetriever",
+    "MultiFieldRetriever",
 ]
