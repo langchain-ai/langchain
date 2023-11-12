@@ -67,6 +67,7 @@ from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
 from langchain.document_loaders.docugami import DocugamiLoader
+from langchain.document_loaders.docusaurus import DocusaurusLoader
 from langchain.document_loaders.dropbox import DropboxLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
@@ -250,6 +251,7 @@ __all__ = [
     "DirectoryLoader",
     "DiscordChatLoader",
     "DocugamiLoader",
+    "DocusaurusLoader",
     "Docx2txtLoader",
     "DropboxLoader",
     "DuckDBLoader",

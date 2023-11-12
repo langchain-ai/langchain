@@ -19,7 +19,7 @@ These templates cover advanced retrieval techniques, which can be used for chat 
 
 - [Reranking](../rag-pinecone-rerank): This retrieval technique uses Cohere's reranking endpoint to rerank documents from an initial retrieval step.
 - [Anthropic Iterative Search](../anthropic-iterative-search): This retrieval technique uses iterative prompting to determine what to retrieve and whether the retriever documents are good enough.
-- [Neo4j Parent Document Retrieval](../neo4j-parent): This retrieval technique stores embeddings for smaller chunks, but then returns larger chunks to pass to the model for generation.
+- **Parent Document Retrieval** using [Neo4j](../neo4j-parent) or [MongoDB](../mongo-parent-document-retrieval): This retrieval technique stores embeddings for smaller chunks, but then returns larger chunks to pass to the model for generation.
 - [Semi-Structured RAG](../rag-semi-structured): The template shows how to do retrieval over semi-structured data (e.g. data that involves both text and tables).
 - [Temporal RAG](../rag-timescale-hybrid-search-time): The template shows how to do hybrid search over data with a time-based component using [Timescale Vector](https://www.timescale.com/ai?utm_campaign=vectorlaunch&utm_source=langchain&utm_medium=referral).
 

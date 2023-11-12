@@ -17,7 +17,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import CohereEmbeddings
             cohere = CohereEmbeddings(
-                model="embed-english-light-v2.0", cohere_api_key="my-api-key"
+                model="embed-english-light-v3.0", cohere_api_key="my-api-key"
             )
     """
 
