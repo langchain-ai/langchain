@@ -65,6 +65,7 @@ EXPECT_ALL = [
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
+    "SagemakerAsyncEndpoint",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "StochasticAI",
