@@ -1,4 +1,4 @@
-from typing import Any, List, Sequence
+from typing import Any, Iterator, List, Sequence, cast
 
 from langchain.schema import BaseDocumentTransformer, Document
 
@@ -98,18 +98,15 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(html_content, "html.parser")
-        text_parts = []
-        for tag in tags:
-            elements = soup.find_all(tag)
-            for element in elements:
-                if tag == "a":
-                    href = element.get("href")
-                    if href:
-                        text_parts.append(f"{element.get_text()} ({href})")
-                    else:
-                        text_parts.append(element.get_text())
-                else:
-                    text_parts.append(element.get_text())
+        text_parts: List[str] = []
+        for element in soup.find_all():
+            if element.name in tags:
+                # Extract all navigable strings recursively from this element.
+                text_parts += get_navigable_strings(element)
+
+                # To avoid duplicate text, remove all descendants from the soup.
+                element.decompose()
+
         return " ".join(text_parts)
 
     @staticmethod
@@ -126,13 +123,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         lines = content.split("\n")
         stripped_lines = [line.strip() for line in lines]
         non_empty_lines = [line for line in stripped_lines if line]
-        seen = set()
-        deduped_lines = []
-        for line in non_empty_lines:
-            if line not in seen:
-                seen.add(line)
-                deduped_lines.append(line)
-        cleaned_content = " ".join(deduped_lines)
+        cleaned_content = " ".join(non_empty_lines)
         return cleaned_content
 
     async def atransform_documents(
@@ -141,3 +132,16 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         **kwargs: Any,
     ) -> Sequence[Document]:
         raise NotImplementedError
+
+
+def get_navigable_strings(element: Any) -> Iterator[str]:
+    from bs4 import NavigableString, Tag
+
+    for child in cast(Tag, element).children:
+        if isinstance(child, Tag):
+            yield from get_navigable_strings(child)
+        elif isinstance(child, NavigableString):
+            if (element.name == "a") and (href := element.get("href")):
+                yield f"{child.strip()} ({href})"
+            else:
+                yield child.strip()
