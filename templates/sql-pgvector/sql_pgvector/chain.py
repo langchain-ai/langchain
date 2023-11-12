@@ -28,6 +28,24 @@ db = SQLDatabase.from_uri(CONNECTION_STRING)
 llm = ChatOpenAI(temperature=0)
 embeddings_model = OpenAIEmbeddings()
 
+
+# # Ingest code - you will need to run this the first time
+# column_to_embed = db.run('replace-with-your-own-select-query') # e.g. "SELECT Name FROM Track"
+# column_values = [s[0] for s in eval(column_to_embed)]
+# embeddings = embeddings_model.embed_documents(column_values)
+
+# for i in range(len(embeddings)):
+#     value = column_values[i].replace("'", "''")
+#     embedding = embeddings[i]
+
+#     # Replace with your own SQL command for your column and table.
+#     sql_command = (
+#         f'UPDATE "Track" SET "embeddings" = ARRAY{embedding} WHERE "Name" ='
+#         + f"'{value}'"
+#     )
+#     db.run(sql_command)
+
+
 #-----------------
 # Define functions
 #-----------------
