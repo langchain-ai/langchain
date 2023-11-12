@@ -34,6 +34,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         unwanted_tags: List[str] = ["script", "style"],
         tags_to_extract: List[str] = ["p", "li", "div", "a"],
         remove_lines: bool = True,
+        ignore_comments: bool = False,
         **kwargs: Any,
     ) -> Sequence[Document]:
         """
@@ -44,7 +45,8 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
             unwanted_tags: A list of tags to be removed from the HTML.
             tags_to_extract: A list of tags whose content will be extracted.
             remove_lines: If set to True, unnecessary lines will be
-            removed from the HTML content.
+                          removed from the HTML content.
+            ignore_comments: If set to True, comments will be ignored.
 
         Returns:
             A sequence of Document objects with transformed content.
@@ -54,7 +56,9 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
             cleaned_content = self.remove_unwanted_tags(cleaned_content, unwanted_tags)
 
-            cleaned_content = self.extract_tags(cleaned_content, tags_to_extract)
+            cleaned_content = self.extract_tags(
+                cleaned_content, tags_to_extract, ignore_comments
+            )
 
             if remove_lines:
                 cleaned_content = self.remove_unnecessary_lines(cleaned_content)
@@ -84,7 +88,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return str(soup)
 
     @staticmethod
-    def extract_tags(html_content: str, tags: List[str]) -> str:
+    def extract_tags(html_content: str, tags: List[str], ignore_comments: bool) -> str:
         """
         Extract specific tags from a given HTML content.
 
@@ -102,7 +106,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         for element in soup.find_all():
             if element.name in tags:
                 # Extract all navigable strings recursively from this element.
-                text_parts += get_navigable_strings(element)
+                text_parts += get_navigable_strings(element, ignore_comments)
 
                 # To avoid duplicate text, remove all descendants from the soup.
                 element.decompose()
@@ -134,12 +138,14 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         raise NotImplementedError
 
 
-def get_navigable_strings(element: Any) -> Iterator[str]:
-    from bs4 import NavigableString, Tag
+def get_navigable_strings(element: Any, ignore_comments: bool) -> Iterator[str]:
+    from bs4 import Comment, NavigableString, Tag
 
     for child in cast(Tag, element).children:
+        if isinstance(child, Comment) and ignore_comments:
+            continue
         if isinstance(child, Tag):
-            yield from get_navigable_strings(child)
+            yield from get_navigable_strings(child, ignore_comments)
         elif isinstance(child, NavigableString):
             if (element.name == "a") and (href := element.get("href")):
                 yield f"{child.strip()} ({href})"
