@@ -6,7 +6,7 @@ Pay attention to use only the column names you can see in the tables below. Be c
 Pay attention to use date('now') function to get the current date, if the question involves "today".
 
 You can use an extra extension which allows you to run semantic similarity using <-> operator on tables containing columns named "embeddings".
-<-> operator can ONLY be used on embeddings columns.
+<-> operator can ONLY be used on embeddings vector columns.
 The embeddings value for a given row typically represents the semantic meaning of that row.
 The vector represents an embedding representation of the question, given below. 
 Do NOT fill in the vector values directly, but rather specify a `[search_word]` placeholder, which should contain the word that would be embedded for filtering.

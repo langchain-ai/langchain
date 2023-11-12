@@ -13,7 +13,7 @@ from prompt_templates import postgresql_template, final_template
 
 
 """
-# TODO explain how to setup
+IMPORTANT: For using this template, you will need to follow the setup steps in the readme file
 """
 
 if os.environ.get("OPENAI_API_KEY", None) is None:
@@ -48,6 +48,7 @@ def replace_brackets(match):
 def get_query(query):
     sql_query = re.sub(r"\[([\w\s,]+)\]", replace_brackets, query)
     return sql_query
+
 
 # -----------------------
 # Now we create the chain
