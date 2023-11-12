@@ -53,9 +53,9 @@ class HuggingFacePipeline(BaseLLM):
     model_id: str = DEFAULT_MODEL_ID
     """Model name to use."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments passed to the model."""
+    """Keyword arguments passed to the model."""
     pipeline_kwargs: Optional[dict] = None
-    """Key word arguments passed to the pipeline."""
+    """Keyword arguments passed to the pipeline."""
     batch_size: int = DEFAULT_BATCH_SIZE
     """Batch size to use when passing multiple documents to generate."""
 

@@ -87,7 +87,9 @@ class VectorStore(ABC):
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore."""
-        raise NotImplementedError
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self.add_texts, **kwargs), texts, metadatas
+        )
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Run more documents through the embeddings and add to the vectorstore.
@@ -451,7 +453,9 @@ class VectorStore(ABC):
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
-        raise NotImplementedError
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(cls.from_texts, **kwargs), texts, embedding, metadatas
+        )
 
     def _get_retriever_tags(self) -> List[str]:
         """Get tags for retriever."""

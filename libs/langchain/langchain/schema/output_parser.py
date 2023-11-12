@@ -16,7 +16,6 @@ from typing import (
 
 from typing_extensions import get_args
 
-from langchain.load.serializable import Serializable
 from langchain.schema.messages import AnyMessage, BaseMessage, BaseMessageChunk
 from langchain.schema.output import (
     ChatGeneration,
@@ -25,12 +24,12 @@ from langchain.schema.output import (
     GenerationChunk,
 )
 from langchain.schema.prompt import PromptValue
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 T = TypeVar("T")
 
 
-class BaseLLMOutputParser(Serializable, Generic[T], ABC):
+class BaseLLMOutputParser(Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
@@ -63,7 +62,7 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
 
 
 class BaseGenerationOutputParser(
-    BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
+    BaseLLMOutputParser, RunnableSerializable[Union[str, BaseMessage], T]
 ):
     """Base class to parse the output of an LLM call."""
 
@@ -121,7 +120,9 @@ class BaseGenerationOutputParser(
             )
 
 
-class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]):
+class BaseOutputParser(
+    BaseLLMOutputParser, RunnableSerializable[Union[str, BaseMessage], T]
+):
     """Base class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.

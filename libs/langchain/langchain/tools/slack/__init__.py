@@ -1,6 +1,6 @@
 """Slack tools."""
 
 from langchain.tools.slack.send_message import SlackSendMessage
-from langchain.tools.slack.utils import authenticate
+from langchain.tools.slack.utils import login
 
-__all__ = ["SlackSendMessage", "authenticate"]
+__all__ = ["SlackSendMessage", "login"]

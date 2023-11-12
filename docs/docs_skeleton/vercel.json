@@ -2629,6 +2629,18 @@
       "destination": "/docs/integrations/memory/cassandra_chat_message_history"
     },
     {
+      "source": "/docs/integrations/memory/motorhead_memory_managed",
+      "destination": "/docs/integrations/memory/motorhead_memory"
+    },
+    {
+      "source": "/docs/integrations/memory/dynamodb_chat_message_history",
+      "destination": "/docs/integrations/memory/aws_dynamodb"
+    },
+    {
+      "source": "/docs/integrations/memory/entity_memory_with_sqlite",
+      "destination": "/docs/integrations/memory/sqlite"
+    },
+    {
       "source": "/en/latest/modules/memory/examples/dynamodb_chat_message_history.html",
       "destination": "/docs/integrations/memory/dynamodb_chat_message_history"
     },

@@ -1,9 +1,3 @@
-
-import logging
-import os
-# Import WebClient from Python SDK (github.com/slackapi/python-slack-sdk)
-
-
 from typing import List, Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
@@ -14,126 +8,32 @@ from langchain.tools.slack.base import SlackBaseTool
 class SendMessageSchema(BaseModel):
     """Input for SendMessageTool."""
 
-    text: str = Field(
+    message: str = Field(
         ...,
-        description="The message text to be sent.",
+        description="The message to be sent.",
     )
-    channel_id: str = Field(
+    channel: str = Field(
         ...,
-        description="The channel the text to be sent to.",
+        description="The channel, private group, or IM channel to send message to.",
     )
-    
+
 
 class SlackSendMessage(SlackBaseTool):
-    """Tool for sending an email in Office 365."""
+    """Tool for sending a message in Slack."""
 
     name: str = "send_message"
     description: str = (
-        "Use this tool to send a message with the provided message text to the provided channel."
+        "Use this tool to send a message with the provided message fields."
     )
     args_schema: Type[SendMessageSchema] = SendMessageSchema
 
     def _run(
         self,
-        text: str,
-        channel_id:str,
+        message: str,
+        channel: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        result = self.client.chat_postMessage(
-                channel=channel_id, 
-                text="test post msg user with .py"
-            )
-            # logger.info(result)
-        output = "Message sent: " + str(text)
+        result = self.client.chat_postMessage(channel=channel, text=message)
+
+        output = "Message sent: " + str(result)
         return output
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# from typing import List, Optional, Type
-
-# from langchain.callbacks.manager import CallbackManagerForToolRun
-# from langchain.pydantic_v1 import BaseModel, Field
-# from langchain.tools.office365.base import O365BaseTool
-
-
-# class SendMessageSchema(BaseModel):
-#     """Input for SendMessageTool."""
-
-#     body: str = Field(
-#         ...,
-#         description="The message body to be sent.",
-#     )
-#     to: List[str] = Field(
-#         ...,
-#         description="The list of recipients.",
-#     )
-#     subject: str = Field(
-#         ...,
-#         description="The subject of the message.",
-#     )
-#     cc: Optional[List[str]] = Field(
-#         None,
-#         description="The list of CC recipients.",
-#     )
-#     bcc: Optional[List[str]] = Field(
-#         None,
-#         description="The list of BCC recipients.",
-#     )
-
-
-# class O365SendMessage(O365BaseTool):
-#     """Tool for sending an email in Office 365."""
-
-#     name: str = "send_email"
-#     description: str = (
-#         "Use this tool to send an email with the provided message fields."
-#     )
-#     args_schema: Type[SendMessageSchema] = SendMessageSchema
-
-#     def _run(
-#         self,
-#         body: str,
-#         to: List[str],
-#         subject: str,
-#         cc: Optional[List[str]] = None,
-#         bcc: Optional[List[str]] = None,
-#         run_manager: Optional[CallbackManagerForToolRun] = None,
-#     ) -> str:
-#         # Get mailbox object
-#         mailbox = self.account.mailbox()
-#         message = mailbox.new_message()
-
-#         # Assign message values
-#         message.body = body
-#         message.subject = subject
-#         message.to.add(to)
-#         if cc is not None:
-#             message.cc.add(cc)
-#         if bcc is not None:
-#             message.bcc.add(cc)
-
-#         message.send()
-
-#         output = "Message sent: " + str(message)
-#         return output

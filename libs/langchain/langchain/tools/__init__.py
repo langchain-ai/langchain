@@ -60,8 +60,10 @@ from langchain.tools.gmail import (
     GmailSearch,
     GmailSendMessage,
 )
+
 from langchain.tools.slack.send_message import SlackSendMessage
-from langchain.tools.slack.utils import authenticate
+from langchain.tools.slack.utils import login
+
 from langchain.tools.google_places.tool import GooglePlacesTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
@@ -227,6 +229,8 @@ __all__ = [
     "SearxSearchResults",
     "SearxSearchRun",
     "ShellTool",
+    "SlackSendMessage",
+    "login",
     "SleepTool",
     "StdInInquireTool",
     "SteamshipImageGenerationTool",

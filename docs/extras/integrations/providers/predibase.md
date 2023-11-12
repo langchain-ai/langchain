@@ -3,7 +3,7 @@
 Learn how to use LangChain with models on Predibase. 
 
 ## Setup
-- Create a [Predibase](hhttps://predibase.com/) account and [API key](https://docs.predibase.com/sdk-guide/intro).
+- Create a [Predibase](https://predibase.com/) account and [API key](https://docs.predibase.com/sdk-guide/intro).
 - Install the Predibase Python client with `pip install predibase`
 - Use your API key to authenticate
 
