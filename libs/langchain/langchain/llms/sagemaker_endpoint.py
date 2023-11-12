@@ -481,16 +481,16 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
     """
 
     input_bucket: str = ""
-    """Whether to stream the results."""
+    """Configured input bucket of endpoint. If not configured uses default."""
 
     input_prefix: str = ""
-    """Whether to stream the results."""
+    """Configured input prefix of endpoint. If not configured uses default."""
 
     max_request_timeout: int = 90
-    """Whether to stream the results."""
+    """Time until request timeout for endpoint invocation."""
 
     session: Optional[Any] = None
-    """boto3 session."""
+    """boto3 session. Defaults to a new session."""
 
     _s3_client: Any = None
     """boto3 s3 client"""
@@ -501,13 +501,14 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
     _smr_client: Any = None
     """boto3 smr client"""
 
-    max_retries: int = 2
+    max_retries: int = 1
     """Maximum retries during polling of async inference results.
-     try polls every 5 seconds for 20 times.
+    One try polls every 5 seconds for 20 times.
     See: https://boto3.amazonaws.com/v1/documentation/api/1.9.42/reference/services/s3.html#waiters."""
 
     wake_up_endpoint: bool = True
-    """Whether to wake up the endpoint if it is not running."""
+    """Whether to wake up the endpoint if it is not running
+    by sending the request."""
 
     wake_up_wait: int = 500
     """If the endpoint is not running wait x seconds for scale up."""
