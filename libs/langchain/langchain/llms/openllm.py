@@ -91,7 +91,8 @@ class OpenLLM(LLM):
     """Keyword arguments to be passed to openllm.LLM"""
 
     _llm: Optional[openllm.LLM[Any, Any]] = PrivateAttr(default=None)
-    _client: Optional[openllm.client.HTTPClient] = PrivateAttr(default=None)
+    _client: Optional[openllm.HTTPClient] = PrivateAttr(default=None)
+    _async_client: Optional[openllm.AsyncHTTPClient] = PrivateAttr(default=None)
 
     class Config:
         extra = "forbid"
@@ -142,8 +143,6 @@ class OpenLLM(LLM):
             assert (
                 model_id is None and model_name is None
             ), "'server_url' and {'model_id', 'model_name'} are mutually exclusive"
-            client_cls = openllm.client.HTTPClient
-            client = client_cls(server_url)
 
             super().__init__(
                 **{
@@ -153,20 +152,27 @@ class OpenLLM(LLM):
                 }
             )
             self._llm = None  # type: ignore
-            self._client = client
+            self._client = openllm.HTTPClient(server_url)
+            self._async_client = openllm.AsyncHTTPClient(server_url)
         else:
-            assert model_name is not None, "Must provide 'model_name' or 'server_url'"
-            config = openllm.AutoConfig.for_model(model_name, **llm_kwargs)
-            model_id = model_id or config["default_id"]
-            # since the LLM are relatively huge, we don't actually want to convert the
-            # Runner with embedded when running the server. Instead, we will only set
-            # the init_local here so that LangChain users can still use the LLM
-            # in-process. Wrt to BentoML users, setting embedded=False is the expected
-            # behaviour to invoke the runners remotely.
-            # We need to also enable ensure_available to download and setup the model.
-            llm = openllm.LLM[Any, Any](model_id, llm_config=config)
-            if embedded:
-                llm.runner.init_local(quiet=True)
+            if model_name is None:  # suports not passing model_name
+                assert model_id is not None, "Must provide 'model_id' or 'server_url'"
+                llm = openllm.LLM[t.Any, t.Any](model_id, embedded=embedded)
+            else:
+                assert (
+                    model_name is not None
+                ), "Must provide 'model_name' or 'server_url'"
+                config = openllm.AutoConfig.for_model(model_name, **llm_kwargs)
+                model_id = model_id or config["default_id"]
+                # since the LLM are relatively huge, we don't actually want to convert the
+                # Runner with embedded when running the server. Instead, we will only set
+                # the init_local here so that LangChain users can still use the LLM
+                # in-process. Wrt to BentoML users, setting embedded=False is the expected
+                # behaviour to invoke the runners remotely.
+                # We need to also enable ensure_available to download and setup the model.
+                llm = openllm.LLM[Any, Any](
+                    model_id, llm_config=config, embedded=embedded
+                )
             super().__init__(
                 **{
                     "model_name": model_name,
@@ -176,6 +182,7 @@ class OpenLLM(LLM):
                 }
             )
             self._client = None  # type: ignore
+            self._async_client = None  # type: ignore
             self._llm = llm
 
     @property
@@ -270,7 +277,9 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            res = self._client.generate(prompt, llm_config=config, stop=stop)
+            res = self._client.generate(
+                prompt, llm_config=config.model_dump(flatten=True), stop=stop
+            )
         else:
             assert self._llm is not None
             res = asyncio.run(
@@ -304,9 +313,10 @@ class OpenLLM(LLM):
         config = openllm.AutoConfig.for_model(
             self._identifying_params["model_name"], **copied
         )
-        if self._client:
-            async_client = openllm.client.AsyncHTTPClient(self.server_url)
-            res = await async_client.generate(prompt, llm_config=config, stop=stop)
+        if self._async_client:
+            res = await self._async_client.generate(
+                prompt, llm_config=config.model_dump(flatten=True), stop=stop
+            )
         else:
             assert self._llm is not None
             res = await self._llm.generate(
