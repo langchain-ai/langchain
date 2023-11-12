@@ -4,7 +4,12 @@ from typing import List, Tuple
 
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AIMessage, HumanMessage, format_document
 from langchain.schema.output_parser import StrOutputParser
@@ -20,9 +25,7 @@ from pydantic import BaseModel, Field
 if os.environ.get("OPENAI_API_KEY", None) is None:
     raise Exception("Missing `OPENAI_API_KEY` environment variable.")
 
-# if os.environ.get("DOCUGAMI_API_KEY", None) is None:
-#     raise Exception("Missing `DOCUGAMI_API_KEY` environment variable.")
-
+# Pinecone options (please see README for notes on how to run indexing)
 if os.environ.get("PINECONE_API_KEY", None) is None:
     raise Exception("Missing `PINECONE_API_KEY` environment variable.")
 
@@ -31,37 +34,47 @@ if os.environ.get("PINECONE_ENVIRONMENT", None) is None:
 
 PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
-DOCUGAMI_ENVIRONMENT = "PRODUCTION"
 
+# LangSmith options (set for tracing)
 LANGCHAIN_TRACING_V2 = True
-
 LANGCHAIN_ENDPOINT = "https://api.smith.langchain.com"
-
 LANGCHAIN_API_KEY = os.environ.get("LANGCHAIN_API_KEY", "")
-
 LANGCHAIN_PROJECT = os.environ.get("LANGCHAIN_PROJECT", "")
 
-vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
+llm = ChatOpenAI(temperature=0, model="gpt-4")
+embeddings = OpenAIEmbeddings()
+vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, embeddings)
 retriever = vectorstore.as_retriever()
 
 # Condense a chat history and follow-up question into a standalone question
-_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+standalone_question_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
 Chat History:
 {chat_history}
 Follow Up Input: {question}
 Standalone question:"""  # noqa: E501
-CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(_template)
+STANDALONE_QUESTION_PROMPT = PromptTemplate.from_template(standalone_question_template)
 
 # RAG answer synthesis prompt
-template = """Answer the question based only on the following context:
-<context>
+system_prompt = SystemMessagePromptTemplate.from_template(
+    "You are a helpful assistant that answers questions based only on provided context. Your provided context can include text or tables, "
+    "and may also contain semantic XML markup. Pay attention the semantic XML markup to understand more about the context semantics as "
+    "well as structure (e.g. lists and tabular layouts expressed with HTML-like tags)"
+)
+
+human_prompt = HumanMessagePromptTemplate.from_template(
+    """**** START CONTEXT:
+
 {context}
-</context>"""
-ANSWER_PROMPT = ChatPromptTemplate.from_messages(
+**** END CONTEXT
+
+Question: {question}"""
+)
+
+RAG_PROMPT = ChatPromptTemplate.from_messages(
     [
-        ("system", template),
+        system_prompt,
         MessagesPlaceholder(variable_name="chat_history"),
-        ("user", "{question}"),
+        human_prompt,
     ]
 )
 
@@ -87,7 +100,7 @@ def _format_chat_history(chat_history: List[Tuple[str, str]]) -> List:
 # User input
 class ChatHistory(BaseModel):
     chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat"}})
-    question: str
+    question: str = ""
 
 
 _search_query = RunnableBranch(
@@ -99,8 +112,8 @@ _search_query = RunnableBranch(
         RunnablePassthrough.assign(
             chat_history=lambda x: _format_chat_history(x["chat_history"])
         )
-        | CONDENSE_QUESTION_PROMPT
-        | ChatOpenAI(temperature=0)
+        | STANDALONE_QUESTION_PROMPT
+        | llm
         | StrOutputParser(),
     ),
     # Else, we have no chat history, so just pass through the question
@@ -115,4 +128,4 @@ _inputs = RunnableMap(
     }
 ).with_types(input_type=ChatHistory)
 
-chain = _inputs | ANSWER_PROMPT | ChatOpenAI() | StrOutputParser()
+chain = _inputs | RAG_PROMPT | llm | StrOutputParser()

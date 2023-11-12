@@ -19,6 +19,7 @@ Then navigate to the `docugami_kg_rag` directory and set the Docset ID and Docum
 
 ## Usage
 
+### Creating app
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
@@ -44,10 +45,15 @@ from docugami_kg_rag import chain as docugami_kg_rag_chain
 add_routes(app, docugami_kg_rag, path="/docugami-kg-rag")
 ```
 
-(Optional) Let's now configure LangSmith. 
-LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
-If you don't have access, you can skip this section
+### Configuring Environment Variables
+
+You need to set some required environment variables before using your new app based on this template. There are read in `chain.py` and exceptions are raised if the following required environment variables are not set:
+
+1. `OPENAI_API_KEY`: from the OpenAI platform.
+2. `PINECONE_API_KEY` and `PINECONE_ENVIRONMENT`: from pinecone.io
+
+
+(Optional) You can also configure LangSmith to help us trace, monitor and debug LangChain applications. LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). If you don't have access, you can skip this section
 
 ```shell
 export LANGCHAIN_TRACING_V2=true
@@ -55,7 +61,12 @@ export LANGCHAIN_API_KEY=<your-api-key>
 export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
 ```
 
-If you are inside this directory, then you can spin up a LangServe instance directly by:
+### Indexing
+
+Before you can run your app, you need to build your index in Pinecone.io. See `docugami_kg_rag/indexing.py` which you can directly run after modifying the variables as needed. When this is done, make sure your index is created and populated in Pinecone.io.
+
+### Running app
+If you are inside the app directory, then you can spin up a LangServe instance directly by:
 
 ```shell
 langchain serve
@@ -73,4 +84,10 @@ We can access the template from code with:
 from langserve.client import RemoteRunnable
 
 runnable = RemoteRunnable("http://localhost:8000/docugami-kg-rag")
+```
+
+As a special case, if you are working on the template (rather than an app created from the template) you can run the template for development as follows:
+
+```shell
+langchain template serve
 ```
