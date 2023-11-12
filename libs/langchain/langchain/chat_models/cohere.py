@@ -22,6 +22,17 @@ from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatRes
 
 
 def get_role(message: BaseMessage) -> str:
+    """Get the role of the message.
+
+    Args:
+        message: The message.
+
+    Returns:
+        The role of the message.
+
+    Raises:
+        ValueError: If the message is of an unknown type.
+    """
     if isinstance(message, ChatMessage) or isinstance(message, HumanMessage):
         return "User"
     elif isinstance(message, AIMessage):
@@ -38,6 +49,16 @@ def get_cohere_chat_request(
     connectors: Optional[List[Dict[str, str]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
+    """Get the request for the Cohere chat API.
+
+    Args:
+        messages: The messages.
+        connectors: The connectors.
+        **kwargs: The keyword arguments.
+
+    Returns:
+        The request for the Cohere chat API.
+    """
     documents = (
         None
         if "source_documents" not in kwargs
@@ -145,6 +166,16 @@ class ChatCohere(BaseChatModel, BaseCohere):
                 if run_manager:
                     await run_manager.on_llm_new_token(delta)
 
+    def _get_generation_info(self, response: Any) -> Dict[str, Any]:
+        """Get the generation info from cohere API response."""
+        return {
+            "documents": response.documents,
+            "citations": response.citations,
+            "search_results": response.search_results,
+            "search_queries": response.search_queries,
+            "token_count": response.token_count,
+        }
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -164,7 +195,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         message = AIMessage(content=response.text)
         generation_info = None
         if hasattr(response, "documents"):
-            generation_info = {"documents": response.documents}
+            generation_info = self._get_generation_info(response)
         return ChatResult(
             generations=[
                 ChatGeneration(message=message, generation_info=generation_info)
@@ -190,7 +221,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         message = AIMessage(content=response.text)
         generation_info = None
         if hasattr(response, "documents"):
-            generation_info = {"documents": response.documents}
+            generation_info = self._get_generation_info(response)
         return ChatResult(
             generations=[
                 ChatGeneration(message=message, generation_info=generation_info)

@@ -9,7 +9,9 @@ from langchain.chains.openai_functions import (
     create_openai_fn_chain,
 )
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -23,7 +25,19 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 @pytest.mark.scheduled
 def test_chat_openai() -> None:
     """Test ChatOpenAI wrapper."""
-    chat = ChatOpenAI(max_tokens=10)
+    chat = ChatOpenAI(
+        temperature=0.7,
+        base_url=None,
+        organization=None,
+        openai_proxy=None,
+        timeout=10.0,
+        max_retries=3,
+        http_client=None,
+        n=1,
+        max_tokens=10,
+        default_headers=None,
+        default_query=None,
+    )
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, BaseMessage)
@@ -56,6 +70,8 @@ def test_chat_openai_generate() -> None:
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 2
+    assert response.llm_output
+    assert "system_fingerprint" in response.llm_output
     for generations in response.generations:
         assert len(generations) == 2
         for generation in generations:
@@ -161,6 +177,8 @@ async def test_async_chat_openai() -> None:
     response = await chat.agenerate([[message], [message]])
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 2
+    assert response.llm_output
+    assert "system_fingerprint" in response.llm_output
     for generations in response.generations:
         assert len(generations) == 2
         for generation in generations:
@@ -295,6 +313,46 @@ async def test_async_chat_openai_streaming_with_function() -> None:
     assert len(callback_handler._captured_tokens) > 0
     assert len(callback_handler._captured_chunks) > 0
     assert all([chunk is not None for chunk in callback_handler._captured_chunks])
+
+
+@pytest.mark.scheduled
+@pytest.mark.asyncio
+async def test_async_chat_openai_bind_functions() -> None:
+    """Test ChatOpenAI wrapper with multiple completions."""
+
+    class Person(BaseModel):
+        """Identifying information about a person."""
+
+        name: str = Field(..., title="Name", description="The person's name")
+        age: int = Field(..., title="Age", description="The person's age")
+        fav_food: Optional[str] = Field(
+            default=None, title="Fav Food", description="The person's favorite food"
+        )
+
+    chat = ChatOpenAI(
+        max_tokens=30,
+        n=1,
+        streaming=True,
+    ).bind_functions(functions=[Person], function_call="Person")
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", "Use the provided Person function"),
+            ("user", "{input}"),
+        ]
+    )
+
+    chain = prompt | chat | JsonOutputFunctionsParser(args_only=True)
+
+    message = HumanMessage(content="Sally is 13 years old")
+    response = await chain.abatch([{"input": message}])
+
+    assert isinstance(response, list)
+    assert len(response) == 1
+    for generation in response:
+        assert isinstance(generation, dict)
+        assert "name" in generation
+        assert "age" in generation
 
 
 def test_chat_openai_extra_kwargs() -> None:

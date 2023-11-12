@@ -32,7 +32,7 @@ def create_tagging_chain(
     schema: dict,
     llm: BaseLanguageModel,
     prompt: Optional[ChatPromptTemplate] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Chain:
     """Creates a chain that extracts information from a passage
      based on a schema.
@@ -62,7 +62,7 @@ def create_tagging_chain_pydantic(
     pydantic_schema: Any,
     llm: BaseLanguageModel,
     prompt: Optional[ChatPromptTemplate] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Chain:
     """Creates a chain that extracts information from a passage
      based on a pydantic schema.
