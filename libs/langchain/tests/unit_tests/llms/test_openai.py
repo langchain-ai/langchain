@@ -17,6 +17,13 @@ from tests.unit_tests.callbacks.fake_callback_handler import (
 os.environ["OPENAI_API_KEY"] = "foo"
 
 
+def _openai_v1_installed() -> bool:
+    try:
+        return is_openai_v1()
+    except Exception as _:
+        return False
+
+
 @pytest.mark.requires("openai")
 def test_openai_model_param() -> None:
     llm = OpenAI(model="foo")
@@ -69,7 +76,7 @@ def _patched_retry(*args: Any, **kwargs: Any) -> Any:
 
 
 @pytest.mark.skipif(
-    is_openai_v1(), reason="Retries only handled by LangChain for openai<1"
+    _openai_v1_installed(), reason="Retries only handled by LangChain for openai<1"
 )
 @pytest.mark.requires("openai")
 def test_openai_retries(mock_completion: dict) -> None:
@@ -105,7 +112,7 @@ def test_openai_retries(mock_completion: dict) -> None:
 
 
 @pytest.mark.skipif(
-    is_openai_v1(), reason="Retries only handled by LangChain for openai<1"
+    _openai_v1_installed(), reason="Retries only handled by LangChain for openai<1"
 )
 @pytest.mark.requires("openai")
 @pytest.mark.asyncio
