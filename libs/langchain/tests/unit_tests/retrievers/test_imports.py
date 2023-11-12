@@ -42,6 +42,7 @@ EXPECTED_ALL = [
     "EnsembleRetriever",
     "ParentDocumentRetriever",
     "MultiVectorRetriever",
+    "MultiFieldRetriever",
 ]
 
 
