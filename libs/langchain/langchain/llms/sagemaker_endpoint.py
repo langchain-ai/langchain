@@ -14,7 +14,7 @@ from botocore.exceptions import WaiterError
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, Field, root_validator
+from langchain.pydantic_v1 import Extra, root_validator
 
 logger = logging.getLogger(__file__)
 
@@ -106,10 +106,10 @@ class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
                     return response_json[0]["generated_text"]
     """
 
-    content_type: Optional[str] = "text/plain"
+    content_type: str = "text/plain"
     """The MIME type of the input data passed to endpoint"""
 
-    accepts: Optional[str] = "text/plain"
+    accepts: str = "text/plain"
     """The MIME type of the response data returned from endpoint"""
 
     @abstractmethod
@@ -322,7 +322,7 @@ class SagemakerEndpoint(_BaseSagemakerEndpoint):
 
     """
 
-    _client: Any = Field(None, alias="client")
+    _client: Any = None
     """Boto3 client for sagemaker runtime"""
 
     streaming: bool = False
@@ -331,9 +331,10 @@ class SagemakerEndpoint(_BaseSagemakerEndpoint):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Dont do anything if client provided externally"""
-        if values.get("client") is not None:
+        if values.get("_client") is not None:
             return values
-        values["client"] = cls._validate_boto_session.client("sagemaker-runtime")
+        session = cls._validate_boto_session(values)
+        values["_client"] = session.client("sagemaker-runtime")
         return values
 
     def _call(
@@ -367,7 +368,7 @@ class SagemakerEndpoint(_BaseSagemakerEndpoint):
 
         if self.streaming and run_manager:
             try:
-                resp = self.client.invoke_endpoint_with_response_stream(
+                resp = self._client.invoke_endpoint_with_response_stream(
                     EndpointName=self.endpoint_name,
                     Body=body,
                     ContentType=self.content_handler.content_type,
@@ -388,7 +389,7 @@ class SagemakerEndpoint(_BaseSagemakerEndpoint):
                 raise ValueError(f"Error raised by streaming inference endpoint: {e}")
         else:
             try:
-                response = self.client.invoke_endpoint(
+                response = self._client.invoke_endpoint(
                     EndpointName=self.endpoint_name,
                     Body=body,
                     ContentType=content_type,
@@ -474,10 +475,10 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
 
     """
 
-    input_bucket: Optional[str] = None
+    input_bucket: str = ""
     """Whether to stream the results."""
 
-    input_prefix: Optional[str] = None
+    input_prefix: str = ""
     """Whether to stream the results."""
 
     max_request_timeout: int = 90
@@ -486,13 +487,13 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
     session: Optional[Any] = None
     """boto3 session."""
 
-    _s3_client: Any = Field(None, alias="s3_client")
+    _s3_client: Any = None
     """boto3 s3 client"""
 
-    _sm_client: Any = Field(None, alias="sm_client")
+    _sm_client: Any = None
     """boto3 sm client"""
 
-    _smr_client: Any = Field(None, alias="smr_client")
+    _smr_client: Any = None
     """boto3 smr client"""
 
     max_retries: int = 2
@@ -516,10 +517,10 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         values["_smr_client"] = values["session"].client(values, "sagemaker-runtime")
 
         # Also set defaults based on dynamic values
-        if values["input_bucket"] is None or values["input_prefix"] is None:
+        if values["input_bucket"] == "" or values["input_prefix"] == "":
             sts_client = values["session"].client("sts")
             account_id = sts_client.get_caller_identity()["Account"]
-            if values["input_bucket"] is None:
+            if values["input_bucket"] == "":
                 values[
                     "input_bucket"
                 ] = f"s3://sagemaker-{values['region_name']}-{account_id}"
@@ -528,7 +529,7 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
                     raise ValueError(
                         "Input bucket is not a valid s3 bucket." "Must start with s3://"
                     )
-            if values["input_prefix"] is None:
+            if values["input_prefix"] == "":
                 values["input_prefix"] = "async-endpoint-outputs/"
                 f"{values['endpoint_name']}"
         return values
@@ -552,7 +553,7 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         tries = 0
         while tries < self.max_retries:
             try:
-                waiter = self.s3_client.get_waiter("object_exists")
+                waiter = self._s3_client.get_waiter("object_exists")
                 result = waiter.wait(Bucket=bucket, Key=output_prefix)
                 return result
             except WaiterError:
@@ -561,7 +562,7 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
 
         # Output file still not available, check failure file
         try:
-            waiter = self.s3_client.get_waiter("object_exists")
+            waiter = self._s3_client.get_waiter("object_exists")
             result = waiter.wait(Bucket=bucket, Key=failure_prefix)
             return result
         except WaiterError:
@@ -571,20 +572,23 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         )
 
     def _invoke_endpoint(
-        self, input_key: str, content_type: str, accepts: str, **kwargs
-    ) -> Any:
-        """Invoke SageMaker endpoint asynchronously.
+        self, input_key: str, content_type: str, accepts: str, **kwargs: Dict[str, Any]
+    ) -> Dict[str, str]:
+        """Invoke the sagemaker async endpoint.
 
         Args:
-            input_key: S3 key for input data
-            content_type: MIME type for input data
-            accepts: Expected response MIME type
-            **kwargs: Additional parameters for client.invoke_endpoint_async()
+            input_key (str): the key if the input object
+            content_type (str): the type of the content
+            accepts (str): what is accepted (e.g application/json)
+            kwargs (Dict[str, Any]): Keyword arguments to pass to the
+                invoke_endpoint_async endpoint.
 
         Returns:
-            Response dictionary containing InferenceId
+            Dict[str, str]: {'InferenceId': 'string',
+                            'OutputLocation': 'string',
+                            'FailureLocation': 'string'}
         """
-        response = self.smr_client.invoke_endpoint_async(
+        response = self._smr_client.invoke_endpoint_async(
             EndpointName=self.endpoint_name,
             InputLocation=f"{self.input_bucket}/{input_key}",
             ContentType=content_type,
@@ -625,7 +629,7 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         accepts = self.content_handler.accepts
 
         # Verify if the endpoint is running
-        response = self.sm_client.describe_endpoint(EndpointName=self.endpoint_name)
+        response = self._sm_client.describe_endpoint(EndpointName=self.endpoint_name)
         endpoint_is_running = (
             response["ProductionVariants"][0]["CurrentInstanceCount"] > 0
         )
@@ -641,7 +645,7 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         request_key = os.path.join(
             self.input_prefix, f"request-{timestamp}-{str(uuid.uuid4())}"
         )
-        self.s3_client.put_object(Body=body, Bucket=self.input_bucket, Key=request_key)
+        self._s3_client.put_object(Body=body, Bucket=self.input_bucket, Key=request_key)
         response = self._invoke_endpoint(
             request_key, content_type, accepts, **_endpoint_kwargs
         )
