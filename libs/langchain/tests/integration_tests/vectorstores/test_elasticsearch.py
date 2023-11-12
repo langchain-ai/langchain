@@ -267,7 +267,7 @@ class TestElasticsearch:
             index_name=index_name,
         )
 
-        def custom_document_builder(*_: Dict) -> Document:
+        def custom_document_builder(_: Dict) -> Document:
             return Document(
                 page_content="Mock content!",
                 metadata={
