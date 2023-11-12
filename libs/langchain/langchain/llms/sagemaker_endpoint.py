@@ -336,7 +336,7 @@ class SagemakerEndpoint(_BaseSagemakerEndpoint):
         session = cls._validate_boto_session(values)
         if values.get("region_name") == "":
             logger.info("Using sessions default region for sagemaker endpoint.")
-            values["region_name"] = values["session"].region_name
+            values["region_name"] = session.region_name
         values["_client"] = session.client("sagemaker-runtime", region_name=values["region_name"])
         return values
 
