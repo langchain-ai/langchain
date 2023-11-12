@@ -231,12 +231,13 @@
             "lc": 1,
             "type": "not_implemented",
             "id": [
-              "openai",
-              "resources",
-              "completions",
-              "Completions"
+              "tests",
+              "unit_tests",
+              "load",
+              "test_dump",
+              "NotSerializable"
             ],
-            "repr": "<openai.resources.completions.Completions object at 0x129f24bb0>"
+            "repr": "<class 'tests.unit_tests.load.test_dump.NotSerializable'>"
           }
         }
       },
