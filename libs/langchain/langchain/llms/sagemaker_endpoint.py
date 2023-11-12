@@ -337,7 +337,9 @@ class SagemakerEndpoint(_BaseSagemakerEndpoint):
         if values.get("region_name") == "":
             logger.info("Using sessions default region for sagemaker endpoint.")
             values["region_name"] = session.region_name
-        values["_client"] = session.client("sagemaker-runtime", region_name=values["region_name"])
+        values["_client"] = session.client(
+            "sagemaker-runtime", region_name=values["region_name"]
+        )
         return values
 
     def _call(
@@ -520,7 +522,9 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
             values["region_name"] = values["session"].region_name
         values["_s3_client"] = values["session"].client("s3")
         values["_sm_client"] = values["session"].client("sagemaker")
-        values["_smr_client"] = values["session"].client("sagemaker-runtime", region_name=values["region_name"])
+        values["_smr_client"] = values["session"].client(
+            "sagemaker-runtime", region_name=values["region_name"]
+        )
 
         # Also set defaults based on dynamic values
         if values["input_bucket"] == "" or values["input_prefix"] == "":
@@ -533,7 +537,8 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
             else:
                 if values["input_bucket"].startswith("s3://"):
                     raise ValueError(
-                        "Input bucket is not a valid s3 bucket." "Must not start with s3://"
+                        "Input bucket is not a valid s3 bucket."
+                        "Must not start with s3://"
                     )
             if values["input_prefix"] == "":
                 values["input_prefix"] = "async-endpoint-outputs/"
@@ -669,12 +674,12 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
             time.sleep(self.wake_up_wait)
 
         response = self._wait_inference_file(output_url, failure_url)
-        
+
         # if failure but info on it give a verbose exception
         if response["failure"]:
             failure_description = response["Body"].read().decode("utf-8")
-            raise ValueError(f"Endoint failed. Reason: {failure_description}")
-        
+            raise ValueError(f"Endpoint failed. Reason: {failure_description}")
+
         text = self.content_handler.transform_output(response["Body"])
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
