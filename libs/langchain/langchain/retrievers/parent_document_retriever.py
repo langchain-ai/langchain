@@ -69,6 +69,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
         documents: List[Document],
         ids: Optional[List[str]] = None,
         add_to_docstore: bool = True,
+        use_precomputed_parents: bool = False,
     ) -> None:
         """Adds documents to the docstore and vectorstores.
 
@@ -83,8 +84,16 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 This can be false if and only if `ids` are provided. You may want
                 to set this to False if the documents are already in the docstore
                 and you don't want to re-add them.
+            use_precomputed_parents:
+                If set, the splitter uses the existing parent property on all documents
+                where it is set, and does not try to do any splitting itself.
         """
         if self.parent_splitter is not None:
+            if use_precomputed_parents:
+                raise ValueError(
+                    "If use_precomputed_parents is True, parent_splitter must NOT be set."
+                )
+
             documents = self.parent_splitter.split_documents(documents)
         if ids is None:
             doc_ids = [str(uuid.uuid4()) for _ in documents]
@@ -101,14 +110,18 @@ class ParentDocumentRetriever(MultiVectorRetriever):
             doc_ids = ids
 
         docs = []
-        full_docs = []
+        full_docs = {}
         for i, doc in enumerate(documents):
             _id = doc_ids[i]
             sub_docs = self.child_splitter.split_documents([doc])
             for _doc in sub_docs:
                 _doc.metadata[self.id_key] = _id
             docs.extend(sub_docs)
-            full_docs.append((_id, doc))
+
+            if use_precomputed_parents and doc.parent and _id not in full_docs:
+                full_docs[_id] = doc.parent
+            else:
+                full_docs[_id] = doc
         self.vectorstore.add_documents(docs)
         if add_to_docstore:
-            self.docstore.mset(full_docs)
+            self.docstore.mset(list(full_docs.items()))

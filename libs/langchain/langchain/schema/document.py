@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Literal, Sequence
+from typing import Any, Literal, Optional, Sequence
 
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
@@ -19,6 +19,9 @@ class Document(Serializable):
         documents, etc.).
     """
     type: Literal["Document"] = "Document"
+
+    parent: Optional[Document] = None
+    """Parent document, optionally set by document loaders that support hierarchical chunking."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
