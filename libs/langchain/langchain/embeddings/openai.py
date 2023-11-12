@@ -175,8 +175,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model: str = "text-embedding-ada-002"
     # to support Azure OpenAI Service custom deployment names
     deployment: Optional[str] = model

@@ -226,18 +226,6 @@
             "id": [
               "OPENAI_API_KEY"
             ]
-          },
-          "client": {
-            "lc": 1,
-            "type": "not_implemented",
-            "id": [
-              "tests",
-              "unit_tests",
-              "load",
-              "test_dump",
-              "NotSerializable"
-            ],
-            "repr": "<class 'tests.unit_tests.load.test_dump.NotSerializable'>"
           }
         }
       },
