@@ -10,7 +10,16 @@ if __name__ == "__main__":
     DOCUGAMI_API_KEY = os.environ.get("DOCUGAMI_API_KEY")
     PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
-    loader = DocugamiLoader(docset_id="4eik4b8kuoup", document_ids=["4vevuqrux0yb"])
+    loader = DocugamiLoader(
+        docset_id="4eik4b8kuoup",
+        document_ids=["4vevuqrux0yb"],
+        min_text_length=32,
+        max_text_length=1024 * 8,
+        sub_chunk_tables=False,
+        xml_mode=True,
+        parent_hierarchy_levels=2
+    )
+
     data = loader.load()
 
     # Add to vectorDB
