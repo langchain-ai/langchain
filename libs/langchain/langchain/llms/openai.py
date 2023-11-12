@@ -776,7 +776,45 @@ class AzureOpenAI(BaseOpenAI):
     """
 
     @root_validator()
-    def validate_azure_settings(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that api key and python package exists in environment."""
+        if values["n"] < 1:
+            raise ValueError("n must be at least 1.")
+        if values["streaming"] and values["n"] > 1:
+            raise ValueError("Cannot stream results when n > 1.")
+        if values["streaming"] and values["best_of"] > 1:
+            raise ValueError("Cannot stream results when best_of > 1.")
+
+        # Check OPENAI_KEY for backwards compatibility.
+        # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
+        # other forms of azure credentials.
+        values["openai_api_key"] = (
+            values["openai_api_key"]
+            or os.getenv("AZURE_OPENAI_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
+        )
+        values["azure_endpoint"] = get_from_dict_or_env(
+            values,
+            "azure_endpoint",
+            "AZURE_OPENAI_ENDPOINT",
+        )
+        values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
+            "AZURE_OPENAI_AD_TOKEN"
+        )
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+            "OPENAI_API_BASE"
+        )
+        values["openai_proxy"] = get_from_dict_or_env(
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",
+        )
+        values["openai_organization"] = (
+            values["openai_organization"]
+            or os.getenv("OPENAI_ORG_ID")
+            or os.getenv("OPENAI_ORGANIZATION")
+        )
         values["openai_api_version"] = get_from_dict_or_env(
             values,
             "openai_api_version",
@@ -815,6 +853,7 @@ class AzureOpenAI(BaseOpenAI):
 
         else:
             values["client"] = openai.Completion
+
         return values
 
     @property
