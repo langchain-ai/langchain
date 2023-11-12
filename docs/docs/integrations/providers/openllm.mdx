@@ -38,7 +38,7 @@ OpenLLM server can run either locally or on the cloud.
 To try it out locally, start an OpenLLM server:
 
 ```bash
-openllm start flan-t5
+openllm start facebook/opt-1.3b
 ```
 
 Wrapper usage:
@@ -59,7 +59,7 @@ running inference.
 ```python
 from langchain.llms import OpenLLM
 
-llm = OpenLLM(model_name="dolly-v2", model_id='databricks/dolly-v2-7b')
+llm = OpenLLM(model_id='HuggingFaceH4/zephyr-7b-alpha')
 
 llm("What is the difference between a duck and a goose? And why there are so many Goose in Canada?")
 ```
