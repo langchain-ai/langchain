@@ -334,7 +334,10 @@ class SagemakerEndpoint(_BaseSagemakerEndpoint):
         if values.get("_client") is not None:
             return values
         session = cls._validate_boto_session(values)
-        values["_client"] = session.client("sagemaker-runtime")
+        if values.get("region_name") == "":
+            logger.info("Using sessions default region for sagemaker endpoint.")
+            values["region_name"] = values["session"].region_name
+        values["_client"] = session.client("sagemaker-runtime", region_name=values["region_name"])
         return values
 
     def _call(
@@ -512,12 +515,12 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         """Validate aws environment (boto3 and access) and set inferred defaults."""
         if values.get("session") is None:
             values["session"] = cls._validate_boto_session(values)
+        if values.get("region_name") == "":
+            logger.info("Using sessions default region for sagemaker endpoint.")
+            values["region_name"] = values["session"].region_name
         values["_s3_client"] = values["session"].client("s3")
         values["_sm_client"] = values["session"].client("sagemaker")
-        values["_smr_client"] = values["session"].client("sagemaker-runtime")
-        
-        if values.get("region_name") == "":
-            values["region_name"] = values["session"].region_name
+        values["_smr_client"] = values["session"].client("sagemaker-runtime", region_name=values["region_name"])
 
         # Also set defaults based on dynamic values
         if values["input_bucket"] == "" or values["input_prefix"] == "":
@@ -526,7 +529,7 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
             if values["input_bucket"] == "":
                 values[
                     "input_bucket"
-                ] = f"sagemaker-{values['region_name']}-{account_id}"
+                ] = f"sagemaker-{values['session'].region_name}-{account_id}"
             else:
                 if values["input_bucket"].startswith("s3://"):
                     raise ValueError(
