@@ -232,11 +232,11 @@
             "type": "not_implemented",
             "id": [
               "openai",
-              "api_resources",
-              "completion",
-              "Completion"
+              "resources",
+              "completions",
+              "Completions"
             ],
-            "repr": "<class 'openai.api_resources.completion.Completion'>"
+            "repr": "<openai.resources.completions.Completions object at 0x129f24bb0>"
           }
         }
       },
