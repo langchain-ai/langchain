@@ -63,7 +63,7 @@ export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "defaul
 
 ### Indexing
 
-Before you can run your app, you need to build your index in Pinecone.io. See `docugami_kg_rag/indexing.py` which you can directly run after modifying the variables as needed. When this is done, make sure your index is created and populated in Pinecone.io.
+Before you can run your app, you need to build your index in Pinecone.io. See `indexing.py` which you can directly run after modifying the variables as needed. When this is done, make sure your index is created and populated in Pinecone.io.
 
 ### Running app
 If you are inside the app directory, then you can spin up a LangServe instance directly by:
