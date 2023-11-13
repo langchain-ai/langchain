@@ -70,6 +70,7 @@ class HuggingFacePipeline(BaseLLM):
         model_id: str,
         task: str,
         device: Optional[int] = -1,
+        device_map: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
         pipeline_kwargs: Optional[dict] = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
@@ -108,10 +109,12 @@ class HuggingFacePipeline(BaseLLM):
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token_id = model.config.eos_token_id
+
         if (
-            model.is_quantized
-            or model.model.is_loaded_in_4bit
-            or model.model.is_loaded_in_8bit
+            getattr(model, "is_loaded_in_4bit", False)
+            or getattr(model, "is_loaded_in_8bit", False)
         ) and device is not None:
             logger.warning(
                 f"Setting the `device` argument to None from {device} to avoid "
@@ -130,7 +133,9 @@ class HuggingFacePipeline(BaseLLM):
                     f"Got device=={device}, "
                     f"device is required to be within [-1, {cuda_device_count})"
                 )
-            if device < 0 and cuda_device_count > 0:
+            if device_map is not None and device < 0:
+                device = None
+            if device is not None and device < 0 and cuda_device_count > 0:
                 logger.warning(
                     "Device has %d GPUs available. "
                     "Provide device={deviceId} to `from_model_id` to use available"
@@ -148,6 +153,7 @@ class HuggingFacePipeline(BaseLLM):
             model=model,
             tokenizer=tokenizer,
             device=device,
+            device_map=device_map,
             batch_size=batch_size,
             model_kwargs=_model_kwargs,
             **_pipeline_kwargs,
@@ -202,8 +208,23 @@ class HuggingFacePipeline(BaseLLM):
                     response = response[0]
 
                 if self.pipeline.task == "text-generation":
-                    # Text generation return includes the starter text
-                    text = response["generated_text"][len(batch_prompts[j]) :]
+                    try:
+                        from transformers.pipelines.text_generation import ReturnType
+
+                        remove_prompt = (
+                            self.pipeline._postprocess_params.get("return_type")
+                            != ReturnType.NEW_TEXT
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Unable to extract pipeline return_type. "
+                            f"Received error:\n\n{e}"
+                        )
+                        remove_prompt = True
+                    if remove_prompt:
+                        text = response["generated_text"][len(batch_prompts[j]) :]
+                    else:
+                        text = response["generated_text"]
                 elif self.pipeline.task == "text2text-generation":
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":

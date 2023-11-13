@@ -8,13 +8,13 @@ Here are a few different tools and functionalities to aid in debugging.
 
 ## Tracing
 
-Platforms with tracing capabilities like [LangSmith](/docs/guides/langsmith/) and [WandB](/docs/integrations/providers/wandb_tracing) are the most comprehensive solutions for debugging. These platforms make it easy to not only log and visualize LLM apps, but also to actively debug, test and refine them.
+Platforms with tracing capabilities like [LangSmith](/docs/langsmith/) and [WandB](/docs/integrations/providers/wandb_tracing) are the most comprehensive solutions for debugging. These platforms make it easy to not only log and visualize LLM apps, but also to actively debug, test and refine them.
 
 For anyone building production-grade LLM applications, we highly recommend using a platform like this.
 
 ![LangSmith run](/img/run_details.png)
 
-## `langchain.debug` and `langchain.verbose`
+## `set_debug` and `set_verbose`
 
 If you're prototyping in Jupyter Notebooks or running Python scripts, it can be helpful to print out the intermediate steps of a Chain run. 
 
@@ -45,15 +45,15 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 </CodeOutputBlock>
 
-### `langchain.debug = True`
+### `set_debug(True)`
 
 Setting the global `debug` flag will cause all LangChain components with callback support (chains, models, agents, tools, retrievers) to print the inputs they receive and outputs they generate. This is the most verbose setting and will fully log raw inputs and outputs.
 
 
 ```python
-import langchain
+from langchain.globals import set_debug
 
-langchain.debug = True
+set_debug(True)
 
 agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?")
 ```
@@ -376,15 +376,15 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 </details>
 
-### `langchain.verbose = True`
+### `set_verbose(True)`
 
 Setting the `verbose` flag will print out inputs and outputs in a slightly more readable format and will skip logging certain raw outputs (like the token usage stats for an LLM call) so that you can focus on application logic.
 
 
 ```python
-import langchain
+from langchain.globals import set_verbose
 
-langchain.verbose = True
+set_verbose(True)
 
 agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?")
 ```
@@ -656,6 +656,6 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 ## Other callbacks
 
-`Callbacks` are what we use to execute any functionality within a component outside the primary component logic. All of the above solutions use `Callbacks` under the hood to log intermediate steps of components. There's a number of `Callbacks` relevant for debugging that come with LangChain out of the box, like the [FileCallbackHandler](/docs/modules/callbacks/how_to/filecallbackhandler). You can also implement your own callbacks to execute custom functionality.
+`Callbacks` are what we use to execute any functionality within a component outside the primary component logic. All of the above solutions use `Callbacks` under the hood to log intermediate steps of components. There are a number of `Callbacks` relevant for debugging that come with LangChain out of the box, like the [FileCallbackHandler](/docs/modules/callbacks/how_to/filecallbackhandler). You can also implement your own callbacks to execute custom functionality.
 
 See here for more info on [Callbacks](/docs/modules/callbacks/), how to use them, and customize them.
