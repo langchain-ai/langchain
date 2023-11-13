@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from langserve import add_routes
 
-app = FastAPI()
+app = FastAPI(docs_url="/")
 
 # Edit this to add the chain you want to add
 add_routes(app, NotImplemented)
