@@ -1,4 +1,15 @@
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from tenacity import (
     AsyncRetrying,
@@ -10,25 +21,98 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
-from langchain.schema.runnable.base import Input, Output, RunnableBinding
+from langchain.schema.runnable.base import Input, Output, RunnableBindingBase
 from langchain.schema.runnable.config import RunnableConfig, patch_config
 
-T = TypeVar("T", CallbackManagerForChainRun, AsyncCallbackManagerForChainRun)
+if TYPE_CHECKING:
+    from langchain.callbacks.manager import (
+        AsyncCallbackManagerForChainRun,
+        CallbackManagerForChainRun,
+    )
+
+    T = TypeVar("T", CallbackManagerForChainRun, AsyncCallbackManagerForChainRun)
 U = TypeVar("U")
 
 
-class RunnableRetry(RunnableBinding[Input, Output]):
-    """Retry a Runnable if it fails."""
+class RunnableRetry(RunnableBindingBase[Input, Output]):
+    """Retry a Runnable if it fails.
+
+    A RunnableRetry helps can be used to add retry logic to any object
+    that subclasses the base Runnable.
+
+    Such retries are especially useful for network calls that may fail
+    due to transient errors.
+
+    The RunnableRetry is implemented as a RunnableBinding. The easiest
+    way to use it is through the `.with_retry()` method on all Runnables.
+
+    Example:
+
+    Here's an example that uses a RunnableLambda to raise an exception
+
+        .. code-block:: python
+
+            import time
+
+            def foo(input) -> None:
+                '''Fake function that raises an exception.'''
+                raise ValueError("Invoking foo failed. At time {time.time()}")
+
+            runnable = RunnableLambda(foo)
+
+            runnable_with_retries = runnable.with_retry(
+                retry_exception_types=(ValueError,), # Retry only on ValueError
+                wait_exponential_jitter=True, # Add jitter to the exponential backoff
+                max_attempt_number=2, # Try twice
+            )
+
+            # The method invocation above is equivalent to the longer form below:
+
+            runnable_with_retries = RunnableRetry(
+                bound=runnable,
+                retry_exception_types=(ValueError,),
+                max_attempt_number=2,
+                wait_exponential_jitter=True
+            )
+
+    This logic can be used to retry any Runnable, including a chain of Runnables,
+    but in general it's best practice to keep the scope of the retry as small as
+    possible. For example, if you have a chain of Runnables, you should only retry
+    the Runnable that is likely to fail, not the entire chain.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain.chat_models import ChatOpenAI
+            from langchain.prompts import PromptTemplate
+
+            template = PromptTemplate.from_template("tell me a joke about {topic}.")
+            model = ChatOpenAI(temperature=0.5)
+
+            # Good
+            chain = template | model.with_retry()
+
+            # Bad
+            chain = template | model
+            retryable_chain = chain.with_retry()
+    """
 
     retry_exception_types: Tuple[Type[BaseException], ...] = (Exception,)
+    """The exception types to retry on. By default all exceptions are retried.
+    
+    In general you should only retry on exceptions that are likely to be
+    transient, such as network errors.
+    
+    Good exceptions to retry are all server errors (5xx) and selected client
+    errors (4xx) such as 429 Too Many Requests.
+    """
 
     wait_exponential_jitter: bool = True
+    """Whether to add jitter to the exponential backoff."""
 
     max_attempt_number: int = 3
+    """The maximum number of attempts to retry the runnable."""
 
     @property
     def _kwargs_retrying(self) -> Dict[str, Any]:
@@ -54,7 +138,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _patch_config(
         self,
         config: RunnableConfig,
-        run_manager: T,
+        run_manager: "T",
         retry_state: RetryCallState,
     ) -> RunnableConfig:
         attempt = retry_state.attempt_number
@@ -64,7 +148,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _patch_config_list(
         self,
         config: List[RunnableConfig],
-        run_manager: List[T],
+        run_manager: List["T"],
         retry_state: RetryCallState,
     ) -> List[RunnableConfig]:
         return [
@@ -74,14 +158,16 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _invoke(
         self,
         input: Input,
-        run_manager: CallbackManagerForChainRun,
+        run_manager: "CallbackManagerForChainRun",
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> Output:
         for attempt in self._sync_retrying(reraise=True):
             with attempt:
                 result = super().invoke(
                     input,
                     self._patch_config(config, run_manager, attempt.retry_state),
+                    **kwargs,
                 )
             if attempt.retry_state.outcome and not attempt.retry_state.outcome.failed:
                 attempt.retry_state.set_result(result)
@@ -95,14 +181,16 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     async def _ainvoke(
         self,
         input: Input,
-        run_manager: AsyncCallbackManagerForChainRun,
+        run_manager: "AsyncCallbackManagerForChainRun",
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> Output:
         async for attempt in self._async_retrying(reraise=True):
             with attempt:
                 result = await super().ainvoke(
                     input,
                     self._patch_config(config, run_manager, attempt.retry_state),
+                    **kwargs,
                 )
             if attempt.retry_state.outcome and not attempt.retry_state.outcome.failed:
                 attempt.retry_state.set_result(result)
@@ -116,8 +204,9 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     def _batch(
         self,
         inputs: List[Input],
-        run_manager: List[CallbackManagerForChainRun],
+        run_manager: List["CallbackManagerForChainRun"],
         config: List[RunnableConfig],
+        **kwargs: Any,
     ) -> List[Union[Output, Exception]]:
         results_map: Dict[int, Output] = {}
 
@@ -134,6 +223,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
                             pending(config), pending(run_manager), attempt.retry_state
                         ),
                         return_exceptions=True,
+                        **kwargs,
                     )
                     # Register the results of the inputs that have succeeded.
                     first_exception = None
@@ -171,7 +261,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[Output]:
         return self._batch_with_config(
             self._batch, inputs, config, return_exceptions=return_exceptions, **kwargs
@@ -180,8 +270,9 @@ class RunnableRetry(RunnableBinding[Input, Output]):
     async def _abatch(
         self,
         inputs: List[Input],
-        run_manager: List[AsyncCallbackManagerForChainRun],
+        run_manager: List["AsyncCallbackManagerForChainRun"],
         config: List[RunnableConfig],
+        **kwargs: Any,
     ) -> List[Union[Output, Exception]]:
         results_map: Dict[int, Output] = {}
 
@@ -198,6 +289,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
                             pending(config), pending(run_manager), attempt.retry_state
                         ),
                         return_exceptions=True,
+                        **kwargs,
                     )
                     # Register the results of the inputs that have succeeded.
                     first_exception = None
@@ -235,7 +327,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[Output]:
         return await self._abatch_with_config(
             self._abatch, inputs, config, return_exceptions=return_exceptions, **kwargs

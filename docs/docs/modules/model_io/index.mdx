@@ -1,0 +1,27 @@
+---
+sidebar_position: 0
+sidebar_custom_props:
+  description: Interface with language models
+sidebar_class_name: hidden
+---
+
+# Model I/O
+
+The core element of any language model application is...the model. LangChain gives you the building blocks to interface with any language model.
+
+- [Prompts](/docs/modules/model_io/prompts/): Templatize, dynamically select, and manage model inputs
+- [Chat models](/docs/modules/model_io/chat/): Models that are backed by a language model but take a list of Chat Messages as input and return a Chat Message
+- [LLMs](/docs/modules/model_io/llms/): Models that take a text string as input and return a text string
+- [Output parsers](/docs/modules/model_io/output_parsers/): Extract information from model outputs
+
+![model_io_diagram](/img/model_io.jpg)
+
+
+## LLMs vs Chat models
+
+LLMs and chat models are subtly but importantly different. LLMs in LangChain refer to pure text completion models.
+The APIs they wrap take a string prompt as input and output a string completion. OpenAI's GPT-3 is implemented as an LLM.
+Chat models are often backed by LLMs but tuned specifically for having conversations.
+And, crucially, their provider APIs use a different interface than pure text completion models. Instead of a single string,
+they take a list of chat messages as input. Usually these messages are labeled with the speaker (usually one of "System",
+"AI", and "Human"). And they return an AI chat message as output. GPT-4 and Anthropic's Claude-2 are both implemented as chat models.

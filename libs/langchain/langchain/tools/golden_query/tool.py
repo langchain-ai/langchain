@@ -10,7 +10,7 @@ from langchain.utilities.golden_query import GoldenQueryAPIWrapper
 class GoldenQueryRun(BaseTool):
     """Tool that adds the capability to query using the Golden API and get back JSON."""
 
-    name: str = "Golden Query"
+    name: str = "Golden-Query"
     description: str = (
         "A wrapper around Golden Query API."
         " Useful for getting entities that match"
