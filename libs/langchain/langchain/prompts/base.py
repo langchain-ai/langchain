@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
+from string import Formatter
 from typing import Any, Callable, Dict, List, Literal, Set
 
 from langchain.schema.messages import BaseMessage, HumanMessage
@@ -14,19 +15,33 @@ from langchain.utils.formatting import formatter
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
     """Format a template using jinja2.
 
-    *Security warning*: jinja2 templates are not sandboxed and may lead
-    to arbitrary Python code execution. Do not expand jinja2 templates
-    using unverified or user-controlled inputs!
+    *Security warning*: As of LangChain 0.0.329, this method uses Jinja2's
+        SandboxedEnvironment by default. However, this sand-boxing should
+        be treated as a best-effort approach rather than a guarantee of security.
+        Do not accept jinja2 templates from untrusted sources as they may lead
+        to arbitrary Python code execution.
+
+        https://jinja.palletsprojects.com/en/3.1.x/sandbox/
     """
     try:
-        from jinja2 import Template
+        from jinja2.sandbox import SandboxedEnvironment
     except ImportError:
         raise ImportError(
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
+            "Please be cautious when using jinja2 templates. "
+            "Do not expand jinja2 templates using unverified or user-controlled "
+            "inputs as that can result in arbitrary Python code execution."
         )
 
-    return Template(template).render(**kwargs)
+    # This uses a sandboxed environment to prevent arbitrary code execution.
+    # Jinja2 uses an opt-out rather than opt-in approach for sand-boxing.
+    # Please treat this sand-boxing as a best-effort approach rather than
+    # a guarantee of security.
+    # We recommend to never use jinja2 templates with untrusted inputs.
+    # https://jinja.palletsprojects.com/en/3.1.x/sandbox/
+    # approach not a guarantee of security.
+    return SandboxedEnvironment().from_string(template).render(**kwargs)
 
 
 def validate_jinja2(template: str, input_variables: List[str]) -> None:
@@ -82,7 +97,16 @@ DEFAULT_VALIDATOR_MAPPING: Dict[str, Callable] = {
 def check_valid_template(
     template: str, template_format: str, input_variables: List[str]
 ) -> None:
-    """Check that template string is valid."""
+    """Check that template string is valid.
+
+    Args:
+        template: The template string.
+        template_format: The template format. Should be one of "f-string" or "jinja2".
+        input_variables: The input variables.
+
+    Raises:
+        ValueError: If the template format is not supported.
+    """
     if template_format not in DEFAULT_FORMATTER_MAPPING:
         valid_formats = list(DEFAULT_FORMATTER_MAPPING)
         raise ValueError(
@@ -97,6 +121,32 @@ def check_valid_template(
             "Invalid prompt schema; check for mismatched or missing input parameters. "
             + str(e)
         )
+
+
+def get_template_variables(template: str, template_format: str) -> List[str]:
+    """Get the variables from the template.
+
+    Args:
+        template: The template string.
+        template_format: The template format. Should be one of "f-string" or "jinja2".
+
+    Returns:
+        The variables from the template.
+
+    Raises:
+        ValueError: If the template format is not supported.
+    """
+    if template_format == "jinja2":
+        # Get the variables for the template
+        input_variables = _get_jinja2_variables_from_template(template)
+    elif template_format == "f-string":
+        input_variables = {
+            v for _, v, _, _ in Formatter().parse(template) if v is not None
+        }
+    else:
+        raise ValueError(f"Unsupported template format: {template_format}")
+
+    return sorted(input_variables)
 
 
 class StringPromptValue(PromptValue):

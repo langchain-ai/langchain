@@ -177,3 +177,5 @@ docs/api_reference/*/
 docs/docs/build
 docs/docs/node_modules
 docs/docs/yarn.lock
+_dist
+docs/docs/templates

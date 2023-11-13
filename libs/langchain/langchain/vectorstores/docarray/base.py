@@ -6,7 +6,7 @@ import numpy as np
 from langchain.pydantic_v1 import Field
 from langchain.schema import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores import VectorStore
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
@@ -10,7 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
-from langsmith.utils import LangSmithError
+from langsmith import utils as ls_utils
 from tenacity import (
     Retrying,
     retry_if_exception_type,
@@ -64,6 +63,16 @@ def _get_executor() -> ThreadPoolExecutor:
     return _EXECUTOR
 
 
+def _copy(run: Run) -> Run:
+    """Copy a run."""
+    try:
+        return run.copy(deep=True)
+    except TypeError:
+        # Fallback in case the object contains a lock or other
+        # non-pickleable object
+        return run.copy()
+
+
 class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
@@ -81,9 +90,7 @@ class LangChainTracer(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.project_name = project_name or os.getenv(
-            "LANGCHAIN_PROJECT", os.getenv("LANGCHAIN_SESSION", "default")
-        )
+        self.project_name = project_name or ls_utils.get_tracer_project()
         self.client = client or get_client()
         self._futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.tags = tags or []
@@ -142,7 +149,7 @@ class LangChainTracer(BaseTracer):
         for attempt in Retrying(
             stop=stop_after_attempt(5),
             wait=wait_exponential_jitter(),
-            retry=retry_if_exception_type(LangSmithError),
+            retry=retry_if_exception_type(ls_utils.LangSmithError),
         ):
             with attempt:
                 return self.client.get_run_url(
@@ -192,63 +199,63 @@ class LangChainTracer(BaseTracer):
         """Persist an LLM run."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, run.copy(deep=True))
+        self._submit(self._persist_run_single, _copy(run))
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, run.copy(deep=True))
+        self._submit(self._persist_run_single, _copy(run))
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_llm_error(self, run: Run) -> None:
         """Process the LLM Run upon error."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_chain_start(self, run: Run) -> None:
         """Process the Chain Run upon start."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, run.copy(deep=True))
+        self._submit(self._persist_run_single, _copy(run))
 
     def _on_chain_end(self, run: Run) -> None:
         """Process the Chain Run."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_chain_error(self, run: Run) -> None:
         """Process the Chain Run upon error."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, run.copy(deep=True))
+        self._submit(self._persist_run_single, _copy(run))
 
     def _on_tool_end(self, run: Run) -> None:
         """Process the Tool Run."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_tool_error(self, run: Run) -> None:
         """Process the Tool Run upon error."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_retriever_start(self, run: Run) -> None:
         """Process the Retriever Run upon start."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, run.copy(deep=True))
+        self._submit(self._persist_run_single, _copy(run))
 
     def _on_retriever_end(self, run: Run) -> None:
         """Process the Retriever Run."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def _on_retriever_error(self, run: Run) -> None:
         """Process the Retriever Run upon error."""
-        self._submit(self._update_run_single, run.copy(deep=True))
+        self._submit(self._update_run_single, _copy(run))
 
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
