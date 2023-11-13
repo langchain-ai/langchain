@@ -21,7 +21,9 @@ if os.environ.get("OPENAI_API_KEY", None) is None:
 
 
 # Connect to DB
-CONNECTION_STRING = "postgresql+psycopg2://postgres:test@localhost:5432/vectordb"  # Replace with your own
+CONNECTION_STRING = (
+    "postgresql+psycopg2://postgres:test@localhost:5432/vectordb"
+)  # Replace with your own
 db = SQLDatabase.from_uri(CONNECTION_STRING)
 
 # Choose LLM and embeddings model
@@ -46,14 +48,16 @@ embeddings_model = OpenAIEmbeddings()
 #     db.run(sql_command)
 
 
-#-----------------
+# -----------------
 # Define functions
-#-----------------
+# -----------------
 def get_schema(_):
     return db.get_table_info()
 
+
 def run_query(query):
     return db.run(query)
+
 
 def replace_brackets(match):
     words_inside_brackets = match.group(1).split(", ")
