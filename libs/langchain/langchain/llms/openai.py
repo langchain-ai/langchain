@@ -26,10 +26,14 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 from langchain.utils.openai import is_openai_v1
 from langchain.utils.utils import build_extra_kwargs
 
@@ -189,7 +193,7 @@ class BaseOpenAI(BaseLLM):
     # When updating this to use a SecretStr
     # Check for classes that derive from this class (as some of them
     # may assume openai_api_key is a str)
-    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
@@ -271,9 +275,9 @@ class BaseOpenAI(BaseLLM):
         if values["streaming"] and values["best_of"] > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
 
-        values["openai_api_key"] = get_from_dict_or_env(
+        values["openai_api_key"] = convert_to_secret_str(get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
-        )
+        ))
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
         )
@@ -298,7 +302,7 @@ class BaseOpenAI(BaseLLM):
 
         if is_openai_v1():
             client_params = {
-                "api_key": values["openai_api_key"],
+                "api_key": values["openai_api_key"].get_secret_value(),
                 "organization": values["openai_organization"],
                 "base_url": values["openai_api_base"],
                 "timeout": values["request_timeout"],
@@ -580,7 +584,7 @@ class BaseOpenAI(BaseLLM):
         if not is_openai_v1():
             openai_creds.update(
                 {
-                    "api_key": self.openai_api_key,
+                    "api_key": self.openai_api_key.get_secret_value(),
                     "api_base": self.openai_api_base,
                     "organization": self.openai_organization,
                 }
@@ -854,8 +858,8 @@ class OpenAIChat(BaseLLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
+        values["openai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "openai_api_key", "OPENAI_API_KEY")
         )
         openai_api_base = get_from_dict_or_env(
             values,
@@ -875,7 +879,7 @@ class OpenAIChat(BaseLLM):
         try:
             import openai
 
-            openai.api_key = openai_api_key
+            openai.api_key = values["openai_api_key"].get_secret_value()
             if openai_api_base:
                 openai.api_base = openai_api_base
             if openai_organization:
