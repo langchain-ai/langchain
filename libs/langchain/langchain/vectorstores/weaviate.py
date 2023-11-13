@@ -468,7 +468,7 @@ class Weaviate(VectorStore):
         attributes = list(metadatas[0].keys()) if metadatas else None
 
         # If the UUID of one of the objects already exists
-        # then the existing objectwill be replaced by the new object.
+        # then the existing object will be replaced by the new object.
         if "uuids" in kwargs:
             uuids = kwargs.pop("uuids")
         else:
