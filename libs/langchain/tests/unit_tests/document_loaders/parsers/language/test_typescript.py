@@ -44,7 +44,7 @@ enum Colors
         self.expected_extracted_code = [
             "function foo(): number\n{\n    return 1;\n}",
             "class Autumn\n{\n    leafCount = 45;\n    "
-            'reduceTemperature(desiredTemperature: number): number {\n        '
+            "reduceTemperature(desiredTemperature: number): number {\n        "
             "return desiredTemperature * 0.6;\n    }\n}",
             "interface Season\n{\n    change(): void;\n}",
             "enum Colors\n{\n    Green = 'green',\n    Red = 'red',\n}",

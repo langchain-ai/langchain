@@ -8,6 +8,7 @@ from langchain.document_loaders.parsers.language.cobol import CobolSegmenter
 from langchain.document_loaders.parsers.language.cpp import CPPSegmenter
 from langchain.document_loaders.parsers.language.csharp import CSharpSegmenter
 from langchain.document_loaders.parsers.language.go import GoSegmenter
+from langchain.document_loaders.parsers.language.java import JavaSegmenter
 from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
 from langchain.document_loaders.parsers.language.kotlin import KotlinSegmenter
 from langchain.document_loaders.parsers.language.lua import LuaSegmenter
@@ -34,6 +35,7 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "lua": Language.LUA,
     "pl": Language.PERL,
     "ts": Language.TS,
+    "java": Language.JAVA,
 }
 
 LANGUAGE_SEGMENTERS: Dict[str, Any] = {
@@ -50,7 +52,8 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     Language.KOTLIN: KotlinSegmenter,
     Language.LUA: LuaSegmenter,
     Language.PERL: PerlSegmenter,
-    Language.TS: TypeScriptSegmenter
+    Language.TS: TypeScriptSegmenter,
+    Language.JAVA: JavaSegmenter,
 }
 
 
@@ -79,6 +82,7 @@ class LanguageParser(BaseBlobParser):
     - Rust (*)
     - Scala (*)
     - TypeScript (*)
+    - Java (*)
 
     Items marked with (*) require the packages `tree_sitter` and `tree_sitter_languages`.
     It is straightforward to add support for additional languages using `tree_sitter`,
