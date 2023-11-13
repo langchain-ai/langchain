@@ -128,7 +128,8 @@ class _OllamaCommon(BaseLanguageModel):
             stop = self.stop
         elif stop is None:
             stop = []
-        params = {**self._default_params}
+
+        params = self._default_params
 
         if "model" in kwargs:
             params["model"] = kwargs["model"]
