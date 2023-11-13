@@ -26,7 +26,7 @@ class DatabricksVectorSearch(VectorStore):
             vs_client = VectorSearchClient()
             vs_index = vs_client.get_index(
               endpoint_name="vs_endpoint",
-              index_name="delta_sync_managed_embeddings_index"
+              index_name="ml.llm.index"
             )
             vectorstore = DatabricksVectorSearch(vs_index)
 
@@ -60,7 +60,7 @@ class DatabricksVectorSearch(VectorStore):
             vs_client = VectorSearchClient()
             vs_index = vs_client.get_index(
               endpoint_name="vs_endpoint",
-              index_name="delta_sync_self_managed_embeddings_index"
+              index_name="ml.llm.index"
             )
             vectorstore = DatabricksVectorSearch(
               index=vs_index,
@@ -81,7 +81,7 @@ class DatabricksVectorSearch(VectorStore):
             vs_client = VectorSearchClient()
             vs_index = vs_client.get_index(
               endpoint_name="vs_endpoint",
-              index_name="direct_access_index"
+              index_name="ml.llm.index"
             )
             vectorstore = DatabricksVectorSearch(
               index=vs_index,
