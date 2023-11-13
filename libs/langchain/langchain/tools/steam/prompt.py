@@ -11,3 +11,5 @@ STEAM_GET_GAMES_DETAILS = """
     For example, to search for a game with id "730", you would input {'request': 'appdetails', 'appid': '730'} as the dictionary.
 
 """
+
+# need more discussion on more functionalities of steam api

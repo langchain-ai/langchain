@@ -4,15 +4,12 @@ from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from typing import Any, Dict, List, Optional
 from langchain.langchain.tools.steam.prompt import STEAM_GET_GAMES_ID, STEAM_GET_GAMES_DETAILS
 from langchain.utils import get_from_dict_or_env  
-
+import steamspypi
 
 class SteamWebAPIWrapper(BaseModel):
     # Steam WebAPI Implementation will go here...
 
     steam: Any  #for python-steam-api
-    data_request: Any #for steamspypi
-
-    # can decide later if needed
 
     #oprations: a list of dictionaries, each representing a specific operation that can be performed with the API
     operations: List[Dict]=[
@@ -60,22 +57,66 @@ class SteamWebAPIWrapper(BaseModel):
                 "python-steam-api library is not installed. "
               
             )
-       
+        
         try:
-            import steamspypi
+            from decouple import config
         except ImportError:
             raise ImportError(
-                "steamspypi library is not installed. "
+                "decouple library is not installed. "
+              
             )
-
-       ################################################################################# 
-        #NOT SURE IF WE INITILAIZE THE steam and data_request HERE OR LATER!!!
-       #################################################################################
+        
+        #initilize the steam attribute for python-steam-api usage
+        KEY = config(values["steam_key"])
+        steam = Steam(KEY)
         return values
 
 
 
 
+    def parse_to_str(self, details: Dict) -> str: #NOT SURE IF details IS A DICT OF LIST OF DICT
+        """Parse the details result."""
+        result=""
+        for key, value in details.items():
+            result+= str(key) + '->' + str(value) + '\n'
+        return result
 
-    def run(self, prompt: str = "demo") -> str:
-        return prompt
+
+######################################  TBC   #####################################################################
+    #CHECK python-steam-api DOCUMENTATION FOR MORE INFO
+    def get_id(self, games: List[Dict]) -> str:
+        """ The response may contain more than one game, so we need to choose the right one and 
+        return the id."""
+
+
+        id=""
+
+        # can reuse parse_to_str() here probably?
+        return id
+     
+##############################################################################################################
+
+    def details_of_games(self, name: str) -> str:   
+        
+        #get id
+        games = self.steam.apps.search_games(name)
+        id = self.get_id(games)
+
+        #use id to get details
+        data_request = dict()
+        data_request['request'] = 'appdetails'
+        data_request['appid'] = id
+        data = steamspypi.download(self.data_request)
+        parsed_data = self.parse_to_str(data)
+        return parsed_data
+
+
+   
+    def run(self, mode: str, game:str) -> str:
+
+        if mode == "get_game_ID":
+            return self.get_id(game)
+        elif mode == "get_game_Details":
+            return self.details_of_games(game)
+        else:
+            raise ValueError(f"Invalid mode {mode} for Steam API.")
