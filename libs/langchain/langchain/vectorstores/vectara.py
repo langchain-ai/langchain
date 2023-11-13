@@ -38,7 +38,7 @@ class Vectara(VectorStore):
         vectara_customer_id: Optional[str] = None,
         vectara_corpus_id: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
-        vectara_api_timeout: int = 60,
+        vectara_api_timeout: int = 120,
         source: str = "langchain",
     ):
         """Initialize with Vectara API."""
@@ -312,7 +312,6 @@ class Vectara(VectorStore):
             return []
 
         result = response.json()
-
         if score_threshold:
             responses = [
                 r
@@ -441,7 +440,8 @@ class Vectara(VectorStore):
     def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
-        return VectaraRetriever(vectorstore=self, **kwargs, tags=tags)
+        search_kwargs = kwargs
+        return VectaraRetriever(vectorstore=self, search_kwargs=kwargs, tags=tags)
 
 
 class VectaraRetriever(VectorStoreRetriever):
@@ -451,12 +451,13 @@ class VectaraRetriever(VectorStoreRetriever):
     """Vectara vectorstore."""
     search_kwargs: dict = Field(
         default_factory=lambda: {
-            "lambda_val": 0.025,
+            "lambda_val": 0.0,
             "k": 5,
             "filter": "",
             "n_sentence_context": "2",
         }
     )
+
     """Search params.
         k: Number of Documents to return. Defaults to 5.
         lambda_val: lexical match parameter for hybrid search.
