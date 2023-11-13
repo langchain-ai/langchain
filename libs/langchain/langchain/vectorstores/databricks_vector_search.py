@@ -163,10 +163,11 @@ class DatabricksVectorSearch(VectorStore):
                         f"'{index_embedding_dimension}'."
                     )
         else:
-            logger.warning(
-                "embedding model is not used in delta-sync index with "
-                "Databricks-managed embeddings."
-            )
+            if embedding is not None:
+                logger.warning(
+                    "embedding model is not used in delta-sync index with "
+                    "Databricks-managed embeddings."
+                )
             self._embedding = None
 
     @classmethod
