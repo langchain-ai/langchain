@@ -55,6 +55,8 @@ GRAMMAR = r"""
 
 
 class ISO8601Date(TypedDict):
+    """A date in ISO 8601 format (YYYY-MM-DD)."""
+
     date: str
     type: Literal["date"]
 
