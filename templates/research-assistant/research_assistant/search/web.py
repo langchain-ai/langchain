@@ -60,9 +60,10 @@ get_links: Runnable[Any, Any] = (
 ).configurable_alternatives(
     ConfigurableField("search_engine"),
     default_key="duckduckgo",
-    tavily=RunnableParallel(
+    tavily=RunnableLambda(lambda x: x["question"])
+    | RunnableParallel(
         {
-            "question": lambda x: x["question"],
+            "question": RunnablePassthrough(),
             "results": TavilySearchAPIRetriever(k=RESULTS_PER_QUESTION),
         }
     )
