@@ -8,15 +8,15 @@ postgresql_template = (
     "informative data in the database.\n"
     "Never query for all columns from a table. You must query only the "
     "columns that are needed to answer the question. Wrap each column name "
-    "in double quotes (\") to denote them as delimited identifiers.\n"
+    'in double quotes (") to denote them as delimited identifiers.\n'
     "Pay attention to use only the column names you can see in the tables "
     "below. Be careful to not query for columns that do not exist. Also, "
     "pay attention to which column is in which table.\n"
     "Pay attention to use date('now') function to get the current date, "
-    "if the question involves \"today\".\n\n"
+    'if the question involves "today".\n\n'
     "You can use an extra extension which allows you to run semantic "
     "similarity using <-> operator on tables containing columns named "
-    "\"embeddings\".\n"
+    '"embeddings".\n'
     "<-> operator can ONLY be used on embeddings vector columns.\n"
     "The embeddings value for a given row typically represents the semantic "
     "meaning of that row.\n"
@@ -27,8 +27,8 @@ postgresql_template = (
     "be embedded for filtering.\n"
     "For example, if the user asks for songs about 'the feeling of "
     "loneliness' the query could be:\n"
-    "'SELECT \"[whatever_table_name]\".\"SongName\" FROM "
-    "\"[whatever_table_name]\" ORDER BY \"embeddings\" <-> '[loneliness]' "
+    '\'SELECT "[whatever_table_name]"."SongName" FROM '
+    '"[whatever_table_name]" ORDER BY "embeddings" <-> \'[loneliness]\' '
     "LIMIT 5'\n\n"
     "Use the following format:\n\n"
     "Question: <Question here>\n"
@@ -48,8 +48,3 @@ final_template = (
     "SQL Query: {query}\n"
     "SQL Response: {response}"
 )
-
-
-Question: {question}
-SQL Query: {query}
-SQL Response: {response}"""

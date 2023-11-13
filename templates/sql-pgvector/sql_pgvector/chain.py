@@ -19,9 +19,8 @@ if os.environ.get("OPENAI_API_KEY", None) is None:
 
 
 # Connect to DB
-CONNECTION_STRING = (
-    "postgresql+psycopg2://postgres:test@localhost:5432/vectordb"
-)  # Replace with your own
+# Replace with your own
+CONNECTION_STRING = "postgresql+psycopg2://postgres:test@localhost:5432/vectordb"
 db = SQLDatabase.from_uri(CONNECTION_STRING)
 
 # Choose LLM and embeddings model
@@ -31,7 +30,7 @@ embeddings_model = OpenAIEmbeddings()
 
 # # Ingest code - you will need to run this the first time
 # # Insert your query e.g. "SELECT Name FROM Track"
-# column_to_embed = db.run('replace-with-your-own-select-query') 
+# column_to_embed = db.run('replace-with-your-own-select-query')
 # column_values = [s[0] for s in eval(column_to_embed)]
 # embeddings = embeddings_model.embed_documents(column_values)
 
