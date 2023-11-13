@@ -762,8 +762,7 @@ class PGVector(VectorStore):
             k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
-            filter=filter
-            **kwargs,
+            filter=filter**kwargs,
         )
 
     def max_marginal_relevance_search_with_score(
