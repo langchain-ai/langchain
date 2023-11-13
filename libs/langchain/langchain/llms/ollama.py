@@ -136,8 +136,21 @@ class _OllamaCommon(BaseLanguageModel):
             stop = self.stop
         elif stop is None:
             stop = []
-        params = {**self._default_params, **kwargs}
-        params["options"]["stop"] = stop
+
+        params = self._default_params
+
+        if "model" in kwargs:
+            params["model"] = kwargs["model"]
+
+        if "options" in kwargs:
+            params["options"] = kwargs["options"]
+        else:
+            params["options"] = {
+                **params["options"],
+                "stop": stop,
+                **kwargs,
+            }
+
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
             headers={"Content-Type": "application/json"},
