@@ -1,4 +1,3 @@
-from datetime import date
 from typing import Dict, Tuple
 
 from langchain.chains.query_constructor.ir import (
@@ -77,7 +76,9 @@ def test_visit_operation() -> None:
         arguments=[
             Comparison(comparator=Comparator.EQ, attribute="foo", value="hello"),
             Comparison(
-                comparator=Comparator.GTE, attribute="bar", value=date(2023, 9, 13)
+                comparator=Comparator.GTE,
+                attribute="bar",
+                value={"type": "date", "date": "2023-09-13"},
             ),
             Comparison(comparator=Comparator.LTE, attribute="abc", value=1.4),
         ],
