@@ -34,7 +34,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         unwanted_tags: List[str] = ["script", "style"],
         tags_to_extract: List[str] = ["p", "li", "div", "a"],
         remove_lines: bool = True,
-        ignore_comments: bool = False,
+        remove_comments: bool = True,
         **kwargs: Any,
     ) -> Sequence[Document]:
         """
@@ -44,9 +44,8 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
             documents: A sequence of Document objects containing HTML content.
             unwanted_tags: A list of tags to be removed from the HTML.
             tags_to_extract: A list of tags whose content will be extracted.
-            remove_lines: If set to True, unnecessary lines will be
-                          removed from the HTML content.
-            ignore_comments: If set to True, comments will be ignored.
+            remove_lines: If set to True, unnecessary lines will be removed.
+            remove_comments: If set to True, comments will be removed.
 
         Returns:
             A sequence of Document objects with transformed content.
@@ -57,7 +56,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
             cleaned_content = self.remove_unwanted_tags(cleaned_content, unwanted_tags)
 
             cleaned_content = self.extract_tags(
-                cleaned_content, tags_to_extract, ignore_comments
+                cleaned_content, tags_to_extract, remove_comments
             )
 
             if remove_lines:
@@ -138,14 +137,14 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         raise NotImplementedError
 
 
-def get_navigable_strings(element: Any, ignore_comments: bool) -> Iterator[str]:
+def get_navigable_strings(element: Any, remove_comments: bool) -> Iterator[str]:
     from bs4 import Comment, NavigableString, Tag
 
     for child in cast(Tag, element).children:
-        if isinstance(child, Comment) and ignore_comments:
+        if isinstance(child, Comment) and remove_comments:
             continue
         if isinstance(child, Tag):
-            yield from get_navigable_strings(child, ignore_comments)
+            yield from get_navigable_strings(child, remove_comments)
         elif isinstance(child, NavigableString):
             if (element.name == "a") and (href := element.get("href")):
                 yield f"{child.strip()} ({href})"
