@@ -87,7 +87,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return str(soup)
 
     @staticmethod
-    def extract_tags(html_content: str, tags: List[str], ignore_comments: bool) -> str:
+    def extract_tags(html_content: str, tags: List[str], remove_comments: bool) -> str:
         """
         Extract specific tags from a given HTML content.
 
@@ -105,7 +105,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         for element in soup.find_all():
             if element.name in tags:
                 # Extract all navigable strings recursively from this element.
-                text_parts += get_navigable_strings(element, ignore_comments)
+                text_parts += get_navigable_strings(element, remove_comments)
 
                 # To avoid duplicate text, remove all descendants from the soup.
                 element.decompose()
