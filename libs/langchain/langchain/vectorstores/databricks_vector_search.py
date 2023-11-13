@@ -202,6 +202,7 @@ class DatabricksVectorSearch(VectorStore):
             List of ids from adding the texts into the index.
         """
         self._op_require_direct_access_index("add_texts")
+        assert self.embeddings is not None, "embedding model is required."
         texts = list(texts)
         vectors = self.embeddings.embed_documents(texts)
         ids = ids or [str(uuid.uuid4()) for _ in texts]
@@ -427,14 +428,14 @@ class DatabricksVectorSearch(VectorStore):
         """Infer the embedding dimension from the embedding function."""
         return len(self.embeddings.embed_query("test"))
 
-    def _op_require_direct_access_index(self, op_name):
+    def _op_require_direct_access_index(self, op_name) -> None:
         """
         Raise ValueError if the operation is not supported for direct-access index."""
         if not self._is_direct_access_index():
             raise ValueError(f"`{op_name}` is only supported for direct-access index.")
 
     @staticmethod
-    def _require_arg(arg: Any, arg_name):
+    def _require_arg(arg: Any, arg_name) -> None:
         """Raise ValueError if the required arg with name `arg_name` is None."""
         if not arg:
             raise ValueError(f"`{arg_name}` is required for this index.")
