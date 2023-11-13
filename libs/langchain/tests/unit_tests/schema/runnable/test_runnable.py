@@ -60,13 +60,12 @@ from langchain.schema.runnable import (
     Runnable,
     RunnableBranch,
     RunnableConfig,
+    RunnableContextProvider,
     RunnableLambda,
     RunnableParallel,
     RunnablePassthrough,
     RunnableSequence,
     RunnableWithFallbacks,
-    RunnableContextProvider,
-    RunnableContextBuilder
 )
 from langchain.schema.runnable.base import (
     ConfigurableField,
@@ -121,33 +120,33 @@ class FakeTracer(BaseTracer):
 
 class FakeRunnable(Runnable[str, int]):
     def invoke(
-            self,
-            input: str,
-            config: Optional[RunnableConfig] = None,
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
     ) -> int:
         return len(input)
 
 
 class FakeRetriever(BaseRetriever):
     def _get_relevant_documents(
-            self,
-            query: str,
-            *,
-            callbacks: Callbacks = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        *,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         return [Document(page_content="foo"), Document(page_content="bar")]
 
     async def _aget_relevant_documents(
-            self,
-            query: str,
-            *,
-            callbacks: Callbacks = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        *,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         return [Document(page_content="foo"), Document(page_content="bar")]
 
@@ -558,13 +557,13 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     assert router.output_schema.schema() == {"title": "RouterRunnableOutput"}
 
     seq_w_map: Runnable = (
-            prompt
-            | fake_llm
-            | {
-                "original": RunnablePassthrough(input_type=str),
-                "as_list": list_parser,
-                "length": typed_lambda_impl,
-            }
+        prompt
+        | fake_llm
+        | {
+            "original": RunnablePassthrough(input_type=str),
+            "as_list": list_parser,
+            "length": typed_lambda_impl,
+        }
     )
 
     assert seq_w_map.input_schema.schema() == {
@@ -605,9 +604,9 @@ def test_passthrough_assign_schema() -> None:
     fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
 
     seq_w_assign: Runnable = (
-            RunnablePassthrough.assign(context=itemgetter("question") | retriever)
-            | prompt
-            | fake_llm
+        RunnablePassthrough.assign(context=itemgetter("question") | retriever)
+        | prompt
+        | fake_llm
     )
 
     assert seq_w_assign.input_schema.schema() == {
@@ -621,8 +620,8 @@ def test_passthrough_assign_schema() -> None:
     }
 
     invalid_seq_w_assign: Runnable = (
-            RunnablePassthrough.assign(context=itemgetter("question") | retriever)
-            | fake_llm
+        RunnablePassthrough.assign(context=itemgetter("question") | retriever)
+        | fake_llm
     )
 
     # fallback to RunnableAssign.input_schema if next runnable doesn't have
@@ -649,10 +648,10 @@ def test_lambda_schemas() -> None:
     assert RunnableLambda(
         second_lambda,  # type: ignore[arg-type]
     ).input_schema.schema() == {
-               "title": "RunnableLambdaInput",
-               "type": "object",
-               "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
-           }
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
+    }
 
     def get_value(input):  # type: ignore[no-untyped-def]
         return input["variable_name"]
@@ -708,25 +707,25 @@ def test_lambda_schemas() -> None:
         }
 
     assert (
-            RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
-            == {
-                "title": "RunnableLambdaInput",
-                "$ref": "#/definitions/InputType",
-                "definitions": {
-                    "InputType": {
-                        "properties": {
-                            "variable_name": {
-                                "title": "Variable " "Name",
-                                "type": "string",
-                            },
-                            "yo": {"title": "Yo", "type": "integer"},
+        RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
+        == {
+            "title": "RunnableLambdaInput",
+            "$ref": "#/definitions/InputType",
+            "definitions": {
+                "InputType": {
+                    "properties": {
+                        "variable_name": {
+                            "title": "Variable " "Name",
+                            "type": "string",
                         },
-                        "required": ["variable_name", "yo"],
-                        "title": "InputType",
-                        "type": "object",
-                    }
-                },
-            }
+                        "yo": {"title": "Yo", "type": "integer"},
+                    },
+                    "required": ["variable_name", "yo"],
+                    "title": "InputType",
+                    "type": "object",
+                }
+            },
+        }
     )
 
     assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
@@ -776,10 +775,10 @@ def test_schema_complex_seq() -> None:
     chain1 = prompt1 | model | StrOutputParser()
 
     chain2: Runnable = (
-            {"city": chain1, "language": itemgetter("language")}
-            | prompt2
-            | model
-            | StrOutputParser()
+        {"city": chain1, "language": itemgetter("language")}
+        | prompt2
+        | model
+        | StrOutputParser()
     )
 
     assert chain2.input_schema.schema() == {
@@ -1033,13 +1032,13 @@ def test_configurable_fields() -> None:
     assert prompt_configurable.with_config(
         configurable={"prompt_template": "Hello {name} in {lang}"}
     ).input_schema.schema() == {
-               "title": "PromptInput",
-               "type": "object",
-               "properties": {
-                   "lang": {"title": "Lang", "type": "string"},
-                   "name": {"title": "Name", "type": "string"},
-               },
-           }
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {
+            "lang": {"title": "Lang", "type": "string"},
+            "name": {"title": "Name", "type": "string"},
+        },
+    }
 
     chain_configurable = prompt_configurable | fake_llm_configurable | StrOutputParser()
 
@@ -1073,13 +1072,13 @@ def test_configurable_fields() -> None:
     }
 
     assert (
-            chain_configurable.with_config(
-                configurable={
-                    "prompt_template": "A very good morning to you, {name} {lang}!",
-                    "llm_responses": ["c"],
-                }
-            ).invoke({"name": "John", "lang": "en"})
-            == "c"
+        chain_configurable.with_config(
+            configurable={
+                "prompt_template": "A very good morning to you, {name} {lang}!",
+                "llm_responses": ["c"],
+            }
+        ).invoke({"name": "John", "lang": "en"})
+        == "c"
     )
 
     assert chain_configurable.with_config(
@@ -1088,13 +1087,13 @@ def test_configurable_fields() -> None:
             "llm_responses": ["c"],
         }
     ).input_schema.schema() == {
-               "title": "PromptInput",
-               "type": "object",
-               "properties": {
-                   "lang": {"title": "Lang", "type": "string"},
-                   "name": {"title": "Name", "type": "string"},
-               },
-           }
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {
+            "lang": {"title": "Lang", "type": "string"},
+            "name": {"title": "Name", "type": "string"},
+        },
+    }
 
     chain_with_map_configurable: Runnable = prompt_configurable | {
         "llm1": fake_llm_configurable | StrOutputParser(),
@@ -1102,7 +1101,7 @@ def test_configurable_fields() -> None:
         "llm3": fake_llm.configurable_fields(
             responses=ConfigurableField("other_responses")
         )
-                | StrOutputParser(),
+        | StrOutputParser(),
     }
 
     assert chain_with_map_configurable.invoke({"name": "John"}) == {
@@ -1270,17 +1269,17 @@ def test_configurable_fields_example() -> None:
         chain_configurable.with_config(configurable={"llm123": "chat"})
 
     assert (
-            chain_configurable.with_config(configurable={"llm": "chat"}).invoke(
-                {"name": "John"}
-            )
-            == "A good morning to you!"
+        chain_configurable.with_config(configurable={"llm": "chat"}).invoke(
+            {"name": "John"}
+        )
+        == "A good morning to you!"
     )
 
     assert (
-            chain_configurable.with_config(
-                configurable={"llm": "chat", "chat_responses": ["helpful"]}
-            ).invoke({"name": "John"})
-            == "How can I help you?"
+        chain_configurable.with_config(
+            configurable={"llm": "chat", "chat_responses": ["helpful"]}
+        ).invoke({"name": "John"})
+        == "How can I help you?"
     )
 
 
@@ -1296,8 +1295,8 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     mock.reset_mock()
 
     assert [
-               part async for part in seq.astream("hello", dict(metadata={"key": "value"}))
-           ] == [5]
+        part async for part in seq.astream("hello", dict(metadata={"key": "value"}))
+    ] == [5]
     assert mock.call_args_list == [mocker.call(5)]
     mock.reset_mock()
 
@@ -1343,10 +1342,10 @@ async def test_with_config(mocker: MockerFixture) -> None:
     mocker.stop(spy_seq_step)
 
     assert [
-               *fake.with_config(tags=["a-tag"]).stream(
-                   "hello", dict(metadata={"key": "value"})
-               )
-           ] == [5]
+        *fake.with_config(tags=["a-tag"]).stream(
+            "hello", dict(metadata={"key": "value"})
+        )
+    ] == [5]
     assert spy.call_args_list == [
         mocker.call("hello", dict(tags=["a-tag"], metadata={"key": "value"})),
     ]
@@ -1358,7 +1357,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
 
     assert len(spy.call_args_list) == 2
     for i, call in enumerate(
-            sorted(spy.call_args_list, key=lambda x: 0 if x.args[0] == "hello" else 1)
+        sorted(spy.call_args_list, key=lambda x: 0 if x.args[0] == "hello" else 1)
     ):
         assert call.args[0] == ("hello" if i == 0 else "wooorld")
         if i == 0:
@@ -1384,10 +1383,10 @@ async def test_with_config(mocker: MockerFixture) -> None:
 
     handler = ConsoleCallbackHandler()
     assert (
-            await fake.with_config(metadata={"a": "b"}).ainvoke(
-                "hello", config={"callbacks": [handler]}
-            )
-            == 5
+        await fake.with_config(metadata={"a": "b"}).ainvoke(
+            "hello", config={"callbacks": [handler]}
+        )
+        == 5
     )
     assert spy.call_args_list == [
         mocker.call("hello", dict(callbacks=[handler], metadata={"a": "b"})),
@@ -1395,8 +1394,8 @@ async def test_with_config(mocker: MockerFixture) -> None:
     spy.reset_mock()
 
     assert [
-               part async for part in fake.with_config(metadata={"a": "b"}).astream("hello")
-           ] == [5]
+        part async for part in fake.with_config(metadata={"a": "b"}).astream("hello")
+    ] == [5]
     assert spy.call_args_list == [
         mocker.call("hello", dict(metadata={"a": "b"})),
     ]
@@ -1405,9 +1404,9 @@ async def test_with_config(mocker: MockerFixture) -> None:
     assert await fake.with_config(recursion_limit=5, tags=["c"]).abatch(
         ["hello", "wooorld"], dict(metadata={"key": "value"})
     ) == [
-               5,
-               7,
-           ]
+        5,
+        7,
+    ]
     assert spy.call_args_list == [
         mocker.call(
             "hello",
@@ -1532,14 +1531,14 @@ async def test_prompt() -> None:
             {"question": "What is your favorite color?"},
         ]
     ) == [
-               expected,
-               ChatPromptValue(
-                   messages=[
-                       SystemMessage(content="You are a nice assistant."),
-                       HumanMessage(content="What is your favorite color?"),
-                   ]
-               ),
-           ]
+        expected,
+        ChatPromptValue(
+            messages=[
+                SystemMessage(content="You are a nice assistant."),
+                HumanMessage(content="What is your favorite color?"),
+            ]
+        ),
+    ]
 
     assert [*prompt.stream({"question": "What is your name?"})] == [expected]
 
@@ -1551,18 +1550,18 @@ async def test_prompt() -> None:
             {"question": "What is your favorite color?"},
         ]
     ) == [
-               expected,
-               ChatPromptValue(
-                   messages=[
-                       SystemMessage(content="You are a nice assistant."),
-                       HumanMessage(content="What is your favorite color?"),
-                   ]
-               ),
-           ]
+        expected,
+        ChatPromptValue(
+            messages=[
+                SystemMessage(content="You are a nice assistant."),
+                HumanMessage(content="What is your favorite color?"),
+            ]
+        ),
+    ]
 
     assert [
-               part async for part in prompt.astream({"question": "What is your name?"})
-           ] == [expected]
+        part async for part in prompt.astream({"question": "What is your name?"})
+    ] == [expected]
 
     stream_log = [
         part async for part in prompt.astream_log({"question": "What is your name?"})
@@ -1683,8 +1682,8 @@ def test_prompt_template_params() -> None:
 
 def test_with_listeners(mocker: MockerFixture) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     chat = FakeListChatModel(responses=["foo"])
 
@@ -1717,8 +1716,8 @@ def test_with_listeners(mocker: MockerFixture) -> None:
 @pytest.mark.asyncio
 async def test_with_listeners_async(mocker: MockerFixture) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     chat = FakeListChatModel(responses=["foo"])
 
@@ -1750,11 +1749,11 @@ async def test_with_listeners_async(mocker: MockerFixture) -> None:
 
 @freeze_time("2023-01-01")
 def test_prompt_with_chat_model(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     chat = FakeListChatModel(responses=["foo"])
 
@@ -1798,9 +1797,9 @@ def test_prompt_with_chat_model(
         ],
         dict(callbacks=[tracer]),
     ) == [
-               AIMessage(content="foo"),
-               AIMessage(content="foo"),
-           ]
+        AIMessage(content="foo"),
+        AIMessage(content="foo"),
+    ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
         {"question": "What is your favorite color?"},
@@ -1820,14 +1819,14 @@ def test_prompt_with_chat_model(
         ),
     ]
     assert (
-            len(
-                [
-                    r
-                    for r in tracer.runs
-                    if r.parent_run_id is None and len(r.child_runs) == 2
-                ]
-            )
-            == 2
+        len(
+            [
+                r
+                for r in tracer.runs
+                if r.parent_run_id is None and len(r.child_runs) == 2
+            ]
+        )
+        == 2
     ), "Each of 2 outer runs contains exactly two inner runs (1 prompt, 1 chat)"
     mocker.stop(prompt_spy)
     mocker.stop(chat_spy)
@@ -1837,12 +1836,12 @@ def test_prompt_with_chat_model(
     chat_spy = mocker.spy(chat.__class__, "stream")
     tracer = FakeTracer()
     assert [
-               *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
-           ] == [
-               AIMessageChunk(content="f"),
-               AIMessageChunk(content="o"),
-               AIMessageChunk(content="o"),
-           ]
+        *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
+    ] == [
+        AIMessageChunk(content="f"),
+        AIMessageChunk(content="o"),
+        AIMessageChunk(content="o"),
+    ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -1855,11 +1854,11 @@ def test_prompt_with_chat_model(
 @pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_chat_model_async(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     chat = FakeListChatModel(responses=["foo"])
 
@@ -1903,9 +1902,9 @@ async def test_prompt_with_chat_model_async(
         ],
         dict(callbacks=[tracer]),
     ) == [
-               AIMessage(content="foo"),
-               AIMessage(content="foo"),
-           ]
+        AIMessage(content="foo"),
+        AIMessage(content="foo"),
+    ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
         {"question": "What is your favorite color?"},
@@ -1925,14 +1924,14 @@ async def test_prompt_with_chat_model_async(
         ),
     ]
     assert (
-            len(
-                [
-                    r
-                    for r in tracer.runs
-                    if r.parent_run_id is None and len(r.child_runs) == 2
-                ]
-            )
-            == 2
+        len(
+            [
+                r
+                for r in tracer.runs
+                if r.parent_run_id is None and len(r.child_runs) == 2
+            ]
+        )
+        == 2
     ), "Each of 2 outer runs contains exactly two inner runs (1 prompt, 1 chat)"
     mocker.stop(prompt_spy)
     mocker.stop(chat_spy)
@@ -1942,15 +1941,15 @@ async def test_prompt_with_chat_model_async(
     chat_spy = mocker.spy(chat.__class__, "astream")
     tracer = FakeTracer()
     assert [
-               a
-               async for a in chain.astream(
+        a
+        async for a in chain.astream(
             {"question": "What is your name?"}, dict(callbacks=[tracer])
         )
-           ] == [
-               AIMessageChunk(content="f"),
-               AIMessageChunk(content="o"),
-               AIMessageChunk(content="o"),
-           ]
+    ] == [
+        AIMessageChunk(content="f"),
+        AIMessageChunk(content="o"),
+        AIMessageChunk(content="o"),
+    ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -1963,11 +1962,11 @@ async def test_prompt_with_chat_model_async(
 @pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     llm = FakeListLLM(responses=["foo", "bar"])
 
@@ -1984,10 +1983,10 @@ async def test_prompt_with_llm(
     llm_spy = mocker.spy(llm.__class__, "ainvoke")
     tracer = FakeTracer()
     assert (
-            await chain.ainvoke(
-                {"question": "What is your name?"}, dict(callbacks=[tracer])
-            )
-            == "foo"
+        await chain.ainvoke(
+            {"question": "What is your name?"}, dict(callbacks=[tracer])
+        )
+        == "foo"
     )
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert llm_spy.call_args.args[1] == ChatPromptValue(
@@ -2038,11 +2037,11 @@ async def test_prompt_with_llm(
     llm_spy = mocker.spy(llm.__class__, "astream")
     tracer = FakeTracer()
     assert [
-               token
-               async for token in chain.astream(
+        token
+        async for token in chain.astream(
             {"question": "What is your name?"}, dict(callbacks=[tracer])
         )
-           ] == ["bar"]
+    ] == ["bar"]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert llm_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -2061,9 +2060,9 @@ async def test_prompt_with_llm(
     for part in stream_log:
         for op in part.ops:
             if (
-                    isinstance(op["value"], dict)
-                    and "id" in op["value"]
-                    and not isinstance(op["value"]["id"], list)  # serialized lc id
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
             ):
                 del op["value"]["id"]
 
@@ -2157,16 +2156,16 @@ async def test_prompt_with_llm(
 @freeze_time("2023-01-01")
 async def test_stream_log_retriever() -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{documents}"
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{documents}"
+        + "{question}"
     )
     llm = FakeListLLM(responses=["foo", "bar"])
 
     chain: Runnable = (
-            {"documents": FakeRetriever(), "question": itemgetter("question")}
-            | prompt
-            | {"one": llm, "two": llm}
+        {"documents": FakeRetriever(), "question": itemgetter("question")}
+        | prompt
+        | {"one": llm, "two": llm}
     )
 
     stream_log = [
@@ -2177,9 +2176,9 @@ async def test_stream_log_retriever() -> None:
     for part in stream_log:
         for op in part.ops:
             if (
-                    isinstance(op["value"], dict)
-                    and "id" in op["value"]
-                    and not isinstance(op["value"]["id"], list)  # serialized lc id
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
             ):
                 del op["value"]["id"]
 
@@ -2484,11 +2483,11 @@ async def test_stream_log_retriever() -> None:
 @pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm_and_async_lambda(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     llm = FakeListLLM(responses=["foo", "bar"])
 
@@ -2508,10 +2507,10 @@ async def test_prompt_with_llm_and_async_lambda(
     llm_spy = mocker.spy(llm.__class__, "ainvoke")
     tracer = FakeTracer()
     assert (
-            await chain.ainvoke(
-                {"question": "What is your name?"}, dict(callbacks=[tracer])
-            )
-            == "foo"
+        await chain.ainvoke(
+            {"question": "What is your name?"}, dict(callbacks=[tracer])
+        )
+        == "foo"
     )
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert llm_spy.call_args.args[1] == ChatPromptValue(
@@ -2527,11 +2526,11 @@ async def test_prompt_with_llm_and_async_lambda(
 
 @freeze_time("2023-01-01")
 def test_prompt_with_chat_model_and_parser(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     chat = FakeListChatModel(responses=["foo, bar"])
     parser = CommaSeparatedListOutputParser()
@@ -2566,11 +2565,11 @@ def test_prompt_with_chat_model_and_parser(
 
 @freeze_time("2023-01-01")
 def test_combining_sequences(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     chat = FakeListChatModel(responses=["foo, bar"])
     parser = CommaSeparatedListOutputParser()
@@ -2585,8 +2584,8 @@ def test_combining_sequences(
         assert dumps(chain, pretty=True) == snapshot
 
     prompt2 = (
-            SystemMessagePromptTemplate.from_template("You are a nicer assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nicer assistant.")
+        + "{question}"
     )
     chat2 = FakeListChatModel(responses=["baz, qux"])
     parser2 = CommaSeparatedListOutputParser()
@@ -2629,15 +2628,15 @@ def test_combining_sequences(
 
 @freeze_time("2023-01-01")
 def test_seq_dict_prompt_llm(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     passthrough = mocker.Mock(side_effect=lambda x: x)
 
     retriever = FakeRetriever()
 
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + """Context:
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + """Context:
 {documents}
 
 Question:
@@ -2649,14 +2648,14 @@ Question:
     parser = CommaSeparatedListOutputParser()
 
     chain: Runnable = (
-            {
-                "question": RunnablePassthrough[str]() | passthrough,
-                "documents": passthrough | retriever,
-                "just_to_test_lambda": passthrough,
-            }
-            | prompt
-            | chat
-            | parser
+        {
+            "question": RunnablePassthrough[str]() | passthrough,
+            "documents": passthrough | retriever,
+            "just_to_test_lambda": passthrough,
+        }
+        | prompt
+        | chat
+        | parser
     )
 
     assert repr(chain) == snapshot
@@ -2706,8 +2705,8 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     passthrough = mocker.Mock(side_effect=lambda x: x)
 
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
 
     chat = FakeListChatModel(responses=["i'm a chatbot"])
@@ -2715,12 +2714,12 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     llm = FakeListLLM(responses=["i'm a textbot"])
 
     chain = (
-            prompt
-            | passthrough
-            | {
-                "chat": chat,
-                "llm": llm,
-            }
+        prompt
+        | passthrough
+        | {
+            "chat": chat,
+            "llm": llm,
+        }
     )
 
     assert repr(chain) == snapshot
@@ -2738,9 +2737,9 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-               "chat": AIMessage(content="i'm a chatbot"),
-               "llm": "i'm a textbot",
-           }
+        "chat": AIMessage(content="i'm a chatbot"),
+        "llm": "i'm a textbot",
+    }
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -2765,7 +2764,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
 @pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_router_runnable(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     chain1 = ChatPromptTemplate.from_template(
         "You are a math genius. Answer the question: {question}"
@@ -2775,9 +2774,9 @@ async def test_router_runnable(
     ) | FakeListLLM(responses=["2"])
     router = RouterRunnable({"math": chain1, "english": chain2})
     chain: Runnable = {
-                          "key": lambda x: x["key"],
-                          "input": {"question": lambda x: x["question"]},
-                      } | router
+        "key": lambda x: x["key"],
+        "input": {"question": lambda x: x["question"]},
+    } | router
     assert dumps(chain, pretty=True) == snapshot
 
     result = chain.invoke({"key": "math", "question": "2 + 2"})
@@ -2800,8 +2799,8 @@ async def test_router_runnable(
     router_spy = mocker.spy(router.__class__, "invoke")
     tracer = FakeTracer()
     assert (
-            chain.invoke({"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer]))
-            == "4"
+        chain.invoke({"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer]))
+        == "4"
     )
     assert router_spy.call_args.args[1] == {
         "key": "math",
@@ -2818,7 +2817,7 @@ async def test_router_runnable(
 @pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_higher_order_lambda_runnable(
-        mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     math_chain = ChatPromptTemplate.from_template(
         "You are a math genius. Answer the question: {question}"
@@ -2863,8 +2862,8 @@ async def test_higher_order_lambda_runnable(
     math_spy = mocker.spy(math_chain.__class__, "invoke")
     tracer = FakeTracer()
     assert (
-            chain.invoke({"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer]))
-            == "4"
+        chain.invoke({"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer]))
+        == "4"
     )
     assert math_spy.call_args.args[1] == {
         "key": "math",
@@ -2893,10 +2892,10 @@ async def test_higher_order_lambda_runnable(
     math_spy = mocker.spy(math_chain.__class__, "ainvoke")
     tracer = FakeTracer()
     assert (
-            await achain.ainvoke(
-                {"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer])
-            )
-            == "4"
+        await achain.ainvoke(
+            {"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer])
+        )
+        == "4"
     )
     assert math_spy.call_args.args[1] == {
         "key": "math",
@@ -2918,8 +2917,8 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     passthrough = mocker.Mock(side_effect=lambda x: x)
 
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
 
     chat = FakeListChatModel(responses=["i'm a chatbot"])
@@ -2927,13 +2926,13 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     llm = FakeListLLM(responses=["i'm a textbot"])
 
     chain = (
-            prompt
-            | passthrough
-            | {
-                "chat": chat.bind(stop=["Thought:"]),
-                "llm": llm,
-                "passthrough": passthrough,
-            }
+        prompt
+        | passthrough
+        | {
+            "chat": chat.bind(stop=["Thought:"]),
+            "llm": llm,
+            "passthrough": passthrough,
+        }
     )
 
     assert isinstance(chain, RunnableSequence)
@@ -2950,15 +2949,15 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-               "chat": AIMessage(content="i'm a chatbot"),
-               "llm": "i'm a textbot",
-               "passthrough": ChatPromptValue(
-                   messages=[
-                       SystemMessage(content="You are a nice assistant."),
-                       HumanMessage(content="What is your name?"),
-                   ]
-               ),
-           }
+        "chat": AIMessage(content="i'm a chatbot"),
+        "llm": "i'm a textbot",
+        "passthrough": ChatPromptValue(
+            messages=[
+                SystemMessage(content="You are a nice assistant."),
+                HumanMessage(content="What is your name?"),
+            ]
+        ),
+    }
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -2982,8 +2981,8 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
 
 def test_map_stream() -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
 
     chat_res = "i'm a chatbot"
@@ -3028,8 +3027,8 @@ def test_map_stream() -> None:
 
 def test_map_stream_iterator_input() -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
 
     chat_res = "i'm a chatbot"
@@ -3041,13 +3040,13 @@ def test_map_stream_iterator_input() -> None:
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
     chain: Runnable = (
-            prompt
-            | llm
-            | {
-                "chat": chat.bind(stop=["Thought:"]),
-                "llm": llm,
-                "passthrough": RunnablePassthrough(),
-            }
+        prompt
+        | llm
+        | {
+            "chat": chat.bind(stop=["Thought:"]),
+            "llm": llm,
+            "passthrough": RunnablePassthrough(),
+        }
     )
 
     stream = chain.stream({"question": "What is your name?"})
@@ -3077,8 +3076,8 @@ def test_map_stream_iterator_input() -> None:
 @pytest.mark.asyncio
 async def test_map_astream() -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
 
     chat_res = "i'm a chatbot"
@@ -3138,11 +3137,11 @@ async def test_map_astream() -> None:
     assert len(final_state.ops) == len(streamed_ops)
     assert len(final_state.state["logs"]) == 5
     assert (
-            final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
+        final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
     )
     assert final_state.state["logs"]["ChatPromptTemplate"][
-               "final_output"
-           ] == prompt.invoke({"question": "What is your name?"})
+        "final_output"
+    ] == prompt.invoke({"question": "What is your name?"})
     assert final_state.state["logs"]["RunnableParallel"]["name"] == "RunnableParallel"
     assert sorted(final_state.state["logs"]) == [
         "ChatPromptTemplate",
@@ -3155,7 +3154,7 @@ async def test_map_astream() -> None:
     # Test astream_log with include filters
     final_state = None
     async for chunk in chain.astream_log(
-            {"question": "What is your name?"}, include_names=["FakeListChatModel"]
+        {"question": "What is your name?"}, include_names=["FakeListChatModel"]
     ):
         if final_state is None:
             final_state = chunk
@@ -3171,7 +3170,7 @@ async def test_map_astream() -> None:
     # Test astream_log with exclude filters
     final_state = None
     async for chunk in chain.astream_log(
-            {"question": "What is your name?"}, exclude_names=["FakeListChatModel"]
+        {"question": "What is your name?"}, exclude_names=["FakeListChatModel"]
     ):
         if final_state is None:
             final_state = chunk
@@ -3183,7 +3182,7 @@ async def test_map_astream() -> None:
     assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
     assert len(final_state.state["logs"]) == 4
     assert (
-            final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
+        final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
     )
     assert final_state.state["logs"]["ChatPromptTemplate"]["final_output"] == (
         prompt.invoke({"question": "What is your name?"})
@@ -3200,8 +3199,8 @@ async def test_map_astream() -> None:
 @pytest.mark.asyncio
 async def test_map_astream_iterator_input() -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
 
     chat_res = "i'm a chatbot"
@@ -3213,13 +3212,13 @@ async def test_map_astream_iterator_input() -> None:
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
     chain: Runnable = (
-            prompt
-            | llm
-            | {
-                "chat": chat.bind(stop=["Thought:"]),
-                "llm": llm,
-                "passthrough": RunnablePassthrough(),
-            }
+        prompt
+        | llm
+        | {
+            "chat": chat.bind(stop=["Thought:"]),
+            "llm": llm,
+            "passthrough": RunnablePassthrough(),
+        }
     )
 
     stream = chain.astream({"question": "What is your name?"})
@@ -3292,8 +3291,8 @@ def test_bind_bind() -> None:
 
 def test_deep_stream() -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
@@ -3318,8 +3317,8 @@ def test_deep_stream() -> None:
 
 def test_deep_stream_assign() -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
@@ -3417,8 +3416,8 @@ def test_deep_stream_assign() -> None:
 @pytest.mark.asyncio
 async def test_deep_astream() -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
@@ -3444,8 +3443,8 @@ async def test_deep_astream() -> None:
 @pytest.mark.asyncio
 async def test_deep_astream_assign() -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
@@ -3605,7 +3604,7 @@ def llm_chain_with_fallbacks() -> Runnable:
 )
 @pytest.mark.asyncio
 async def test_llm_with_fallbacks(
-        runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion
+    runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion
 ) -> None:
     runnable = request.getfixturevalue(runnable)
     assert runnable.invoke("hello") == "bar"
@@ -3650,8 +3649,8 @@ def test_each_simple() -> None:
 
 def test_each(snapshot: SnapshotAssertion) -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     first_llm = FakeStreamingListLLM(responses=["first item, second item, third item"])
     parser = FakeSplitIntoListParser()
@@ -3821,8 +3820,8 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
             raise NotImplementedError()
 
         def _batch(
-                self,
-                inputs: List[str],
+            self,
+            inputs: List[str],
         ) -> List:
             outputs: List[Any] = []
             for input in inputs:
@@ -3833,12 +3832,12 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
             return outputs
 
         def batch(
-                self,
-                inputs: List[str],
-                config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-                *,
-                return_exceptions: bool = False,
-                **kwargs: Any,
+            self,
+            inputs: List[str],
+            config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+            *,
+            return_exceptions: bool = False,
+            **kwargs: Any,
         ) -> List[str]:
             return self._batch_with_config(
                 self._batch,
@@ -3849,10 +3848,10 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
             )
 
     chain = (
-            ControlledExceptionRunnable("bux")
-            | ControlledExceptionRunnable("bar")
-            | ControlledExceptionRunnable("baz")
-            | ControlledExceptionRunnable("foo")
+        ControlledExceptionRunnable("bux")
+        | ControlledExceptionRunnable("bar")
+        | ControlledExceptionRunnable("baz")
+        | ControlledExceptionRunnable("foo")
     )
 
     assert isinstance(chain, RunnableSequence)
@@ -3942,8 +3941,8 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
             raise NotImplementedError()
 
         async def _abatch(
-                self,
-                inputs: List[str],
+            self,
+            inputs: List[str],
         ) -> List:
             outputs: List[Any] = []
             for input in inputs:
@@ -3954,12 +3953,12 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
             return outputs
 
         async def abatch(
-                self,
-                inputs: List[str],
-                config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-                *,
-                return_exceptions: bool = False,
-                **kwargs: Any,
+            self,
+            inputs: List[str],
+            config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+            *,
+            return_exceptions: bool = False,
+            **kwargs: Any,
         ) -> List[str]:
             return await self._abatch_with_config(
                 self._abatch,
@@ -3970,10 +3969,10 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
             )
 
     chain = (
-            ControlledExceptionRunnable("bux")
-            | ControlledExceptionRunnable("bar")
-            | ControlledExceptionRunnable("baz")
-            | ControlledExceptionRunnable("foo")
+        ControlledExceptionRunnable("bux")
+        | ControlledExceptionRunnable("bar")
+        | ControlledExceptionRunnable("baz")
+        | ControlledExceptionRunnable("foo")
     )
 
     assert isinstance(chain, RunnableSequence)
@@ -4284,19 +4283,19 @@ def test_representation_of_runnables() -> None:
             "b": RunnableLambda(lambda x: x * 3),
         }
     ) == (
-               "RunnableLambda(...)\n"
-               "| {\n"
-               "    a: RunnableLambda(...),\n"
-               "    b: RunnableLambda(...)\n"
-               "  }"
-           ), "repr where code string contains multiple lambdas gives up"
+        "RunnableLambda(...)\n"
+        "| {\n"
+        "    a: RunnableLambda(...),\n"
+        "    b: RunnableLambda(...)\n"
+        "  }"
+    ), "repr where code string contains multiple lambdas gives up"
 
 
 @pytest.mark.asyncio
 async def test_tool_from_runnable() -> None:
     prompt = (
-            SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-            + "{question}"
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
     )
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
@@ -4399,33 +4398,111 @@ async def test_runnable_gen_transform() -> None:
     assert [p async for p in achain.astream(4)] == [1, 2, 3, 4]
 
 
-@pytest.mark.asyncio
-async def test_runnable_context_provider_invoke() -> None:
-    prompt = PromptTemplate.from_template("{context} {question}")
-    llm = FakeListLLM(responses=["hello"])
-
-    context_provider = RunnableContextProvider(
-        chain=prompt | llm | StrOutputParser(),
+def test_runnable_context_provider_basic_get_set() -> None:
+    provider = RunnableContextProvider(
+        lambda getter, setter: setter("foo") | getter("foo")
     )
 
-    result = await context_provider.ainvoke({"question": "What up", "context": "Hi there!"})
-    assert result == "hello"
+    result = provider.invoke("foo")
+    assert result == "foo"
+
+
+def test_runnable_context_provider_invoke() -> None:
+    prompt = PromptTemplate.from_template("{foo} {bar}")
+    llm = FakeListLLM(responses=["hello"])
+
+    provider = RunnableContextProvider(
+        lambda getter, setter: prompt
+        | setter("prompt")
+        | llm
+        | StrOutputParser()
+        | {
+            "response": RunnablePassthrough(),
+            "prompt": getter("prompt"),
+        }
+    )
+
+    result = provider.invoke({"foo": "foo", "bar": "bar"})
+    assert result == {"response": "hello", "prompt": StringPromptValue(text="foo bar")}
 
 
 @pytest.mark.asyncio
-async def test_runnable_context_provider_batch() -> None:
-    prompt = PromptTemplate.from_template("{context} {question}")
+async def test_runnable_context_provider_ainvoke() -> None:
+    prompt = PromptTemplate.from_template("{foo} {bar}")
     llm = FakeListLLM(responses=["hello"])
 
-    context_provider = RunnableContextProvider(
-        chain=prompt | llm | StrOutputParser(),
+    provider = RunnableContextProvider(
+        lambda getter, setter: prompt
+        | setter("prompt")
+        | llm
+        | StrOutputParser()
+        | {
+            "response": RunnablePassthrough(),
+            "prompt": getter("prompt"),
+        }
     )
 
-    results = await context_provider.abatch([
-        {"question": "What up", "context": "Hi there!"},
-        {"question": "What up", "context": "Hi there!"}
-    ])
-    assert results == ["hello", "hello"]
+    result = await provider.ainvoke({"foo": "foo", "bar": "bar"})
+    assert result == {"response": "hello", "prompt": StringPromptValue(text="foo bar")}
+
+
+def test_runnable_context_provider_batch() -> None:
+    prompt = PromptTemplate.from_template("{foo} {bar}")
+    llm = FakeListLLM(responses=["hello"])
+
+    provider = RunnableContextProvider(
+        lambda getter, setter: prompt
+        | setter("prompt")
+        | llm
+        | StrOutputParser()
+        | {
+            "response": RunnablePassthrough(),
+            "prompt": getter("prompt"),
+        }
+    )
+
+    result = provider.batch(
+        [
+            {"foo": "foo", "bar": "bar"},
+            {"foo": "bar", "bar": "foo"},
+            {"foo": "a", "bar": "b"},
+        ]
+    )
+    assert result == [
+        {"response": "hello", "prompt": StringPromptValue(text="foo bar")},
+        {"response": "hello", "prompt": StringPromptValue(text="bar foo")},
+        {"response": "hello", "prompt": StringPromptValue(text="a b")},
+    ]
+
+
+@pytest.mark.asyncio
+async def test_runnable_context_provider_abatch() -> None:
+    prompt = PromptTemplate.from_template("{foo} {bar}")
+    llm = FakeListLLM(responses=["hello"])
+
+    provider = RunnableContextProvider(
+        lambda getter, setter: prompt
+        | setter("prompt")
+        | llm
+        | StrOutputParser()
+        | {
+            "response": RunnablePassthrough(),
+            "prompt": getter("prompt"),
+        }
+    )
+
+    result = await provider.abatch(
+        [
+            {"foo": "foo", "bar": "bar"},
+            {"foo": "bar", "bar": "foo"},
+            {"foo": "a", "bar": "b"},
+        ]
+    )
+    assert result == [
+        {"response": "hello", "prompt": StringPromptValue(text="foo bar")},
+        {"response": "hello", "prompt": StringPromptValue(text="bar foo")},
+        {"response": "hello", "prompt": StringPromptValue(text="a b")},
+    ]
 
 
 def test_runnable_context() -> None:
