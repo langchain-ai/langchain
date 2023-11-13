@@ -4,16 +4,14 @@ import re
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema.runnable import RunnableLambda
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnablePassthrough
+from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.sql_database import SQLDatabase
-
-from prompt_templates import postgresql_template, final_template
-
+from prompt_templates import final_template, postgresql_template
 
 """
-IMPORTANT: For using this template, you will need to follow the setup steps in the readme file
+IMPORTANT: For using this template, you will need to 
+follow the setup steps in the readme file
 """
 
 if os.environ.get("OPENAI_API_KEY", None) is None:
@@ -32,7 +30,8 @@ embeddings_model = OpenAIEmbeddings()
 
 
 # # Ingest code - you will need to run this the first time
-# column_to_embed = db.run('replace-with-your-own-select-query') # e.g. "SELECT Name FROM Track"
+# # Insert your query e.g. "SELECT Name FROM Track"
+# column_to_embed = db.run('replace-with-your-own-select-query') 
 # column_values = [s[0] for s in eval(column_to_embed)]
 # embeddings = embeddings_model.embed_documents(column_values)
 
