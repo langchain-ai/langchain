@@ -1,10 +1,10 @@
 import logging
 import uuid
-from typing import Type, List, Optional, Any, Iterable, TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore, VST
+from langchain.schema.vectorstore import VST, VectorStore
 
 if TYPE_CHECKING:
     from databricks.vector_search.client import VectorSearchIndex
