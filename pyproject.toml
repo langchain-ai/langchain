@@ -54,3 +54,10 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/{cookbook,docs}/*" = [
+    "E402",  # allow imports to appear anywhere in docs
+    "F811",  # allow re-importing the same module, so that cells can stay independent
+    "F841",  # allow assignments to variables that are never read -- it's example code
+]
