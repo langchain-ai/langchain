@@ -279,6 +279,7 @@ class DatabricksVectorSearch(VectorStore):
             query_text = query
             query_vector = None
         else:
+            assert self.embeddings is not None, "embedding model is required."
             query_text = None
             query_vector = self.embeddings.embed_query(query)
 
@@ -426,16 +427,17 @@ class DatabricksVectorSearch(VectorStore):
 
     def _infer_embedding_dimension(self) -> int:
         """Infer the embedding dimension from the embedding function."""
+        assert self.embeddings is not None, "embedding model is required."
         return len(self.embeddings.embed_query("test"))
 
-    def _op_require_direct_access_index(self, op_name) -> None:
+    def _op_require_direct_access_index(self, op_name: str) -> None:
         """
         Raise ValueError if the operation is not supported for direct-access index."""
         if not self._is_direct_access_index():
             raise ValueError(f"`{op_name}` is only supported for direct-access index.")
 
     @staticmethod
-    def _require_arg(arg: Any, arg_name) -> None:
+    def _require_arg(arg: Any, arg_name: str) -> None:
         """Raise ValueError if the required arg with name `arg_name` is None."""
         if not arg:
             raise ValueError(f"`{arg_name}` is required for this index.")
