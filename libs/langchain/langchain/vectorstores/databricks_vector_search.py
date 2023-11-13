@@ -347,9 +347,12 @@ class DatabricksVectorSearch(VectorStore):
 
     def _parse_search_response(self, search_resp: dict) -> List[Tuple[Document, float]]:
         """Parse the search response into a list of Documents with score."""
-        columns = [col["name"] for col in search_resp["manifest"]["columns"]]
+        columns = [
+            col["name"]
+            for col in search_resp.get("manifest", dict()).get("columns", [])
+        ]
         docs_with_score = []
-        for result in search_resp["result"]["data_array"]:
+        for result in search_resp.get("result", dict()).get("data_array", []):
             doc_id = result[columns.index(self.primary_key)]
             text_content = result[columns.index(self.text_column)]
             metadata = {
