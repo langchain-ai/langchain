@@ -1,3 +1,4 @@
+import hashlib
 import io
 import logging
 import os
@@ -13,7 +14,7 @@ from langchain.pydantic_v1 import BaseModel, root_validator
 TABLE_NAME = "{http://www.w3.org/1999/xhtml}table"
 
 XPATH_KEY = "xpath"
-DOCUMENT_ID_KEY = "id"
+ID_KEY = "id"
 DOCUMENT_SOURCE_KEY = "source"
 DOCUMENT_NAME_KEY = "name"
 STRUCTURE_KEY = "structure"
@@ -91,7 +92,10 @@ class DocugamiLoader(BaseLoader, BaseModel):
         return values
 
     def _parse_dgml(
-        self, document: Mapping, content: bytes, doc_metadata: Optional[Mapping] = None
+        self,
+        content: bytes,
+        document_name: Optional[str] = None,
+        additional_metadata: Optional[Mapping] = None,
     ) -> List[Document]:
         """Parse a single DGML document into a list of Documents."""
         try:
@@ -112,17 +116,19 @@ class DocugamiLoader(BaseLoader, BaseModel):
             )
 
         def _build_framework_chunk(dg_chunk: Chunk) -> Document:
+            # Stable IDs for chunks with the same text.
+            _hashed_id = hashlib.md5(dg_chunk.text.encode()).hexdigest()
             metadata = {
                 XPATH_KEY: dg_chunk.xpath,
-                DOCUMENT_ID_KEY: document[DOCUMENT_ID_KEY],
-                DOCUMENT_NAME_KEY: document[DOCUMENT_NAME_KEY],
-                DOCUMENT_SOURCE_KEY: document[DOCUMENT_NAME_KEY],
+                ID_KEY: _hashed_id,
+                DOCUMENT_NAME_KEY: document_name,
+                DOCUMENT_SOURCE_KEY: document_name,
                 STRUCTURE_KEY: dg_chunk.structure,
                 TAG_KEY: dg_chunk.tag,
             }
 
-            if doc_metadata:
-                metadata.update(doc_metadata)
+            if additional_metadata:
+                metadata.update(additional_metadata)
 
             return Document(
                 page_content=dg_chunk.text,
@@ -141,7 +147,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             whitespace_normalize_text=self.whitespace_normalize_text,
             sub_chunk_tables=self.sub_chunk_tables,
             xml_mode=self.xml_mode,
-            parent_hierarchy_levels=self.parent_hierarchy_levels
+            parent_hierarchy_levels=self.parent_hierarchy_levels,
         )
 
         for dg_chunk in dg_chunks:
@@ -198,7 +204,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
     def _metadata_for_project(self, project: Dict) -> Dict:
         """Gets project metadata for all files"""
-        project_id = project.get("id")
+        project_id = project.get(ID_KEY)
 
         url = f"{self.api}/projects/{project_id}/artifacts/latest"
         all_artifacts = []
@@ -229,7 +235,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             artifact_doc = artifact.get("document")
 
             if artifact_name == "report-values.xml" and artifact_url and artifact_doc:
-                doc_id = artifact_doc["id"]
+                doc_id = artifact_doc[ID_KEY]
                 metadata: Dict = {}
 
                 # The evaluated XML for each document is named after the project
@@ -268,10 +274,13 @@ class DocugamiLoader(BaseLoader, BaseModel):
         return per_file_metadata
 
     def _load_chunks_for_document(
-        self, docset_id: str, document: Dict, doc_metadata: Optional[Dict] = None
+        self,
+        document_id: str,
+        docset_id: str,
+        document_name: Optional[str] = None,
+        additional_metadata: Optional[Mapping] = None,
     ) -> List[Document]:
         """Load chunks for a document."""
-        document_id = document["id"]
         url = f"{self.api}/docsets/{docset_id}/documents/{document_id}/dgml"
 
         response = requests.request(
@@ -282,7 +291,11 @@ class DocugamiLoader(BaseLoader, BaseModel):
         )
 
         if response.ok:
-            return self._parse_dgml(document, response.content, doc_metadata)
+            return self._parse_dgml(
+                content=response.content,
+                document_name=document_name,
+                additional_metadata=additional_metadata,
+            )
         else:
             raise Exception(
                 f"Failed to download {url} (status: {response.status_code})"
@@ -297,7 +310,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             _document_details = self._document_details_for_docset_id(self.docset_id)
             if self.document_ids:
                 _document_details = [
-                    d for d in _document_details if d["id"] in self.document_ids
+                    d for d in _document_details if d[ID_KEY] in self.document_ids
                 ]
 
             _project_details = self._project_details_for_docset_id(self.docset_id)
@@ -309,9 +322,14 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     combined_project_metadata.update(metadata)
 
             for doc in _document_details:
-                doc_metadata = combined_project_metadata.get(doc["id"])
+                doc_id = doc[ID_KEY]
+                doc_name = doc.get(DOCUMENT_NAME_KEY)
+                doc_metadata = combined_project_metadata.get(doc_id)
                 chunks += self._load_chunks_for_document(
-                    self.docset_id, doc, doc_metadata
+                    document_id=doc_id,
+                    docset_id=self.docset_id,
+                    document_name=doc_name,
+                    additional_metadata=doc_metadata,
                 )
         elif self.file_paths:
             # Local mode (for integration testing, or pre-downloaded XML)
@@ -319,11 +337,8 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 path = Path(path)
                 with open(path, "rb") as file:
                     chunks += self._parse_dgml(
-                        {
-                            DOCUMENT_ID_KEY: path.name,
-                            DOCUMENT_NAME_KEY: path.name,
-                        },
-                        file.read(),
+                        content=file.read(),
+                        document_name=path.name,
                     )
 
         return chunks
