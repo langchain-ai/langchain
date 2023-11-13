@@ -2,24 +2,32 @@
 import json
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 
 
 class LambdaWrapper(BaseModel):
     """Wrapper for AWS Lambda SDK.
+    To use, you should have the ``boto3`` package installed
+    and a lambda functions built from the AWS Console or
+    CLI. Set up your AWS credentials with ``aws configure``
 
-    Docs for using:
+    Example:
+        .. code-block:: bash
 
-    1. pip install boto3
-    2. Create a lambda function using the AWS Console or CLI
-    3. Run `aws configure` and enter your AWS credentials
+            pip install boto3
+
+            aws configure
 
     """
 
     lambda_client: Any  #: :meta private:
+    """The configured boto3 client"""
     function_name: Optional[str] = None
+    """The name of your lambda function"""
     awslambda_tool_name: Optional[str] = None
+    """If passing to an agent as a tool, the tool name"""
     awslambda_tool_description: Optional[str] = None
+    """If passing to an agent as a tool, the description"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -44,7 +52,15 @@ class LambdaWrapper(BaseModel):
         return values
 
     def run(self, query: str) -> str:
-        """Invoke Lambda function and parse result."""
+        """
+        Invokes the lambda function and returns the
+        result.
+
+        Args:
+            query: an input to passed to the lambda
+                function as the ``body`` of a JSON
+                object.
+        """  # noqa: E501
         res = self.lambda_client.invoke(
             FunctionName=self.function_name,
             InvocationType="RequestResponse",

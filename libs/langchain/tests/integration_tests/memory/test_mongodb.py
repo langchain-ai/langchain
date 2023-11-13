@@ -6,7 +6,7 @@ from langchain.memory.chat_message_histories import MongoDBChatMessageHistory
 from langchain.schema.messages import _message_to_dict
 
 # Replace these with your mongodb connection string
-connection_string = os.environ["MONGODB_CONNECTION_STRING"]
+connection_string = os.environ.get("MONGODB_CONNECTION_STRING", "")
 
 
 def test_memory_with_message_store() -> None:

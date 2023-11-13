@@ -37,7 +37,7 @@ def _make_iterator(
 
 
 class FileSystemBlobLoader(BlobLoader):
-    """Blob loader for the local file system.
+    """Load blobs in the local file system.
 
     Example:
 
@@ -54,15 +54,17 @@ class FileSystemBlobLoader(BlobLoader):
         path: Union[str, Path],
         *,
         glob: str = "**/[!.]*",
+        exclude: Sequence[str] = (),
         suffixes: Optional[Sequence[str]] = None,
         show_progress: bool = False,
     ) -> None:
-        """Initialize with path to directory and how to glob over it.
+        """Initialize with a path to directory and how to glob over it.
 
         Args:
             path: Path to directory to load from
             glob: Glob pattern relative to the specified path
                   by default set to pick up all non-hidden files
+            exclude: patterns to exclude from results, use glob syntax
             suffixes: Provide to keep only files with these suffixes
                       Useful when wanting to keep files with different suffixes
                       Suffixes must include the dot, e.g. ".txt"
@@ -72,16 +74,23 @@ class FileSystemBlobLoader(BlobLoader):
 
         Examples:
 
-        ... code-block:: python
+            .. code-block:: python
 
-            # Recursively load all text files in a directory.
-            loader = FileSystemBlobLoader("/path/to/directory", glob="**/*.txt")
+                # Recursively load all text files in a directory.
+                loader = FileSystemBlobLoader("/path/to/directory", glob="**/*.txt")
 
-            # Recursively load all non-hidden files in a directory.
-            loader = FileSystemBlobLoader("/path/to/directory", glob="**/[!.]*")
+                # Recursively load all non-hidden files in a directory.
+                loader = FileSystemBlobLoader("/path/to/directory", glob="**/[!.]*")
 
-            # Load all files in a directory without recursion.
-            loader = FileSystemBlobLoader("/path/to/directory", glob="*")
+                # Load all files in a directory without recursion.
+                loader = FileSystemBlobLoader("/path/to/directory", glob="*")
+
+                # Recursively load all files in a directory, except for py or pyc files.
+                loader = FileSystemBlobLoader(
+                    "/path/to/directory",
+                    glob="**/*.txt",
+                    exclude=["**/*.py", "**/*.pyc"]
+                )
         """
         if isinstance(path, Path):
             _path = path
@@ -90,10 +99,11 @@ class FileSystemBlobLoader(BlobLoader):
         else:
             raise TypeError(f"Expected str or Path, got {type(path)}")
 
-        self.path = _path
+        self.path = _path.expanduser()  # Expand user to handle ~
         self.glob = glob
         self.suffixes = set(suffixes or [])
         self.show_progress = show_progress
+        self.exclude = exclude
 
     def yield_blobs(
         self,
@@ -110,6 +120,9 @@ class FileSystemBlobLoader(BlobLoader):
         """Yield paths that match the requested pattern."""
         paths = self.path.glob(self.glob)
         for path in paths:
+            if self.exclude:
+                if any(path.match(glob) for glob in self.exclude):
+                    continue
             if path.is_file():
                 if self.suffixes and path.suffix not in self.suffixes:
                     continue

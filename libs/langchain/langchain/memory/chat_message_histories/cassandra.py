@@ -36,12 +36,12 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         session: Session,
         keyspace: str,
         table_name: str = DEFAULT_TABLE_NAME,
-        ttl_seconds: int | None = DEFAULT_TTL_SECONDS,
+        ttl_seconds: typing.Optional[int] = DEFAULT_TTL_SECONDS,
     ) -> None:
         try:
             from cassio.history import StoredBlobHistory
         except (ImportError, ModuleNotFoundError):
-            raise ValueError(
+            raise ImportError(
                 "Could not import cassio python package. "
                 "Please install it with `pip install cassio`."
             )

@@ -3,12 +3,11 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Optional, Type
 
-from pydantic import BaseModel, Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import aget_current_page, get_current_page
 
@@ -38,7 +37,7 @@ class ExtractHyperlinksTool(BaseBrowserTool):
         try:
             from bs4 import BeautifulSoup  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "The 'beautifulsoup4' package is required to use this tool."
                 " Please install it with 'pip install beautifulsoup4'."
             )

@@ -2,7 +2,7 @@
 """Tools for interacting with Spark SQL."""
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -21,20 +21,15 @@ class BaseSparkSQLTool(BaseModel):
 
     db: SparkSQL = Field(exclude=True)
 
-    # Override BaseTool.Config to appease mypy
-    # See https://github.com/pydantic/pydantic/issues/4173
     class Config(BaseTool.Config):
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-        extra = Extra.forbid
+        pass
 
 
 class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for querying a Spark SQL."""
 
-    name = "query_sql_db"
-    description = """
+    name: str = "query_sql_db"
+    description: str = """
     Input to this tool is a detailed and correct SQL query, output is a result from the Spark SQL.
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
@@ -48,19 +43,12 @@ class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
         """Execute the query, return the results or an error message."""
         return self.db.run_no_throw(query)
 
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        raise NotImplementedError("QuerySqlDbTool does not support async")
-
 
 class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for getting metadata about a Spark SQL."""
 
-    name = "schema_sql_db"
-    description = """
+    name: str = "schema_sql_db"
+    description: str = """
     Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
     Be sure that the tables actually exist by calling list_tables_sql_db first!
 
@@ -75,19 +63,12 @@ class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
         """Get the schema for tables in a comma-separated list."""
         return self.db.get_table_info_no_throw(table_names.split(", "))
 
-    async def _arun(
-        self,
-        table_name: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        raise NotImplementedError("SchemaSqlDbTool does not support async")
-
 
 class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for getting tables names."""
 
-    name = "list_tables_sql_db"
-    description = "Input is an empty string, output is a comma separated list of tables in the Spark SQL."
+    name: str = "list_tables_sql_db"
+    description: str = "Input is an empty string, output is a comma separated list of tables in the Spark SQL."
 
     def _run(
         self,
@@ -97,13 +78,6 @@ class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):
         """Get the schema for a specific table."""
         return ", ".join(self.db.get_usable_table_names())
 
-    async def _arun(
-        self,
-        tool_input: str = "",
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        raise NotImplementedError("ListTablesSqlDbTool does not support async")
-
 
 class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
     """Use an LLM to check if a query is correct.
@@ -112,8 +86,8 @@ class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
     template: str = QUERY_CHECKER
     llm: BaseLanguageModel
     llm_chain: LLMChain = Field(init=False)
-    name = "query_checker_sql_db"
-    description = """
+    name: str = "query_checker_sql_db"
+    description: str = """
     Use this tool to double check if your query is correct before executing it.
     Always use this tool before executing a query with query_sql_db!
     """
@@ -142,11 +116,15 @@ class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the LLM to check the query."""
-        return self.llm_chain.predict(query=query)
+        return self.llm_chain.predict(
+            query=query, callbacks=run_manager.get_child() if run_manager else None
+        )
 
     async def _arun(
         self,
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        return await self.llm_chain.apredict(query=query)
+        return await self.llm_chain.apredict(
+            query=query, callbacks=run_manager.get_child() if run_manager else None
+        )

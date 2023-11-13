@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "anthropic-iterative-search"
+version = "0.0.1"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.325"
+anthropic = "^0.5.0"
+wikipedia = "^1.4.0"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = {extras = ["serve"], version = "^0.0.13"}
+
+[tool.langserve]
+export_module = "anthropic_iterative_search"
+export_attr = "chain"
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

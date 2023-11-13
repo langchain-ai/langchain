@@ -18,8 +18,8 @@ from langchain.llms.azureml_endpoint import (
 from langchain.llms.loading import load_llm
 
 
-def test_oss_call() -> None:
-    """Test valid call to Open Source Foundation Model."""
+def test_gpt2_call() -> None:
+    """Test valid call to GPT2."""
     llm = AzureMLOnlineEndpoint(
         endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),
         endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
@@ -43,7 +43,7 @@ def test_hf_call() -> None:
 
 
 def test_dolly_call() -> None:
-    """Test valid call to dolly-v2-12b."""
+    """Test valid call to dolly-v2."""
     llm = AzureMLOnlineEndpoint(
         endpoint_api_key=os.getenv("DOLLY_ENDPOINT_API_KEY"),
         endpoint_url=os.getenv("DOLLY_ENDPOINT_URL"),

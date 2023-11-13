@@ -1,4 +1,3 @@
-"""Load CoNLL-U files."""
 import csv
 from typing import List
 
@@ -7,7 +6,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class CoNLLULoader(BaseLoader):
-    """Load CoNLL-U files."""
+    """Load `CoNLL-U` files."""
 
     def __init__(self, file_path: str):
         """Initialize with a file path."""

@@ -6,7 +6,7 @@ from langchain.utilities.brave_search import BraveSearchWrapper
 
 
 class BraveSearchLoader(BaseLoader):
-    """Loads a query result from Brave Search engine into a list of Documents."""
+    """Load with `Brave Search` engine."""
 
     def __init__(self, query: str, api_key: str, search_kwargs: Optional[dict] = None):
         """Initializes the BraveLoader.

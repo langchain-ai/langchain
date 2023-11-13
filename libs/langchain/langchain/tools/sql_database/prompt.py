@@ -11,4 +11,8 @@ Double check the {dialect} query above for common mistakes, including:
 - Casting to the correct data type
 - Using the proper columns for joins
 
-If there are any of the above mistakes, rewrite the query. If there are no mistakes, just reproduce the original query."""
+If there are any of the above mistakes, rewrite the query. If there are no mistakes, just reproduce the original query.
+
+Output the final SQL query only.
+
+SQL Query: """

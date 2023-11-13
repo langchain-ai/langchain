@@ -1,4 +1,3 @@
-"""Loader that fetches data from IUGU"""
 import json
 import urllib.request
 from typing import List, Optional
@@ -17,7 +16,7 @@ IUGU_ENDPOINTS = {
 
 
 class IuguLoader(BaseLoader):
-    """Loader that fetches data from IUGU."""
+    """Load from `IUGU`."""
 
     def __init__(self, resource: str, api_token: Optional[str] = None) -> None:
         """Initialize the IUGU resource.

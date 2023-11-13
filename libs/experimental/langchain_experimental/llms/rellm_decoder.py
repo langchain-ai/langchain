@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Any, List, Optional, cast
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.utils import enforce_stop_tokens
-from pydantic import Field, root_validator
+
+from langchain_experimental.pydantic_v1 import Field, root_validator
 
 if TYPE_CHECKING:
     import rellm
@@ -23,7 +24,7 @@ def import_rellm() -> rellm:
     try:
         import rellm
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import rellm python package. "
             "Please install it with `pip install rellm`."
         )
@@ -31,12 +32,16 @@ def import_rellm() -> rellm:
 
 
 class RELLM(HuggingFacePipeline):
+    """RELLM wrapped LLM using HuggingFace Pipeline API."""
+
     regex: RegexPattern = Field(..., description="The structured format to complete.")
     max_new_tokens: int = Field(
         default=200, description="Maximum number of new tokens to generate."
     )
 
-    @root_validator
+    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
+    #       and causes mypy type-checking failures (hence the `type: ignore`)
+    @root_validator  # type: ignore[call-overload]
     def check_rellm_installation(cls, values: dict) -> dict:
         import_rellm()
         return values

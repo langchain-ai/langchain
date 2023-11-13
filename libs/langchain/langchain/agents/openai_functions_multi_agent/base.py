@@ -1,12 +1,12 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 import json
-from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
-from pydantic import root_validator
-
 from langchain.agents import BaseMultiActionAgent
+from langchain.agents.format_scratchpad.openai_functions import (
+    format_to_openai_function_messages,
+)
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
@@ -16,87 +16,24 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import (
     AgentAction,
     AgentFinish,
     BasePromptTemplate,
     OutputParserException,
 )
+from langchain.schema.agent import AgentActionMessageLog
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
-    FunctionMessage,
     SystemMessage,
 )
 from langchain.tools import BaseTool
 
-
-@dataclass
-class _FunctionsAgentAction(AgentAction):
-    message_log: List[BaseMessage]
-
-
-def _convert_agent_action_to_messages(
-    agent_action: AgentAction, observation: str
-) -> List[BaseMessage]:
-    """Convert an agent action to a message.
-
-    This code is used to reconstruct the original AI message from the agent action.
-
-    Args:
-        agent_action: Agent action to convert.
-
-    Returns:
-        AIMessage that corresponds to the original tool invocation.
-    """
-    if isinstance(agent_action, _FunctionsAgentAction):
-        return agent_action.message_log + [
-            _create_function_message(agent_action, observation)
-        ]
-    else:
-        return [AIMessage(content=agent_action.log)]
-
-
-def _create_function_message(
-    agent_action: AgentAction, observation: str
-) -> FunctionMessage:
-    """Convert agent action and observation into a function message.
-    Args:
-        agent_action: the tool invocation request from the agent
-        observation: the result of the tool invocation
-    Returns:
-        FunctionMessage that corresponds to the original tool invocation
-    """
-    if not isinstance(observation, str):
-        try:
-            content = json.dumps(observation, ensure_ascii=False)
-        except Exception:
-            content = str(observation)
-    else:
-        content = observation
-    return FunctionMessage(
-        name=agent_action.tool,
-        content=content,
-    )
-
-
-def _format_intermediate_steps(
-    intermediate_steps: List[Tuple[AgentAction, str]],
-) -> List[BaseMessage]:
-    """Format intermediate steps.
-    Args:
-        intermediate_steps: Steps the LLM has taken to date, along with observations
-    Returns:
-        list of messages to send to the LLM for the next prediction
-    """
-    messages = []
-
-    for intermediate_step in intermediate_steps:
-        agent_action, observation = intermediate_step
-        messages.extend(_convert_agent_action_to_messages(agent_action, observation))
-
-    return messages
+# For backwards compatibility
+_FunctionsAgentAction = AgentActionMessageLog
 
 
 def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFinish]:
@@ -108,12 +45,21 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
 
     if function_call:
         try:
-            tools = json.loads(function_call["arguments"])["actions"]
+            arguments = json.loads(function_call["arguments"])
         except JSONDecodeError:
             raise OutputParserException(
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` is not valid JSON."
             )
+
+        try:
+            tools = arguments["actions"]
+        except (TypeError, KeyError):
+            raise OutputParserException(
+                f"Could not parse tool input: {function_call} because "
+                f"the `arguments` JSON does not contain `actions` key."
+            )
+
         final_tools: List[AgentAction] = []
         for tool_schema in tools:
             _tool_input = tool_schema["action"]
@@ -130,7 +76,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
             else:
                 tool_input = _tool_input
 
-            content_msg = "responded: {content}\n" if message.content else "\n"
+            content_msg = f"responded: {message.content}\n" if message.content else "\n"
             log = f"\nInvoking: `{function_name}` with `{tool_input}`\n{content_msg}\n"
             _tool = _FunctionsAgentAction(
                 tool=function_name,
@@ -141,7 +87,9 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
             final_tools.append(_tool)
         return final_tools
 
-    return AgentFinish(return_values={"output": message.content}, log=message.content)
+    return AgentFinish(
+        return_values={"output": message.content}, log=str(message.content)
+    )
 
 
 class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
@@ -260,7 +208,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        agent_scratchpad = _format_intermediate_steps(intermediate_steps)
+        agent_scratchpad = format_to_openai_function_messages(intermediate_steps)
         selected_inputs = {
             k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
         }
@@ -289,7 +237,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        agent_scratchpad = _format_intermediate_steps(intermediate_steps)
+        agent_scratchpad = format_to_openai_function_messages(intermediate_steps)
         selected_inputs = {
             k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
         }

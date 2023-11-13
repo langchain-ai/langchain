@@ -1,9 +1,8 @@
 import warnings
 from typing import Any, Dict, List, Set
 
-from pydantic import validator
-
 from langchain.memory.chat_memory import BaseChatMemory
+from langchain.pydantic_v1 import validator
 from langchain.schema import BaseMemory
 
 
@@ -61,10 +60,12 @@ class CombinedMemory(BaseMemory):
         # Collect vars from all sub-memories
         for memory in self.memories:
             data = memory.load_memory_variables(inputs)
-            memory_data = {
-                **memory_data,
-                **data,
-            }
+            for key, value in data.items():
+                if key in memory_data:
+                    raise ValueError(
+                        f"The variable {key} is repeated in the CombinedMemory."
+                    )
+                memory_data[key] = value
 
         return memory_data
 

@@ -1,7 +1,7 @@
+import uuid
 from typing import Optional
 
 import pytest
-from qdrant_client.http import models as rest
 
 from langchain.schema import Document
 from langchain.vectorstores import Qdrant
@@ -58,7 +58,7 @@ def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) ->
     from qdrant_client.http import models as rest
 
     client = QdrantClient(":memory:")
-    collection_name = "test"
+    collection_name = uuid.uuid4().hex
     vectors_config = rest.VectorParams(size=10, distance=rest.Distance.COSINE)
     if vector_name is not None:
         vectors_config = {vector_name: vectors_config}  # type: ignore[assignment]
@@ -80,6 +80,7 @@ def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) ->
 def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     """Test end to end Qdrant.add_texts stores provided ids."""
     from qdrant_client import QdrantClient
+    from qdrant_client.http import models as rest
 
     ids = [
         "fa38d572-4c31-4579-aedc-1960d79df6df",
@@ -87,7 +88,7 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     ]
 
     client = QdrantClient(":memory:")
-    collection_name = "test"
+    collection_name = uuid.uuid4().hex
     client.recreate_collection(
         collection_name,
         vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE),
@@ -106,8 +107,9 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
 def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -> None:
     """Test end to end Qdrant.add_texts stores named vectors if name is provided."""
     from qdrant_client import QdrantClient
+    from qdrant_client.http import models as rest
 
-    collection_name = "test"
+    collection_name = uuid.uuid4().hex
 
     client = QdrantClient(":memory:")
     client.recreate_collection(

@@ -1,4 +1,3 @@
-"""Wrapper around Annoy vector database."""
 from __future__ import annotations
 
 import os
@@ -13,8 +12,8 @@ import numpy as np
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 INDEX_METRICS = frozenset(["angular", "euclidean", "manhattan", "hamming", "dot"])
@@ -26,7 +25,7 @@ def dependable_annoy_import() -> Any:
     try:
         import annoy
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import annoy python package. "
             "Please install it with `pip install --user annoy` "
         )
@@ -34,14 +33,14 @@ def dependable_annoy_import() -> Any:
 
 
 class Annoy(VectorStore):
-    """Wrapper around Annoy vector database.
+    """`Annoy` vector store.
 
     To use, you should have the ``annoy`` python package installed.
 
     Example:
         .. code-block:: python
 
-            from langchain import Annoy
+            from langchain.vectorstores import Annoy
             db = Annoy(embedding_function, index, docstore, index_to_docstore_id)
 
     """
@@ -351,7 +350,7 @@ class Annoy(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Annoy
+                from langchain.vectorstores import Annoy
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 index = Annoy.from_texts(texts, embeddings)
@@ -391,7 +390,7 @@ class Annoy(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Annoy
+                from langchain.vectorstores import Annoy
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)

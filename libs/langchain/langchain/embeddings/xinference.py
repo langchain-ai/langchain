@@ -1,44 +1,55 @@
 """Wrapper around Xinference embedding models."""
 from typing import Any, List, Optional
 
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 
 
 class XinferenceEmbeddings(Embeddings):
 
-    """Wrapper around xinference embedding models.
+    """Xinference embedding models.
+
     To use, you should have the xinference library installed:
+
     .. code-block:: bash
 
         pip install xinference
 
     Check out: https://github.com/xorbitsai/inference
-    To run, you need to start a Xinference supervisor on one server and Xinference workers on the other servers
+    To run, you need to start a Xinference supervisor on one server and Xinference workers on the other servers.
+
     Example:
         To start a local instance of Xinference, run
-         .. code-block:: bash
 
-            $ xinference
+        .. code-block:: bash
+
+           $ xinference
+
         You can also deploy Xinference in a distributed cluster. Here are the steps:
+
         Starting the supervisor:
+
         .. code-block:: bash
 
-            $ xinference-supervisor
+           $ xinference-supervisor
+
         Starting the worker:
+
         .. code-block:: bash
 
-            $ xinference-worker
+           $ xinference-worker
 
     Then, launch a model using command line interface (CLI).
 
     Example:
+
     .. code-block:: bash
 
-            $ xinference launch -n orca -s 3 -q q4_0
+       $ xinference launch -n orca -s 3 -q q4_0
 
     It will return a model UID. Then you can use Xinference Embedding with LangChain.
 
     Example:
+
     .. code-block:: python
 
         from langchain.embeddings import XinferenceEmbeddings
