@@ -396,7 +396,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "SystemMessage": {
                 "title": "SystemMessage",
-                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
+                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof \
+input messages.",
                 # noqa
                 "type": "object",
                 "properties": {
