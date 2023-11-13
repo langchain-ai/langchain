@@ -28,7 +28,7 @@ With pip:
 pip install langchain
 ```
 
-With conda
+With conda:
 ```bash
 pip install langsmith && conda install langchain -c conda-forge
 ```
@@ -47,7 +47,7 @@ This framework consists of several parts.
 
 **This repo contains the `langchain` ([here](libs/langchain)), `langchain-experimental` ([here](libs/experimental)), and `langchain-cli` ([here](libs/cli)) Python packages, as well as [LangChain Templates](templates).**
 
-## 🧱 What can you build with LangChain
+## 🧱 What can you build with LangChain?
 **❓ Retrieval augmented generation**
 
 - [Documentation](https://python.langchain.com/docs/use_cases/question_answering/)
@@ -65,7 +65,7 @@ This framework consists of several parts.
 
 And much more! Head to the [Use cases](https://python.langchain.com/docs/use_cases/) section of the docs for more.
 
-## 🚀 How does it help?
+## 🚀 How does LangChain help?
 The main value props of the LangChain libraries are:
 1. **Components**: composable tools and integrations for working with language models. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not
 2. **Off-the-shelf chains**: built-in assemblages of components for accomplishing higher-level tasks
