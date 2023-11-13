@@ -5,15 +5,19 @@ import requests
 from bs4 import BeautifulSoup
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
+from langchain.retrievers.tavily_search_api import TavilySearchAPIRetriever
 from langchain.schema.messages import SystemMessage
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import (
+    ConfigurableField,
     Runnable,
     RunnableLambda,
     RunnableParallel,
     RunnablePassthrough,
 )
 from langchain.utilities import DuckDuckGoSearchAPIWrapper
+
+RESULTS_PER_QUESTION = 3
 
 ddg_search = DuckDuckGoSearchAPIWrapper()
 
@@ -43,6 +47,32 @@ def scrape_text(url: str):
 def web_search(query: str, num_results: int):
     results = ddg_search.results(query, num_results)
     return [r["link"] for r in results]
+
+
+get_links: Runnable[Any, Any] = (
+    RunnablePassthrough()
+    | RunnableLambda(
+        lambda x: [
+            {"url": url, "question": x["question"]}
+            for url in web_search(query=x["question"], num_results=RESULTS_PER_QUESTION)
+        ]
+    )
+).configurable_alternatives(
+    ConfigurableField("search_engine"),
+    default_key="duckduckgo",
+    tavily=RunnableParallel(
+        {
+            "question": lambda x: x["question"],
+            "results": TavilySearchAPIRetriever(k=RESULTS_PER_QUESTION),
+        }
+    )
+    | RunnableLambda(
+        lambda x: [
+            {"url": result.metadata["source"], "question": x["question"]}
+            for result in x["results"]
+        ]
+    ),
+)
 
 
 SEARCH_PROMPT = ChatPromptTemplate.from_messages(
@@ -116,16 +146,7 @@ scrape_and_summarize: Runnable[Any, Any] = (
     | RunnableLambda(lambda x: f"Source Url: {x['url']}\nSummary: {x['summary']}")
 )
 
-multi_search = (
-    (
-        lambda x: [
-            {"url": url, "question": x["question"]}
-            for url in web_search(query=x["question"], num_results=3)
-        ]
-    )
-    | scrape_and_summarize.map()
-    | (lambda x: "\n".join(x))
-)
+multi_search = get_links | scrape_and_summarize.map() | (lambda x: "\n".join(x))
 
 
 def load_json(s):
