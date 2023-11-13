@@ -33,17 +33,22 @@ class DatabricksVectorSearch(VectorStore):
     Args:
         index: A Databricks Vector Search index object.
         embedding: The embedding model.
-                  Required for direct-access index or delta-sync index with self-managed embeddings.
+                  Required for direct-access index or delta-sync index
+                  with self-managed embeddings.
         text_column: The name of the text column to use for the embeddings.
-                    Required for direct-access index or delta-sync index with self-managed embeddings.
+                    Required for direct-access index or delta-sync index
+                    with self-managed embeddings.
                     Make sure the text column specified is in the index.
-        columns: The list of column names to get when doing the search. Defaults to ``[primary_key, text_column]``.
+        columns: The list of column names to get when doing the search.
+                Defaults to ``[primary_key, text_column]``.
 
-    Delta-sync index with Databricks-managed embeddings manages the ingestion, deletion, and embedding for you.
-    Manually ingestion/deletion of the documents/texts is not supported for delta-sync index.
+    Delta-sync index with Databricks-managed embeddings manages the ingestion, deletion,
+    and embedding for you.
+    Manually ingestion/deletion of the documents/texts is not supported for delta-sync
+    index.
 
-    If you want to use a delta-sync index with self-managed embeddings, you need to provide the embedding model and
-    the name of the text column to use for the embeddings.
+    If you want to use a delta-sync index with self-managed embeddings, you need to
+    provide the embedding model and text column name to use for the embeddings.
 
     Example:
         .. code-block:: python
@@ -63,7 +68,8 @@ class DatabricksVectorSearch(VectorStore):
               text_column="document_content"
             )
 
-    If you want to manage the documents ingestion/deletion yourself, you can use a direct-access index.
+    If you want to manage the documents ingestion/deletion yourself, you can use a
+    direct-access index.
 
     Example:
         .. code-block:: python
@@ -86,8 +92,8 @@ class DatabricksVectorSearch(VectorStore):
               texts=["text1", "text2"]
             )
 
-    For more information on Databricks Vector Search, see `Databricks Vector Search documentation
-    <TODO: pending-link-to-documentation-page>`.
+    For more information on Databricks Vector Search, see `Databricks Vector Search
+    documentation <TODO: pending-link-to-documentation-page>`.
 
     """
 
@@ -118,11 +124,11 @@ class DatabricksVectorSearch(VectorStore):
         # text_column
         if self._is_databricks_managed_embeddings():
             index_source_column = self._embedding_source_column_name()
-            # if text_column is not None, check that it matches the source column of the index
+            # check if input text column matches the source column of the index
             if text_column is not None and text_column != index_source_column:
                 raise ValueError(
-                    f"text_column '{text_column}' does not match with the source column "
-                    f"of the index: '{index_source_column}'."
+                    f"text_column '{text_column}' does not match with the "
+                    f"source column of the index: '{index_source_column}'."
                 )
             self.text_column = index_source_column
         else:
@@ -142,7 +148,8 @@ class DatabricksVectorSearch(VectorStore):
 
         # embedding model
         if not self._is_databricks_managed_embeddings():
-            # embedding model is required for direct-access index or delta-sync index with self-managed embedding
+            # embedding model is required for direct-access index
+            # or delta-sync index with self-managed embedding
             self._require_arg(embedding, "embedding")
             self._embedding = embedding
             # validate dimension matches
@@ -151,12 +158,14 @@ class DatabricksVectorSearch(VectorStore):
                 inferred_embedding_dimension = self._infer_embedding_dimension()
                 if inferred_embedding_dimension != index_embedding_dimension:
                     raise ValueError(
-                        f"embedding model's dimension '{inferred_embedding_dimension}' does not match with "
-                        f"the index's dimension '{index_embedding_dimension}'."
+                        f"embedding model's dimension '{inferred_embedding_dimension}' "
+                        f"does not match with the index's dimension "
+                        f"'{index_embedding_dimension}'."
                     )
         else:
             logger.warning(
-                "embedding model is not used in delta-sync index with Databricks-managed embeddings."
+                "embedding model is not used in delta-sync index with "
+                "Databricks-managed embeddings."
             )
             self._embedding = None
 
@@ -322,7 +331,8 @@ class DatabricksVectorSearch(VectorStore):
         """
         if self._is_databricks_managed_embeddings():
             raise ValueError(
-                "`similarity_search_by_vector` is not supported for index with Databricks-managed embeddings."
+                "`similarity_search_by_vector` is not supported for index with "
+                "Databricks-managed embeddings."
             )
         search_resp = self.index.similarity_search(
             columns=self.columns,
@@ -418,7 +428,8 @@ class DatabricksVectorSearch(VectorStore):
         return len(self.embeddings.embed_query("test"))
 
     def _op_require_direct_access_index(self, op_name):
-        """Raise ValueError if the operation is not supported for direct-access index."""
+        """
+        Raise ValueError if the operation is not supported for direct-access index."""
         if not self._is_direct_access_index():
             raise ValueError(f"`{op_name}` is only supported for direct-access index.")
 

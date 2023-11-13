@@ -188,8 +188,8 @@ def test_init_fail_text_column_mismatch():
             text_column="some_other_column",
         )
     assert (
-        f"text_column 'some_other_column' does not match with the source column of the index: '{DEFAULT_TEXT_COLUMN}'."
-        in str(ex.value)
+        f"text_column 'some_other_column' does not match with the source column of the "
+        f"index: '{DEFAULT_TEXT_COLUMN}'." in str(ex.value)
     )
 
 
@@ -234,8 +234,8 @@ def test_init_fail_embedding_dim_mismatch(index_details):
             embedding=FakeEmbeddingsWithDimension(DEFAULT_VECTOR_DIMENSION + 1),
         )
     assert (
-        f"embedding model's dimension '{DEFAULT_VECTOR_DIMENSION + 1}' does not match with "
-        f"the index's dimension '{DEFAULT_VECTOR_DIMENSION}'"
+        f"embedding model's dimension '{DEFAULT_VECTOR_DIMENSION + 1}' does not match "
+        f"with the index's dimension '{DEFAULT_VECTOR_DIMENSION}'"
     ) in str(ex.value)
 
 
@@ -464,6 +464,6 @@ def test_similarity_search_by_vector_not_supported_for_managed_embedding():
             query_embedding, k=limit, filters=filters
         )
     assert (
-        "`similarity_search_by_vector` is not supported for index with Databricks-managed embeddings."
-        in str(ex.value)
+        "`similarity_search_by_vector` is not supported for index with "
+        "Databricks-managed embeddings." in str(ex.value)
     )
