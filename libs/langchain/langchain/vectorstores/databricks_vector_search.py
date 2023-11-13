@@ -143,7 +143,7 @@ class DatabricksVectorSearch(VectorStore):
         # add primary key column and source column if not in columns
         if self.primary_key not in self.columns:
             self.columns.append(self.primary_key)
-        if self.text_column not in self.columns:
+        if self.text_column and self.text_column not in self.columns:
             self.columns.append(self.text_column)
 
         # embedding model
