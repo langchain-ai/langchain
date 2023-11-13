@@ -19,6 +19,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 from langchain.callbacks.manager import (
@@ -275,9 +276,9 @@ class BaseOpenAI(BaseLLM):
         if values["streaming"] and values["best_of"] > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
 
-        values["openai_api_key"] = convert_to_secret_str(get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        ))
+        values["openai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "openai_api_key", "OPENAI_API_KEY")
+        )
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
         )
@@ -584,7 +585,7 @@ class BaseOpenAI(BaseLLM):
         if not is_openai_v1():
             openai_creds.update(
                 {
-                    "api_key": self.openai_api_key.get_secret_value(),
+                    "api_key": cast(SecretStr, self.openai_api_key).get_secret_value(),
                     "api_base": self.openai_api_base,
                     "organization": self.openai_organization,
                 }
