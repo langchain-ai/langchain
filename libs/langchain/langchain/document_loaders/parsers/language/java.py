@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 CHUNK_QUERY = """
     [
         (class_declaration) @class
-        (method_declaration) @method
         (interface_declaration) @interface
+        (enum_declaration) @enum
     ]
 """.strip()
 

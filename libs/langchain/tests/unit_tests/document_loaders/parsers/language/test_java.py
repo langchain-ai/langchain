@@ -32,8 +32,7 @@ enum Tens
 
 // Code for: interface Human
 
-// Code for: enum Tens
-"""
+// Code for: enum Tens"""
 
         self.expected_extracted_code = [
             "class Hello\n{\n    public static void main(String[] args)\n    {\n        "
