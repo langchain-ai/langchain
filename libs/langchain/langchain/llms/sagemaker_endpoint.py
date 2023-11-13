@@ -9,8 +9,6 @@ import uuid
 from abc import abstractmethod
 from typing import Any, Dict, Generic, Iterator, List, Mapping, Optional, TypeVar, Union
 
-from botocore.exceptions import WaiterError
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
@@ -501,6 +499,10 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
     _smr_client: Any = None
     """boto3 smr client"""
 
+    _waiter_error: Any = None
+    """WaiterError from botocore. Will automatically be imported
+    and set during class initialization."""
+
     max_retries: int = 1
     """Maximum retries during polling of async inference results.
     One try polls every 5 seconds for 20 times.
@@ -526,6 +528,13 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
         values["_smr_client"] = values["session"].client(
             "sagemaker-runtime", region_name=values["region_name"]
         )
+        # this is not considered best practice, however, other tests in langchain
+        # rely on imports from this module. botocore is not present during test
+        # execution which means all tests importing this module will
+        # fail if this import is not shieled inside a function scope
+        from botocore.exceptions import WaiterError
+
+        values["_waiter_error"] = WaiterError
 
         # Also set defaults based on dynamic values
         if values["input_bucket"] == "" or values["input_prefix"] == "":
@@ -570,7 +579,7 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
                 result = self._s3_client.get_object(Bucket=bucket, Key=output_prefix)
                 result["failure"] = False
                 return result
-            except WaiterError:
+            except self._waiter_error:
                 tries += 1
                 logger.info("Output file not found yet.")
 
@@ -581,7 +590,7 @@ class SagemakerAsyncEndpoint(_BaseSagemakerEndpoint):
             result = self._s3_client.get_object(Bucket=bucket, Key=failure_prefix)
             result["failure"] = True
             return result
-        except WaiterError:
+        except self._waiter_error:
             logger.error("Could also find no error log in failure bucket.")
         raise ValueError(
             "Could not fetch a result or error from the Sagemaker Async Endpoint."
