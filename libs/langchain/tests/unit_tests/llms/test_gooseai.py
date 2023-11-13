@@ -8,7 +8,7 @@ from langchain.pydantic_v1 import SecretStr
 from langchain.utils.openai import is_openai_v1
 
 
-def _openai_v1_installed():
+def _openai_v1_installed() -> bool:
     try:
         return is_openai_v1()
     except Exception as _:
@@ -23,7 +23,7 @@ def test_api_key_is_secret_string() -> None:
 
 
 @pytest.mark.skipif(
-    _openai_v1_installed(), "GooseAI currently only works with openai<1"
+    _openai_v1_installed(), reason="GooseAI currently only works with openai<1"
 )
 @pytest.mark.requires("openai")
 def test_api_key_masked_when_passed_via_constructor() -> None:
@@ -34,7 +34,7 @@ def test_api_key_masked_when_passed_via_constructor() -> None:
 
 
 @pytest.mark.skipif(
-    _openai_v1_installed(), "GooseAI currently only works with openai<1"
+    _openai_v1_installed(), reason="GooseAI currently only works with openai<1"
 )
 @pytest.mark.requires("openai")
 def test_api_key_masked_when_passed_from_env() -> None:
