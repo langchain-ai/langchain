@@ -56,6 +56,7 @@ from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
 from langchain.schema.output import GenerationChunk
 from langchain.schema.runnable import RunnableConfig
 from langchain.schema.runnable.config import get_config_list
+from langchain.schema.runnable.utils import gather_with_concurrency
 
 logger = logging.getLogger(__name__)
 
@@ -316,41 +317,39 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     ) -> List[str]:
         if not inputs:
             return []
-        config = get_config_list(config, len(inputs))
-        max_concurrency = config[0].get("max_concurrency")
+        configs = get_config_list(config, len(inputs))
 
-        if max_concurrency is None:
-            try:
-                llm_result = await self.agenerate_prompt(
-                    [self._convert_input(input) for input in inputs],
-                    callbacks=[c.get("callbacks") for c in config],
-                    tags=[c.get("tags") for c in config],
-                    metadata=[c.get("metadata") for c in config],
-                    run_name=[c.get("run_name") for c in config],
+        async def ainvoke(
+            llm_input: LanguageModelInput, config: RunnableConfig
+        ) -> Union[LLMResult, Exception]:
+            if return_exceptions:
+                try:
+                    return await self.agenerate_prompt(
+                        [self._convert_input(llm_input)],
+                        callbacks=[config.get("callbacks")],
+                        tags=[config.get("tags")],
+                        metadata=[config.get("metadata")],
+                        run_name=[config.get("run_name")],
+                        **kwargs,
+                    )
+                except Exception as e:
+                    return e
+            else:
+                return await self.agenerate_prompt(
+                    [self._convert_input(llm_input)],
+                    callbacks=[config.get("callbacks")],
+                    tags=[config.get("tags")],
+                    metadata=[config.get("metadata")],
+                    run_name=[config.get("run_name")],
                     **kwargs,
                 )
-                return [g[0].text for g in llm_result.generations]
-            except Exception as e:
-                if return_exceptions:
-                    return cast(List[str], [e for _ in inputs])
-                else:
-                    raise e
-        else:
-            batches = [
-                inputs[i : i + max_concurrency]
-                for i in range(0, len(inputs), max_concurrency)
-            ]
-            config = [{**c, "max_concurrency": None} for c in config]  # type: ignore[misc]
-            return [
-                output
-                for i, batch in enumerate(batches)
-                for output in await self.abatch(
-                    batch,
-                    config=config[i * max_concurrency : (i + 1) * max_concurrency],
-                    return_exceptions=return_exceptions,
-                    **kwargs,
-                )
-            ]
+
+        coros = map(ainvoke, inputs, configs)
+        # max_concurrency allows to control for LLM rate limits.
+        llm_results = await gather_with_concurrency(
+            configs[0].get("max_concurrency"), *coros
+        )
+        return [g[0].text for result in llm_results for g in result.generations]
 
     def stream(
         self,
