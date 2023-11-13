@@ -390,10 +390,7 @@ def test_delete_fail_no_ids() -> None:
 
 
 @pytest.mark.requires("databricks.vector_search")
-@pytest.mark.parametrize(
-    "index_details",
-    ALL_INDEXES,
-)
+@pytest.mark.parametrize("index_details", ALL_INDEXES)
 def test_similarity_search(index_details: dict) -> None:
     index = mock_index(index_details)
     index.similarity_search.return_value = EXAMPLE_SEARCH_RESPONSE
@@ -448,6 +445,31 @@ def test_similarity_search_by_vector(index_details: dict) -> None:
     assert len(search_result) == len(fake_texts)
     assert sorted([d.page_content for d in search_result]) == sorted(fake_texts)
     assert all([DEFAULT_PRIMARY_KEY in d.metadata for d in search_result])
+
+
+@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.parametrize("index_details", ALL_INDEXES)
+def test_similarity_search_empty_result(index_details) -> None:
+    index = mock_index(index_details)
+    index.similarity_search.return_value = {
+        "manifest": {
+            "column_count": 3,
+            "columns": [
+                {"name": DEFAULT_PRIMARY_KEY},
+                {"name": DEFAULT_TEXT_COLUMN},
+                {"name": "score"},
+            ],
+        },
+        "result": {
+            "row_count": 0,
+            "data_array": [],
+        },
+        "next_page_token": "",
+    }
+    vectorsearch = default_databricks_vector_search(index)
+
+    search_result = vectorsearch.similarity_search("foo")
+    assert len(search_result) == 0
 
 
 @pytest.mark.requires("databricks.vector_search")
