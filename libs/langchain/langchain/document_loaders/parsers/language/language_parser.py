@@ -8,6 +8,7 @@ from langchain.document_loaders.parsers.language.cobol import CobolSegmenter
 from langchain.document_loaders.parsers.language.cpp import CPPSegmenter
 from langchain.document_loaders.parsers.language.csharp import CSharpSegmenter
 from langchain.document_loaders.parsers.language.go import GoSegmenter
+from langchain.document_loaders.parsers.language.java import JavaSegmenter
 from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
 from langchain.document_loaders.parsers.language.kotlin import KotlinSegmenter
 from langchain.document_loaders.parsers.language.lua import LuaSegmenter
@@ -17,7 +18,6 @@ from langchain.document_loaders.parsers.language.ruby import RubySegmenter
 from langchain.document_loaders.parsers.language.rust import RustSegmenter
 from langchain.document_loaders.parsers.language.scala import ScalaSegmenter
 from langchain.document_loaders.parsers.language.typescript import TypeScriptSegmenter
-from langchain.document_loaders.parsers.language.java import javaSegmenter
 
 from langchain.text_splitter import Language
 
@@ -37,7 +37,6 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "pl": Language.PERL,
     "ts": Language.TS,
     "java": Language.JAVA,
-
 }
 
 LANGUAGE_SEGMENTERS: Dict[str, Any] = {
@@ -55,8 +54,7 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     Language.LUA: LuaSegmenter,
     Language.PERL: PerlSegmenter,
     Language.TS: TypeScriptSegmenter,
-    Language.Java: JavaSegmenter
-
+    Language.JAVA: JavaSegmenter,
 }
 
 
