@@ -197,6 +197,7 @@ class DatabricksVectorSearch(VectorStore):
             texts: List of texts to add.
             metadatas: List of metadata for each text. Defaults to None.
             ids: List of ids for each text. Defaults to None.
+                If not provided, a random uuid will be generated for each text.
 
         Returns:
             List of ids from adding the texts into the index.
