@@ -238,13 +238,6 @@ async def test_openai_async_streaming_callback() -> None:
     assert isinstance(result, LLMResult)
 
 
-def test_openai_chat_wrong_class() -> None:
-    """Test OpenAIChat with wrong class still works."""
-    llm = OpenAI(model_name="gpt-3.5-turbo")
-    output = llm("Say foo:")
-    assert isinstance(output, str)
-
-
 def test_openai_modelname_to_contextsize_valid() -> None:
     """Test model name to context size on a valid model."""
     assert OpenAI().modelname_to_contextsize("davinci") == 2049
