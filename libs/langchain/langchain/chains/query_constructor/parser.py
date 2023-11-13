@@ -1,4 +1,5 @@
 import datetime
+import warnings
 from typing import Any, Literal, Optional, Sequence, Union
 
 from typing_extensions import TypedDict
@@ -143,10 +144,10 @@ class QueryTransformer(Transformer):
         try:
             datetime.datetime.strptime(item, "%Y-%m-%d")
         except ValueError as e:
-            raise ValueError(
+            warnings.warn(
                 "Dates are expected to be provided in ISO 8601 date format "
                 "(YYYY-MM-DD)."
-            ) from e
+            )
         return {"date": item, "type": "date"}
 
     def string(self, item: Any) -> str:
