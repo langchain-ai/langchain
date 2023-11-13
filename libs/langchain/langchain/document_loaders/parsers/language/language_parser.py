@@ -18,7 +18,6 @@ from langchain.document_loaders.parsers.language.ruby import RubySegmenter
 from langchain.document_loaders.parsers.language.rust import RustSegmenter
 from langchain.document_loaders.parsers.language.scala import ScalaSegmenter
 from langchain.document_loaders.parsers.language.typescript import TypeScriptSegmenter
-
 from langchain.text_splitter import Language
 
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
