@@ -4553,7 +4553,7 @@ async def test_runnable_context_provider_decorator() -> None:
     ]
 
 
-def test_runnable_context() -> None:
+def test_runnable_context_provider_naive_rag() -> None:
     context = [
         "Hi there!",
         "How are you?",
@@ -4564,38 +4564,27 @@ def test_runnable_context() -> None:
     prompt = PromptTemplate.from_template("{context} {question}")
     llm = FakeListLLM(responses=["hello"])
 
-    # provider = RunnableContextProvider()
-    # setter = RunnableContextSetter(provider)
-    # getter = RunnableContextGetter(provider)
-    # provider, getter, setter = RunnableContextBuilder.build()
-    #
-    # chain = provider(
-    #     {
-    #         "context": retriever | setter("context"),
-    #         "question": RunnablePassthrough(),
-    #     }
-    #     | prompt
-    #     | llm
-    #     | StrOutputParser()
-    #     | {
-    #         "result": RunnablePassthrough(),
-    #         "context": getter("context"),
-    #     }
-    # )
-
-    # chain = RunnableContextBuilder(
-    #     lambda getter, setter: {
-    #         "context": retriever | setter("context"),
-    #         "question": RunnablePassthrough(),
-    #     }
-    #     | prompt
-    #     | llm
-    #     | StrOutputParser()
-    #     | {
-    #         "result": RunnablePassthrough(),
-    #         "context": getter("context"),
-    #     }
-    # )
+    chain = RunnableContextProvider(
+        lambda getter, setter: setter("input")
+        | {
+            "context": retriever | setter("context"),
+            "question": RunnablePassthrough(),
+        }
+        | prompt
+        | llm
+        | StrOutputParser()
+        | {
+            "result": RunnablePassthrough(),
+            "context": getter("context"),
+            "input": getter("input"),
+        }
+    )
+    result = chain.invoke("What up")
+    assert result == {
+        "result": "hello",
+        "context": context,
+        "input": "What up",
+    }
 
 
 def test_with_config_callbacks() -> None:
