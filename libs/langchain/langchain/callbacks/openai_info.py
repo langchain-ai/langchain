@@ -1,4 +1,5 @@
 """Callback Handler that prints to std out."""
+from __future__ import annotations
 from typing import Any, Dict, List
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -197,10 +198,22 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         prompt_cost = get_openai_token_cost_for_model(model_name, prompt_tokens)
         self.total_cost += prompt_cost 
 
-    def __copy__(self) -> "OpenAICallbackHandler":
+    def __copy__(self) -> OpenAICallbackHandler:
         """Return a copy of the callback handler."""
-        return self
+        res: OpenAICallbackHandler = OpenAICallbackHandler()
+        res.total_tokens = self.total_tokens
+        res.prompt_tokens = self.prompt_tokens
+        res.completion_tokens = self.completion_tokens
+        res.successful_requests = self.successful_requests
+        res.total_cost = self.total_cost
+        return res
 
-    def __deepcopy__(self, memo: Any) -> "OpenAICallbackHandler":
+    def __deepcopy__(self, memo: Any) -> OpenAICallbackHandler:
         """Return a deep copy of the callback handler."""
-        return self
+        res: OpenAICallbackHandler = OpenAICallbackHandler()
+        res.total_tokens = self.total_tokens
+        res.prompt_tokens = self.prompt_tokens
+        res.completion_tokens = self.completion_tokens
+        res.successful_requests = self.successful_requests
+        res.total_cost = self.total_cost
+        return res
