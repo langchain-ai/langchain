@@ -440,7 +440,6 @@ class Vectara(VectorStore):
     def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
-        search_kwargs = kwargs
         return VectaraRetriever(vectorstore=self, search_kwargs=kwargs, tags=tags)
 
 
