@@ -111,10 +111,6 @@ class RunnableContextProvider(RunnableSerializable[Input, Output]):
         return cls.__module__.split(".")[:-1]
 
     @property
-    def started(self) -> bool:
-        return self._started
-
-    @property
     def chain(self):
         context = KeyValueContext()
 
