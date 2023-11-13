@@ -36,9 +36,10 @@ class DatabricksVectorSearch(VectorStore):
                   Required for direct-access index or delta-sync index with self-managed embeddings.
         text_column: The name of the text column to use for the embeddings.
                     Required for direct-access index or delta-sync index with self-managed embeddings.
+                    Make sure the text column specified is in the index.
         columns: The list of column names to get when doing the search. Defaults to ``[primary_key, text_column]``.
 
-    Delta-sync index with Databricks-managed embeddings manages the documents ingestion, deletion, and embedding for you.
+    Delta-sync index with Databricks-managed embeddings manages the ingestion, deletion, and embedding for you.
     Manually ingestion/deletion of the documents/texts is not supported for delta-sync index.
 
     If you want to use a delta-sync index with self-managed embeddings, you need to provide the embedding model and
@@ -109,7 +110,7 @@ class DatabricksVectorSearch(VectorStore):
         # index
         self.index = index
         if not isinstance(index, VectorSearchIndex):
-            raise ValueError("index must be a VectorSearchIndex")
+            raise TypeError("index must be of type VectorSearchIndex.")
 
         # index_details
         self.index_details = self.index.describe()
@@ -118,10 +119,11 @@ class DatabricksVectorSearch(VectorStore):
         if self._is_databricks_managed_embeddings():
             index_source_column = self._embedding_source_column_name()
             # if text_column is not None, check that it matches the source column of the index
-            if text_column is not None:
-                assert (
-                    text_column == index_source_column
-                ), f"text_column '{text_column}' does not match the source column '{index_source_column}' of the index."
+            if text_column is not None and text_column != index_source_column:
+                raise ValueError(
+                    f"text_column '{text_column}' does not match with the source column "
+                    f"of the index: '{index_source_column}'."
+                )
             self.text_column = index_source_column
         else:
             self._require_arg(text_column, "text_column")
@@ -150,8 +152,13 @@ class DatabricksVectorSearch(VectorStore):
                 if inferred_embedding_dimension != index_embedding_dimension:
                     raise ValueError(
                         f"embedding model's dimension '{inferred_embedding_dimension}' does not match with "
-                        f"the index's dimension '{index_embedding_dimension}'"
+                        f"the index's dimension '{index_embedding_dimension}'."
                     )
+        else:
+            logger.warning(
+                "embedding model is not used in delta-sync index with Databricks-managed embeddings."
+            )
+            self._embedding = None
 
     @classmethod
     def from_texts(
@@ -224,7 +231,7 @@ class DatabricksVectorSearch(VectorStore):
         self._op_require_direct_access_index("delete")
         if ids is None:
             raise ValueError("ids must be provided.")
-        self.index.delete(primary_keys=ids)
+        self.index.delete(ids)
         return True
 
     def similarity_search(
@@ -315,7 +322,7 @@ class DatabricksVectorSearch(VectorStore):
         """
         if self._is_databricks_managed_embeddings():
             raise ValueError(
-                "'similarity_search_by_vector' is not supported for index with Databricks-managed embeddings."
+                "`similarity_search_by_vector` is not supported for index with Databricks-managed embeddings."
             )
         search_resp = self.index.similarity_search(
             columns=self.columns,
@@ -337,8 +344,9 @@ class DatabricksVectorSearch(VectorStore):
                 for col, value in zip(columns[:-1], result[:-1])
                 if col not in [self.primary_key, self.text_column]
             }
+            metadata[self.primary_key] = doc_id
             score = result[-1]
-            doc = Document(id=doc_id, page_content=text_content, metadata=metadata)
+            doc = Document(page_content=text_content, metadata=metadata)
             docs_with_score.append((doc, score))
         return docs_with_score
 
