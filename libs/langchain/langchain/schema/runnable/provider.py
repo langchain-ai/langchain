@@ -256,3 +256,9 @@ class RunnableContextProvider(RunnableSerializable[Input, Output]):
 
         await run_manager.on_chain_end(results)
         return list(results)
+
+
+def context_provider(
+    chain_factory: ContextProviderFactory,
+) -> RunnableContextProvider:
+    return RunnableContextProvider(chain_factory=chain_factory)

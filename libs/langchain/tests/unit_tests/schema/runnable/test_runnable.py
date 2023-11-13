@@ -66,6 +66,7 @@ from langchain.schema.runnable import (
     RunnablePassthrough,
     RunnableSequence,
     RunnableWithFallbacks,
+    context_provider,
 )
 from langchain.schema.runnable.base import (
     ConfigurableField,
@@ -4502,6 +4503,53 @@ async def test_runnable_context_provider_abatch() -> None:
         {"response": "hello", "prompt": StringPromptValue(text="foo bar")},
         {"response": "hello", "prompt": StringPromptValue(text="bar foo")},
         {"response": "hello", "prompt": StringPromptValue(text="a b")},
+    ]
+
+
+@pytest.mark.asyncio
+async def test_runnable_context_provider_decorator() -> None:
+    prompt = PromptTemplate.from_template("{foo} {bar}")
+    llm = FakeListLLM(responses=["hello"])
+
+    @context_provider
+    def mock_llm_chain(getter, setter):
+        return (
+            prompt
+            | setter("prompt")
+            | llm
+            | StrOutputParser()
+            | {
+                "response": RunnablePassthrough(),
+                "prompt": getter("prompt"),
+            }
+        )
+
+    result = mock_llm_chain.invoke({"foo": "foo", "bar": "bar"})
+    assert result == {"response": "hello", "prompt": StringPromptValue(text="foo bar")}
+
+    result = await mock_llm_chain.ainvoke({"foo": "foo", "bar": "bar"})
+    assert result == {"response": "hello", "prompt": StringPromptValue(text="foo bar")}
+
+    result = mock_llm_chain.batch(
+        [
+            {"foo": "foo", "bar": "bar"},
+            {"foo": "bar", "bar": "foo"},
+        ]
+    )
+    assert result == [
+        {"response": "hello", "prompt": StringPromptValue(text="foo bar")},
+        {"response": "hello", "prompt": StringPromptValue(text="bar foo")},
+    ]
+
+    result = await mock_llm_chain.abatch(
+        [
+            {"foo": "foo", "bar": "bar"},
+            {"foo": "bar", "bar": "foo"},
+        ]
+    )
+    assert result == [
+        {"response": "hello", "prompt": StringPromptValue(text="foo bar")},
+        {"response": "hello", "prompt": StringPromptValue(text="bar foo")},
     ]
 
 
