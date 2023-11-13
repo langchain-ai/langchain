@@ -143,7 +143,7 @@ class QueryTransformer(Transformer):
         item = str(item).strip("\"'")
         try:
             datetime.datetime.strptime(item, "%Y-%m-%d")
-        except ValueError as e:
+        except ValueError:
             warnings.warn(
                 "Dates are expected to be provided in ISO 8601 date format "
                 "(YYYY-MM-DD)."
