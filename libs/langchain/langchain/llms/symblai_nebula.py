@@ -187,9 +187,7 @@ def make_request(
         "ApiKey": f"{api_key}",
     }
 
-    body = {
-        "prompt": prompt
-    }
+    body = {"prompt": prompt}
 
     # add params to body
     for key, value in params.items():
