@@ -662,13 +662,13 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.0.329"
+version = "0.0.331"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain-0.0.329-py3-none-any.whl", hash = "sha256:5f3e884991271e8b55eda4c63a11105dcd7da119682ce0e3d5d1385b3a4103d2"},
-    {file = "langchain-0.0.329.tar.gz", hash = "sha256:488f3cb68a587696f136d4f01f97df8d8270e295b3cc56158057dab0f61f4166"},
+    {file = "langchain-0.0.331-py3-none-any.whl", hash = "sha256:64e6e1a57b8deafc1c4e914820b2b8e22a5eed60d49432cadc3b8cca9d613694"},
+    {file = "langchain-0.0.331.tar.gz", hash = "sha256:b1ac365faf7fe413d5aa38329f70f23589ed07152c1a1398a5f16319eb32beb6"},
 ]
 
 [package.dependencies]
@@ -721,13 +721,13 @@ uvicorn = ">=0.23.2,<0.24.0"
 
 [[package]]
 name = "langserve"
-version = "0.0.22"
+version = "0.0.23"
 description = ""
 optional = false
 python-versions = ">=3.8.1,<4.0.0"
 files = [
-    {file = "langserve-0.0.22-py3-none-any.whl", hash = "sha256:908239209959fc23202a09113b42c0e5838d046404a4e725602fe56af96bf340"},
-    {file = "langserve-0.0.22.tar.gz", hash = "sha256:14a33986668c8d36aa2e58dc66307c021eaac18019d2b99e7fae30f6937650d1"},
+    {file = "langserve-0.0.23-py3-none-any.whl", hash = "sha256:35f29ba83f7198dd0e6eff57b70b521a36d59d2133fd368d8b3161f55570f7bc"},
+    {file = "langserve-0.0.23.tar.gz", hash = "sha256:4d4202fa3badc198aef884eb5dbfe4b0e9d27565872eae6a3e13d6c4a4aa0fd2"},
 ]
 
 [package.dependencies]
@@ -745,13 +745,13 @@ server = ["fastapi (>=0.90.1)", "sse-starlette (>=1.3.0,<2.0.0)"]
 
 [[package]]
 name = "langsmith"
-version = "0.0.56"
+version = "0.0.60"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.56-py3-none-any.whl", hash = "sha256:5aed1ad2395700442a6511651eca17d60eff56878f18bdd9e1d20b3c6f7e016c"},
-    {file = "langsmith-0.0.56.tar.gz", hash = "sha256:98382931f61a984a3d02cad07e4b986a0a7c843f87830172692c987deb8ba554"},
+    {file = "langsmith-0.0.60-py3-none-any.whl", hash = "sha256:94f9ef9898fa5fb5afed72538bb3ccca9a92a841b37654d699c732a76c623379"},
+    {file = "langsmith-0.0.60.tar.gz", hash = "sha256:f63513398d8d4530e3aa552926924c8443ac9d21c3812f303fa20fa2c44a9a42"},
 ]
 
 [package.dependencies]

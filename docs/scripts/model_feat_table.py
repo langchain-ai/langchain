@@ -23,7 +23,7 @@ CHAT_MODEL_FEAT_TABLE_CORRECTION = {
 
 LLM_TEMPLATE = """\
 ---
-sidebar_position: 0
+sidebar_position: 1
 sidebar_class_name: hidden
 ---
 
@@ -43,7 +43,7 @@ Each LLM integration can optionally provide native implementations for async, st
 
 CHAT_MODEL_TEMPLATE = """\
 ---
-sidebar_position: 1
+sidebar_position: 0
 sidebar_class_name: hidden
 ---
 

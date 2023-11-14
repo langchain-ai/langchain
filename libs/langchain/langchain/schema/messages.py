@@ -288,6 +288,44 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
         return super().__add__(other)
 
 
+class ToolMessage(BaseMessage):
+    """A Message for passing the result of executing a tool back to a model."""
+
+    tool_call_id: str
+    """Tool call that this message is responding to."""
+
+    type: Literal["tool"] = "tool"
+
+
+ToolMessage.update_forward_refs()
+
+
+class ToolMessageChunk(ToolMessage, BaseMessageChunk):
+    """A Tool Message chunk."""
+
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["ToolMessageChunk"] = "ToolMessageChunk"  # type: ignore[assignment]
+
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+        if isinstance(other, ToolMessageChunk):
+            if self.tool_call_id != other.tool_call_id:
+                raise ValueError(
+                    "Cannot concatenate ToolMessageChunks with different names."
+                )
+
+            return self.__class__(
+                tool_call_id=self.tool_call_id,
+                content=merge_content(self.content, other.content),
+                additional_kwargs=self._merge_kwargs_dict(
+                    self.additional_kwargs, other.additional_kwargs
+                ),
+            )
+
+        return super().__add__(other)
+
+
 class ChatMessage(BaseMessage):
     """A Message that can be assigned an arbitrary speaker (i.e. role)."""
 
@@ -326,7 +364,9 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
         return super().__add__(other)
 
 
-AnyMessage = Union[AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage]
+AnyMessage = Union[
+    AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage, ToolMessage
+]
 
 
 def _message_to_dict(message: BaseMessage) -> dict:
@@ -357,6 +397,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return ChatMessage(**message["data"])
     elif _type == "function":
         return FunctionMessage(**message["data"])
+    elif _type == "tool":
+        return ToolMessage(**message["data"])
     else:
         raise ValueError(f"Got unexpected message type: {_type}")
 
