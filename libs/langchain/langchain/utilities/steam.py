@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional
 from langchain.langchain.tools.steam.prompt import STEAM_GET_GAMES_ID, STEAM_GET_GAMES_DETAILS, STEAM_GET_RECOMMENDED_GAMES
 from langchain.utils import get_from_dict_or_env  
 import steamspypi
-import json
 
 class SteamWebAPIWrapper(BaseModel):
     # Steam WebAPI Implementation will go here...
@@ -115,20 +114,14 @@ class SteamWebAPIWrapper(BaseModel):
     
 
     
-    # get steam id from username
     def get_steam_id(self, name: str) -> str:
-        user_json = self.steam.users.search_user(name)
-        user = json.loads(user_json)
-        steamId = user['player']['steamid']
-        return steamId
-        #use id to get more details
-      
-    
+        user = self.steam.users.search_user(name)
+        steam_id = user['player']['steamid']
+        return steam_id
 
-    def recommended_games(self, name: str) -> str:
+    def recommended_games(self, name: str) -> dict:
         steam_id = self.get_steam_id(name)
-        user_games_json = self.steam.users.get_owned_games(steam_id)
-        user_games_data = json.loads(user_games_json)
+        user_games_data = self.steam.users.get_owned_games(steam_id)
 
         appids_with_playtime = [(game['appid'], game.get('playtime_forever', 0)) for game in user_games_data['response']['games']]
         sorted_appids = sorted(appids_with_playtime, key=lambda x: x[1], reverse=True)
@@ -138,7 +131,7 @@ class SteamWebAPIWrapper(BaseModel):
             app_detail = self.steam.apps.get_app_details(app_id)
             app_details.append(app_detail)
         
-        #TODO: get recommended games using langchain
+        # TODO: implement recommended games
    
     def run(self, mode: str, game:str) -> str:
 
