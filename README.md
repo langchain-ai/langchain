@@ -63,7 +63,7 @@ This framework consists of several parts.
 **🤖 Chatbots**
 
 - [Documentation](https://python.langchain.com/docs/use_cases/chatbots)
-- End-to-end Example: [GPT+WolframAlpha](https://huggingface.co/spaces/JavaFXpert/Chat-GPT-LangChain)
+- End-to-end Example: [Web LangChain (web researcher chatbot)](https://weblangchain.vercel.app) and [repo](https://github.com/langchain-ai/weblangchain)
 
 And much more! Head to the [Use cases](https://python.langchain.com/docs/use_cases/) section of the docs for more.
 
