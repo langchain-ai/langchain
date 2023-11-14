@@ -1765,8 +1765,8 @@ files = [
 [package.dependencies]
 aiohttp = ">=3.1.0"
 grpcio = [
-    {version = ">=1.22.0", markers = "python_version < \"3.11\""},
     {version = ">=1.49.1", markers = "python_version >= \"3.11\""},
+    {version = ">=1.22.0", markers = "python_version < \"3.11\""},
 ]
 numpy = "*"
 protobuf = ">=3.8.0,<4.0.0"
@@ -2752,8 +2752,8 @@ files = [
 [package.dependencies]
 google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
 proto-plus = [
-    {version = ">=1.22.0,<2.0.0dev", markers = "python_version < \"3.11\""},
     {version = ">=1.22.2,<2.0.0dev", markers = "python_version >= \"3.11\""},
+    {version = ">=1.22.0,<2.0.0dev", markers = "python_version < \"3.11\""},
 ]
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
 
@@ -4109,13 +4109,13 @@ all = ["datasets (>=2.12.0,<3.0.0)", "evaluate (>=0.4.0,<0.5.0)", "faiss-cpu (>=
 
 [[package]]
 name = "langsmith"
-version = "0.0.57"
+version = "0.0.64"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.57-py3-none-any.whl", hash = "sha256:d9d466cc45ce5224096ffb820d019b6f83678fc1f1021076ed75728aba60ec2b"},
-    {file = "langsmith-0.0.57.tar.gz", hash = "sha256:34929afd84cbfd46a8469229e3befc14c7e89186a0bee8ce9d084c7b8b271005"},
+    {file = "langsmith-0.0.64-py3-none-any.whl", hash = "sha256:461acdcd8332d1325c16dc57e8a2d5ec9d1578490a4eaabe14db74db74ceaf21"},
+    {file = "langsmith-0.0.64.tar.gz", hash = "sha256:e78c02501c2cff24fff7bd2d28ff3765b21675c7f0fcf6a09932bc218603c36e"},
 ]
 
 [package.dependencies]
@@ -4699,29 +4699,29 @@ files = [
 
 [[package]]
 name = "momento"
-version = "1.10.1"
+version = "1.13.2"
 description = "SDK for Momento"
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "momento-1.10.1-py3-none-any.whl", hash = "sha256:a97893bb3542499a429aa67c66d9330cd64b8f1a4f64c33dba4adc72cc3e9d01"},
-    {file = "momento-1.10.1.tar.gz", hash = "sha256:c9cc21d06194371881c9749a20f3a6db68190427ff29dfd414aa94b90b27ab89"},
+    {file = "momento-1.13.2-py3-none-any.whl", hash = "sha256:deb0c09835a1f0cf7c8ea769e03b3b8617b42b9a38a8d3ff471a2080edf7e6b2"},
+    {file = "momento-1.13.2.tar.gz", hash = "sha256:daa4d7ffd38d9d685d3540a890eefaa10facf0e37d4389444ccffd1794b8b4b1"},
 ]
 
 [package.dependencies]
 grpcio = ">=1.46.0,<2.0.0"
-momento-wire-types = ">=0.84.0,<0.85.0"
+momento-wire-types = ">=0.94.1,<0.95.0"
 pyjwt = ">=2.4.0,<3.0.0"
 
 [[package]]
 name = "momento-wire-types"
-version = "0.84.2"
+version = "0.94.1"
 description = "Momento Client Proto Generated Files"
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "momento_wire_types-0.84.2-py3-none-any.whl", hash = "sha256:1b260556f1220bc3d5b3ffd7491a7d6de6654fef87e8a17f2b7cae53e9e30a23"},
-    {file = "momento_wire_types-0.84.2.tar.gz", hash = "sha256:0560180af916cc588598ac0ee0fe04872ad30f428971c81e2d54b146a9f6d5fc"},
+    {file = "momento_wire_types-0.94.1-py3-none-any.whl", hash = "sha256:9df6860b9f09308bf36cb702fb85bfc83583bf9f36bb8ac63aef8f2d485827a8"},
+    {file = "momento_wire_types-0.94.1.tar.gz", hash = "sha256:1ca589e0ed26b112dbf25ad71f11910ce35dde1e931783b8ce0a0a484bf6dff2"},
 ]
 
 [package.dependencies]
@@ -5754,12 +5754,12 @@ files = [
 
 [package.dependencies]
 numpy = [
+    {version = ">=1.23.5", markers = "python_version >= \"3.11\""},
     {version = ">=1.21.0", markers = "python_version <= \"3.9\" and platform_system == \"Darwin\" and platform_machine == \"arm64\" and python_version >= \"3.8\""},
     {version = ">=1.19.3", markers = "platform_system == \"Linux\" and platform_machine == \"aarch64\" and python_version >= \"3.8\" and python_version < \"3.10\" or python_version > \"3.9\" and python_version < \"3.10\" or python_version >= \"3.9\" and platform_system != \"Darwin\" and python_version < \"3.10\" or python_version >= \"3.9\" and platform_machine != \"arm64\" and python_version < \"3.10\""},
     {version = ">=1.17.3", markers = "(platform_system != \"Darwin\" and platform_system != \"Linux\") and python_version >= \"3.8\" and python_version < \"3.9\" or platform_system != \"Darwin\" and python_version >= \"3.8\" and python_version < \"3.9\" and platform_machine != \"aarch64\" or platform_machine != \"arm64\" and python_version >= \"3.8\" and python_version < \"3.9\" and platform_system != \"Linux\" or (platform_machine != \"arm64\" and platform_machine != \"aarch64\") and python_version >= \"3.8\" and python_version < \"3.9\""},
     {version = ">=1.21.4", markers = "python_version >= \"3.10\" and platform_system == \"Darwin\" and python_version < \"3.11\""},
     {version = ">=1.21.2", markers = "platform_system != \"Darwin\" and python_version >= \"3.10\" and python_version < \"3.11\""},
-    {version = ">=1.23.5", markers = "python_version >= \"3.11\""},
 ]
 
 [[package]]
@@ -5945,9 +5945,9 @@ files = [
 
 [package.dependencies]
 numpy = [
+    {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
     {version = ">=1.20.3", markers = "python_version < \"3.10\""},
     {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
-    {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -11090,4 +11090,4 @@ tree-sitter = ["tree-sitter", "tree-sitter-languages"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "43048fa801873b47b89c61a5a25e90694ea39a35aee06a15de8ee0f4bf4f1d29"
+content-hash = "da2e0b26a116845de06a873dc19e6941fbba208a2827f638ac9791ca792f9bba"
