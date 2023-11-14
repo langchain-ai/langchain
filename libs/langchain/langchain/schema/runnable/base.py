@@ -2874,6 +2874,11 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         ):
             yield item
 
+    def __getattr__(self, item):
+        if hasattr(super(), item):
+            return getattr(super(), item)
+        return getattr(self.bound, item)
+
 
 RunnableBindingBase.update_forward_refs(RunnableConfig=RunnableConfig)
 
