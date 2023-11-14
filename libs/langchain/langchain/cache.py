@@ -25,6 +25,7 @@ import hashlib
 import inspect
 import json
 import logging
+import uuid
 import warnings
 from datetime import timedelta
 from functools import lru_cache
@@ -41,7 +42,7 @@ from typing import (
     cast,
 )
 
-from sqlalchemy import Column, Integer, String, create_engine, select
+from sqlalchemy import Column, Integer, Row, String, create_engine, select
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
@@ -50,13 +51,12 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-
-from langchain.embeddings.base import Embeddings
 from langchain.llms.base import LLM, get_prompts
 from langchain.load.dump import dumps
 from langchain.load.load import loads
 from langchain.schema import ChatGeneration, Generation
 from langchain.schema.cache import RETURN_VAL_TYPE, BaseCache
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_env
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 
@@ -80,6 +80,8 @@ def _dump_generations_to_json(generations: RETURN_VAL_TYPE) -> str:
 
     Returns:
         str: Json representing a list of generations.
+
+    Warning: would not work well with arbitrary subclasses of `Generation`
     """
     return json.dumps([generation.dict() for generation in generations])
 
@@ -95,6 +97,8 @@ def _load_generations_from_json(generations_json: str) -> RETURN_VAL_TYPE:
 
     Returns:
         RETURN_VAL_TYPE: A list of generations.
+
+    Warning: would not work well with arbitrary subclasses of `Generation`
     """
     try:
         results = json.loads(generations_json)
@@ -103,6 +107,65 @@ def _load_generations_from_json(generations_json: str) -> RETURN_VAL_TYPE:
         raise ValueError(
             f"Could not decode json to list of generations: {generations_json}"
         )
+
+
+def _dumps_generations(generations: RETURN_VAL_TYPE) -> str:
+    """
+    Serialization for generic RETURN_VAL_TYPE, i.e. sequence of `Generation`
+
+    Args:
+        generations (RETURN_VAL_TYPE): A list of language model generations.
+
+    Returns:
+        str: a single string representing a list of generations.
+
+    This function (+ its counterpart `_loads_generations`) rely on
+    the dumps/loads pair with Reviver, so are able to deal
+    with all subclasses of Generation.
+
+    Each item in the list can be `dumps`ed to a string,
+    then we make the whole list of strings into a json-dumped.
+    """
+    return json.dumps([dumps(_item) for _item in generations])
+
+
+def _loads_generations(generations_str: str) -> Union[RETURN_VAL_TYPE, None]:
+    """
+    Deserialization of a string into a generic RETURN_VAL_TYPE
+    (i.e. a sequence of `Generation`).
+
+    See `_dumps_generations`, the inverse of this function.
+
+    Args:
+        generations_str (str): A string representing a list of generations.
+
+    Compatible with the legacy cache-blob format
+    Does not raise exceptions for malformed entries, just logs a warning
+    and returns none: the caller should be prepared for such a cache miss.
+
+    Returns:
+        RETURN_VAL_TYPE: A list of generations.
+    """
+    try:
+        generations = [loads(_item_str) for _item_str in json.loads(generations_str)]
+        return generations
+    except (json.JSONDecodeError, TypeError):
+        # deferring the (soft) handling to after the legacy-format attempt
+        pass
+
+    try:
+        gen_dicts = json.loads(generations_str)
+        # not relying on `_load_generations_from_json` (which could disappear):
+        generations = [Generation(**generation_dict) for generation_dict in gen_dicts]
+        logger.warning(
+            f"Legacy 'Generation' cached blob encountered: '{generations_str}'"
+        )
+        return generations
+    except (json.JSONDecodeError, TypeError):
+        logger.warning(
+            f"Malformed/unparsable cached blob encountered: '{generations_str}'"
+        )
+        return None
 
 
 class InMemoryCache(BaseCache):
@@ -198,6 +261,92 @@ class SQLiteCache(SQLAlchemyCache):
         super().__init__(engine)
 
 
+class UpstashRedisCache(BaseCache):
+    """Cache that uses Upstash Redis as a backend."""
+
+    def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
+        """
+        Initialize an instance of UpstashRedisCache.
+
+        This method initializes an object with Upstash Redis caching capabilities.
+        It takes a `redis_` parameter, which should be an instance of an Upstash Redis
+        client class, allowing the object to interact with Upstash Redis
+        server for caching purposes.
+
+        Parameters:
+            redis_: An instance of Upstash Redis client class
+                (e.g., Redis) used for caching.
+                This allows the object to communicate with
+                Redis server for caching operations on.
+            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
+                If provided, it sets the time duration for how long cached
+                items will remain valid. If not provided, cached items will not
+                have an automatic expiration.
+        """
+        try:
+            from upstash_redis import Redis
+        except ImportError:
+            raise ValueError(
+                "Could not import upstash_redis python package. "
+                "Please install it with `pip install upstash_redis`."
+            )
+        if not isinstance(redis_, Redis):
+            raise ValueError("Please pass in Upstash Redis object.")
+        self.redis = redis_
+        self.ttl = ttl
+
+    def _key(self, prompt: str, llm_string: str) -> str:
+        """Compute key from prompt and llm_string"""
+        return _hash(prompt + llm_string)
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        generations = []
+        # Read from a HASH
+        results = self.redis.hgetall(self._key(prompt, llm_string))
+        if results:
+            for _, text in results.items():
+                generations.append(Generation(text=text))
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "UpstashRedisCache supports caching of normal LLM generations, "
+                    f"got {type(gen)}"
+                )
+            if isinstance(gen, ChatGeneration):
+                warnings.warn(
+                    "NOTE: Generation has not been cached. UpstashRedisCache does not"
+                    " support caching ChatModel outputs."
+                )
+                return
+        # Write to a HASH
+        key = self._key(prompt, llm_string)
+
+        mapping = {
+            str(idx): generation.text for idx, generation in enumerate(return_val)
+        }
+        self.redis.hset(key=key, values=mapping)
+
+        if self.ttl is not None:
+            self.redis.expire(key, self.ttl)
+
+    def clear(self, **kwargs: Any) -> None:
+        """
+        Clear cache. If `asynchronous` is True, flush asynchronously.
+        This flushes the *whole* db.
+        """
+        asynchronous = kwargs.get("asynchronous", False)
+        if asynchronous:
+            asynchronous = "ASYNC"
+        else:
+            asynchronous = "SYNC"
+        self.redis.flushdb(flush_type=asynchronous)
+
+
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
 
@@ -243,7 +392,18 @@ class RedisCache(BaseCache):
         results = self.redis.hgetall(self._key(prompt, llm_string))
         if results:
             for _, text in results.items():
-                generations.append(Generation(text=text))
+                try:
+                    generations.append(loads(text))
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+                    # In a previous life we stored the raw text directly
+                    # in the table, so assume it's in that format.
+                    generations.append(Generation(text=text))
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -254,12 +414,6 @@ class RedisCache(BaseCache):
                     "RedisCache only supports caching of normal LLM generations, "
                     f"got {type(gen)}"
                 )
-            if isinstance(gen, ChatGeneration):
-                warnings.warn(
-                    "NOTE: Generation has not been cached. RedisCache does not"
-                    " support caching ChatModel outputs."
-                )
-                return
         # Write to a Redis HASH
         key = self._key(prompt, llm_string)
 
@@ -267,7 +421,7 @@ class RedisCache(BaseCache):
             pipe.hset(
                 key,
                 mapping={
-                    str(idx): generation.text
+                    str(idx): dumps(generation)
                     for idx, generation in enumerate(return_val)
                 },
             )
@@ -309,15 +463,15 @@ class RedisSemanticCache(BaseCache):
 
         .. code-block:: python
 
-            import langchain
+            from langchain.globals import set_llm_cache
 
             from langchain.cache import RedisSemanticCache
             from langchain.embeddings import OpenAIEmbeddings
 
-            langchain.llm_cache = RedisSemanticCache(
+            set_llm_cache(RedisSemanticCache(
                 redis_url="redis://localhost:6379",
                 embedding=OpenAIEmbeddings()
-            )
+            ))
 
         """
         self._cache_dict: Dict[str, RedisVectorstore] = {}
@@ -352,7 +506,7 @@ class RedisSemanticCache(BaseCache):
                 index_schema=cast(Dict, self.DEFAULT_SCHEMA),
             )
             _embedding = self.embedding.embed_query(text="test")
-            redis._create_index(dim=len(_embedding))
+            redis._create_index_if_not_exist(dim=len(_embedding))
             self._cache_dict[index_name] = redis
 
         return self._cache_dict[index_name]
@@ -378,9 +532,20 @@ class RedisSemanticCache(BaseCache):
         )
         if results:
             for document in results:
-                generations.extend(
-                    _load_generations_from_json(document.metadata["return_val"])
-                )
+                try:
+                    generations.extend(loads(document.metadata["return_val"]))
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+                    # In a previous life we stored the raw text directly
+                    # in the table, so assume it's in that format.
+                    generations.extend(
+                        _load_generations_from_json(document.metadata["return_val"])
+                    )
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -391,18 +556,12 @@ class RedisSemanticCache(BaseCache):
                     "RedisSemanticCache only supports caching of "
                     f"normal LLM generations, got {type(gen)}"
                 )
-            if isinstance(gen, ChatGeneration):
-                warnings.warn(
-                    "NOTE: Generation has not been cached. RedisSentimentCache does not"
-                    " support caching ChatModel outputs."
-                )
-                return
         llm_cache = self._get_llm_cache(llm_string)
-        _dump_generations_to_json([g for g in return_val])
+
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
-            "return_val": _dump_generations_to_json([g for g in return_val]),
+            "return_val": dumps([g for g in return_val]),
         }
         llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
 
@@ -429,6 +588,7 @@ class GPTCache(BaseCache):
             import gptcache
             from gptcache.processor.pre import get_prompt
             from gptcache.manager.factory import get_data_manager
+            from langchain.globals import set_llm_cache
 
             # Avoid multiple caches using the same file,
             causing different llm model caches to affect each other
@@ -442,7 +602,7 @@ class GPTCache(BaseCache):
                     ),
                 )
 
-            langchain.llm_cache = GPTCache(init_gptcache)
+            set_llm_cache(GPTCache(init_gptcache))
 
         """
         try:
@@ -612,7 +772,8 @@ class MomentoCache(BaseCache):
         ttl: timedelta,
         *,
         configuration: Optional[momento.config.Configuration] = None,
-        auth_token: Optional[str] = None,
+        api_key: Optional[str] = None,
+        auth_token: Optional[str] = None,  # for backwards compatibility
         **kwargs: Any,
     ) -> MomentoCache:
         """Construct cache from CacheClient parameters."""
@@ -625,8 +786,13 @@ class MomentoCache(BaseCache):
             )
         if configuration is None:
             configuration = Configurations.Laptop.v1()
-        auth_token = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
-        credentials = CredentialProvider.from_string(auth_token)
+
+        # Try checking `MOMENTO_AUTH_TOKEN` first for backwards compatibility
+        try:
+            api_key = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
+        except ValueError:
+            api_key = api_key or get_from_env("api_key", "MOMENTO_API_KEY")
+        credentials = CredentialProvider.from_string(api_key)
         cache_client = CacheClient(configuration, credentials, default_ttl=ttl)
         return cls(cache_client, cache_name, ttl=ttl, **kwargs)
 
@@ -733,10 +899,11 @@ class CassandraCache(BaseCache):
 
     def __init__(
         self,
-        session: CassandraSession,
-        keyspace: str,
+        session: Optional[CassandraSession] = None,
+        keyspace: Optional[str] = None,
         table_name: str = CASSANDRA_CACHE_DEFAULT_TABLE_NAME,
         ttl_seconds: Optional[int] = CASSANDRA_CACHE_DEFAULT_TTL_SECONDS,
+        skip_provisioning: bool = False,
     ):
         """
         Initialize with a ready session and a keyspace name.
@@ -767,6 +934,7 @@ class CassandraCache(BaseCache):
             keys=["llm_string", "prompt"],
             primary_key_type=["TEXT", "TEXT"],
             ttl_seconds=self.ttl_seconds,
+            skip_provisioning=skip_provisioning,
         )
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
@@ -775,14 +943,19 @@ class CassandraCache(BaseCache):
             llm_string=_hash(llm_string),
             prompt=_hash(prompt),
         )
-        if item:
-            return _load_generations_from_json(item["body_blob"])
+        if item is not None:
+            generations = _loads_generations(item["body_blob"])
+            # this protects against malformed cached items:
+            if generations is not None:
+                return generations
+            else:
+                return None
         else:
             return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
-        blob = _dump_generations_to_json(return_val)
+        blob = _dumps_generations(return_val)
         self.kv_cache.put(
             llm_string=_hash(llm_string),
             prompt=_hash(prompt),
@@ -836,13 +1009,14 @@ class CassandraSemanticCache(BaseCache):
 
     def __init__(
         self,
-        session: CassandraSession,
-        keyspace: str,
+        session: Optional[CassandraSession],
+        keyspace: Optional[str],
         embedding: Embeddings,
         table_name: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME,
         distance_metric: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC,
         score_threshold: float = CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD,
         ttl_seconds: Optional[int] = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS,
+        skip_provisioning: bool = False,
     ):
         """
         Initialize the cache with all relevant parameters.
@@ -897,6 +1071,7 @@ class CassandraSemanticCache(BaseCache):
             vector_dimension=self.embedding_dimension,
             ttl_seconds=self.ttl_seconds,
             metadata_indexing=("allow", {"_llm_string_hash"}),
+            skip_provisioning=skip_provisioning,
         )
 
     def _get_embedding_dimension(self) -> int:
@@ -906,7 +1081,7 @@ class CassandraSemanticCache(BaseCache):
         """Update cache based on prompt and llm_string."""
         embedding_vector = self._get_embedding(text=prompt)
         llm_string_hash = _hash(llm_string)
-        body = _dump_generations_to_json(return_val)
+        body = _dumps_generations(return_val)
         metadata = {
             "_prompt": prompt,
             "_llm_string_hash": llm_string_hash,
@@ -947,11 +1122,15 @@ class CassandraSemanticCache(BaseCache):
         )
         if hits:
             hit = hits[0]
-            generations_str = hit["body_blob"]
-            return (
-                hit["row_id"],
-                _load_generations_from_json(generations_str),
-            )
+            generations = _loads_generations(hit["body_blob"])
+            if generations is not None:
+                # this protects against malformed cached items:
+                return (
+                    hit["row_id"],
+                    generations,
+                )
+            else:
+                return None
         else:
             return None
 
@@ -975,3 +1154,87 @@ class CassandraSemanticCache(BaseCache):
     def clear(self, **kwargs: Any) -> None:
         """Clear the *whole* semantic cache."""
         self.table.clear()
+
+
+class FullMd5LLMCache(Base):  # type: ignore
+    """SQLite table for full LLM Cache (all generations)."""
+
+    __tablename__ = "full_md5_llm_cache"
+    id = Column(String, primary_key=True)
+    prompt_md5 = Column(String, index=True)
+    llm = Column(String, index=True)
+    idx = Column(Integer, index=True)
+    prompt = Column(String)
+    response = Column(String)
+
+
+class SQLAlchemyMd5Cache(BaseCache):
+    """Cache that uses SQAlchemy as a backend."""
+
+    def __init__(
+        self, engine: Engine, cache_schema: Type[FullMd5LLMCache] = FullMd5LLMCache
+    ):
+        """Initialize by creating all tables."""
+        self.engine = engine
+        self.cache_schema = cache_schema
+        self.cache_schema.metadata.create_all(self.engine)
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        rows = self._search_rows(prompt, llm_string)
+        if rows:
+            return [loads(row[0]) for row in rows]
+        return None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update based on prompt and llm_string."""
+        self._delete_previous(prompt, llm_string)
+        prompt_md5 = self.get_md5(prompt)
+        items = [
+            self.cache_schema(
+                id=str(uuid.uuid1()),
+                prompt=prompt,
+                prompt_md5=prompt_md5,
+                llm=llm_string,
+                response=dumps(gen),
+                idx=i,
+            )
+            for i, gen in enumerate(return_val)
+        ]
+        with Session(self.engine) as session, session.begin():
+            for item in items:
+                session.merge(item)
+
+    def _delete_previous(self, prompt: str, llm_string: str) -> None:
+        stmt = (
+            select(self.cache_schema.response)
+            .where(self.cache_schema.prompt_md5 == self.get_md5(prompt))  # type: ignore
+            .where(self.cache_schema.llm == llm_string)
+            .where(self.cache_schema.prompt == prompt)
+            .order_by(self.cache_schema.idx)
+        )
+        with Session(self.engine) as session, session.begin():
+            rows = session.execute(stmt).fetchall()
+            for item in rows:
+                session.delete(item)
+
+    def _search_rows(self, prompt: str, llm_string: str) -> List[Row]:
+        prompt_pd5 = self.get_md5(prompt)
+        stmt = (
+            select(self.cache_schema.response)
+            .where(self.cache_schema.prompt_md5 == prompt_pd5)  # type: ignore
+            .where(self.cache_schema.llm == llm_string)
+            .where(self.cache_schema.prompt == prompt)
+            .order_by(self.cache_schema.idx)
+        )
+        with Session(self.engine) as session:
+            return session.execute(stmt).fetchall()
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache."""
+        with Session(self.engine) as session:
+            session.execute(self.cache_schema.delete())
+
+    @staticmethod
+    def get_md5(input_string: str) -> str:
+        return hashlib.md5(input_string.encode()).hexdigest()

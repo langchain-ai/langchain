@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from packaging.version import parse
 
@@ -236,9 +236,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             # Push the records to Argilla
             self.dataset.push_to_argilla()
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when LLM outputs an error."""
         pass
 
@@ -286,7 +284,8 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                             },
                         }
                         for prompt, output in zip(
-                            prompts, chain_output_val  # type: ignore
+                            prompts,  # type: ignore
+                            chain_output_val,
                         )
                     ]
                 )
@@ -313,9 +312,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             # Push the records to Argilla
             self.dataset.push_to_argilla()
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when LLM chain outputs an error."""
         pass
 
@@ -342,9 +339,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         """Do nothing when tool ends."""
         pass
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when tool outputs an error."""
         pass
 

@@ -1,7 +1,6 @@
 """Graph Index Creator."""
 from typing import Optional, Type
 
-from langchain import BasePromptTemplate
 from langchain.chains.llm import LLMChain
 from langchain.graphs.networkx_graph import NetworkxEntityGraph, parse_triples
 from langchain.indexes.prompts.knowledge_triplet_extraction import (
@@ -9,6 +8,7 @@ from langchain.indexes.prompts.knowledge_triplet_extraction import (
 )
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.prompt_template import BasePromptTemplate
 
 
 class GraphIndexCreator(BaseModel):

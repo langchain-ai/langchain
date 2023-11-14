@@ -14,7 +14,8 @@ class ConversationChain(LLMChain):
     Example:
         .. code-block:: python
 
-            from langchain import ConversationChain, OpenAI
+            from langchain.chains import ConversationChain
+            from langchain.llms import OpenAI
 
             conversation = ConversationChain(llm=OpenAI())
     """

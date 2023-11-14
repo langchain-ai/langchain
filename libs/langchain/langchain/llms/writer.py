@@ -18,7 +18,7 @@ class Writer(LLM):
     Example:
         .. code-block:: python
 
-            from langchain import Writer
+            from langchain.llms import Writer
             writer = Writer(model_id="palmyra-base")
     """
 

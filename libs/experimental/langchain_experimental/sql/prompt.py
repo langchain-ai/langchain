@@ -63,7 +63,7 @@ CREATE TABLE "ChatPaper" (
  ORDER BY id
  PRIMARY KEY id
  
-Question: What is Feartue Pyramid Network?
+Question: What is Feature Pyramid Network?
 SQLQuery: SELECT ChatPaper.title, ChatPaper.id, ChatPaper.authors FROM ChatPaper ORDER BY DISTANCE(vector, NeuralArray(PaperRank contribution)) LIMIT {top_k}
 
 

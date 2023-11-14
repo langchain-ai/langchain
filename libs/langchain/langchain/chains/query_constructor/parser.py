@@ -1,5 +1,8 @@
 import datetime
-from typing import Any, Optional, Sequence, Union
+import warnings
+from typing import Any, Literal, Optional, Sequence, Union
+
+from typing_extensions import TypedDict
 
 from langchain.utils import check_package_version
 
@@ -23,7 +26,7 @@ from langchain.chains.query_constructor.ir import (
     Operator,
 )
 
-GRAMMAR = """
+GRAMMAR = r"""
     ?program: func_call
     ?expr: func_call
         | value
@@ -32,14 +35,14 @@ GRAMMAR = """
 
     ?value: SIGNED_INT -> int
         | SIGNED_FLOAT -> float
-        | TIMESTAMP -> timestamp
+        | DATE -> date
         | list
         | string
         | ("false" | "False" | "FALSE") -> false
         | ("true" | "True" | "TRUE") -> true
 
     args: expr ("," expr)*
-    TIMESTAMP.2: /["'](\d{4}-[01]\d-[0-3]\d)["']/
+    DATE.2: /["']?(\d{4}-[01]\d-[0-3]\d)["']?/
     string: /'[^']*'/ | ESCAPED_STRING
     list: "[" [args] "]"
 
@@ -52,6 +55,13 @@ GRAMMAR = """
 """
 
 
+class ISO8601Date(TypedDict):
+    """A date in ISO 8601 format (YYYY-MM-DD)."""
+
+    date: str
+    type: Literal["date"]
+
+
 @v_args(inline=True)
 class QueryTransformer(Transformer):
     """Transforms a query string into an intermediate representation."""
@@ -61,11 +71,13 @@ class QueryTransformer(Transformer):
         *args: Any,
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
+        allowed_attributes: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
         self.allowed_comparators = allowed_comparators
         self.allowed_operators = allowed_operators
+        self.allowed_attributes = allowed_attributes
 
     def program(self, *items: Any) -> tuple:
         return items
@@ -73,6 +85,11 @@ class QueryTransformer(Transformer):
     def func_call(self, func_name: Any, args: list) -> FilterDirective:
         func = self._match_func_name(str(func_name))
         if isinstance(func, Comparator):
+            if self.allowed_attributes and args[0] not in self.allowed_attributes:
+                raise ValueError(
+                    f"Received invalid attributes {args[0]}. Allowed attributes are "
+                    f"{self.allowed_attributes}"
+                )
             return Comparison(comparator=func, attribute=args[0], value=args[1])
         elif len(args) == 1 and func in (Operator.AND, Operator.OR):
             return args[0]
@@ -122,9 +139,16 @@ class QueryTransformer(Transformer):
     def float(self, item: Any) -> float:
         return float(item)
 
-    def timestamp(self, item: Any) -> datetime.date:
-        item = item.replace("'", '"')
-        return datetime.datetime.strptime(item, '"%Y-%m-%d"').date()
+    def date(self, item: Any) -> ISO8601Date:
+        item = str(item).strip("\"'")
+        try:
+            datetime.datetime.strptime(item, "%Y-%m-%d")
+        except ValueError:
+            warnings.warn(
+                "Dates are expected to be provided in ISO 8601 date format "
+                "(YYYY-MM-DD)."
+            )
+        return {"date": item, "type": "date"}
 
     def string(self, item: Any) -> str:
         # Remove escaped quotes
@@ -134,6 +158,7 @@ class QueryTransformer(Transformer):
 def get_parser(
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
+    allowed_attributes: Optional[Sequence[str]] = None,
 ) -> Lark:
     """
     Returns a parser for the query language.
@@ -151,6 +176,8 @@ def get_parser(
             "Cannot import lark, please install it with 'pip install lark'."
         )
     transformer = QueryTransformer(
-        allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
+        allowed_comparators=allowed_comparators,
+        allowed_operators=allowed_operators,
+        allowed_attributes=allowed_attributes,
     )
     return Lark(GRAMMAR, parser="lalr", transformer=transformer, start="program")

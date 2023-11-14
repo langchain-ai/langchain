@@ -472,6 +472,68 @@ helloWorld();
     ]
 
 
+def test_cobol_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.COBOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+IDENTIFICATION DIVISION.
+PROGRAM-ID. HelloWorld.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 GREETING           PIC X(12)   VALUE 'Hello, World!'.
+PROCEDURE DIVISION.
+DISPLAY GREETING.
+STOP RUN.
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "IDENTIFICATION",
+        "DIVISION.",
+        "PROGRAM-ID.",
+        "HelloWorld.",
+        "DATA DIVISION.",
+        "WORKING-STORAGE",
+        "SECTION.",
+        "01 GREETING",
+        "PIC X(12)",
+        "VALUE 'Hello,",
+        "World!'.",
+        "PROCEDURE",
+        "DIVISION.",
+        "DISPLAY",
+        "GREETING.",
+        "STOP RUN.",
+    ]
+
+
+def test_typescript_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.TS, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+function helloWorld(): void {
+  console.log("Hello, World!");
+}
+
+// Call the function
+helloWorld();
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "function",
+        "helloWorld():",
+        "void {",
+        'console.log("He',
+        "llo,",
+        'World!");',
+        "}",
+        "// Call the",
+        "function",
+        "helloWorld();",
+    ]
+
+
 def test_java_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.JAVA, chunk_size=CHUNK_SIZE, chunk_overlap=0
@@ -495,6 +557,38 @@ public class HelloWorld {
         'tln("Hello,',
         'World!");',
         "}\n}",
+    ]
+
+
+def test_kotlin_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.KOTLIN, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+class HelloWorld {
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            println("Hello, World!")
+        }
+    }
+}
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "class",
+        "HelloWorld {",
+        "companion",
+        "object {",
+        "@JvmStatic",
+        "fun",
+        "main(args:",
+        "Array<String>)",
+        "{",
+        'println("Hello,',
+        'World!")',
+        "}\n    }",
+        "}",
     ]
 
 
@@ -724,6 +818,10 @@ ____________
 #### Code blocks
 ```
 This is a code block
+
+# sample code
+a = 1
+b = 2
 ```
     """
     chunks = splitter.split_text(code)
@@ -749,6 +847,8 @@ This is a code block
         "```",
         "This is a code",
         "block",
+        "# sample code",
+        "a = 1\nb = 2",
         "```",
     ]
     # Special test for special characters

@@ -1,14 +1,14 @@
 """Vector SQL Database Chain Retriever"""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
-from langchain.embeddings.base import Embeddings
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser, BasePromptTemplate
+from langchain.schema.embeddings import Embeddings
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 from langchain.utilities.sql_database import SQLDatabase
@@ -76,23 +76,9 @@ class VectorSQLRetrieveAllOutputParser(VectorSQLOutputParser):
         return super().parse(text)
 
 
-def _try_eval(x: Any) -> Any:
-    try:
-        return eval(x)
-    except Exception:
-        return x
-
-
-def get_result_from_sqldb(
-    db: SQLDatabase, cmd: str
-) -> Union[str, List[Dict[str, Any]], Dict[str, Any]]:
-    result = db._execute(cmd, fetch="all")  # type: ignore
-    if isinstance(result, list):
-        return [{k: _try_eval(v) for k, v in dict(d._asdict()).items()} for d in result]
-    else:
-        return {
-            k: _try_eval(v) for k, v in dict(result._asdict()).items()  # type: ignore
-        }
+def get_result_from_sqldb(db: SQLDatabase, cmd: str) -> Sequence[Dict[str, Any]]:
+    result = db._execute(cmd, fetch="all")
+    return result
 
 
 class VectorSQLDatabaseChain(SQLDatabaseChain):
@@ -102,7 +88,7 @@ class VectorSQLDatabaseChain(SQLDatabaseChain):
         .. code-block:: python
 
             from langchain_experimental.sql import SQLDatabaseChain
-            from langchain import OpenAI, SQLDatabase, OpenAIEmbeddings
+            from langchain.llms import OpenAI, SQLDatabase, OpenAIEmbeddings
             db = SQLDatabase(...)
             db_chain = VectorSQLDatabaseChain.from_llm(OpenAI(), db, OpenAIEmbeddings())
 
@@ -191,8 +177,9 @@ class VectorSQLDatabaseChain(SQLDatabaseChain):
             _run_manager.on_text("\nSQLResult: ", verbose=self.verbose)
             _run_manager.on_text(str(result), color="yellow", verbose=self.verbose)
             # If return direct, we just set the final result equal to
-            # the result of the sql query result, otherwise try to get a human readable
-            # final answer
+            # the result of the sql query result (`Sequence[Dict[str, Any]]`),
+            # otherwise try to get a human readable final answer (`str`).
+            final_result: Union[str, Sequence[Dict[str, Any]]]
             if self.return_direct:
                 final_result = result
             else:
