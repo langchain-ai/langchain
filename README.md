@@ -137,6 +137,7 @@ while(True):
 - [Парсинг списков, содержащихся в ответе](docs/extras/modules/model_io/output_parsers/list.ipynb)
 - [Асинхронная работа с LLM](docs/docs/modules/model_io/llms/async_llm.ipynb)
 - [Использование Elastic для поиска ответов по документам](docs/extras/integrations/retrievers/elastic_qna.ipynb)
+- [Использование разных эмбеддингов для Retrieval механизма](docs/docs/modules/chains/how_to/retrieve.ipynb)
 - [Генерация и выполнение кода с помощью PythonREPL](docs/docs/expression_language/cookbook/code_writing.ipynb)
 - [Работа с кэшем в GigaChain](docs/extras/integrations/llms/gigachain_caching.ipynb)
 - [CAMEL агент для разработки программ](cookbook/camel_role_playing.ipynb)
