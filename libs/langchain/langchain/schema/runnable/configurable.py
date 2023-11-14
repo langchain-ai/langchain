@@ -224,7 +224,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 spec, self.default.__fields__[field_name].field_info.description
             )
             for field_name, spec in self.fields.items()
-        ]
+        ] + self.default.config_specs
 
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
