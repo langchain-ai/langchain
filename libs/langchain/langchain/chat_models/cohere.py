@@ -80,9 +80,9 @@ def get_cohere_chat_request(
     )
 
     return {
-        "message": messages[0].content,
+        "message": messages[-1].content,
         "chat_history": [
-            {"role": get_role(x), "message": x.content} for x in messages[1:]
+            {"role": get_role(x), "message": x.content} for x in messages[:-1]
         ],
         "documents": documents,
         "connectors": maybe_connectors,
