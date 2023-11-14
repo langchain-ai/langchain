@@ -34,7 +34,7 @@ if os.environ.get("PINECONE_ENVIRONMENT", None) is None:
 
 DOCUGAMI_DOCSET_ID = "fi6vi49cmeac"
 DOCUGAMI_DOCSET_NAME = "Earnings Calls"
-DOCUGAMI_DOCSET_DESCRIPTION = "This type of document is an edited transcript of a corporate earnings conference call, providing information about a company's financial performance, leadership team, and forward-looking statements."
+DOCUGAMI_DOCSET_DESCRIPTION = "This type of document is an edited transcript of a corporate earnings conference call, providing information about a company's financial performance, leadership team, and forward-looking statements about earnings."
 
 PINECONE_INDEX_NAME = (
     os.environ.get("PINECONE_INDEX", "langchain-docugami") + f"-{DOCUGAMI_DOCSET_ID}"
@@ -59,13 +59,16 @@ with open(PARENT_DOC_STORE_PATH, "rb") as file:
     parent_docstore: InMemoryStore = pickle.load(file)
 
 retriever = MultiVectorRetriever(
-    vectorstore=chunk_vectorstore, docstore=parent_docstore, search_kwargs={"k": 1}
+    vectorstore=chunk_vectorstore,
+    docstore=parent_docstore,
+    search_kwargs={"k": 10},  # retrieve more small chunks from the vector store
+    docstore_k=2,  # provide fewer large chunks from the docstore
 )
 
 docset_retrieval_tool = create_retriever_tool(
     retriever,
     "search_earnings_calls",
-    f"Searches and returns documents regarding {DOCUGAMI_DOCSET_NAME}. {DOCUGAMI_DOCSET_DESCRIPTION}",
+    f"Searches and returns documents from the {DOCUGAMI_DOCSET_NAME} document set. {DOCUGAMI_DOCSET_DESCRIPTION}.",
 )
 tools: List[BaseTool] = [docset_retrieval_tool]
 

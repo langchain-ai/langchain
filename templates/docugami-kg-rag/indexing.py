@@ -20,7 +20,8 @@ if __name__ == "__main__":
 
     # Lengths for the loader are in terms of characters, 1 token ~= 4 chars in English
     # Reference: https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them
-    MAX_TEXT_LENGTH = 1024 * 32  # ~8k tokens
+    MAX_TEXT_LENGTH = 1024 * 128  # ~32k tokens
+    MIN_TEXT_LENGTH = 256
 
     PINECONE_INDEX_NAME = (
         os.environ.get("PINECONE_INDEX", "langchain-docugami")
@@ -33,11 +34,13 @@ if __name__ == "__main__":
 
     loader = DocugamiLoader(
         docset_id=DOCUGAMI_DOCSET_ID,
-        min_text_length=32,
+        min_text_length=MIN_TEXT_LENGTH,
         max_text_length=MAX_TEXT_LENGTH,
         sub_chunk_tables=False,
-        xml_mode=False,  # text based chunking and parenting, without XML
+        include_xml_tags=True,
         parent_hierarchy_levels=1000,  # essentially entire document, up to max which is very large
+        include_project_metadata_in_doc_metadata=False,  # not used, so lighten the vector index
+        include_project_metadata_in_page_content=True,  # ok to include in vectorstore chunks, not used in context
     )
 
     chunks = loader.load()

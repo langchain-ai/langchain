@@ -15,7 +15,7 @@ tiktoken = ">=0.5.1"
 pinecone-client = ">=2.2.4"
 beautifulsoup4 = "^4.12.2"
 lxml = "^4.9.3"
-dgml-utils = "^0.1.1"
+dgml-utils = "^0.2.0"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"

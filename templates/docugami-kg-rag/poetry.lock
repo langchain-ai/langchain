@@ -356,13 +356,13 @@ typing-inspect = ">=0.4.0,<1"
 
 [[package]]
 name = "dgml-utils"
-version = "0.1.1"
+version = "0.2.0"
 description = "Python utilities to work with the Docugami Markup Language (DGML) format."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "dgml_utils-0.1.1-py3-none-any.whl", hash = "sha256:04365be29083b06944c32669a0f897889ce43f2a94f9453864814dbb5a0fa11a"},
-    {file = "dgml_utils-0.1.1.tar.gz", hash = "sha256:b4b70ed641042df17f6dfeaa6191ba9413cdae1e32bfe27dd0a7008da7be1ff6"},
+    {file = "dgml_utils-0.2.0-py3-none-any.whl", hash = "sha256:e466f8e74706ece99fe4e0ec338fc673fb95b14d9a5e9afc0f83cb8687def770"},
+    {file = "dgml_utils-0.2.0.tar.gz", hash = "sha256:9c630a0f84eb79142b94de959cf51ba9056bd9ddd257270322a7ac6cfb734dc7"},
 ]
 
 [package.dependencies]
@@ -738,7 +738,7 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 type = "git"
 url = "https://github.com/docugami/langchain.git"
 reference = "kgrag/docugami_loader"
-resolved_reference = "d96229ee3a93c7a93b3b25b7a2bb8e6a4155f544"
+resolved_reference = "b2843cfef555844d87aa921c1a3a27f9e8d90f6f"
 subdirectory = "libs/langchain"
 
 [[package]]
@@ -2050,4 +2050,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "42e026ebafee1e98de2b4abd300de80f441f03f7c015a4eab086a5727a28eb6f"
+content-hash = "e6d5c577b7bbe63a911dbc244d6f204c3a6f4d7cdbce3764e5ae56f6f97d3f76"
