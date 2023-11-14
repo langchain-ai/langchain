@@ -41,6 +41,7 @@ class ConditionalDocumentsChain(BaseCombineDocumentsChain):
     def current_chain(
         self, docs: List[Document], **kwargs: Any
     ) -> BaseCombineDocumentsChain:
-        if self.stuff_chain.prompt_length(docs, **kwargs) > self.max_length:
+        prompt_length = self.stuff_chain.prompt_length(docs, **kwargs)
+        if prompt_length is None or prompt_length > self.max_length:
             return self.map_reduce_chain
         return self.stuff_chain
