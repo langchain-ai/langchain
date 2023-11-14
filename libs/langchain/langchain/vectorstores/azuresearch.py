@@ -277,6 +277,8 @@ class AzureSearch(VectorStore):
             # Encoding key for Azure Search valid characters
             key = base64.urlsafe_b64encode(bytes(key, "utf-8")).decode("ascii")
             metadata = metadatas[i] if metadatas else {}
+            # Add doc key to metadata
+            metadata[FIELDS_ID] = key
             # Add data to index
             # Additional metadata to fields mapping
             doc = {
