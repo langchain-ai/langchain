@@ -347,8 +347,7 @@ def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
 
 _EXTRA_LLM_TOOLS: Dict[
     str,
-    Tuple[Callable[[Arg(BaseLanguageModel, "llm"),
-                    KwArg(Any)], BaseTool], List[str]],
+    Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],
 ] = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
