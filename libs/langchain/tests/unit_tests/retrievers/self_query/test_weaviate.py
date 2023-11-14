@@ -1,4 +1,3 @@
-from datetime import date, datetime
 from typing import Dict, Tuple
 
 from langchain.chains.query_constructor.ir import (
@@ -45,12 +44,12 @@ def test_visit_comparison_datetime() -> None:
     comp = Comparison(
         comparator=Comparator.LTE,
         attribute="foo",
-        value=datetime(2023, 9, 13, 4, 20, 0),
+        value={"type": "date", "date": "2023-09-13"},
     )
     expected = {
         "operator": "LessThanEqual",
         "path": ["foo"],
-        "valueDate": "2023-09-13T04:20:00Z",
+        "valueDate": "2023-09-13T00:00:00Z",
     }
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
@@ -58,7 +57,9 @@ def test_visit_comparison_datetime() -> None:
 
 def test_visit_comparison_date() -> None:
     comp = Comparison(
-        comparator=Comparator.LT, attribute="foo", value=date(2023, 9, 13)
+        comparator=Comparator.LT,
+        attribute="foo",
+        value={"type": "date", "date": "2023-09-13"},
     )
     expected = {
         "operator": "LessThan",
@@ -75,7 +76,9 @@ def test_visit_operation() -> None:
         arguments=[
             Comparison(comparator=Comparator.EQ, attribute="foo", value="hello"),
             Comparison(
-                comparator=Comparator.GTE, attribute="bar", value=date(2023, 9, 13)
+                comparator=Comparator.GTE,
+                attribute="bar",
+                value={"type": "date", "date": "2023-09-13"},
             ),
             Comparison(comparator=Comparator.LTE, attribute="abc", value=1.4),
         ],

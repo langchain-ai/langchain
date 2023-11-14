@@ -18,6 +18,8 @@ class YouRetriever(BaseRetriever):
 
     ydc_api_key: str
     k: Optional[int] = None
+    n_hits: Optional[int] = None
+    n_snippets_per_hit: Optional[int] = None
     endpoint_type: str = "web"
 
     @root_validator(pre=True)
@@ -43,8 +45,10 @@ class YouRetriever(BaseRetriever):
             ).json()
 
             docs = []
-            for hit in results["hits"]:
-                for snippet in hit["snippets"]:
+            n_hits = self.n_hits or len(results["hits"])
+            for hit in results["hits"][:n_hits]:
+                n_snippets_per_hit = self.n_snippets_per_hit or len(hit["snippets"])
+                for snippet in hit["snippets"][:n_snippets_per_hit]:
                     docs.append(Document(page_content=snippet))
                     if self.k is not None and len(docs) >= self.k:
                         return docs

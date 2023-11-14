@@ -1,5 +1,8 @@
 import datetime
-from typing import Any, Optional, Sequence, Union
+import warnings
+from typing import Any, Literal, Optional, Sequence, Union
+
+from typing_extensions import TypedDict
 
 from langchain.utils import check_package_version
 
@@ -32,14 +35,14 @@ GRAMMAR = r"""
 
     ?value: SIGNED_INT -> int
         | SIGNED_FLOAT -> float
-        | TIMESTAMP -> timestamp
+        | DATE -> date
         | list
         | string
         | ("false" | "False" | "FALSE") -> false
         | ("true" | "True" | "TRUE") -> true
 
     args: expr ("," expr)*
-    TIMESTAMP.2: /["'](\d{4}-[01]\d-[0-3]\d)["']/
+    DATE.2: /["']?(\d{4}-[01]\d-[0-3]\d)["']?/
     string: /'[^']*'/ | ESCAPED_STRING
     list: "[" [args] "]"
 
@@ -50,6 +53,13 @@ GRAMMAR = r"""
     %import common.WS
     %ignore WS
 """
+
+
+class ISO8601Date(TypedDict):
+    """A date in ISO 8601 format (YYYY-MM-DD)."""
+
+    date: str
+    type: Literal["date"]
 
 
 @v_args(inline=True)
@@ -129,9 +139,16 @@ class QueryTransformer(Transformer):
     def float(self, item: Any) -> float:
         return float(item)
 
-    def timestamp(self, item: Any) -> datetime.date:
-        item = item.replace("'", '"')
-        return datetime.datetime.strptime(item, '"%Y-%m-%d"').date()
+    def date(self, item: Any) -> ISO8601Date:
+        item = str(item).strip("\"'")
+        try:
+            datetime.datetime.strptime(item, "%Y-%m-%d")
+        except ValueError:
+            warnings.warn(
+                "Dates are expected to be provided in ISO 8601 date format "
+                "(YYYY-MM-DD)."
+            )
+        return {"date": item, "type": "date"}
 
     def string(self, item: Any) -> str:
         # Remove escaped quotes

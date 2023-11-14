@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import Dict, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
@@ -47,23 +47,26 @@ class WeaviateTranslator(Visitor):
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
         value_type = "valueText"
+        value = comparison.value
         if isinstance(comparison.value, bool):
             value_type = "valueBoolean"
         elif isinstance(comparison.value, float):
             value_type = "valueNumber"
         elif isinstance(comparison.value, int):
             value_type = "valueInt"
-        elif isinstance(comparison.value, datetime) or isinstance(
-            comparison.value, date
+        elif (
+            isinstance(comparison.value, dict)
+            and comparison.value.get("type") == "date"
         ):
             value_type = "valueDate"
             # ISO 8601 timestamp, formatted as RFC3339
-            comparison.value = comparison.value.strftime("%Y-%m-%dT%H:%M:%SZ")
+            date = datetime.strptime(comparison.value["date"], "%Y-%m-%d")
+            value = date.strftime("%Y-%m-%dT%H:%M:%SZ")
         filter = {
             "path": [comparison.attribute],
             "operator": self._format_func(comparison.comparator),
+            value_type: value,
         }
-        filter[value_type] = comparison.value
         return filter
 
     def visit_structured_query(
