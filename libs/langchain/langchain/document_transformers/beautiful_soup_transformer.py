@@ -27,13 +27,69 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
                 "BeautifulSoup4 is required for BeautifulSoupTransformer. "
                 "Please install it with `pip install beautifulsoup4`."
             )
+    @staticmethod 
+    def clean_html_retain_header(self, page_content):
+        """transform html to text change all h1, h2, h3 to title
+        args:
+            page_content: html content
+        return:
+            clean_text: text content"""
+        from bs4 import BeautifulSoup,NavigableString
+        import re
+        soup = BeautifulSoup(page_content, "html.parser")
 
+        def header_level(tag_name):
+            levels = {"h1": "title ", "h2": "title ", "h3": "title "}
+            return levels.get(tag_name, "")
+
+        # Remove all script and style elements
+        for script_or_style in soup(["script", "style"]):
+            script_or_style.extract()
+
+        # Iterate through document headers
+        headers = soup.find_all(['h1', 'h2', 'h3'])
+        text_chunks = []
+
+        for header in headers:
+            level = header_level(header.name)
+            header_text = header.get_text(strip=True)
+
+            if level and header_text:
+                section_text = [f"{level}{header_text}"]
+                sibling = header.next_sibling
+
+                # Go through siblings until the next header or None
+                while sibling and sibling.name not in ['h1', 'h2', 'h3', None]:
+                    if isinstance(sibling, NavigableString):
+                        sibling_text = sibling.strip()
+                        if sibling_text:  # Skip empty strings
+                            section_text.append(sibling_text)
+                    elif sibling.name in ["p", "div"]:
+                        sibling_text = sibling.get_text(" ", strip=True)
+                        if sibling_text:  # Skip empty paragraphs or divs
+                            section_text.append(sibling_text)
+                    sibling = sibling.next_sibling
+
+                # Clean and concatenate the section text, separated by a single newline
+                section_cleaned = '\n'.join(filter(None, section_text))
+                text_chunks.append(section_cleaned)
+
+        # Join all text chunks with two line breaks between each section
+        clean_text = "\n\n".join(text_chunks).strip()
+
+        # Normalize whitespace by collapsing multiple spaces into one, except for newlines
+        clean_text = re.sub(r'[^\S\n]+', ' ', clean_text)
+        # Collapse multiple newlines into a single newline
+        clean_text = re.sub(r'\n+', '\n', clean_text)
+
+        return clean_text
     def transform_documents(
         self,
         documents: Sequence[Document],
         unwanted_tags: List[str] = ["script", "style"],
         tags_to_extract: List[str] = ["p", "li", "div", "a"],
         remove_lines: bool = True,
+        retain_text_only: bool = False,
         **kwargs: Any,
     ) -> Sequence[Document]:
         """
@@ -52,13 +108,15 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         for doc in documents:
             cleaned_content = doc.page_content
 
-            cleaned_content = self.remove_unwanted_tags(cleaned_content, unwanted_tags)
+            if retain_text_only == False:
+                cleaned_content = self.remove_unwanted_tags(cleaned_content, unwanted_tags)
 
-            cleaned_content = self.extract_tags(cleaned_content, tags_to_extract)
+                cleaned_content = self.extract_tags(cleaned_content, tags_to_extract)
 
-            if remove_lines:
-                cleaned_content = self.remove_unnecessary_lines(cleaned_content)
-
+                if remove_lines:
+                    cleaned_content = self.remove_unnecessary_lines(cleaned_content)
+            elif retain_text_only == True:
+                cleaned_content = self.clean_html_retain_header(self, cleaned_content)
             doc.page_content = cleaned_content
 
         return documents
