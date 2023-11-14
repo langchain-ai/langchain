@@ -71,7 +71,7 @@ In physics, the term "quantization" refers to the process of transforming a cont
 ```
 You can also do all the other things you are used to doing in LangChain such as using `PromptTemplete`s and parsing outputs:
 ```python
-from langchain import PromptTemplate
+from langchain.prompts import PromptTemplate
 from langchain.output_parsers import CommaSeparatedListOutputParser
 
 llm_parser = CommaSeparatedListOutputParser()
