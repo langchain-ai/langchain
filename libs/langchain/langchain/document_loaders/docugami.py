@@ -340,7 +340,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                         if file_id not in combined_project_metadata:
                             combined_project_metadata[file_id] = metadata[file_id]
                         else:
-                            combined_project_metadata[file_id].update(metadata)
+                            combined_project_metadata[file_id].update(metadata[file_id])
 
             for doc in _document_details:
                 doc_id = doc[ID_KEY]
