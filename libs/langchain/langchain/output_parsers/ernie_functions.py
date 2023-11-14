@@ -74,7 +74,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         message = generation.message
         message.additional_kwargs["function_call"] = {}
         if "function_call" in message.content:
-            function_call = json.loads(message.content)
+            function_call = json.loads(str(message.content))
             if "function_call" in function_call:
                 fc = function_call["function_call"]
                 message.additional_kwargs["function_call"] = fc
