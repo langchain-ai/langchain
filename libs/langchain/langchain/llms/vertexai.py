@@ -238,7 +238,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
     model_name: str = "text-bison"
     "The name of the Vertex AI large language model."
     tuned_model_name: Optional[str] = None
-    "The name of a tuned model. If provided, model_name is ignored." 
+    "The name of a tuned model. If provided, model_name is ignored."
     "tuned_model_name should be in the format: "
     "'projects/' + PROJECT_ID + '/locations/' + REGION +'/models/'+ model_id"
 
@@ -395,7 +395,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
             raise ValueError(
                 "A GCP project should be provided to run inference on Model Garden!"
             )
-        if values["location"] is None:                 
+        if values["location"] is None:
             raise ValueError(
                 "The location of the endpoint must be provided to run inference!"
             )
@@ -454,9 +454,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         response = self.client.predict(endpoint=endpoint, instances=predict_instances)
         generations: List[List[Generation]] = []
         for result in response.predictions:
-            generations.append(
-                [Generation(text=result)]
-            )
+            generations.append([Generation(text=result)])
         return LLMResult(generations=generations)
 
     async def _agenerate(
@@ -499,7 +497,5 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         )
         generations: List[List[Generation]] = []
         for result in response.predictions:
-            generations.append(
-                [Generation(text=result)]
-            )
+            generations.append([Generation(text=result)])
         return LLMResult(generations=generations)
