@@ -20,7 +20,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import ClarifaiEmbeddings
             clarifai = ClarifaiEmbeddings(
-                model="embed-english-light-v2.0", clarifai_api_key="my-api-key"
+                model="embed-english-light-v3.0", clarifai_api_key="my-api-key"
             )
     """
 
