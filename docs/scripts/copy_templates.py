@@ -10,7 +10,7 @@ DOCS_TEMPLATES_DIR = Path(os.path.abspath(__file__)).parents[1] / "docs" / "temp
 
 
 readmes = list(glob.glob(str(TEMPLATES_DIR) + "/*/README.md"))
-destinations = [readme[len(str(TEMPLATES_DIR)) + 1:-10] + ".md" for readme in readmes]
+destinations = [readme[len(str(TEMPLATES_DIR)) + 1 : -10] + ".md" for readme in readmes]
 for source, destination in zip(readmes, destinations):
     full_destination = DOCS_TEMPLATES_DIR / destination
     shutil.copyfile(source, full_destination)
@@ -33,4 +33,3 @@ with open(TEMPLATES_INDEX_DESTINATION, "r") as f:
 content = re.sub("\]\(\.\.\/", "](/docs/templates/", content)
 with open(TEMPLATES_INDEX_DESTINATION, "w") as f:
     f.write(sidebar_hidden + content)
-
