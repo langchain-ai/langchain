@@ -52,6 +52,8 @@ def _stream_response_to_generation_chunk(
     stream_response: Dict[str, Any],
 ) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
+    if not stream_response["choices"]:
+        return GenerationChunk(text="")
     return GenerationChunk(
         text=stream_response["choices"][0]["text"],
         generation_info=dict(
@@ -759,8 +761,10 @@ class AzureOpenAI(BaseOpenAI):
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
     """
-    openai_api_type: str = ""
-    openai_api_version: str = ""
+    openai_api_version: str = Field(default="", alias="api_version")
+    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
+    openai_api_key: Union[str, None] = Field(default=None, alias="api_key")
+    """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
     azure_ad_token: Union[str, None] = None
     """Your Azure Active Directory token.
 
@@ -773,6 +777,12 @@ class AzureOpenAI(BaseOpenAI):
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every request.
+    """
+    openai_api_type: str = ""
+    """Legacy, for openai<1.0.0 support."""
+    validate_base_url: bool = True
+    """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
+        infer if it is a base_url or azure_endpoint and update accordingly.
     """
 
     @root_validator()
@@ -793,10 +803,9 @@ class AzureOpenAI(BaseOpenAI):
             or os.getenv("AZURE_OPENAI_API_KEY")
             or os.getenv("OPENAI_API_KEY")
         )
-        values["azure_endpoint"] = get_from_dict_or_env(
-            values,
-            "azure_endpoint",
-            "AZURE_OPENAI_ENDPOINT",
+
+        values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
+            "AZURE_OPENAI_ENDPOINT"
         )
         values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
             "AZURE_OPENAI_AD_TOKEN"
@@ -815,10 +824,8 @@ class AzureOpenAI(BaseOpenAI):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        values["openai_api_version"] = get_from_dict_or_env(
-            values,
-            "openai_api_version",
-            "OPENAI_API_VERSION",
+        values["openai_api_version"] = values["openai_api_version"] or os.getenv(
+            "OPENAI_API_VERSION"
         )
         values["openai_api_type"] = get_from_dict_or_env(
             values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
@@ -831,6 +838,41 @@ class AzureOpenAI(BaseOpenAI):
                 "Please install it with `pip install openai`."
             )
         if is_openai_v1():
+            # For backwards compatibility. Before openai v1, no distinction was made
+            # between azure_endpoint and base_url (openai_api_base).
+            openai_api_base = values["openai_api_base"]
+            if openai_api_base and values["validate_base_url"]:
+                if "/openai" not in openai_api_base:
+                    values["openai_api_base"] = (
+                        values["openai_api_base"].rstrip("/") + "/openai"
+                    )
+                    warnings.warn(
+                        "As of openai>=1.0.0, Azure endpoints should be specified via "
+                        f"the `azure_endpoint` param not `openai_api_base` "
+                        f"(or alias `base_url`). Updating `openai_api_base` from "
+                        f"{openai_api_base} to {values['openai_api_base']}."
+                    )
+                if values["deployment_name"]:
+                    warnings.warn(
+                        "As of openai>=1.0.0, if `deployment_name` (or alias "
+                        "`azure_deployment`) is specified then "
+                        "`openai_api_base` (or alias `base_url`) should not be. "
+                        "Instead use `deployment_name` (or alias `azure_deployment`) "
+                        "and `azure_endpoint`."
+                    )
+                    if values["deployment_name"] not in values["openai_api_base"]:
+                        warnings.warn(
+                            "As of openai>=1.0.0, if `openai_api_base` "
+                            "(or alias `base_url`) is specified it is expected to be "
+                            "of the form "
+                            "https://example-resource.azure.openai.com/openai/deployments/example-deployment. "  # noqa: E501
+                            f"Updating {openai_api_base} to "
+                            f"{values['openai_api_base']}."
+                        )
+                        values["openai_api_base"] += (
+                            "/deployments/" + values["deployment_name"]
+                        )
+                    values["deployment_name"] = None
             client_params = {
                 "api_version": values["openai_api_version"],
                 "azure_endpoint": values["azure_endpoint"],
