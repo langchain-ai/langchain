@@ -2,7 +2,6 @@ import asyncio
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
-from langchain.embeddings import HuggingFaceEmbeddings
 from surrealdb import Surreal
 
 from typing import (
@@ -29,7 +28,7 @@ class SurrealDBStore(VectorStore):
 
     Args:
         dburl: SurrealDB connection url
-        embeddings_function: Embedding function to use. (default: HuggingFaceEmbeddings())
+        embeddings_function: Embedding function to use.
         ns: surrealdb namespace for the vector store. (default: "langchain")
         db: surrealdb database for the vector store. (default: "database")
         collection: surrealdb collection for the vector store. (default: "documents")
@@ -53,13 +52,13 @@ class SurrealDBStore(VectorStore):
             sdb = SurrealDBStore.from_texts(
                     dburl,
                     texts=texts,
-                    embeddings_function,
+                    embeddings_function=embeddings_function,
                     ns, db, collection,
                     db_user=db_user, db_pass=db_pass)
     """
 
     def __init__(self, dburl: str,
-                 embeddings_function: Optional[Embeddings] = HuggingFaceEmbeddings(),
+                 embeddings_function: Optional[Embeddings] = None,
                  ns: str = "langchain",
                  db: str = "database",
                  collection: str = "documents",
@@ -311,7 +310,7 @@ class SurrealDBStore(VectorStore):
         cls,
         dburl: str,
         texts: List[str],
-        embeddings_function: Optional[Embeddings] = HuggingFaceEmbeddings(),
+        embeddings_function: Optional[Embeddings],
         ns: str = "langchain",
         db: str = "database",
         collection: str = "documents",
@@ -321,8 +320,8 @@ class SurrealDBStore(VectorStore):
 
         Args:
             dburl (str): SurrealDB connection url
-            texts (List[str]): 
-            embeddings_function (Optional[Embeddings]): Embedding function to use. (default: HuggingFaceEmbeddings())
+            texts (List[str]): list of text to vectorize and store
+            embeddings_function (Optional[Embeddings]): Embedding function to use.
             ns (str): surrealdb namespace for the vector store. (default: "langchain")
             db (str): surrealdb database for the vector store. (default: "database")
             collection (str): surrealdb collection for the vector store. (default: "documents")
@@ -341,7 +340,7 @@ class SurrealDBStore(VectorStore):
         cls,
         dburl: str,
         texts: List[str],
-        embeddings_function: Optional[Embeddings] = HuggingFaceEmbeddings(),
+        embeddings_function: Optional[Embeddings],
         ns: str = "langchain",
         db: str = "database",
         collection: str = "documents",
@@ -351,8 +350,8 @@ class SurrealDBStore(VectorStore):
 
         Args:
             dburl (str): SurrealDB connection url
-            texts (List[str]): 
-            embeddings_function (Optional[Embeddings]): Embedding function to use. (default: HuggingFaceEmbeddings())
+            texts (List[str]): list of text to vectorize and store
+            embeddings_function (Optional[Embeddings]): Embedding function to use.
             ns (str): surrealdb namespace for the vector store. (default: "langchain")
             db (str): surrealdb database for the vector store. (default: "database")
             collection (str): surrealdb collection for the vector store. (default: "documents")
