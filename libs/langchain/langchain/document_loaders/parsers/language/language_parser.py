@@ -73,6 +73,7 @@ class LanguageParser(BaseBlobParser):
     - C# (*)
     - COBOL
     - Go (*)
+    - Java (*)
     - JavaScript (requires package `esprima`)
     - Kotlin (*)
     - Lua (*)
@@ -82,7 +83,6 @@ class LanguageParser(BaseBlobParser):
     - Rust (*)
     - Scala (*)
     - TypeScript (*)
-    - Java (*)
 
     Items marked with (*) require the packages `tree_sitter` and
     `tree_sitter_languages`. It is straightforward to add support for additional
