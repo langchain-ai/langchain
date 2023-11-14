@@ -108,8 +108,7 @@ jobs:
         # TODO: add more in-depth pre-publish tests after testing that importing works
         run: |
           pip install \
-            --index-url https://test.pypi.org/simple/ \
-            --extra-index-url https://pypi.org/simple/ \
+            --extra-index-url https://test.pypi.org/simple/ \
             "$PKG_NAME==$VERSION"
 
           # Replace all dashes in the package name with underscores,
