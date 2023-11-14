@@ -6,6 +6,7 @@ from langchain.langchain.tools.steam.prompt import STEAM_GET_GAMES_ID, STEAM_GET
 from langchain.utils import get_from_dict_or_env  
 import steamspypi
 import json
+from bs4 import BeautifulSoup
 
 class SteamWebAPIWrapper(BaseModel):
     # Steam WebAPI Implementation will go here...
@@ -98,16 +99,23 @@ class SteamWebAPIWrapper(BaseModel):
         return game_info
             
 
+    def remove_html_tags(html_string):
+        soup = BeautifulSoup(html_string, 'html.parser')
+        return soup.get_text()
 
+    
     def details_of_games(self, name: str) -> str:   
         
         games = self.steam.apps.search_games(name)
         info_partOne_dict = self.get_id_link_price(games, name)
         info_partOne = self.parse_to_str(info_partOne_dict)
-        id = str(info_partOne_dict.get(id))
+        id = str(info_partOne_dict.get("id"))
         info_dict = self.steam.apps.get_app_details(id)
-        detailed_description = info_dict.get(id).get('detailed_description')
-        supported_languages = info_dict.get(id).get('supported_languages')
+        detailed_description = info_dict.get(id).get("data").get('detailed_description')
+
+        #detailed_description contains <li> <br> some other html tags, so we need to remove them
+        detailed_description = self.remove_html_tags(detailed_description)
+        supported_languages = info_dict.get(id).get("data").get('supported_languages')    
         info_partTwo = "The detailed description of the game is: " + detailed_description + "\n" + "The supported languages of the game are: " + supported_languages + "\n"
         info = info_partOne + info_partTwo
 
