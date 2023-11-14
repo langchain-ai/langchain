@@ -8,6 +8,7 @@ import yaml
 from langchain.chains import AnalyzeDocumentChain, ReduceDocumentsChain
 from langchain.chains.api.base import APIChain
 from langchain.chains.base import Chain
+from langchain.chains.combine_documents.conditional import ConditionalDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
@@ -559,6 +560,28 @@ def _load_analyze_document_chain(config: dict, **kwargs: Any) -> AnalyzeDocument
     return AnalyzeDocumentChain(combine_docs_chain=combine_chain, **config)
 
 
+def _load_conditional_documents_chain(
+    config: dict, **kwargs: Any
+) -> ConditionalDocumentsChain:
+    if "stuff_chain" in config:
+        stuff_chain_config = config.pop("stuff_chain")
+        stuff_chain = load_chain_from_config(stuff_chain_config)
+    else:
+        raise ValueError("`stuff_chain` must be present.")
+
+    if "map_reduce_chain" in config:
+        map_reduce_chain_config = config.pop("map_reduce_chain")
+        map_reduce_chain = load_chain_from_config(map_reduce_chain_config)
+    else:
+        raise ValueError("`map_reduce_chain` must be present.")
+
+    return ConditionalDocumentsChain(
+        stuff_chain=stuff_chain,
+        map_reduce_chain=map_reduce_chain,
+        **config,
+    )
+
+
 type_to_loader_dict = {
     "api_chain": _load_api_chain,
     "hyde_chain": _load_hyde_chain,
@@ -581,6 +604,7 @@ type_to_loader_dict = {
     "retrieval_qa": _load_retrieval_qa,
     "retrieval_qa_with_sources_chain": _load_retrieval_qa_with_sources_chain,
     "graph_cypher_chain": _load_graph_cypher_chain,
+    "conditional_documents_chain": _load_conditional_documents_chain,
 }
 
 
