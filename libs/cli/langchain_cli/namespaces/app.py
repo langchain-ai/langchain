@@ -54,10 +54,10 @@ def new(
             is_flag=True,
         ),
     ] = None,
-    nointeractive: Annotated[
+    noninteractive: Annotated[
         bool,
         typer.Option(
-            "--nointeractive",
+            "--non-interactive/--interactive",
             help="Don't prompt for any input",
             is_flag=True,
         ),
@@ -68,11 +68,11 @@ def new(
     """
     has_packages = package is not None and len(package) > 0
 
-    if nointeractive:
+    if noninteractive:
         if name is None:
-            raise typer.BadParameter("name is required when --nointeractive is set")
+            raise typer.BadParameter("name is required when --non-interactive is set")
         name_str = name
-        pip_bool = bool(pip)
+        pip_bool = bool(pip)  # None should be false
     else:
         name_str = (
             name if name else typer.prompt("What folder would you like to create?")
