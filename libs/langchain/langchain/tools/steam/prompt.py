@@ -12,11 +12,10 @@ STEAM_GET_GAMES_DETAILS = """
 
 """
 
-#TODO: finish description, not sure what this is a wrapper for this it does multiple things
 STEAM_GET_RECOMMENDED_GAMES = """
-    This tool is a wrapper around ..., useful for when you want to get recommended games for a user.
-    The input to this tool is a string specifying the username of the user you want recommended games for, and will be passed into python-steam-api's 'steam.users.search_user' function.
-    as well as the 'steam.users.get_owned_games'. For example, to search for recommended games for a user called "John", you would input "John" as the username.
+    This tool is a wrapper around python-steam-api's Searching for a user 'steam.users.search_user' and Getting owned games 'steam.users.get_owned_games' API, useful for when you 
+    want to get recommended games for a user. The input to this tool is a string specifying the username of the user you want recommended games for. For example, to search for 
+    recommended games for a user called "John", you would input "John" as the username.
 
 """
 
