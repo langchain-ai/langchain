@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 from uuid import UUID
 
 import langsmith
-from langsmith.evaluation.evaluator import EvaluationResult
+from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
 
 from langchain.callbacks import manager
 from langchain.callbacks.tracers import langchain as langchain_tracer
@@ -153,7 +153,7 @@ class EvaluatorCallbackHandler(BaseTracer):
 
     def _select_eval_results(
         self,
-        results: Union[EvaluationResult, dict],
+        results: Union[EvaluationResult, EvaluationResults],
     ) -> List[EvaluationResult]:
         if isinstance(results, EvaluationResult):
             results_ = [results]
@@ -168,7 +168,7 @@ class EvaluatorCallbackHandler(BaseTracer):
 
     def _log_evaluation_feedback(
         self,
-        evaluator_response: Union[EvaluationResult, dict],
+        evaluator_response: Union[EvaluationResult, EvaluationResults],
         run: Run,
         source_run_id: Optional[UUID] = None,
     ) -> List[EvaluationResult]:

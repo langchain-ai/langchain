@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import logging
+import os
+import warnings
 from typing import Any, Dict, Union
 
-from langchain.chat_models.openai import ChatOpenAI, _is_openai_v1
+from langchain.chat_models.openai import ChatOpenAI
 from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.schema import ChatResult
 from langchain.utils import get_from_dict_or_env
+from langchain.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +24,9 @@ class AzureChatOpenAI(ChatOpenAI):
 
     In addition, you should have the ``openai`` python package installed, and the
     following environment variables set or passed in constructor in lower case:
-    - ``OPENAI_API_TYPE`` (default: ``azure``)
-    - ``OPENAI_API_KEY``
-    - ``OPENAI_API_BASE``
+    - ``AZURE_OPENAI_API_KEY``
+    - ``AZURE_OPENAI_API_ENDPOINT``
+    - ``AZURE_OPENAI_AD_TOKEN``
     - ``OPENAI_API_VERSION``
     - ``OPENAI_PROXY``
 
@@ -33,7 +36,7 @@ class AzureChatOpenAI(ChatOpenAI):
     .. code-block:: python
 
         AzureChatOpenAI(
-            deployment_name="35-turbo-dev",
+            azure_deployment="35-turbo-dev",
             openai_api_version="2023-05-15",
         )
 
@@ -51,48 +54,87 @@ class AzureChatOpenAI(ChatOpenAI):
     in, even if not explicitly saved on this class.
     """
 
-    deployment_name: str = Field(default="", alias="azure_deployment")
-    model_version: str = ""
-    openai_api_type: str = ""
-    openai_api_base: str = Field(default="", alias="azure_endpoint")
+    azure_endpoint: Union[str, None] = None
+    """Your Azure endpoint, including the resource.
+    
+        Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
+    
+        Example: `https://example-resource.azure.openai.com/`
+    """
+    deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
+    """A model deployment. 
+    
+        If given sets the base client URL to include `/deployments/{azure_deployment}`.
+        Note: this means you won't be able to use non-deployment endpoints.
+    """
     openai_api_version: str = Field(default="", alias="api_version")
-    openai_api_key: str = Field(default="", alias="api_key")
-    openai_organization: str = Field(default="", alias="organization")
-    openai_proxy: str = ""
+    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
+    openai_api_key: Union[str, None] = Field(default=None, alias="api_key")
+    """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
+    azure_ad_token: Union[str, None] = None
+    """Your Azure Active Directory token.
+    
+        Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
+        
+        For more: 
+        https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
+    """  # noqa: E501
+    azure_ad_token_provider: Union[str, None] = None
+    """A function that returns an Azure Active Directory token.
+        
+        Will be invoked on every request.
+    """
+    model_version: str = ""
+    """Legacy, for openai<1.0.0 support."""
+    openai_api_type: str = ""
+    """Legacy, for openai<1.0.0 support."""
+    validate_base_url: bool = True
+    """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
+        infer if it is a base_url or azure_endpoint and update accordingly.
+    """
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values,
-            "openai_api_key",
-            "OPENAI_API_KEY",
+        if values["n"] < 1:
+            raise ValueError("n must be at least 1.")
+        if values["n"] > 1 and values["streaming"]:
+            raise ValueError("n must be 1 when streaming.")
+
+        # Check OPENAI_KEY for backwards compatibility.
+        # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
+        # other forms of azure credentials.
+        values["openai_api_key"] = (
+            values["openai_api_key"]
+            or os.getenv("AZURE_OPENAI_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
         )
-        values["openai_api_base"] = get_from_dict_or_env(
-            values,
-            "openai_api_base",
-            "OPENAI_API_BASE",
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+            "OPENAI_API_BASE"
         )
-        values["openai_api_version"] = get_from_dict_or_env(
-            values,
-            "openai_api_version",
-            "OPENAI_API_VERSION",
+        values["openai_api_version"] = values["openai_api_version"] or os.getenv(
+            "OPENAI_API_VERSION"
         )
+        # Check OPENAI_ORGANIZATION for backwards compatibility.
+        values["openai_organization"] = (
+            values["openai_organization"]
+            or os.getenv("OPENAI_ORG_ID")
+            or os.getenv("OPENAI_ORGANIZATION")
+        )
+        values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
+            "AZURE_OPENAI_ENDPOINT"
+        )
+        values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
+            "AZURE_OPENAI_AD_TOKEN"
+        )
+
         values["openai_api_type"] = get_from_dict_or_env(
             values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
-        values["openai_organization"] = get_from_dict_or_env(
-            values,
-            "openai_organization",
-            "OPENAI_ORGANIZATION",
-            default="",
-        )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
+
         try:
             import openai
 
@@ -101,37 +143,69 @@ class AzureChatOpenAI(ChatOpenAI):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        if _is_openai_v1():
-            values["client"] = openai.AzureOpenAI(
-                azure_endpoint=values["openai_api_base"],
-                api_key=values["openai_api_key"],
-                timeout=values["request_timeout"],
-                max_retries=values["max_retries"],
-                organization=values["openai_organization"],
-                api_version=values["openai_api_version"],
-                azure_deployment=values["deployment_name"],
-            ).chat.completions
+        if is_openai_v1():
+            # For backwards compatibility. Before openai v1, no distinction was made
+            # between azure_endpoint and base_url (openai_api_base).
+            openai_api_base = values["openai_api_base"]
+            if openai_api_base and values["validate_base_url"]:
+                if "/openai" not in openai_api_base:
+                    values["openai_api_base"] = (
+                        values["openai_api_base"].rstrip("/") + "/openai"
+                    )
+                    warnings.warn(
+                        "As of openai>=1.0.0, Azure endpoints should be specified via "
+                        f"the `azure_endpoint` param not `openai_api_base` "
+                        f"(or alias `base_url`). Updating `openai_api_base` from "
+                        f"{openai_api_base} to {values['openai_api_base']}."
+                    )
+                if values["deployment_name"]:
+                    warnings.warn(
+                        "As of openai>=1.0.0, if `deployment_name` (or alias "
+                        "`azure_deployment`) is specified then "
+                        "`openai_api_base` (or alias `base_url`) should not be. "
+                        "Instead use `deployment_name` (or alias `azure_deployment`) "
+                        "and `azure_endpoint`."
+                    )
+                    if values["deployment_name"] not in values["openai_api_base"]:
+                        warnings.warn(
+                            "As of openai>=1.0.0, if `openai_api_base` "
+                            "(or alias `base_url`) is specified it is expected to be "
+                            "of the form "
+                            "https://example-resource.azure.openai.com/openai/deployments/example-deployment. "  # noqa: E501
+                            f"Updating {openai_api_base} to "
+                            f"{values['openai_api_base']}."
+                        )
+                        values["openai_api_base"] += (
+                            "/deployments/" + values["deployment_name"]
+                        )
+                    values["deployment_name"] = None
+            client_params = {
+                "api_version": values["openai_api_version"],
+                "azure_endpoint": values["azure_endpoint"],
+                "azure_deployment": values["deployment_name"],
+                "api_key": values["openai_api_key"],
+                "azure_ad_token": values["azure_ad_token"],
+                "azure_ad_token_provider": values["azure_ad_token_provider"],
+                "organization": values["openai_organization"],
+                "base_url": values["openai_api_base"],
+                "timeout": values["request_timeout"],
+                "max_retries": values["max_retries"],
+                "default_headers": values["default_headers"],
+                "default_query": values["default_query"],
+                "http_client": values["http_client"],
+            }
+            values["client"] = openai.AzureOpenAI(**client_params).chat.completions
             values["async_client"] = openai.AsyncAzureOpenAI(
-                azure_endpoint=values["openai_api_base"],
-                api_key=values["openai_api_key"],
-                timeout=values["request_timeout"],
-                max_retries=values["max_retries"],
-                organization=values["openai_organization"],
-                api_version=values["openai_api_version"],
-                azure_deployment=values["deployment_name"],
+                **client_params
             ).chat.completions
         else:
             values["client"] = openai.ChatCompletion
-        if values["n"] < 1:
-            raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
-            raise ValueError("n must be 1 when streaming.")
         return values
 
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        if _is_openai_v1():
+        if is_openai_v1():
             return super()._default_params
         else:
             return {
@@ -147,7 +221,7 @@ class AzureChatOpenAI(ChatOpenAI):
     @property
     def _client_params(self) -> Dict[str, Any]:
         """Get the config params used for the openai client."""
-        if _is_openai_v1():
+        if is_openai_v1():
             return super()._client_params
         else:
             return {
