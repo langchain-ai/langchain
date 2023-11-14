@@ -1,13 +1,19 @@
+from typing import Any
+
 import pytest
 
 from langchain.vectorstores.redis import (
     RedisNum as Num,
+)
+from langchain.vectorstores.redis import (
     RedisTag as Tag,
-    RedisText as Text
+)
+from langchain.vectorstores.redis import (
+    RedisText as Text,
 )
 
 
-# Test cases for various scenarios of tag usage, combinations, and their string representations.
+# Test cases for various tag scenarios
 @pytest.mark.parametrize(
     "operation,tags,expected",
     [
@@ -45,7 +51,7 @@ from langchain.vectorstores.redis import (
         # ...additional unique cases as desired...
     ],
 )
-def test_tag_filter_varied(operation, tags, expected):
+def test_tag_filter_varied(operation: str, tags: str, expected: str) -> None:
     if operation == "==":
         tf = Tag("tag_field") == tags
     elif operation == "!=":
@@ -55,84 +61,6 @@ def test_tag_filter_varied(operation, tags, expected):
 
     # Verify the string representation matches the expected RediSearch query part
     assert str(tf) == expected
-
-
-def test_nullable():
-    tag = Tag("tag_field") == None
-    assert str(tag) == "*"
-
-    tag = Tag("tag_field") != None
-    assert str(tag) == "*"
-
-    tag = Tag("tag_field") == []
-    assert str(tag) == "*"
-
-    tag = Tag("tag_field") != []
-    assert str(tag) == "*"
-
-    tag = Tag("tag_field") == ""
-    assert str(tag) == "*"
-
-    tag = Tag("tag_field") != ""
-    assert str(tag) == "*"
-
-    tag = Tag("tag_field") == [None]
-    assert str(tag) == "*"
-
-    tag = Tag("tag_field") == [None, "tag"]
-    assert str(tag) == "@tag_field:{tag}"
-
-
-def test_numeric_filter():
-    nf = Num("numeric_field") == 5
-    assert str(nf) == "@numeric_field:[5 5]"
-
-    nf = Num("numeric_field") != 5
-    assert str(nf) == "(-@numeric_field:[5 5])"
-
-    nf = Num("numeric_field") > 5
-    assert str(nf) == "@numeric_field:[(5 +inf]"
-
-    nf = Num("numeric_field") >= 5
-    assert str(nf) == "@numeric_field:[5 +inf]"
-
-    nf = Num("numeric_field") < 5
-    assert str(nf) == "@numeric_field:[-inf (5]"
-
-    nf = Num("numeric_field") <= 5
-    assert str(nf) == "@numeric_field:[-inf 5]"
-
-    nf = Num("numeric_field") < 5.55
-    assert str(nf) == "@numeric_field:[-inf (5.55]"
-
-    nf = Num("numeric_field") <= None
-    assert str(nf) == "*"
-
-    nf = Num("numeric_field") == None
-    assert str(nf) == "*"
-
-    nf = Num("numeric_field") != None
-    assert str(nf) == "*"
-
-
-def test_text_filter():
-    txt_f = Text("text_field") == "text"
-    assert str(txt_f) == '@text_field:("text")'
-
-    txt_f = Text("text_field") != "text"
-    assert str(txt_f) == '(-@text_field:"text")'
-
-    txt_f = Text("text_field") % "text"
-    assert str(txt_f) == "@text_field:(text)"
-
-    txt_f = Text("text_field") % "tex*"
-    assert str(txt_f) == "@text_field:(tex*)"
-
-    txt_f = Text("text_field") % "%text%"
-    assert str(txt_f) == "@text_field:(%text%)"
-
-    txt_f = Text("text_field") % ""
-    assert str(txt_f) == "*"
 
 
 @pytest.mark.parametrize(
@@ -152,7 +80,7 @@ def test_text_filter():
         "list_with_none_and_tag",
     ],
 )
-def test_nullable(value, expected):
+def test_nullable_tags(value: Any, expected: str) -> None:
     tag = Tag("tag_field")
     assert str(tag == value) == expected
 
@@ -164,15 +92,15 @@ def test_nullable(value, expected):
         ("__ne__", 5, "(-@numeric_field:[5 5])"),
         ("__gt__", 5, "@numeric_field:[(5 +inf]"),
         ("__ge__", 5, "@numeric_field:[5 +inf]"),
-        ("__lt__", 5, "@numeric_field:[-inf (5]"),
+        ("__lt__", 5.55, "@numeric_field:[-inf (5.55]"),
         ("__le__", 5, "@numeric_field:[-inf 5]"),
         ("__le__", None, "*"),
-        ("__eq__", None, "*"),
+        ("__eq__", None, "*")
         ("__ne__", None, "*"),
     ],
     ids=["eq", "ne", "gt", "ge", "lt", "le", "le_none", "eq_none", "ne_none"],
 )
-def test_numeric_filter(operation, value, expected):
+def test_numeric_filter(operation: str, value: Any, expected: str) -> None:
     nf = Num("numeric_field")
     assert str(getattr(nf, operation)(value)) == expected
 
@@ -206,13 +134,12 @@ def test_numeric_filter(operation, value, expected):
         "like_none",
     ],
 )
-def test_text_filter(operation, value, expected):
+def test_text_filter(operation: str, value: Any, expected: str) -> None:
     txt_f = getattr(Text("text_field"), operation)(value)
     assert str(txt_f) == expected
 
 
-
-def test_filters_combination():
+def test_filters_combination() -> None:
     tf1 = Tag("tag_field") == ["tag1", "tag2"]
     tf2 = Tag("tag_field") == "tag3"
     combined = tf1 & tf2
@@ -227,20 +154,20 @@ def test_filters_combination():
     assert str(tf1 | tf2) == str(tf2)
 
     # test combining filters with None values and empty strings
-    tf1 = Tag("tag_field") == None
+    tf1 = Tag("tag_field") == None  # noqa: E711
     tf2 = Tag("tag_field") == ""
     assert str(tf1 & tf2) == "*"
 
-    tf1 = Tag("tag_field") == None
+    tf1 = Tag("tag_field") == None  # noqa: E711
     tf2 = Tag("tag_field") == "tag"
     assert str(tf1 & tf2) == str(tf2)
 
-    tf1 = Tag("tag_field") == None
+    tf1 = Tag("tag_field") == None  # noqa: E711
     tf2 = Tag("tag_field") == ["tag1", "tag2"]
     assert str(tf1 & tf2) == str(tf2)
 
-    tf1 = Tag("tag_field") == None
-    tf2 = Tag("tag_field") != None
+    tf1 = Tag("tag_field") == None  # noqa: E711
+    tf2 = Tag("tag_field") != None  # noqa: E711
     assert str(tf1 & tf2) == "*"
 
     tf1 = Tag("tag_field") == ""
@@ -249,18 +176,18 @@ def test_filters_combination():
     assert str(tf1 & tf2 & tf3) == str(tf2 & tf3)
 
     # test none filters for Tag Num Text
-    tf1 = Tag("tag_field") == None
-    tf2 = Num("num_field") == None
-    tf3 = Text("text_field") == None
+    tf1 = Tag("tag_field") == None  # noqa: E711
+    tf2 = Num("num_field") == None  # noqa: E711
+    tf3 = Text("text_field") == None  # noqa: E711
     assert str(tf1 & tf2 & tf3) == "*"
 
-    tf1 = Tag("tag_field") != None
-    tf2 = Num("num_field") != None
-    tf3 = Text("text_field") != None
+    tf1 = Tag("tag_field") != None  # noqa: E711
+    tf2 = Num("num_field") != None  # noqa: E711
+    tf3 = Text("text_field") != None  # noqa: E711
     assert str(tf1 & tf2 & tf3) == "*"
 
     # test combinations of real and None filters
     tf1 = Tag("tag_field") == "tag"
-    tf2 = Num("num_field") == None
-    tf3 = Text("text_field") == None
+    tf2 = Num("num_field") == None  # noqa: E711
+    tf3 = Text("text_field") == None  # noqa: E711
     assert str(tf1 & tf2 & tf3) == str(tf1)

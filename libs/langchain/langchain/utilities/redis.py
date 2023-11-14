@@ -39,7 +39,8 @@ class TokenEscaper:
     def escape(self, value: str) -> str:
         if not isinstance(value, str):
             raise TypeError(
-                f"Value must be a string object for token escaping, got type {type(value)}"
+                "Value must be a string object for token escaping."
+                f"Got type {type(value)}"
             )
 
         def escape_symbol(match: re.Match) -> str:

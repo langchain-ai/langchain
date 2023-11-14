@@ -552,7 +552,7 @@ class Redis(VectorStore):
             embedding,
             index_schema=schema,
             key_prefix=key_prefix,
-            **kwargs
+            **kwargs,
         )
 
         if not check_index_exists(instance.client, index_name):
