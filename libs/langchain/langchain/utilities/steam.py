@@ -78,16 +78,25 @@ class SteamWebAPIWrapper(BaseModel):
         """Parse the details result."""
         result=""
         for key, value in details.items():
-            result+= str(key) + '->' + str(value) + '\n'
+            result+= "The" + str(key) + 'is: ' + str(value) + '\n'
         return result
+    
 
-    def get_id(self, games: Dict, name: str) -> str:
+
+    def get_id(self, games: Dict, name: str) -> Dict:
         """ The response may contain more than one game, so we need to choose the right one and 
         return the id."""
 
-        for app in games.get("apps", []):
-            if app["name"].lower() == name.lower():
-                return str(app["id"])
+        game_info = {}
+        for app in games['apps']:
+            if app['name'].lower() == name.lower():
+                game_info['id'] = app['id']
+                game_info['link'] = app['link']
+                game_info['price'] = app['price']
+                break
+        return game_info
+            
+
 
     def details_of_games(self, name: str) -> str:   
         
