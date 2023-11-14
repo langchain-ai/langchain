@@ -108,6 +108,7 @@ class BaseRetrievalQA(Chain):
         question: str,
         *,
         run_manager: CallbackManagerForChainRun,
+        search_kwargs: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """Get documents to do question answering over."""
 
@@ -121,6 +122,10 @@ class BaseRetrievalQA(Chain):
         If chain has 'return_source_documents' as 'True', returns
         the retrieved documents as well under the key 'source_documents'.
 
+        If inputs contains a key 'search_kwargs' this is passed down to the
+        retriever and overrides the search_kwargs set on the retriever during
+        construction.
+
         Example:
         .. code-block:: python
 
@@ -129,13 +134,14 @@ class BaseRetrievalQA(Chain):
         """
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
+        search_kwargs = inputs.get("search_kwargs", None)
         accepts_run_manager = (
             "run_manager" in inspect.signature(self._get_docs).parameters
         )
         if accepts_run_manager:
-            docs = self._get_docs(question, run_manager=_run_manager)
+            docs = self._get_docs(question, run_manager=_run_manager, search_kwargs=search_kwargs)
         else:
-            docs = self._get_docs(question)  # type: ignore[call-arg]
+            docs = self._get_docs(question, search_kwargs=search_kwargs)  # type: ignore[call-arg]
         answer = self.combine_documents_chain.run(
             input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
@@ -151,6 +157,7 @@ class BaseRetrievalQA(Chain):
         question: str,
         *,
         run_manager: AsyncCallbackManagerForChainRun,
+        search_kwargs: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """Get documents to do question answering over."""
 
@@ -172,13 +179,14 @@ class BaseRetrievalQA(Chain):
         """
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
+        search_kwargs = inputs.get("search_kwargs", None)
         accepts_run_manager = (
             "run_manager" in inspect.signature(self._aget_docs).parameters
         )
         if accepts_run_manager:
-            docs = await self._aget_docs(question, run_manager=_run_manager)
+            docs = await self._aget_docs(question, run_manager=_run_manager, search_kwargs=search_kwargs)
         else:
-            docs = await self._aget_docs(question)  # type: ignore[call-arg]
+            docs = await self._aget_docs(question, search_kwargs=search_kwargs)  # type: ignore[call-arg]
         answer = await self.combine_documents_chain.arun(
             input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
@@ -211,10 +219,11 @@ class RetrievalQA(BaseRetrievalQA):
         question: str,
         *,
         run_manager: CallbackManagerForChainRun,
+        search_kwargs: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """Get docs."""
         return self.retriever.get_relevant_documents(
-            question, callbacks=run_manager.get_child()
+            question, callbacks=run_manager.get_child(), search_kwargs=search_kwargs
         )
 
     async def _aget_docs(
@@ -222,10 +231,11 @@ class RetrievalQA(BaseRetrievalQA):
         question: str,
         *,
         run_manager: AsyncCallbackManagerForChainRun,
+        search_kwargs: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """Get docs."""
         return await self.retriever.aget_relevant_documents(
-            question, callbacks=run_manager.get_child()
+            question, callbacks=run_manager.get_child(), search_kwargs=search_kwargs
         )
 
     @property
@@ -268,15 +278,25 @@ class VectorDBQA(BaseRetrievalQA):
         question: str,
         *,
         run_manager: CallbackManagerForChainRun,
+        search_kwargs: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """Get docs."""
+
+        merged_search_kwargs: dict = self.search_kwargs
+        if search_kwargs is not None:
+            if self.search_kwargs is not None:
+                merged_search_kwargs = self.search_kwargs.copy()
+                merged_search_kwargs.update(search_kwargs)
+            else:
+                merged_search_kwargs = search_kwargs
+
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(
-                question, k=self.k, **self.search_kwargs
+                question, k=self.k, **merged_search_kwargs
             )
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
-                question, k=self.k, **self.search_kwargs
+                question, k=self.k, **merged_search_kwargs
             )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")

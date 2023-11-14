@@ -203,6 +203,73 @@ result["source_documents"]
 
 </CodeOutputBlock>
 
+For hybrid searches, we can also pass `search_qwargs` with the query, rather than determining them during construction of the retriever.
+This way we can ingest different documents with custom metadata, then query on the metadata in addition to the usual similarity. (Hence, 'hybrid' search.)
+
+First, let's ingest some more documents into the same Chroma database, using metadata to record the author of each document:
+
+```python
+more_documents = TextLoader("../../paul_graham_essay.txt").load()
+for doc in more_documents:
+    doc.metadata.update({ "author": "paulgraham" })
+more_texts = text_splitter.split_documents(more_documents)
+docsearch.add_documents(more_texts)
+```
+
+Then, we can pass a filter to the retriever to only retrieve documents with a specific author:
+
+```python
+search_kwargs = { "filter": { "author": "paulgraham" }}
+query = "What is this speech about?"
+result = qa({"query": query, "search_kwargs": search_kwargs})
+print("Result:")
+print(result["result"])
+
+# Let's use a set to get a simple, unique list of sources.
+sources = set([d.metadata["source"] for d in result["source_documents"]])
+print("Sources:")
+print(sources)
+```
+
+Note how only the document that was ingested with the metadata matching the filter is represented in the source documents.
+
+<CodeOutputBlock lang="python">
+
+```
+Result:
+ This speech is about how to choose what to work on and how to start a startup.
+Sources:
+{'../../paul_graham_essay.txt'}
+```
+
+</CodeOutputBlock>
+
+Try this again, *without* the filter:
+
+```python
+result = qa({"query": query})  # No filter
+
+print("Result:")
+print(result["result"])
+sources = set([d.metadata["source"] for d in result["source_documents"]])
+print("Sources:")
+print(sources)
+```
+
+Without the filter, both documents were retrieved, but the state-of-the-union document was considered more relevant.
+
+<CodeOutputBlock lang="python">
+
+```
+Result:
+ This speech is about the state of the economy during the pandemic and how to deal with inflation.
+Sources:
+{'../../state_of_the_union.txt', '../../paul_graham_essay.txt'}
+
+```
+
+</CodeOutputBlock>
+
 Alternatively, if our document have a "source" metadata key, we can use the `RetrievalQAWithSourcesChain` to cite our sources:
 
 ```python
