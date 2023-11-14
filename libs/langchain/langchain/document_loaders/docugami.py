@@ -47,7 +47,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
     max_metadata_length = 512
     """Max length of chunk text returned."""
 
-    xml_mode: bool = False
+    include_xml_tags: bool = False
     """Set to true for XML tags in chunk output text."""
 
     parent_hierarchy_levels: int = 0
@@ -158,7 +158,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             max_text_length=self.max_text_length,
             whitespace_normalize_text=self.whitespace_normalize_text,
             sub_chunk_tables=self.sub_chunk_tables,
-            xml_mode=self.xml_mode,
+            include_xml_tags=self.include_xml_tags,
             parent_hierarchy_levels=self.parent_hierarchy_levels,
         )
 
@@ -326,7 +326,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 ]
 
             _project_details = self._project_details_for_docset_id(self.docset_id)
-            combined_project_metadata = {}
+            combined_project_metadata: Dict[str, Dict] = {}
             fetch_metadata = (
                 self.include_project_metadata_in_doc_metadata
                 or self.include_project_metadata_in_page_content
@@ -336,7 +336,11 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 # project metadata, load it.
                 for project in _project_details:
                     metadata = self._metadata_for_project(project)
-                    combined_project_metadata.update(metadata)
+                    for file_id in metadata:
+                        if file_id not in combined_project_metadata:
+                            combined_project_metadata[file_id] = metadata[file_id]
+                        else:
+                            combined_project_metadata[file_id].update(metadata)
 
             for doc in _document_details:
                 doc_id = doc[ID_KEY]
