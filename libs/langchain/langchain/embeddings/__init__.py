@@ -19,6 +19,7 @@ from langchain.embeddings.aleph_alpha import (
     AlephAlphaSymmetricSemanticEmbedding,
 )
 from langchain.embeddings.awa import AwaEmbeddings
+from langchain.embeddings.azure_openai import AzureOpenAIEmbeddings
 from langchain.embeddings.baidu_qianfan_endpoint import QianfanEmbeddingsEndpoint
 from langchain.embeddings.bedrock import BedrockEmbeddings
 from langchain.embeddings.cache import CacheBackedEmbeddings
@@ -31,6 +32,7 @@ from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
 from langchain.embeddings.embaas import EmbaasEmbeddings
 from langchain.embeddings.ernie import ErnieEmbeddings
 from langchain.embeddings.fake import DeterministicFakeEmbedding, FakeEmbeddings
+from langchain.embeddings.fastembed import FastEmbedEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.gpt4all import GPT4AllEmbeddings
 from langchain.embeddings.gradient_ai import GradientEmbeddings
@@ -53,7 +55,6 @@ from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 from langchain.embeddings.nlpcloud import NLPCloudEmbeddings
 from langchain.embeddings.octoai_embeddings import OctoAIEmbeddings
 from langchain.embeddings.ollama import OllamaEmbeddings
-from langchain.embeddings.open_clip import OpenCLIPEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
@@ -72,10 +73,12 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "OpenAIEmbeddings",
+    "AzureOpenAIEmbeddings",
     "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
     "ElasticsearchEmbeddings",
+    "FastEmbedEmbeddings",
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
     "GradientEmbeddings",
@@ -118,7 +121,6 @@ __all__ = [
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
-    "OpenCLIPEmbeddings",
 ]
 
 
