@@ -449,7 +449,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         generations: List[List[Generation]] = []
         for result in response.predictions:
             generations.append(
-                [Generation(text=result]
+                [Generation(text=result)]
             )
         return LLMResult(generations=generations)
 
@@ -494,6 +494,6 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         generations: List[List[Generation]] = []
         for result in response.predictions:
             generations.append(
-                [Generation(text=result]
+                [Generation(text=result)]
             )
         return LLMResult(generations=generations)
