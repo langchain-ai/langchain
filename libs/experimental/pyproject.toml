@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-experimental"
-version = "0.0.39"
+version = "0.0.40"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
