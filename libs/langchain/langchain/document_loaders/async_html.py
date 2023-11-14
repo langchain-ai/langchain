@@ -143,9 +143,7 @@ class AsyncHtmlLoader(BaseLoader):
                         return text
                 except aiohttp.ClientConnectionError as e:
                     if i == retries - 1:
-                        logger.warning(
-                            f"Error fetching {url} after {retries} retries."
-                        )
+                        logger.warning(f"Error fetching {url} after {retries} retries.")
                         return ""
                     else:
                         logger.warning(
@@ -198,7 +196,11 @@ class AsyncHtmlLoader(BaseLoader):
             results = asyncio.run(self.fetch_all(self.web_paths))
         docs = []
         for i, text in enumerate(cast(List[str], results)):
-            soup = self._scrape(self.web_paths[i])
+            try:
+                soup = self._scrape(self.web_paths[i])
+            except Exception as e:
+                warnings.warn(e)
+                continue
             metadata = _build_metadata(soup, self.web_paths[i])
             docs.append(Document(page_content=text, metadata=metadata))
 
