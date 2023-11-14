@@ -47,6 +47,8 @@ This framework consists of several parts.
 
 **This repo contains the `langchain` ([here](libs/langchain)), `langchain-experimental` ([here](libs/experimental)), and `langchain-cli` ([here](libs/cli)) Python packages, as well as [LangChain Templates](templates).**
 
+![LangChain Stack](docs/static/img/langchain_stack.png)
+
 ## 🧱 What can you build with LangChain?
 **❓ Retrieval augmented generation**
 
