@@ -2535,7 +2535,7 @@ class RunnableLambda(Runnable[Input, Output]):
             return await super().ainvoke(input, config)
 
 
-class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
+class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     """
     A runnable that delegates calls to another runnable
     with each element of the input sequence.
@@ -2589,38 +2589,6 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
     def get_lc_namespace(cls) -> List[str]:
         return cls.__module__.split(".")[:-1]
 
-    def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
-        return RunnableEach(bound=self.bound.bind(**kwargs))
-
-    def with_config(
-        self, config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> RunnableEach[Input, Output]:
-        return RunnableEach(bound=self.bound.with_config(config, **kwargs))
-
-    def with_listeners(
-        self,
-        *,
-        on_start: Optional[Listener] = None,
-        on_end: Optional[Listener] = None,
-        on_error: Optional[Listener] = None,
-    ) -> RunnableEach[Input, Output]:
-        """
-        Bind lifecycle listeners to a Runnable, returning a new Runnable.
-
-        on_start: Called before the runnable starts running, with the Run object.
-        on_end: Called after the runnable finishes running, with the Run object.
-        on_error: Called if the runnable throws an error, with the Run object.
-
-        The Run object contains information about the run, including its id,
-        type, input, output, error, start_time, end_time, and any tags or metadata
-        added to the run.
-        """
-        return RunnableEach(
-            bound=self.bound.with_listeners(
-                on_start=on_start, on_end=on_end, on_error=on_error
-            )
-        )
-
     def _invoke(
         self,
         inputs: List[Input],
@@ -2652,6 +2620,40 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
         self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Output]:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
+
+
+class RunnableEach(RunnableEachBase[Input, Output]):
+    def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
+        return RunnableEach(bound=self.bound.bind(**kwargs))
+
+    def with_config(
+        self, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> RunnableEach[Input, Output]:
+        return RunnableEach(bound=self.bound.with_config(config, **kwargs))
+
+    def with_listeners(
+        self,
+        *,
+        on_start: Optional[Listener] = None,
+        on_end: Optional[Listener] = None,
+        on_error: Optional[Listener] = None,
+    ) -> RunnableEach[Input, Output]:
+        """
+        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Called before the runnable starts running, with the Run object.
+        on_end: Called after the runnable finishes running, with the Run object.
+        on_error: Called if the runnable throws an error, with the Run object.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+        """
+        return RunnableEach(
+            bound=self.bound.with_listeners(
+                on_start=on_start, on_end=on_end, on_error=on_error
+            )
+        )
 
 
 class RunnableBindingBase(RunnableSerializable[Input, Output]):
