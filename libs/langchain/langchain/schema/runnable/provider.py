@@ -50,7 +50,7 @@ class RunnableContextGetter(RunnableSerializable[Any, Output]):
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
         if self.key not in self.context.key_value_map:
-            raise RuntimeError(f"Cannot find key {self.key} in context.")
+            raise KeyError(f"Cannot find key {self.key} in context.")
         return self.context.key_value_map[self.key]
 
 

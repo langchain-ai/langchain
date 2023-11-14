@@ -4409,6 +4409,30 @@ def test_runnable_context_provider_basic_get_set() -> None:
     assert result == "foo"
 
 
+def test_runnable_context_provider_get_in_map() -> None:
+    provider = RunnableContextProvider(
+        lambda getter, setter: setter("input") | {"bar": getter("input")}
+    )
+
+    assert provider.invoke("foo") == {"bar": "foo"}
+
+
+def test_runnable_context_provider_put_in_map() -> None:
+    provider = RunnableContextProvider(
+        lambda getter, setter: {"bar": setter("input")} | getter("input")
+    )
+    assert provider.invoke("foo") == "foo"
+
+
+def test_runnable_context_provider_key_not_found() -> None:
+    provider = RunnableContextProvider(
+        lambda getter, setter: {"bar": setter("input")} | getter("foo")
+    )
+
+    with pytest.raises(KeyError):
+        provider.invoke("foo")
+
+
 def test_runnable_context_provider_invoke() -> None:
     prompt = PromptTemplate.from_template("{foo} {bar}")
     llm = FakeListLLM(responses=["hello"])
