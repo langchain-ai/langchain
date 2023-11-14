@@ -96,7 +96,8 @@ def new(
         pip_bool = False
         if pip is None and has_packages:
             pip_bool = typer.confirm(
-                "Would you like to install these templates into your environment with pip?",
+                "Would you like to install these templates into your environment "
+                "with pip?",
                 default=False,
             )
     # copy over template from ../project_template
