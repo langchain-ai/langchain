@@ -132,6 +132,7 @@ def _load_conditional_chain(
     verbose: Optional[bool] = None,
     map_reduce_kwargs: Any = None,
     stuff_kwargs: Any = None,
+    **kwargs: Any,
 ) -> ConditionalDocumentsChain:
     if stuff_kwargs is None:
         stuff_kwargs = {}
@@ -146,6 +147,7 @@ def _load_conditional_chain(
         stuff_chain=stuff_chain,
         map_reduce_chain=map_reduce_chain,
         max_length=max_length,
+        **kwargs,
     )
 
 
