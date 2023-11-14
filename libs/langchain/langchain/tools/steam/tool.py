@@ -9,6 +9,7 @@ from langchain.utilities.steam import SteamWebAPIWrapper
 class SteamWebAPIQueryRun(BaseTool):
     """Tool that searches the Steam Web API."""
 
+    mode: str
     name: str = "Steam"
     description: str = (
         "A wrapper around Steam Web API."
