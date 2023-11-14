@@ -163,7 +163,10 @@ _LLM_TOOLS: Dict[str, Callable[[BaseLanguageModel], BaseTool]] = {
 def _get_news_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     news_api_key = kwargs["news_api_key"]
     chain = APIChain.from_llm_and_api_docs(
-        llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
+        llm,
+        news_docs.NEWS_DOCS,
+        headers={"X-Api-Key": news_api_key},
+        limit_to_domains=["https://newsapi.org/"],
     )
     return Tool(
         name="News-API",
