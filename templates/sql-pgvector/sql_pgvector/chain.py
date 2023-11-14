@@ -7,7 +7,8 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.sql_database import SQLDatabase
-from prompt_templates import final_template, postgresql_template
+
+from sql_pgvector.prompt_templates import final_template, postgresql_template
 
 """
 IMPORTANT: For using this template, you will need to 
@@ -74,13 +75,13 @@ def get_query(query):
 # Now we create the chain
 # -----------------------
 
-query_genertion_prompt = ChatPromptTemplate.from_messages(
+query_generation_prompt = ChatPromptTemplate.from_messages(
     [("system", postgresql_template), ("human", "{question}")]
 )
 
 sql_query_chain = (
     RunnablePassthrough.assign(schema=get_schema)
-    | query_genertion_prompt
+    | query_generation_prompt
     | llm.bind(stop=["\nSQLResult:"])
     | StrOutputParser()
 )
