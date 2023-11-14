@@ -143,7 +143,10 @@ class AsyncHtmlLoader(BaseLoader):
                         return text
                 except aiohttp.ClientConnectionError as e:
                     if i == retries - 1:
-                        raise
+                        logger.warning(
+                            f"Error fetching {url} after {retries} retries."
+                        )
+                        return ""
                     else:
                         logger.warning(
                             f"Error fetching {url} with attempt "
