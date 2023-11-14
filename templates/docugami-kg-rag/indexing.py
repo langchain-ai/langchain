@@ -55,20 +55,22 @@ if __name__ == "__main__":
 
         # Keep track of all unique parents (by ID)
         if parent_id not in parents:
-            parents[parent_id] = chunk.parent
+            parents[parent_id] = chunk.parent.page_content
 
     # Populate vectorDB with child chunks
     if PINECONE_INDEX_NAME not in pinecone.list_indexes():
         # Create index if it does not exist
-        print(f"Creating index {PINECONE_INDEX_NAME} (this will take some time)")
+        print(f"Creating pinecone index {PINECONE_INDEX_NAME}...")
         pinecone.create_index(name=PINECONE_INDEX_NAME, dimension=EMBEDDINGS_DIMENSIONS)
-        print(f"Done creating {PINECONE_INDEX_NAME}")
 
+        print(f"Done creating pinecone index {PINECONE_INDEX_NAME}, now embedding...")
         Pinecone.from_documents(
             documents=chunks,
             embedding=EMBEDDINGS,
             index_name=PINECONE_INDEX_NAME,
         )
+
+        print(f"Done embedding documents to pinecode index {PINECONE_INDEX_NAME}!")
     else:
         raise Exception(
             f"Index {PINECONE_INDEX_NAME} already exists. Please delete it to re-index this docset or you will get duplicate chunks."
