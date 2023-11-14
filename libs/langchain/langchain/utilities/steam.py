@@ -15,13 +15,6 @@ class SteamWebAPIWrapper(BaseModel):
     #oprations: a list of dictionaries, each representing a specific operation that can be performed with the API
     operations: List[Dict]=[
       
-
-        { 
-            "mode": "get_game_ID",
-            "name": "Get Game ID",
-            "description": STEAM_GET_GAMES_ID, 
-        },
-
         {
             "mode": "get_game_Details",
             "name": "Get Game Details",
@@ -78,7 +71,11 @@ class SteamWebAPIWrapper(BaseModel):
         values["steam"] = steam
         return values
 
-    def parse_to_str(self, details: Dict) -> str: #NOT SURE IF details IS A DICT OF LIST OF DICT
+
+
+
+    def parse_to_str(self, details: Dict) -> str: #For later parsing
+
         """Parse the details result."""
         result=""
         for key, value in details.items():
@@ -87,7 +84,7 @@ class SteamWebAPIWrapper(BaseModel):
     
 
 
-    def get_id(self, games: Dict, name: str) -> Dict:
+    def get_id_link_price(self, games: Dict, name: str) -> Dict:
         """ The response may contain more than one game, so we need to choose the right one and 
         return the id."""
 
@@ -104,19 +101,19 @@ class SteamWebAPIWrapper(BaseModel):
 
     def details_of_games(self, name: str) -> str:   
         
-        #get id
         games = self.steam.apps.search_games(name)
-        id = self.get_id(games, name)
+        info_partOne_dict = self.get_id_link_price(games, name)
+        info_partOne = self.parse_to_str(info_partOne_dict)
+        id = str(info_partOne_dict.get(id))
+        info_dict = self.steam.apps.get_app_details(id)
+        detailed_description = info_dict.get(id).get('detailed_description')
+        supported_languages = info_dict.get(id).get('supported_languages')
+        info_partTwo = "The detailed description of the game is: " + detailed_description + "\n" + "The supported languages of the game are: " + supported_languages + "\n"
+        info = info_partOne + info_partTwo
 
-        #use id to get details
-        data_request = dict()
-        data_request['request'] = 'appdetails'
-        data_request['appid'] = id
-        data = steamspypi.download(self.data_request)
-        parsed_data = self.parse_to_str(data)
-        return parsed_data
+        return info
     
-    ##############################################################################################################
+
     
     # get steam id from username
     def get_steam_id(self, name: str) -> str:
@@ -124,6 +121,9 @@ class SteamWebAPIWrapper(BaseModel):
         user = json.loads(user_json)
         steamId = user['player']['steamid']
         return steamId
+        #use id to get more details
+      
+    
 
     def recommended_games(self, name: str) -> str:
         steam_id = self.get_steam_id(name)
@@ -142,9 +142,7 @@ class SteamWebAPIWrapper(BaseModel):
    
     def run(self, mode: str, game:str) -> str:
 
-        if mode == "get_game_ID":
-            return self.get_id(game)
-        elif mode == "get_game_Details":
+        if mode == "get_game_Details":
             return self.details_of_games(game)
         elif mode == "get_recommended_games":
             return self.recommended_games(game)
