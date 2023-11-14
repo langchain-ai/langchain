@@ -21,7 +21,8 @@ class Document(Serializable):
     type: Literal["Document"] = "Document"
 
     parent: Optional[Document] = None
-    """Parent document, optionally set by document loaders that support hierarchical chunking."""
+    """Parent document, optionally set by document loaders that support
+    hierarchical chunking."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

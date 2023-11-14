@@ -22,8 +22,6 @@ TAG_KEY = "tag"
 PROJECTS_KEY = "projects"
 
 DEFAULT_API_ENDPOINT = "https://api.docugami.com/v1preview1"
-DEFAULT_MAX_TEXT_LENGTH = 1024
-DEFAULT_MIN_TEXT_LENGTH = 32
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +38,14 @@ class DocugamiLoader(BaseLoader, BaseModel):
     access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY")
     """The Docugami API access token to use."""
 
-    max_text_length = DEFAULT_MAX_TEXT_LENGTH
-    """Max length of chunk and metadata values."""
+    max_text_length = 1024
+    """Max length of chunk text returned."""
 
-    min_text_length: int = DEFAULT_MIN_TEXT_LENGTH
-    """Threshold under which chunks are appended to next chunk to avoid over-chunking."""
+    min_text_length: int = 32
+    """Threshold under which chunks are appended to next to avoid over-chunking."""
+
+    max_metadata_length = 512
+    """Max length of chunk text returned."""
 
     xml_mode: bool = False
     """Set to true for XML tags in chunk output text."""
@@ -56,7 +57,8 @@ class DocugamiLoader(BaseLoader, BaseModel):
     """Set to True to return sub-chunks within tables."""
 
     whitespace_normalize_text: bool = True
-    """Set to False if you want to full whitespace formatting in the original XML doc, including indentation."""
+    """Set to False if you want to full whitespace formatting in the original
+    XML doc, including indentation."""
 
     docset_id: Optional[str]
     """The Docugami API docset ID to use."""
@@ -67,8 +69,11 @@ class DocugamiLoader(BaseLoader, BaseModel):
     file_paths: Optional[Sequence[Union[Path, str]]]
     """The local file paths to use."""
 
-    fetch_metadata: bool = True
-    """Set to False if you don't want to fetch project metadata."""
+    include_project_metadata_in_doc_metadata: bool = True
+    """Set to True if you want to include the project metadata in the doc metadata."""
+
+    include_project_metadata_in_page_content: bool = False
+    """Set to True if you want to include the project metadata in the page content."""
 
     @root_validator
     def validate_local_or_remote(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -95,7 +100,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         self,
         content: bytes,
         document_name: Optional[str] = None,
-        additional_metadata: Optional[Mapping] = None,
+        additional_doc_metadata: Optional[Mapping] = None,
     ) -> List[Document]:
         """Parse a single DGML document into a list of Documents."""
         try:
@@ -127,11 +132,18 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 TAG_KEY: dg_chunk.tag,
             }
 
-            if additional_metadata:
-                metadata.update(additional_metadata)
+            text = dg_chunk.text
+            if additional_doc_metadata:
+                if self.include_project_metadata_in_doc_metadata:
+                    metadata.update(additional_doc_metadata)
+
+                # Embed formatted metadata at the end of chunk text
+                if self.include_project_metadata_in_page_content:
+                    for key in additional_doc_metadata:
+                        text += f"\n{key}: {additional_doc_metadata[key]}"
 
             return Document(
-                page_content=dg_chunk.text,
+                page_content=text[: self.max_text_length],
                 metadata=metadata,
             )
 
@@ -263,7 +275,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                         value = " ".join(
                             entry.xpath("./pr:Value", namespaces=ns)[0].itertext()
                         ).strip()
-                        metadata[heading] = value[: self.max_text_length]
+                        metadata[heading] = value[: self.max_metadata_length]
                     per_file_metadata[doc_id] = metadata
                 else:
                     raise Exception(
@@ -294,7 +306,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             return self._parse_dgml(
                 content=response.content,
                 document_name=document_name,
-                additional_metadata=additional_metadata,
+                additional_doc_metadata=additional_metadata,
             )
         else:
             raise Exception(
@@ -306,7 +318,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         chunks: List[Document] = []
 
         if self.access_token and self.docset_id:
-            # remote mode
+            # Remote mode
             _document_details = self._document_details_for_docset_id(self.docset_id)
             if self.document_ids:
                 _document_details = [
@@ -315,8 +327,13 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
             _project_details = self._project_details_for_docset_id(self.docset_id)
             combined_project_metadata = {}
-            if _project_details and self.fetch_metadata:
-                # if there are any projects for this docset, load project metadata
+            fetch_metadata = (
+                self.include_project_metadata_in_doc_metadata
+                or self.include_project_metadata_in_page_content
+            )
+            if _project_details and fetch_metadata:
+                # If there are any projects for this docset and the caller requested
+                # project metadata, load it.
                 for project in _project_details:
                     metadata = self._metadata_for_project(project)
                     combined_project_metadata.update(metadata)

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import Field
@@ -18,6 +18,12 @@ class MultiVectorRetriever(BaseRetriever):
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass to the search function."""
 
+    docstore_k: Optional[int] = None
+    """The k on the underlying vectorstore can be set to a high number, 
+    to get a lot of matches especially if docs in the docstore are large.
+    In this case, the docstore_k parameter can be set to a lower number 
+    to reduce context passed to the LLM."""
+
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
@@ -35,4 +41,8 @@ class MultiVectorRetriever(BaseRetriever):
             if d.metadata[self.id_key] not in ids:
                 ids.append(d.metadata[self.id_key])
         docs = self.docstore.mget(ids)
-        return [d for d in docs if d is not None]
+        docs = [d for d in docs if d is not None]
+        if self.docstore_k is not None:
+            docs = docs[: self.docstore_k]
+
+        return docs
