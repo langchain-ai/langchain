@@ -1395,7 +1395,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n",
                 " ",
                 "",
-            ]              
+            ]
 
         else:
             raise ValueError(
