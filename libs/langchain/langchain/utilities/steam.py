@@ -81,26 +81,19 @@ class SteamWebAPIWrapper(BaseModel):
             result+= str(key) + '->' + str(value) + '\n'
         return result
 
-
-######################################  TBC   #####################################################################
-    #CHECK python-steam-api DOCUMENTATION FOR MORE INFO
-    def get_id(self, games: List[Dict]) -> str:
+    def get_id(self, games: Dict, name: str) -> str:
         """ The response may contain more than one game, so we need to choose the right one and 
         return the id."""
 
-
-        id=""
-
-        # can reuse parse_to_str() here probably?
-        return id
-     
-##############################################################################################################
+        for app in games.get("apps", []):
+            if app["name"].lower() == name.lower():
+                return str(app["id"])
 
     def details_of_games(self, name: str) -> str:   
         
         #get id
         games = self.steam.apps.search_games(name)
-        id = self.get_id(games)
+        id = self.get_id(games, name)
 
         #use id to get details
         data_request = dict()
