@@ -31,7 +31,7 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
-from langchain.pydantic_v1 import BaseModel, Field, root_validator, SecretStr
+from langchain.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.language_model import LanguageModelInput
 from langchain.schema.messages import (
@@ -47,9 +47,9 @@ from langchain.schema.messages import (
 from langchain.schema.output import ChatGenerationChunk
 from langchain.schema.runnable import Runnable
 from langchain.utils import (
+    convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
-    convert_to_secret_str,
 )
 from langchain.utils.openai import is_openai_v1
 
