@@ -29,6 +29,11 @@ docker run \
   postgres:16
 ```
 
+And to start again later, use the `--name` defined above:
+```bash
+docker start some-postgres
+```
+
 ### PostgreSQL Database setup
 
 Apart from having `pgvector` extension enabled, you will need to do some setup before being able to run semantic search within your SQL queries.
