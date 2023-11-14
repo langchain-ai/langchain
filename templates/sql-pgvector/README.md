@@ -8,7 +8,17 @@ It uses [PGVector](https://github.com/pgvector/pgvector) extension as shown in t
 
 If you are using `ChatOpenAI` as your LLM, make sure the `OPENAI_API_KEY` is set in your environment. You can change both the LLM and embeddings model inside `chain.py`
 
-To run a local postgres instance in docker, use 
+And you can configure configure the following environment variables
+for use by the template (defaults are in parentheses)
+
+- `POSTGRES_USER` (postgres)
+- `POSTGRES_PASSWORD` (test)
+- `POSTGRES_DB` (vectordb)
+- `POSTGRES_HOST` (localhost)
+- `POSTGRES_PORT` (5432)
+
+If you don't have a postgres instance, you can run one locally in docker:
+
 ```bash
 docker run \
   --name some-postgres \

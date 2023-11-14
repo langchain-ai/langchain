@@ -19,10 +19,18 @@ follow the setup steps in the readme file
 if os.environ.get("OPENAI_API_KEY", None) is None:
     raise Exception("Missing `OPENAI_API_KEY` environment variable")
 
+postgres_user = os.environ.get("POSTGRES_USER", "postgres")
+postgres_password = os.environ.get("POSTGRES_PASSWORD", "test")
+postgres_db = os.environ.get("POSTGRES_DB", "vectordb")
+postgres_host = os.environ.get("POSTGRES_HOST", "localhost")
+postgres_port = os.environ.get("POSTGRES_PORT", "5432")
 
 # Connect to DB
 # Replace with your own
-CONNECTION_STRING = "postgresql+psycopg2://postgres:test@localhost:5432/vectordb"
+CONNECTION_STRING = (
+    f"postgresql+psycopg2://{postgres_user}:{postgres_password}"
+    f"@{postgres_host}:{postgres_port}/{postgres_db}"
+)
 db = SQLDatabase.from_uri(CONNECTION_STRING)
 
 # Choose LLM and embeddings model
