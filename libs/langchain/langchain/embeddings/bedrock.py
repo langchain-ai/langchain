@@ -29,9 +29,9 @@ class EmbeddingInputOutputAdapter:
         cls, provider: str, text: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
-        if provider == 'amazon':
+        if provider == "amazon":
             input_body[cls.provider_to_input_key_map[provider]] = text
-        elif provider == 'cohere':
+        elif provider == "cohere":
             if "input_type" not in input_body.keys():
                 input_body["input_type"] = "search_document"
             input_body[cls.provider_to_input_key_map[provider]] = [text]
@@ -42,9 +42,9 @@ class EmbeddingInputOutputAdapter:
     @classmethod
     def prepare_output(cls, provider: str, response: Any) -> str:
         response_body = json.loads(response.get("body").read())
-        if provider == 'amazon':
+        if provider == "amazon":
             return response_body.get(cls.provider_to_output_key_map[provider])
-        elif provider == 'cohere':
+        elif provider == "cohere":
             return response_body.get(cls.provider_to_output_key_map[provider])[0]
         else:
             return response_body.get("embedding")
@@ -158,7 +158,9 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         # format input body for provider
         provider = self.model_id.split(".")[0]
         _model_kwargs = self.model_kwargs or {}
-        input_body = EmbeddingInputOutputAdapter.prepare_input(provider, text, _model_kwargs)
+        input_body = EmbeddingInputOutputAdapter.prepare_input(
+            provider, text, _model_kwargs
+        )
         body = json.dumps(input_body)
 
         try:
