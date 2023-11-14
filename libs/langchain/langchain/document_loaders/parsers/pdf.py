@@ -476,8 +476,10 @@ class AmazonTextractPDFParser(BaseBlobParser):
                 self.textract_features = []
         except ImportError:
             raise ImportError(
-                "Could not import amazon-textract-caller python package. "
-                "Please install it with `pip install amazon-textract-caller`."
+                "Could not import amazon-textract-caller or "
+                "amazon-textract-textractor python package. Please install it "
+                "with `pip install amazon-textract-caller` & "
+                "`pip install amazon-textract-textractor`."
             )
 
         if not client:
