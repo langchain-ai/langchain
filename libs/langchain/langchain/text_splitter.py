@@ -1340,6 +1340,62 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.PERL:
+            return [
+                # Split along subroutines
+                "\nsub ",
+                # Split along control flow statements
+                "\nif ",
+                "\nelse ",
+                "\nwhile ",
+                "\nfor ",
+                "\nforeach ",
+                "\nuntil ",
+                "\nunless ",
+                "\ndo ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.LUA:
+            return [
+                # Split along function definitions
+                "\nfunction ",
+                # Split along control flow statements
+                "\nif ",
+                "\nelse ",
+                "\nwhile ",
+                "\nfor ",
+                "\nrepeat ",
+                "\nuntil ",
+                "\ndo ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.C:
+            return [
+                # Split along function definitions
+                "\nvoid ",
+                "\nint ",
+                "\nfloat ",
+                "\ndouble ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                "\ncase ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]              
 
         else:
             raise ValueError(
