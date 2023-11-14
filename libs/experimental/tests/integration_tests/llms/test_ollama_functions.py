@@ -1,4 +1,4 @@
-"""Test AnthropicFunctions"""
+"""Test OllamaFunctions"""
 
 import unittest
 
@@ -7,9 +7,9 @@ from langchain.chat_models.ollama import ChatOllama
 from langchain_experimental.llms.ollama_functions import OllamaFunctions
 
 
-class TestAnthropicFunctions(unittest.TestCase):
+class TestOllamaFunctions(unittest.TestCase):
     """
-    Test AnthropicFunctions with default llm (ChatAnthropic) as well as a passed-in llm
+    Test OllamaFunctions
     """
 
     def test_default_chat_anthropic(self) -> None:

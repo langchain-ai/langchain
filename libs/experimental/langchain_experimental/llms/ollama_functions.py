@@ -6,7 +6,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.chat_models.ollama import ChatOllama
-from langchain.schema import ChatGeneration, ChatResult
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema import BasePromptTemplate, ChatGeneration, ChatResult
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
@@ -15,7 +16,7 @@ from langchain.schema.messages import (
 
 from langchain_experimental.pydantic_v1 import root_validator
 
-prompt = """You have access to the following tools.
+DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools.
 
 {tools}
 
@@ -46,9 +47,14 @@ should be called for a given query.",
 class OllamaFunctions(BaseChatModel):
     llm: ChatOllama
 
+    tool_system_prompt: BasePromptTemplate
+
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["llm"] = values.get("llm") or ChatOllama(**values, format="json")
+        values["tool_system_prompt"] = values.get(
+            "tool_system_prompt"
+        ) or ChatPromptTemplate.from_template(DEFAULT_SYSTEM_TEMPLATE)
         return values
 
     @property
@@ -75,7 +81,9 @@ function in "functions".'
                 )
         elif not functions:
             functions.append(DEFAULT_RESPONSE_FUNCTION)
-        default_content = prompt.format(tools=json.dumps(functions, indent=2))
+        default_content = self.tool_system_prompt.format(
+            tools=json.dumps(functions, indent=2)
+        )
         system_message = SystemMessage(content=default_content)
         response_message = self.llm.predict_messages(
             [system_message] + messages, stop=stop, callbacks=run_manager, **kwargs
