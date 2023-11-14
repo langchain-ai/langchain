@@ -4,6 +4,7 @@ import re
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.sql_database import SQLDatabase
@@ -101,4 +102,9 @@ full_chain = (
     | llm
 )
 
-chain = full_chain
+
+class InputType(BaseModel):
+    question: str
+
+
+chain = full_chain.with_types(input_type=InputType)

@@ -8,6 +8,17 @@ It uses [PGVector](https://github.com/pgvector/pgvector) extension as shown in t
 
 If you are using `ChatOpenAI` as your LLM, make sure the `OPENAI_API_KEY` is set in your environment. You can change both the LLM and embeddings model inside `chain.py`
 
+To run a local postgres instance in docker, use 
+```bash
+docker run \
+  --name some-postgres \
+  -e POSTGRES_PASSWORD=test \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_DB=vectordb \
+  -p 5432:5432 \
+  postgres:16
+```
+
 ### PostgreSQL Database setup
 
 Apart from having `pgvector` extension enabled, you will need to do some setup before being able to run semantic search within your SQL queries.
