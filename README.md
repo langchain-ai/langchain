@@ -53,7 +53,7 @@ This framework consists of several parts.
 **❓ Retrieval augmented generation**
 
 - [Documentation](https://python.langchain.com/docs/use_cases/question_answering/)
-- End-to-end Example: [Chat LangChain](https://github.com/langchain-ai/chat-langchain)
+- End-to-end Example: [Chat LangChain](https://chat.langchain.com) and [repo](https://github.com/langchain-ai/chat-langchain)
 
 **💬 Analyzing structured data**
 
