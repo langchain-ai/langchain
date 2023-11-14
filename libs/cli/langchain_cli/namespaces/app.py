@@ -36,12 +36,11 @@ app_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 @app_cli.command()
 def new(
     name: Annotated[
-        str,
-        typer.Option(
+        Optional[str],
+        typer.Argument(
             help="The name of the folder to create",
-            prompt="What folder would you like to create?",
         ),
-    ],
+    ] = None,
     *,
     package: Annotated[
         Optional[List[str]],
@@ -55,21 +54,56 @@ def new(
             is_flag=True,
         ),
     ] = None,
+    noninteractive: Annotated[
+        bool,
+        typer.Option(
+            "--non-interactive/--interactive",
+            help="Don't prompt for any input",
+            is_flag=True,
+        ),
+    ] = False,
 ):
     """
     Create a new LangServe application.
     """
     has_packages = package is not None and len(package) > 0
-    pip_bool = False
-    if pip is None and has_packages:
-        pip_bool = typer.confirm(
-            "Would you like to `pip install -e` the template(s)?",
-            default=False,
+
+    if noninteractive:
+        if name is None:
+            raise typer.BadParameter("name is required when --non-interactive is set")
+        name_str = name
+        pip_bool = bool(pip)  # None should be false
+    else:
+        name_str = (
+            name if name else typer.prompt("What folder would you like to create?")
         )
+        if not has_packages:
+            package = []
+            package_prompt = "What package would you like to add? (leave blank to skip)"
+            while True:
+                package_str = typer.prompt(
+                    package_prompt, default="", show_default=False
+                )
+                if not package_str:
+                    break
+                package.append(package_str)
+                package_prompt = (
+                    f"{len(package)} added. Any more packages (leave blank to end)?"
+                )
+
+            has_packages = len(package) > 0
+
+        pip_bool = False
+        if pip is None and has_packages:
+            pip_bool = typer.confirm(
+                "Would you like to install these templates into your environment "
+                "with pip?",
+                default=False,
+            )
     # copy over template from ../project_template
     project_template_dir = Path(__file__).parents[1] / "project_template"
-    destination_dir = Path.cwd() / name if name != "." else Path.cwd()
-    app_name = name if name != "." else Path.cwd().name
+    destination_dir = Path.cwd() / name_str if name_str != "." else Path.cwd()
+    app_name = name_str if name_str != "." else Path.cwd().name
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=name == ".")
 
     readme = destination_dir / "README.md"
