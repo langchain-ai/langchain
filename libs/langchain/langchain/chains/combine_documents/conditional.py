@@ -1,6 +1,6 @@
-from typing import List, Any, Tuple
+from typing import Any, List, Tuple
 
-from langchain.chains import StuffDocumentsChain, MapReduceDocumentsChain
+from langchain.chains import MapReduceDocumentsChain, StuffDocumentsChain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.pydantic_v1 import Extra
 from langchain.schema import Document
