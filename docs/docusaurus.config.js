@@ -197,6 +197,10 @@ const config = {
                 label: "Tutorials"
               },
               {
+                label: "Cookbooks",
+                href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
+              },
+              {
                 to: "/docs/additional_resources/youtube",
                 label: "YouTube videos"
               },
