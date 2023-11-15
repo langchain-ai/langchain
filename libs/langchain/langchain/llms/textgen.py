@@ -211,14 +211,14 @@ class TextGen(LLM):
             result = combined_text_output
 
         else:
-            url = f"{self.model_url}/api/v1/generate"
+            url = f"{self.model_url}/v1/completions"
             params = self._get_parameters(stop)
             request = params.copy()
             request["prompt"] = prompt
             response = requests.post(url, json=request)
 
             if response.status_code == 200:
-                result = response.json()["results"][0]["text"]
+                result = response.json()["choices"][0]["text"]
             else:
                 print(f"ERROR: response: {response}")
                 result = ""
@@ -257,14 +257,14 @@ class TextGen(LLM):
             result = combined_text_output
 
         else:
-            url = f"{self.model_url}/api/v1/generate"
+            url = f"{self.model_url}/v1/completions"
             params = self._get_parameters(stop)
             request = params.copy()
             request["prompt"] = prompt
             response = requests.post(url, json=request)
 
             if response.status_code == 200:
-                result = response.json()["results"][0]["text"]
+                result = response.json()["choices"][0]["text"]
             else:
                 print(f"ERROR: response: {response}")
                 result = ""
