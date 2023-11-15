@@ -4,8 +4,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.anthropic import convert_messages_to_prompt_anthropic
-from langchain.chat_models.meta import convert_messages_to_prompt_llama
 from langchain.chat_models.base import BaseChatModel
+from langchain.chat_models.meta import convert_messages_to_prompt_llama
 from langchain.llms.bedrock import BedrockBase
 from langchain.pydantic_v1 import Extra
 from langchain.schema.messages import AIMessage, AIMessageChunk, BaseMessage

@@ -1,4 +1,5 @@
 from typing import List
+
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
@@ -20,6 +21,7 @@ def _convert_one_message_to_text_llama(message: BaseMessage) -> str:
     else:
         raise ValueError(f"Got unknown type {message}")
     return message_text
+
 
 def convert_messages_to_prompt_llama(messages: List[BaseMessage]) -> str:
     return "\n".join(
