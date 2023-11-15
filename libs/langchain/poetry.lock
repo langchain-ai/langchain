@@ -4782,29 +4782,29 @@ files = [
 
 [[package]]
 name = "momento"
-version = "1.12.0"
+version = "1.13.0"
 description = "SDK for Momento"
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "momento-1.12.0-py3-none-any.whl", hash = "sha256:1dcb3ebadba67bc5e49337c433119d3857ff2e1e36627a8fcdadcc5db9a2f785"},
-    {file = "momento-1.12.0.tar.gz", hash = "sha256:31918c4e56b8db2f632a465c3a7df656666b8dab9efdcd49c61f3451d7bc481d"},
+    {file = "momento-1.13.0-py3-none-any.whl", hash = "sha256:dd5ace5b8d679e882afcefaa16bc413973c270b0a7a1c6c45f3eb60b0b9526de"},
+    {file = "momento-1.13.0.tar.gz", hash = "sha256:39419627542b8f5997a777ff91aa3aaf6406b7d76fb83cd84284a0f7d1f9e356"},
 ]
 
 [package.dependencies]
 grpcio = ">=1.46.0,<2.0.0"
-momento-wire-types = ">=0.86.0,<0.87.0"
+momento-wire-types = ">=0.91.1,<0.92.0"
 pyjwt = ">=2.4.0,<3.0.0"
 
 [[package]]
 name = "momento-wire-types"
-version = "0.86.0"
+version = "0.91.4"
 description = "Momento Client Proto Generated Files"
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "momento_wire_types-0.86.0-py3-none-any.whl", hash = "sha256:1079f61f3a0aa90865870b116a8699289e6f03b969a349265abdd605b073251c"},
-    {file = "momento_wire_types-0.86.0.tar.gz", hash = "sha256:7695a448382fbfda8ad7a51c307b34a2ef3d81d883f77b71891c27a4c25aed18"},
+    {file = "momento_wire_types-0.91.4-py3-none-any.whl", hash = "sha256:f296249693de2f6c383a397e7616b84dd83dfd466743d34b035b90865000a2a8"},
+    {file = "momento_wire_types-0.91.4.tar.gz", hash = "sha256:de8cd14a12835d95997eb9b753ea47e1a5d2916658ec9320e416da8bd835fdff"},
 ]
 
 [package.dependencies]
@@ -11094,4 +11094,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "baf540085a61c3574695d1c2a075ff7a38a9eeea0d3d49bb24a41dddeeb5edd0"
+content-hash = "d2257c040b493ddd74b066a97a0f7f77101a59203eefc498149a90186a9a244e"
