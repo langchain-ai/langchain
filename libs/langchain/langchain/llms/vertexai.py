@@ -448,9 +448,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         response = self.client.predict(endpoint=endpoint, instances=predict_instances)
         generations: List[List[Generation]] = []
         for result in response.predictions:
-            generations.append(
-                [Generation(text=result)]
-            )
+            generations.append([Generation(text=result)])
         return LLMResult(generations=generations)
 
     async def _agenerate(
@@ -493,7 +491,5 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         )
         generations: List[List[Generation]] = []
         for result in response.predictions:
-            generations.append(
-                [Generation(text=result)]
-            )
+            generations.append([Generation(text=result)])
         return LLMResult(generations=generations)
