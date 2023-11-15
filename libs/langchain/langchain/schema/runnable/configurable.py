@@ -34,6 +34,7 @@ from langchain.schema.runnable.utils import (
     Input,
     Output,
     gather_with_concurrency,
+    get_unique_config_specs,
 )
 
 
@@ -209,22 +210,25 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
     @property
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
-        return [
-            ConfigurableFieldSpec(
-                id=spec.id,
-                name=spec.name,
-                description=spec.description
-                or self.default.__fields__[field_name].field_info.description,
-                annotation=spec.annotation
-                or self.default.__fields__[field_name].annotation,
-                default=getattr(self.default, field_name),
-            )
-            if isinstance(spec, ConfigurableField)
-            else make_options_spec(
-                spec, self.default.__fields__[field_name].field_info.description
-            )
-            for field_name, spec in self.fields.items()
-        ]
+        return get_unique_config_specs(
+            [
+                ConfigurableFieldSpec(
+                    id=spec.id,
+                    name=spec.name,
+                    description=spec.description
+                    or self.default.__fields__[field_name].field_info.description,
+                    annotation=spec.annotation
+                    or self.default.__fields__[field_name].annotation,
+                    default=getattr(self.default, field_name),
+                )
+                if isinstance(spec, ConfigurableField)
+                else make_options_spec(
+                    spec, self.default.__fields__[field_name].field_info.description
+                )
+                for field_name, spec in self.fields.items()
+            ]
+            + list(self.default.config_specs)
+        )
 
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
