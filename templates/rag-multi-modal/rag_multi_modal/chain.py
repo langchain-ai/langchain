@@ -3,13 +3,11 @@ import io
 import os
 import re
 import uuid
-from base64 import b64decode
-from io import BytesIO
-from PIL import Image
 
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.schema.document import Document
 from langchain.schema.messages import HumanMessage
@@ -17,10 +15,12 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.storage import InMemoryStore
 from langchain.vectorstores import Chroma
+from PIL import Image
 from unstructured.partition.pdf import partition_pdf
 
+
 # Extract elements from PDF
-def extract_pdf_elements(path,fname):
+def extract_pdf_elements(path, fname):
     """
     Extract images, tables, and chunk text from a PDF file.
     path: File path, which is used to dump image files
@@ -37,6 +37,7 @@ def extract_pdf_elements(path,fname):
         image_output_dir_path=path,
     )
 
+
 # Categorize elements by type
 def categorize_elements(raw_pdf_elements):
     """
@@ -52,6 +53,7 @@ def categorize_elements(raw_pdf_elements):
             texts.append(str(element))
     return texts, tables
 
+
 # Generate summaries of text elements
 def generate_text_summaries(texts, tables, summarize_texts=False):
     """
@@ -62,11 +64,12 @@ def generate_text_summaries(texts, tables, summarize_texts=False):
     """
 
     # Prompt
-    prompt_text = """You are an assistant tasked with summarizing tables and text for retrieval. \
-    These summaries will be embedded and used to retrieve the raw text or table elements. \
-    Give a concise summary of the table or text that is well optimized for retrieval. Table or text: {element} """
+    prompt_text = """You are an assistant tasked with summarizing tables and text for  \
+    retrieval. These summaries will be embedded and used to retrieve the raw text or \
+    table elements. Give a concise summary of the table or text that is well \
+    optimized for retrieval. Table or text: {element} """
     prompt = ChatPromptTemplate.from_template(prompt_text)
-    
+
     # Text summary chain
     model = ChatOpenAI(temperature=0, model="gpt-4")
     summarize_chain = {"element": lambda x: x} | prompt | model | StrOutputParser()
@@ -79,13 +82,16 @@ def generate_text_summaries(texts, tables, summarize_texts=False):
     if texts and summarize_texts:
         text_summaries = summarize_chain.batch(texts, {"max_concurrency": 5})
     elif texts:
-        text_summaries = texts  # Directly assign texts if summarization is not requested
+        text_summaries = (
+            texts
+        )  # Directly assign texts if summarization is not requested
 
     # Apply to tables if tables are provided
     if tables:
         table_summaries = summarize_chain.batch(tables, {"max_concurrency": 5})
 
     return text_summaries, table_summaries
+
 
 def encode_image(image_path):
     """Getting the base64 string"""
@@ -112,6 +118,7 @@ def image_summarize(img_base64, prompt):
     )
     return msg.content
 
+
 def generate_img_summaries(path):
     """
     Generate summaries and base64 encoded strings for images
@@ -120,15 +127,15 @@ def generate_img_summaries(path):
 
     # Store base64 encoded images
     img_base64_list = []
-    
+
     # Store image summaries
     image_summaries = []
-    
+
     # Prompt
     prompt = """You are an assistant tasked with summarizing images for retrieval. \
     These summaries will be embedded and used to retrieve the raw image. \
     Give a concise summary of the image that is well optimized for retrieval."""
-    
+
     # Apply to images
     for img_file in sorted(os.listdir(path)):
         if img_file.endswith(".jpg"):
@@ -139,9 +146,14 @@ def generate_img_summaries(path):
 
     return img_base64_list, image_summaries
 
+
 def create_multi_vector_retriever(
     vectorstore, text_summaries, texts, table_summaries, tables, image_summaries, images
 ):
+    """
+    Create retriever that indexes summaries, but returns raw images or texts
+    """
+
     # Initialize the storage layer
     store = InMemoryStore()
     id_key = "doc_id"
@@ -176,13 +188,18 @@ def create_multi_vector_retriever(
 
     return retriever
 
+
 def looks_like_base64(sb):
-    """Check if the string looks like base64."""
+    """
+    Check if the string looks like base64.
+    """
     return re.match("^[A-Za-z0-9+/]+[=]{0,2}$", sb) is not None
 
 
 def is_image_data(b64data):
-    """Check if the base64 data is an image by looking at the start of the data."""
+    """
+    Check if the base64 data is an image by looking at the start of the data.
+    """
     image_signatures = {
         b"\xFF\xD8\xFF": "jpg",
         b"\x89\x50\x4E\x47\x0D\x0A\x1A\x0A": "png",
@@ -199,8 +216,31 @@ def is_image_data(b64data):
         return False
 
 
+def resize_base64_image(base64_string, size=(128, 128)):
+    """
+    Resize an image encoded as a Base64 string.
+    base64_string (str): Base64 string of the original image.
+    size (tuple): Desired size of the image as (width, height).
+    """
+    # Decode the Base64 string
+    img_data = base64.b64decode(base64_string)
+    img = Image.open(io.BytesIO(img_data))
+
+    # Resize the image
+    resized_img = img.resize(size, Image.LANCZOS)
+
+    # Save the resized image to a bytes buffer
+    buffered = io.BytesIO()
+    resized_img.save(buffered, format=img.format)
+
+    # Encode the resized image to Base64
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+
 def split_image_text_types(docs):
-    """Split base64-encoded images and texts."""
+    """
+    Split base64-encoded images and texts.
+    """
     b64_images = []
     texts = []
     for doc in docs:
@@ -208,6 +248,7 @@ def split_image_text_types(docs):
         if isinstance(doc, Document):
             doc = doc.page_content
         if looks_like_base64(doc) and is_image_data(doc):
+            doc = resize_base64_image(doc, size=(250, 250))
             b64_images.append(doc)
         else:
             texts.append(doc)
@@ -224,9 +265,7 @@ def img_prompt_func(data_dict):
         for image in data_dict["context"]["images"]:
             image_message = {
                 "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/jpeg;base64,{image}"
-                },
+                "image_url": {"url": f"data:image/jpeg;base64,{image}"},
             }
             messages.append(image_message)
 
@@ -234,8 +273,9 @@ def img_prompt_func(data_dict):
     text_message = {
         "type": "text",
         "text": (
-            "Answer the question based only on the provided context, which can include text, tables, and image(s). "
-            "If an image is provided, analyze it carefully to help answer the question.\n"
+            "Answer the question based only on the provided context, "
+            "which can include text, tables, and image(s). If an image is "
+            "provided, analyze it carefully to help answer the question.\n"
             f"User-provided question / keywords: {data_dict['question']}\n\n"
             "Text and / or tables:\n"
             f"{formatted_texts}"
@@ -244,8 +284,11 @@ def img_prompt_func(data_dict):
     messages.append(text_message)
     return [HumanMessage(content=messages)]
 
+
 def multi_modal_rag_chain(retriever):
-    """Multi-modal RAG chain"""
+    """
+    Multi-modal RAG chain
+    """
 
     # Multi-modal LLM
     model = ChatOpenAI(temperature=0, model="gpt-4-vision-preview", max_tokens=1024)
@@ -263,13 +306,13 @@ def multi_modal_rag_chain(retriever):
 
     return chain
 
+
 # File path
 fpath = "../docs/"
 fname = "cj.pdf"
 
 # Get elements
-raw_pdf_elements=extract_pdf_elements(fpath,
-                                      fname)
+raw_pdf_elements = extract_pdf_elements(fpath, fname)
 # Get text, tables
 texts, tables = categorize_elements(raw_pdf_elements)
 
@@ -281,8 +324,7 @@ img_base64_list, image_summaries = generate_img_summaries(fpath)
 
 # The vectorstore to use to index the summaries
 vectorstore = Chroma(
-    collection_name="multi_vector_img", 
-    embedding_function=OpenAIEmbeddings()
+    collection_name="multi_vector_img", embedding_function=OpenAIEmbeddings()
 )
 
 # Create retriever
@@ -297,11 +339,12 @@ retriever_multi_vector_img = create_multi_vector_retriever(
 )
 
 # Create RAG chain
-chain_multimodal_rag = multi_modal_rag_chain(retriever_multi_vector_img)
+chain = multi_modal_rag_chain(retriever_multi_vector_img)
+
 
 # Add typing for input
 class Question(BaseModel):
     __root__: str
 
-chain_multimodal_rag = multi_modal_rag_chain(retriever_multi_vector_img)
+
 chain = chain.with_types(input_type=Question)

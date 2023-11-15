@@ -2,16 +2,30 @@
 
 This template performs RAG on documents with images.
 
-It is confiured to ingest a pdf file that contains images:
+It is configured to ingest a pdf file that contains images:
 
 * It uses uses [Unstructured](https://unstructured-io.github.io/unstructured/) for pdf parsing.
 * It uses [Chroma](https://www.trychroma.com/) for stroage.
+
+The file is supplied in `docs/` and set in `chain.py`:
+
+```
+fpath = "../docs/"
+fname = "cj.pdf"
+```
+
+By defaut it runs on a `.pdf` of [this blog post](https://cloudedjudgement.substack.com/p/clouded-judgement-111023) 
 
 ## Environment Setup
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 [Unstructured](https://unstructured-io.github.io/unstructured/) requires some system-level package installations:
+
+You will also need these in your system:
+
+* `poppler` ([installation instructions](https://pdf2image.readthedocs.io/en/latest/installation.html)) 
+* `tesseract` ([installation instructions](https://tesseract-ocr.github.io/tessdoc/Installation.html)) 
 
 On Mac, you can install the necessary packages with the following:
 
