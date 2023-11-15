@@ -133,7 +133,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                 "azure_ad_token": values["azure_ad_token"],
                 "azure_ad_token_provider": values["azure_ad_token_provider"],
                 "organization": values["openai_organization"],
-                "openai_api_type":values["openai_api_type"],
+                "api_type":values["openai_api_type"],
                 "base_url": values["openai_api_base"],
                 "timeout": values["request_timeout"],
                 "max_retries": values["max_retries"],
