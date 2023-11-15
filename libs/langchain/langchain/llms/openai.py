@@ -166,8 +166,8 @@ class BaseOpenAI(BaseLLM):
     def is_lc_serializable(cls) -> bool:
         return True
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="text-davinci-003", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -309,10 +309,14 @@ class BaseOpenAI(BaseLLM):
                 "default_query": values["default_query"],
                 "http_client": values["http_client"],
             }
-            values["client"] = openai.OpenAI(**client_params).completions
-            values["async_client"] = openai.AsyncOpenAI(**client_params).completions
-        else:
+            if not values.get("client"):
+                values["client"] = openai.OpenAI(**client_params).completions
+            if not values.get("async_client"):
+                values["async_client"] = openai.AsyncOpenAI(**client_params).completions
+        elif not values.get("client"):
             values["client"] = openai.Completion
+        else:
+            pass
 
         return values
 
@@ -946,10 +950,8 @@ class OpenAIChat(BaseLLM):
             openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
     """
 
-    client: Any  #: :meta private:
-
-    # this is for compatibility with Union types in helper functions
-    async_client: Any  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = "gpt-3.5-turbo"
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
