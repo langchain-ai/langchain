@@ -370,10 +370,7 @@ class RunnableAgent(BaseMultiActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[
-        List[AgentAction],
-        AgentFinish,
-    ]:
+    ) -> Union[List[AgentAction], AgentFinish,]:
         """Given input, decided what to do.
 
         Args:
@@ -396,10 +393,7 @@ class RunnableAgent(BaseMultiActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[
-        List[AgentAction],
-        AgentFinish,
-    ]:
+    ) -> Union[List[AgentAction], AgentFinish,]:
         """Given input, decided what to do.
 
         Args:

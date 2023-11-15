@@ -269,7 +269,9 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             self,
             input=[text],
             **self._invocation_params,
-        )["data"][0]["embedding"]
+        )["data"][
+            0
+        ]["embedding"]
 
     async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint."""

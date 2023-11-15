@@ -120,7 +120,8 @@ class BearlyInterpreterTool:
                     "inputFiles": self.make_input_files(),
                     "outputDir": "output/",
                     "outputAsLinks": True,
-                }
+                },
+                ensure_ascii=False,
             ),
             headers={"Authorization": self.api_key},
         ).json()

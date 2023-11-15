@@ -90,5 +90,6 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
                 {chain.question_key: query},
                 return_only_outputs=True,
                 callbacks=run_manager.get_child() if run_manager else None,
-            )
+            ),
+            ensure_ascii=False,
         )

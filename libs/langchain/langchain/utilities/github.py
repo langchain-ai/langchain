@@ -299,7 +299,7 @@ class GitHubAPIWrapper(BaseModel):
         if mode == "get_issues":
             return self.get_issues()
         elif mode == "get_issue":
-            return json.dumps(self.get_issue(int(query)))
+            return json.dumps(self.get_issue(int(query)), ensure_ascii=False)
         elif mode == "comment_on_issue":
             return self.comment_on_issue(query)
         elif mode == "create_file":

@@ -9,7 +9,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.325"
+gigachain = ">=0.0.325"
 openai = ">=0.28.1"
 tiktoken = ">=0.5.1"
 pinecone-client = ">=2.2.4"
@@ -18,7 +18,7 @@ python-dotenv = "^1.0.0"
 timescale-vector = "^0.0.3"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+gigachain-cli = ">=0.0.15"
 
 [tool.langserve]
 export_module = "rag_timescale_conversation"

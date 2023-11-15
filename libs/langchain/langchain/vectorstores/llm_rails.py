@@ -150,7 +150,7 @@ class LLMRails(VectorStore):
         response = self._session.post(
             headers=self._get_post_headers(),
             url=f"{self.base_url}/datastores/{self._datastore_id}/search",
-            data=json.dumps({"k": k, "text": query}),
+            data=json.dumps({"k": k, "text": query}, ensure_ascii=False),
             timeout=10,
         )
 
