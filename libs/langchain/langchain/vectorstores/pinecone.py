@@ -250,6 +250,11 @@ class Pinecone(VectorStore):
                 "(dot product), or euclidean"
             )
 
+    @staticmethod
+    def _cosine_relevance_score_fn(score: float) -> float:
+        """Pinecone returns cosine similarity scores between [-1,1]"""
+        return (score + 1) / 2
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],

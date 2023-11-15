@@ -176,6 +176,11 @@ const config = {
             position: "left",
             items: [
               {
+                type: "docSidebar",
+                sidebarId: "templates",
+                label: "Templates",
+              },
+              {
                 to: "/docs/community",
                 label: "Community",
               },
@@ -188,8 +193,16 @@ const config = {
                 label: "Dependents",
               },
               {
+                label: "Integrations Hub",
+                href: "https://integrations.langchain.com/",
+              },
+              {
                 to: "/docs/additional_resources/tutorials",
                 label: "Tutorials"
+              },
+              {
+                label: "Cookbooks",
+                href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
               {
                 to: "/docs/additional_resources/youtube",
@@ -215,6 +228,10 @@ const config = {
               {
                 href: "https://github.com/langchain-ai/langserve",
                 label: "LangServe GitHub",
+              },
+              {
+                href: "https://github.com/langchain-ai/langchain/tree/master/templates",
+                label: "Templates GitHub",
               },
               {
                 href: "https://smith.langchain.com/hub",
