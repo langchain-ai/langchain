@@ -3,6 +3,7 @@ from typing import Any, Mapping, Optional, Protocol
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.combine_documents.conditional import ConditionalDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
@@ -125,6 +126,31 @@ def _load_refine_chain(
     )
 
 
+def _load_conditional_chain(
+    llm: BaseLanguageModel,
+    max_length: int = 10000,
+    verbose: Optional[bool] = None,
+    map_reduce_kwargs: Any = None,
+    stuff_kwargs: Any = None,
+    **kwargs: Any,
+) -> ConditionalDocumentsChain:
+    if stuff_kwargs is None:
+        stuff_kwargs = {}
+    if map_reduce_kwargs is None:
+        map_reduce_kwargs = {}
+    if verbose is not None:
+        stuff_kwargs["verbose"] = verbose
+        map_reduce_kwargs["verbose"] = verbose
+    stuff_chain = _load_stuff_chain(llm, **stuff_kwargs)
+    map_reduce_chain = _load_map_reduce_chain(llm, **map_reduce_kwargs)
+    return ConditionalDocumentsChain(
+        stuff_chain=stuff_chain,
+        map_reduce_chain=map_reduce_chain,
+        max_length=max_length,
+        **kwargs,
+    )
+
+
 def load_summarize_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
@@ -147,6 +173,7 @@ def load_summarize_chain(
         "stuff": _load_stuff_chain,
         "map_reduce": _load_map_reduce_chain,
         "refine": _load_refine_chain,
+        "conditional": _load_conditional_chain,
     }
     if chain_type not in loader_mapping:
         raise ValueError(
