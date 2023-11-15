@@ -138,9 +138,13 @@ class SteamWebAPIWrapper(BaseModel):
         app_details = []
         for app_id, _ in sorted_appids:
             app_detail = self.steam.apps.get_app_details(app_id)
-            app_details.append(app_detail)
+            # app_details.append(app_detail)
 
-        # TODO: implement recommended games
+            # TODO: implement recommended games
+            game_name = app_detail[app_id]["data"]["name"]
+            app_details.append(self.details_of_games(game_name))
+
+        # TODO: send the app_details to the langchain to get recommended games
 
     def run(self, mode: str, game: str) -> str:
         if mode == "get_game_details":
