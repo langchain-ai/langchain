@@ -9,7 +9,6 @@ from typing import (
 )
 
 from langchain.callbacks.openai_info import OpenAICallbackHandler
-from langchain.callbacks.tracers import run_collector
 from langchain.callbacks.tracers.wandb import WandbTracer
 from langchain.schema.callbacks.manager import (
     AsyncCallbackManager,
@@ -34,6 +33,7 @@ from langchain.schema.callbacks.manager import (
     collect_runs,
     env_var_is_set,
     handle_event,
+    register_configure_hook,
     trace_as_chain_group,
     tracing_enabled,
     tracing_v2_enabled,
@@ -48,10 +48,9 @@ wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(  # n
     "tracing_wandb_callback", default=None
 )
 
-run_collector_var: ContextVar[
-    Optional[run_collector.RunCollectorCallbackHandler]
-] = ContextVar(  # noqa: E501
-    "run_collector", default=None
+register_configure_hook(openai_callback_var, True)
+register_configure_hook(
+    wandb_tracing_callback_var, True, WandbTracer, "LANGCHAIN_WANDB_TRACING"
 )
 
 

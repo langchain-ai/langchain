@@ -18,6 +18,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -1897,6 +1898,43 @@ def _get_tracer_project() -> str:
     )
 
 
+_configure_hooks: List[
+    Tuple[
+        ContextVar[Optional[BaseCallbackHandler]],
+        bool,
+        Optional[Type[BaseCallbackHandler]],
+        Optional[str],
+    ]
+] = []
+
+H = TypeVar("H", bound=BaseCallbackHandler, covariant=True)
+
+
+def register_configure_hook(
+    context_var: ContextVar[Optional[Any]],
+    inheritable: bool,
+    handle_class: Optional[Type[BaseCallbackHandler]] = None,
+    env_var: Optional[str] = None,
+) -> None:
+    if env_var is not None and handle_class is None:
+        raise ValueError(
+            "If env_var is set, handle_class must also be set to a non-None value."
+        )
+    _configure_hooks.append(
+        (
+            # the typings of ContextVar do not have the generic arg set as covariant
+            # so we have to cast it
+            cast(ContextVar[Optional[BaseCallbackHandler]], context_var),
+            inheritable,
+            handle_class,
+            env_var,
+        )
+    )
+
+
+register_configure_hook(run_collector_var, False)
+
+
 def _configure(
     callback_manager_cls: Type[T],
     inheritable_callbacks: Callbacks = None,
@@ -1972,7 +2010,6 @@ def _configure(
     tracer_v2 = tracing_v2_callback_var.get()
     tracing_v2_enabled_ = _tracing_v2_is_enabled()
     tracer_project = _get_tracer_project()
-    run_collector_ = run_collector_var.get()
     debug = _get_debug()
     if verbose or debug or tracing_enabled_ or tracing_v2_enabled_:
         if verbose and not any(
@@ -2012,12 +2049,27 @@ def _configure(
                     logger.warning(
                         "Unable to load requested LangChainTracer."
                         " To disable this warning,"
-                        " unset the  LANGCHAIN_TRACING_V2 environment variables.",
+                        " unset the LANGCHAIN_TRACING_V2 environment variables.",
                         e,
                     )
-    if run_collector_ is not None and not any(
-        handler is run_collector_  # direct pointer comparison
-        for handler in callback_manager.handlers
-    ):
-        callback_manager.add_handler(run_collector_, False)
+    for var, inheritable, handler_class, env_var in _configure_hooks:
+        create_one = (
+            env_var is not None
+            and env_var_is_set(env_var)
+            and handler_class is not None
+        )
+        if var.get() is not None or create_one:
+            var_handler = var.get() or cast(Type[BaseCallbackHandler], handler_class)()
+            if handler_class is None:
+                if not any(
+                    handler is var_handler  # direct pointer comparison
+                    for handler in callback_manager.handlers
+                ):
+                    callback_manager.add_handler(var_handler, inheritable)
+            else:
+                if not any(
+                    isinstance(handler, handler_class)
+                    for handler in callback_manager.handlers
+                ):
+                    callback_manager.add_handler(var_handler, inheritable)
     return callback_manager
