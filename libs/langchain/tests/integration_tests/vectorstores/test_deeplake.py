@@ -261,7 +261,7 @@ def test_add_texts(deeplake_datastore: DeepLake) -> None:
         )
 
 
-def test_ids_backwards_compatibility():
+def test_ids_backwards_compatibility() -> None:
     """Test that ids are backwards compatible."""
     db = DeepLake(
         dataset_path="mem://test_path",
