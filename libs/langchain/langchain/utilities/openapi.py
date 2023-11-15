@@ -209,6 +209,8 @@ class OpenAPISpec(OpenAPI):
                 item = new_obj
                 for key in keys[:-1]:
                     item = item[key]
+                if keys[-1] not in item:
+                    raise e
                 item.pop(keys[-1], None)
             return cls.parse_obj(new_obj)
 
