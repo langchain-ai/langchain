@@ -199,7 +199,7 @@ class AsyncHtmlLoader(BaseLoader):
             try:
                 soup = self._scrape(self.web_paths[i])
             except Exception as e:
-                warnings.warn(e)
+                warnings.warn(str(e))
                 continue
             metadata = _build_metadata(soup, self.web_paths[i])
             docs.append(Document(page_content=text, metadata=metadata))
