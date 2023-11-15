@@ -443,7 +443,7 @@ class RedisFilterExpression:
         if not self._filter and not self._operator:
             raise ValueError("Improperly initialized RedisFilterExpression")
 
-        # if theres an operator, combine expressions accordingly
+        # if there's an operator, combine expressions accordingly
         if self._operator:
             if not isinstance(self._left, RedisFilterExpression) or not isinstance(
                 self._right, RedisFilterExpression

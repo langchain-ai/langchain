@@ -45,8 +45,8 @@ from langchain.vectorstores.redis import (
         ("==", "tag/with/slashes", "@tag_field:{tag\\/with\\/slashes}"),
         (
             "==",
-            ["hypen-tag", "under_score", "dot.tag"],
-            "@tag_field:{hypen\\-tag|under_score|dot\\.tag}",
+            ["hyphen-tag", "under_score", "dot.tag"],
+            "@tag_field:{hyphen\\-tag|under_score|dot\\.tag}",
         ),
         # ...additional unique cases as desired...
     ],
@@ -95,7 +95,7 @@ def test_nullable_tags(value: Any, expected: str) -> None:
         ("__lt__", 5.55, "@numeric_field:[-inf (5.55]"),
         ("__le__", 5, "@numeric_field:[-inf 5]"),
         ("__le__", None, "*"),
-        ("__eq__", None, "*")
+        ("__eq__", None, "*"),
         ("__ne__", None, "*"),
     ],
     ids=["eq", "ne", "gt", "ge", "lt", "le", "le_none", "eq_none", "ne_none"],
