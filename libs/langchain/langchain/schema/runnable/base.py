@@ -38,9 +38,11 @@ if TYPE_CHECKING:
     )
     from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
     from langchain.callbacks.tracers.root_listeners import Listener
+    from langchain.schema.chat_history import BaseChatMessageHistory
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
+    from langchain.schema.runnable.history import RunnableWithMessageHistory
 
 
 from langchain.load.dump import dumpd
@@ -818,6 +820,26 @@ class Runnable(Generic[Input, Output], ABC):
             runnable=self,
             fallbacks=fallbacks,
             exceptions_to_handle=exceptions_to_handle,
+        )
+
+    def with_message_history(
+        self,
+        factory: Callable[[str], BaseChatMessageHistory],
+        *,
+        input_messages_key: Optional[str] = None,
+        output_messages_key: Optional[str] = None,
+        message_history_key: Optional[str] = None,
+        **kwargs: Any,
+    ) -> RunnableWithMessageHistory:
+        from langchain.schema.runnable.history import RunnableWithMessageHistory
+
+        return RunnableWithMessageHistory(
+            self,  # type: ignore
+            factory,
+            input_messages_key=input_messages_key,
+            output_messages_key=output_messages_key,
+            message_history_key=message_history_key,
+            **kwargs,
         )
 
     """ --- Helper methods for Subclasses --- """
