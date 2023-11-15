@@ -13,9 +13,8 @@ langchain = ">=0.0.334"
 tiktoken = ">=0.5.1"
 chromadb = ">=0.4.14"
 openai = ">=1.1.1"
-unstructured = ">=0.10.19"
+unstructured = {extras = ["all-docs"], version = "^0.10.30"}
 pdf2image = ">=1.16.3"
-pdfminer = ">=20191125"
 pillow = ">=10.0.1"
 
 [tool.poetry.group.dev.dependencies]

@@ -3,6 +3,7 @@ import io
 import os
 import re
 import uuid
+from pathlib import Path
 
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
@@ -308,7 +309,7 @@ def multi_modal_rag_chain(retriever):
 
 
 # File path
-fpath = "../docs/"
+fpath = str(Path(__file__).parent.parent / "docs") + "/"
 fname = "cj.pdf"
 
 # Get elements
