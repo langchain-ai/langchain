@@ -16,10 +16,10 @@ pre {
   z-index: 10000;
 }
 
-.longtable code {
+table.longtable code {
   white-space: normal;
 }
 
-.longtable td {
+table.longtable td {
   max-width: 600px;
 }
