@@ -149,7 +149,7 @@ async def ask_for_passphrase(said_please: bool) -> Dict[str, Any]:
     " Requires knowledge of the pass phrase.",
 )
 async def recycle(password: SecretPassPhrase) -> Dict[str, Any]:
-    # Checks API chain handling of endpoints with depenedencies
+    # Checks API chain handling of endpoints with dependencies
     if password.pw == PASS_PHRASE:
         _ROBOT_STATE["destruct"] = True
         return {"status": "Self-destruct initiated", "state": _ROBOT_STATE}

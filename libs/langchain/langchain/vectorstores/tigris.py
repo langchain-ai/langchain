@@ -3,9 +3,9 @@ from __future__ import annotations
 import itertools
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
 
-from langchain.embeddings.base import Embeddings
 from langchain.schema import Document
-from langchain.vectorstores import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 
 if TYPE_CHECKING:
     from tigrisdb import TigrisClient

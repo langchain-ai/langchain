@@ -67,7 +67,14 @@ def test_prompt_missing_input_variables() -> None:
             suffix=template,
             examples=[],
             example_prompt=EXAMPLE_PROMPT,
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=[],
+        suffix=template,
+        examples=[],
+        example_prompt=EXAMPLE_PROMPT,
+    ).input_variables == ["foo"]
 
     # Test when missing in prefix
     template = "This is a {foo} test."
@@ -78,7 +85,15 @@ def test_prompt_missing_input_variables() -> None:
             examples=[],
             prefix=template,
             example_prompt=EXAMPLE_PROMPT,
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=[],
+        suffix="foo",
+        examples=[],
+        prefix=template,
+        example_prompt=EXAMPLE_PROMPT,
+    ).input_variables == ["foo"]
 
 
 def test_prompt_extra_input_variables() -> None:
@@ -91,7 +106,14 @@ def test_prompt_extra_input_variables() -> None:
             suffix=template,
             examples=[],
             example_prompt=EXAMPLE_PROMPT,
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=input_variables,
+        suffix=template,
+        examples=[],
+        example_prompt=EXAMPLE_PROMPT,
+    ).input_variables == ["foo"]
 
 
 def test_few_shot_functionality() -> None:
@@ -248,7 +270,15 @@ def test_prompt_jinja2_missing_input_variables(
             examples=example_jinja2_prompt[1],
             example_prompt=example_jinja2_prompt[0],
             template_format="jinja2",
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=[],
+        suffix=suffix,
+        examples=example_jinja2_prompt[1],
+        example_prompt=example_jinja2_prompt[0],
+        template_format="jinja2",
+    ).input_variables == ["bar"]
 
     # Test when missing in prefix
     with pytest.warns(UserWarning):
@@ -259,7 +289,16 @@ def test_prompt_jinja2_missing_input_variables(
             examples=example_jinja2_prompt[1],
             example_prompt=example_jinja2_prompt[0],
             template_format="jinja2",
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=["bar"],
+        suffix=suffix,
+        prefix=prefix,
+        examples=example_jinja2_prompt[1],
+        example_prompt=example_jinja2_prompt[0],
+        template_format="jinja2",
+    ).input_variables == ["bar", "foo"]
 
 
 @pytest.mark.requires("jinja2")
@@ -277,7 +316,16 @@ def test_prompt_jinja2_extra_input_variables(
             examples=example_jinja2_prompt[1],
             example_prompt=example_jinja2_prompt[0],
             template_format="jinja2",
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=["bar", "foo", "extra", "thing"],
+        suffix=suffix,
+        prefix=prefix,
+        examples=example_jinja2_prompt[1],
+        example_prompt=example_jinja2_prompt[0],
+        template_format="jinja2",
+    ).input_variables == ["bar", "foo"]
 
 
 def test_few_shot_chat_message_prompt_template() -> None:

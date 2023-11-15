@@ -6,11 +6,10 @@ from typing import Callable, Dict, Union
 
 import yaml
 
-from langchain.output_parsers.regex import RegexParser
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, StrOutputParser
-from langchain.utilities.loading import try_load_from_hub
+from langchain.utils.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
 logger = logging.getLogger(__name__)
@@ -77,6 +76,8 @@ def _load_output_parser(config: dict) -> dict:
         _config = config.pop("output_parser")
         output_parser_type = _config.pop("_type")
         if output_parser_type == "regex_parser":
+            from langchain.output_parsers.regex import RegexParser
+
             output_parser: BaseLLMOutputParser = RegexParser(**_config)
         elif output_parser_type == "default":
             output_parser = StrOutputParser(**_config)
@@ -112,6 +113,17 @@ def _load_prompt(config: dict) -> PromptTemplate:
     # Load the template from disk if necessary.
     config = _load_template("template", config)
     config = _load_output_parser(config)
+
+    template_format = config.get("template_format", "f-string")
+    if template_format == "jinja2":
+        # Disabled due to:
+        # https://github.com/langchain-ai/langchain/issues/4394
+        raise ValueError(
+            f"Loading templates with '{template_format}' format is no longer supported "
+            f"since it can lead to arbitrary code execution. Please migrate to using "
+            f"the 'f-string' template format, which does not suffer from this issue."
+        )
+
     return PromptTemplate(**config)
 
 

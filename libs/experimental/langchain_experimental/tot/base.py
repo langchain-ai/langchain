@@ -46,7 +46,7 @@ class ToTChain(Chain):
     """ToT Checker to use."""
     output_key: str = "response"  #: :meta private:
     k: int = 10
-    """The maximmum number of conversation rounds"""
+    """The maximum number of conversation rounds"""
     c: int = 3
     """The number of children to explore at each node"""
     tot_memory: ToTDFSMemory = ToTDFSMemory()

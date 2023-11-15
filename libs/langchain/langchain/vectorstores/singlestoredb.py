@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import (
     Any,
     Callable,
-    ClassVar,
-    Collection,
     Iterable,
     List,
     Optional,
@@ -15,13 +14,9 @@ from typing import (
 
 from sqlalchemy.pool import QueuePool
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
 from langchain.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.DOT_PRODUCT
@@ -186,22 +181,22 @@ class SingleStoreDB(VectorStore):
 
         self.embedding = embedding
         self.distance_strategy = distance_strategy
-        self.table_name = table_name
-        self.content_field = content_field
-        self.metadata_field = metadata_field
-        self.vector_field = vector_field
+        self.table_name = self._sanitize_input(table_name)
+        self.content_field = self._sanitize_input(content_field)
+        self.metadata_field = self._sanitize_input(metadata_field)
+        self.vector_field = self._sanitize_input(vector_field)
 
-        """Pass the rest of the kwargs to the connection."""
+        # Pass the rest of the kwargs to the connection.
         self.connection_kwargs = kwargs
 
-        """Add program name and version to connection attributes."""
+        # Add program name and version to connection attributes.
         if "conn_attrs" not in self.connection_kwargs:
             self.connection_kwargs["conn_attrs"] = dict()
 
         self.connection_kwargs["conn_attrs"]["_connector_name"] = "langchain python sdk"
-        self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.0"
+        self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.1"
 
-        """Create connection pool."""
+        # Create connection pool.
         self.connection_pool = QueuePool(
             self._get_connection,
             max_overflow=max_overflow,
@@ -213,6 +208,10 @@ class SingleStoreDB(VectorStore):
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding
+
+    def _sanitize_input(self, input_str: str) -> str:
+        # Remove characters that are not alphanumeric or underscores
+        return re.sub(r"[^a-zA-Z0-9_]", "", input_str)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         return self._max_inner_product_relevance_score_fn
@@ -444,31 +443,6 @@ class SingleStoreDB(VectorStore):
         instance.add_texts(texts, metadatas, embedding.embed_documents(texts), **kwargs)
         return instance
 
-    def as_retriever(self, **kwargs: Any) -> SingleStoreDBRetriever:
-        tags = kwargs.pop("tags", None) or []
-        tags.extend(self._get_retriever_tags())
-        return SingleStoreDBRetriever(vectorstore=self, **kwargs, tags=tags)
 
-
-class SingleStoreDBRetriever(VectorStoreRetriever):
-    """Retriever for SingleStoreDB vector stores."""
-
-    vectorstore: SingleStoreDB
-    k: int = 4
-    allowed_search_types: ClassVar[Collection[str]] = ("similarity",)
-
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(query, k=self.k)
-        else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
-        return docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError(
-            "SingleStoreDBVectorStoreRetriever does not support async"
-        )
+# SingleStoreDBRetriever is not needed, but we keep it for backwards compatibility
+SingleStoreDBRetriever = VectorStoreRetriever

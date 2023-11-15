@@ -36,7 +36,9 @@ class AzureBlobStorageContainerLoader(BaseLoader):
         blob_list = container.list_blobs(name_starts_with=self.prefix)
         for blob in blob_list:
             loader = AzureBlobStorageFileLoader(
-                self.conn_str, self.container, blob.name  # type: ignore
+                self.conn_str,
+                self.container,
+                blob.name,  # type: ignore
             )
             docs.extend(loader.load())
         return docs

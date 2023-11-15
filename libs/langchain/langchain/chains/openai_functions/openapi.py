@@ -22,7 +22,7 @@ from langchain.utilities.openapi import OpenAPISpec
 from langchain.utils.input import get_colored_text
 
 if TYPE_CHECKING:
-    from openapi_schema_pydantic import Parameter
+    from openapi_pydantic import Parameter
 
 
 def _get_description(o: Any, prefer_short: bool) -> Optional[str]:
@@ -266,6 +266,8 @@ def get_openapi_chain(
             try:
                 spec = conversion(spec)  # type: ignore[arg-type]
                 break
+            except ImportError as e:
+                raise e
             except Exception:  # noqa: E722
                 pass
         if isinstance(spec, str):

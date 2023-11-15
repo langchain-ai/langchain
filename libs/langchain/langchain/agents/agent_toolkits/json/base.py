@@ -21,7 +21,7 @@ def create_json_agent(
     input_variables: Optional[List[str]] = None,
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a json agent from an LLM and tools."""
     tools = toolkit.get_tools()

@@ -17,7 +17,20 @@ if TYPE_CHECKING:
 
 
 class O365Toolkit(BaseToolkit):
-    """Toolkit for interacting with Office 365."""
+    """Toolkit for interacting with Office 365.
+
+    *Security Note*: This toolkit contains tools that can read and modify
+        the state of a service; e.g., by reading, creating, updating, deleting
+        data associated with this service.
+
+        For example, this toolkit can be used search through emails and events,
+        send messages and event invites, and create draft messages.
+
+        Please make sure that the permissions given by this toolkit
+        are appropriate for your use case.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     account: Account = Field(default_factory=authenticate)
 

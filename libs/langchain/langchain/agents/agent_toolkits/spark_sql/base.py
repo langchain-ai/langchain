@@ -26,7 +26,7 @@ def create_spark_sql_agent(
     early_stopping_method: str = "force",
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a Spark SQL agent from an LLM and tools."""
     tools = toolkit.get_tools()

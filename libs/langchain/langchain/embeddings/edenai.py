@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain.requests import Requests
+from langchain.schema.embeddings import Embeddings
+from langchain.utilities.requests import Requests
 from langchain.utils import get_from_dict_or_env
 
 

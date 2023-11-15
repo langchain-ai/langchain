@@ -91,7 +91,7 @@ class Modal(LLM):
             if prompt in response.json()["prompt"]:
                 response_json = response.json()
         except KeyError:
-            raise ValueError("LangChain requires 'prompt' key in response.")
+            raise KeyError("LangChain requires 'prompt' key in response.")
         text = response_json["prompt"]
         if stop is not None:
             # I believe this is required since the stop tokens

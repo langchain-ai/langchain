@@ -158,7 +158,7 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
     device: int = 0
     """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
     hardware: Any
     """Remote hardware to send the inference function to."""
     model_reqs: List[str] = ["./", "transformers", "torch"]

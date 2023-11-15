@@ -1,4 +1,4 @@
-# Susceptible to arbitrary code execution: https://github.com/hwchase17/langchain/issues/4849
+# Susceptible to arbitrary code execution: https://github.com/langchain-ai/langchain/issues/4849
 import importlib
 import json
 from pathlib import Path

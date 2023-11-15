@@ -122,9 +122,12 @@ class SQLDatabaseChain(Chain):
             "table_info": table_info,
             "stop": ["\nSQLResult:"],
         }
+        if self.memory is not None:
+            for k in self.memory.memory_variables:
+                llm_inputs[k] = inputs[k]
         intermediate_steps: List = []
         try:
-            intermediate_steps.append(llm_inputs)  # input: sql generation
+            intermediate_steps.append(llm_inputs.copy())  # input: sql generation
             sql_cmd = self.llm_chain.predict(
                 callbacks=_run_manager.get_child(),
                 **llm_inputs,
@@ -177,7 +180,7 @@ class SQLDatabaseChain(Chain):
                 _run_manager.on_text("\nAnswer:", verbose=self.verbose)
                 input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
                 llm_inputs["input"] = input_text
-                intermediate_steps.append(llm_inputs)  # input: final answer
+                intermediate_steps.append(llm_inputs.copy())  # input: final answer
                 final_result = self.llm_chain.predict(
                     callbacks=_run_manager.get_child(),
                     **llm_inputs,

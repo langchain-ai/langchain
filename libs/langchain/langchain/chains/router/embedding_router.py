@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.router.base import RouterChain
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import Extra
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 
 
 class EmbeddingRouterChain(RouterChain):

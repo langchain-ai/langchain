@@ -1,5 +1,5 @@
 """Callback Handler that prints to std out."""
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -27,9 +27,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
@@ -44,9 +42,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Print out that we finished a chain."""
         print("\n\033[1m> Finished chain.\033[0m")
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
@@ -80,9 +76,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         if llm_prefix is not None:
             print_text(f"\n{llm_prefix}")
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 

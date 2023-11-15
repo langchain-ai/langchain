@@ -12,7 +12,7 @@ class ToTDFSMemory:
     """
 
     def __init__(self, stack: Optional[List[Thought]] = None):
-        self.stack: list[Thought] = stack or []
+        self.stack: List[Thought] = stack or []
 
     def top(self) -> Optional[Thought]:
         "Get the top of the stack without popping it."

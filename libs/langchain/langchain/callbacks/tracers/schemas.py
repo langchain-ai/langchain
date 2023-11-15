@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import datetime
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 from uuid import UUID
 
 from langsmith.schemas import RunBase as BaseRunV2
@@ -13,7 +13,7 @@ from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.schema import LLMResult
 
 
-def RunTypeEnum() -> RunTypeEnumDep:
+def RunTypeEnum() -> Type[RunTypeEnumDep]:
     """RunTypeEnum."""
     warnings.warn(
         "RunTypeEnum is deprecated. Please directly use a string instead"
@@ -106,6 +106,7 @@ class Run(BaseRunV2):
     child_execution_order: int
     child_runs: List[Run] = Field(default_factory=list)
     tags: Optional[List[str]] = Field(default_factory=list)
+    events: List[Dict[str, Any]] = Field(default_factory=list)
 
     @root_validator(pre=True)
     def assign_name(cls, values: dict) -> dict:
@@ -115,6 +116,8 @@ class Run(BaseRunV2):
                 values["name"] = values["serialized"]["name"]
             elif "id" in values["serialized"]:
                 values["name"] = values["serialized"]["id"][-1]
+        if values.get("events") is None:
+            values["events"] = []
         return values
 
 

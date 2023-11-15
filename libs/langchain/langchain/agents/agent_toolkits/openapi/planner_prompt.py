@@ -24,6 +24,7 @@ GET /user to get information about the current user
 GET /products/search search across products
 POST /users/{{id}}/cart to add products to a user's cart
 PATCH /users/{{id}}/cart to update a user's cart
+PUT /users/{{id}}/coupon to apply idempotent coupon to a user's cart
 DELETE /users/{{id}}/cart to delete a user's cart
 
 User query: tell me a joke
@@ -38,6 +39,10 @@ User query: I want to add a lamp to my cart
 Plan: 1. GET /products with a query param to search for lamps
 2. GET /user to find the user's id
 3. PATCH /users/{{id}}/cart to add a lamp to the user's cart
+
+User query: I want to add a coupon to my cart
+Plan: 1. GET /user to find the user's id
+2. PUT /users/{{id}}/coupon to apply the coupon
 
 User query: I want to delete my cart
 Plan: 1. GET /user to find the user's id
@@ -186,6 +191,23 @@ The value of "output_instructions" should be instructions on what information to
 Always use double quotes for strings in the json string."""
 
 PARSING_PATCH_PROMPT = PromptTemplate(
+    template="""Here is an API response:\n\n{response}\n\n====
+Your task is to extract some information according to these instructions: {instructions}
+When working with API objects, you should usually use ids over names. Do not return any ids or names that are not in the response.
+If the response indicates an error, you should instead output a summary of the error.
+
+Output:""",
+    input_variables=["response", "instructions"],
+)
+
+REQUESTS_PUT_TOOL_DESCRIPTION = """Use this when you want to PUT to a website.
+Input to the tool should be a json string with 3 keys: "url", "data", and "output_instructions".
+The value of "url" should be a string.
+The value of "data" should be a dictionary of key-value pairs you want to PUT to the url.
+The value of "output_instructions" should be instructions on what information to extract from the response, for example the id(s) for a resource(s) that the PUT request creates.
+Always use double quotes for strings in the json string."""
+
+PARSING_PUT_PROMPT = PromptTemplate(
     template="""Here is an API response:\n\n{response}\n\n====
 Your task is to extract some information according to these instructions: {instructions}
 When working with API objects, you should usually use ids over names. Do not return any ids or names that are not in the response.

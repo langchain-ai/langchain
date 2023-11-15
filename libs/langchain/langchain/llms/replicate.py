@@ -65,8 +65,8 @@ class Replicate(LLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"replicate_api_token": "REPLICATE_API_TOKEN"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     @root_validator(pre=True)

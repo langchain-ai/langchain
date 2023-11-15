@@ -1,4 +1,3 @@
-"""Base class for AINetwork tools."""
 from __future__ import annotations
 
 import asyncio
@@ -16,6 +15,8 @@ if TYPE_CHECKING:
 
 
 class OperationType(str, Enum):
+    """Type of operation as enumerator."""
+
     SET = "SET"
     GET = "GET"
 

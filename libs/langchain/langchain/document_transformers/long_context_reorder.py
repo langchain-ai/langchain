@@ -6,7 +6,7 @@ from langchain.schema import BaseDocumentTransformer, Document
 
 
 def _litm_reordering(documents: List[Document]) -> List[Document]:
-    """Los in the middle reorder: the most relevant will be at the
+    """Lost in the middle reorder: the less relevant documents will be at the
     middle of the list and more relevant elements at beginning / end.
     See: https://arxiv.org/abs//2307.03172"""
 

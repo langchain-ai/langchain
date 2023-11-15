@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional
 
-from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_EMBED_INSTRUCTION = "Represent this input: "

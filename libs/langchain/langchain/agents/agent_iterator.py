@@ -282,7 +282,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             return self._call_next()
         except StopIteration:
             raise
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             if self.run_manager:
                 self.run_manager.on_chain_error(e)
             raise
@@ -304,7 +304,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
             await self.timeout_manager.__aexit__(None, None, None)
             self.timeout_manager = None
             return await self._astop()
-        except (KeyboardInterrupt, Exception) as e:
+        except BaseException as e:
             if self.run_manager:
                 assert isinstance(self.run_manager, AsyncCallbackManagerForChainRun)
                 await self.run_manager.on_chain_error(e)

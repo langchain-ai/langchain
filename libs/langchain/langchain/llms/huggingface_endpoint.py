@@ -39,7 +39,7 @@ class HuggingFaceEndpoint(LLM):
     """Task to call the model with.
     Should be a task that returns `generated_text` or `summary_text`."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     huggingfacehub_api_token: Optional[str] = None
 
@@ -69,7 +69,7 @@ class HuggingFaceEndpoint(LLM):
                 ) from e
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )

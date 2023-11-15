@@ -50,7 +50,7 @@ class YahooFinanceNewsTool(BaseTool):
                 return f"No news found for company that searched with {query} ticker."
         if not links:
             return f"No news found for company that searched with {query} ticker."
-        loader = WebBaseLoader(links)
+        loader = WebBaseLoader(web_paths=links)
         docs = loader.load()
         result = self._format_results(docs, query)
         if not result:

@@ -1,13 +1,16 @@
 """Test Redis cache functionality."""
 import uuid
-from typing import List
+from typing import List, cast
 
 import pytest
 
-import langchain
 from langchain.cache import RedisCache, RedisSemanticCache
-from langchain.embeddings.base import Embeddings
+from langchain.globals import get_llm_cache, set_llm_cache
+from langchain.load.dump import dumps
 from langchain.schema import Generation, LLMResult
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain.schema.output import ChatGeneration
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
@@ -25,52 +28,65 @@ def random_string() -> str:
 def test_redis_cache_ttl() -> None:
     import redis
 
-    langchain.llm_cache = RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL), ttl=1)
-    langchain.llm_cache.update("foo", "bar", [Generation(text="fizz")])
-    key = langchain.llm_cache._key("foo", "bar")
-    assert langchain.llm_cache.redis.pttl(key) > 0
+    set_llm_cache(RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL), ttl=1))
+    llm_cache = cast(RedisCache, get_llm_cache())
+    llm_cache.update("foo", "bar", [Generation(text="fizz")])
+    key = llm_cache._key("foo", "bar")
+    assert llm_cache.redis.pttl(key) > 0
 
 
 def test_redis_cache() -> None:
     import redis
 
-    langchain.llm_cache = RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL))
+    set_llm_cache(RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL)))
     llm = FakeLLM()
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo"])
     expected_output = LLMResult(
         generations=[[Generation(text="fizz")]],
         llm_output={},
     )
     assert output == expected_output
-    langchain.llm_cache.redis.flushall()
+    llm_cache = cast(RedisCache, get_llm_cache())
+    llm_cache.redis.flushall()
 
 
 def test_redis_cache_chat() -> None:
     import redis
 
-    langchain.llm_cache = RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL))
+    set_llm_cache(RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL)))
     llm = FakeChatModel()
     params = llm.dict()
     params["stop"] = None
-    with pytest.warns():
-        llm.predict("foo")
-    llm.predict("foo")
-    langchain.llm_cache.redis.flushall()
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    prompt: List[BaseMessage] = [HumanMessage(content="foo")]
+    get_llm_cache().update(
+        dumps(prompt), llm_string, [ChatGeneration(message=AIMessage(content="fizz"))]
+    )
+    output = llm.generate([prompt])
+    expected_output = LLMResult(
+        generations=[[ChatGeneration(message=AIMessage(content="fizz"))]],
+        llm_output={},
+    )
+    assert output == expected_output
+    llm_cache = cast(RedisCache, get_llm_cache())
+    llm_cache.redis.flushall()
 
 
 def test_redis_semantic_cache() -> None:
-    langchain.llm_cache = RedisSemanticCache(
-        embedding=FakeEmbeddings(), redis_url=REDIS_TEST_URL, score_threshold=0.1
+    set_llm_cache(
+        RedisSemanticCache(
+            embedding=FakeEmbeddings(), redis_url=REDIS_TEST_URL, score_threshold=0.1
+        )
     )
     llm = FakeLLM()
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(
         ["bar"]
     )  # foo and bar will have the same embedding produced by FakeEmbeddings
@@ -80,24 +96,26 @@ def test_redis_semantic_cache() -> None:
     )
     assert output == expected_output
     # clear the cache
-    langchain.llm_cache.clear(llm_string=llm_string)
+    get_llm_cache().clear(llm_string=llm_string)
     output = llm.generate(
         ["bar"]
     )  # foo and bar will have the same embedding produced by FakeEmbeddings
     # expect different output now without cached result
     assert output != expected_output
-    langchain.llm_cache.clear(llm_string=llm_string)
+    get_llm_cache().clear(llm_string=llm_string)
 
 
 def test_redis_semantic_cache_multi() -> None:
-    langchain.llm_cache = RedisSemanticCache(
-        embedding=FakeEmbeddings(), redis_url=REDIS_TEST_URL, score_threshold=0.1
+    set_llm_cache(
+        RedisSemanticCache(
+            embedding=FakeEmbeddings(), redis_url=REDIS_TEST_URL, score_threshold=0.1
+        )
     )
     llm = FakeLLM()
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    langchain.llm_cache.update(
+    get_llm_cache().update(
         "foo", llm_string, [Generation(text="fizz"), Generation(text="Buzz")]
     )
     output = llm.generate(
@@ -109,21 +127,30 @@ def test_redis_semantic_cache_multi() -> None:
     )
     assert output == expected_output
     # clear the cache
-    langchain.llm_cache.clear(llm_string=llm_string)
+    get_llm_cache().clear(llm_string=llm_string)
 
 
 def test_redis_semantic_cache_chat() -> None:
-    langchain.llm_cache = RedisSemanticCache(
-        embedding=FakeEmbeddings(), redis_url=REDIS_TEST_URL, score_threshold=0.1
+    set_llm_cache(
+        RedisSemanticCache(
+            embedding=FakeEmbeddings(), redis_url=REDIS_TEST_URL, score_threshold=0.1
+        )
     )
     llm = FakeChatModel()
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    with pytest.warns():
-        llm.predict("foo")
-    llm.predict("foo")
-    langchain.llm_cache.clear(llm_string=llm_string)
+    prompt: List[BaseMessage] = [HumanMessage(content="foo")]
+    get_llm_cache().update(
+        dumps(prompt), llm_string, [ChatGeneration(message=AIMessage(content="fizz"))]
+    )
+    output = llm.generate([prompt])
+    expected_output = LLMResult(
+        generations=[[ChatGeneration(message=AIMessage(content="fizz"))]],
+        llm_output={},
+    )
+    assert output == expected_output
+    get_llm_cache().clear(llm_string=llm_string)
 
 
 @pytest.mark.parametrize("embedding", [ConsistentFakeEmbeddings()])
@@ -152,9 +179,7 @@ def test_redis_semantic_cache_chat() -> None:
 def test_redis_semantic_cache_hit(
     embedding: Embeddings, prompts: List[str], generations: List[List[str]]
 ) -> None:
-    langchain.llm_cache = RedisSemanticCache(
-        embedding=embedding, redis_url=REDIS_TEST_URL
-    )
+    set_llm_cache(RedisSemanticCache(embedding=embedding, redis_url=REDIS_TEST_URL))
 
     llm = FakeLLM()
     params = llm.dict()
@@ -171,7 +196,7 @@ def test_redis_semantic_cache_hit(
     for prompt_i, llm_generations_i in zip(prompts, llm_generations):
         print(prompt_i)
         print(llm_generations_i)
-        langchain.llm_cache.update(prompt_i, llm_string, llm_generations_i)
+        get_llm_cache().update(prompt_i, llm_string, llm_generations_i)
     llm.generate(prompts)
     assert llm.generate(prompts) == LLMResult(
         generations=llm_generations, llm_output={}

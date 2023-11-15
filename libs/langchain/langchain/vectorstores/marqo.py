@@ -16,8 +16,8 @@ from typing import (
 )
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 
 if TYPE_CHECKING:
     import marqo
@@ -61,7 +61,7 @@ class Marqo(VectorStore):
         try:
             import marqo
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import marqo python package. "
                 "Please install it with `pip install marqo`."
             )
@@ -424,7 +424,7 @@ class Marqo(VectorStore):
         try:
             import marqo
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import marqo python package. "
                 "Please install it with `pip install marqo`."
             )

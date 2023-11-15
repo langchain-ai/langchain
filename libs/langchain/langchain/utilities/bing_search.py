@@ -36,7 +36,9 @@ class BingSearchAPIWrapper(BaseModel):
             "textFormat": "HTML",
         }
         response = requests.get(
-            self.bing_search_url, headers=headers, params=params  # type: ignore
+            self.bing_search_url,
+            headers=headers,
+            params=params,  # type: ignore
         )
         response.raise_for_status()
         search_results = response.json()
