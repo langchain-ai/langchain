@@ -2357,6 +2357,12 @@ class RunnableLambda(Runnable[Input, Output]):
                 f"Instead got an unsupported type: {type(func)}"
             )
 
+        if not hasattr(self, "afunc"):
+            async def f(*args,**kwargs):
+                return await asyncio.get_running_loop().run_in_executor(
+                    None, partial(self.func, **kwargs), *args)
+            self.afunc = f
+
     @property
     def InputType(self) -> Any:
         """The type of the input to this runnable."""
@@ -2523,16 +2529,11 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         """Invoke this runnable asynchronously."""
-        if hasattr(self, "afunc"):
-            return await self._acall_with_config(
-                self._ainvoke,
-                input,
-                self._config(config, self.afunc),
-            )
-        else:
-            # Delegating to super implementation of ainvoke.
-            # Uses asyncio executor to run the sync version (invoke)
-            return await super().ainvoke(input, config)
+        return await self._acall_with_config(
+            self._ainvoke,
+            input,
+            self._config(config, self.afunc),
+        )
 
 
 class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
