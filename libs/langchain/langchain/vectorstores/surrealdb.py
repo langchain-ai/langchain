@@ -28,7 +28,7 @@ class SurrealDBStore(VectorStore):
 
     Args:
         dburl: SurrealDB connection url
-        embeddings_function: Embedding function to use.
+        embedding_function: Embedding function to use.
         ns: surrealdb namespace for the vector store. (default: "langchain")
         db: surrealdb database for the vector store. (default: "database")
         collection: surrealdb collection for the vector store. (default: "documents")
@@ -42,7 +42,7 @@ class SurrealDBStore(VectorStore):
             from langchain.embeddings import HuggingFaceEmbeddings
 
             dburl = "ws://localhost:8000/rpc"
-            embeddings_function = HuggingFaceEmbeddings()
+            embedding_function = HuggingFaceEmbeddings()
             ns = "langchain"
             db = "docstore"
             collection = "documents"
@@ -52,13 +52,13 @@ class SurrealDBStore(VectorStore):
             sdb = SurrealDBStore.from_texts(
                     dburl,
                     texts=texts,
-                    embeddings_function=embeddings_function,
+                    embedding_function=embedding_function,
                     ns, db, collection,
                     db_user=db_user, db_pass=db_pass)
     """
 
     def __init__(self, dburl: str,
-                 embeddings_function: Optional[Embeddings] = None,
+                 embedding_function: Optional[Embeddings] = None,
                  ns: str = "langchain",
                  db: str = "database",
                  collection: str = "documents",
@@ -67,7 +67,7 @@ class SurrealDBStore(VectorStore):
         self.ns = ns
         self.db = db
         self.dburl = dburl
-        self.embeddings_function = embeddings_function
+        self.embedding_function = embedding_function
         self.sdb = Surreal()
         self.kwargs = kwargs
 
@@ -106,7 +106,7 @@ class SurrealDBStore(VectorStore):
         Returns:
             List of ids for the newly inserted documents
         """
-        embeddings = self.embeddings_function.embed_documents(texts)
+        embeddings = self.embedding_function.embed_documents(texts)
         ids = []
         for idx, text in enumerate(texts):
             record = await self.sdb.create(
@@ -182,7 +182,7 @@ class SurrealDBStore(VectorStore):
         Returns:
             List of Documents most similar along with relevance scores
         """
-        query_embedding = self.embeddings_function.embed_query(query)
+        query_embedding = self.embedding_function.embed_query(query)
         return [(document, similarity) for document, similarity in
                 await self._asimilarity_search_by_vector_with_score(
                     query_embedding, k, **kwargs)]
@@ -217,7 +217,7 @@ class SurrealDBStore(VectorStore):
         Returns:
             List of Documents most similar along with relevance distance scores
         """
-        query_embedding = self.embeddings_function.embed_query(query)
+        query_embedding = self.embedding_function.embed_query(query)
         return [(document, similarity) for document, similarity in
                 await self._asimilarity_search_by_vector_with_score(
                     query_embedding, k, **kwargs
@@ -284,7 +284,7 @@ class SurrealDBStore(VectorStore):
         Returns:
             List of Documents most similar to the query
         """
-        query_embedding = self.embeddings_function.embed_query(query)
+        query_embedding = self.embedding_function.embed_query(query)
         return await self.asimilarity_search_by_vector(
                 query_embedding, k, **kwargs)
 
@@ -310,7 +310,7 @@ class SurrealDBStore(VectorStore):
         cls,
         dburl: str,
         texts: List[str],
-        embeddings_function: Optional[Embeddings],
+        embedding_function: Optional[Embeddings],
         ns: str = "langchain",
         db: str = "database",
         collection: str = "documents",
@@ -321,7 +321,7 @@ class SurrealDBStore(VectorStore):
         Args:
             dburl (str): SurrealDB connection url
             texts (List[str]): list of text to vectorize and store
-            embeddings_function (Optional[Embeddings]): Embedding function to use.
+            embedding_function (Optional[Embeddings]): Embedding function to use.
             ns (str): surrealdb namespace for the vector store. (default: "langchain")
             db (str): surrealdb database for the vector store. (default: "database")
             collection (str): surrealdb collection for the vector store. (default: "documents")
@@ -330,7 +330,7 @@ class SurrealDBStore(VectorStore):
 
         Returns:
             SurrealDBStore object initialized and ready for use."""
-        sdb = cls(dburl, embeddings_function, ns, db, collection, **kwargs)
+        sdb = cls(dburl, embedding_function, ns, db, collection, **kwargs)
         await sdb.initialize()
         await sdb.aadd_texts(texts)
         return sdb
@@ -340,7 +340,7 @@ class SurrealDBStore(VectorStore):
         cls,
         dburl: str,
         texts: List[str],
-        embeddings_function: Optional[Embeddings],
+        embedding_function: Optional[Embeddings],
         ns: str = "langchain",
         db: str = "database",
         collection: str = "documents",
@@ -351,7 +351,7 @@ class SurrealDBStore(VectorStore):
         Args:
             dburl (str): SurrealDB connection url
             texts (List[str]): list of text to vectorize and store
-            embeddings_function (Optional[Embeddings]): Embedding function to use.
+            embedding_function (Optional[Embeddings]): Embedding function to use.
             ns (str): surrealdb namespace for the vector store. (default: "langchain")
             db (str): surrealdb database for the vector store. (default: "database")
             collection (str): surrealdb collection for the vector store. (default: "documents")
@@ -360,6 +360,6 @@ class SurrealDBStore(VectorStore):
 
         Returns:
             SurrealDBStore object initialized and ready for use."""
-        sdb = asyncio.run(cls.afrom_texts(dburl, texts, embeddings_function,
+        sdb = asyncio.run(cls.afrom_texts(dburl, texts, embedding_function,
                                           ns, db, collection, **kwargs))
         return sdb
