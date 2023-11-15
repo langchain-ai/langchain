@@ -6,6 +6,7 @@ from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.pydantic_v1 import Field
 from langchain.tools import BaseTool
 from langchain.tools.slack.send_message import SlackSendMessage
+from langchain.tools.slack.get_channelIdNameDict import SlackGetChannelIdNameDict
 from langchain.tools.slack.utils import login
 
 if TYPE_CHECKING:
@@ -25,4 +26,4 @@ class SlackToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        return [SlackSendMessage()]
+        return [SlackSendMessage(),SlackGetChannelIdNameDict()]

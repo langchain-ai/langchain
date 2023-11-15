@@ -62,6 +62,7 @@ from langchain.tools.gmail import (
 )
 
 from langchain.tools.slack.send_message import SlackSendMessage
+from langchain.tools.slack.get_channelIdNameDict import SlackGetChannelIdNameDict
 from langchain.tools.slack.utils import login
 
 from langchain.tools.google_places.tool import GooglePlacesTool
@@ -235,7 +236,7 @@ __all__ = [
     "StdInInquireTool",
     "SteamshipImageGenerationTool",
     "StructuredTool",
-    "SlackSendMessage",
+    "SlackGetChannelIdNameDict",
     "authenticate",
     "Tool",
     "VectorStoreQATool",
