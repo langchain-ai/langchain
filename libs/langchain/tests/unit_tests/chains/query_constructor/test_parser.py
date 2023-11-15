@@ -122,3 +122,10 @@ def test_parser_unpack_single_arg_operation(op: str, arg: str) -> None:
     expected = DEFAULT_PARSER.parse(arg)
     actual = DEFAULT_PARSER.parse(f"{op}({arg})")
     assert expected == actual
+
+
+@pytest.mark.parametrize("x", ('"2022-10-20"', "'2022-10-20'", "2022-10-20"))
+def test_parse_date_value(x: str) -> None:
+    parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
+    actual = parsed.value["date"]
+    assert actual == x.strip("'\"")

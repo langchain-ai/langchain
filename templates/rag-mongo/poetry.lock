@@ -528,21 +528,6 @@ uvicorn = ">=0.23.2,<0.24.0"
 
 [[package]]
 name = "gigachat"
-version = "0.1.7"
-description = "GigaChat. Python-библиотека для GigaChain"
-optional = false
-python-versions = ">=3.8,<4.0"
-files = [
-    {file = "gigachat-0.1.7-py3-none-any.whl", hash = "sha256:e11462b32de1099402a06dd003ddb9b0d2b86c406283fe2e533ddc3070ef0394"},
-    {file = "gigachat-0.1.7.tar.gz", hash = "sha256:93bacb542c882aea41292370ad662a12e4f4fefc03ba72f38e87bff42c80de60"},
-]
-
-[package.dependencies]
-httpx = {version = ">=0.25.0,<0.26.0", markers = "python_version >= \"3.9\" and python_version < \"4.0\""}
-pydantic = ">=1,<3"
-
-[[package]]
-name = "gigachat"
 version = "0.1.8"
 description = "GigaChat. Python-библиотека для GigaChain"
 optional = false
