@@ -1,7 +1,7 @@
 """Util that calls Steam-WebAPI."""
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from typing import Any, Dict, List, Optional
+from typing import Any, dict, List, Optional
 from langchain.langchain.tools.steam.prompt import (
     STEAM_GET_GAMES_ID,
     STEAM_GET_GAMES_DETAILS,
@@ -9,6 +9,7 @@ from langchain.langchain.tools.steam.prompt import (
 )
 from langchain.utils import get_from_dict_or_env
 import steamspypi
+import json
 from bs4 import BeautifulSoup
 
 
@@ -18,7 +19,7 @@ class SteamWebAPIWrapper(BaseModel):
     steam: Any  # for python-steam-api
 
     # oprations: a list of dictionaries, each representing a specific operation that can be performed with the API
-    operations: List[Dict] = [
+    operations: List[dict] = [
         {
             "mode": "get_games_id",
             "name": "Get Games ID",
@@ -41,12 +42,12 @@ class SteamWebAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    def list(self) -> List[Dict]:
+    def list(self) -> List[dict]:
         """Return a list of operations."""
         return self.operations
 
     @root_validator
-    def validate_environment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: dict) -> dict:
         """Validate api key and python package has been configed."""
 
         steam_key = get_from_dict_or_env(
@@ -73,14 +74,14 @@ class SteamWebAPIWrapper(BaseModel):
         values["steam"] = steam
         return values
 
-    def parse_to_str(self, details: Dict) -> str:  # For later parsing
+    def parse_to_str(self, details: dict) -> str:  # For later parsing
         """Parse the details result."""
         result = ""
         for key, value in details.items():
             result += "The " + str(key) + " is: " + str(value) + "\n"
         return result
 
-    def get_id_link_price(self, games: Dict, name: str) -> Dict:
+    def get_id_link_price(self, games: dict, name: str) -> dict:
         """The response may contain more than one game, so we need to choose the right one and
         return the id."""
 
@@ -153,3 +154,39 @@ class SteamWebAPIWrapper(BaseModel):
             return self.recommended_games(game)
         else:
             raise ValueError(f"Invalid mode {mode} for Steam API.")
+
+    # def recommended_games(steam_id: str) -> dict:
+    #     # steam_id = get_steam_id(name)
+    #     user_games_data = steam.users.get_owned_games(steam_id, False, False)
+    #     # print(user_games_data)
+    #     result = []
+    #     for game in user_games_data["games"]:
+    #         appid = game["appid"]
+    #         data_request = dict()
+    #         data_request["request"] = "appdetails"
+    #         data_request["appid"] = appid
+    #         genreStore = steamspypi.download(data_request)
+    #         genreList = genreStore["genre"].split(", ")
+    #         print(genreList)
+    #         d = {}
+    #         for item in genreList:
+    #             if item == d:
+    #                 d[genreStore["genre"]] += 1
+    #             # if genreStore["genre"] in d:
+    #             else:
+    #                 d[genreStore["genre"]] = 1
+    #         print(d)
+    #         # result.append(genreDict)
+    #     print(json.dumps(genreStore))
+    #     # [[appid, playtime, GameName], ...]
+
+    #     # app_details = []
+    #     # for app_id, _ in sorted_appids:
+    #     #     app_detail = steam.apps.get_app_details(app_id)
+    #     #     # app_details.append(app_detail)
+
+    #     #     # TODO: implement recommended games
+    #     #     game_name = app_detail[app_id]["data"]["name"]
+    #     #     app_details.append(details_of_games(game_name))
+
+    #     # TODO: send the app_details to the langchain to get recommended games
