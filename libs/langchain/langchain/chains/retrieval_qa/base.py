@@ -139,7 +139,9 @@ class BaseRetrievalQA(Chain):
             "run_manager" in inspect.signature(self._get_docs).parameters
         )
         if accepts_run_manager:
-            docs = self._get_docs(question, run_manager=_run_manager, search_kwargs=search_kwargs)
+            docs = self._get_docs(
+                question, run_manager=_run_manager, search_kwargs=search_kwargs
+            )
         else:
             docs = self._get_docs(question, search_kwargs=search_kwargs)  # type: ignore[call-arg]
         answer = self.combine_documents_chain.run(
@@ -184,7 +186,9 @@ class BaseRetrievalQA(Chain):
             "run_manager" in inspect.signature(self._aget_docs).parameters
         )
         if accepts_run_manager:
-            docs = await self._aget_docs(question, run_manager=_run_manager, search_kwargs=search_kwargs)
+            docs = await self._aget_docs(
+                question, run_manager=_run_manager, search_kwargs=search_kwargs
+            )
         else:
             docs = await self._aget_docs(question, search_kwargs=search_kwargs)  # type: ignore[call-arg]
         answer = await self.combine_documents_chain.arun(

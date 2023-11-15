@@ -651,7 +651,11 @@ class VectorStoreRetriever(BaseRetriever):
         return values
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, search_kwargs = None
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        search_kwargs=None,
     ) -> List[Document]:
         merged_search_kwargs: dict = self.search_kwargs
         if search_kwargs is not None:
@@ -659,7 +663,7 @@ class VectorStoreRetriever(BaseRetriever):
                 merged_search_kwargs = self.search_kwargs.copy()
                 merged_search_kwargs.update(search_kwargs)
             else:
-                merged_search_kwargs = search_kwargs 
+                merged_search_kwargs = search_kwargs
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **merged_search_kwargs)
         elif self.search_type == "similarity_score_threshold":
@@ -678,7 +682,11 @@ class VectorStoreRetriever(BaseRetriever):
         return docs
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun, search_kwargs = None
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        search_kwargs=None,
     ) -> List[Document]:
         merged_search_kwargs: dict = self.search_kwargs
         if search_kwargs is not None:
