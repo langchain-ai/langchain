@@ -35,20 +35,75 @@ app_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
 @app_cli.command()
 def new(
-    name: Annotated[str, typer.Argument(help="The name of the folder to create")],
+    name: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="The name of the folder to create",
+        ),
+    ] = None,
     *,
     package: Annotated[
         Optional[List[str]],
         typer.Option(help="Packages to seed the project with"),
     ] = None,
+    pip: Annotated[
+        Optional[bool],
+        typer.Option(
+            "--pip/--no-pip",
+            help="Pip install the template(s) as editable dependencies",
+            is_flag=True,
+        ),
+    ] = None,
+    noninteractive: Annotated[
+        bool,
+        typer.Option(
+            "--non-interactive/--interactive",
+            help="Don't prompt for any input",
+            is_flag=True,
+        ),
+    ] = False,
 ):
     """
     Create a new LangServe application.
     """
+    has_packages = package is not None and len(package) > 0
+
+    if noninteractive:
+        if name is None:
+            raise typer.BadParameter("name is required when --non-interactive is set")
+        name_str = name
+        pip_bool = bool(pip)  # None should be false
+    else:
+        name_str = (
+            name if name else typer.prompt("What folder would you like to create?")
+        )
+        if not has_packages:
+            package = []
+            package_prompt = "What package would you like to add? (leave blank to skip)"
+            while True:
+                package_str = typer.prompt(
+                    package_prompt, default="", show_default=False
+                )
+                if not package_str:
+                    break
+                package.append(package_str)
+                package_prompt = (
+                    f"{len(package)} added. Any more packages (leave blank to end)?"
+                )
+
+            has_packages = len(package) > 0
+
+        pip_bool = False
+        if pip is None and has_packages:
+            pip_bool = typer.confirm(
+                "Would you like to install these templates into your environment "
+                "with pip?",
+                default=False,
+            )
     # copy over template from ../project_template
     project_template_dir = Path(__file__).parents[1] / "project_template"
-    destination_dir = Path.cwd() / name if name != "." else Path.cwd()
-    app_name = name if name != "." else Path.cwd().name
+    destination_dir = Path.cwd() / name_str if name_str != "." else Path.cwd()
+    app_name = name_str if name_str != "." else Path.cwd().name
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=name == ".")
 
     readme = destination_dir / "README.md"
@@ -56,8 +111,8 @@ def new(
     readme.write_text(readme_contents.replace("__app_name__", app_name))
 
     # add packages if specified
-    if package is not None and len(package) > 0:
-        add(package, project_dir=destination_dir)
+    if has_packages:
+        add(package, project_dir=destination_dir, pip=pip_bool)
 
 
 @app_cli.command()
@@ -77,6 +132,15 @@ def add(
     branch: Annotated[
         List[str], typer.Option(help="Install templates from a specific branch")
     ] = [],
+    pip: Annotated[
+        bool,
+        typer.Option(
+            "--pip/--no-pip",
+            help="Pip install the template(s) as editable dependencies",
+            is_flag=True,
+            prompt="Would you like to `pip install -e` the template(s)?",
+        ),
+    ],
 ):
     """
     Adds the specified template to the current LangServe app.
@@ -164,47 +228,49 @@ def add(
         # Can fail if the cwd is not a parent of the package
         typer.echo("Failed to print install command, continuing...")
     else:
-        cmd = ["pip", "install", "-e"] + installed_destination_strs
-        cmd_str = " \\\n  ".join(installed_destination_strs)
-        install_str = f"To install:\n\npip install -e \\\n  {cmd_str}"
-        typer.echo(install_str)
-
-        if typer.confirm("Run it?"):
+        if pip:
+            cmd = ["pip", "install", "-e"] + installed_destination_strs
+            cmd_str = " \\\n  ".join(installed_destination_strs)
+            typer.echo(f"Running: pip install -e \\\n  {cmd_str}")
             subprocess.run(cmd, cwd=cwd)
 
-    if typer.confirm("\nGenerate route code for these packages?", default=True):
-        chain_names = []
-        for e in installed_exports:
-            original_candidate = f'{e["package_name"].replace("-", "_")}_chain'
-            candidate = original_candidate
-            i = 2
-            while candidate in chain_names:
-                candidate = original_candidate + "_" + str(i)
-                i += 1
-            chain_names.append(candidate)
+    chain_names = []
+    for e in installed_exports:
+        original_candidate = f'{e["package_name"].replace("-", "_")}_chain'
+        candidate = original_candidate
+        i = 2
+        while candidate in chain_names:
+            candidate = original_candidate + "_" + str(i)
+            i += 1
+        chain_names.append(candidate)
 
-        api_paths = [
-            str(Path("/") / path.relative_to(package_dir))
-            for path in installed_destination_paths
-        ]
+    api_paths = [
+        str(Path("/") / path.relative_to(package_dir))
+        for path in installed_destination_paths
+    ]
 
-        imports = [
-            f"from {e['module']} import {e['attr']} as {name}"
-            for e, name in zip(installed_exports, chain_names)
-        ]
-        routes = [
-            f'add_routes(app, {name}, path="{path}")'
-            for name, path in zip(chain_names, api_paths)
-        ]
+    imports = [
+        f"from {e['module']} import {e['attr']} as {name}"
+        for e, name in zip(installed_exports, chain_names)
+    ]
+    routes = [
+        f'add_routes(app, {name}, path="{path}")'
+        for name, path in zip(chain_names, api_paths)
+    ]
 
-        lines = (
-            ["", "Great! Add the following to your app:\n\n```", ""]
-            + imports
-            + [""]
-            + routes
-            + ["```"]
-        )
-        typer.echo("\n".join(lines))
+    t = (
+        "this template"
+        if len(chain_names) == 1
+        else f"these {len(chain_names)} templates"
+    )
+    lines = (
+        ["", f"To use {t}, add the following to your app:\n\n```", ""]
+        + imports
+        + [""]
+        + routes
+        + ["```"]
+    )
+    typer.echo("\n".join(lines))
 
 
 @app_cli.command()

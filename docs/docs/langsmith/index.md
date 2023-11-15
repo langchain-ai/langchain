@@ -7,7 +7,7 @@ sidebar_class_name: hidden
 [LangSmith](https://smith.langchain.com) helps you trace and evaluate your language model applications and intelligent agents to help you
 move from prototype to production.
 
-Check out the [interactive walkthrough](/docs/guides/langsmith/walkthrough) to get started.
+Check out the [interactive walkthrough](/docs/langsmith/walkthrough) to get started.
 
 For more information, please refer to the [LangSmith documentation](https://docs.smith.langchain.com/).
 

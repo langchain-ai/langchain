@@ -137,7 +137,7 @@ class MatchingEngine(VectorStore):
             json_: dict = {"id": id, "embedding": embedding}
             if metadatas is not None:
                 json_["metadata"] = metadatas[idx]
-            jsons.append(json)
+            jsons.append(json_)
             self._upload_to_gcs(text, f"documents/{id}")
 
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")
