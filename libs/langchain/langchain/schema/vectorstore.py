@@ -610,6 +610,7 @@ class VectorStore(ABC):
         tags.extend(self._get_retriever_tags())
         return VectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
+
 class VectorStoreRetriever(BaseRetriever):
     """Base Retriever class for VectorStore."""
 
