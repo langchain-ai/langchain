@@ -18,13 +18,13 @@ from typing import (
 import requests
 
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import BaseChatModel, _generate_from_stream
 from langchain.chat_models.openai import _convert_delta_to_message_chunk
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.callbacks.manager import (
+    CallbackManagerForLLMRun,
+)
 from langchain.schema.messages import AIMessageChunk, BaseMessage
 from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env

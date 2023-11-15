@@ -1,12 +1,12 @@
 from typing import Any, Dict, Iterator, List, Optional
 
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.anthropic import convert_messages_to_prompt_anthropic
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.bedrock import BedrockBase
 from langchain.pydantic_v1 import Extra
+from langchain.schema.callbacks.manager import (
+    CallbackManagerForLLMRun,
+)
 from langchain.schema.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain.utilities.anthropic import (

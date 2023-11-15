@@ -12,10 +12,6 @@ from typing import (
     cast,
 )
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.llms.openai import (
     BaseOpenAI,
     acompletion_with_retry,
@@ -23,6 +19,10 @@ from langchain.llms.openai import (
 )
 from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema import Generation, LLMResult
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.schema.output import GenerationChunk
 from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 

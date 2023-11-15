@@ -2,11 +2,11 @@
 
 from typing import Optional
 
-from langchain.callbacks.manager import (
+from langchain.pydantic_v1 import Field
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 

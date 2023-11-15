@@ -15,12 +15,12 @@ from typing import (
     overload,
 )
 
-from langchain.callbacks.manager import (
+from langchain.llms.base import LLM
+from langchain.pydantic_v1 import PrivateAttr
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
-from langchain.pydantic_v1 import PrivateAttr
 
 if TYPE_CHECKING:
     import openllm

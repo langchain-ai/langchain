@@ -6,11 +6,11 @@ from typing import Optional, Type
 import requests
 import yaml
 
-from langchain.callbacks.manager import (
+from langchain.pydantic_v1 import BaseModel
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.pydantic_v1 import BaseModel
 from langchain.tools.base import BaseTool
 
 

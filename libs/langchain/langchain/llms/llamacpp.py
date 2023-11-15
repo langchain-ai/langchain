@@ -4,9 +4,9 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.schema.output import GenerationChunk
 from langchain.utils import get_pydantic_field_names
 from langchain.utils.utils import build_extra_kwargs

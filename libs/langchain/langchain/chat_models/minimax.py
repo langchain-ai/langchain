@@ -2,10 +2,6 @@
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.minimax import MinimaxCommon
 from langchain.llms.utils import enforce_stop_tokens
@@ -14,6 +10,10 @@ from langchain.schema import (
     BaseMessage,
     ChatResult,
     HumanMessage,
+)
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
 )
 
 logger = logging.getLogger(__name__)

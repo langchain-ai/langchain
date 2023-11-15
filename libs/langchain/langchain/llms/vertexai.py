@@ -13,15 +13,15 @@ from typing import (
     Union,
 )
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
 from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.schema import (
     Generation,
     LLMResult,
+)
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
 )
 from langchain.schema.output import GenerationChunk
 from langchain.utilities.vertexai import (

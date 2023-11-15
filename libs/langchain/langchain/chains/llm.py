@@ -4,13 +4,6 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForChainRun,
-    CallbackManager,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
 from langchain.chains.base import Chain
 from langchain.load.dump import dumpd
 from langchain.prompts.prompt import PromptTemplate
@@ -24,6 +17,13 @@ from langchain.schema import (
     LLMResult,
     PromptValue,
     StrOutputParser,
+)
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
+    CallbackManager,
+    CallbackManagerForChainRun,
+    Callbacks,
 )
 from langchain.schema.language_model import (
     BaseLanguageModel,

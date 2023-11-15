@@ -3,10 +3,10 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, Field, root_validator
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 
 logger = logging.getLogger(__name__)
 

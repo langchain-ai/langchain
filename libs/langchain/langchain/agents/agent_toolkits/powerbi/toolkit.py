@@ -2,7 +2,6 @@
 from typing import List, Optional, Union
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.prompts import PromptTemplate
@@ -12,6 +11,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.pydantic_v1 import Field
+from langchain.schema.callbacks.base import BaseCallbackManager
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.powerbi.prompt import (

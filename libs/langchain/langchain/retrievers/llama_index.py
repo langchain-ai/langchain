@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, cast
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import Field
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import CallbackManagerForRetrieverRun
 
 
 class LlamaIndexRetriever(BaseRetriever):

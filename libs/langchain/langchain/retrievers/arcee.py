@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
 from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BaseRetriever
+from langchain.schema.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.utilities.arcee import ArceeWrapper, DALMFilter
 from langchain.utils import get_from_dict_or_env
 

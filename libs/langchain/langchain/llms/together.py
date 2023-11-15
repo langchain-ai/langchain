@@ -4,12 +4,12 @@ from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession
 
-from langchain.callbacks.manager import (
+from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Extra, root_validator
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utilities.requests import Requests
 from langchain.utils import get_from_dict_or_env
 

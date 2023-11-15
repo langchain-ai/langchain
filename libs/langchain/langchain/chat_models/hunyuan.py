@@ -9,7 +9,6 @@ from urllib.parse import urlparse
 
 import requests
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel, _generate_from_stream
 from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema import (
@@ -20,6 +19,7 @@ from langchain.schema import (
     ChatResult,
     HumanMessage,
 )
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.schema.messages import (
     AIMessageChunk,
     BaseMessageChunk,

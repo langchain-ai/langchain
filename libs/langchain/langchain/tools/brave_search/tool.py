@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.brave_search import BraveSearchWrapper
 

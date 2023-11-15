@@ -5,9 +5,9 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
-from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.streamlit.mutable_expander import MutableExpander
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema.callbacks.base import BaseCallbackHandler
 
 if TYPE_CHECKING:
     from streamlit.delta_generator import DeltaGenerator

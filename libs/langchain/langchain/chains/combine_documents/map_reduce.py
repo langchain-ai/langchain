@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.pydantic_v1 import BaseModel, Extra, create_model, root_validator
+from langchain.schema.callbacks.manager import Callbacks
 from langchain.schema.runnable.config import RunnableConfig
 
 

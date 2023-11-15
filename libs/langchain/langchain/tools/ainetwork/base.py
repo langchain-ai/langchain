@@ -5,8 +5,8 @@ import threading
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import Field
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.ainetwork.utils import authenticate
 from langchain.tools.base import BaseTool
 

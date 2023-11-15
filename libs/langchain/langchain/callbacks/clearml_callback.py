@@ -5,7 +5,6 @@ from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence
 
-from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     BaseMetadataCallbackHandler,
     flatten_dict,
@@ -16,6 +15,7 @@ from langchain.callbacks.utils import (
     load_json,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema.callbacks.base import BaseCallbackHandler
 
 if TYPE_CHECKING:
     import pandas as pd

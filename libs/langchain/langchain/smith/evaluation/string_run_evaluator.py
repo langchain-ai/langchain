@@ -7,16 +7,16 @@ from typing import Any, Dict, List, Optional
 from langsmith import EvaluationResult, RunEvaluator
 from langsmith.schemas import DataType, Example, Run
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
 from langchain.load.dump import dumpd
 from langchain.load.load import load
 from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, messages_from_dict
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.schema.messages import BaseMessage, get_buffer_string
 
 

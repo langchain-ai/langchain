@@ -1,12 +1,12 @@
 import json
 from typing import Any, Iterator, List, Optional
 
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.ollama import _OllamaCommon
 from langchain.schema import ChatResult
+from langchain.schema.callbacks.manager import (
+    CallbackManagerForLLMRun,
+)
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,

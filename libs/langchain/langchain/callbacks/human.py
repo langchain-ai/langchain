@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, Optional
 from uuid import UUID
 
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain.schema.callbacks.base import BaseCallbackHandler
 
 
 def _default_approve(_input: str) -> bool:

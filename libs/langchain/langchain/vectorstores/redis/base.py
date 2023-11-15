@@ -24,8 +24,8 @@ import numpy as np
 import yaml
 
 from langchain._api import deprecated
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
+from langchain.schema.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
 from langchain.utilities.redis import (

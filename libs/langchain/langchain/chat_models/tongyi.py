@@ -22,13 +22,13 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import (
     BaseChatModel,
     _generate_from_stream,
 )
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,

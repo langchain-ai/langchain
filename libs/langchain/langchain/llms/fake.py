@@ -2,11 +2,11 @@ import asyncio
 import time
 from typing import Any, AsyncIterator, Iterator, List, Mapping, Optional
 
-from langchain.callbacks.manager import (
+from langchain.llms.base import LLM
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
 from langchain.schema.language_model import LanguageModelInput
 from langchain.schema.runnable import RunnableConfig
 

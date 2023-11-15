@@ -2,8 +2,8 @@
 
 from typing import Callable, Optional
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import Field
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 
 

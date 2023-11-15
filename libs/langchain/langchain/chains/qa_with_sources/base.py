@@ -7,10 +7,6 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -26,6 +22,10 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
 from langchain.docstore.document import Document
 from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BasePromptTemplate
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.schema.language_model import BaseLanguageModel
 
 

@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
-from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import (
     AgentAction,
     AgentFinish,
@@ -14,6 +13,7 @@ from langchain.schema import (
     Generation,
     LLMResult,
 )
+from langchain.schema.callbacks.base import BaseCallbackHandler
 
 
 class LabelStudioMode(Enum):

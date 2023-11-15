@@ -20,8 +20,8 @@ from mypy_extensions import Arg, KwArg
 
 from langchain.agents.tools import Tool
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
+from langchain.schema.callbacks.base import BaseCallbackManager
+from langchain.schema.callbacks.manager import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain

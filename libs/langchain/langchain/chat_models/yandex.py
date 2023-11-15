@@ -2,10 +2,6 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.llms.yandex import _BaseYandexGPT
@@ -16,6 +12,10 @@ from langchain.schema import (
     ChatResult,
     HumanMessage,
     SystemMessage,
+)
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
 )
 
 logger = logging.getLogger(__name__)

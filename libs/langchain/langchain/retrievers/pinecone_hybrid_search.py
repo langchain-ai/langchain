@@ -3,9 +3,9 @@
 import hashlib
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema.embeddings import Embeddings
 
 

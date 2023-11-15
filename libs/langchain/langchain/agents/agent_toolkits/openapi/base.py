@@ -9,8 +9,8 @@ from langchain.agents.agent_toolkits.openapi.prompt import (
 from langchain.agents.agent_toolkits.openapi.toolkit import OpenAPIToolkit
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
+from langchain.schema.callbacks.base import BaseCallbackManager
 from langchain.schema.language_model import BaseLanguageModel
 
 

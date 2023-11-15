@@ -25,7 +25,7 @@ from langchain.schema.runnable.base import Input, Output, RunnableBindingBase
 from langchain.schema.runnable.config import RunnableConfig, patch_config
 
 if TYPE_CHECKING:
-    from langchain.callbacks.manager import (
+    from langchain.schema.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )

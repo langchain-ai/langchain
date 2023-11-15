@@ -36,7 +36,7 @@ from typing import Optional
 
 import requests
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 
 

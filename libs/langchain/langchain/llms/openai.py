@@ -21,13 +21,13 @@ from typing import (
     Union,
 )
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import Generation, LLMResult
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 from langchain.utils.openai import is_openai_v1

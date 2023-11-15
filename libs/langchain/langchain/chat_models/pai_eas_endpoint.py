@@ -6,14 +6,14 @@ from typing import Any, AsyncIterator, Dict, List, Optional, cast
 
 import requests
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,

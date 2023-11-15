@@ -4,8 +4,8 @@ import pickle
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import CallbackManagerForRetrieverRun
 
 
 class TFIDFRetriever(BaseRetriever):

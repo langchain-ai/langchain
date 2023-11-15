@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional
 
 import numpy as np
 
-from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema.callbacks.base import BaseCallbackHandler
 
 if TYPE_CHECKING:
     import arthurai

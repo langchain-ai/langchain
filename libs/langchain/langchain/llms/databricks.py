@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, List, Optional
 
 import requests
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.pydantic_v1 import (
     BaseModel,
@@ -14,6 +13,7 @@ from langchain.pydantic_v1 import (
     root_validator,
     validator,
 )
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 
 __all__ = ["Databricks"]
 

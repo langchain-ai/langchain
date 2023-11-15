@@ -7,12 +7,12 @@ from io import StringIO
 from sys import version_info
 from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type
 
-from langchain.callbacks.manager import (
+from langchain.pydantic_v1 import BaseModel, Field, PrivateAttr
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManager,
     CallbackManagerForToolRun,
 )
-from langchain.pydantic_v1 import BaseModel, Field, PrivateAttr
 from langchain.tools import BaseTool, Tool
 from langchain.tools.e2b_data_analysis.unparse import Unparser
 

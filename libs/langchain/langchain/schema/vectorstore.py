@@ -27,7 +27,7 @@ from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
 
 if TYPE_CHECKING:
-    from langchain.callbacks.manager import (
+    from langchain.schema.callbacks.manager import (
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,
     )

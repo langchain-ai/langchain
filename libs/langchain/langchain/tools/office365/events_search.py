@@ -7,8 +7,8 @@ https://learn.microsoft.com/en-us/graph/auth/
 from datetime import datetime as dt
 from typing import Any, Dict, List, Optional, Type
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Extra, Field
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.office365.base import O365BaseTool
 from langchain.tools.office365.utils import clean_body
 

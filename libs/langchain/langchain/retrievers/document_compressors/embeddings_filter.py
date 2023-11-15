@@ -2,7 +2,6 @@ from typing import Callable, Dict, Optional, Sequence
 
 import numpy as np
 
-from langchain.callbacks.manager import Callbacks
 from langchain.document_transformers.embeddings_redundant_filter import (
     _get_embeddings_from_stateful_docs,
     get_stateful_documents,
@@ -12,6 +11,7 @@ from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
 from langchain.schema import Document
+from langchain.schema.callbacks.manager import Callbacks
 from langchain.schema.embeddings import Embeddings
 from langchain.utils.math import cosine_similarity
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
@@ -12,6 +11,7 @@ from langchain.chains.llm import LLMChain
 from langchain.graphs.graph_store import GraphStore
 from langchain.pydantic_v1 import Field
 from langchain.schema import BasePromptTemplate
+from langchain.schema.callbacks.manager import CallbackManagerForChainRun
 from langchain.schema.language_model import BaseLanguageModel
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"

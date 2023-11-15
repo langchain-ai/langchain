@@ -4,13 +4,13 @@ import logging
 from functools import cached_property
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.llms.base import BaseLLM
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import root_validator
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.schema.output import Generation, GenerationChunk, LLMResult
 
 logger = logging.getLogger(__name__)

@@ -24,10 +24,6 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import (
     BaseChatModel,
     _agenerate_from_stream,
@@ -43,6 +39,10 @@ from langchain.schema import (
     FunctionMessage,
     HumanMessage,
     SystemMessage,
+)
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
 )
 from langchain.schema.messages import (
     AIMessageChunk,

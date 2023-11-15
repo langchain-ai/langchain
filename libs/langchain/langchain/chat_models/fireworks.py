@@ -11,13 +11,13 @@ from typing import (
 )
 
 from langchain.adapters.openai import convert_message_to_dict
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import create_base_retry_decorator
 from langchain.pydantic_v1 import Field, SecretStr, root_validator
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,

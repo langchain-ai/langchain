@@ -3,12 +3,12 @@ import functools
 import logging
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
-from langchain.callbacks.manager import (
+from langchain.chains.base import Chain
+from langchain.pydantic_v1 import Field
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain.chains.base import Chain
-from langchain.pydantic_v1 import Field
 
 logger = logging.getLogger(__name__)
 

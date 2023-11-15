@@ -21,10 +21,6 @@ from typing import (
 )
 
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import (
     BaseChatModel,
     _agenerate_from_stream,
@@ -33,6 +29,10 @@ from langchain.chat_models.base import (
 from langchain.llms.base import create_base_retry_decorator
 from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.schema.language_model import LanguageModelInput
 from langchain.schema.messages import (
     AIMessageChunk,

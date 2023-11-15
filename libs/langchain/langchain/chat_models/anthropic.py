@@ -1,15 +1,15 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import (
     BaseChatModel,
     _agenerate_from_stream,
     _generate_from_stream,
 )
 from langchain.llms.anthropic import _AnthropicCommon
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,

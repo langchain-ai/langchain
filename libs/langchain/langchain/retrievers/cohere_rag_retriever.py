@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
 from langchain.chat_models.base import BaseChatModel
 from langchain.pydantic_v1 import Field
 from langchain.schema import BaseRetriever, Document, HumanMessage
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 
 if TYPE_CHECKING:
     from langchain.schema.messages import BaseMessage

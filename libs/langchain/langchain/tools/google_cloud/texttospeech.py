@@ -3,7 +3,7 @@ from __future__ import annotations
 import tempfile
 from typing import TYPE_CHECKING, Any, Optional
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.vertexai import get_client_info
 

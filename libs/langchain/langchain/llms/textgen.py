@@ -4,12 +4,12 @@ from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 import requests
 
-from langchain.callbacks.manager import (
+from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Field
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Field
 from langchain.schema.output import GenerationChunk
 
 logger = logging.getLogger(__name__)

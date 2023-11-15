@@ -559,8 +559,8 @@ class Runnable(Generic[Input, Output], ABC):
         The jsonpatch ops can be applied in order to construct state.
         """
 
-        from langchain.callbacks.base import BaseCallbackManager
-        from langchain.callbacks.tracers.log_stream import (
+        from langchain.schema.callbacks.base import BaseCallbackManager
+        from langchain.schema.callbacks.tracers.log_stream import (
             LogStreamCallbackHandler,
             RunLog,
             RunLogPatch,
@@ -726,7 +726,9 @@ class Runnable(Generic[Input, Output], ABC):
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
         """
-        from langchain.callbacks.tracers.root_listeners import RootListenersTracer
+        from langchain.schema.callbacks.tracers.root_listeners import (
+            RootListenersTracer,
+        )
 
         return RunnableBinding(
             bound=self,
@@ -1479,7 +1481,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain.callbacks.manager import CallbackManager
+        from langchain.schema.callbacks.manager import CallbackManager
 
         if not inputs:
             return []
@@ -1598,7 +1600,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain.callbacks.manager import (
+        from langchain.schema.callbacks.manager import (
             AsyncCallbackManager,
         )
 
@@ -1900,7 +1902,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None
     ) -> Dict[str, Any]:
-        from langchain.callbacks.manager import CallbackManager
+        from langchain.schema.callbacks.manager import CallbackManager
 
         # setup callbacks
         config = ensure_config(config)
@@ -2920,7 +2922,9 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
         """
-        from langchain.callbacks.tracers.root_listeners import RootListenersTracer
+        from langchain.schema.callbacks.tracers.root_listeners import (
+            RootListenersTracer,
+        )
 
         return self.__class__(
             bound=self.bound,

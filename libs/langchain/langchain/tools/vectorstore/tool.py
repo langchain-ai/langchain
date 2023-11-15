@@ -3,9 +3,9 @@
 import json
 from typing import Any, Dict, Optional
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.llms.openai import OpenAI
 from langchain.pydantic_v1 import BaseModel, Field
+from langchain.schema.callbacks.manager import CallbackManagerForToolRun
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.vectorstore import VectorStore
 from langchain.tools.base import BaseTool

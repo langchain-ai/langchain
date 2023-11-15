@@ -2,9 +2,9 @@ from typing import Any, Dict, List, Optional, cast
 
 import requests
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 

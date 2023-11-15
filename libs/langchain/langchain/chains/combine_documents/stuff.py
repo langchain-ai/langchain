@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
 )
@@ -11,6 +10,7 @@ from langchain.docstore.document import Document
 from langchain.prompts.prompt import PromptTemplate
 from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema import BasePromptTemplate, format_document
+from langchain.schema.callbacks.manager import Callbacks
 
 
 def _get_default_document_prompt() -> PromptTemplate:
