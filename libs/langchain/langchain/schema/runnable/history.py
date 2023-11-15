@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 class RunnableWithMessageHistory(RunnableBindingBase):
     """
-    A runnable that handles chat message history management for another runnable.
+    A runnable that manages chat message history for another runnable.
 
     Example:
         .. code-block:: python
@@ -165,24 +165,18 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             hist.add_message(m)
 
         # Add the output messages
-        if isinstance(run.outputs, dict):
-            if self.output_key is not None:
-                output_messages: List[BaseMessage] = run.outputs[self.output_key]
-            elif "output" in run.outputs:
-                output_messages = load(run.outputs["output"])
-                if isinstance(output_messages, BaseMessage):
-                    output_messages = [output_messages]
-            else:
-                raise ValueError(
-                    f"Output stored in run as dict but cannot extract messages: "
-                    f"{run.outputs}"
-                )
-        elif isinstance(run.outputs, BaseMessage):
-            output_messages = [run.outputs]
-        elif isinstance(run.outputs, list):
-            output_messages = run.outputs
+        outputs = load(run.outputs)
+        if self.output_key is not None:
+            output_messages: List[BaseMessage] = outputs[self.output_key]
+        elif "output" in outputs:
+            output_messages = outputs["output"]
         else:
-            raise ValueError(f"Received output {run.outputs}")
+            raise ValueError(
+                f"Output is a dict but not output_key was specified. Received output: "
+                f"{outputs}"
+            )
+        if isinstance(output_messages, BaseMessage):
+            output_messages = [output_messages]
 
         for m in output_messages:
             hist.add_message(m)
