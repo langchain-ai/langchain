@@ -46,13 +46,13 @@ logger = logging.getLogger(__name__)
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
-        message_dict = {'role': 'user', 'content': message.content}
+        message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, HumanMessage):
-        message_dict = {'role': 'user', 'content': message.content}
+        message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
-        message_dict = {'role': 'assistant', 'content': message.content}
+        message_dict = {"role": "assistant", "content": message.content}
     elif isinstance(message, SystemMessage):
-        message_dict = {'role': 'system', 'content': message.content}
+        message_dict = {"role": "system", "content": message.content}
     else:
         raise ValueError(f"Got unknown type {message}")
 
@@ -74,8 +74,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 
 
 def _convert_delta_to_message_chunk(
-        _dict: Mapping[str, Any],
-        default_class: Type[BaseMessageChunk]
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     msg_role = _dict["role"]
     msg_content = _dict.get("content", "")
@@ -128,7 +127,7 @@ class ChatSparkLLM(BaseChatModel):
     spark_api_secret: Optional[str] = None
     spark_api_url: Optional[str] = None
     spark_llm_domain: Optional[str] = None
-    spark_user_id: str = 'lc_user'
+    spark_user_id: str = "lc_user"
     streaming: bool = False
     request_timeout: int = 30
     temperature: float = 0.5
@@ -192,53 +191,48 @@ class ChatSparkLLM(BaseChatModel):
             "generalv3",
         )
         # put extra params into model_kwargs
-        values["model_kwargs"]['temperature'] = values['temperature'] or cls.temperature
-        values["model_kwargs"]['top_k'] = values['top_k'] or cls.top_k
+        values["model_kwargs"]["temperature"] = values["temperature"] or cls.temperature
+        values["model_kwargs"]["top_k"] = values["top_k"] or cls.top_k
 
         values["client"] = _SparkLLMClient(
-            app_id=values['spark_app_id'],
-            api_key=values['spark_api_key'],
-            api_secret=values['spark_api_secret'],
-            api_url=values['spark_api_url'],
-            spark_domain=values['spark_llm_domain'],
+            app_id=values["spark_app_id"],
+            api_key=values["spark_api_key"],
+            api_secret=values["spark_api_secret"],
+            api_url=values["spark_api_url"],
+            spark_domain=values["spark_llm_domain"],
             model_kwargs=values["model_kwargs"],
         )
         return values
 
     def _stream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         messages = [_convert_message_to_dict(m) for m in messages]
         default_chunk_class = AIMessageChunk
 
         self.client.arun(
-            messages,
-            self.spark_user_id,
-            self.model_kwargs,
-            self.streaming
+            messages, self.spark_user_id, self.model_kwargs, self.streaming
         )
         for content in self.client.subscribe(timeout=self.request_timeout):
-            if 'data' not in content:
+            if "data" not in content:
                 continue
-            delta = content['data']
-            chunk = _convert_delta_to_message_chunk(
-                delta, default_chunk_class
-            )
+            delta = content["data"]
+            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.content)
 
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
             stream_iter = self._stream(
@@ -250,16 +244,16 @@ class ChatSparkLLM(BaseChatModel):
             [_convert_message_to_dict(m) for m in messages],
             self.spark_user_id,
             self.model_kwargs,
-            False
+            False,
         )
         completion = {}
         llm_output = {}
         for content in self.client.subscribe(timeout=self.request_timeout):
-            if 'usage' in content:
-                llm_output['token_usage'] = content['usage']
-            if 'data' not in content:
+            if "usage" in content:
+                llm_output["token_usage"] = content["usage"]
+            if "data" not in content:
                 continue
-            completion = content['data']
+            completion = content["data"]
         message = _convert_dict_to_message(completion)
         generations = [ChatGeneration(message=message)]
         return ChatResult(generations=generations, llm_output=llm_output)
@@ -276,14 +270,17 @@ class _SparkLLMClient:
     """
 
     def __init__(
-            self, app_id: str,
-            api_key: str,
-            api_secret: str,
-            api_url: Optional[str] = None,
-            spark_domain: Optional[str] = None,
-            model_kwargs: Optional[dict] = None,
+        self,
+        app_id: str,
+        api_key: str,
+        api_secret: str,
+        api_url: Optional[str] = None,
+        spark_domain: Optional[str] = None,
+        model_kwargs: Optional[dict] = None,
     ):
-        self.api_url = "wss://spark-api.xf-yun.com/v3.1/chat" if not api_url else api_url
+        self.api_url = (
+            "wss://spark-api.xf-yun.com/v3.1/chat" if not api_url else api_url
+        )
         self.app_id = app_id
         self.ws_url = _SparkLLMClient._create_url(
             self.api_url,
@@ -291,9 +288,9 @@ class _SparkLLMClient:
             api_secret,
         )
         self.model_kwargs = model_kwargs
-        self.spark_domain = spark_domain or 'generalv3'
+        self.spark_domain = spark_domain or "generalv3"
         self.queue = queue.Queue()
-        self.blocking_message = {'content': '', 'role': 'assistant'}
+        self.blocking_message = {"content": "", "role": "assistant"}
 
     @staticmethod
     def _create_url(api_url: str, api_key: str, api_secret: str) -> str:
@@ -311,43 +308,49 @@ class _SparkLLMClient:
         signature_origin = f"host: {host}\ndate: {date}\nGET {path} HTTP/1.1"
 
         # encrypt using hmac-sha256
-        signature_sha = hmac.new(api_secret.encode('utf-8'), signature_origin.encode('utf-8'),
-                                 digestmod=hashlib.sha256).digest()
+        signature_sha = hmac.new(
+            api_secret.encode("utf-8"),
+            signature_origin.encode("utf-8"),
+            digestmod=hashlib.sha256,
+        ).digest()
 
-        signature_sha_base64 = base64.b64encode(
-            signature_sha).decode(encoding='utf-8')
+        signature_sha_base64 = base64.b64encode(signature_sha).decode(encoding="utf-8")
 
         authorization_origin = f'api_key="{api_key}", algorithm="hmac-sha256", headers="host date request-line", \
         signature="{signature_sha_base64}"'
-        authorization = base64.b64encode(
-            authorization_origin.encode('utf-8')).decode(encoding='utf-8')
+        authorization = base64.b64encode(authorization_origin.encode("utf-8")).decode(
+            encoding="utf-8"
+        )
 
         # generate url
-        params_dict = {
-            "authorization": authorization,
-            "date": date,
-            "host": host
-        }
+        params_dict = {"authorization": authorization, "date": date, "host": host}
         encoded_params = urlencode(params_dict)
-        url = urlunparse((
-            parsed_url.scheme,
-            parsed_url.netloc,
-            parsed_url.path,
-            parsed_url.params,
-            encoded_params,
-            parsed_url.fragment
-        ))
+        url = urlunparse(
+            (
+                parsed_url.scheme,
+                parsed_url.netloc,
+                parsed_url.path,
+                parsed_url.params,
+                encoded_params,
+                parsed_url.fragment,
+            )
+        )
         return url
 
-    def run(self, messages: List[Dict], user_id: str,
-            model_kwargs: Optional[dict] = None, streaming: bool = False):
+    def run(
+        self,
+        messages: List[Dict],
+        user_id: str,
+        model_kwargs: Optional[dict] = None,
+        streaming: bool = False,
+    ):
         websocket.enableTrace(False)
         ws = websocket.WebSocketApp(
             self.ws_url,
             on_message=self.on_message,
             on_error=self.on_error,
             on_close=self.on_close,
-            on_open=self.on_open
+            on_open=self.on_open,
         )
         ws.messages = messages
         ws.user_id = user_id
@@ -355,84 +358,87 @@ class _SparkLLMClient:
         ws.streaming = streaming
         ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
 
-    def arun(self, messages: List[Dict], user_id: str,
-             model_kwargs: Optional[dict] = None, streaming: bool = False) -> threading.Thread:
-        ws_thread = threading.Thread(target=self.run, args=(
-            messages,
-            user_id,
-            model_kwargs,
-            streaming,
-        ))
+    def arun(
+        self,
+        messages: List[Dict],
+        user_id: str,
+        model_kwargs: Optional[dict] = None,
+        streaming: bool = False,
+    ) -> threading.Thread:
+        ws_thread = threading.Thread(
+            target=self.run,
+            args=(
+                messages,
+                user_id,
+                model_kwargs,
+                streaming,
+            ),
+        )
         ws_thread.start()
         return ws_thread
 
     def on_error(self, ws, error):
-        self.queue.put({'error': error})
+        self.queue.put({"error": error})
         ws.close()
 
     def on_close(self, ws, close_status_code, close_reason):
         logger.debug(
             {
-                'log': {
-                    'close_status_code': close_status_code,
-                    'close_reason': close_reason
+                "log": {
+                    "close_status_code": close_status_code,
+                    "close_reason": close_reason,
                 }
             }
         )
-        self.queue.put({'done': True})
+        self.queue.put({"done": True})
 
     def on_open(self, ws):
-        self.blocking_message = {'content': '', 'role': 'assistant'}
-        data = json.dumps(self.gen_params(
-            messages=ws.messages,
-            user_id=ws.user_id,
-            model_kwargs=ws.model_kwargs
-        ))
+        self.blocking_message = {"content": "", "role": "assistant"}
+        data = json.dumps(
+            self.gen_params(
+                messages=ws.messages, user_id=ws.user_id, model_kwargs=ws.model_kwargs
+            )
+        )
         ws.send(data)
 
     def on_message(self, ws, message):
         data = json.loads(message)
-        code = data['header']['code']
+        code = data["header"]["code"]
         if code != 0:
             self.queue.put(
-                {'error': f"Code: {code}, Error: {data['header']['message']}"})
+                {"error": f"Code: {code}, Error: {data['header']['message']}"}
+            )
             ws.close()
         else:
-            choices = data['payload']['choices']
-            status = choices['status']
-            content = choices['text'][0]['content']
+            choices = data["payload"]["choices"]
+            status = choices["status"]
+            content = choices["text"][0]["content"]
             if ws.streaming:
-                self.queue.put({'data': choices['text'][0]})
+                self.queue.put({"data": choices["text"][0]})
             else:
-                self.blocking_message['content'] += content
+                self.blocking_message["content"] += content
             if status == 2:
                 if not ws.streaming:
-                    self.queue.put({'data': self.blocking_message})
-                usage_data = data.get('payload', {}).get('usage', {}).get('text', {}) if data else {}
-                self.queue.put({'usage': usage_data})
+                    self.queue.put({"data": self.blocking_message})
+                usage_data = (
+                    data.get("payload", {}).get("usage", {}).get("text", {})
+                    if data
+                    else {}
+                )
+                self.queue.put({"usage": usage_data})
                 ws.close()
 
-    def gen_params(self, messages: list, user_id: str,
-                   model_kwargs: Optional[dict] = None) -> dict:
+    def gen_params(
+        self, messages: list, user_id: str, model_kwargs: Optional[dict] = None
+    ) -> dict:
         data = {
-            "header": {
-                "app_id": self.app_id,
-                "uid": user_id
-            },
-            "parameter": {
-                "chat": {
-                    "domain": self.spark_domain
-                }
-            },
-            "payload": {
-                "message": {
-                    "text": messages
-                }
-            }
+            "header": {"app_id": self.app_id, "uid": user_id},
+            "parameter": {"chat": {"domain": self.spark_domain}},
+            "payload": {"message": {"text": messages}},
         }
 
         if model_kwargs:
-            data['parameter']['chat'].update(model_kwargs)
+            data["parameter"]["chat"].update(model_kwargs)
         logger.debug(f"Spark Request Parameters: {data}")
         return data
 
@@ -441,15 +447,17 @@ class _SparkLLMClient:
             try:
                 content = self.queue.get(timeout=timeout)
             except queue.Empty as _:
-                raise TimeoutError(f'SparkLLMClient wait LLM api response timeout {timeout} seconds')
-            if 'error' in content:
-                raise SparkError(content['error'])
-            if 'usage' in content:
+                raise TimeoutError(
+                    f"SparkLLMClient wait LLM api response timeout {timeout} seconds"
+                )
+            if "error" in content:
+                raise SparkError(content["error"])
+            if "usage" in content:
                 yield content
                 continue
-            if 'done' in content:
+            if "done" in content:
                 break
-            if 'data' not in content:
+            if "data" not in content:
                 break
             yield content
 
