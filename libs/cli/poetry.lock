@@ -499,10 +499,22 @@ files = [
 ]
 
 [package.dependencies]
-httpx = [
-    {version = ">=0.24.0,<0.25.0", markers = "python_version >= \"3.8\" and python_version < \"3.9\""},
-    {version = ">=0.25.0,<0.26.0", markers = "python_version >= \"3.9\" and python_version < \"4.0\""},
+httpx = {version = ">=0.25.0,<0.26.0", markers = "python_version >= \"3.9\" and python_version < \"4.0\""}
+pydantic = ">=1,<3"
+
+[[package]]
+name = "gigachat"
+version = "0.1.8"
+description = "GigaChat. Python-библиотека для GigaChain"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "gigachat-0.1.8-py3-none-any.whl", hash = "sha256:2581ed497d47937701846d1433b12974cbfb36a6e1ffeddc3b11ed8e8e0a8ba4"},
+    {file = "gigachat-0.1.8.tar.gz", hash = "sha256:9c2a65c9b8543dc4cf74061622aa67446e125f5ef81063b8fd642879cce384d5"},
 ]
+
+[package.dependencies]
+httpx = "<1"
 pydantic = ">=1,<3"
 
 [[package]]
@@ -645,27 +657,6 @@ files = [
 
 [[package]]
 name = "httpcore"
-version = "0.17.3"
-description = "A minimal low-level HTTP client."
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "httpcore-0.17.3-py3-none-any.whl", hash = "sha256:c2789b767ddddfa2a5782e3199b2b7f6894540b17b16ec26b2c4d8e103510b87"},
-    {file = "httpcore-0.17.3.tar.gz", hash = "sha256:a6f30213335e34c1ade7be6ec7c47f19f50c56db36abef1a9dfa3815b1cb3888"},
-]
-
-[package.dependencies]
-anyio = ">=3.0,<5.0"
-certifi = "*"
-h11 = ">=0.13,<0.15"
-sniffio = "==1.*"
-
-[package.extras]
-http2 = ["h2 (>=3,<5)"]
-socks = ["socksio (==1.*)"]
-
-[[package]]
-name = "httpcore"
 version = "1.0.1"
 description = "A minimal low-level HTTP client."
 optional = false
@@ -684,29 +675,6 @@ asyncio = ["anyio (>=4.0,<5.0)"]
 http2 = ["h2 (>=3,<5)"]
 socks = ["socksio (==1.*)"]
 trio = ["trio (>=0.22.0,<0.23.0)"]
-
-[[package]]
-name = "httpx"
-version = "0.24.1"
-description = "The next generation HTTP client."
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "httpx-0.24.1-py3-none-any.whl", hash = "sha256:06781eb9ac53cde990577af654bd990a4949de37a28bdb4a230d434f3a30b9bd"},
-    {file = "httpx-0.24.1.tar.gz", hash = "sha256:5853a43053df830c20f8110c5e69fe44d035d850b2dfe795e196f00fdb774bdd"},
-]
-
-[package.dependencies]
-certifi = "*"
-httpcore = ">=0.15.0,<0.18.0"
-idna = "*"
-sniffio = "*"
-
-[package.extras]
-brotli = ["brotli", "brotlicffi"]
-cli = ["click (==8.*)", "pygments (==2.*)", "rich (>=10,<14)"]
-http2 = ["h2 (>=3,<5)"]
-socks = ["socksio (==1.*)"]
 
 [[package]]
 name = "httpx"
@@ -1681,4 +1649,4 @@ serve = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6890838826632761b456045f7de2f0c6f619c4e2194b64693a506b337ed809be"
+content-hash = "2ea44493b776d7273a6a9186e057ff69f0e093ef42c558716b27b1c44734411f"

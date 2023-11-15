@@ -1,5 +1,5 @@
 """
-Manage LangChain apps
+Manage GigaChain apps
 """
 
 import shutil

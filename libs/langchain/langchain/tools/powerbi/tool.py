@@ -99,7 +99,9 @@ class QueryPowerBITool(BaseTool):
         logger.debug(f"PBI Query duration: {end_time - start_time:0.6f}")
         result, error = self._parse_output(pbi_result)
         if error is not None and "TokenExpired" in error:
-            self.session_cache[tool_input] = "Срок действия или недействительность \
+            self.session_cache[
+                tool_input
+            ] = "Срок действия или недействительность \
 токена аутентификации истек, пожалуйста,\
 попробуйте повторно аутентифицироваться."
             return self.session_cache[tool_input]

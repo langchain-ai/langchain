@@ -168,9 +168,9 @@ def test_chat_prompt_template_from_messages_using_role_strings() -> None:
 
 
 def test_chat_prompt_template_with_messages() -> None:
-    messages: List[Union[BaseMessagePromptTemplate, BaseMessage]] = (
-        create_messages() + [HumanMessage(content="foo")]
-    )
+    messages: List[
+        Union[BaseMessagePromptTemplate, BaseMessage]
+    ] = create_messages() + [HumanMessage(content="foo")]
     chat_prompt_template = ChatPromptTemplate.from_messages(messages)
     assert sorted(chat_prompt_template.input_variables) == sorted(
         ["context", "foo", "bar"]

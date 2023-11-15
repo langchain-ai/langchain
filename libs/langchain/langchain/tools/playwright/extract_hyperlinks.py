@@ -60,7 +60,7 @@ class ExtractHyperlinksTool(BaseBrowserTool):
         else:
             links = [anchor.get("href", "") for anchor in anchors]
         # Return the list of links as a JSON string
-        return json.dumps(links)
+        return json.dumps(links, ensure_ascii=False)
 
     def _run(
         self,

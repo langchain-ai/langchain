@@ -25,7 +25,7 @@ def create_events(events: List[EventDict]) -> Optional[Any]:
 
         conn = http.client.HTTPSConnection("app.firstpartyhq.com")
 
-        payload = json.dumps(data)
+        payload = json.dumps(data, ensure_ascii=False)
 
         headers = {
             "Content-Type": "application/json",

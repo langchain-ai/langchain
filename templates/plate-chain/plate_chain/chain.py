@@ -68,7 +68,8 @@ def _get_json_format(request: FileProcessingRequest):
                 "col_end": 1 + request.num_cols - 1,
                 "contents": "Entity ID",
             }
-        ]
+        ],
+        ensure_ascii=False
     )
 
 

@@ -65,4 +65,4 @@ class JsonFormer(HuggingFacePipeline):
             debug=self.debug,
         )
         text = model()
-        return json.dumps(text)
+        return json.dumps(text, ensure_ascii=False)

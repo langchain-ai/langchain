@@ -106,7 +106,7 @@ class Tair(VectorStore):
                     **{
                         "TEXT": text,
                         self.content_key: text,
-                        self.metadata_key: json.dumps(metadata),
+                        self.metadata_key: json.dumps(metadata, ensure_ascii=False),
                     },
                 )
             else:
@@ -117,7 +117,7 @@ class Tair(VectorStore):
                     False,
                     **{
                         self.content_key: text,
-                        self.metadata_key: json.dumps(metadata),
+                        self.metadata_key: json.dumps(metadata, ensure_ascii=False),
                     },
                 )
             ids.append(key)

@@ -143,7 +143,7 @@ class MatchingEngine(VectorStore):
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")
 
         # Creating json lines from the embedded documents.
-        result_str = "\n".join([json.dumps(x) for x in jsons])
+        result_str = "\n".join([json.dumps(x, ensure_ascii=False) for x in jsons])
 
         filename_prefix = f"indexes/{uuid.uuid4()}"
         filename = f"{filename_prefix}/{time.time()}.json"
