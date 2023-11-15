@@ -26,6 +26,7 @@ class PlanAndExecute(Chain):
     """The step container to use."""
     input_key: str = "input"
     output_key: str = "output"
+    intermediate_steps_key: str = "intermediate_steps"
 
     @property
     def input_keys(self) -> List[str]:
@@ -34,6 +35,10 @@ class PlanAndExecute(Chain):
     @property
     def output_keys(self) -> List[str]:
         return [self.output_key]
+
+    @property
+    def intermediate_steps_keys(self) -> List[tuple]:
+        return [self.intermediate_steps_key]
 
     def _call(
         self,
@@ -46,6 +51,7 @@ class PlanAndExecute(Chain):
         )
         if run_manager:
             run_manager.on_text(str(plan), verbose=self.verbose)
+        tmp = []
         for step in plan.steps:
             _new_inputs = {
                 "previous_steps": self.step_container,
@@ -65,7 +71,8 @@ class PlanAndExecute(Chain):
                     f"\n\nResponse: {response.response}", verbose=self.verbose
                 )
             self.step_container.add_step(step, response)
-        return {self.output_key: self.step_container.get_final_response()}
+            tmp.append((step, response))
+        return {self.output_key: self.step_container.get_final_response(), self.intermediate_steps_key:tmp}
 
     async def _acall(
         self,
@@ -78,6 +85,7 @@ class PlanAndExecute(Chain):
         )
         if run_manager:
             await run_manager.on_text(str(plan), verbose=self.verbose)
+        tmp =[]
         for step in plan.steps:
             _new_inputs = {
                 "previous_steps": self.step_container,
@@ -97,4 +105,5 @@ class PlanAndExecute(Chain):
                     f"\n\nResponse: {response.response}", verbose=self.verbose
                 )
             self.step_container.add_step(step, response)
-        return {self.output_key: self.step_container.get_final_response()}
+            tmp.append((step, response))
+        return {self.output_key: self.step_container.get_final_response(), self.intermediate_steps_key:tmp}
