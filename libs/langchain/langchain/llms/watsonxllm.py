@@ -90,12 +90,28 @@ class WatsonxLLM(LLM):
 
         extra = Extra.forbid
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {
+            "url": "WATSONX_URL",
+            "apikey": "WATSONX_APIKEY",
+            "token": "WATSONX_TOKEN",
+            "password": "WATSONX_PASSWORD",
+            "username": "WATSONX_USERNAME",
+            "instance_id": "WATSONX_INSTANCE_ID",
+        }
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that credentials and python package exists in environment."""
-        if not values["url"]:
-            raise TypeError("`url` is not provided.")
-        elif "cloud.ibm.com" in values.get("url", "").get_secret_value():
+        values["url"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "url", "WATSONX_URL")
+        )
+        if "cloud.ibm.com" in values.get("url", "").get_secret_value():
             values["apikey"] = convert_to_secret_str(
                 get_from_dict_or_env(values, "apikey", "WATSONX_APIKEY")
             )

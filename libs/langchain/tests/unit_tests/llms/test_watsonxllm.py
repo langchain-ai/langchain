@@ -3,6 +3,15 @@
 from langchain.llms import WatsonxLLM
 
 
+def test_initialize_watsonxllm_bad_path_without_url() -> None:
+    try:
+        WatsonxLLM(
+            model_id="google/flan-ul2",
+        )
+    except ValueError as e:
+        assert "WATSONX_URL" in e.__str__()
+
+
 def test_initialize_watsonxllm_cloud_bad_path() -> None:
     try:
         WatsonxLLM(model_id="google/flan-ul2", url="https://us-south.ml.cloud.ibm.com")
