@@ -4,6 +4,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.anthropic import convert_messages_to_prompt_anthropic
+from langchain.chat_models.meta import convert_messages_to_prompt_llama
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.bedrock import BedrockBase
 from langchain.pydantic_v1 import Extra
@@ -26,6 +27,8 @@ class ChatPromptAdapter:
     ) -> str:
         if provider == "anthropic":
             prompt = convert_messages_to_prompt_anthropic(messages=messages)
+        if provider == "meta":
+            prompt = convert_messages_to_prompt_llama(messages=messages)
         else:
             raise NotImplementedError(
                 f"Provider {provider} model does not support chat."
