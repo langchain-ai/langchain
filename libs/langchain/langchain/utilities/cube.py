@@ -46,7 +46,7 @@ class Granularity(Enum):
 
 class Filter(BaseModel):
     member: str = Field(
-        title="dimension or measure column",
+        description="dimension or measure column",
     )
     operator: Operator = Field(...)
     values: List[str] = Field(...)
@@ -58,7 +58,7 @@ class Filter(BaseModel):
 
 
 class TimeDimension(BaseModel):
-    dimension: str = Field(title="dimension column")
+    dimension: str = Field(description="dimension column")
     dateRange: List[Union[datetime, date]] = Field(
         min_items=2,
         max_items=2,
@@ -82,11 +82,11 @@ class TimeDimension(BaseModel):
 
 class Query(BaseModel):
     measures: Optional[List[str]] = Field(
-        title="measure columns",
+        description="measure columns",
         default=None,
     )
     dimensions: Optional[List[str]] = Field(
-        title="dimension columns",
+        description="dimension columns",
         default=None,
     )
     filters: Optional[List[Filter]] = Field(
