@@ -100,9 +100,9 @@ class ChatSparkLLM(BaseChatModel):
         .. code-block:: python
 
         client = ChatSparkLLM(
-            app_id="<app_id>",
-            api_key="<api_key>",
-            api_secret="<api_secret>"
+            spark_app_id="<app_id>",
+            spark_api_key="<api_key>",
+            spark_api_secret="<api_secret>"
         )
     """
 
