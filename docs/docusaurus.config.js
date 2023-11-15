@@ -193,6 +193,10 @@ const config = {
                 label: "Dependents",
               },
               {
+                label: "Integration Cards",
+                href: "https://integrations.langchain.com/",
+              },
+              {
                 to: "/docs/additional_resources/tutorials",
                 label: "Tutorials"
               },
