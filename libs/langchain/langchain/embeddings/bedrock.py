@@ -8,48 +8,6 @@ from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.embeddings import Embeddings
 
 
-class EmbeddingInputOutputAdapter:
-    """Adapter class to prepare the inputs from Langchain to a format
-    that an embedding model expects.
-
-    It also provides helper function to extract
-    the embeddings from the model response."""
-
-    provider_to_input_key_map = {
-        "amazon": "inputText",
-        "cohere": "texts",
-    }
-    provider_to_output_key_map = {
-        "amazon": "embedding",
-        "cohere": "embeddings",
-    }
-
-    @classmethod
-    def prepare_input(
-        cls, provider: str, text: str, model_kwargs: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        input_body = {**model_kwargs}
-        if provider == "amazon":
-            input_body[cls.provider_to_input_key_map[provider]] = text
-        elif provider == "cohere":
-            if "input_type" not in input_body.keys():
-                input_body["input_type"] = "search_document"
-            input_body[cls.provider_to_input_key_map[provider]] = [text]
-        else:
-            input_body["inputText"] = text
-        return input_body
-
-    @classmethod
-    def prepare_output(cls, provider: str, response: Any) -> str:
-        response_body = json.loads(response.get("body").read())
-        if provider == "amazon":
-            return response_body.get(cls.provider_to_output_key_map[provider])
-        elif provider == "cohere":
-            return response_body.get(cls.provider_to_output_key_map[provider])[0]
-        else:
-            return response_body.get("embedding")
-
-
 class BedrockEmbeddings(BaseModel, Embeddings):
     """Bedrock embedding models.
 
@@ -158,20 +116,34 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         # format input body for provider
         provider = self.model_id.split(".")[0]
         _model_kwargs = self.model_kwargs or {}
-        input_body = EmbeddingInputOutputAdapter.prepare_input(
-            provider, text, _model_kwargs
-        )
+        input_body = {**_model_kwargs}
+        if provider == "amazon":
+            input_body["inputText"] = text
+        elif provider == "cohere":
+            if "input_type" not in input_body.keys():
+                input_body["input_type"] = "search_document"
+            input_body["texts"] = [text]
+        else:
+            input_body["inputText"] = text
         body = json.dumps(input_body)
 
         try:
+            # invoke bedrock API
             response = self.client.invoke_model(
                 body=body,
                 modelId=self.model_id,
                 accept="application/json",
                 contentType="application/json",
             )
-            output = EmbeddingInputOutputAdapter.prepare_output(provider, response)
-            return output
+
+            # format output based on provider
+            response_body = json.loads(response.get("body").read())
+            if provider == "amazon":
+                return response_body.get("embedding")
+            elif provider == "cohere":
+                return response_body.get("embeddings")[0]
+            else:
+                return response_body.get("embedding")
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
