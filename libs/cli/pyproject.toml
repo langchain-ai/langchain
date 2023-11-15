@@ -57,7 +57,7 @@ _bump_2.shell = """sed -i "" "/^__version__ =/c\\ \n__version__ = \\"$version\\"
 _bump_2.uses = { version = "version" }
 
 _bump_1 = "poetry version patch"
-_check_formatting = "poetry run ruff format . --diff"
+_check_formatting = "poetry run ruff format . --check"
 _lint = "poetry run ruff ."
 _format = "poetry run ruff format ."
 _lint_fix = "poetry run ruff . --fix"
