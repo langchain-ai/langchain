@@ -18,7 +18,7 @@ from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.vectorstore import VectorStore
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
-from langchain.utilities import GoogleSearchAPIWrapper
+from langchain.utilities import GoogleSearchAPIWrapper, Requests
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +154,17 @@ class WebResearchRetriever(BaseRetriever):
         query_clean = self.clean_search_query(query)
         result = self.search.results(query_clean, num_search_results)
         return result
+    
+    def fetch_valid_documents(self, url_list: List[str]) -> List[str]:
+        clean_urls = []
+        for url in url_list:
+            try:
+                Requests().get(url).status_code
+                clean_urls.append(url)
+            except Exception as e:
+                logger.error(f"Error loading urls: {e}")
+        
+        return clean_urls
 
     def _get_relevant_documents(
         self,
@@ -194,6 +205,9 @@ class WebResearchRetriever(BaseRetriever):
 
         # Check for any new urls that we have not processed
         new_urls = list(urls.difference(self.url_database))
+
+        # Removes urls with connection errors from list
+        new_urls = self.fetch_valid_documents(new_urls)
 
         logger.info(f"New URLs to load: {new_urls}")
         # Load, split, and add new urls to vectorstore
