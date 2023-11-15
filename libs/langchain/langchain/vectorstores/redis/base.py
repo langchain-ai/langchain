@@ -1367,7 +1367,7 @@ def _prepare_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
 
     clean_meta: Dict[str, Union[str, float, int]] = {}
     for key, value in metadata.items():
-        if not value:
+        if value is None:
             clean_meta[key] = ""
             continue
 
