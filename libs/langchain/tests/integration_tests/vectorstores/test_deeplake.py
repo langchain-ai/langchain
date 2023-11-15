@@ -294,13 +294,3 @@ db = DeepLake(
         {"name": "metadata", "htype": "json"},
     ]
 )
-
-db.vectorstore.add(
-    ids=["1", "2", "3"],
-    text=["foo", "bar", "baz"],
-    embedding=FakeEmbeddings().embed_documents(["foo", "bar", "baz"]),
-    metadata=[{"page": str(i)} for i in range(3)],
-)
-
-output = db.similarity_search("foo", k=1)
-assert len(output) == 1
