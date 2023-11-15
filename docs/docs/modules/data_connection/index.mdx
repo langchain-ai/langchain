@@ -60,7 +60,13 @@ These include:
 - [Ensemble Retriever](/docs/modules/data_connection/retrievers/ensemble): Sometimes you may want to retrieve documents from multiple different sources, or using multiple different algorithms. The ensemble retriever allows you to easily do this.
 - And more!
 
-**[Indexes](/docs/modules/data_connection/indexing)**
+**[Indexing](/docs/modules/data_connection/indexing)**
 
-**Index** is used to avoid writing duplicated content into the 
-vectostore and to avoid over-writing content if it’s unchanged.
+The LangChain **Indexing API** syncs your data from any source into a vector store,
+helping you:
+
+- Avoid writing duplicated content into the vector store
+- Avoid re-writing unchanged content
+- Avoid re-computing embeddings over unchanged content
+
+All of which should save you time and money, as well as improve your vector search results.
