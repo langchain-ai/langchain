@@ -2430,7 +2430,12 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __repr__(self) -> str:
         """A string representation of this runnable."""
-        return f"RunnableLambda({get_lambda_source(self.func) or '...'})"
+        if hasattr(self, "func"):
+            return f"RunnableLambda({get_lambda_source(self.func) or '...'})"
+        elif hasattr(self, "afunc"):
+            return f"RunnableLambda(afunc={get_lambda_source(self.afunc) or '...'})"
+        else:
+            return "RunnableLambda(...)"
 
     def _invoke(
         self,
