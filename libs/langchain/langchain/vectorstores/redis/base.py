@@ -1420,28 +1420,40 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
         arbitrary_types_allowed = True
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        search_kwargs: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
+        merged_search_kwargs: dict = self.search_kwargs
+        if search_kwargs is not None:
+            if self.search_kwargs is not None:
+                merged_search_kwargs = self.search_kwargs.copy()
+                merged_search_kwargs.update(search_kwargs)
+            else:
+                merged_search_kwargs = search_kwargs
+
         if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
+            docs = self.vectorstore.similarity_search(query, **merged_search_kwargs)
         elif self.search_type == "similarity_distance_threshold":
             if self.search_kwargs["distance_threshold"] is None:
                 raise ValueError(
                     "distance_threshold must be provided for "
                     + "similarity_distance_threshold retriever"
                 )
-            docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
+            docs = self.vectorstore.similarity_search(query, **merged_search_kwargs)
 
         elif self.search_type == "similarity_score_threshold":
             docs_and_similarities = (
                 self.vectorstore.similarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
+                    query, **merged_search_kwargs
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
-                query, **self.search_kwargs
+                query, **merged_search_kwargs
             )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")

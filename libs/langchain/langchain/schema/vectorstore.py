@@ -655,7 +655,7 @@ class VectorStoreRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
-        search_kwargs=None,
+        search_kwargs: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         merged_search_kwargs: dict = self.search_kwargs
         if search_kwargs is not None:
@@ -686,7 +686,7 @@ class VectorStoreRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        search_kwargs=None,
+        search_kwargs: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         merged_search_kwargs: dict = self.search_kwargs
         if search_kwargs is not None:

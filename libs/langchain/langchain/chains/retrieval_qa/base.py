@@ -311,6 +311,7 @@ class VectorDBQA(BaseRetrievalQA):
         question: str,
         *,
         run_manager: AsyncCallbackManagerForChainRun,
+        search_kwargs: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """Get docs."""
         raise NotImplementedError("VectorDBQA does not support async")
