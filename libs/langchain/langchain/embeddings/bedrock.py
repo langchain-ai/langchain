@@ -117,13 +117,12 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         provider = self.model_id.split(".")[0]
         _model_kwargs = self.model_kwargs or {}
         input_body = {**_model_kwargs}
-        if provider == "amazon":
-            input_body["inputText"] = text
-        elif provider == "cohere":
+        if provider == "cohere":
             if "input_type" not in input_body.keys():
                 input_body["input_type"] = "search_document"
             input_body["texts"] = [text]
         else:
+            # includes common provider == "amazon"
             input_body["inputText"] = text
         body = json.dumps(input_body)
 
@@ -138,11 +137,10 @@ class BedrockEmbeddings(BaseModel, Embeddings):
 
             # format output based on provider
             response_body = json.loads(response.get("body").read())
-            if provider == "amazon":
-                return response_body.get("embedding")
-            elif provider == "cohere":
+            if provider == "cohere":
                 return response_body.get("embeddings")[0]
             else:
+                # includes common provider == "amazon"
                 return response_body.get("embedding")
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
