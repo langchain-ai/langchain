@@ -282,15 +282,3 @@ def test_ids_backwards_compatibility():
     
     output = db.search("foo", k=1)
     assert len(output) == 1
-    
-    
-db = DeepLake(
-    dataset_path="mem://test_path",
-    embedding_function=FakeEmbeddings(),
-    tensor_params=[
-        {"name": "ids", "htype": "text"},
-        {"name": "text", "htype": "text"},
-        {"name": "embedding", "htype": "embedding"},
-        {"name": "metadata", "htype": "json"},
-    ]
-)
