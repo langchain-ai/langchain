@@ -2437,8 +2437,11 @@ class RunnableLambda(Runnable[Input, Output]):
         input: Input,
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> Output:
-        output = call_func_with_variable_args(self.func, input, config, run_manager)
+        output = call_func_with_variable_args(
+            self.func, input, config, run_manager, **kwargs
+        )
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
@@ -2461,9 +2464,10 @@ class RunnableLambda(Runnable[Input, Output]):
         input: Input,
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> Output:
         output = await acall_func_with_variable_args(
-            self.afunc, input, config, run_manager
+            self.afunc, input, config, run_manager, **kwargs
         )
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
@@ -2509,6 +2513,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 self._invoke,
                 input,
                 self._config(config, self.func),
+                **kwargs,
             )
         else:
             raise TypeError(
@@ -2528,6 +2533,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 self._ainvoke,
                 input,
                 self._config(config, self.afunc),
+                **kwargs,
             )
         else:
             # Delegating to super implementation of ainvoke.
@@ -2535,10 +2541,12 @@ class RunnableLambda(Runnable[Input, Output]):
             return await super().ainvoke(input, config)
 
 
-class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
+class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     """
     A runnable that delegates calls to another runnable
     with each element of the input sequence.
+
+    Use only if creating a new RunnableEach subclass with different __init__ args.
     """
 
     bound: Runnable[Input, Output]
@@ -2581,11 +2589,6 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
-    def config_schema(
-        self, *, include: Optional[Sequence[str]] = None
-    ) -> Type[BaseModel]:
-        return self.bound.config_schema(include=include)
-
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
@@ -2593,38 +2596,6 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         return cls.__module__.split(".")[:-1]
-
-    def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
-        return RunnableEach(bound=self.bound.bind(**kwargs))
-
-    def with_config(
-        self, config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> RunnableEach[Input, Output]:
-        return RunnableEach(bound=self.bound.with_config(config, **kwargs))
-
-    def with_listeners(
-        self,
-        *,
-        on_start: Optional[Listener] = None,
-        on_end: Optional[Listener] = None,
-        on_error: Optional[Listener] = None,
-    ) -> RunnableEach[Input, Output]:
-        """
-        Bind lifecycle listeners to a Runnable, returning a new Runnable.
-
-        on_start: Called before the runnable starts running, with the Run object.
-        on_end: Called after the runnable finishes running, with the Run object.
-        on_error: Called if the runnable throws an error, with the Run object.
-
-        The Run object contains information about the run, including its id,
-        type, input, output, error, start_time, end_time, and any tags or metadata
-        added to the run.
-        """
-        return RunnableEach(
-            bound=self.bound.with_listeners(
-                on_start=on_start, on_end=on_end, on_error=on_error
-            )
-        )
 
     def _invoke(
         self,
@@ -2659,9 +2630,50 @@ class RunnableEach(RunnableSerializable[List[Input], List[Output]]):
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
 
-class RunnableBinding(RunnableSerializable[Input, Output]):
+class RunnableEach(RunnableEachBase[Input, Output]):
+    """
+    A runnable that delegates calls to another runnable
+    with each element of the input sequence.
+    """
+
+    def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
+        return RunnableEach(bound=self.bound.bind(**kwargs))
+
+    def with_config(
+        self, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> RunnableEach[Input, Output]:
+        return RunnableEach(bound=self.bound.with_config(config, **kwargs))
+
+    def with_listeners(
+        self,
+        *,
+        on_start: Optional[Listener] = None,
+        on_end: Optional[Listener] = None,
+        on_error: Optional[Listener] = None,
+    ) -> RunnableEach[Input, Output]:
+        """
+        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Called before the runnable starts running, with the Run object.
+        on_end: Called after the runnable finishes running, with the Run object.
+        on_error: Called if the runnable throws an error, with the Run object.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+        """
+        return RunnableEach(
+            bound=self.bound.with_listeners(
+                on_start=on_start, on_end=on_end, on_error=on_error
+            )
+        )
+
+
+class RunnableBindingBase(RunnableSerializable[Input, Output]):
     """
     A runnable that delegates calls to another runnable with a set of kwargs.
+
+    Use only if creating a new RunnableBinding subclass with different __init__ args.
     """
 
     bound: Runnable[Input, Output]
@@ -2749,11 +2761,6 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
-    def config_schema(
-        self, *, include: Optional[Sequence[str]] = None
-    ) -> Type[BaseModel]:
-        return self.bound.config_schema(include=include)
-
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
@@ -2761,93 +2768,6 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         return cls.__module__.split(".")[:-1]
-
-    def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
-        return self.__class__(
-            bound=self.bound,
-            config=self.config,
-            kwargs={**self.kwargs, **kwargs},
-            custom_input_type=self.custom_input_type,
-            custom_output_type=self.custom_output_type,
-        )
-
-    def with_config(
-        self,
-        config: Optional[RunnableConfig] = None,
-        # Sadly Unpack is not well supported by mypy so this will have to be untyped
-        **kwargs: Any,
-    ) -> Runnable[Input, Output]:
-        return self.__class__(
-            bound=self.bound,
-            kwargs=self.kwargs,
-            config=cast(RunnableConfig, {**self.config, **(config or {}), **kwargs}),
-            custom_input_type=self.custom_input_type,
-            custom_output_type=self.custom_output_type,
-        )
-
-    def with_listeners(
-        self,
-        *,
-        on_start: Optional[Listener] = None,
-        on_end: Optional[Listener] = None,
-        on_error: Optional[Listener] = None,
-    ) -> Runnable[Input, Output]:
-        """
-        Bind lifecycle listeners to a Runnable, returning a new Runnable.
-
-        on_start: Called before the runnable starts running, with the Run object.
-        on_end: Called after the runnable finishes running, with the Run object.
-        on_error: Called if the runnable throws an error, with the Run object.
-
-        The Run object contains information about the run, including its id,
-        type, input, output, error, start_time, end_time, and any tags or metadata
-        added to the run.
-        """
-        from langchain.callbacks.tracers.root_listeners import RootListenersTracer
-
-        return self.__class__(
-            bound=self.bound,
-            kwargs=self.kwargs,
-            config=self.config,
-            config_factories=[
-                lambda config: {
-                    "callbacks": [
-                        RootListenersTracer(
-                            config=config,
-                            on_start=on_start,
-                            on_end=on_end,
-                            on_error=on_error,
-                        )
-                    ],
-                }
-            ],
-            custom_input_type=self.custom_input_type,
-            custom_output_type=self.custom_output_type,
-        )
-
-    def with_types(
-        self,
-        input_type: Optional[Union[Type[Input], BaseModel]] = None,
-        output_type: Optional[Union[Type[Output], BaseModel]] = None,
-    ) -> Runnable[Input, Output]:
-        return self.__class__(
-            bound=self.bound,
-            kwargs=self.kwargs,
-            config=self.config,
-            custom_input_type=input_type
-            if input_type is not None
-            else self.custom_input_type,
-            custom_output_type=output_type
-            if output_type is not None
-            else self.custom_output_type,
-        )
-
-    def with_retry(self, **kwargs: Any) -> Runnable[Input, Output]:
-        return self.__class__(
-            bound=self.bound.with_retry(**kwargs),
-            kwargs=self.kwargs,
-            config=self.config,
-        )
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
         config = merge_configs(self.config, *configs)
@@ -2972,7 +2892,101 @@ class RunnableBinding(RunnableSerializable[Input, Output]):
             yield item
 
 
-RunnableBinding.update_forward_refs(RunnableConfig=RunnableConfig)
+RunnableBindingBase.update_forward_refs(RunnableConfig=RunnableConfig)
+
+
+class RunnableBinding(RunnableBindingBase[Input, Output]):
+    """
+    A runnable that delegates calls to another runnable with a set of kwargs.
+    """
+
+    def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
+        return self.__class__(
+            bound=self.bound,
+            config=self.config,
+            kwargs={**self.kwargs, **kwargs},
+            custom_input_type=self.custom_input_type,
+            custom_output_type=self.custom_output_type,
+        )
+
+    def with_config(
+        self,
+        config: Optional[RunnableConfig] = None,
+        # Sadly Unpack is not well supported by mypy so this will have to be untyped
+        **kwargs: Any,
+    ) -> Runnable[Input, Output]:
+        return self.__class__(
+            bound=self.bound,
+            kwargs=self.kwargs,
+            config=cast(RunnableConfig, {**self.config, **(config or {}), **kwargs}),
+            custom_input_type=self.custom_input_type,
+            custom_output_type=self.custom_output_type,
+        )
+
+    def with_listeners(
+        self,
+        *,
+        on_start: Optional[Listener] = None,
+        on_end: Optional[Listener] = None,
+        on_error: Optional[Listener] = None,
+    ) -> Runnable[Input, Output]:
+        """
+        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Called before the runnable starts running, with the Run object.
+        on_end: Called after the runnable finishes running, with the Run object.
+        on_error: Called if the runnable throws an error, with the Run object.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+        """
+        from langchain.callbacks.tracers.root_listeners import RootListenersTracer
+
+        return self.__class__(
+            bound=self.bound,
+            kwargs=self.kwargs,
+            config=self.config,
+            config_factories=[
+                lambda config: {
+                    "callbacks": [
+                        RootListenersTracer(
+                            config=config,
+                            on_start=on_start,
+                            on_end=on_end,
+                            on_error=on_error,
+                        )
+                    ],
+                }
+            ],
+            custom_input_type=self.custom_input_type,
+            custom_output_type=self.custom_output_type,
+        )
+
+    def with_types(
+        self,
+        input_type: Optional[Union[Type[Input], BaseModel]] = None,
+        output_type: Optional[Union[Type[Output], BaseModel]] = None,
+    ) -> Runnable[Input, Output]:
+        return self.__class__(
+            bound=self.bound,
+            kwargs=self.kwargs,
+            config=self.config,
+            custom_input_type=input_type
+            if input_type is not None
+            else self.custom_input_type,
+            custom_output_type=output_type
+            if output_type is not None
+            else self.custom_output_type,
+        )
+
+    def with_retry(self, **kwargs: Any) -> Runnable[Input, Output]:
+        return self.__class__(
+            bound=self.bound.with_retry(**kwargs),
+            kwargs=self.kwargs,
+            config=self.config,
+        )
+
 
 RunnableLike = Union[
     Runnable[Input, Output],
