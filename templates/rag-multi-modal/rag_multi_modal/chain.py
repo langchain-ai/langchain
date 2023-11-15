@@ -83,8 +83,8 @@ def generate_text_summaries(texts, tables, summarize_texts=False):
         text_summaries = summarize_chain.batch(texts, {"max_concurrency": 5})
     elif texts:
         text_summaries = (
-            texts
-        )  # Directly assign texts if summarization is not requested
+            texts  # Directly assign texts if summarization is not requested
+        )
 
     # Apply to tables if tables are provided
     if tables:
