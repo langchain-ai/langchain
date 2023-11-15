@@ -2539,6 +2539,8 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     """
     A runnable that delegates calls to another runnable
     with each element of the input sequence.
+
+    Use only if creating a new RunnableEach subclass with different __init__ args.
     """
 
     bound: Runnable[Input, Output]
@@ -2623,6 +2625,11 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
 
 
 class RunnableEach(RunnableEachBase[Input, Output]):
+    """
+    A runnable that delegates calls to another runnable
+    with each element of the input sequence.
+    """
+
     def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
         return RunnableEach(bound=self.bound.bind(**kwargs))
 
@@ -2659,6 +2666,8 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 class RunnableBindingBase(RunnableSerializable[Input, Output]):
     """
     A runnable that delegates calls to another runnable with a set of kwargs.
+
+    Use only if creating a new RunnableBinding subclass with different __init__ args.
     """
 
     bound: Runnable[Input, Output]
@@ -2881,6 +2890,10 @@ RunnableBindingBase.update_forward_refs(RunnableConfig=RunnableConfig)
 
 
 class RunnableBinding(RunnableBindingBase[Input, Output]):
+    """
+    A runnable that delegates calls to another runnable with a set of kwargs.
+    """
+
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         return self.__class__(
             bound=self.bound,
