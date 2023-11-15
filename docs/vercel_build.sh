@@ -47,8 +47,11 @@ source .venv/bin/activate
 python3.11 -m pip install --upgrade pip
 python3.11 -m pip install -r vercel_requirements.txt
 python3.11 scripts/model_feat_table.py
-mkdir docs/templates
-cp ../templates/docs/INDEX.md docs/templates/index.md
+mkdir docs/templates/templates
+cp ../templates/README.md docs/templates/templates/index.md
+cp ../templates/docs/CONTRIBUTING.md docs/templates/contributing.md
+cp ../templates/docs/LAUNCHING_PACKAGE.md docs/templates/launching_package.md
+cp ../templates/docs/INDEX.md docs/templates/templates/index.md
 python3.11 scripts/copy_templates.py
 cp ../cookbook/README.md src/pages/cookbook.mdx
 cp ../.github/CONTRIBUTING.md docs/contributing.md
