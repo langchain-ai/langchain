@@ -1,11 +1,10 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra, Field, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import Extra, Field, SecretStr, root_validator
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class GooseAI(LLM):
     logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
     """Adjust the probability of specific tokens being generated."""
 
-    gooseai_api_key: Optional[str] = None
+    gooseai_api_key: Optional[SecretStr] = None
 
     class Config:
         """Configuration for this pydantic config."""
@@ -90,13 +89,14 @@ class GooseAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        gooseai_api_key = get_from_dict_or_env(
-            values, "gooseai_api_key", "GOOSEAI_API_KEY"
+        gooseai_api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "gooseai_api_key", "GOOSEAI_API_KEY")
         )
+        values["gooseai_api_key"] = gooseai_api_key
         try:
             import openai
 
-            openai.api_key = gooseai_api_key
+            openai.api_key = gooseai_api_key.get_secret_value()
             openai.api_base = "https://api.goose.ai/v1"
             values["client"] = openai.Completion
         except ImportError:

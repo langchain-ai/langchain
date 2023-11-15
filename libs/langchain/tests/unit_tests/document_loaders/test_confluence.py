@@ -3,9 +3,10 @@ from typing import Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.confluence import ConfluenceLoader
+from langchain.document_loaders.confluence import ConfluenceLoader, ContentFormat
 
 
 @pytest.fixture
@@ -23,7 +24,7 @@ class TestConfluenceLoader:
 
     def test_confluence_loader_initialization(self, mock_confluence: MagicMock) -> None:
         ConfluenceLoader(
-            url=self.CONFLUENCE_URL,
+            self.CONFLUENCE_URL,
             username=self.MOCK_USERNAME,
             api_key=self.MOCK_API_TOKEN,
         )
@@ -33,6 +34,36 @@ class TestConfluenceLoader:
             password="api_token",
             cloud=True,
         )
+
+    def test_confluence_loader_initialization_invalid(self) -> None:
+        with pytest.raises(ValueError):
+            ConfluenceLoader(
+                self.CONFLUENCE_URL,
+                username=self.MOCK_USERNAME,
+                api_key=self.MOCK_API_TOKEN,
+                token="foo",
+            )
+
+        with pytest.raises(ValueError):
+            ConfluenceLoader(
+                self.CONFLUENCE_URL,
+                username=self.MOCK_USERNAME,
+                api_key=self.MOCK_API_TOKEN,
+                oauth2={
+                    "access_token": "bar",
+                    "access_token_secret": "bar",
+                    "consumer_key": "bar",
+                    "key_cert": "bar",
+                },
+            )
+
+        with pytest.raises(ValueError):
+            ConfluenceLoader(
+                self.CONFLUENCE_URL,
+                username=self.MOCK_USERNAME,
+                api_key=self.MOCK_API_TOKEN,
+                session=requests.Session(),
+            )
 
     def test_confluence_loader_initialization_from_env(
         self, mock_confluence: MagicMock
@@ -51,7 +82,7 @@ class TestConfluenceLoader:
 
     def test_confluence_loader_load_data_invalid_args(self) -> None:
         confluence_loader = ConfluenceLoader(
-            url=self.CONFLUENCE_URL,
+            self.CONFLUENCE_URL,
             username=self.MOCK_USERNAME,
             api_key=self.MOCK_API_TOKEN,
         )
@@ -121,22 +152,60 @@ class TestConfluenceLoader:
         assert mock_confluence.cql.call_count == 0
         assert mock_confluence.get_page_child_by_type.call_count == 0
 
+    def test_confluence_loader_when_content_format_and_keep_markdown_format_enabled(
+        self, mock_confluence: MagicMock
+    ) -> None:
+        # one response with two pages
+        mock_confluence.get_all_pages_from_space.return_value = [
+            self._get_mock_page("123", ContentFormat.VIEW),
+            self._get_mock_page("456", ContentFormat.VIEW),
+        ]
+        mock_confluence.get_all_restrictions_for_content.side_effect = [
+            self._get_mock_page_restrictions("123"),
+            self._get_mock_page_restrictions("456"),
+        ]
+
+        confluence_loader = self._get_mock_confluence_loader(mock_confluence)
+
+        documents = confluence_loader.load(
+            space_key=self.MOCK_SPACE_KEY,
+            content_format=ContentFormat.VIEW,
+            keep_markdown_format=True,
+            max_pages=2,
+        )
+
+        assert mock_confluence.get_all_pages_from_space.call_count == 1
+
+        assert len(documents) == 2
+        assert all(isinstance(doc, Document) for doc in documents)
+        assert documents[0].page_content == "Content 123\n\n"
+        assert documents[1].page_content == "Content 456\n\n"
+
+        assert mock_confluence.get_page_by_id.call_count == 0
+        assert mock_confluence.get_all_pages_by_label.call_count == 0
+        assert mock_confluence.cql.call_count == 0
+        assert mock_confluence.get_page_child_by_type.call_count == 0
+
     def _get_mock_confluence_loader(
         self, mock_confluence: MagicMock
     ) -> ConfluenceLoader:
         confluence_loader = ConfluenceLoader(
-            url=self.CONFLUENCE_URL,
+            self.CONFLUENCE_URL,
             username=self.MOCK_USERNAME,
             api_key=self.MOCK_API_TOKEN,
         )
         confluence_loader.confluence = mock_confluence
         return confluence_loader
 
-    def _get_mock_page(self, page_id: str) -> Dict:
+    def _get_mock_page(
+        self, page_id: str, content_format: ContentFormat = ContentFormat.STORAGE
+    ) -> Dict:
         return {
             "id": f"{page_id}",
             "title": f"Page {page_id}",
-            "body": {"storage": {"value": f"<p>Content {page_id}</p>"}},
+            "body": {
+                f"{content_format.name.lower()}": {"value": f"<p>Content {page_id}</p>"}
+            },
             "status": "current",
             "type": "page",
             "_links": {

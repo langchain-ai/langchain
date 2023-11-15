@@ -1,22 +1,16 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
-
-if TYPE_CHECKING:
-    from vespa.application import Vespa
 
 
 class VespaRetriever(BaseRetriever):
-    """Retriever that uses Vespa."""
+    """`Vespa` retriever."""
 
-    app: Vespa
+    app: Any
     """Vespa application to query."""
     body: Dict
     """Body of the query."""
@@ -56,11 +50,6 @@ class VespaRetriever(BaseRetriever):
         body = self.body.copy()
         body["query"] = query
         return self._query(body)
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError
 
     def get_relevant_documents_with_filter(
         self, query: str, *, _filter: Optional[str] = None

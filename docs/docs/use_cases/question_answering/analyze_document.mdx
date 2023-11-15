@@ -1,0 +1,44 @@
+# Analyze a single long document
+
+The AnalyzeDocumentChain takes in a single document, splits it up, and then runs it through a CombineDocumentsChain.
+
+```python
+with open("../../state_of_the_union.txt") as f:
+    state_of_the_union = f.read()
+```
+
+```python
+from langchain.llms import OpenAI
+from langchain.chains import AnalyzeDocumentChain
+
+
+llm = OpenAI(temperature=0)
+```
+
+
+```python
+from langchain.chains.question_answering import load_qa_chain
+```
+
+
+```python
+qa_chain = load_qa_chain(llm, chain_type="map_reduce")
+```
+
+
+```python
+qa_document_chain = AnalyzeDocumentChain(combine_docs_chain=qa_chain)
+```
+
+
+```python
+qa_document_chain.run(input_document=state_of_the_union, question="what did the president say about justice breyer?")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    ' The president thanked Justice Breyer for his service.'
+```
+
+</CodeOutputBlock>

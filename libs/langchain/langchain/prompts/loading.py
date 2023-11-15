@@ -1,17 +1,15 @@
 """Load prompts."""
-import importlib
 import json
 import logging
 from pathlib import Path
-from typing import Union
+from typing import Callable, Dict, Union
 
 import yaml
 
-from langchain.output_parsers.regex import RegexParser
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, NoOpOutputParser
-from langchain.utilities.loading import try_load_from_hub
+from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, StrOutputParser
+from langchain.utils.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
 logger = logging.getLogger(__name__)
@@ -78,9 +76,11 @@ def _load_output_parser(config: dict) -> dict:
         _config = config.pop("output_parser")
         output_parser_type = _config.pop("_type")
         if output_parser_type == "regex_parser":
+            from langchain.output_parsers.regex import RegexParser
+
             output_parser: BaseLLMOutputParser = RegexParser(**_config)
         elif output_parser_type == "default":
-            output_parser = NoOpOutputParser(**_config)
+            output_parser = StrOutputParser(**_config)
         else:
             raise ValueError(f"Unsupported output parser {output_parser_type}")
         config["output_parser"] = output_parser
@@ -113,6 +113,17 @@ def _load_prompt(config: dict) -> PromptTemplate:
     # Load the template from disk if necessary.
     config = _load_template("template", config)
     config = _load_output_parser(config)
+
+    template_format = config.get("template_format", "f-string")
+    if template_format == "jinja2":
+        # Disabled due to:
+        # https://github.com/langchain-ai/langchain/issues/4394
+        raise ValueError(
+            f"Loading templates with '{template_format}' format is no longer supported "
+            f"since it can lead to arbitrary code execution. Please migrate to using "
+            f"the 'f-string' template format, which does not suffer from this issue."
+        )
+
     return PromptTemplate(**config)
 
 
@@ -140,27 +151,13 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     elif file_path.suffix == ".yaml":
         with open(file_path, "r") as f:
             config = yaml.safe_load(f)
-    # TODO: deprecate this
-    elif file_path.suffix == ".py":
-        spec = importlib.util.spec_from_loader(
-            "prompt", loader=None, origin=str(file_path)
-        )
-        if spec is None:
-            raise ValueError("could not load spec")
-        helper = importlib.util.module_from_spec(spec)
-        with open(file_path, "rb") as f:
-            exec(f.read(), helper.__dict__)
-        if not isinstance(helper.PROMPT, BasePromptTemplate):
-            raise ValueError("Did not get object of type BasePromptTemplate.")
-        return helper.PROMPT
     else:
         raise ValueError(f"Got unsupported file type {file_path.suffix}")
     # Load the prompt from the config now.
     return load_prompt_from_config(config)
 
 
-type_to_loader_dict = {
+type_to_loader_dict: Dict[str, Callable[[dict], BasePromptTemplate]] = {
     "prompt": _load_prompt,
     "few_shot": _load_few_shot_prompt,
-    # "few_shot_with_templates": _load_few_shot_with_templates_prompt,
 }

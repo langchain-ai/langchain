@@ -6,9 +6,6 @@ import re
 import warnings
 from typing import Any, Dict, List, Optional
 
-import numexpr
-from pydantic import Extra, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -16,6 +13,7 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
@@ -26,7 +24,8 @@ class LLMMathChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import LLMMathChain, OpenAI
+            from langchain.chains import LLMMathChain
+            from langchain.llms import OpenAI
             llm_math = LLMMathChain.from_llm(OpenAI())
     """
 
@@ -46,6 +45,13 @@ class LLMMathChain(Chain):
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
+        try:
+            import numexpr  # noqa: F401
+        except ImportError:
+            raise ImportError(
+                "LLMMathChain requires the numexpr package. "
+                "Please install it with `pip install numexpr`."
+            )
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMMathChain with an llm is deprecated. "
@@ -74,6 +80,8 @@ class LLMMathChain(Chain):
         return [self.output_key]
 
     def _evaluate_expression(self, expression: str) -> str:
+        import numexpr  # noqa: F401
+
         try:
             local_dict = {"pi": math.pi, "e": math.e}
             output = str(

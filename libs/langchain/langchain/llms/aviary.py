@@ -3,11 +3,11 @@ import os
 from typing import Any, Dict, List, Mapping, Optional, Union, cast
 
 import requests
-from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 TIMEOUT = 60
@@ -15,6 +15,13 @@ TIMEOUT = 60
 
 @dataclasses.dataclass
 class AviaryBackend:
+    """Aviary backend.
+
+    Attributes:
+        backend_url: The URL for the Aviary backend.
+        bearer: The bearer token for the Aviary backend.
+    """
+
     backend_url: str
     bearer: str
 
@@ -88,6 +95,14 @@ class Aviary(LLM):
     `aviary models`
 
     AVIARY_URL and AVIARY_TOKEN environment variables must be set.
+
+    Attributes:
+        model: The name of the model to use. Defaults to "amazon/LightGPT".
+        aviary_url: The URL for the Aviary backend. Defaults to None.
+        aviary_token: The bearer token for the Aviary backend. Defaults to None.
+        use_prompt_format: If True, the prompt template for the model will be ignored.
+            Defaults to True.
+        version: API version to use for Aviary. Defaults to None.
 
     Example:
         .. code-block:: python

@@ -15,7 +15,7 @@ def dummy_transform(inputs: Dict[str, str]) -> Dict[str, str]:
     return outputs
 
 
-def test_tranform_chain() -> None:
+def test_transform_chain() -> None:
     """Test basic transform chain."""
     transform_chain = TransformChain(
         input_variables=["first_name", "last_name"],

@@ -244,7 +244,7 @@ def test_load_empty_jsonlines(mocker: MockerFixture) -> None:
         ),
     ),
 )
-def test_json_meta(
+def test_json_meta_01(
     patch_func: str, patch_func_value: Any, kwargs: Dict, mocker: MockerFixture
 ) -> None:
     mocker.patch("builtins.open", mocker.mock_open())
@@ -265,6 +265,55 @@ def test_json_meta(
     def metadata_func(record: Dict, metadata: Dict) -> Dict:
         metadata["x"] = f"{record['text']}-meta"
         return metadata
+
+    loader = JSONLoader(file_path=file_path, metadata_func=metadata_func, **kwargs)
+    result = loader.load()
+
+    assert result == expected_docs
+
+
+@pytest.mark.parametrize(
+    "patch_func,patch_func_value,kwargs",
+    (
+        # JSON content.
+        (
+            "pathlib.Path.read_text",
+            '[{"text": "value1"}, {"text": "value2"}]',
+            {"jq_schema": ".[]", "content_key": "text"},
+        ),
+        # JSON Lines content.
+        (
+            "pathlib.Path.open",
+            io.StringIO(
+                """
+                        {"text": "value1"}
+                        {"text": "value2"}
+                        """
+            ),
+            {"jq_schema": ".", "content_key": "text", "json_lines": True},
+        ),
+    ),
+)
+def test_json_meta_02(
+    patch_func: str, patch_func_value: Any, kwargs: Dict, mocker: MockerFixture
+) -> None:
+    mocker.patch("builtins.open", mocker.mock_open())
+    mocker.patch(patch_func, return_value=patch_func_value)
+
+    file_path = "/workspaces/langchain/test.json"
+    expected_docs = [
+        Document(
+            page_content="value1",
+            metadata={"source": file_path, "seq_num": 1, "x": "value1-meta"},
+        ),
+        Document(
+            page_content="value2",
+            metadata={"source": file_path, "seq_num": 2, "x": "value2-meta"},
+        ),
+    ]
+
+    def metadata_func(record: Dict, metadata: Dict) -> Dict:
+        return {**metadata, "x": f"{record['text']}-meta"}
 
     loader = JSONLoader(file_path=file_path, metadata_func=metadata_func, **kwargs)
     result = loader.load()

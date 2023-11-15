@@ -1,5 +1,19 @@
 # flake8: noqa
-"""Load tools."""
+"""Tools provide access to various resources and services.
+
+LangChain has a large ecosystem of integrations with various external resources
+like local and remote file systems, APIs and databases.
+
+These integrations allow developers to create versatile applications that combine the
+power of LLMs with the ability to access, interact with and manipulate external
+resources.
+
+When developing an application, developers should inspect the capabilities and
+permissions of the tools that underlie the given agent toolkit, and determine
+whether permissions of the given toolkit are appropriate for the application.
+
+See [Security](https://python.langchain.com/docs/security) for more information.
+"""
 import warnings
 from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
@@ -11,7 +25,7 @@ from langchain.callbacks.manager import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
-from langchain.chains.pal.base import PALChain
+from langchain.utilities.dalle_image_generator import DallEAPIWrapper
 from langchain.utilities.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.golden_query.tool import GoldenQueryRun
@@ -19,12 +33,14 @@ from langchain.tools.pubmed.tool import PubmedQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
+from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.google_scholar.tool import GoogleScholarQueryRun
 from langchain.tools.metaphor_search.tool import MetaphorSearchResults
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
+from langchain.tools.searchapi.tool import SearchAPIResults, SearchAPIRun
 from langchain.tools.graphql.tool import BaseGraphQLTool
 from langchain.tools.human.tool import HumanInputRun
-from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import (
     RequestsDeleteTool,
     RequestsGetTool,
@@ -32,6 +48,7 @@ from langchain.tools.requests.tool import (
     RequestsPostTool,
     RequestsPutTool,
 )
+from langchain.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
@@ -41,16 +58,19 @@ from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchResults
-from langchain.utilities import ArxivAPIWrapper
-from langchain.utilities import GoldenQueryAPIWrapper
-from langchain.utilities import PubMedAPIWrapper
+from langchain.tools.memorize.tool import Memorize
+from langchain.utilities.arxiv import ArxivAPIWrapper
+from langchain.utilities.golden_query import GoldenQueryAPIWrapper
+from langchain.utilities.pubmed import PubMedAPIWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
 from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.graphql import GraphQLAPIWrapper
+from langchain.utilities.searchapi import SearchApiAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.twilio import TwilioAPIWrapper
@@ -61,7 +81,14 @@ from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 
 
 def _get_python_repl() -> BaseTool:
-    return PythonREPLTool()
+    raise ImportError(
+        "This tool has been moved to langchain experiment. "
+        "This tool has access to a python REPL. "
+        "For best practices make sure to sandbox this tool. "
+        "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
+        "To keep using this code as is, install langchain experimental and "
+        "update relevant imports replacing 'langchain' with 'langchain_experimental'"
+    )
 
 
 def _get_tools_requests_get() -> BaseTool:
@@ -105,22 +132,6 @@ _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
 }
 
 
-def _get_pal_math(llm: BaseLanguageModel) -> BaseTool:
-    return Tool(
-        name="PAL-MATH",
-        description="A language model that is really good at solving complex word math problems. Input should be a fully worded hard word math problem.",
-        func=PALChain.from_math_prompt(llm).run,
-    )
-
-
-def _get_pal_colored_objects(llm: BaseLanguageModel) -> BaseTool:
-    return Tool(
-        name="PAL-COLOR-OBJ",
-        description="A language model that is really good at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.",
-        func=PALChain.from_colored_object_prompt(llm).run,
-    )
-
-
 def _get_llm_math(llm: BaseLanguageModel) -> BaseTool:
     return Tool(
         name="Calculator",
@@ -131,17 +142,19 @@ def _get_llm_math(llm: BaseLanguageModel) -> BaseTool:
 
 
 def _get_open_meteo_api(llm: BaseLanguageModel) -> BaseTool:
-    chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
+    chain = APIChain.from_llm_and_api_docs(
+        llm,
+        open_meteo_docs.OPEN_METEO_DOCS,
+        limit_to_domains=["https://api.open-meteo.com/"],
+    )
     return Tool(
-        name="Open Meteo API",
+        name="Open-Meteo-API",
         description="Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
 
 
 _LLM_TOOLS: Dict[str, Callable[[BaseLanguageModel], BaseTool]] = {
-    "pal-math": _get_pal_math,
-    "pal-colored-objects": _get_pal_colored_objects,
     "llm-math": _get_llm_math,
     "open-meteo-api": _get_open_meteo_api,
 }
@@ -150,10 +163,13 @@ _LLM_TOOLS: Dict[str, Callable[[BaseLanguageModel], BaseTool]] = {
 def _get_news_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     news_api_key = kwargs["news_api_key"]
     chain = APIChain.from_llm_and_api_docs(
-        llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
+        llm,
+        news_docs.NEWS_DOCS,
+        headers={"X-Api-Key": news_api_key},
+        limit_to_domains=["https://newsapi.org/"],
     )
     return Tool(
-        name="News API",
+        name="News-API",
         description="Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -165,9 +181,10 @@ def _get_tmdb_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         llm,
         tmdb_docs.TMDB_DOCS,
         headers={"Authorization": f"Bearer {tmdb_bearer_token}"},
+        limit_to_domains=["https://api.themoviedb.org/"],
     )
     return Tool(
-        name="TMDB API",
+        name="TMDB-API",
         description="Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -179,9 +196,10 @@ def _get_podcast_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         llm,
         podcast_docs.PODCAST_DOCS,
         headers={"X-ListenAPI-Key": listen_api_key},
+        limit_to_domains=["https://listen-api.listennotes.com/"],
     )
     return Tool(
-        name="Podcast API",
+        name="Podcast-API",
         description="Use the Listen Notes Podcast API to search all podcasts or episodes. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
@@ -215,12 +233,16 @@ def _get_golden_query(**kwargs: Any) -> BaseTool:
     return GoldenQueryRun(api_wrapper=GoldenQueryAPIWrapper(**kwargs))
 
 
-def _get_pupmed(**kwargs: Any) -> BaseTool:
+def _get_pubmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
 
 
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
+
+
+def _get_google_scholar(**kwargs: Any) -> BaseTool:
+    return GoogleScholarQueryRun(api_wrapper=GoogleScholarAPIWrapper(**kwargs))
 
 
 def _get_google_serper_results_json(**kwargs: Any) -> BaseTool:
@@ -229,6 +251,14 @@ def _get_google_serper_results_json(**kwargs: Any) -> BaseTool:
 
 def _get_google_search_results_json(**kwargs: Any) -> BaseTool:
     return GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
+
+
+def _get_searchapi(**kwargs: Any) -> BaseTool:
+    return SearchAPIRun(api_wrapper=SearchApiAPIWrapper(**kwargs))
+
+
+def _get_searchapi_results_json(**kwargs: Any) -> BaseTool:
+    return SearchAPIResults(api_wrapper=SearchApiAPIWrapper(**kwargs))
 
 
 def _get_serpapi(**kwargs: Any) -> BaseTool:
@@ -240,9 +270,17 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
     )
 
 
+def _get_dalle_image_generator(**kwargs: Any) -> Tool:
+    return Tool(
+        "Dall-E-Image-Generator",
+        DallEAPIWrapper(**kwargs).run,
+        "A wrapper around OpenAI DALL-E API. Useful for when you need to generate images from a text description. Input should be an image description.",
+    )
+
+
 def _get_twilio(**kwargs: Any) -> BaseTool:
     return Tool(
-        name="Text Message",
+        name="Text-Message",
         description="Useful for when you need to send a text message to a provided phone number.",
         func=TwilioAPIWrapper(**kwargs).run,
     )
@@ -295,6 +333,18 @@ def _get_dataforseo_api_search_json(**kwargs: Any) -> BaseTool:
     return DataForSeoAPISearchResults(api_wrapper=DataForSeoAPIWrapper(**kwargs))
 
 
+def _get_eleven_labs_text2speech(**kwargs: Any) -> BaseTool:
+    return ElevenLabsText2SpeechTool(**kwargs)
+
+
+def _get_memorize(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
+    return Memorize(llm=llm)
+
+
+def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
+    return GoogleCloudTextToSpeechTool(**kwargs)
+
+
 _EXTRA_LLM_TOOLS: Dict[
     str,
     Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],
@@ -302,8 +352,8 @@ _EXTRA_LLM_TOOLS: Dict[
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
     "podcast-api": (_get_podcast_api, ["listen_api_key"]),
+    "memorize": (_get_memorize, []),
 }
-
 _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[str]]] = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
@@ -319,11 +369,21 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "metaphor-search": (_get_metaphor_search, ["metaphor_api_key"]),
     "ddg-search": (_get_ddg_search, []),
     "google-serper": (_get_google_serper, ["serper_api_key", "aiosession"]),
+    "google-scholar": (
+        _get_google_scholar,
+        ["top_k_results", "hl", "lr", "serp_api_key"],
+    ),
     "google-serper-results-json": (
         _get_google_serper_results_json,
         ["serper_api_key", "aiosession"],
     ),
+    "searchapi": (_get_searchapi, ["searchapi_api_key", "aiosession"]),
+    "searchapi-results-json": (
+        _get_searchapi_results_json,
+        ["searchapi_api_key", "aiosession"],
+    ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
+    "dalle-image-generator": (_get_dalle_image_generator, ["openai_api_key"]),
     "twilio": (_get_twilio, ["account_sid", "auth_token", "from_number"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
@@ -332,10 +392,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["top_k_results", "load_max_docs", "load_all_available_meta"],
     ),
     "golden-query": (_get_golden_query, ["golden_api_key"]),
-    "pupmed": (
-        _get_pupmed,
-        ["top_k_results", "load_max_docs", "load_all_available_meta"],
-    ),
+    "pubmed": (_get_pubmed, ["top_k_results"]),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
     "awslambda": (
         _get_lambda_api,
@@ -352,6 +409,8 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_dataforseo_api_search_json,
         ["api_login", "api_password", "aiosession"],
     ),
+    "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
+    "google_cloud_texttospeech": (_get_google_cloud_texttospeech, []),
 }
 
 
@@ -389,7 +448,6 @@ def load_huggingface_tool(
 
     Returns:
         A tool.
-
     """
     try:
         from transformers import load_tool
@@ -425,6 +483,22 @@ def load_tools(
     **kwargs: Any,
 ) -> List[BaseTool]:
     """Load tools based on their name.
+
+    Tools allow agents to interact with various resources and services like
+    APIs, databases, file systems, etc.
+
+    Please scope the permissions of each tools to the minimum required for the
+    application.
+
+    For example, if an application only needs to read from a database,
+    the database tool should not be given write permissions. Moreover
+    consider scoping the permissions to only allow accessing specific
+    tables and impose user-level quota for limiting resource usage.
+
+    Please read the APIs of the individual tools to determine which configuration
+    they support.
+
+    See [Security](https://python.langchain.com/docs/security) for more information.
 
     Args:
         tool_names: name of tools to load.

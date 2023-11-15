@@ -3,8 +3,6 @@
 import warnings
 from typing import Any, Dict, List
 
-from pydantic import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -12,7 +10,8 @@ from langchain.callbacks.manager import (
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
 from langchain.docstore.document import Document
-from langchain.vectorstores.base import VectorStore
+from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema.vectorstore import VectorStore
 
 
 class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
@@ -37,9 +36,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
             self.combine_documents_chain, StuffDocumentsChain
         ):
             tokens = [
-                self.combine_documents_chain.llm_chain.llm.get_num_tokens(
-                    doc.page_content
-                )
+                self.combine_documents_chain.llm_chain._get_num_tokens(doc.page_content)
                 for doc in docs
             ]
             token_count = sum(tokens[:num_docs])

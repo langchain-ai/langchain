@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra
 
 
 class ContentHandlerAmazonAPIGateway:
@@ -36,7 +36,7 @@ class AmazonAPIGateway(LLM):
     """API Gateway HTTP Headers to send, e.g. for authentication"""
 
     model_kwargs: Optional[Dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     content_handler: ContentHandlerAmazonAPIGateway = ContentHandlerAmazonAPIGateway()
     """The content handler class that provides an input and

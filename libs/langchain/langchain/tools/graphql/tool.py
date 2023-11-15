@@ -1,10 +1,7 @@
 import json
 from typing import Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.graphql import GraphQLAPIWrapper
 
@@ -14,8 +11,8 @@ class BaseGraphQLTool(BaseTool):
 
     graphql_wrapper: GraphQLAPIWrapper
 
-    name = "query_graphql"
-    description = """\
+    name: str = "query_graphql"
+    description: str = """\
     Input to this tool is a detailed and correct GraphQL query, output is a result from the API.
     If the query is not correct, an error message will be returned.
     If an error is returned with 'Bad request' in it, rewrite the query and try again.
@@ -36,11 +33,3 @@ class BaseGraphQLTool(BaseTool):
     ) -> str:
         result = self.graphql_wrapper.run(tool_input)
         return json.dumps(result, indent=2)
-
-    async def _arun(
-        self,
-        tool_input: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the Graphql tool asynchronously."""
-        raise NotImplementedError("GraphQLAPIWrapper does not support async")

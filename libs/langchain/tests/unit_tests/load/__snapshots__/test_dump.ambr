@@ -5,6 +5,9 @@
     "lc": 1,
     "type": "constructor",
     "id": [
+      "tests",
+      "unit_tests",
+      "load",
       "test_dump",
       "Person"
     ],
@@ -27,6 +30,9 @@
     "lc": 1,
     "type": "constructor",
     "id": [
+      "tests",
+      "unit_tests",
+      "load",
       "test_dump",
       "SpecialPerson"
     ],
@@ -98,7 +104,8 @@
             "name"
           ],
           "template": "hello {name}!",
-          "template_format": "f-string"
+          "template_format": "f-string",
+          "partial_variables": {}
         }
       }
     }
@@ -176,7 +183,8 @@
                       "name"
                     ],
                     "template": "hello {name}!",
-                    "template_format": "f-string"
+                    "template_format": "f-string",
+                    "partial_variables": {}
                   }
                 }
               }
@@ -218,16 +226,6 @@
             "id": [
               "OPENAI_API_KEY"
             ]
-          },
-          "client": {
-            "lc": 1,
-            "type": "not_implemented",
-            "id": [
-              "openai",
-              "api_resources",
-              "completion",
-              "Completion"
-            ]
           }
         }
       },
@@ -245,7 +243,8 @@
             "name"
           ],
           "template": "hello {name}!",
-          "template_format": "f-string"
+          "template_format": "f-string",
+          "partial_variables": {}
         }
       }
     }

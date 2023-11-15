@@ -1,16 +1,15 @@
-"""Interface for retrieved document compressors."""
+import asyncio
 from abc import ABC, abstractmethod
 from inspect import signature
 from typing import List, Optional, Sequence, Union
 
-from pydantic import BaseModel
-
 from langchain.callbacks.manager import Callbacks
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema import BaseDocumentTransformer, Document
 
 
 class BaseDocumentCompressor(BaseModel, ABC):
-    """Base abstraction interface for document compression."""
+    """Base class for document compressors."""
 
     @abstractmethod
     def compress_documents(
@@ -21,7 +20,6 @@ class BaseDocumentCompressor(BaseModel, ABC):
     ) -> Sequence[Document]:
         """Compress retrieved documents given the query context."""
 
-    @abstractmethod
     async def acompress_documents(
         self,
         documents: Sequence[Document],
@@ -29,10 +27,13 @@ class BaseDocumentCompressor(BaseModel, ABC):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Compress retrieved documents given the query context."""
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self.compress_documents, documents, query, callbacks
+        )
 
 
 class DocumentCompressorPipeline(BaseDocumentCompressor):
-    """Document compressor that uses a pipeline of transformers."""
+    """Document compressor that uses a pipeline of Transformers."""
 
     transformers: List[Union[BaseDocumentTransformer, BaseDocumentCompressor]]
     """List of document filters that are chained together and run in sequence."""

@@ -1,8 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
-
-from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_EMBED_INSTRUCTION = "Represent this input: "
@@ -88,4 +87,4 @@ class OctoAIEmbeddings(BaseModel, Embeddings):
     def embed_query(self, text: str) -> List[float]:
         """Compute query embedding using an OctoAI instruct model."""
         text = text.replace("\n", " ")
-        return self._compute_embeddings([text], self.embed_instruction)[0]
+        return self._compute_embeddings([text], self.query_instruction)[0]

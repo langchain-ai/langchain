@@ -1,8 +1,7 @@
 from typing import Any, List
 
-from pydantic import BaseModel, Extra
-
-from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, Extra
+from langchain.schema.embeddings import Embeddings
 
 DEFAULT_MODEL_URL = "https://tfhub.dev/google/universal-sentence-encoder-multilingual/3"
 

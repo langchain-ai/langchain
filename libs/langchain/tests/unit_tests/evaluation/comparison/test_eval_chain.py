@@ -8,8 +8,63 @@ import pytest
 from langchain.evaluation.comparison.eval_chain import (
     LabeledPairwiseStringEvalChain,
     PairwiseStringEvalChain,
+    PairwiseStringResultOutputParser,
+    resolve_pairwise_criteria,
 )
+from langchain.evaluation.criteria.eval_chain import Criteria
 from tests.unit_tests.llms.fake_llm import FakeLLM
+
+
+@pytest.mark.parametrize("criterion", list(Criteria))
+def test_resolve_criteria_enum(criterion: Criteria) -> None:
+    val = resolve_pairwise_criteria(criterion)
+    assert isinstance(val, dict)
+    assert next(iter(val)) == criterion.value
+
+
+def test_resolve_criteria_list_enum() -> None:
+    val = resolve_pairwise_criteria(list(Criteria))
+    assert isinstance(val, dict)
+    assert set(val.keys()) == set(c.value for c in list(Criteria))
+
+
+def test_PairwiseStringResultOutputParser_parse() -> None:
+    output_parser = PairwiseStringResultOutputParser()
+    text = """I like pie better than cake.
+[[A]]"""
+    got = output_parser.parse(text)
+    want = {
+        "reasoning": text,
+        "value": "A",
+        "score": 1,
+    }
+    assert got.get("reasoning") == want["reasoning"]
+    assert got.get("value") == want["value"]
+    assert got.get("score") == want["score"]
+
+    text = """I like cake better than pie.
+[[B]]"""
+    got = output_parser.parse(text)
+    want = {
+        "reasoning": text,
+        "value": "B",
+        "score": 0,
+    }
+    assert got.get("reasoning") == want["reasoning"]
+    assert got.get("value") == want["value"]
+    assert got.get("score") == want["score"]
+
+    text = """I like cake and pie.
+[[C]]"""
+    got = output_parser.parse(text)
+    want = {
+        "reasoning": text,
+        "value": None,
+        "score": 0.5,
+    }
+    assert got.get("reasoning") == want["reasoning"]
+    assert got.get("value") == want["value"]
+    assert got.get("score") == want["score"]
 
 
 def test_pairwise_string_comparison_chain() -> None:
@@ -29,7 +84,7 @@ def test_pairwise_string_comparison_chain() -> None:
     )
     assert res["value"] is None
     assert res["score"] == 0.5
-    assert res["reasoning"] == "The values are the same."
+    assert res["reasoning"] == "The values are the same.\n[[C]]"
     res = chain.evaluate_string_pairs(
         prediction="I like pie.",
         prediction_b="I like pie.",

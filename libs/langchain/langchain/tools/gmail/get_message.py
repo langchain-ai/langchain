@@ -2,12 +2,8 @@ import base64
 import email
 from typing import Dict, Optional, Type
 
-from pydantic import BaseModel, Field
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.gmail.base import GmailBaseTool
 from langchain.tools.gmail.utils import clean_email_body
 
@@ -50,7 +46,16 @@ class GmailGetMessage(GmailBaseTool):
         subject = email_msg["Subject"]
         sender = email_msg["From"]
 
-        message_body = email_msg.get_payload()
+        message_body = ""
+        if email_msg.is_multipart():
+            for part in email_msg.walk():
+                ctype = part.get_content_type()
+                cdispo = str(part.get("Content-Disposition"))
+                if ctype == "text/plain" and "attachment" not in cdispo:
+                    message_body = part.get_payload(decode=True).decode("utf-8")
+                    break
+        else:
+            message_body = email_msg.get_payload(decode=True).decode("utf-8")
 
         body = clean_email_body(message_body)
 
@@ -62,11 +67,3 @@ class GmailGetMessage(GmailBaseTool):
             "subject": subject,
             "sender": sender,
         }
-
-    async def _arun(
-        self,
-        message_id: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> Dict:
-        """Run the tool."""
-        raise NotImplementedError

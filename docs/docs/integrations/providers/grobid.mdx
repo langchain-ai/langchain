@@ -1,0 +1,46 @@
+# Grobid
+
+GROBID is a machine learning library for extracting, parsing, and re-structuring raw documents.
+
+It is designed and expected to be used to parse academic papers, where it works particularly well.
+
+*Note*: if the articles supplied to Grobid are large documents (e.g. dissertations) exceeding a certain number
+of elements, they might not be processed.
+
+This page covers how to use the Grobid to parse articles for LangChain.
+
+## Installation
+The grobid installation is described in details in https://grobid.readthedocs.io/en/latest/Install-Grobid/.
+However, it is probably easier and less troublesome to run grobid through a docker container,
+as documented [here](https://grobid.readthedocs.io/en/latest/Grobid-docker/).
+
+## Use Grobid with LangChain
+
+Once grobid is installed and up and running (you can check by accessing it http://localhost:8070),
+you're ready to go.
+
+You can now use the GrobidParser to produce documents
+```python
+from langchain.document_loaders.parsers import GrobidParser
+from langchain.document_loaders.generic import GenericLoader
+
+#Produce chunks from article paragraphs
+loader = GenericLoader.from_filesystem(
+    "/Users/31treehaus/Desktop/Papers/",
+    glob="*",
+    suffixes=[".pdf"],
+    parser= GrobidParser(segment_sentences=False)
+)
+docs = loader.load()
+
+#Produce chunks from article sentences
+loader = GenericLoader.from_filesystem(
+    "/Users/31treehaus/Desktop/Papers/",
+    glob="*",
+    suffixes=[".pdf"],
+    parser= GrobidParser(segment_sentences=True)
+)
+docs = loader.load()
+```
+Chunk metadata will include Bounding Boxes. Although these are a bit funky to parse,
+they are explained in https://grobid.readthedocs.io/en/latest/Coordinates-in-PDF/

@@ -20,6 +20,19 @@ def test_qdrant_max_marginal_relevance_search(
     vector_name: Optional[str],
 ) -> None:
     """Test end to end construction and MRR search."""
+    from qdrant_client import models
+
+    filter = models.Filter(
+        must=[
+            models.FieldCondition(
+                key=f"{metadata_payload_key}.page",
+                match=models.MatchValue(
+                    value=2,
+                ),
+            ),
+        ],
+    )
+
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = Qdrant.from_texts(
@@ -38,5 +51,12 @@ def test_qdrant_max_marginal_relevance_search(
     )
     assert output == [
         Document(page_content="foo", metadata={"page": 0}),
+        Document(page_content="baz", metadata={"page": 2}),
+    ]
+
+    output = docsearch.max_marginal_relevance_search(
+        "foo", k=2, fetch_k=3, lambda_mult=0.0, filter=filter
+    )
+    assert output == [
         Document(page_content="baz", metadata={"page": 2}),
     ]

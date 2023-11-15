@@ -1,10 +1,21 @@
 """Test few shot prompt template."""
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Sequence, Tuple
 
 import pytest
 
-from langchain.prompts.few_shot import FewShotPromptTemplate
+from langchain.prompts import (
+    AIMessagePromptTemplate,
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+)
+from langchain.prompts.chat import SystemMessagePromptTemplate
+from langchain.prompts.example_selector.base import BaseExampleSelector
+from langchain.prompts.few_shot import (
+    FewShotChatMessagePromptTemplate,
+    FewShotPromptTemplate,
+)
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
 
 EXAMPLE_PROMPT = PromptTemplate(
     input_variables=["question", "answer"], template="{question}: {answer}"
@@ -56,7 +67,14 @@ def test_prompt_missing_input_variables() -> None:
             suffix=template,
             examples=[],
             example_prompt=EXAMPLE_PROMPT,
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=[],
+        suffix=template,
+        examples=[],
+        example_prompt=EXAMPLE_PROMPT,
+    ).input_variables == ["foo"]
 
     # Test when missing in prefix
     template = "This is a {foo} test."
@@ -67,7 +85,15 @@ def test_prompt_missing_input_variables() -> None:
             examples=[],
             prefix=template,
             example_prompt=EXAMPLE_PROMPT,
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=[],
+        suffix="foo",
+        examples=[],
+        prefix=template,
+        example_prompt=EXAMPLE_PROMPT,
+    ).input_variables == ["foo"]
 
 
 def test_prompt_extra_input_variables() -> None:
@@ -80,7 +106,14 @@ def test_prompt_extra_input_variables() -> None:
             suffix=template,
             examples=[],
             example_prompt=EXAMPLE_PROMPT,
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=input_variables,
+        suffix=template,
+        examples=[],
+        example_prompt=EXAMPLE_PROMPT,
+    ).input_variables == ["foo"]
 
 
 def test_few_shot_functionality() -> None:
@@ -237,7 +270,15 @@ def test_prompt_jinja2_missing_input_variables(
             examples=example_jinja2_prompt[1],
             example_prompt=example_jinja2_prompt[0],
             template_format="jinja2",
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=[],
+        suffix=suffix,
+        examples=example_jinja2_prompt[1],
+        example_prompt=example_jinja2_prompt[0],
+        template_format="jinja2",
+    ).input_variables == ["bar"]
 
     # Test when missing in prefix
     with pytest.warns(UserWarning):
@@ -248,7 +289,16 @@ def test_prompt_jinja2_missing_input_variables(
             examples=example_jinja2_prompt[1],
             example_prompt=example_jinja2_prompt[0],
             template_format="jinja2",
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=["bar"],
+        suffix=suffix,
+        prefix=prefix,
+        examples=example_jinja2_prompt[1],
+        example_prompt=example_jinja2_prompt[0],
+        template_format="jinja2",
+    ).input_variables == ["bar", "foo"]
 
 
 @pytest.mark.requires("jinja2")
@@ -266,4 +316,103 @@ def test_prompt_jinja2_extra_input_variables(
             examples=example_jinja2_prompt[1],
             example_prompt=example_jinja2_prompt[0],
             template_format="jinja2",
+            validate_template=True,
         )
+    assert FewShotPromptTemplate(
+        input_variables=["bar", "foo", "extra", "thing"],
+        suffix=suffix,
+        prefix=prefix,
+        examples=example_jinja2_prompt[1],
+        example_prompt=example_jinja2_prompt[0],
+        template_format="jinja2",
+    ).input_variables == ["bar", "foo"]
+
+
+def test_few_shot_chat_message_prompt_template() -> None:
+    """Tests for few shot chat message template."""
+    examples = [
+        {"input": "2+2", "output": "4"},
+        {"input": "2+3", "output": "5"},
+    ]
+
+    example_prompt = ChatPromptTemplate.from_messages(
+        [
+            HumanMessagePromptTemplate.from_template("{input}"),
+            AIMessagePromptTemplate.from_template("{output}"),
+        ]
+    )
+
+    few_shot_prompt = FewShotChatMessagePromptTemplate(
+        input_variables=["input"],
+        example_prompt=example_prompt,
+        examples=examples,
+    )
+    final_prompt: ChatPromptTemplate = (
+        SystemMessagePromptTemplate.from_template("You are a helpful AI Assistant")
+        + few_shot_prompt
+        + HumanMessagePromptTemplate.from_template("{input}")
+    )
+
+    messages = final_prompt.format_messages(input="100 + 1")
+    assert messages == [
+        SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
+        HumanMessage(content="2+2", additional_kwargs={}, example=False),
+        AIMessage(content="4", additional_kwargs={}, example=False),
+        HumanMessage(content="2+3", additional_kwargs={}, example=False),
+        AIMessage(content="5", additional_kwargs={}, example=False),
+        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+    ]
+
+
+class AsIsSelector(BaseExampleSelector):
+    """An example selector for testing purposes.
+
+    This selector returns the examples as-is.
+    """
+
+    def __init__(self, examples: Sequence[Dict[str, str]]) -> None:
+        """Initializes the selector."""
+        self.examples = examples
+
+    def add_example(self, example: Dict[str, str]) -> Any:
+        """Adds an example to the selector."""
+        raise NotImplementedError()
+
+    def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+        """Select which examples to use based on the inputs."""
+        return list(self.examples)
+
+
+def test_few_shot_chat_message_prompt_template_with_selector() -> None:
+    """Tests for few shot chat message template with an example selector."""
+    examples = [
+        {"input": "2+2", "output": "4"},
+        {"input": "2+3", "output": "5"},
+    ]
+    example_selector = AsIsSelector(examples)
+    example_prompt = ChatPromptTemplate.from_messages(
+        [
+            HumanMessagePromptTemplate.from_template("{input}"),
+            AIMessagePromptTemplate.from_template("{output}"),
+        ]
+    )
+
+    few_shot_prompt = FewShotChatMessagePromptTemplate(
+        input_variables=["input"],
+        example_prompt=example_prompt,
+        example_selector=example_selector,
+    )
+    final_prompt: ChatPromptTemplate = (
+        SystemMessagePromptTemplate.from_template("You are a helpful AI Assistant")
+        + few_shot_prompt
+        + HumanMessagePromptTemplate.from_template("{input}")
+    )
+    messages = final_prompt.format_messages(input="100 + 1")
+    assert messages == [
+        SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
+        HumanMessage(content="2+2", additional_kwargs={}, example=False),
+        AIMessage(content="4", additional_kwargs={}, example=False),
+        HumanMessage(content="2+3", additional_kwargs={}, example=False),
+        AIMessage(content="5", additional_kwargs={}, example=False),
+        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+    ]

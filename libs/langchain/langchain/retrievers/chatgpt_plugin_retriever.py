@@ -13,7 +13,7 @@ from langchain.schema import BaseRetriever, Document
 
 
 class ChatGPTPluginRetriever(BaseRetriever):
-    """Retrieves documents from a ChatGPT plugin."""
+    """`ChatGPT plugin` retriever."""
 
     url: str
     """URL of the ChatGPT plugin."""

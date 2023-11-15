@@ -8,7 +8,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
 class BaseLoader(ABC):
-    """Interface for loading Documents.
+    """Interface for Document Loader.
 
     Implementations should implement the lazy-loading method using generators
     to avoid loading all Documents into memory at once.
@@ -60,7 +60,7 @@ class BaseBlobParser(ABC):
     A blob parser provides a way to parse raw data stored in a blob into one
     or more documents.
 
-    The parser can be composed with blob loaders, making it easy to re-use
+    The parser can be composed with blob loaders, making it easy to reuse
     a parser independent of how the blob was originally loaded.
     """
 

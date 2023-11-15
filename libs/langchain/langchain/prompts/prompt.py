@@ -2,26 +2,48 @@
 from __future__ import annotations
 
 from pathlib import Path
-from string import Formatter
-from typing import Any, Dict, List, Union
-
-from pydantic import root_validator
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
-    _get_jinja2_variables_from_template,
     check_valid_template,
+    get_template_variables,
 )
+from langchain.pydantic_v1 import root_validator
 
 
 class PromptTemplate(StringPromptTemplate):
-    """Schema to represent a prompt for an LLM.
+    """A prompt template for a language model.
+
+    A prompt template consists of a string template. It accepts a set of parameters
+    from the user that can be used to generate a prompt for a language model.
+
+    The template can be formatted using either f-strings (default) or jinja2 syntax.
+
+    *Security warning*: Prefer using `template_format="f-string"` instead of
+        `template_format="jinja2"`, or make sure to NEVER accept jinja2 templates
+        from untrusted sources as they may lead to arbitrary Python code execution.
+
+        As of LangChain 0.0.329, Jinja2 templates will be rendered using
+        Jinja2's SandboxedEnvironment by default. This sand-boxing should
+        be treated as a best-effort approach rather than a guarantee of security,
+        as it is an opt-out rather than opt-in approach.
+
+        Despite the sand-boxing, we recommend to never use jinja2 templates
+        from untrusted sources.
 
     Example:
+
         .. code-block:: python
 
-            from langchain import PromptTemplate
+            from langchain.prompts import PromptTemplate
+
+            # Instantiation using from_template (recommended)
+            prompt = PromptTemplate.from_template("Say {foo}")
+            prompt.format(foo="bar")
+
+            # Instantiation using initializer
             prompt = PromptTemplate(input_variables=["foo"], template="Say {foo}")
     """
 
@@ -37,13 +59,14 @@ class PromptTemplate(StringPromptTemplate):
     template: str
     """The prompt template."""
 
-    template_format: str = "f-string"
+    template_format: Union[Literal["f-string"], Literal["jinja2"]] = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
-    validate_template: bool = True
+    validate_template: bool = False
     """Whether or not to try validating the template."""
 
     def __add__(self, other: Any) -> PromptTemplate:
+        """Override the + operator to allow for combining prompt templates."""
         # Allow for easy combining
         if isinstance(other, PromptTemplate):
             if self.template_format != "f-string":
@@ -95,9 +118,9 @@ class PromptTemplate(StringPromptTemplate):
 
         Example:
 
-        .. code-block:: python
+            .. code-block:: python
 
-            prompt.format(variable1="foo")
+                prompt.format(variable1="foo")
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
@@ -110,6 +133,14 @@ class PromptTemplate(StringPromptTemplate):
             check_valid_template(
                 values["template"], values["template_format"], all_inputs
             )
+        elif values.get("template_format"):
+            values["input_variables"] = [
+                var
+                for var in get_template_variables(
+                    values["template"], values["template_format"]
+                )
+                if var not in values["partial_variables"]
+            ]
         return values
 
     @classmethod
@@ -153,6 +184,7 @@ class PromptTemplate(StringPromptTemplate):
             template_file: The path to the file containing the prompt template.
             input_variables: A list of variable names the final prompt template
                 will expect.
+
         Returns:
             The prompt loaded from the file.
         """
@@ -161,25 +193,56 @@ class PromptTemplate(StringPromptTemplate):
         return cls(input_variables=input_variables, template=template, **kwargs)
 
     @classmethod
-    def from_template(cls, template: str, **kwargs: Any) -> PromptTemplate:
-        """Load a prompt template from a template."""
-        if "template_format" in kwargs and kwargs["template_format"] == "jinja2":
-            # Get the variables for the template
-            input_variables = _get_jinja2_variables_from_template(template)
+    def from_template(
+        cls,
+        template: str,
+        *,
+        template_format: str = "f-string",
+        partial_variables: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> PromptTemplate:
+        """Load a prompt template from a template.
 
-        else:
-            input_variables = {
-                v for _, v, _, _ in Formatter().parse(template) if v is not None
-            }
+        *Security warning*: Prefer using `template_format="f-string"` instead of
+            `template_format="jinja2"`, or make sure to NEVER accept jinja2 templates
+            from untrusted sources as they may lead to arbitrary Python code execution.
 
-        if "partial_variables" in kwargs:
-            partial_variables = kwargs["partial_variables"]
-            input_variables = {
-                var for var in input_variables if var not in partial_variables
-            }
+            As of LangChain 0.0.329, Jinja2 templates will be rendered using
+            Jinja2's SandboxedEnvironment by default. This sand-boxing should
+            be treated as a best-effort approach rather than a guarantee of security,
+            as it is an opt-out rather than opt-in approach.
+
+            Despite the sand-boxing, we recommend to never use jinja2 templates
+            from untrusted sources.
+
+        Args:
+            template: The template to load.
+            template_format: The format of the template. Use `jinja2` for jinja2,
+                             and `f-string` or None for f-strings.
+            partial_variables: A dictionary of variables that can be used to partially
+                               fill in the template. For example, if the template is
+                              `"{variable1} {variable2}"`, and `partial_variables` is
+                              `{"variable1": "foo"}`, then the final prompt will be
+                              `"foo {variable2}"`.
+
+        Returns:
+            The prompt template loaded from the template.
+        """
+
+        input_variables = get_template_variables(template, template_format)
+        _partial_variables = partial_variables or {}
+
+        if _partial_variables:
+            input_variables = [
+                var for var in input_variables if var not in _partial_variables
+            ]
 
         return cls(
-            input_variables=list(sorted(input_variables)), template=template, **kwargs
+            input_variables=input_variables,
+            template=template,
+            template_format=template_format,
+            partial_variables=_partial_variables,
+            **kwargs,
         )
 
 

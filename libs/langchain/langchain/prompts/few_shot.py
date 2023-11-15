@@ -1,23 +1,24 @@
 """Prompt template that contains few shot examples."""
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-from pydantic import Extra, root_validator
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
     check_valid_template,
+    get_template_variables,
 )
+from langchain.prompts.chat import BaseChatPromptTemplate, BaseMessagePromptTemplate
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
-class FewShotPromptTemplate(StringPromptTemplate):
+class _FewShotPromptTemplateMixin(BaseModel):
     """Prompt template that contains few shot examples."""
-
-    @property
-    def lc_serializable(self) -> bool:
-        return False
 
     examples: Optional[List[dict]] = None
     """Examples to format into the prompt.
@@ -27,26 +28,11 @@ class FewShotPromptTemplate(StringPromptTemplate):
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
 
-    example_prompt: PromptTemplate
-    """PromptTemplate used to format an individual example."""
+    class Config:
+        """Configuration for this pydantic object."""
 
-    suffix: str
-    """A prompt template string to put after the examples."""
-
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
-
-    example_separator: str = "\n\n"
-    """String separator used to join the prefix, the examples, and suffix."""
-
-    prefix: str = ""
-    """A prompt template string to put before the examples."""
-
-    template_format: str = "f-string"
-    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
-
-    validate_template: bool = True
-    """Whether or not to try validating the template."""
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
@@ -65,6 +51,54 @@ class FewShotPromptTemplate(StringPromptTemplate):
 
         return values
 
+    def _get_examples(self, **kwargs: Any) -> List[dict]:
+        """Get the examples to use for formatting the prompt.
+
+        Args:
+            **kwargs: Keyword arguments to be passed to the example selector.
+
+        Returns:
+            List of examples.
+        """
+        if self.examples is not None:
+            return self.examples
+        elif self.example_selector is not None:
+            return self.example_selector.select_examples(kwargs)
+        else:
+            raise ValueError(
+                "One of 'examples' and 'example_selector' should be provided"
+            )
+
+
+class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
+    """Prompt template that contains few shot examples."""
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
+        return False
+
+    validate_template: bool = False
+    """Whether or not to try validating the template."""
+
+    input_variables: List[str]
+    """A list of the names of the variables the prompt template expects."""
+
+    example_prompt: PromptTemplate
+    """PromptTemplate used to format an individual example."""
+
+    suffix: str
+    """A prompt template string to put after the examples."""
+
+    example_separator: str = "\n\n"
+    """String separator used to join the prefix, the examples, and suffix."""
+
+    prefix: str = ""
+    """A prompt template string to put before the examples."""
+
+    template_format: Union[Literal["f-string"], Literal["jinja2"]] = "f-string"
+    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
+
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix, and input variables are consistent."""
@@ -74,6 +108,14 @@ class FewShotPromptTemplate(StringPromptTemplate):
                 values["template_format"],
                 values["input_variables"] + list(values["partial_variables"]),
             )
+        elif values.get("template_format"):
+            values["input_variables"] = [
+                var
+                for var in get_template_variables(
+                    values["prefix"] + values["suffix"], values["template_format"]
+                )
+                if var not in values["partial_variables"]
+            ]
         return values
 
     class Config:
@@ -82,19 +124,11 @@ class FewShotPromptTemplate(StringPromptTemplate):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def _get_examples(self, **kwargs: Any) -> List[dict]:
-        if self.examples is not None:
-            return self.examples
-        elif self.example_selector is not None:
-            return self.example_selector.select_examples(kwargs)
-        else:
-            raise ValueError
-
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -127,8 +161,180 @@ class FewShotPromptTemplate(StringPromptTemplate):
         """Return the prompt type key."""
         return "few_shot"
 
-    def dict(self, **kwargs: Any) -> Dict:
-        """Return a dictionary of the prompt."""
+    def save(self, file_path: Union[Path, str]) -> None:
         if self.example_selector:
             raise ValueError("Saving an example selector is not currently supported")
-        return super().dict(**kwargs)
+        return super().save(file_path)
+
+
+class FewShotChatMessagePromptTemplate(
+    BaseChatPromptTemplate, _FewShotPromptTemplateMixin
+):
+    """Chat prompt template that supports few-shot examples.
+
+    The high level structure of produced by this prompt template is a list of messages
+    consisting of prefix message(s), example message(s), and suffix message(s).
+
+    This structure enables creating a conversation with intermediate examples like:
+
+        System: You are a helpful AI Assistant
+        Human: What is 2+2?
+        AI: 4
+        Human: What is 2+3?
+        AI: 5
+        Human: What is 4+4?
+
+    This prompt template can be used to generate a fixed list of examples or else
+    to dynamically select examples based on the input.
+
+    Examples:
+
+        Prompt template with a fixed list of examples (matching the sample
+        conversation above):
+
+        .. code-block:: python
+
+            from langchain.prompts import (
+                FewShotChatMessagePromptTemplate,
+                ChatPromptTemplate
+            )
+
+            examples = [
+                {"input": "2+2", "output": "4"},
+                {"input": "2+3", "output": "5"},
+            ]
+
+            example_prompt = ChatPromptTemplate.from_messages(
+                [('human', '{input}'), ('ai', '{output}')]
+            )
+
+            few_shot_prompt = FewShotChatMessagePromptTemplate(
+                examples=examples,
+                # This is a prompt template used to format each individual example.
+                example_prompt=example_prompt,
+            )
+
+            final_prompt = ChatPromptTemplate.from_messages(
+                [
+                    ('system', 'You are a helpful AI Assistant'),
+                    few_shot_prompt,
+                    ('human', '{input}'),
+                ]
+            )
+            final_prompt.format(input="What is 4+4?")
+
+        Prompt template with dynamically selected examples:
+
+        .. code-block:: python
+
+            from langchain.prompts import SemanticSimilarityExampleSelector
+            from langchain.embeddings import OpenAIEmbeddings
+            from langchain.vectorstores import Chroma
+
+            examples = [
+                {"input": "2+2", "output": "4"},
+                {"input": "2+3", "output": "5"},
+                {"input": "2+4", "output": "6"},
+                # ...
+            ]
+
+            to_vectorize = [
+                " ".join(example.values())
+                for example in examples
+            ]
+            embeddings = OpenAIEmbeddings()
+            vectorstore = Chroma.from_texts(
+                to_vectorize, embeddings, metadatas=examples
+            )
+            example_selector = SemanticSimilarityExampleSelector(
+                vectorstore=vectorstore
+            )
+
+            from langchain.schema import SystemMessage
+            from langchain.prompts import HumanMessagePromptTemplate
+            from langchain.prompts.few_shot import FewShotChatMessagePromptTemplate
+
+            few_shot_prompt = FewShotChatMessagePromptTemplate(
+                # Which variable(s) will be passed to the example selector.
+                input_variables=["input"],
+                example_selector=example_selector,
+                # Define how each example will be formatted.
+                # In this case, each example will become 2 messages:
+                # 1 human, and 1 AI
+                example_prompt=(
+                    HumanMessagePromptTemplate.from_template("{input}")
+                    + AIMessagePromptTemplate.from_template("{output}")
+                ),
+            )
+            # Define the overall prompt.
+            final_prompt = (
+                SystemMessagePromptTemplate.from_template(
+                    "You are a helpful AI Assistant"
+                )
+                + few_shot_prompt
+                + HumanMessagePromptTemplate.from_template("{input}")
+            )
+            # Show the prompt
+            print(final_prompt.format_messages(input="What's 3+3?"))
+
+            # Use within an LLM
+            from langchain.chat_models import ChatAnthropic
+            chain = final_prompt | ChatAnthropic()
+            chain.invoke({"input": "What's 3+3?"})
+    """
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
+        return False
+
+    input_variables: List[str] = Field(default_factory=list)
+    """A list of the names of the variables the prompt template will use
+    to pass to the example_selector, if provided."""
+    example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
+    """The class to format each example."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
+
+    def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """Format kwargs into a list of messages.
+
+        Args:
+            **kwargs: keyword arguments to use for filling in templates in messages.
+
+        Returns:
+            A list of formatted messages with all template variables filled in.
+        """
+        # Get the examples to use.
+        examples = self._get_examples(**kwargs)
+        examples = [
+            {k: e[k] for k in self.example_prompt.input_variables} for e in examples
+        ]
+        # Format the examples.
+        messages = [
+            message
+            for example in examples
+            for message in self.example_prompt.format_messages(**example)
+        ]
+        return messages
+
+    def format(self, **kwargs: Any) -> str:
+        """Format the prompt with inputs generating a string.
+
+        Use this method to generate a string representation of a prompt consisting
+        of chat messages.
+
+        Useful for feeding into a string based completion language model or debugging.
+
+        Args:
+            **kwargs: keyword arguments to use for formatting.
+
+        Returns:
+            A string representation of the prompt
+        """
+        messages = self.format_messages(**kwargs)
+        return get_buffer_string(messages)

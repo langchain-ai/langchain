@@ -1,17 +1,15 @@
 from typing import Optional, Type
 
-from pydantic import BaseModel, Field
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.amadeus.base import AmadeusBaseTool
 
 
 class ClosestAirportSchema(BaseModel):
+    """Schema for the AmadeusClosestAirport tool."""
+
     location: str = Field(
         description=(
             " The location for which you would like to find the nearest airport "
@@ -29,6 +27,8 @@ class ClosestAirportSchema(BaseModel):
 
 
 class AmadeusClosestAirport(AmadeusBaseTool):
+    """Tool for finding the closest airport to a particular location."""
+
     name: str = "closest_airport"
     description: str = (
         "Use this tool to find the closest airport to a particular location."
@@ -54,10 +54,3 @@ class AmadeusClosestAirport(AmadeusBaseTool):
         output = llm_chain.run(location=location)
 
         return output
-
-    async def _arun(
-        self,
-        location: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        raise NotImplementedError(f"The tool {self.name} does not support async yet.")

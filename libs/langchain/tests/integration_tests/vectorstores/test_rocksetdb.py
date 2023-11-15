@@ -1,9 +1,6 @@
 import logging
 import os
 
-import rockset
-import rockset.models
-
 from langchain.docstore.document import Document
 from langchain.vectorstores.rocksetdb import Rockset
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -33,6 +30,7 @@ logger = logging.getLogger(__name__)
 #
 # See https://rockset.com/blog/introducing-vector-search-on-rockset/ for more details.
 
+workspace = "langchain_tests"
 collection_name = "langchain_demo"
 text_key = "description"
 embedding_key = "description_embedding"
@@ -43,6 +41,9 @@ class TestRockset:
 
     @classmethod
     def setup_class(cls) -> None:
+        import rockset
+        import rockset.models
+
         assert os.environ.get("ROCKSET_API_KEY") is not None
         assert os.environ.get("ROCKSET_REGION") is not None
 
@@ -71,10 +72,9 @@ class TestRockset:
                 "Deleting all existing documents from the Rockset collection %s",
                 collection_name,
             )
+            query = f"select _id from {workspace}.{collection_name}"
 
-            query_response = client.Queries.query(
-                sql={"query": "select _id from {}".format(collection_name)}
-            )
+            query_response = client.Queries.query(sql={"query": query})
             ids = [
                 str(r["_id"])
                 for r in getattr(
@@ -85,12 +85,13 @@ class TestRockset:
             client.Documents.delete_documents(
                 collection=collection_name,
                 data=[rockset.models.DeleteDocumentsRequestData(id=i) for i in ids],
+                workspace=workspace,
             )
 
         embeddings = ConsistentFakeEmbeddings()
         embeddings.embed_documents(fake_texts)
         cls.rockset_vectorstore = Rockset(
-            client, embeddings, collection_name, text_key, embedding_key
+            client, embeddings, collection_name, text_key, embedding_key, workspace
         )
 
     def test_rockset_insert_and_search(self) -> None:
@@ -127,9 +128,9 @@ class TestRockset:
         )
         vector_str = ",".join(map(str, vector))
         expected = f"""\
-SELECT * EXCEPT(description_embedding), \
-COSINE_SIM(description_embedding, [{vector_str}]) as dist
-FROM langchain_demo
+SELECT * EXCEPT({embedding_key}), \
+COSINE_SIM({embedding_key}, [{vector_str}]) as dist
+FROM {workspace}.{collection_name}
 ORDER BY dist DESC
 LIMIT 4
 """
@@ -145,9 +146,9 @@ LIMIT 4
         )
         vector_str = ",".join(map(str, vector))
         expected = f"""\
-SELECT * EXCEPT(description_embedding), \
-COSINE_SIM(description_embedding, [{vector_str}]) as dist
-FROM langchain_demo
+SELECT * EXCEPT({embedding_key}), \
+COSINE_SIM({embedding_key}, [{vector_str}]) as dist
+FROM {workspace}.{collection_name}
 WHERE age >= 10
 ORDER BY dist DESC
 LIMIT 4

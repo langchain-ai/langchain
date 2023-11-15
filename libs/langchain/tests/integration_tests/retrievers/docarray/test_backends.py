@@ -1,7 +1,6 @@
 from typing import Any
 
 import pytest
-from vcr.request import Request
 
 from langchain.retrievers import DocArrayRetriever
 from tests.integration_tests.retrievers.docarray.fixtures import (  # noqa: F401
@@ -17,7 +16,7 @@ from tests.integration_tests.retrievers.docarray.fixtures import (  # noqa: F401
     "backend",
     ["init_hnsw", "init_in_memory", "init_qdrant", "init_elastic", "init_weaviate"],
 )
-def test_backends(request: Request, backend: Any) -> None:
+def test_backends(request: Any, backend: Any) -> None:
     index, filter_query, embeddings = request.getfixturevalue(backend)
 
     # create a retriever

@@ -1,4 +1,3 @@
-"""Loader that fetches data from Stripe"""
 import json
 import urllib.request
 from typing import List, Optional
@@ -18,7 +17,7 @@ STRIPE_ENDPOINTS = {
 
 
 class StripeLoader(BaseLoader):
-    """Loader that fetches data from Stripe."""
+    """Load from `Stripe` API."""
 
     def __init__(self, resource: str, access_token: Optional[str] = None) -> None:
         """Initialize with a resource and an access token.

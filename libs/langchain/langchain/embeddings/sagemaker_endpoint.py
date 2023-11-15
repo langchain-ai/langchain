@@ -1,9 +1,8 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
-
-from langchain.embeddings.base import Embeddings
 from langchain.llms.sagemaker_endpoint import ContentHandlerBase
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.schema.embeddings import Embeddings
 
 
 class EmbeddingsContentHandler(ContentHandlerBase[List[str], List[List[float]]]):
@@ -47,8 +46,18 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
                 region_name=region_name,
                 credentials_profile_name=credentials_profile_name
             )
+
+            #Use with boto3 client
+            client = boto3.client(
+                        "sagemaker-runtime",
+                        region_name=region_name
+                    )
+            se = SagemakerEndpointEmbeddings(
+                endpoint_name=endpoint_name,
+                client=client
+            )
     """
-    client: Any  #: :meta private:
+    client: Any = None
 
     endpoint_name: str = ""
     """The name of the endpoint from the deployed Sagemaker model.
@@ -91,7 +100,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
     """  # noqa: E501
 
     model_kwargs: Optional[Dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     endpoint_kwargs: Optional[Dict] = None
     """Optional attributes passed to the invoke_endpoint
@@ -107,6 +116,10 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
+        """Dont do anything if client provided externally"""
+        if values.get("client") is not None:
+            return values
+
         """Validate that AWS credentials to and python package exists in environment."""
         try:
             import boto3

@@ -1,4 +1,6 @@
 """Test MosaicML API wrapper."""
+import re
+
 import pytest
 
 from langchain.llms.mosaicml import PROMPT_FOR_GENERATION_FORMAT, MosaicML
@@ -13,7 +15,7 @@ def test_mosaicml_llm_call() -> None:
 
 def test_mosaicml_endpoint_change() -> None:
     """Test valid call to MosaicML."""
-    new_url = "https://models.hosted-on.mosaicml.hosting/dolly-12b/v1/predict"
+    new_url = "https://models.hosted-on.mosaicml.hosting/mpt-30b-instruct/v1/predict"
     llm = MosaicML(endpoint_url=new_url)
     assert llm.endpoint_url == new_url
     output = llm("Say foo:")
@@ -34,7 +36,7 @@ def test_mosaicml_extra_kwargs() -> None:
 
 def test_instruct_prompt() -> None:
     """Test instruct prompt."""
-    llm = MosaicML(inject_instruction_format=True, model_kwargs={"do_sample": False})
+    llm = MosaicML(inject_instruction_format=True, model_kwargs={"max_new_tokens": 10})
     instruction = "Repeat the word foo"
     prompt = llm._transform_prompt(instruction)
     expected_prompt = PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction)
@@ -45,7 +47,7 @@ def test_instruct_prompt() -> None:
 
 def test_retry_logic() -> None:
     """Tests that two queries (which would usually exceed the rate limit) works"""
-    llm = MosaicML(inject_instruction_format=True, model_kwargs={"do_sample": False})
+    llm = MosaicML(inject_instruction_format=True, model_kwargs={"max_new_tokens": 10})
     instruction = "Repeat the word foo"
     prompt = llm._transform_prompt(instruction)
     expected_prompt = PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction)
@@ -70,9 +72,11 @@ def test_short_retry_does_not_loop() -> None:
 
     with pytest.raises(
         ValueError,
-        match="Error raised by inference API: Rate limit exceeded: 1 per 1 second",
+        match=re.escape(
+            "Error raised by inference API: rate limit exceeded.\nResponse: You have "
+            "reached maximum request limit.\n"
+        ),
     ):
-        output = llm(prompt)
-        assert isinstance(output, str)
-        output = llm(prompt)
-        assert isinstance(output, str)
+        for _ in range(10):
+            output = llm(prompt)
+            assert isinstance(output, str)

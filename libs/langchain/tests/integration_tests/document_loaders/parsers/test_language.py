@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from langchain.document_loaders.concurrent import ConcurrentLoader
 from langchain.document_loaders.generic import GenericLoader
 from langchain.document_loaders.parsers import LanguageParser
 from langchain.text_splitter import Language
@@ -131,3 +132,52 @@ def test_language_loader_for_javascript_with_parser_threshold() -> None:
     docs = loader.load()
 
     assert len(docs) == 1
+
+
+def test_concurrent_language_loader_for_javascript_with_parser_threshold() -> None:
+    """Test JavaScript ConcurrentLoader with parser enabled and below threshold."""
+    file_path = Path(__file__).parent.parent.parent / "examples"
+    loader = ConcurrentLoader.from_filesystem(
+        file_path,
+        glob="hello_world.js",
+        parser=LanguageParser(language=Language.JS, parser_threshold=1000),
+    )
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+
+def test_concurrent_language_loader_for_python_with_parser_threshold() -> None:
+    """Test Python ConcurrentLoader with parser enabled and below threshold."""
+    file_path = Path(__file__).parent.parent.parent / "examples"
+    loader = ConcurrentLoader.from_filesystem(
+        file_path,
+        glob="hello_world.py",
+        parser=LanguageParser(language=Language.PYTHON, parser_threshold=1000),
+    )
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+
+@pytest.mark.skipif(not esprima_installed(), reason="requires esprima package")
+def test_concurrent_language_loader_for_javascript() -> None:
+    """Test JavaScript ConcurrentLoader with parser enabled."""
+    file_path = Path(__file__).parent.parent.parent / "examples"
+    loader = ConcurrentLoader.from_filesystem(
+        file_path, glob="hello_world.js", parser=LanguageParser(parser_threshold=5)
+    )
+    docs = loader.load()
+
+    assert len(docs) == 3
+
+
+def test_concurrent_language_loader_for_python() -> None:
+    """Test Python ConcurrentLoader with parser enabled."""
+    file_path = Path(__file__).parent.parent.parent / "examples"
+    loader = ConcurrentLoader.from_filesystem(
+        file_path, glob="hello_world.py", parser=LanguageParser(parser_threshold=5)
+    )
+    docs = loader.load()
+
+    assert len(docs) == 2

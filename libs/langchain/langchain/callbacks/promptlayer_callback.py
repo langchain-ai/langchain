@@ -40,12 +40,12 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
     def __init__(
         self,
         pl_id_callback: Optional[Callable[..., Any]] = None,
-        pl_tags: Optional[List[str]] = [],
+        pl_tags: Optional[List[str]] = None,
     ) -> None:
         """Initialize the PromptLayerCallbackHandler."""
         _lazy_import_promptlayer()
         self.pl_id_callback = pl_id_callback
-        self.pl_tags = pl_tags
+        self.pl_tags = pl_tags or []
         self.runs: Dict[UUID, Dict[str, Any]] = {}
 
     def on_chat_model_start(

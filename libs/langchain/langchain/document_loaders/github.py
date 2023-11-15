@@ -3,20 +3,22 @@ from datetime import datetime
 from typing import Dict, Iterator, List, Literal, Optional, Union
 
 import requests
-from pydantic import BaseModel, root_validator, validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.pydantic_v1 import BaseModel, root_validator, validator
 from langchain.utils import get_from_dict_or_env
 
 
 class BaseGitHubLoader(BaseLoader, BaseModel, ABC):
-    """Load issues of a GitHub repository."""
+    """Load `GitHub` repository Issues."""
 
     repo: str
     """Name of repository"""
     access_token: str
     """Personal access token - see https://github.com/settings/tokens?type=beta"""
+    github_api_url: str = "https://api.github.com"
+    """URL of GitHub API"""
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -183,4 +185,4 @@ class GitHubIssuesLoader(BaseGitHubLoader):
     @property
     def url(self) -> str:
         """Create URL for GitHub API."""
-        return f"https://api.github.com/repos/{self.repo}/issues?{self.query_params}"
+        return f"{self.github_api_url}/repos/{self.repo}/issues?{self.query_params}"

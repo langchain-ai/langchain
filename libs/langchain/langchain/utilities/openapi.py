@@ -1,26 +1,18 @@
 """Utility functions for parsing an OpenAPI spec."""
+from __future__ import annotations
+
 import copy
 import json
 import logging
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import requests
 import yaml
-from openapi_schema_pydantic import (
-    Components,
-    OpenAPI,
-    Operation,
-    Parameter,
-    PathItem,
-    Paths,
-    Reference,
-    RequestBody,
-    Schema,
-)
-from pydantic import ValidationError
+
+from langchain.pydantic_v1 import ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +30,7 @@ class HTTPVerb(str, Enum):
     TRACE = "trace"
 
     @classmethod
-    def from_str(cls, verb: str) -> "HTTPVerb":
+    def from_str(cls, verb: str) -> HTTPVerb:
         """Parse an HTTP verb."""
         try:
             return cls(verb)
@@ -46,8 +38,28 @@ class HTTPVerb(str, Enum):
             raise ValueError(f"Invalid HTTP verb. Valid values are {cls.__members__}")
 
 
+if TYPE_CHECKING:
+    from openapi_pydantic import (
+        Components,
+        Operation,
+        Parameter,
+        PathItem,
+        Paths,
+        Reference,
+        RequestBody,
+        Schema,
+    )
+
+try:
+    from openapi_pydantic import OpenAPI
+except ImportError:
+    OpenAPI = object  # type: ignore
+
+
 class OpenAPISpec(OpenAPI):
-    """OpenAPI Model that removes misformatted parts of the spec."""
+    """OpenAPI Model that removes mis-formatted parts of the spec."""
+
+    openapi: str = "3.1.0"  # overriding overly restrictive type from parent class
 
     @property
     def _paths_strict(self) -> Paths:
@@ -102,6 +114,8 @@ class OpenAPISpec(OpenAPI):
 
     def _get_root_referenced_parameter(self, ref: Reference) -> Parameter:
         """Get the root reference or err."""
+        from openapi_pydantic import Reference
+
         parameter = self._get_referenced_parameter(ref)
         while isinstance(parameter, Reference):
             parameter = self._get_referenced_parameter(parameter)
@@ -116,12 +130,16 @@ class OpenAPISpec(OpenAPI):
         return schemas[ref_name]
 
     def get_schema(self, schema: Union[Reference, Schema]) -> Schema:
+        from openapi_pydantic import Reference
+
         if isinstance(schema, Reference):
             return self.get_referenced_schema(schema)
         return schema
 
     def _get_root_referenced_schema(self, ref: Reference) -> Schema:
         """Get the root reference or err."""
+        from openapi_pydantic import Reference
+
         schema = self.get_referenced_schema(ref)
         while isinstance(schema, Reference):
             schema = self.get_referenced_schema(schema)
@@ -141,6 +159,8 @@ class OpenAPISpec(OpenAPI):
         self, ref: Reference
     ) -> Optional[RequestBody]:
         """Get the root request Body or err."""
+        from openapi_pydantic import Reference
+
         request_body = self._get_referenced_request_body(ref)
         while isinstance(request_body, Reference):
             request_body = self._get_referenced_request_body(request_body)
@@ -176,13 +196,13 @@ class OpenAPISpec(OpenAPI):
             )
 
     @classmethod
-    def parse_obj(cls, obj: dict) -> "OpenAPISpec":
+    def parse_obj(cls, obj: dict) -> OpenAPISpec:
         try:
             cls._alert_unsupported_spec(obj)
             return super().parse_obj(obj)
         except ValidationError as e:
-            # We are handling possibly misconfigured specs and want to do a best-effort
-            # job to get a reasonable interface out of it.
+            # We are handling possibly misconfigured specs and
+            # want to do a best-effort job to get a reasonable interface out of it.
             new_obj = copy.deepcopy(obj)
             for error in e.errors():
                 keys = error["loc"]
@@ -193,12 +213,12 @@ class OpenAPISpec(OpenAPI):
             return cls.parse_obj(new_obj)
 
     @classmethod
-    def from_spec_dict(cls, spec_dict: dict) -> "OpenAPISpec":
+    def from_spec_dict(cls, spec_dict: dict) -> OpenAPISpec:
         """Get an OpenAPI spec from a dict."""
         return cls.parse_obj(spec_dict)
 
     @classmethod
-    def from_text(cls, text: str) -> "OpenAPISpec":
+    def from_text(cls, text: str) -> OpenAPISpec:
         """Get an OpenAPI spec from a text."""
         try:
             spec_dict = json.loads(text)
@@ -207,7 +227,7 @@ class OpenAPISpec(OpenAPI):
         return cls.from_spec_dict(spec_dict)
 
     @classmethod
-    def from_file(cls, path: Union[str, Path]) -> "OpenAPISpec":
+    def from_file(cls, path: Union[str, Path]) -> OpenAPISpec:
         """Get an OpenAPI spec from a file path."""
         path_ = path if isinstance(path, Path) else Path(path)
         if not path_.exists():
@@ -216,7 +236,7 @@ class OpenAPISpec(OpenAPI):
             return cls.from_text(f.read())
 
     @classmethod
-    def from_url(cls, url: str) -> "OpenAPISpec":
+    def from_url(cls, url: str) -> OpenAPISpec:
         """Get an OpenAPI spec from a URL."""
         response = requests.get(url)
         return cls.from_text(response.text)
@@ -228,6 +248,8 @@ class OpenAPISpec(OpenAPI):
 
     def get_methods_for_path(self, path: str) -> List[str]:
         """Return a list of valid methods for the specified path."""
+        from openapi_pydantic import Operation
+
         path_item = self._get_path_strict(path)
         results = []
         for method in HTTPVerb:
@@ -237,6 +259,8 @@ class OpenAPISpec(OpenAPI):
         return results
 
     def get_parameters_for_path(self, path: str) -> List[Parameter]:
+        from openapi_pydantic import Reference
+
         path_item = self._get_path_strict(path)
         parameters = []
         if not path_item.parameters:
@@ -249,6 +273,8 @@ class OpenAPISpec(OpenAPI):
 
     def get_operation(self, path: str, method: str) -> Operation:
         """Get the operation object for a given path and HTTP method."""
+        from openapi_pydantic import Operation
+
         path_item = self._get_path_strict(path)
         operation_obj = getattr(path_item, method, None)
         if not isinstance(operation_obj, Operation):
@@ -257,6 +283,8 @@ class OpenAPISpec(OpenAPI):
 
     def get_parameters_for_operation(self, operation: Operation) -> List[Parameter]:
         """Get the components for a given operation."""
+        from openapi_pydantic import Reference
+
         parameters = []
         if operation.parameters:
             for parameter in operation.parameters:
@@ -269,6 +297,8 @@ class OpenAPISpec(OpenAPI):
         self, operation: Operation
     ) -> Optional[RequestBody]:
         """Get the request body for a given operation."""
+        from openapi_pydantic import Reference
+
         request_body = operation.requestBody
         if isinstance(request_body, Reference):
             request_body = self._get_root_referenced_request_body(request_body)

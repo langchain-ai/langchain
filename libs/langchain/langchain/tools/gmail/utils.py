@@ -42,7 +42,7 @@ def import_installed_app_flow() -> InstalledAppFlow:
     try:
         from google_auth_oauthlib.flow import InstalledAppFlow
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "You need to install google-auth-oauthlib to use this toolkit. "
             "Try running pip install --upgrade google-auth-oauthlib"
         )
@@ -58,7 +58,7 @@ def import_googleapiclient_resource_builder() -> build_resource:
     try:
         from googleapiclient.discovery import build
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "You need to install googleapiclient to use this toolkit. "
             "Try running pip install --upgrade google-api-python-client"
         )

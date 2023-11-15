@@ -19,7 +19,7 @@ class RunCollectorCallbackHandler(BaseTracer):
         The ID of the example being traced. It can be either a UUID or a string.
     """
 
-    name = "run-collector_callback_handler"
+    name: str = "run-collector_callback_handler"
 
     def __init__(
         self, example_id: Optional[Union[UUID, str]] = None, **kwargs: Any

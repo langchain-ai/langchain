@@ -3,19 +3,30 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import Field
-
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import CYPHER_QA_PROMPT, NGQL_GENERATION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.graphs.nebula_graph import NebulaGraph
+from langchain.pydantic_v1 import Field
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
 
 class NebulaGraphQAChain(Chain):
-    """Chain for question-answering against a graph by generating nGQL statements."""
+    """Chain for question-answering against a graph by generating nGQL statements.
+
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     graph: NebulaGraph = Field(exclude=True)
     ngql_generation_chain: LLMChain

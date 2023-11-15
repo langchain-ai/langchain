@@ -1,4 +1,5 @@
 """Test text splitting functionality."""
+import re
 from typing import List
 
 import pytest
@@ -80,25 +81,43 @@ def test_character_text_splitter_longer_words() -> None:
     assert output == expected_output
 
 
-def test_character_text_splitter_keep_separator_regex() -> None:
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
+def test_character_text_splitter_keep_separator_regex(
+    separator: str, is_separator_regex: bool
+) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character.
     """
     text = "foo.bar.baz.123"
     splitter = CharacterTextSplitter(
-        separator=r"\.", chunk_size=1, chunk_overlap=0, keep_separator=True
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator=True,
+        is_separator_regex=is_separator_regex,
     )
     output = splitter.split_text(text)
     expected_output = ["foo", ".bar", ".baz", ".123"]
     assert output == expected_output
 
 
-def test_character_text_splitter_discard_separator_regex() -> None:
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
+def test_character_text_splitter_discard_separator_regex(
+    separator: str, is_separator_regex: bool
+) -> None:
     """Test splitting by characters discarding the separator
     that is a regex special character."""
     text = "foo.bar.baz.123"
     splitter = CharacterTextSplitter(
-        separator=r"\.", chunk_size=1, chunk_overlap=0, keep_separator=False
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator=False,
+        is_separator_regex=is_separator_regex,
     )
     output = splitter.split_text(text)
     expected_output = ["foo", "bar", "baz", "123"]
@@ -387,6 +406,10 @@ Not a comment
         ".. This is a",
         "comment",
     ]
+    # Special test for special characters
+    code = "harry\n***\nbabylon is"
+    chunks = splitter.split_text(code)
+    assert chunks == ["harry", "***\nbabylon is"]
 
 
 def test_proto_file_splitter() -> None:
@@ -449,6 +472,68 @@ helloWorld();
     ]
 
 
+def test_cobol_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.COBOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+IDENTIFICATION DIVISION.
+PROGRAM-ID. HelloWorld.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 GREETING           PIC X(12)   VALUE 'Hello, World!'.
+PROCEDURE DIVISION.
+DISPLAY GREETING.
+STOP RUN.
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "IDENTIFICATION",
+        "DIVISION.",
+        "PROGRAM-ID.",
+        "HelloWorld.",
+        "DATA DIVISION.",
+        "WORKING-STORAGE",
+        "SECTION.",
+        "01 GREETING",
+        "PIC X(12)",
+        "VALUE 'Hello,",
+        "World!'.",
+        "PROCEDURE",
+        "DIVISION.",
+        "DISPLAY",
+        "GREETING.",
+        "STOP RUN.",
+    ]
+
+
+def test_typescript_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.TS, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+function helloWorld(): void {
+  console.log("Hello, World!");
+}
+
+// Call the function
+helloWorld();
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "function",
+        "helloWorld():",
+        "void {",
+        'console.log("He',
+        "llo,",
+        'World!");',
+        "}",
+        "// Call the",
+        "function",
+        "helloWorld();",
+    ]
+
+
 def test_java_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.JAVA, chunk_size=CHUNK_SIZE, chunk_overlap=0
@@ -472,6 +557,105 @@ public class HelloWorld {
         'tln("Hello,',
         'World!");',
         "}\n}",
+    ]
+
+
+def test_kotlin_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.KOTLIN, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+class HelloWorld {
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            println("Hello, World!")
+        }
+    }
+}
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "class",
+        "HelloWorld {",
+        "companion",
+        "object {",
+        "@JvmStatic",
+        "fun",
+        "main(args:",
+        "Array<String>)",
+        "{",
+        'println("Hello,',
+        'World!")',
+        "}\n    }",
+        "}",
+    ]
+
+
+def test_csharp_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.CSHARP, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+using System;
+class Program
+{
+    static void Main()
+    {
+        int age = 30; // Change the age value as needed
+
+        // Categorize the age without any console output
+        if (age < 18)
+        {
+            // Age is under 18
+        }
+        else if (age >= 18 && age < 65)
+        {
+            // Age is an adult
+        }
+        else
+        {
+            // Age is a senior citizen
+        }
+    }
+}
+    """
+
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "using System;",
+        "class Program\n{",
+        "static void",
+        "Main()",
+        "{",
+        "int age",
+        "= 30; // Change",
+        "the age value",
+        "as needed",
+        "//",
+        "Categorize the",
+        "age without any",
+        "console output",
+        "if (age",
+        "< 18)",
+        "{",
+        "//",
+        "Age is under 18",
+        "}",
+        "else if",
+        "(age >= 18 &&",
+        "age < 65)",
+        "{",
+        "//",
+        "Age is an adult",
+        "}",
+        "else",
+        "{",
+        "//",
+        "Age is a senior",
+        "citizen",
+        "}\n    }",
+        "}",
     ]
 
 
@@ -634,6 +818,10 @@ ____________
 #### Code blocks
 ```
 This is a code block
+
+# sample code
+a = 1
+b = 2
 ```
     """
     chunks = splitter.split_text(code)
@@ -659,8 +847,26 @@ This is a code block
         "```",
         "This is a code",
         "block",
+        "# sample code",
+        "a = 1\nb = 2",
         "```",
     ]
+    # Special test for special characters
+    code = "harry\n***\nbabylon is"
+    chunks = splitter.split_text(code)
+    assert chunks == ["harry", "***\nbabylon is"]
+
+
+def test_latex_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.LATEX, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+Hi Harrison!
+\\chapter{1}
+"""
+    chunks = splitter.split_text(code)
+    assert chunks == ["Hi Harrison!", "\\chapter{1}"]
 
 
 def test_html_code_splitter() -> None:

@@ -10,7 +10,6 @@ from datetime import timedelta
 from typing import Iterator
 
 import pytest
-from momento import CacheClient, Configurations, CredentialProvider
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import MomentoChatMessageHistory
@@ -23,10 +22,12 @@ def random_string() -> str:
 
 @pytest.fixture(scope="function")
 def message_history() -> Iterator[MomentoChatMessageHistory]:
+    from momento import CacheClient, Configurations, CredentialProvider
+
     cache_name = f"langchain-test-cache-{random_string()}"
     client = CacheClient(
         Configurations.Laptop.v1(),
-        CredentialProvider.from_environment_variable("MOMENTO_AUTH_TOKEN"),
+        CredentialProvider.from_environment_variable("MOMENTO_API_KEY"),
         default_ttl=timedelta(seconds=30),
     )
     try:

@@ -2,8 +2,6 @@
 
 from typing import Any, Dict, List
 
-from pydantic import Field
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -11,6 +9,7 @@ from langchain.callbacks.manager import (
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
 from langchain.docstore.document import Document
+from langchain.pydantic_v1 import Field
 from langchain.schema import BaseRetriever
 
 
@@ -32,9 +31,7 @@ class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain):
             self.combine_documents_chain, StuffDocumentsChain
         ):
             tokens = [
-                self.combine_documents_chain.llm_chain.llm.get_num_tokens(
-                    doc.page_content
-                )
+                self.combine_documents_chain.llm_chain._get_num_tokens(doc.page_content)
                 for doc in docs
             ]
             token_count = sum(tokens[:num_docs])
@@ -61,3 +58,8 @@ class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain):
             question, callbacks=run_manager.get_child()
         )
         return self._reduce_tokens_below_limit(docs)
+
+    @property
+    def _chain_type(self) -> str:
+        """Return the chain type."""
+        return "retrieval_qa_with_sources_chain"

@@ -3,11 +3,15 @@ from typing import Dict, List, Optional
 
 import pytest
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.simple import SimpleMemory
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 class FakeChain(Chain):
@@ -30,6 +34,17 @@ class FakeChain(Chain):
         self,
         inputs: Dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        outputs = {}
+        for var in self.output_variables:
+            variables = [inputs[k] for k in self.input_variables]
+            outputs[var] = f"{' '.join(variables)}foo"
+        return outputs
+
+    async def _acall(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         outputs = {}
         for var in self.output_variables:
@@ -163,6 +178,36 @@ def test_simple_sequential_functionality() -> None:
     output = chain({"input": "123"})
     expected_output = {"output": "123foofoo", "input": "123"}
     assert output == expected_output
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("isAsync", [False, True])
+async def test_simple_sequential_functionality_with_callbacks(isAsync: bool) -> None:
+    """Test simple sequential functionality."""
+    handler_1 = FakeCallbackHandler()
+    handler_2 = FakeCallbackHandler()
+    handler_3 = FakeCallbackHandler()
+    chain_1 = FakeChain(
+        input_variables=["foo"], output_variables=["bar"], callbacks=[handler_1]
+    )
+    chain_2 = FakeChain(
+        input_variables=["bar"], output_variables=["baz"], callbacks=[handler_2]
+    )
+    chain_3 = FakeChain(
+        input_variables=["jack"], output_variables=["baf"], callbacks=[handler_3]
+    )
+    chain = SimpleSequentialChain(chains=[chain_1, chain_2, chain_3])
+    if isAsync:
+        output = await chain.ainvoke({"input": "123"})
+    else:
+        output = chain({"input": "123"})
+    expected_output = {"output": "123foofoofoo", "input": "123"}
+    assert output == expected_output
+    # Check that each of the callbacks were invoked once per the entire run
+    for handler in [handler_1, handler_2, handler_3]:
+        assert handler.starts == 1
+        assert handler.ends == 1
+        assert handler.errors == 0
 
 
 def test_multi_input_errors() -> None:

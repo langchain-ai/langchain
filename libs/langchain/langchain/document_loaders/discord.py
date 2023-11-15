@@ -1,4 +1,3 @@
-"""Load from Discord chat dump"""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List
@@ -11,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class DiscordChatLoader(BaseLoader):
-    """Load Discord chat logs."""
+    """Load `Discord` chat logs."""
 
     def __init__(self, chat_log: pd.DataFrame, user_id_col: str = "ID"):
         """Initialize with a Pandas DataFrame containing chat logs.

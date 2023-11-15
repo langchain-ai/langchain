@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, NamedTuple, Optional, Sequence
 
-from pydantic import Field
-
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
 from langchain.agents.mrkl.output_parser import MRKLOutputParser
@@ -14,6 +12,7 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
+from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
@@ -138,18 +137,7 @@ class ZeroShotAgent(Agent):
 
 
 class MRKLChain(AgentExecutor):
-    """Chain that implements the MRKL system.
-
-    Example:
-        .. code-block:: python
-
-            from langchain import OpenAI, MRKLChain
-            from langchain.chains.mrkl.base import ChainConfig
-            llm = OpenAI(temperature=0)
-            prompt = PromptTemplate(...)
-            chains = [...]
-            mrkl = MRKLChain.from_chains(llm=llm, prompt=prompt)
-    """
+    """[Deprecated] Chain that implements the MRKL system."""
 
     @classmethod
     def from_chains(
@@ -167,28 +155,6 @@ class MRKLChain(AgentExecutor):
 
         Returns:
             An initialized MRKL chain.
-
-        Example:
-            .. code-block:: python
-
-                from langchain import LLMMathChain, OpenAI, SerpAPIWrapper, MRKLChain
-                from langchain.chains.mrkl.base import ChainConfig
-                llm = OpenAI(temperature=0)
-                search = SerpAPIWrapper()
-                llm_math_chain = LLMMathChain(llm=llm)
-                chains = [
-                    ChainConfig(
-                        action_name = "Search",
-                        action=search.search,
-                        action_description="useful for searching"
-                    ),
-                    ChainConfig(
-                        action_name="Calculator",
-                        action=llm_math_chain.run,
-                        action_description="useful for doing math"
-                    )
-                ]
-                mrkl = MRKLChain.from_chains(llm, chains)
         """
         tools = [
             Tool(

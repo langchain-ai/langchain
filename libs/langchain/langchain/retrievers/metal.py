@@ -1,16 +1,12 @@
 from typing import Any, List, Optional
 
-from pydantic import root_validator
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever, Document
 
 
 class MetalRetriever(BaseRetriever):
-    """Retriever that uses the Metal API."""
+    """`Metal API` retriever."""
 
     client: Any
     """The Metal client to use."""
@@ -43,8 +39,3 @@ class MetalRetriever(BaseRetriever):
             metadata = {k: v for k, v in r.items() if k != "text"}
             final_results.append(Document(page_content=r["text"], metadata=metadata))
         return final_results
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError

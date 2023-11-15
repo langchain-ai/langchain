@@ -1,7 +1,7 @@
 import tempfile
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import langchain
 from langchain.callbacks.base import BaseCallbackHandler
@@ -223,9 +223,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self._log_text_metrics(output_complexity_metrics, step=self.step)
         self._log_text_metrics(output_custom_metrics, step=self.step)
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when LLM errors."""
         self.step += 1
         self.errors += 1
@@ -280,9 +278,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     f"Output Value for {chain_output_key} will not be logged"
                 )
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when chain errors."""
         self.step += 1
         self.errors += 1
@@ -320,9 +316,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update({"output": output})
         self.action_records.append(resp)
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when tool errors."""
         self.step += 1
         self.errors += 1

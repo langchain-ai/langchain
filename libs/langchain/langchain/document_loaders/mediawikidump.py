@@ -1,4 +1,3 @@
-"""Load Data from a MediaWiki dump xml."""
 import logging
 from pathlib import Path
 from typing import List, Optional, Sequence, Union
@@ -10,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class MWDumpLoader(BaseLoader):
-    """
-    Load MediaWiki dump from XML file
+    """Load `MediaWiki` dump from an `XML` file.
+
     Example:
         .. code-block:: python
 

@@ -21,7 +21,7 @@ class YoutubeAudioLoader(BlobLoader):
         try:
             import yt_dlp
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "yt_dlp package not found, please install it with "
                 "`pip install yt_dlp`"
             )

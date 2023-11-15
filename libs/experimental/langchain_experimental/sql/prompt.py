@@ -1,5 +1,4 @@
 # flake8: noqa
-from langchain.output_parsers.list import CommaSeparatedListOutputParser
 from langchain.prompts.prompt import PromptTemplate
 
 
@@ -8,256 +7,79 @@ PROMPT_SUFFIX = """Only use the following tables:
 
 Question: {input}"""
 
-_DEFAULT_TEMPLATE = """Given an input question, first create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer. Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results. You can order the results by a relevant column to return the most interesting examples in the database.
+_VECTOR_SQL_DEFAULT_TEMPLATE = """You are a {dialect} expert. Given an input question, first create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer to the input question.
+{dialect} queries has a vector distance function called `DISTANCE(column, array)` to compute relevance to the user's question and sort the feature array column by the relevance. 
+When the query is asking for {top_k} closest row, you have to use this distance function to calculate distance to entity's array on vector column and order by the distance to retrieve relevant rows.
 
-Never query for all the columns from a specific table, only ask for a the few relevant columns given the question.
+*NOTICE*: `DISTANCE(column, array)` only accept an array column as its first argument and a `NeuralArray(entity)` as its second argument. You also need a user defined function called `NeuralArray(entity)` to retrieve the entity's array. 
 
-Pay attention to use only the column names that you can see in the schema description. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
+Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per {dialect}. You should only order according to the distance function.
+Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
+Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
+Pay attention to use today() function to get the current date, if the question involves "today". `ORDER BY` clause should always be after `WHERE` clause. DO NOT add semicolon to the end of SQL. Pay attention to the comment in table schema.
 
 Use the following format:
 
-Question: Question here
-SQLQuery: SQL Query to run
-SQLResult: Result of the SQLQuery
-Answer: Final answer here
-
+Question: "Question here"
+SQLQuery: "SQL Query to run"
+SQLResult: "Result of the SQLQuery"
+Answer: "Final answer here"
 """
 
-PROMPT = PromptTemplate(
+VECTOR_SQL_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "dialect", "top_k"],
-    template=_DEFAULT_TEMPLATE + PROMPT_SUFFIX,
+    template=_VECTOR_SQL_DEFAULT_TEMPLATE + PROMPT_SUFFIX,
 )
 
 
-_DECIDER_TEMPLATE = """Given the below input question and list of potential tables, output a comma separated list of the table names that may be necessary to answer this question.
+_myscale_prompt = """You are a MyScale expert. Given an input question, first create a syntactically correct MyScale query to run, then look at the results of the query and return the answer to the input question.
+MyScale queries has a vector distance function called `DISTANCE(column, array)` to compute relevance to the user's question and sort the feature array column by the relevance. 
+When the query is asking for {top_k} closest row, you have to use this distance function to calculate distance to entity's array on vector column and order by the distance to retrieve relevant rows.
 
-Question: {query}
+*NOTICE*: `DISTANCE(column, array)` only accept an array column as its first argument and a `NeuralArray(entity)` as its second argument. You also need a user defined function called `NeuralArray(entity)` to retrieve the entity's array. 
 
-Table Names: {table_names}
-
-Relevant Table Names:"""
-DECIDER_PROMPT = PromptTemplate(
-    input_variables=["query", "table_names"],
-    template=_DECIDER_TEMPLATE,
-    output_parser=CommaSeparatedListOutputParser(),
-)
-
-_duckdb_prompt = """You are a DuckDB expert. Given an input question, first create a syntactically correct DuckDB query to run, then look at the results of the query and return the answer to the input question.
-Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per DuckDB. You can order the results to return the most informative data in the database.
+Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per MyScale. You should only order according to the distance function.
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-Pay attention to use today() function to get the current date, if the question involves "today".
+Pay attention to use today() function to get the current date, if the question involves "today". `ORDER BY` clause should always be after `WHERE` clause. DO NOT add semicolon to the end of SQL. Pay attention to the comment in table schema.
 
 Use the following format:
 
-Question: Question here
-SQLQuery: SQL Query to run
-SQLResult: Result of the SQLQuery
-Answer: Final answer here
-
-"""
-
-DUCKDB_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
-    template=_duckdb_prompt + PROMPT_SUFFIX,
-)
-
-_googlesql_prompt = """You are a GoogleSQL expert. Given an input question, first create a syntactically correct GoogleSQL query to run, then look at the results of the query and return the answer to the input question.
-Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per GoogleSQL. You can order the results to return the most informative data in the database.
-Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in backticks (`) to denote them as delimited identifiers.
-Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-Pay attention to use CURRENT_DATE() function to get the current date, if the question involves "today".
-
-Use the following format:
-
-Question: Question here
-SQLQuery: SQL Query to run
-SQLResult: Result of the SQLQuery
-Answer: Final answer here
-
-"""
-
-GOOGLESQL_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
-    template=_googlesql_prompt + PROMPT_SUFFIX,
-)
-
-
-_mssql_prompt = """You are an MS SQL expert. Given an input question, first create a syntactically correct MS SQL query to run, then look at the results of the query and return the answer to the input question.
-Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the TOP clause as per MS SQL. You can order the results to return the most informative data in the database.
-Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in square brackets ([]) to denote them as delimited identifiers.
-Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-Pay attention to use CAST(GETDATE() as date) function to get the current date, if the question involves "today".
-
-Use the following format:
-
-Question: Question here
-SQLQuery: SQL Query to run
-SQLResult: Result of the SQLQuery
-Answer: Final answer here
-
-"""
-
-MSSQL_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
-    template=_mssql_prompt + PROMPT_SUFFIX,
-)
-
-
-_mysql_prompt = """You are a MySQL expert. Given an input question, first create a syntactically correct MySQL query to run, then look at the results of the query and return the answer to the input question.
-Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per MySQL. You can order the results to return the most informative data in the database.
-Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in backticks (`) to denote them as delimited identifiers.
-Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-Pay attention to use CURDATE() function to get the current date, if the question involves "today".
-
-Use the following format:
-
-Question: Question here
-SQLQuery: SQL Query to run
-SQLResult: Result of the SQLQuery
-Answer: Final answer here
-
-"""
-
-MYSQL_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
-    template=_mysql_prompt + PROMPT_SUFFIX,
-)
-
-
-_mariadb_prompt = """You are a MariaDB expert. Given an input question, first create a syntactically correct MariaDB query to run, then look at the results of the query and return the answer to the input question.
-Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per MariaDB. You can order the results to return the most informative data in the database.
-Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in backticks (`) to denote them as delimited identifiers.
-Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-Pay attention to use CURDATE() function to get the current date, if the question involves "today".
-
-Use the following format:
-
-Question: Question here
-SQLQuery: SQL Query to run
-SQLResult: Result of the SQLQuery
-Answer: Final answer here
-
-"""
-
-MARIADB_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
-    template=_mariadb_prompt + PROMPT_SUFFIX,
-)
-
-
-_oracle_prompt = """You are an Oracle SQL expert. Given an input question, first create a syntactically correct Oracle SQL query to run, then look at the results of the query and return the answer to the input question.
-Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the FETCH FIRST n ROWS ONLY clause as per Oracle SQL. You can order the results to return the most informative data in the database.
-Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
-Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-Pay attention to use TRUNC(SYSDATE) function to get the current date, if the question involves "today".
-
-Use the following format:
-
-Question: Question here
-SQLQuery: SQL Query to run
-SQLResult: Result of the SQLQuery
-Answer: Final answer here
-
-"""
-
-ORACLE_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
-    template=_oracle_prompt + PROMPT_SUFFIX,
-)
-
-
-_postgres_prompt = """You are a PostgreSQL expert. Given an input question, first create a syntactically correct PostgreSQL query to run, then look at the results of the query and return the answer to the input question.
-Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per PostgreSQL. You can order the results to return the most informative data in the database.
-Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
-Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-Pay attention to use CURRENT_DATE function to get the current date, if the question involves "today".
-
-Use the following format:
-
-Question: Question here
-SQLQuery: SQL Query to run
-SQLResult: Result of the SQLQuery
-Answer: Final answer here
-
-"""
-
-POSTGRES_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
-    template=_postgres_prompt + PROMPT_SUFFIX,
-)
-
-
-_sqlite_prompt = """You are a SQLite expert. Given an input question, first create a syntactically correct SQLite query to run, then look at the results of the query and return the answer to the input question.
-Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per SQLite. You can order the results to return the most informative data in the database.
-Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
-Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-Pay attention to use date('now') function to get the current date, if the question involves "today".
-
-Use the following format:
-
-Question: Question here
-SQLQuery: SQL Query to run
-SQLResult: Result of the SQLQuery
-Answer: Final answer here
-
-"""
-
-SQLITE_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
-    template=_sqlite_prompt + PROMPT_SUFFIX,
-)
-
-_clickhouse_prompt = """You are a ClickHouse expert. Given an input question, first create a syntactically correct Clic query to run, then look at the results of the query and return the answer to the input question.
-Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per ClickHouse. You can order the results to return the most informative data in the database.
-Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
-Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-Pay attention to use today() function to get the current date, if the question involves "today".
-
-Use the following format:
+======== table info ========
+<some table infos>
 
 Question: "Question here"
 SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
 
-"""
 
-CLICKHOUSE_PROMPT = PromptTemplate(
+Here are some examples:
+
+======== table info ========
+CREATE TABLE "ChatPaper" (
+	abstract String, 
+	id String, 
+	vector Array(Float32), 
+) ENGINE = ReplicatedReplacingMergeTree()
+ ORDER BY id
+ PRIMARY KEY id
+ 
+Question: What is Feature Pyramid Network?
+SQLQuery: SELECT ChatPaper.title, ChatPaper.id, ChatPaper.authors FROM ChatPaper ORDER BY DISTANCE(vector, NeuralArray(PaperRank contribution)) LIMIT {top_k}
+
+
+Let's begin:
+======== table info ========
+{table_info}
+
+Question: {input}
+SQLQuery: """
+
+MYSCALE_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_clickhouse_prompt + PROMPT_SUFFIX,
+    template=_myscale_prompt + PROMPT_SUFFIX,
 )
 
-_prestodb_prompt = """You are a PrestoDB expert. Given an input question, first create a syntactically correct PrestoDB query to run, then look at the results of the query and return the answer to the input question.
-Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per PrestoDB. You can order the results to return the most informative data in the database.
-Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
-Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-Pay attention to use current_date function to get the current date, if the question involves "today".
 
-Use the following format:
-
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
-
-"""
-
-PRESTODB_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
-    template=_prestodb_prompt + PROMPT_SUFFIX,
-)
-
-
-SQL_PROMPTS = {
-    "duckdb": DUCKDB_PROMPT,
-    "googlesql": GOOGLESQL_PROMPT,
-    "mssql": MSSQL_PROMPT,
-    "mysql": MYSQL_PROMPT,
-    "mariadb": MARIADB_PROMPT,
-    "oracle": ORACLE_PROMPT,
-    "postgresql": POSTGRES_PROMPT,
-    "sqlite": SQLITE_PROMPT,
-    "clickhouse": CLICKHOUSE_PROMPT,
-    "prestodb": PRESTODB_PROMPT,
+VECTOR_SQL_PROMPTS = {
+    "myscale": MYSCALE_PROMPT,
 }

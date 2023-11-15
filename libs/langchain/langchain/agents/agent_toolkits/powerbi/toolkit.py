@@ -1,8 +1,6 @@
 """Toolkit for interacting with a Power BI dataset."""
 from typing import List, Optional, Union
 
-from pydantic import Field
-
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
@@ -13,6 +11,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.powerbi.prompt import (
@@ -29,7 +28,17 @@ from langchain.utilities.powerbi import PowerBIDataset
 
 
 class PowerBIToolkit(BaseToolkit):
-    """Toolkit for interacting with Power BI dataset."""
+    """Toolkit for interacting with Power BI dataset.
+
+    *Security Note*: This toolkit interacts with an external service.
+
+        Control access to who can use this toolkit.
+
+        Make sure that the capabilities given by this toolkit to the calling
+        code are appropriately scoped to the application.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     powerbi: PowerBIDataset = Field(exclude=True)
     llm: Union[BaseLanguageModel, BaseChatModel] = Field(exclude=True)

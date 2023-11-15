@@ -17,8 +17,8 @@ from typing import (
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -26,9 +26,11 @@ if TYPE_CHECKING:
 
 
 class SupabaseVectorStore(VectorStore):
-    """VectorStore for a Supabase postgres database. Assumes you have the `pgvector`
+    """`Supabase Postgres` vector store.
+
+    It assumes you have the `pgvector`
     extension installed and a `match_documents` (or similar) function. For more details:
-    https://js.langchain.com/docs/modules/indexes/vector_stores/integrations/supabase
+    https://integrations.langchain.com/vectorstores?integration_name=SupabaseVectorStore
 
     You can implement your own `match_documents` function in order to limit the search
     space to a subset of documents based on your own authorization or business logic.
@@ -37,28 +39,64 @@ class SupabaseVectorStore(VectorStore):
 
     If you'd like to use `max_marginal_relevance_search`, please review the instructions
     below on modifying the `match_documents` function to return matched embeddings.
-    """
 
-    _client: supabase.client.Client
-    # This is the embedding function. Don't confuse with the embedding vectors.
-    # We should perhaps rename the underlying Embedding base class to EmbeddingFunction
-    # or something
-    _embedding: Embeddings
-    table_name: str
-    query_name: str
+
+    Examples:
+
+    .. code-block:: python
+
+        from langchain.embeddings.openai import OpenAIEmbeddings
+        from langchain.schema import Document
+        from langchain.vectorstores import SupabaseVectorStore
+        from supabase.client import create_client
+
+        docs = [
+            Document(page_content="foo", metadata={"id": 1}),
+        ]
+        embeddings = OpenAIEmbeddings()
+        supabase_client = create_client("my_supabase_url", "my_supabase_key")
+        vector_store = SupabaseVectorStore.from_documents(
+            docs,
+            embeddings,
+            client=supabase_client,
+            table_name="documents",
+            query_name="match_documents",
+            chunk_size=500,
+        )
+
+    To load from an existing table:
+
+    .. code-block:: python
+
+        from langchain.embeddings.openai import OpenAIEmbeddings
+        from langchain.vectorstores import SupabaseVectorStore
+        from supabase.client import create_client
+
+
+        embeddings = OpenAIEmbeddings()
+        supabase_client = create_client("my_supabase_url", "my_supabase_key")
+        vector_store = SupabaseVectorStore(
+            client=supabase_client,
+            embedding=embeddings,
+            table_name="documents",
+            query_name="match_documents",
+        )
+
+    """
 
     def __init__(
         self,
         client: supabase.client.Client,
         embedding: Embeddings,
         table_name: str,
+        chunk_size: int = 500,
         query_name: Union[str, None] = None,
     ) -> None:
         """Initialize with supabase client."""
         try:
             import supabase  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import supabase python package. "
                 "Please install it with `pip install supabase`."
             )
@@ -67,6 +105,9 @@ class SupabaseVectorStore(VectorStore):
         self._embedding: Embeddings = embedding
         self.table_name = table_name or "documents"
         self.query_name = query_name or "match_documents"
+        self.chunk_size = chunk_size or 500
+        # According to the SupabaseVectorStore JS implementation, the best chunk size
+        # is 500. Though for large datasets it can be too large so it is configurable.
 
     @property
     def embeddings(self) -> Embeddings:
@@ -94,6 +135,7 @@ class SupabaseVectorStore(VectorStore):
         client: Optional[supabase.client.Client] = None,
         table_name: Optional[str] = "documents",
         query_name: Union[str, None] = "match_documents",
+        chunk_size: int = 500,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> "SupabaseVectorStore":
@@ -108,13 +150,14 @@ class SupabaseVectorStore(VectorStore):
         embeddings = embedding.embed_documents(texts)
         ids = [str(uuid.uuid4()) for _ in texts]
         docs = cls._texts_to_documents(texts, metadatas)
-        _ids = cls._add_vectors(client, table_name, embeddings, docs, ids)
+        cls._add_vectors(client, table_name, embeddings, docs, ids, chunk_size)
 
         return cls(
             client=client,
             embedding=embedding,
             table_name=table_name,
             query_name=query_name,
+            chunk_size=chunk_size,
         )
 
     def add_vectors(
@@ -123,7 +166,9 @@ class SupabaseVectorStore(VectorStore):
         documents: List[Document],
         ids: List[str],
     ) -> List[str]:
-        return self._add_vectors(self._client, self.table_name, vectors, documents, ids)
+        return self._add_vectors(
+            self._client, self.table_name, vectors, documents, ids, self.chunk_size
+        )
 
     def similarity_search(
         self,
@@ -132,10 +177,8 @@ class SupabaseVectorStore(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        vectors = self._embedding.embed_documents([query])
-        return self.similarity_search_by_vector(
-            vectors[0], k=k, filter=filter, **kwargs
-        )
+        vector = self._embedding.embed_query(query)
+        return self.similarity_search_by_vector(vector, k=k, filter=filter, **kwargs)
 
     def similarity_search_by_vector(
         self,
@@ -159,24 +202,37 @@ class SupabaseVectorStore(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        vectors = self._embedding.embed_documents([query])
+        vector = self._embedding.embed_query(query)
         return self.similarity_search_by_vector_with_relevance_scores(
-            vectors[0], k=k, filter=filter
+            vector, k=k, filter=filter
         )
 
     def match_args(
-        self, query: List[float], k: int, filter: Optional[Dict[str, Any]]
+        self, query: List[float], filter: Optional[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        ret = dict(query_embedding=query, match_count=k)
+        ret: Dict[str, Any] = dict(query_embedding=query)
         if filter:
             ret["filter"] = filter
         return ret
 
     def similarity_search_by_vector_with_relevance_scores(
-        self, query: List[float], k: int, filter: Optional[Dict[str, Any]] = None
+        self,
+        query: List[float],
+        k: int,
+        filter: Optional[Dict[str, Any]] = None,
+        postgrest_filter: Optional[str] = None,
     ) -> List[Tuple[Document, float]]:
-        match_documents_params = self.match_args(query, k, filter)
-        res = self._client.rpc(self.query_name, match_documents_params).execute()
+        match_documents_params = self.match_args(query, filter)
+        query_builder = self._client.rpc(self.query_name, match_documents_params)
+
+        if postgrest_filter:
+            query_builder.params = query_builder.params.set(
+                "and", f"({postgrest_filter})"
+            )
+
+        query_builder.params = query_builder.params.set("limit", k)
+
+        res = query_builder.execute()
 
         match_result = [
             (
@@ -193,10 +249,23 @@ class SupabaseVectorStore(VectorStore):
         return match_result
 
     def similarity_search_by_vector_returning_embeddings(
-        self, query: List[float], k: int, filter: Optional[Dict[str, Any]] = None
+        self,
+        query: List[float],
+        k: int,
+        filter: Optional[Dict[str, Any]] = None,
+        postgrest_filter: Optional[str] = None,
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
-        match_documents_params = self.match_args(query, k, filter)
-        res = self._client.rpc(self.query_name, match_documents_params).execute()
+        match_documents_params = self.match_args(query, filter)
+        query_builder = self._client.rpc(self.query_name, match_documents_params)
+
+        if postgrest_filter:
+            query_builder.params = query_builder.params.set(
+                "and", f"({postgrest_filter})"
+            )
+
+        query_builder.params = query_builder.params.set("limit", k)
+
+        res = query_builder.execute()
 
         match_result = [
             (
@@ -240,6 +309,7 @@ class SupabaseVectorStore(VectorStore):
         vectors: List[List[float]],
         documents: List[Document],
         ids: List[str],
+        chunk_size: int,
     ) -> List[str]:
         """Add vectors to Supabase table."""
 
@@ -253,9 +323,6 @@ class SupabaseVectorStore(VectorStore):
             for idx, embedding in enumerate(vectors)
         ]
 
-        # According to the SupabaseVectorStore JS implementation, the best chunk size
-        # is 500
-        chunk_size = 500
         id_list: List[str] = []
         for i in range(0, len(rows), chunk_size):
             chunk = rows[i : i + chunk_size]
@@ -371,9 +438,9 @@ class SupabaseVectorStore(VectorStore):
         $$;
         ```
         """
-        embedding = self._embedding.embed_documents([query])
+        embedding = self._embedding.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding[0], k, fetch_k, lambda_mult=lambda_mult
+            embedding, k, fetch_k, lambda_mult=lambda_mult
         )
         return docs
 

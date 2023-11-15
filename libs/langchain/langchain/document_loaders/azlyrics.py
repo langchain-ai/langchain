@@ -1,4 +1,3 @@
-"""Loads AZLyrics."""
 from typing import List
 
 from langchain.docstore.document import Document
@@ -6,7 +5,7 @@ from langchain.document_loaders.web_base import WebBaseLoader
 
 
 class AZLyricsLoader(WebBaseLoader):
-    """Loads AZLyrics webpages."""
+    """Load `AZLyrics` webpages."""
 
     def load(self) -> List[Document]:
         """Load webpages into Documents."""

@@ -4,12 +4,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.gmail.base import GmailBaseTool
 
 
@@ -90,15 +86,3 @@ class GmailSendMessage(GmailBaseTool):
             return f'Message sent. Message Id: {sent_message["id"]}'
         except Exception as error:
             raise Exception(f"An error occurred: {error}")
-
-    async def _arun(
-        self,
-        message: str,
-        to: Union[str, List[str]],
-        subject: str,
-        cc: Optional[Union[str, List[str]]] = None,
-        bcc: Optional[Union[str, List[str]]] = None,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Run the tool asynchronously."""
-        raise NotImplementedError(f"The tool {self.name} does not support async yet.")

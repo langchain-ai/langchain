@@ -9,12 +9,9 @@ from typing import Any, List, Optional
 
 import numpy as np
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
-from langchain.embeddings.base import Embeddings
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.embeddings import Embeddings
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
@@ -33,7 +30,7 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
 
 
 class KNNRetriever(BaseRetriever):
-    """KNN Retriever."""
+    """`KNN` retriever."""
 
     embeddings: Embeddings
     """Embeddings model to use."""
@@ -82,8 +79,3 @@ class KNNRetriever(BaseRetriever):
             )
         ]
         return top_k_results
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError

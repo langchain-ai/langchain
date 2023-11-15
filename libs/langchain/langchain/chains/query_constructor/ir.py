@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, List, Optional, Sequence, Union
 
-from pydantic import BaseModel
+from langchain.pydantic_v1 import BaseModel
 
 
 class Visitor(ABC):
@@ -81,12 +81,15 @@ class Comparator(str, Enum):
     """Enumerator of the comparison operators."""
 
     EQ = "eq"
+    NE = "ne"
     GT = "gt"
     GTE = "gte"
     LT = "lt"
     LTE = "lte"
     CONTAIN = "contain"
     LIKE = "like"
+    IN = "in"
+    NIN = "nin"
 
 
 class FilterDirective(Expr, ABC):

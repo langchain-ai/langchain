@@ -1,4 +1,3 @@
-"""Loading logic for loading documents from Tencent Cloud COS directory."""
 from typing import Any, Iterator, List
 
 from langchain.docstore.document import Document
@@ -7,7 +6,7 @@ from langchain.document_loaders.tencent_cos_file import TencentCOSFileLoader
 
 
 class TencentCOSDirectoryLoader(BaseLoader):
-    """Loading logic for loading documents from Tencent Cloud COS."""
+    """Load from `Tencent Cloud COS` directory."""
 
     def __init__(self, conf: Any, bucket: str, prefix: str = ""):
         """Initialize with COS config, bucket and prefix.
@@ -27,7 +26,7 @@ class TencentCOSDirectoryLoader(BaseLoader):
         try:
             from qcloud_cos import CosS3Client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import cos-python-sdk-v5 python package. "
                 "Please install it with `pip install cos-python-sdk-v5`."
             )

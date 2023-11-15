@@ -5,9 +5,18 @@ the sequence of actions taken and their outcomes. It uses a language model
 chain (LLMChain) to generate the reasoning and scores.
 """
 
-from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
-
-from pydantic import Extra, Field
+import re
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypedDict,
+    Union,
+    cast,
+)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -21,16 +30,17 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
     TOOL_FREE_EVAL_CHAT_PROMPT,
 )
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
+from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
-class TrajectoryEval(NamedTuple):
+class TrajectoryEval(TypedDict):
     """A named tuple containing the score and reasoning for a trajectory."""
 
     score: float
-    """The score for the trajectory, normalized from 0 to 1.s"""
+    """The score for the trajectory, normalized from 0 to 1."""
     reasoning: str
     """The reasoning for the score."""
 
@@ -64,15 +74,24 @@ class TrajectoryOutputParser(BaseOutputParser):
 
         reasoning, score_str = reasoning.strip(), score_str.strip()
 
-        score_str = next(
-            (char for char in score_str if char.isdigit()), "0"
-        )  # Scan for first digit
-
-        if not 1 <= int(score_str) <= 5:
+        # Use regex to extract the score.
+        # This will get the number in the string, even if it is a float or more than 10.
+        # E.g. "Score: 1" will return 1, "Score: 3.5" will return 3.5, and
+        # "Score: 10" will return 10.
+        # The score should be an integer digit in the range 1-5.
+        _score = re.search(r"(\d+(\.\d+)?)", score_str)
+        # If the score is not found or is a float, raise an exception.
+        if _score is None or "." in _score.group(1):
+            raise OutputParserException(
+                f"Score is not an integer digit in the range 1-5: {text}"
+            )
+        score = int(_score.group(1))
+        # If the score is not in the range 1-5, raise an exception.
+        if not 1 <= score <= 5:
             raise OutputParserException(
                 f"Score is not a digit in the range 1-5: {text}"
             )
-        normalized_score = (int(score_str) - 1) / 4
+        normalized_score = (score - 1) / 4
         return TrajectoryEval(score=normalized_score, reasoning=reasoning)
 
 
@@ -129,8 +148,8 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         default_factory=TrajectoryOutputParser
     )
     """The output parser used to parse the output."""
-    return_reasoning: bool = False
-    """Whether to return the reasoning along with the score."""
+    return_reasoning: bool = False  # :meta private:
+    """DEPRECATED. Reasoning always returned."""
 
     class Config:
         """Configuration for the QAEvalChain."""
@@ -210,7 +229,6 @@ The following is the expected answer. Use this to measure correctness:
         llm: BaseLanguageModel,
         agent_tools: Optional[Sequence[BaseTool]] = None,
         output_parser: Optional[TrajectoryOutputParser] = None,
-        return_reasoning: bool = True,
         **kwargs: Any,
     ) -> "TrajectoryEvalChain":
         """Create a TrajectoryEvalChain object from a language model chain.
@@ -221,9 +239,6 @@ The following is the expected answer. Use this to measure correctness:
                 available to the agent.
             output_parser (Optional[TrajectoryOutputParser]): The output parser
                 used to parse the chain output into a score.
-            return_reasoning (bool): Whether to return the
-                reasoning along with the score.
-
         Returns:
             TrajectoryEvalChain: The TrajectoryEvalChain object.
         """
@@ -238,7 +253,6 @@ The following is the expected answer. Use this to measure correctness:
         eval_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
             agent_tools=agent_tools,
-            return_reasoning=return_reasoning,
             eval_chain=eval_chain,
             output_parser=output_parser or TrajectoryOutputParser(),
             **kwargs,
@@ -260,9 +274,7 @@ The following is the expected answer. Use this to measure correctness:
         Returns:
             List[str]: The output keys.
         """
-        if self.return_reasoning:
-            return ["score", "reasoning"]
-        return ["score"]
+        return ["score", "reasoning"]
 
     def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
         """Validate and prep inputs."""
@@ -292,12 +304,7 @@ The following is the expected answer. Use this to measure correctness:
         raw_output = self.eval_chain.run(
             chain_input, callbacks=_run_manager.get_child()
         )
-        parsed_output = self.output_parser.parse(raw_output)
-
-        if self.return_reasoning:
-            return {"score": parsed_output.score, "reasoning": parsed_output.reasoning}
-
-        return {"score": parsed_output.score}
+        return cast(dict, self.output_parser.parse(raw_output))
 
     async def _acall(
         self,
@@ -321,12 +328,7 @@ The following is the expected answer. Use this to measure correctness:
         raw_output = await self.eval_chain.arun(
             chain_input, callbacks=_run_manager.get_child()
         )
-        parsed_output = self.output_parser.parse(raw_output)
-
-        if self.return_reasoning:
-            return {"score": parsed_output.score, "reasoning": parsed_output.reasoning}
-
-        return {"score": parsed_output.score}
+        return cast(dict, self.output_parser.parse(raw_output))
 
     def _evaluate_agent_trajectory(
         self,

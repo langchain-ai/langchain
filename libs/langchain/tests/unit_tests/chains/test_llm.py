@@ -27,7 +27,7 @@ def fake_llm_chain() -> LLMChain:
     return LLMChain(prompt=prompt, llm=FakeLLM(), output_key="text1")
 
 
-@patch("langchain.llms.loading.type_to_cls_dict", {"fake": FakeLLM})
+@patch("langchain.llms.loading.get_type_to_cls_dict", lambda: {"fake": lambda: FakeLLM})
 def test_serialization(fake_llm_chain: LLMChain) -> None:
     """Test serialization."""
     with TemporaryDirectory() as temp_dir:

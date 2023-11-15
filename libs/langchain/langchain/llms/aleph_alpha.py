@@ -1,11 +1,10 @@
 from typing import Any, Dict, List, Optional, Sequence
 
-from pydantic import Extra, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import Extra, root_validator
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class AlephAlpha(LLM):
@@ -125,11 +124,42 @@ class AlephAlpha(LLM):
     raw_completion: bool = False
     """Force the raw completion of the model to be returned."""
 
-    aleph_alpha_api_key: Optional[str] = None
-    """API key for Aleph Alpha API."""
-
     stop_sequences: Optional[List[str]] = None
     """Stop sequences to use."""
+
+    # Client params
+    aleph_alpha_api_key: Optional[str] = None
+    """API key for Aleph Alpha API."""
+    host: str = "https://api.aleph-alpha.com"
+    """The hostname of the API host. 
+    The default one is "https://api.aleph-alpha.com")"""
+    hosting: Optional[str] = None
+    """Determines in which datacenters the request may be processed.
+    You can either set the parameter to "aleph-alpha" or omit it (defaulting to None).
+    Not setting this value, or setting it to None, gives us maximal 
+    flexibility in processing your request in our
+    own datacenters and on servers hosted with other providers. 
+    Choose this option for maximal availability.
+    Setting it to "aleph-alpha" allows us to only process the 
+    request in our own datacenters.
+    Choose this option for maximal data privacy."""
+    request_timeout_seconds: int = 305
+    """Client timeout that will be set for HTTP requests in the 
+    `requests` library's API calls.
+    Server will close all requests after 300 seconds with an internal server error."""
+    total_retries: int = 8
+    """The number of retries made in case requests fail with certain retryable 
+    status codes. If the last
+    retry fails a corresponding exception is raised. Note, that between retries
+    an exponential backoff
+    is applied, starting with 0.5 s after the first retry and doubling for
+    each retry made. So with the
+    default setting of 8 retries a total wait time of 63.5 s is added 
+    between the retries."""
+    nice: bool = False
+    """Setting this to True, will signal to the API that you intend to be 
+    nice to other users
+    by de-prioritizing your request below concurrent ones."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -139,13 +169,20 @@ class AlephAlpha(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        aleph_alpha_api_key = get_from_dict_or_env(
-            values, "aleph_alpha_api_key", "ALEPH_ALPHA_API_KEY"
+        values["aleph_alpha_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "aleph_alpha_api_key", "ALEPH_ALPHA_API_KEY")
         )
         try:
-            import aleph_alpha_client
+            from aleph_alpha_client import Client
 
-            values["client"] = aleph_alpha_client.Client(token=aleph_alpha_api_key)
+            values["client"] = Client(
+                token=values["aleph_alpha_api_key"].get_secret_value(),
+                host=values["host"],
+                hosting=values["hosting"],
+                request_timeout_seconds=values["request_timeout_seconds"],
+                total_retries=values["total_retries"],
+                nice=values["nice"],
+            )
         except ImportError:
             raise ImportError(
                 "Could not import aleph_alpha_client python package. "
@@ -241,3 +278,9 @@ class AlephAlpha(LLM):
         if stop is not None or self.stop_sequences is not None:
             text = enforce_stop_tokens(text, params["stop_sequences"])
         return text
+
+
+if __name__ == "__main__":
+    aa = AlephAlpha()
+
+    print(aa("How are you?"))

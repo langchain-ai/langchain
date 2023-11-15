@@ -5,16 +5,13 @@ from __future__ import annotations
 import uuid
 from typing import Any, Iterable, List
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
 
 class ElasticSearchBM25Retriever(BaseRetriever):
-    """Retriever for the Elasticsearch using BM25 as a retrieval method.
+    """`Elasticsearch` retriever that uses `BM25`.
 
     To connect to an Elasticsearch instance that requires login credentials,
     including Elastic Cloud, use the Elasticsearch URL format
@@ -138,8 +135,3 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         for r in res["hits"]["hits"]:
             docs.append(Document(page_content=r["_source"]["content"]))
         return docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError

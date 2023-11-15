@@ -1,27 +1,31 @@
-"""Vertex Matching Engine implementation of the vector store."""
 from __future__ import annotations
 
 import json
 import logging
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
-from langchain.docstore.document import Document
-from langchain.embeddings import TensorflowHubEmbeddings
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.document import Document
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
+from langchain.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
     from google.cloud import storage
     from google.cloud.aiplatform import MatchingEngineIndex, MatchingEngineIndexEndpoint
+    from google.cloud.aiplatform.matching_engine.matching_engine_index_endpoint import (
+        Namespace,
+    )
     from google.oauth2.service_account import Credentials
+
+    from langchain.embeddings import TensorflowHubEmbeddings
 
 logger = logging.getLogger()
 
 
 class MatchingEngine(VectorStore):
-    """Vertex Matching Engine implementation of the vector store.
+    """`Google Vertex AI Matching Engine` vector store.
 
     While the embeddings are stored in the Matching Engine, the embedded
     documents will be stored in GCS.
@@ -116,15 +120,24 @@ class MatchingEngine(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+        texts = list(texts)
+        if metadatas is not None and len(texts) != len(metadatas):
+            raise ValueError(
+                "texts and metadatas do not have the same length. Received "
+                f"{len(texts)} texts and {len(metadatas)} metadatas."
+            )
         logger.debug("Embedding documents.")
-        embeddings = self.embedding.embed_documents(list(texts))
+        embeddings = self.embedding.embed_documents(texts)
         jsons = []
         ids = []
         # Could be improved with async.
-        for embedding, text in zip(embeddings, texts):
+        for idx, (embedding, text) in enumerate(zip(embeddings, texts)):
             id = str(uuid.uuid4())
             ids.append(id)
-            jsons.append({"id": id, "embedding": embedding})
+            json_: dict = {"id": id, "embedding": embedding}
+            if metadatas is not None:
+                json_["metadata"] = metadatas[idx]
+            jsons.append(json_)
             self._upload_to_gcs(text, f"documents/{id}")
 
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")
@@ -159,32 +172,84 @@ class MatchingEngine(VectorStore):
         blob = bucket.blob(gcs_location)
         blob.upload_from_string(data)
 
-    def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        """Return docs most similar to query.
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[List[Namespace]] = None,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query and their cosine distance from the query.
 
         Args:
-            query: The string that will be used to search for similar documents.
-            k: The amount of neighbors that will be retrieved.
+            query: String query look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Optional. A list of Namespaces for filtering
+                the matching results.
+                For example:
+                [Namespace("color", ["red"], []), Namespace("shape", [], ["squared"])]
+                will match datapoints that satisfy "red color" but not include
+                datapoints with "squared shape". Please refer to
+                https://cloud.google.com/vertex-ai/docs/matching-engine/filtering#json
+                for more detail.
 
         Returns:
-            A list of k matching documents.
+            List[Tuple[Document, float]]: List of documents most similar to
+            the query text and cosine distance in float for each.
+            Lower score represents more similarity.
         """
-
         logger.debug(f"Embedding query {query}.")
-        embedding_query = self.embedding.embed_documents([query])
-
-        response = self.endpoint.match(
-            deployed_index_id=self._get_index_id(),
-            queries=embedding_query,
-            num_neighbors=k,
+        embedding_query = self.embedding.embed_query(query)
+        return self.similarity_search_by_vector_with_score(
+            embedding_query, k=k, filter=filter
         )
+
+    def similarity_search_by_vector_with_score(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[List[Namespace]] = None,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to the embedding and their cosine distance.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Optional. A list of Namespaces for filtering
+                the matching results.
+                For example:
+                [Namespace("color", ["red"], []), Namespace("shape", [], ["squared"])]
+                will match datapoints that satisfy "red color" but not include
+                datapoints with "squared shape". Please refer to
+                https://cloud.google.com/vertex-ai/docs/matching-engine/filtering#json
+                for more detail.
+
+        Returns:
+            List[Tuple[Document, float]]: List of documents most similar to
+            the query text and cosine distance in float for each.
+            Lower score represents more similarity.
+        """
+        filter = filter or []
+
+        # If the endpoint is public we use the find_neighbors function.
+        if self.endpoint._public_match_client:
+            response = self.endpoint.find_neighbors(
+                deployed_index_id=self._get_index_id(),
+                queries=[embedding],
+                num_neighbors=k,
+                filter=filter,
+            )
+        else:
+            response = self.endpoint.match(
+                deployed_index_id=self._get_index_id(),
+                queries=[embedding],
+                num_neighbors=k,
+                filter=filter,
+            )
+
+        logger.debug(f"Found {len(response)} matches.")
 
         if len(response) == 0:
             return []
-
-        logger.debug(f"Found {len(response)} matches for the query {query}.")
 
         results = []
 
@@ -194,11 +259,69 @@ class MatchingEngine(VectorStore):
         # one element.
         for doc in response[0]:
             page_content = self._download_from_gcs(f"documents/{doc.id}")
-            results.append(Document(page_content=page_content))
+            results.append((Document(page_content=page_content), doc.distance))
 
         logger.debug("Downloaded documents for query.")
 
         return results
+
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[List[Namespace]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: The string that will be used to search for similar documents.
+            k: The amount of neighbors that will be retrieved.
+            filter: Optional. A list of Namespaces for filtering the matching results.
+                For example:
+                [Namespace("color", ["red"], []), Namespace("shape", [], ["squared"])]
+                will match datapoints that satisfy "red color" but not include
+                datapoints with "squared shape". Please refer to
+                https://cloud.google.com/vertex-ai/docs/matching-engine/filtering#json
+                 for more detail.
+
+        Returns:
+            A list of k matching documents.
+        """
+        docs_and_scores = self.similarity_search_with_score(
+            query, k=k, filter=filter, **kwargs
+        )
+
+        return [doc for doc, _ in docs_and_scores]
+
+    def similarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[List[Namespace]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to the embedding.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: The amount of neighbors that will be retrieved.
+            filter: Optional. A list of Namespaces for filtering the matching results.
+                For example:
+                [Namespace("color", ["red"], []), Namespace("shape", [], ["squared"])]
+                will match datapoints that satisfy "red color" but not include
+                datapoints with "squared shape". Please refer to
+                https://cloud.google.com/vertex-ai/docs/matching-engine/filtering#json
+                 for more detail.
+
+        Returns:
+            A list of k matching documents.
+        """
+        docs_and_scores = self.similarity_search_by_vector_with_score(
+            embedding, k=k, filter=filter, **kwargs
+        )
+
+        return [doc for doc, _ in docs_and_scores]
 
     def _get_index_id(self) -> str:
         """Gets the correct index id for the endpoint.
@@ -402,7 +525,11 @@ class MatchingEngine(VectorStore):
 
         from google.cloud import storage
 
-        return storage.Client(credentials=credentials, project=project_id)
+        return storage.Client(
+            credentials=credentials,
+            project=project_id,
+            client_info=get_client_info(module="vertex-ai-matching-engine"),
+        )
 
     @classmethod
     def _init_aiplatform(
@@ -436,10 +563,13 @@ class MatchingEngine(VectorStore):
         )
 
     @classmethod
-    def _get_default_embeddings(cls) -> TensorflowHubEmbeddings:
+    def _get_default_embeddings(cls) -> "TensorflowHubEmbeddings":
         """This function returns the default embedding.
 
         Returns:
             Default TensorflowHubEmbeddings to use.
         """
+
+        from langchain.embeddings import TensorflowHubEmbeddings
+
         return TensorflowHubEmbeddings()

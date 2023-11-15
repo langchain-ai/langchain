@@ -1,21 +1,24 @@
+from __future__ import annotations
+
 import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
 
-from pydantic import Extra
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra
+from langchain.schema import Generation, LLMResult
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
+DEFAULT_BATCH_SIZE = 4
 
 logger = logging.getLogger(__name__)
 
 
-class HuggingFacePipeline(LLM):
+class HuggingFacePipeline(BaseLLM):
     """HuggingFace Pipeline API.
 
     To use, you should have the ``transformers`` python package installed.
@@ -50,9 +53,11 @@ class HuggingFacePipeline(LLM):
     model_id: str = DEFAULT_MODEL_ID
     """Model name to use."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments passed to the model."""
+    """Keyword arguments passed to the model."""
     pipeline_kwargs: Optional[dict] = None
-    """Key word arguments passed to the pipeline."""
+    """Keyword arguments passed to the pipeline."""
+    batch_size: int = DEFAULT_BATCH_SIZE
+    """Batch size to use when passing multiple documents to generate."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -64,11 +69,13 @@ class HuggingFacePipeline(LLM):
         cls,
         model_id: str,
         task: str,
-        device: int = -1,
+        device: Optional[int] = -1,
+        device_map: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
         pipeline_kwargs: Optional[dict] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
-    ) -> LLM:
+    ) -> HuggingFacePipeline:
         """Construct the pipeline object from model_id and task."""
         try:
             from transformers import (
@@ -102,7 +109,22 @@ class HuggingFacePipeline(LLM):
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
-        if importlib.util.find_spec("torch") is not None:
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token_id = model.config.eos_token_id
+
+        if (
+            getattr(model, "is_loaded_in_4bit", False)
+            or getattr(model, "is_loaded_in_8bit", False)
+        ) and device is not None:
+            logger.warning(
+                f"Setting the `device` argument to None from {device} to avoid "
+                "the error caused by attempting to move the model that was already "
+                "loaded on the GPU using the Accelerate module to the same or "
+                "another device."
+            )
+            device = None
+
+        if device is not None and importlib.util.find_spec("torch") is not None:
             import torch
 
             cuda_device_count = torch.cuda.device_count()
@@ -111,7 +133,9 @@ class HuggingFacePipeline(LLM):
                     f"Got device=={device}, "
                     f"device is required to be within [-1, {cuda_device_count})"
                 )
-            if device < 0 and cuda_device_count > 0:
+            if device_map is not None and device < 0:
+                device = None
+            if device is not None and device < 0 and cuda_device_count > 0:
                 logger.warning(
                     "Device has %d GPUs available. "
                     "Provide device={deviceId} to `from_model_id` to use available"
@@ -129,6 +153,8 @@ class HuggingFacePipeline(LLM):
             model=model,
             tokenizer=tokenizer,
             device=device,
+            device_map=device_map,
+            batch_size=batch_size,
             model_kwargs=_model_kwargs,
             **_pipeline_kwargs,
         )
@@ -142,6 +168,7 @@ class HuggingFacePipeline(LLM):
             model_id=model_id,
             model_kwargs=_model_kwargs,
             pipeline_kwargs=_pipeline_kwargs,
+            batch_size=batch_size,
             **kwargs,
         )
 
@@ -158,28 +185,62 @@ class HuggingFacePipeline(LLM):
     def _llm_type(self) -> str:
         return "huggingface_pipeline"
 
-    def _call(
+    def _generate(
         self,
-        prompt: str,
+        prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> str:
-        response = self.pipeline(prompt)
-        if self.pipeline.task == "text-generation":
-            # Text generation return includes the starter text.
-            text = response[0]["generated_text"][len(prompt) :]
-        elif self.pipeline.task == "text2text-generation":
-            text = response[0]["generated_text"]
-        elif self.pipeline.task == "summarization":
-            text = response[0]["summary_text"]
-        else:
-            raise ValueError(
-                f"Got invalid task {self.pipeline.task}, "
-                f"currently only {VALID_TASKS} are supported"
-            )
-        if stop:
-            # This is a bit hacky, but I can't figure out a better way to enforce
-            # stop tokens when making calls to huggingface_hub.
-            text = enforce_stop_tokens(text, stop)
-        return text
+    ) -> LLMResult:
+        # List to hold all results
+        text_generations: List[str] = []
+
+        for i in range(0, len(prompts), self.batch_size):
+            batch_prompts = prompts[i : i + self.batch_size]
+
+            # Process batch of prompts
+            responses = self.pipeline(batch_prompts)
+
+            # Process each response in the batch
+            for j, response in enumerate(responses):
+                if isinstance(response, list):
+                    # if model returns multiple generations, pick the top one
+                    response = response[0]
+
+                if self.pipeline.task == "text-generation":
+                    try:
+                        from transformers.pipelines.text_generation import ReturnType
+
+                        remove_prompt = (
+                            self.pipeline._postprocess_params.get("return_type")
+                            != ReturnType.NEW_TEXT
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Unable to extract pipeline return_type. "
+                            f"Received error:\n\n{e}"
+                        )
+                        remove_prompt = True
+                    if remove_prompt:
+                        text = response["generated_text"][len(batch_prompts[j]) :]
+                    else:
+                        text = response["generated_text"]
+                elif self.pipeline.task == "text2text-generation":
+                    text = response["generated_text"]
+                elif self.pipeline.task == "summarization":
+                    text = response["summary_text"]
+                else:
+                    raise ValueError(
+                        f"Got invalid task {self.pipeline.task}, "
+                        f"currently only {VALID_TASKS} are supported"
+                    )
+                if stop:
+                    # Enforce stop tokens
+                    text = enforce_stop_tokens(text, stop)
+
+                # Append the processed text to results
+                text_generations.append(text)
+
+        return LLMResult(
+            generations=[[Generation(text=text)] for text in text_generations]
+        )

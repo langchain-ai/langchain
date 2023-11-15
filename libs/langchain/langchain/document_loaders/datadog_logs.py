@@ -1,4 +1,3 @@
-"""Load Datadog logs."""
 from datetime import datetime, timedelta
 from typing import List, Optional
 
@@ -7,7 +6,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class DatadogLogsLoader(BaseLoader):
-    """Loads a query result from Datadog into a list of documents.
+    """Load `Datadog` logs.
 
     Logs are written into the `page_content` and into the `metadata`.
     """

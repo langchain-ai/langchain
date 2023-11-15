@@ -1,7 +1,11 @@
 """Test vector store utility functions."""
 import numpy as np
 
-from langchain.vectorstores.utils import maximal_marginal_relevance
+from langchain.docstore.document import Document
+from langchain.vectorstores.utils import (
+    filter_complex_metadata,
+    maximal_marginal_relevance,
+)
 
 
 def test_maximal_marginal_relevance_lambda_zero() -> None:
@@ -52,3 +56,70 @@ def test_maximal_marginal_relevance_query_dim() -> None:
     first = maximal_marginal_relevance(query_embedding, embedding_list)
     second = maximal_marginal_relevance(query_embedding_2d, embedding_list)
     assert first == second
+
+
+def test_filter_list_metadata() -> None:
+    documents = [
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is a string!",
+                "key2": ["a", "list", "of", "strings"],
+            },
+        ),
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is another string!",
+                "key2": {"foo"},
+            },
+        ),
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is another string!",
+                "key2": {"foo": "bar"},
+            },
+        ),
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is another string!",
+                "key2": True,
+            },
+        ),
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is another string!",
+                "key2": 1,
+            },
+        ),
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is another string!",
+                "key2": 1.0,
+            },
+        ),
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is another string!",
+                "key2": "foo",
+            },
+        ),
+    ]
+
+    updated_documents = filter_complex_metadata(documents)
+    filtered_metadata = [doc.metadata for doc in updated_documents]
+
+    assert filtered_metadata == [
+        {"key1": "this is a string!"},
+        {"key1": "this is another string!"},
+        {"key1": "this is another string!"},
+        {"key1": "this is another string!", "key2": True},
+        {"key1": "this is another string!", "key2": 1},
+        {"key1": "this is another string!", "key2": 1.0},
+        {"key1": "this is another string!", "key2": "foo"},
+    ]

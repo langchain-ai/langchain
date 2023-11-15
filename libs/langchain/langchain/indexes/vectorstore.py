@@ -1,17 +1,16 @@
-from typing import Any, List, Optional, Type
-
-from pydantic import BaseModel, Extra, Field
+from typing import Any, Dict, List, Optional, Type
 
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.document_loaders.base import BaseLoader
-from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms.openai import OpenAI
+from langchain.pydantic_v1 import BaseModel, Extra, Field
 from langchain.schema import Document
+from langchain.schema.embeddings import Embeddings
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.vectorstore import VectorStore
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
 
 
@@ -31,22 +30,32 @@ class VectorStoreIndexWrapper(BaseModel):
         arbitrary_types_allowed = True
 
     def query(
-        self, question: str, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
+        self,
+        question: str,
+        llm: Optional[BaseLanguageModel] = None,
+        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> str:
         """Query the vectorstore."""
         llm = llm or OpenAI(temperature=0)
+        retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQA.from_chain_type(
-            llm, retriever=self.vectorstore.as_retriever(), **kwargs
+            llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
         )
         return chain.run(question)
 
     def query_with_sources(
-        self, question: str, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
+        self,
+        question: str,
+        llm: Optional[BaseLanguageModel] = None,
+        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> dict:
         """Query the vectorstore and get back sources."""
         llm = llm or OpenAI(temperature=0)
+        retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQAWithSourcesChain.from_chain_type(
-            llm, retriever=self.vectorstore.as_retriever(), **kwargs
+            llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
         )
         return chain({chain.question_key: question})
 

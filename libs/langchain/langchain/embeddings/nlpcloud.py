@@ -1,8 +1,7 @@
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, root_validator
-
-from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, root_validator
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 
@@ -27,7 +26,7 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
         self,
         model_name: str = "paraphrase-multilingual-mpnet-base-v2",
         gpu: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(model_name=model_name, gpu=gpu, **kwargs)
 

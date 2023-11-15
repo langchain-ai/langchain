@@ -1,9 +1,9 @@
-"""Load Data from a Confluence Space"""
 import logging
 from enum import Enum
 from io import BytesIO
 from typing import Any, Callable, Dict, List, Optional, Union
 
+import requests
 from tenacity import (
     before_sleep_log,
     retry,
@@ -20,20 +20,18 @@ logger = logging.getLogger(__name__)
 class ContentFormat(str, Enum):
     """Enumerator of the content formats of Confluence page."""
 
+    EDITOR = "body.editor"
+    EXPORT_VIEW = "body.export_view"
+    ANONYMOUS_EXPORT_VIEW = "body.anonymous_export_view"
     STORAGE = "body.storage"
     VIEW = "body.view"
 
     def get_content(self, page: dict) -> str:
-        if self == ContentFormat.STORAGE:
-            return page["body"]["storage"]["value"]
-        elif self == ContentFormat.VIEW:
-            return page["body"]["view"]["value"]
-
-        raise ValueError("unknown content format")
+        return page["body"][self.name.lower()]["value"]
 
 
 class ConfluenceLoader(BaseLoader):
-    """Load Confluence pages.
+    """Load `Confluence` pages.
 
     Port of https://llamahub.ai/l/confluence
     This currently supports username/api_key, Oauth2 login or personal access token
@@ -52,7 +50,10 @@ class ConfluenceLoader(BaseLoader):
     raw XML representation for storage. The view format is the HTML representation for
     viewing with macros are rendered as though it is viewed by users. You can pass
     a enum `content_format` argument to `load()` to specify the content format, this is
-    set to `ContentFormat.STORAGE` by default.
+    set to `ContentFormat.STORAGE` by default, the supported values are:
+    `ContentFormat.EDITOR`, `ContentFormat.EXPORT_VIEW`,
+    `ContentFormat.ANONYMOUS_EXPORT_VIEW`, `ContentFormat.STORAGE`,
+    and `ContentFormat.VIEW`.
 
     Hint: space_key and page_id can both be found in the URL of a page in Confluence
     - https://yoursite.atlassian.com/wiki/spaces/<space_key>/pages/<page_id>
@@ -66,6 +67,15 @@ class ConfluenceLoader(BaseLoader):
                 url="https://yoursite.atlassian.com/wiki",
                 username="me",
                 api_key="12345"
+            )
+            documents = loader.load(space_key="SPACE",limit=50)
+
+            # Server on perm
+            loader = ConfluenceLoader(
+                url="https://confluence.yoursite.com/",
+                username="me",
+                api_key="your_password",
+                cloud=False
             )
             documents = loader.load(space_key="SPACE",limit=50)
 
@@ -98,6 +108,7 @@ class ConfluenceLoader(BaseLoader):
         url: str,
         api_key: Optional[str] = None,
         username: Optional[str] = None,
+        session: Optional[requests.Session] = None,
         oauth2: Optional[dict] = None,
         token: Optional[str] = None,
         cloud: Optional[bool] = True,
@@ -108,16 +119,15 @@ class ConfluenceLoader(BaseLoader):
     ):
         confluence_kwargs = confluence_kwargs or {}
         errors = ConfluenceLoader.validate_init_args(
-            url, api_key, username, oauth2, token
+            url=url,
+            api_key=api_key,
+            username=username,
+            session=session,
+            oauth2=oauth2,
+            token=token,
         )
         if errors:
             raise ValueError(f"Error(s) while validating input: {errors}")
-
-        self.base_url = url
-        self.number_of_retries = number_of_retries
-        self.min_retry_seconds = min_retry_seconds
-        self.max_retry_seconds = max_retry_seconds
-
         try:
             from atlassian import Confluence  # noqa: F401
         except ImportError:
@@ -126,7 +136,14 @@ class ConfluenceLoader(BaseLoader):
                 "`pip install atlassian-python-api`"
             )
 
-        if oauth2:
+        self.base_url = url
+        self.number_of_retries = number_of_retries
+        self.min_retry_seconds = min_retry_seconds
+        self.max_retry_seconds = max_retry_seconds
+
+        if session:
+            self.confluence = Confluence(url=url, session=session, **confluence_kwargs)
+        elif oauth2:
             self.confluence = Confluence(
                 url=url, oauth2=oauth2, cloud=cloud, **confluence_kwargs
             )
@@ -148,6 +165,7 @@ class ConfluenceLoader(BaseLoader):
         url: Optional[str] = None,
         api_key: Optional[str] = None,
         username: Optional[str] = None,
+        session: Optional[requests.Session] = None,
         oauth2: Optional[dict] = None,
         token: Optional[str] = None,
     ) -> Union[List, None]:
@@ -163,33 +181,28 @@ class ConfluenceLoader(BaseLoader):
                 "the other must be as well."
             )
 
-        if (api_key or username) and oauth2:
+        non_null_creds = list(
+            x is not None for x in ((api_key or username), session, oauth2, token)
+        )
+        if sum(non_null_creds) > 1:
+            all_names = ("(api_key, username)", "session", "oath2", "token")
+            provided = tuple(n for x, n in zip(non_null_creds, all_names) if x)
             errors.append(
-                "Cannot provide a value for `api_key` and/or "
-                "`username` and provide a value for `oauth2`"
+                f"Cannot provide a value for more than one of: {all_names}. Received "
+                f"values for: {provided}"
             )
-
-        if oauth2 and oauth2.keys() != [
+        if oauth2 and set(oauth2.keys()) != {
             "access_token",
             "access_token_secret",
             "consumer_key",
             "key_cert",
-        ]:
+        }:
             errors.append(
                 "You have either omitted require keys or added extra "
                 "keys to the oauth2 dictionary. key values should be "
                 "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
             )
-
-        if token and (api_key or username or oauth2):
-            errors.append(
-                "Cannot provide a value for `token` and a value for `api_key`, "
-                "`username` or `oauth2`"
-            )
-
-        if errors:
-            return errors
-        return None
+        return errors or None
 
     def load(
         self,
@@ -205,6 +218,8 @@ class ConfluenceLoader(BaseLoader):
         limit: Optional[int] = 50,
         max_pages: Optional[int] = 1000,
         ocr_languages: Optional[str] = None,
+        keep_markdown_format: bool = False,
+        keep_newlines: bool = False,
     ) -> List[Document]:
         """
         :param space_key: Space key retrieved from a confluence URL, defaults to None
@@ -224,7 +239,11 @@ class ConfluenceLoader(BaseLoader):
         :type include_attachments: bool, optional
         :param include_comments: defaults to False
         :type include_comments: bool, optional
-        :param content_format: Specify content format, defaults to ContentFormat.STORAGE
+        :param content_format: Specify content format, defaults to
+                                ContentFormat.STORAGE, the supported values are:
+                                `ContentFormat.EDITOR`, `ContentFormat.EXPORT_VIEW`,
+                                `ContentFormat.ANONYMOUS_EXPORT_VIEW`,
+                                `ContentFormat.STORAGE`, and `ContentFormat.VIEW`.
         :type content_format: ContentFormat
         :param limit: Maximum number of pages to retrieve per request, defaults to 50
         :type limit: int, optional
@@ -234,6 +253,12 @@ class ConfluenceLoader(BaseLoader):
                               language, you'll first need to install the appropriate
                               Tesseract language pack.
         :type ocr_languages: str, optional
+        :param keep_markdown_format: Whether to keep the markdown format, defaults to
+            False
+        :type keep_markdown_format: bool
+        :param keep_newlines: Whether to keep the newlines format, defaults to
+            False
+        :type keep_newlines: bool
         :raises ValueError: _description_
         :raises ImportError: _description_
         :return: _description_
@@ -262,7 +287,9 @@ class ConfluenceLoader(BaseLoader):
                 include_attachments,
                 include_comments,
                 content_format,
-                ocr_languages,
+                ocr_languages=ocr_languages,
+                keep_markdown_format=keep_markdown_format,
+                keep_newlines=keep_newlines,
             )
 
         if label:
@@ -294,6 +321,7 @@ class ConfluenceLoader(BaseLoader):
                 include_comments,
                 content_format,
                 ocr_languages,
+                keep_markdown_format,
             )
 
         if page_ids:
@@ -310,7 +338,9 @@ class ConfluenceLoader(BaseLoader):
                     ),
                     before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
-                page = get_page(page_id=page_id, expand=content_format.value)
+                page = get_page(
+                    page_id=page_id, expand=f"{content_format.value},version"
+                )
                 if not include_restricted_content and not self.is_public_page(page):
                     continue
                 doc = self.process_page(
@@ -319,6 +349,7 @@ class ConfluenceLoader(BaseLoader):
                     include_comments,
                     content_format,
                     ocr_languages,
+                    keep_markdown_format,
                 )
                 docs.append(doc)
 
@@ -397,6 +428,8 @@ class ConfluenceLoader(BaseLoader):
         include_comments: bool,
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
+        keep_markdown_format: Optional[bool] = False,
+        keep_newlines: bool = False,
     ) -> List[Document]:
         """Process a list of pages into a list of documents."""
         docs = []
@@ -408,7 +441,9 @@ class ConfluenceLoader(BaseLoader):
                 include_attachments,
                 include_comments,
                 content_format,
-                ocr_languages,
+                ocr_languages=ocr_languages,
+                keep_markdown_format=keep_markdown_format,
+                keep_newlines=keep_newlines,
             )
             docs.append(doc)
 
@@ -421,24 +456,45 @@ class ConfluenceLoader(BaseLoader):
         include_comments: bool,
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
+        keep_markdown_format: Optional[bool] = False,
+        keep_newlines: bool = False,
     ) -> Document:
-        try:
-            from bs4 import BeautifulSoup  # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`beautifulsoup4` package not found, please run "
-                "`pip install beautifulsoup4`"
-            )
-
+        if keep_markdown_format:
+            try:
+                from markdownify import markdownify
+            except ImportError:
+                raise ImportError(
+                    "`markdownify` package not found, please run "
+                    "`pip install markdownify`"
+                )
+        if include_comments or not keep_markdown_format:
+            try:
+                from bs4 import BeautifulSoup  # type: ignore
+            except ImportError:
+                raise ImportError(
+                    "`beautifulsoup4` package not found, please run "
+                    "`pip install beautifulsoup4`"
+                )
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"], ocr_languages)
         else:
             attachment_texts = []
 
         content = content_format.get_content(page)
-        text = BeautifulSoup(content, "lxml").get_text(" ", strip=True) + "".join(
-            attachment_texts
-        )
+        if keep_markdown_format:
+            # Use markdownify to keep the page Markdown style
+            text = markdownify(content, heading_style="ATX") + "".join(attachment_texts)
+
+        else:
+            if keep_newlines:
+                text = BeautifulSoup(
+                    content.replace("</p>", "\n</p>").replace("<br />", "\n"), "lxml"
+                ).get_text(" ") + "".join(attachment_texts)
+            else:
+                text = BeautifulSoup(content, "lxml").get_text(
+                    " ", strip=True
+                ) + "".join(attachment_texts)
+
         if include_comments:
             comments = self.confluence.get_page_comments(
                 page["id"], expand="body.view.value", depth="all"
@@ -451,13 +507,18 @@ class ConfluenceLoader(BaseLoader):
             ]
             text = text + "".join(comment_texts)
 
+        metadata = {
+            "title": page["title"],
+            "id": page["id"],
+            "source": self.base_url.strip("/") + page["_links"]["webui"],
+        }
+
+        if "version" in page and "when" in page["version"]:
+            metadata["when"] = page["version"]["when"]
+
         return Document(
             page_content=text,
-            metadata={
-                "title": page["title"],
-                "id": page["id"],
-                "source": self.base_url.strip("/") + page["_links"]["webui"],
-            },
+            metadata=metadata,
         )
 
     def process_attachment(
@@ -480,26 +541,33 @@ class ConfluenceLoader(BaseLoader):
             media_type = attachment["metadata"]["mediaType"]
             absolute_url = self.base_url + attachment["_links"]["download"]
             title = attachment["title"]
-            if media_type == "application/pdf":
-                text = title + self.process_pdf(absolute_url, ocr_languages)
-            elif (
-                media_type == "image/png"
-                or media_type == "image/jpg"
-                or media_type == "image/jpeg"
-            ):
-                text = title + self.process_image(absolute_url, ocr_languages)
-            elif (
-                media_type == "application/vnd.openxmlformats-officedocument"
-                ".wordprocessingml.document"
-            ):
-                text = title + self.process_doc(absolute_url)
-            elif media_type == "application/vnd.ms-excel":
-                text = title + self.process_xls(absolute_url)
-            elif media_type == "image/svg+xml":
-                text = title + self.process_svg(absolute_url, ocr_languages)
-            else:
-                continue
-            texts.append(text)
+            try:
+                if media_type == "application/pdf":
+                    text = title + self.process_pdf(absolute_url, ocr_languages)
+                elif (
+                    media_type == "image/png"
+                    or media_type == "image/jpg"
+                    or media_type == "image/jpeg"
+                ):
+                    text = title + self.process_image(absolute_url, ocr_languages)
+                elif (
+                    media_type == "application/vnd.openxmlformats-officedocument"
+                    ".wordprocessingml.document"
+                ):
+                    text = title + self.process_doc(absolute_url)
+                elif media_type == "application/vnd.ms-excel":
+                    text = title + self.process_xls(absolute_url)
+                elif media_type == "image/svg+xml":
+                    text = title + self.process_svg(absolute_url, ocr_languages)
+                else:
+                    continue
+                texts.append(text)
+            except requests.HTTPError as e:
+                if e.response.status_code == 404:
+                    print(f"Attachment not found at {absolute_url}")
+                    continue
+                else:
+                    raise
 
         return texts
 

@@ -1,4 +1,3 @@
-"""Loading logic for loading documents from an Azure Blob Storage container."""
 from typing import List
 
 from langchain.docstore.document import Document
@@ -9,7 +8,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class AzureBlobStorageContainerLoader(BaseLoader):
-    """Loading Documents from Azure Blob Storage."""
+    """Load from `Azure Blob Storage` container."""
 
     def __init__(self, conn_str: str, container: str, prefix: str = ""):
         """Initialize with connection string, container and blob prefix."""
@@ -37,7 +36,9 @@ class AzureBlobStorageContainerLoader(BaseLoader):
         blob_list = container.list_blobs(name_starts_with=self.prefix)
         for blob in blob_list:
             loader = AzureBlobStorageFileLoader(
-                self.conn_str, self.container, blob.name  # type: ignore
+                self.conn_str,
+                self.container,
+                blob.name,  # type: ignore
             )
             docs.extend(loader.load())
         return docs

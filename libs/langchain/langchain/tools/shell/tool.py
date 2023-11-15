@@ -1,16 +1,14 @@
 import asyncio
 import platform
 import warnings
-from typing import List, Optional, Type, Union
-
-from pydantic import BaseModel, Field, root_validator
+from typing import Any, List, Optional, Type, Union
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.tools.base import BaseTool
-from langchain.utilities.bash import BashProcess
 
 
 class ShellInput(BaseModel):
@@ -36,8 +34,16 @@ class ShellInput(BaseModel):
         return values
 
 
-def _get_default_bash_processs() -> BashProcess:
-    """Get file path from string."""
+def _get_default_bash_process() -> Any:
+    """Get default bash process."""
+    try:
+        from langchain_experimental.llm_bash.bash import BashProcess
+    except ImportError:
+        raise ImportError(
+            "BashProcess has been moved to langchain experimental."
+            "To use this tool, install langchain-experimental "
+            "with `pip install langchain-experimental`."
+        )
     return BashProcess(return_err_output=True)
 
 
@@ -52,7 +58,7 @@ def _get_platform() -> str:
 class ShellTool(BaseTool):
     """Tool to run shell commands."""
 
-    process: BashProcess = Field(default_factory=_get_default_bash_processs)
+    process: Any = Field(default_factory=_get_default_bash_process)
     """Bash process to run commands."""
 
     name: str = "terminal"
