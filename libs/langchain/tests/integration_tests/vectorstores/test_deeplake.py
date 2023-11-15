@@ -262,6 +262,7 @@ def test_add_texts(deeplake_datastore: DeepLake) -> None:
 
 
 def test_ids_backwards_compatibility():
+    """Test that ids are backwards compatible."""
     db = DeepLake(
         dataset_path="mem://test_path",
         embedding_function=FakeEmbeddings(),
