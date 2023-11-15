@@ -21,8 +21,7 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
 
     azure_cogs_key: str = ""  #: :meta private:
     azure_cogs_endpoint: str = ""  #: :meta private:
-    # vision_service: Any  #: :meta private:
-    # analysis_options: Any  #: :meta private:
+    text_analytics_client: Any  #: :meta private:
 
     name: str = "azure_cognitive_services_text_analyics_health"
     description: str = (
@@ -49,13 +48,6 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
                 endpoint=azure_cogs_endpoint, key=azure_cogs_key
             )
 
-            # values["analysis_options"] = sdk.ImageAnalysisOptions()
-            # values["analysis_options"].features = (
-            #     sdk.ImageAnalysisFeature.CAPTION
-            #     | sdk.ImageAnalysisFeature.OBJECTS
-            #     | sdk.ImageAnalysisFeature.TAGS
-            #     | sdk.ImageAnalysisFeature.TEXT
-            # )
         except ImportError:
             raise ImportError(
                 "azure-ai-textanalytics is not installed. "
@@ -65,7 +57,9 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
         return values
 
     def _text_analysis(self, text: str) -> Dict:
-        poller = self.text_analytics_client.begin_analyze_healthcare_entities([{"id": "1", "language": "en", "text": text}])
+        poller = self.text_analytics_client.begin_analyze_healthcare_entities(
+            [{"id": "1", "language": "en", "text": text}]
+        )
 
         result = poller.result()
         res_dict = {}
@@ -73,7 +67,10 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
         doc = result.next()
 
         if doc.content is not None:
-            res_dict["entities"] = [ f"{x.text} ({x.category}) found at offset {str(x.offset)}" for x in result.entities ]
+            res_dict["entities"] = [
+                f"{x.text} ({x.category}) found at offset {str(x.offset)}"
+                for x in result.entities
+            ]
 
         return res_dict
 
@@ -81,7 +78,9 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
         formatted_result = []
         if "entities" in text_analysis_result:
             formatted_result.append(
-                f"Entities: {', '.join(text_analysis_result['entities'])}".replace("\n", " ")
+                f"Entities: {', '.join(text_analysis_result['entities'])}".replace(
+                    "\n", " "
+                )
             )
 
     def _run(
@@ -95,4 +94,6 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
 
             return self._format_text_analysis_result(text_analysis_result)
         except Exception as e:
-            raise RuntimeError(f"Error while running AzureCogsTextAnalyticsHealthTool: {e}")
+            raise RuntimeError(
+                f"Error while running AzureCogsTextAnalyticsHealthTool: {e}"
+            )
