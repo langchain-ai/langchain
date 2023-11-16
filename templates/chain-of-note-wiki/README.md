@@ -2,7 +2,7 @@
 
 Implements Chain-of-Note as described in https://arxiv.org/pdf/2311.09210.pdf by Yu, et al. Uses Wikipedia for retrieval.
 
-Check out the prompt being use here https://smith.langchain.com/hub/bagatur/chain-of-note-wiki.
+Check out the prompt being used here https://smith.langchain.com/hub/bagatur/chain-of-note-wiki.
 
 ## Environment Setup
 
