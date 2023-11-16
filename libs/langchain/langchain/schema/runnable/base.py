@@ -2436,15 +2436,23 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __repr__(self) -> str:
         """A string representation of this runnable."""
-        return f"RunnableLambda({get_lambda_source(self.func) or '...'})"
+        if hasattr(self, "func"):
+            return f"RunnableLambda({get_lambda_source(self.func) or '...'})"
+        elif hasattr(self, "afunc"):
+            return f"RunnableLambda(afunc={get_lambda_source(self.afunc) or '...'})"
+        else:
+            return "RunnableLambda(...)"
 
     def _invoke(
         self,
         input: Input,
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> Output:
-        output = call_func_with_variable_args(self.func, input, config, run_manager)
+        output = call_func_with_variable_args(
+            self.func, input, config, run_manager, **kwargs
+        )
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
@@ -2467,9 +2475,10 @@ class RunnableLambda(Runnable[Input, Output]):
         input: Input,
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> Output:
         output = await acall_func_with_variable_args(
-            self.afunc, input, config, run_manager
+            self.afunc, input, config, run_manager, **kwargs
         )
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
@@ -2515,6 +2524,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 self._invoke,
                 input,
                 self._config(config, self.func),
+                **kwargs,
             )
         else:
             raise TypeError(
@@ -2533,6 +2543,7 @@ class RunnableLambda(Runnable[Input, Output]):
             self._ainvoke,
             input,
             self._config(config, self.afunc),
+            **kwargs,
         )
 
 
