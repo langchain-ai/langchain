@@ -229,7 +229,7 @@ class TencentVectorDB(VectorStore):
             for id in range(start, end, 1):
                 metadata = "{}"
                 if metadatas is not None:
-                    metadata = json.dumps(metadatas[id])
+                    metadata = json.dumps(metadatas[id], ensure_ascii=False)
                 doc = self.document.Document(
                     id="{}-{}-{}".format(time.time_ns(), hash(texts[id]), id),
                     vector=embeddings[id],

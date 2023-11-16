@@ -98,7 +98,7 @@ class Vectara(VectorStore):
         }
         response = self._session.post(
             "https://api.vectara.io/v1/delete-doc",
-            data=json.dumps(body),
+            data=json.dumps(body, ensure_ascii=False),
             verify=True,
             headers=self._get_post_headers(),
             timeout=self.vectara_api_timeout,
@@ -121,7 +121,7 @@ class Vectara(VectorStore):
         response = self._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/index",
-            data=json.dumps(request),
+            data=json.dumps(request, ensure_ascii=False),
             timeout=self.vectara_api_timeout,
             verify=True,
         )
@@ -165,7 +165,7 @@ class Vectara(VectorStore):
             md = metadatas[inx] if metadatas else {}
             files: dict = {
                 "file": (file, open(file, "rb")),
-                "doc_metadata": json.dumps(md),
+                "doc_metadata": json.dumps(md, ensure_ascii=False),
             }
             headers = self._get_post_headers()
             headers.pop("Content-Type")
@@ -225,9 +225,9 @@ class Vectara(VectorStore):
             doc_metadata = {"source": "langchain"}
         doc = {
             "document_id": doc_id,
-            "metadataJson": json.dumps(doc_metadata),
+            "metadataJson": json.dumps(doc_metadata, ensure_ascii=False),
             "section": [
-                {"text": text, "metadataJson": json.dumps(md)}
+                {"text": text, "metadataJson": json.dumps(md, ensure_ascii=False)}
                 for text, md in zip(texts, metadatas)
             ],
         }
@@ -293,7 +293,8 @@ class Vectara(VectorStore):
                         ],
                     }
                 ]
-            }
+            },
+            ensure_ascii=False,
         )
 
         response = self._session.post(

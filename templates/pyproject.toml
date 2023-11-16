@@ -36,7 +36,7 @@ watch = "poetry run ptw"
 lint = ["_lint", "_check_formatting"]
 format = ["_lint_fix", "_format"]
 
-_check_formatting = "poetry run ruff format . --diff"
+_check_formatting = "poetry run ruff format . --check"
 _lint = "poetry run ruff ."
 _format = "poetry run ruff format ."
 _lint_fix = "poetry run ruff . --fix"

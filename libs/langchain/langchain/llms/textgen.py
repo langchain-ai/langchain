@@ -325,7 +325,7 @@ class TextGen(LLM):
 
         websocket_client.connect(url)
 
-        websocket_client.send(json.dumps(request))
+        websocket_client.send(json.dumps(request, ensure_ascii=False))
 
         while True:
             result = websocket_client.recv()
@@ -398,7 +398,7 @@ class TextGen(LLM):
 
         websocket_client.connect(url)
 
-        websocket_client.send(json.dumps(request))
+        websocket_client.send(json.dumps(request, ensure_ascii=False))
 
         while True:
             result = websocket_client.recv()
