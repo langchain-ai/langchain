@@ -38,7 +38,7 @@ class TomlLoader(BaseLoader):
                 try:
                     data = tomli.loads(content)
                     doc = Document(
-                        page_content=json.dumps(data),
+                        page_content=json.dumps(data, ensure_ascii=False),
                         metadata={"source": str(file_path)},
                     )
                     yield doc

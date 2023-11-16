@@ -180,7 +180,9 @@ def construct_examples(input_output_pairs: Sequence[Tuple[str, dict]]) -> List[d
     examples = []
     for i, (_input, output) in enumerate(input_output_pairs):
         structured_request = (
-            json.dumps(output, indent=4).replace("{", "{{").replace("}", "}}")
+            json.dumps(output, indent=4, ensure_ascii=False)
+            .replace("{", "{{")
+            .replace("}", "}}")
         )
         example = {
             "i": i + 1,

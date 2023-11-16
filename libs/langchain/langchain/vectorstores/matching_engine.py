@@ -137,13 +137,13 @@ class MatchingEngine(VectorStore):
             json_: dict = {"id": id, "embedding": embedding}
             if metadatas is not None:
                 json_["metadata"] = metadatas[idx]
-            jsons.append(json)
+            jsons.append(json_)
             self._upload_to_gcs(text, f"documents/{id}")
 
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")
 
         # Creating json lines from the embedded documents.
-        result_str = "\n".join([json.dumps(x) for x in jsons])
+        result_str = "\n".join([json.dumps(x, ensure_ascii=False) for x in jsons])
 
         filename_prefix = f"indexes/{uuid.uuid4()}"
         filename = f"{filename_prefix}/{time.time()}.json"

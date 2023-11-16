@@ -173,7 +173,7 @@ class E2BDataAnalysisTool(BaseTool):
             "stderr": stderr,
             "artifacts": list(map(lambda artifact: artifact.name, artifacts)),
         }
-        return json.dumps(out)
+        return json.dumps(out, ensure_ascii=False)
 
     async def _arun(
         self,

@@ -15,6 +15,8 @@ gitpython = "^3.1.40"
 gigaserve = {extras = ["all"], version = ">=0.0.16"}
 uvicorn = "^0.23.2"
 tomlkit = "^0.12.2"
+certifi = "^2023.7.22"
+httpx = "^0.25.0"
 
 [tool.poetry.scripts]
 gigachain = "langchain_cli.cli:app"
@@ -55,7 +57,7 @@ _bump_2.shell = """sed -i "" "/^__version__ =/c\\ \n__version__ = \\"$version\\"
 _bump_2.uses = { version = "version" }
 
 _bump_1 = "poetry version patch"
-_check_formatting = "poetry run ruff format . --diff"
+_check_formatting = "poetry run ruff format . --check"
 _lint = "poetry run ruff ."
 _format = "poetry run ruff format ."
 _lint_fix = "poetry run ruff . --fix"

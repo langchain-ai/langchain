@@ -32,4 +32,4 @@ class BaseGraphQLTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         result = self.graphql_wrapper.run(tool_input)
-        return json.dumps(result, indent=2)
+        return json.dumps(result, indent=2, ensure_ascii=False)

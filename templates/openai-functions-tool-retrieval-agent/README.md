@@ -19,7 +19,7 @@ Set the `TAVILY_API_KEY` environment variable to access Tavily.
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U langchain-cli
+pip install -U gigachain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:

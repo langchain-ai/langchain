@@ -263,19 +263,19 @@ class ZapierNLAWrapper(BaseModel):
         """Same as run, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = self.run(*args, **kwargs)
-        return json.dumps(data)
+        return json.dumps(data, ensure_ascii=False)
 
     async def arun_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
         """Same as run, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = await self.arun(*args, **kwargs)
-        return json.dumps(data)
+        return json.dumps(data, ensure_ascii=False)
 
     def preview_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
         """Same as preview, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = self.preview(*args, **kwargs)
-        return json.dumps(data)
+        return json.dumps(data, ensure_ascii=False)
 
     async def apreview_as_str(  # type: ignore[no-untyped-def]
         self, *args, **kwargs
@@ -283,16 +283,16 @@ class ZapierNLAWrapper(BaseModel):
         """Same as preview, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = await self.apreview(*args, **kwargs)
-        return json.dumps(data)
+        return json.dumps(data, ensure_ascii=False)
 
     def list_as_str(self) -> str:  # type: ignore[no-untyped-def]
         """Same as list, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         actions = self.list()
-        return json.dumps(actions)
+        return json.dumps(actions, ensure_ascii=False)
 
     async def alist_as_str(self) -> str:  # type: ignore[no-untyped-def]
         """Same as list, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         actions = await self.alist()
-        return json.dumps(actions)
+        return json.dumps(actions, ensure_ascii=False)

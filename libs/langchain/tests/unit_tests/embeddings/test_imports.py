@@ -7,6 +7,7 @@ EXPECTED_ALL = [
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
     "ElasticsearchEmbeddings",
+    "FastEmbedEmbeddings",
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
     "GradientEmbeddings",
@@ -49,7 +50,6 @@ EXPECTED_ALL = [
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
-    "OpenCLIPEmbeddings",
 ]
 
 

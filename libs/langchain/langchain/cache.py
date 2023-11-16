@@ -83,7 +83,9 @@ def _dump_generations_to_json(generations: RETURN_VAL_TYPE) -> str:
 
     Warning: would not work well with arbitrary subclasses of `Generation`
     """
-    return json.dumps([generation.dict() for generation in generations])
+    return json.dumps(
+        [generation.dict() for generation in generations], ensure_ascii=False
+    )
 
 
 def _load_generations_from_json(generations_json: str) -> RETURN_VAL_TYPE:
@@ -126,7 +128,7 @@ def _dumps_generations(generations: RETURN_VAL_TYPE) -> str:
     Each item in the list can be `dumps`ed to a string,
     then we make the whole list of strings into a json-dumped.
     """
-    return json.dumps([dumps(_item) for _item in generations])
+    return json.dumps([dumps(_item) for _item in generations], ensure_ascii=False)
 
 
 def _loads_generations(generations_str: str) -> Union[RETURN_VAL_TYPE, None]:
@@ -679,7 +681,9 @@ class GPTCache(BaseCache):
         from gptcache.adapter.api import put
 
         _gptcache = self._get_gptcache(llm_string)
-        handled_data = json.dumps([generation.dict() for generation in return_val])
+        handled_data = json.dumps(
+            [generation.dict() for generation in return_val], ensure_ascii=False
+        )
         put(prompt, handled_data, cache_obj=_gptcache)
         return None
 
