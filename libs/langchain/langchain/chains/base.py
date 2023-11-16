@@ -61,15 +61,17 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             chains and cannot return as rich of an output as `__call__`.
     """
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "ChainInput", **{k: (Any, None) for k in self.input_keys}
         )
 
-    @property
-    def output_schema(self) -> Type[BaseModel]:
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "ChainOutput", **{k: (Any, None) for k in self.output_keys}
@@ -610,8 +612,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                 chain.dict(exclude_unset=True)
                 # -> {"_type": "foo", "verbose": False, ...}
         """
-        if self.memory is not None:
-            raise ValueError("Saving of memory is not yet supported.")
         _dict = super().dict(**kwargs)
         try:
             _dict["_type"] = self._chain_type
@@ -633,6 +633,14 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
                 chain.save(file_path="path/chain.yaml")
         """
+        if self.memory is not None:
+            raise ValueError("Saving of memory is not yet supported.")
+
+        # Fetch dictionary to save
+        chain_dict = self.dict()
+        if "_type" not in chain_dict:
+            raise NotImplementedError(f"Chain {self} does not support saving.")
+
         # Convert file to Path object.
         if isinstance(file_path, str):
             save_path = Path(file_path)
@@ -641,11 +649,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
-
-        # Fetch dictionary to save
-        chain_dict = self.dict()
-        if "_type" not in chain_dict:
-            raise NotImplementedError(f"Chain {self} does not support saving.")
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:

@@ -14,7 +14,7 @@ from langchain.llms.openai import OpenAI
 
 def test_connect_neo4j() -> None:
     """Test that Neo4j database is correctly instantiated and connected."""
-    url = os.environ.get("NEO4J_URL")
+    url = os.environ.get("NEO4J_URI")
     username = os.environ.get("NEO4J_USERNAME")
     password = os.environ.get("NEO4J_PASSWORD")
     assert url is not None
@@ -36,9 +36,22 @@ def test_connect_neo4j() -> None:
     assert output == expected_output
 
 
+def test_connect_neo4j_env() -> None:
+    """Test that Neo4j database environment variables."""
+    graph = Neo4jGraph()
+
+    output = graph.query(
+        """
+    RETURN "test" AS output
+    """
+    )
+    expected_output = [{"output": "test"}]
+    assert output == expected_output
+
+
 def test_cypher_generating_run() -> None:
     """Test that Cypher statement is correctly generated and executed."""
-    url = os.environ.get("NEO4J_URL")
+    url = os.environ.get("NEO4J_URI")
     username = os.environ.get("NEO4J_USERNAME")
     password = os.environ.get("NEO4J_PASSWORD")
     assert url is not None
@@ -68,7 +81,7 @@ def test_cypher_generating_run() -> None:
 
 def test_cypher_top_k() -> None:
     """Test top_k parameter correctly limits the number of results in the context."""
-    url = os.environ.get("NEO4J_URL")
+    url = os.environ.get("NEO4J_URI")
     username = os.environ.get("NEO4J_USERNAME")
     password = os.environ.get("NEO4J_PASSWORD")
     assert url is not None
@@ -102,7 +115,7 @@ def test_cypher_top_k() -> None:
 
 def test_cypher_intermediate_steps() -> None:
     """Test the returning of the intermediate steps."""
-    url = os.environ.get("NEO4J_URL")
+    url = os.environ.get("NEO4J_URI")
     username = os.environ.get("NEO4J_USERNAME")
     password = os.environ.get("NEO4J_PASSWORD")
     assert url is not None
@@ -146,7 +159,7 @@ def test_cypher_intermediate_steps() -> None:
 
 def test_cypher_return_direct() -> None:
     """Test that chain returns direct results."""
-    url = os.environ.get("NEO4J_URL")
+    url = os.environ.get("NEO4J_URI")
     username = os.environ.get("NEO4J_USERNAME")
     password = os.environ.get("NEO4J_PASSWORD")
     assert url is not None
@@ -178,7 +191,7 @@ def test_cypher_return_direct() -> None:
 
 def test_cypher_return_correct_schema() -> None:
     """Test that chain returns direct results."""
-    url = os.environ.get("NEO4J_URL")
+    url = os.environ.get("NEO4J_URI")
     username = os.environ.get("NEO4J_USERNAME")
     password = os.environ.get("NEO4J_PASSWORD")
     assert url is not None
@@ -243,7 +256,7 @@ def test_cypher_save_load() -> None:
     """Test saving and loading."""
 
     FILE_PATH = "cypher.yaml"
-    url = os.environ.get("NEO4J_URL")
+    url = os.environ.get("NEO4J_URI")
     username = os.environ.get("NEO4J_USERNAME")
     password = os.environ.get("NEO4J_PASSWORD")
     assert url is not None
@@ -267,7 +280,7 @@ def test_cypher_save_load() -> None:
 
 def test_exclude_types() -> None:
     """Test exclude types from schema."""
-    url = os.environ.get("NEO4J_URL")
+    url = os.environ.get("NEO4J_URI")
     username = os.environ.get("NEO4J_USERNAME")
     password = os.environ.get("NEO4J_PASSWORD")
     assert url is not None
@@ -307,7 +320,7 @@ def test_exclude_types() -> None:
 
 def test_include_types() -> None:
     """Test include types from schema."""
-    url = os.environ.get("NEO4J_URL")
+    url = os.environ.get("NEO4J_URI")
     username = os.environ.get("NEO4J_USERNAME")
     password = os.environ.get("NEO4J_PASSWORD")
     assert url is not None
@@ -347,7 +360,7 @@ def test_include_types() -> None:
 
 def test_include_types2() -> None:
     """Test include types from schema."""
-    url = os.environ.get("NEO4J_URL")
+    url = os.environ.get("NEO4J_URI")
     username = os.environ.get("NEO4J_USERNAME")
     password = os.environ.get("NEO4J_PASSWORD")
     assert url is not None

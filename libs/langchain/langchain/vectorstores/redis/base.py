@@ -24,10 +24,7 @@ import numpy as np
 import yaml
 
 from langchain._api import deprecated
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
@@ -52,16 +49,6 @@ if TYPE_CHECKING:
 
     from langchain.vectorstores.redis.filters import RedisFilterExpression
     from langchain.vectorstores.redis.schema import RedisModel
-
-
-def _redis_key(prefix: str) -> str:
-    """Redis key schema for a given prefix."""
-    return f"{prefix}:{uuid.uuid4().hex}"
-
-
-def _redis_prefix(index_name: str) -> str:
-    """Redis key prefix for a given index."""
-    return f"doc:{index_name}"
 
 
 def _default_relevance_score(val: float) -> float:
@@ -94,6 +81,7 @@ class Redis(VectorStore):
     search API available.
 
     .. code-block:: bash
+
         # to run redis stack in docker locally
         docker run -d -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
 
@@ -258,6 +246,7 @@ class Redis(VectorStore):
         index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
         vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
+        key_prefix: Optional[str] = None,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
@@ -284,6 +273,7 @@ class Redis(VectorStore):
         self.client = redis_client
         self.relevance_score_fn = relevance_score_fn
         self._schema = self._get_schema_with_defaults(index_schema, vector_schema)
+        self.key_prefix = key_prefix if key_prefix is not None else f"doc:{index_name}"
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -393,7 +383,7 @@ class Redis(VectorStore):
             generated_schema = _generate_field_schema(metadatas[0])
             if index_schema:
                 # read in the schema solely to compare to the generated schema
-                user_schema = read_schema(index_schema)
+                user_schema = read_schema(index_schema)  # type: ignore
 
                 # the very rare case where a super user decides to pass the index
                 # schema and a document loader is used that has metadata which
@@ -420,14 +410,8 @@ class Redis(VectorStore):
             **kwargs,
         )
 
-        # Create embeddings over documents
-        embeddings = embedding.embed_documents(texts)
-
-        # Create the search index
-        instance._create_index(dim=len(embeddings[0]))
-
         # Add data to Redis
-        keys = instance.add_texts(texts, metadatas, embeddings, keys=keys)
+        keys = instance.add_texts(texts, metadatas, keys=keys)
         return instance, keys
 
     @classmethod
@@ -692,7 +676,6 @@ class Redis(VectorStore):
             List[str]: List of ids added to the vectorstore
         """
         ids = []
-        prefix = _redis_prefix(self.index_name)
 
         # Get keys or ids from kwargs
         # Other vectorstores use ids
@@ -705,22 +688,24 @@ class Redis(VectorStore):
             if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
 
+        embeddings = embeddings or self._embeddings.embed_documents(list(texts))
+        self._create_index_if_not_exist(dim=len(embeddings[0]))
+
         # Write data to redis
         pipeline = self.client.pipeline(transaction=False)
         for i, text in enumerate(texts):
             # Use provided values by default or fallback
-            key = keys_or_ids[i] if keys_or_ids else _redis_key(prefix)
+            key = keys_or_ids[i] if keys_or_ids else str(uuid.uuid4().hex)
+            if not key.startswith(self.key_prefix + ":"):
+                key = self.key_prefix + ":" + key
             metadata = metadatas[i] if metadatas else {}
             metadata = _prepare_metadata(metadata) if clean_metadata else metadata
-            embedding = (
-                embeddings[i] if embeddings else self._embeddings.embed_query(text)
-            )
             pipeline.hset(
                 key,
                 mapping={
                     self._schema.content_key: text,
                     self._schema.content_vector_key: _array_to_buffer(
-                        embedding, self._schema.vector_dtype
+                        embeddings[i], self._schema.vector_dtype
                     ),
                     **metadata,
                 },
@@ -1178,7 +1163,7 @@ class Redis(VectorStore):
         # read in schema (yaml file or dict) and
         # pass to the Pydantic validators
         if index_schema:
-            schema_values = read_schema(index_schema)
+            schema_values = read_schema(index_schema)  # type: ignore
             schema = RedisModel(**schema_values)
 
             # ensure user did not exclude the content field
@@ -1212,7 +1197,7 @@ class Redis(VectorStore):
             schema.add_vector_field(vector_field)
         return schema
 
-    def _create_index(self, dim: int = 1536) -> None:
+    def _create_index_if_not_exist(self, dim: int = 1536) -> None:
         try:
             from redis.commands.search.indexDefinition import (  # type: ignore
                 IndexDefinition,
@@ -1232,12 +1217,12 @@ class Redis(VectorStore):
 
         # Check if index exists
         if not check_index_exists(self.client, self.index_name):
-            prefix = _redis_prefix(self.index_name)
-
             # Create Redis Index
             self.client.ft(self.index_name).create_index(
                 fields=self._schema.get_fields(),
-                definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
+                definition=IndexDefinition(
+                    prefix=[self.key_prefix], index_type=IndexType.HASH
+                ),
             )
 
     def _calculate_fp_distance(self, distance: str) -> float:
@@ -1461,11 +1446,6 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError("RedisVectorStoreRetriever does not support async")
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""

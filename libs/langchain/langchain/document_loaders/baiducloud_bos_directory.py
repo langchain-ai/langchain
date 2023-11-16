@@ -43,7 +43,7 @@ class BaiduBOSDirectoryLoader(BaseLoader):
             if response.is_truncated or contents_len < int(str(response.max_keys)):
                 break
             marker = response.next_marker
-        from baidu_bos_file import BaiduBOSFileLoader
+        from langchain.document_loaders.baiducloud_bos_file import BaiduBOSFileLoader
 
         for content in contents:
             if str(content.key).endswith("/"):

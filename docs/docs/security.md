@@ -28,3 +28,8 @@ design and secure your applications.
 ## Reporting a Vulnerability
 
 Please report security vulnerabilities by email to security@langchain.dev. This will ensure the issue is promptly triaged and acted upon as needed.
+
+## Enterprise solutions
+
+LangChain may offer enterprise solutions for customers who have additional security
+requirements. Please contact us at sales@langchain.dev.

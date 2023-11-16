@@ -79,6 +79,7 @@ class TimescaleVector(VectorStore):
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         time_partition_interval: Optional[timedelta] = None,
+        **kwargs: Any,
     ) -> None:
         try:
             from timescale_vector import client
@@ -103,6 +104,7 @@ class TimescaleVector(VectorStore):
             self.num_dimensions,
             self._distance_strategy.value.lower(),
             time_partition_interval=self._time_partition_interval,
+            **kwargs,
         )
         self.async_client = client.Async(
             self.service_url,
@@ -110,6 +112,7 @@ class TimescaleVector(VectorStore):
             self.num_dimensions,
             self._distance_strategy.value.lower(),
             time_partition_interval=self._time_partition_interval,
+            **kwargs,
         )
         self.__post_init__()
 
@@ -310,6 +313,13 @@ class TimescaleVector(VectorStore):
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
 
+    def _embed_query(self, query: str) -> Optional[List[float]]:
+        # an empty query should not be embedded
+        if query is None or query == "" or query.isspace():
+            return None
+        else:
+            return self.embedding.embed_query(query)
+
     def similarity_search(
         self,
         query: str,
@@ -328,7 +338,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding.embed_query(text=query)
+        embedding = self._embed_query(query)
         return self.similarity_search_by_vector(
             embedding=embedding,
             k=k,
@@ -355,7 +365,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding.embed_query(text=query)
+        embedding = self._embed_query(query)
         return await self.asimilarity_search_by_vector(
             embedding=embedding,
             k=k,
@@ -382,7 +392,7 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        embedding = self.embedding.embed_query(query)
+        embedding = self._embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding=embedding,
             k=k,
@@ -410,7 +420,8 @@ class TimescaleVector(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        embedding = self.embedding.embed_query(query)
+
+        embedding = self._embed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
             embedding=embedding,
             k=k,
@@ -445,7 +456,7 @@ class TimescaleVector(VectorStore):
 
     def similarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: Optional[List[float]],
         k: int = 4,
         filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
@@ -481,7 +492,7 @@ class TimescaleVector(VectorStore):
 
     async def asimilarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: Optional[List[float]],
         k: int = 4,
         filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
@@ -517,7 +528,7 @@ class TimescaleVector(VectorStore):
 
     def similarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: Optional[List[float]],
         k: int = 4,
         filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,
@@ -540,7 +551,7 @@ class TimescaleVector(VectorStore):
 
     async def asimilarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: Optional[List[float]],
         k: int = 4,
         filter: Optional[Union[dict, list]] = None,
         predicates: Optional[Predicates] = None,

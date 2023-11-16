@@ -1,4 +1,3 @@
-import datetime
 import re
 from typing import Any, Callable, Dict, Tuple
 
@@ -88,8 +87,8 @@ class MyScaleTranslator(Visitor):
         return self.map_dict[func](*args)
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
-        regex = "\((.*?)\)"
-        matched = re.search("\(\w+\)", comparison.attribute)
+        regex = r"\((.*?)\)"
+        matched = re.search(r"\(\w+\)", comparison.attribute)
 
         # If arbitrary function is applied to an attribute
         if matched:
@@ -106,9 +105,9 @@ class MyScaleTranslator(Visitor):
         value = f"'{value}'" if isinstance(value, str) else value
 
         # convert timestamp for datetime objects
-        if type(value) is datetime.date:
+        if isinstance(value, dict) and value.get("type") == "date":
             attr = f"parseDateTime32BestEffort({attr})"
-            value = f"parseDateTime32BestEffort('{value.strftime('%Y-%m-%d')}')"
+            value = f"parseDateTime32BestEffort('{value['date']}')"
 
         # string pattern match
         if comp is Comparator.LIKE:

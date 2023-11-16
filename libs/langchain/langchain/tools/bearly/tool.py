@@ -12,12 +12,14 @@ from langchain.tools import Tool
 
 
 def strip_markdown_code(md_string: str) -> str:
+    """Strip markdown code from a string."""
     stripped_string = re.sub(r"^`{1,3}.*?\n", "", md_string, flags=re.DOTALL)
     stripped_string = re.sub(r"`{1,3}$", "", stripped_string)
     return stripped_string
 
 
 def head_file(path: str, n: int) -> List[str]:
+    """Get the first n lines of a file."""
     try:
         with open(path, "r") as f:
             return [str(line) for line in itertools.islice(f, n)]
@@ -26,11 +28,14 @@ def head_file(path: str, n: int) -> List[str]:
 
 
 def file_to_base64(path: str) -> str:
+    """Convert a file to base64."""
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
 
 class BearlyInterpreterToolArguments(BaseModel):
+    """Arguments for the BearlyInterpreterTool."""
+
     python_code: str = Field(
         ...,
         example="print('Hello World')",
@@ -58,12 +63,16 @@ print() any output and results so you can capture the output."""
 
 
 class FileInfo(BaseModel):
+    """Information about a file to be uploaded."""
+
     source_path: str
     description: str
     target_path: str
 
 
 class BearlyInterpreterTool:
+    """Tool for evaluating python code in a sandbox environment."""
+
     api_key: str
     endpoint = "https://exec.bearly.ai/v1/interpreter"
     name = "bearly_interpreter"

@@ -19,7 +19,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         self,
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run when LLM starts running."""
 

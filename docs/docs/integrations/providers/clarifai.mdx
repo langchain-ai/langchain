@@ -25,7 +25,7 @@ from langchain.llms import Clarifai
 llm = Clarifai(pat=CLARIFAI_PAT, user_id=USER_ID, app_id=APP_ID, model_id=MODEL_ID)
 ```
 
-For more details, the docs on the Clarifai LLM wrapper provide a [detailed walkthrough](/docs/integrations/llms/clarifai.html).
+For more details, the docs on the Clarifai LLM wrapper provide a [detailed walkthrough](/docs/integrations/llms/clarifai).
 
 
 ### Text Embedding Models
@@ -37,7 +37,7 @@ There is a Clarifai Embedding model in LangChain, which you can access with:
 from langchain.embeddings import ClarifaiEmbeddings
 embeddings = ClarifaiEmbeddings(pat=CLARIFAI_PAT, user_id=USER_ID, app_id=APP_ID, model_id=MODEL_ID)
 ```
-For more details, the docs on the Clarifai Embeddings wrapper provide a [detailed walkthrough](/docs/integrations/text_embedding/clarifai.html).
+For more details, the docs on the Clarifai Embeddings wrapper provide a [detailed walkthrough](/docs/integrations/text_embedding/clarifai).
 
 ## Vectorstore
 
@@ -49,4 +49,4 @@ You can also add data directly from LangChain as well, and the auto-indexing wil
 from langchain.vectorstores import Clarifai
 clarifai_vector_db = Clarifai.from_texts(user_id=USER_ID, app_id=APP_ID, texts=texts, pat=CLARIFAI_PAT, number_of_docs=NUMBER_OF_DOCS, metadatas = metadatas)
 ```
-For more details, the docs on the Clarifai vector store provide a [detailed walkthrough](/docs/integrations/vectorstores/clarifai.ipynb).
+For more details, the docs on the Clarifai vector store provide a [detailed walkthrough](/docs/integrations/vectorstores/clarifai).

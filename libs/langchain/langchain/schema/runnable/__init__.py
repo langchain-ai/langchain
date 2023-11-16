@@ -1,4 +1,4 @@
-"""LangChain Runnables and the LangChain Expression Language (LCEL).
+"""LangChain **Runnable** and the **LangChain Expression Language (LCEL)**.
 
 The LangChain Expression Language (LCEL) offers a declarative method to build
 production-grade programs that harness the power of LLMs.
@@ -6,15 +6,14 @@ production-grade programs that harness the power of LLMs.
 Programs created using LCEL and LangChain Runnables inherently support
 synchronous, asynchronous, batch, and streaming operations.
 
-Support for async allows servers hosting LCEL based programs to scale better
+Support for **async** allows servers hosting LCEL based programs to scale better
 for higher concurrent loads.
 
-Streaming of intermediate outputs as they're being generated allows for
+**Streaming** of intermediate outputs as they're being generated allows for
 creating more responsive UX.
 
 This module contains schema and implementation of LangChain Runnables primitives.
 """
-from langchain.schema.runnable._locals import GetLocalVar, PutLocalVar
 from langchain.schema.runnable.base import (
     Runnable,
     RunnableBinding,
@@ -40,9 +39,7 @@ __all__ = [
     "ConfigurableField",
     "ConfigurableFieldSingleOption",
     "ConfigurableFieldMultiOption",
-    "GetLocalVar",
     "patch_config",
-    "PutLocalVar",
     "RouterInput",
     "RouterRunnable",
     "Runnable",

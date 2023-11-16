@@ -53,7 +53,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         kms_key_id: Optional[str] = None,
     ):
         if boto3_session:
-            client = boto3_session.resource("dynamodb")
+            client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
         else:
             try:
                 import boto3

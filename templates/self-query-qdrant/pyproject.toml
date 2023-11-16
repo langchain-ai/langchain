@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "self-query-qdrant"
+version = "0.1.0"
+description = "Self-querying retriever using Qdrant"
+authors = ["Kacper Łukawski <lukawski.kacper@gmail.com>"]
+license = "Apache 2.0"
+readme = "README.md"
+packages = [{include = "self_query_qdrant"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+langchain = ">=0.0.325"
+openai = "^0.28.1"
+qdrant-client = ">=1.6"
+lark = "^1.1.8"
+tiktoken = "^0.5.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+[tool.poetry.group.dev.dependencies.python-dotenv]
+extras = [
+    "cli",
+]
+version = "^1.0.0"
+
+[tool.langserve]
+export_module = "self_query_qdrant"
+export_attr = "chain"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

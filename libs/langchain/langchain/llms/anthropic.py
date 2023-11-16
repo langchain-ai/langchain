@@ -9,7 +9,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Union,
 )
 
 from langchain.callbacks.manager import (
@@ -26,14 +25,7 @@ from langchain.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
-from langchain.utils.utils import build_extra_kwargs
-
-
-def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
+from langchain.utils.utils import build_extra_kwargs, convert_to_secret_str
 
 
 class _AnthropicCommon(BaseLanguageModel):
@@ -81,7 +73,7 @@ class _AnthropicCommon(BaseLanguageModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["anthropic_api_key"] = _to_secret(
+        values["anthropic_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "anthropic_api_key", "ANTHROPIC_API_KEY")
         )
         # Get custom api url from environment.

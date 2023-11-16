@@ -1,3 +1,4 @@
+import argparse
 import importlib
 import inspect
 import json
@@ -5,7 +6,6 @@ import logging
 import os
 import re
 from pathlib import Path
-import argparse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

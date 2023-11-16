@@ -34,6 +34,8 @@ class ChatPromptAdapter:
 
 
 class BedrockChat(BaseChatModel, BedrockBase):
+    """A chat model that uses the Bedrock API."""
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""

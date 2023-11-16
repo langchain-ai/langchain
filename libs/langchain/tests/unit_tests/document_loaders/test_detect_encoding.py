@@ -47,7 +47,9 @@ def test_loader_detect_encoding_csv() -> None:
         row_count -= 1
 
     loader = DirectoryLoader(
-        str(path), glob="**/*.csv", loader_cls=CSVLoader  # type: ignore
+        str(path),
+        glob="**/*.csv",
+        loader_cls=CSVLoader,  # type: ignore
     )
     loader_detect_encoding = DirectoryLoader(
         str(path),

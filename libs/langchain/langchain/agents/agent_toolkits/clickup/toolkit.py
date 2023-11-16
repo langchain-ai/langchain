@@ -20,7 +20,14 @@ from langchain.utilities.clickup import ClickupAPIWrapper
 
 
 class ClickupToolkit(BaseToolkit):
-    """Clickup Toolkit."""
+    """Clickup Toolkit.
+
+    *Security Note*: This toolkit contains tools that can read and modify
+        the state of a service; e.g., by reading, creating, updating, deleting
+        data associated with this service.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     tools: List[BaseTool] = []
 

@@ -20,6 +20,9 @@ from typing import Any
 
 from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
 
+# Used for internal purposes
+_DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
+
 
 def _import_ainetwork_app() -> Any:
     from langchain.tools.ainetwork.app import AINAppOps
@@ -245,6 +248,12 @@ def _import_gmail_GmailSendMessage() -> Any:
     return GmailSendMessage
 
 
+def _import_google_cloud_texttospeech() -> Any:
+    from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
+
+    return GoogleCloudTextToSpeechTool
+
+
 def _import_google_places_tool() -> Any:
     from langchain.tools.google_places.tool import GooglePlacesTool
 
@@ -450,15 +459,25 @@ def _import_pubmed_tool() -> Any:
 
 
 def _import_python_tool_PythonAstREPLTool() -> Any:
-    from langchain.tools.python.tool import PythonAstREPLTool
-
-    return PythonAstREPLTool
+    raise ImportError(
+        "This tool has been moved to langchain experiment. "
+        "This tool has access to a python REPL. "
+        "For best practices make sure to sandbox this tool. "
+        "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
+        "To keep using this code as is, install langchain experimental and "
+        "update relevant imports replacing 'langchain' with 'langchain_experimental'"
+    )
 
 
 def _import_python_tool_PythonREPLTool() -> Any:
-    from langchain.tools.python.tool import PythonREPLTool
-
-    return PythonREPLTool
+    raise ImportError(
+        "This tool has been moved to langchain experiment. "
+        "This tool has access to a python REPL. "
+        "For best practices make sure to sandbox this tool. "
+        "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
+        "To keep using this code as is, install langchain experimental and "
+        "update relevant imports replacing 'langchain' with 'langchain_experimental'"
+    )
 
 
 def _import_render() -> Any:
@@ -623,6 +642,12 @@ def _import_wolfram_alpha_tool() -> Any:
     return WolframAlphaQueryRun
 
 
+def _import_yahoo_finance_news() -> Any:
+    from langchain.tools.yahoo_finance_news import YahooFinanceNewsTool
+
+    return YahooFinanceNewsTool
+
+
 def _import_youtube_search() -> Any:
     from langchain.tools.youtube.search import YouTubeSearchTool
 
@@ -645,6 +670,12 @@ def _import_bearly_tool() -> Any:
     from langchain.tools.bearly.tool import BearlyInterpreterTool
 
     return BearlyInterpreterTool
+
+
+def _import_e2b_data_analysis() -> Any:
+    from langchain.tools.e2b_data_analysis.tool import E2BDataAnalysisTool
+
+    return E2BDataAnalysisTool
 
 
 def __getattr__(name: str) -> Any:
@@ -722,6 +753,8 @@ def __getattr__(name: str) -> Any:
         return _import_gmail_GmailSearch()
     elif name == "GmailSendMessage":
         return _import_gmail_GmailSendMessage()
+    elif name == "GoogleCloudTextToSpeechTool":
+        return _import_google_cloud_texttospeech()
     elif name == "GooglePlacesTool":
         return _import_google_places_tool()
     elif name == "GoogleSearchResults":
@@ -848,6 +881,8 @@ def __getattr__(name: str) -> Any:
         return _import_wikipedia_tool()
     elif name == "WolframAlphaQueryRun":
         return _import_wolfram_alpha_tool()
+    elif name == "YahooFinanceNewsTool":
+        return _import_yahoo_finance_news()
     elif name == "YouTubeSearchTool":
         return _import_youtube_search()
     elif name == "ZapierNLAListActions":
@@ -856,6 +891,8 @@ def __getattr__(name: str) -> Any:
         return _import_zapier_tool_ZapierNLARunAction()
     elif name == "BearlyInterpreterTool":
         return _import_bearly_tool()
+    elif name == "E2BDataAnalysisTool":
+        return _import_e2b_data_analysis()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -879,6 +916,7 @@ __all__ = [
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
     "BaseTool",
+    "BearlyInterpreterTool",
     "BingSearchResults",
     "BingSearchRun",
     "BraveSearch",
@@ -888,13 +926,14 @@ __all__ = [
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
+    "E2BDataAnalysisTool",
     "EdenAiExplicitImageTool",
     "EdenAiObjectDetectionTool",
     "EdenAiParsingIDTool",
     "EdenAiParsingInvoiceTool",
-    "EdenAiTextToSpeechTool",
     "EdenAiSpeechToTextTool",
     "EdenAiTextModerationTool",
+    "EdenAiTextToSpeechTool",
     "EdenaiTool",
     "ElevenLabsText2SpeechTool",
     "ExtractHyperlinksTool",
@@ -906,6 +945,7 @@ __all__ = [
     "GmailGetThread",
     "GmailSearch",
     "GmailSendMessage",
+    "GoogleCloudTextToSpeechTool",
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
@@ -927,17 +967,14 @@ __all__ = [
     "MoveFileTool",
     "NavigateBackTool",
     "NavigateTool",
+    "O365CreateDraftMessage",
     "O365SearchEmails",
     "O365SearchEvents",
-    "O365CreateDraftMessage",
-    "O365SendMessage",
     "O365SendEvent",
-    "authenticate",
+    "O365SendMessage",
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
-    "PythonAstREPLTool",
-    "PythonREPLTool",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
@@ -963,10 +1000,11 @@ __all__ = [
     "WikipediaQueryRun",
     "WolframAlphaQueryRun",
     "WriteFileTool",
+    "YahooFinanceNewsTool",
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "tool",
+    "authenticate",
     "format_tool_to_openai_function",
-    "BearlyInterpreterTool",
+    "tool",
 ]
