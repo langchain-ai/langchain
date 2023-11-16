@@ -43,7 +43,7 @@ class GoogleSerperResults(BaseTool):
     """Tool that queries the Serper.dev Google Search API
     and get back json."""
 
-    name: str = "google_serrper_results_json"
+    name: str = "google_serper_results_json"
     description: str = (
         "A low-cost Google Search API."
         "Useful for when you need to answer questions about current events."

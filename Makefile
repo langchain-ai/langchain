@@ -38,6 +38,18 @@ spell_fix:
 	poetry run codespell --toml pyproject.toml -w
 
 ######################
+# LINTING AND FORMATTING
+######################
+
+lint:
+	poetry run ruff docs templates cookbook
+	poetry run ruff format docs templates cookbook --diff
+
+format format_diff:
+	poetry run ruff format docs templates cookbook
+	poetry run ruff --select I --fix docs templates cookbook
+
+######################
 # HELP
 ######################
 

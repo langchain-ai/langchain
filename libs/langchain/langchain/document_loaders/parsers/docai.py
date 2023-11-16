@@ -5,6 +5,7 @@ pip install google-cloud-documentai
 pip install google-cloud-documentai-toolbox
 """
 import logging
+import re
 import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence
@@ -12,6 +13,7 @@ from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
+from langchain.utilities.vertexai import get_client_info
 from langchain.utils.iter import batch_iterate
 
 if TYPE_CHECKING:
@@ -64,13 +66,14 @@ class DocAIParser(BaseBlobParser):
                 "a client."
             )
 
-        if processor_name and not processor_name.isalnum():
+        pattern = "projects\/[0-9]+\/locations\/[a-z\-0-9]+\/processors\/[a-z0-9]+"
+        if processor_name and not re.fullmatch(pattern, processor_name):
             raise ValueError(
-                f"Processor name {processor_name} has a wrong format. Use only ID from"
-                "the `Basic information` section on the GCP console. E.g., if your "
+                f"Processor name {processor_name} has a wrong format. If your "
                 "prediction endpoint looks like https://us-documentai.googleapis.com"
-                "/v1/projects/PROJECT_ID/locations/us/processors/PROCESSOR_ID:process"
-                ", use only PROCESSOR_ID part."
+                "/v1/projects/PROJECT_ID/locations/us/processors/PROCESSOR_ID:process,"
+                " use only projects/PROJECT_ID/locations/us/processors/PROCESSOR_ID "
+                "part."
             )
 
         self._gcs_output_path = gcs_output_path
@@ -89,7 +92,10 @@ class DocAIParser(BaseBlobParser):
             options = ClientOptions(
                 api_endpoint=f"{location}-documentai.googleapis.com"
             )
-            self._client = DocumentProcessorServiceClient(client_options=options)
+            self._client = DocumentProcessorServiceClient(
+                client_options=options,
+                client_info=get_client_info(module="document-ai"),
+            )
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Parses a blob lazily.

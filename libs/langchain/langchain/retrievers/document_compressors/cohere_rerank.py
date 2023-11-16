@@ -30,6 +30,8 @@ class CohereRerank(BaseDocumentCompressor):
     """Model to use for reranking."""
 
     cohere_api_key: Optional[str] = None
+    user_agent: str = "langchain"
+    """Identifier for the application making the request."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -40,18 +42,18 @@ class CohereRerank(BaseDocumentCompressor):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        cohere_api_key = get_from_dict_or_env(
-            values, "cohere_api_key", "COHERE_API_KEY"
-        )
         try:
             import cohere
-
-            values["client"] = cohere.Client(cohere_api_key)
         except ImportError:
             raise ImportError(
                 "Could not import cohere python package. "
                 "Please install it with `pip install cohere`."
             )
+        cohere_api_key = get_from_dict_or_env(
+            values, "cohere_api_key", "COHERE_API_KEY"
+        )
+        client_name = values["user_agent"]
+        values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
         return values
 
     def compress_documents(

@@ -13,9 +13,13 @@ from langchain.memory.chat_message_histories.firestore import (
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
 from langchain.memory.chat_message_histories.momento import MomentoChatMessageHistory
 from langchain.memory.chat_message_histories.mongodb import MongoDBChatMessageHistory
+from langchain.memory.chat_message_histories.neo4j import Neo4jChatMessageHistory
 from langchain.memory.chat_message_histories.postgres import PostgresChatMessageHistory
 from langchain.memory.chat_message_histories.redis import RedisChatMessageHistory
 from langchain.memory.chat_message_histories.rocksetdb import RocksetChatMessageHistory
+from langchain.memory.chat_message_histories.singlestoredb import (
+    SingleStoreDBChatMessageHistory,
+)
 from langchain.memory.chat_message_histories.sql import SQLChatMessageHistory
 from langchain.memory.chat_message_histories.streamlit import (
     StreamlitChatMessageHistory,
@@ -41,7 +45,9 @@ __all__ = [
     "RocksetChatMessageHistory",
     "SQLChatMessageHistory",
     "StreamlitChatMessageHistory",
+    "SingleStoreDBChatMessageHistory",
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
     "UpstashRedisChatMessageHistory",
+    "Neo4jChatMessageHistory",
 ]

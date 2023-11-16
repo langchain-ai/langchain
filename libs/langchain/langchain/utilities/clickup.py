@@ -14,6 +14,8 @@ DEFAULT_URL = "https://api.clickup.com/api/v2"
 
 @dataclass
 class Component:
+    """Base class for all components."""
+
     @classmethod
     def from_data(cls, data: Dict[str, Any]) -> "Component":
         raise NotImplementedError()
@@ -21,6 +23,8 @@ class Component:
 
 @dataclass
 class Task(Component):
+    """Class for a task."""
+
     id: int
     name: str
     text_content: str
@@ -63,6 +67,8 @@ class Task(Component):
 
 @dataclass
 class CUList(Component):
+    """Component class for a list."""
+
     folder_id: float
     name: str
     content: Optional[str] = None
@@ -88,6 +94,8 @@ class CUList(Component):
 
 @dataclass
 class Member(Component):
+    """Component class for a member."""
+
     id: int
     username: str
     email: str
@@ -105,6 +113,8 @@ class Member(Component):
 
 @dataclass
 class Team(Component):
+    """Component class for a team."""
+
     id: int
     name: str
     members: List[Member]
@@ -117,6 +127,8 @@ class Team(Component):
 
 @dataclass
 class Space(Component):
+    """Component class for a space."""
+
     id: int
     name: str
     private: bool
@@ -141,11 +153,12 @@ class Space(Component):
 def parse_dict_through_component(
     data: dict, component: Type[Component], fault_tolerant: bool = False
 ) -> Dict:
-    """This is a helper function that helps us parse a dictionary by creating
-    a component and then turning it back into a dictionary. This might seem
-    silly but it's a nice way to:
-    1. Extract and format data from a dictionary according to a schema
-    2. Provide a central place to do this in a fault tolerant way
+    """Parse a dictionary by creating
+    a component and then turning it back into a dictionary.
+
+    This helps with two things
+    1. Extract and format data from a dictionary according to schema
+    2. Provide a central place to do this in a fault-tolerant way
 
     """
     try:
@@ -163,6 +176,16 @@ def parse_dict_through_component(
 def extract_dict_elements_from_component_fields(
     data: dict, component: Type[Component]
 ) -> dict:
+    """Extract elements from a dictionary.
+
+    Args:
+        data: The dictionary to extract elements from.
+        component: The component to extract elements from.
+
+    Returns:
+        A dictionary containing the elements from the input dictionary that are also
+        in the component.
+    """
     output = {}
     for attribute in fields(component):
         if attribute.name in data:
@@ -173,8 +196,8 @@ def extract_dict_elements_from_component_fields(
 def load_query(
     query: str, fault_tolerant: bool = False
 ) -> Tuple[Optional[Dict], Optional[str]]:
-    """
-    Attempts to parse a JSON string and return the parsed object.
+    """Attempts to parse a JSON string and return the parsed object.
+
     If parsing fails, returns an error message.
 
     :param query: The JSON string to parse.
@@ -194,6 +217,7 @@ def load_query(
 
 
 def fetch_first_id(data: dict, key: str) -> Optional[int]:
+    """Fetch the first id from a dictionary."""
     if key in data and len(data[key]) > 0:
         if len(data[key]) > 1:
             warnings.warn(f"Found multiple {key}: {data[key]}. Defaulting to first.")
@@ -202,6 +226,7 @@ def fetch_first_id(data: dict, key: str) -> Optional[int]:
 
 
 def fetch_data(url: str, access_token: str, query: Optional[dict] = None) -> dict:
+    """Fetch data from a URL."""
     headers = {"Authorization": access_token}
     response = requests.get(url, headers=headers, params=query)
     response.raise_for_status()
@@ -209,24 +234,28 @@ def fetch_data(url: str, access_token: str, query: Optional[dict] = None) -> dic
 
 
 def fetch_team_id(access_token: str) -> Optional[int]:
+    """Fetch the team id."""
     url = f"{DEFAULT_URL}/team"
     data = fetch_data(url, access_token)
     return fetch_first_id(data, "teams")
 
 
 def fetch_space_id(team_id: int, access_token: str) -> Optional[int]:
+    """Fetch the space id."""
     url = f"{DEFAULT_URL}/team/{team_id}/space"
     data = fetch_data(url, access_token, query={"archived": "false"})
     return fetch_first_id(data, "spaces")
 
 
 def fetch_folder_id(space_id: int, access_token: str) -> Optional[int]:
+    """Fetch the folder id."""
     url = f"{DEFAULT_URL}/space/{space_id}/folder"
     data = fetch_data(url, access_token, query={"archived": "false"})
     return fetch_first_id(data, "folders")
 
 
 def fetch_list_id(space_id: int, folder_id: int, access_token: str) -> Optional[int]:
+    """Fetch the list id."""
     if folder_id:
         url = f"{DEFAULT_URL}/folder/{folder_id}/list"
     else:
@@ -259,6 +288,7 @@ class ClickupAPIWrapper(BaseModel):
     def get_access_code_url(
         cls, oauth_client_id: str, redirect_uri: str = "https://google.com"
     ) -> str:
+        """Get the URL to get an access code."""
         url = f"https://app.clickup.com/api?client_id={oauth_client_id}"
         return f"{url}&redirect_uri={redirect_uri}"
 
@@ -266,6 +296,7 @@ class ClickupAPIWrapper(BaseModel):
     def get_access_token(
         cls, oauth_client_id: str, oauth_client_secret: str, code: str
     ) -> Optional[str]:
+        """Get the access token."""
         url = f"{DEFAULT_URL}/oauth/token"
 
         params = {
@@ -291,9 +322,7 @@ class ClickupAPIWrapper(BaseModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """
-        Validate that api key and python package exists in environment
-        """
+        """Validate that api key and python package exists in environment."""
         values["access_token"] = get_from_dict_or_env(
             values, "access_token", "CLICKUP_ACCESS_TOKEN"
         )
@@ -309,10 +338,7 @@ class ClickupAPIWrapper(BaseModel):
         return values
 
     def attempt_parse_teams(self, input_dict: dict) -> Dict[str, List[dict]]:
-        """
-        Parse appropriate content from the list of teams
-        """
-
+        """Parse appropriate content from the list of teams."""
         parsed_teams: Dict[str, List[dict]] = {"teams": []}
         for team in input_dict["teams"]:
             try:
@@ -326,6 +352,7 @@ class ClickupAPIWrapper(BaseModel):
     def get_headers(
         self,
     ) -> Mapping[str, Union[str, bytes]]:
+        """Get the headers for the request."""
         if not isinstance(self.access_token, str):
             raise TypeError(f"Access Token: {self.access_token}, must be str.")
 
@@ -339,9 +366,7 @@ class ClickupAPIWrapper(BaseModel):
         return {"archived": "false"}
 
     def get_authorized_teams(self) -> Dict[Any, Any]:
-        """
-        Get all teams for the user
-        """
+        """Get all teams for the user."""
         url = f"{DEFAULT_URL}/team"
 
         response = requests.get(url, headers=self.get_headers())
@@ -353,7 +378,7 @@ class ClickupAPIWrapper(BaseModel):
 
     def get_folders(self) -> Dict:
         """
-        Get all the folders for the team
+        Get all the folders for the team.
         """
         url = f"{DEFAULT_URL}/team/" + str(self.team_id) + "/space"
         params = self.get_default_params()
@@ -362,7 +387,7 @@ class ClickupAPIWrapper(BaseModel):
 
     def get_task(self, query: str, fault_tolerant: bool = True) -> Dict:
         """
-        Retrieve a specific task
+        Retrieve a specific task.
         """
 
         params, error = load_query(query, fault_tolerant=True)
@@ -385,7 +410,7 @@ class ClickupAPIWrapper(BaseModel):
 
     def get_lists(self) -> Dict:
         """
-        Get all available lists
+        Get all available lists.
         """
 
         url = f"{DEFAULT_URL}/folder/{self.folder_id}/list"
@@ -410,7 +435,7 @@ class ClickupAPIWrapper(BaseModel):
 
     def get_spaces(self) -> Dict:
         """
-        Get all spaces for the team
+        Get all spaces for the team.
         """
         url = f"{DEFAULT_URL}/team/{self.team_id}/space"
         response = requests.get(
@@ -422,7 +447,7 @@ class ClickupAPIWrapper(BaseModel):
 
     def get_task_attribute(self, query: str) -> Dict:
         """
-        Update an attribute of a specified task
+        Update an attribute of a specified task.
         """
 
         task = self.get_task(query, fault_tolerant=True)
@@ -440,7 +465,7 @@ found in task keys {task.keys()}. Please call again with one of the key names.""
 
     def update_task(self, query: str) -> Dict:
         """
-        Update an attribute of a specified task
+        Update an attribute of a specified task.
         """
         query_dict, error = load_query(query, fault_tolerant=True)
         if query_dict is None:
@@ -461,7 +486,7 @@ found in task keys {task.keys()}. Please call again with one of the key names.""
 
     def update_task_assignees(self, query: str) -> Dict:
         """
-        Add or remove assignees of a specified task
+        Add or remove assignees of a specified task.
         """
         query_dict, error = load_query(query, fault_tolerant=True)
         if query_dict is None:
@@ -500,7 +525,7 @@ found in task keys {task.keys()}. Please call again with one of the key names.""
 
     def create_task(self, query: str) -> Dict:
         """
-        Creates a new task
+        Creates a new task.
         """
         query_dict, error = load_query(query, fault_tolerant=True)
         if query_dict is None:
@@ -519,7 +544,7 @@ found in task keys {task.keys()}. Please call again with one of the key names.""
 
     def create_list(self, query: str) -> Dict:
         """
-        Creates a new list
+        Creates a new list.
         """
         query_dict, error = load_query(query, fault_tolerant=True)
         if query_dict is None:
@@ -543,7 +568,7 @@ found in task keys {task.keys()}. Please call again with one of the key names.""
 
     def create_folder(self, query: str) -> Dict:
         """
-        Creates a new folder
+        Creates a new folder.
         """
 
         query_dict, error = load_query(query, fault_tolerant=True)
@@ -566,6 +591,7 @@ found in task keys {task.keys()}. Please call again with one of the key names.""
         return data
 
     def run(self, mode: str, query: str) -> str:
+        """Run the API."""
         if mode == "get_task":
             output = self.get_task(query)
         elif mode == "get_task_attribute":

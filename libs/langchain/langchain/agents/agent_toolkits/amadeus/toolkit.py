@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class AmadeusToolkit(BaseToolkit):
-    """Toolkit for interacting with Office365."""
+    """Toolkit for interacting with Amadeus which offers APIs for travel search."""
 
     client: Client = Field(default_factory=authenticate)
 

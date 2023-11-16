@@ -268,20 +268,16 @@ class Rockset(VectorStore):
             )
             for k, v in document.items():
                 if k == self._text_key:
-                    assert isinstance(
-                        v, str
-                    ), "page content stored in column `{}` must be of type `str`. \
-                        But found: `{}`".format(
-                        self._text_key, type(v)
-                    )
+                    assert isinstance(v, str), (
+                        "page content stored in column `{}` must be of type `str`. "
+                        "But found: `{}`"
+                    ).format(self._text_key, type(v))
                     page_content = v
                 elif k == "dist":
-                    assert isinstance(
-                        v, float
-                    ), "Computed distance between vectors must of type `float`. \
-                        But found {}".format(
-                        type(v)
-                    )
+                    assert isinstance(v, float), (
+                        "Computed distance between vectors must of type `float`. "
+                        "But found {}"
+                    ).format(type(v))
                     score = v
                 elif k not in ["_id", "_event_time", "_meta"]:
                     # These columns are populated by Rockset when documents are

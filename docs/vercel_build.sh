@@ -47,5 +47,11 @@ source .venv/bin/activate
 python3.11 -m pip install --upgrade pip
 python3.11 -m pip install -r vercel_requirements.txt
 python3.11 scripts/model_feat_table.py
+mkdir docs/templates
+cp ../templates/docs/INDEX.md docs/templates/index.md
+python3.11 scripts/copy_templates.py
+cp ../cookbook/README.md src/pages/cookbook.mdx
+cp ../.github/CONTRIBUTING.md docs/contributing.md
+wget https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
 nbdoc_build --srcdir docs
 python3.11 scripts/generate_api_reference_links.py

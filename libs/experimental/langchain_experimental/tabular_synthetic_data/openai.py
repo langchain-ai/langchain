@@ -16,7 +16,7 @@ def create_openai_data_generator(
     llm: ChatOpenAI,
     prompt: BasePromptTemplate,
     output_parser: Optional[BaseLLMOutputParser] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> SyntheticDataGenerator:
     """
     Create an instance of SyntheticDataGenerator tailored for OpenAI models.

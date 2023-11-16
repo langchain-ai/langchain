@@ -166,6 +166,14 @@ def _format_attribute_info(info: Sequence[Union[AttributeInfo, dict]]) -> str:
 
 
 def construct_examples(input_output_pairs: Sequence[Tuple[str, dict]]) -> List[dict]:
+    """Construct examples from input-output pairs.
+
+    Args:
+        input_output_pairs: Sequence of input-output pairs.
+
+    Returns:
+        List of examples.
+    """
     examples = []
     for i, (_input, output) in enumerate(input_output_pairs):
         structured_request = (
@@ -204,6 +212,9 @@ def get_query_constructor_prompt(
         schema_prompt: Prompt for describing query schema. Should have string input
             variables allowed_comparators and allowed_operators.
         **kwargs: Additional named params to pass to FewShotPromptTemplate init.
+
+    Returns:
+        A prompt template that can be used to construct queries.
     """
     default_schema_prompt = (
         SCHEMA_WITH_LIMIT_PROMPT if enable_limit else DEFAULT_SCHEMA_PROMPT

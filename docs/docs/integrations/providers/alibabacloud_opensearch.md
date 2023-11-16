@@ -4,7 +4,7 @@
 
 OpenSearch helps you develop high quality, maintenance-free, and high performance intelligent search services to provide your users with high search efficiency and accuracy.
 
- OpenSearch provides the vector search feature. In specific scenarios, especially test question search and image search scenarios, you can use the vector search feature together with the multimodal search feature to improve the accuracy of search results. This topic describes the syntax and usage notes of vector indexes.
+OpenSearch provides the vector search feature. In specific scenarios,especially in question retrieval and image search scenarios, you can use the vector search feature together with the multimodal search feature to improve the accuracy of search results.
 
 ## Purchase an instance and configure it
 
@@ -21,6 +21,8 @@ supported functions:
 - `similarity_search_by_vector`
 - `asimilarity_search_by_vector`
 - `similarity_search_with_relevance_scores`
+- `delete_doc_by_texts`
+
 
 For a more detailed walk through of the Alibaba Cloud OpenSearch wrapper, see [this notebook](../modules/indexes/vectorstores/examples/alibabacloud_opensearch.ipynb)
 

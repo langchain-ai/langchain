@@ -15,6 +15,5 @@
     "partial_variables": {},
     "template": "Given the following question and student answer, provide a correct answer and score the student answer.\nQuestion: {question}\nStudent Answer: {student_answer}\nCorrect Answer:",
     "template_format": "f-string",
-    "validate_template": true,
     "_type": "prompt"
 }

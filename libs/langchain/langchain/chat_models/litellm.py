@@ -62,14 +62,13 @@ def _create_retry_decorator(
     ] = None,
 ) -> Callable[[Any], Any]:
     """Returns a tenacity retry decorator, preconfigured to handle PaLM exceptions"""
-    import openai
+    import litellm
 
     errors = [
-        openai.error.Timeout,
-        openai.error.APIError,
-        openai.error.APIConnectionError,
-        openai.error.RateLimitError,
-        openai.error.ServiceUnavailableError,
+        litellm.Timeout,
+        litellm.APIError,
+        litellm.APIConnectionError,
+        litellm.RateLimitError,
     ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
@@ -162,6 +161,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class ChatLiteLLM(BaseChatModel):
+    """A chat model that uses the LiteLLM API."""
+
     client: Any  #: :meta private:
     model: str = "gpt-3.5-turbo"
     model_name: Optional[str] = None

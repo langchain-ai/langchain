@@ -322,7 +322,7 @@ class RunEvalConfig(BaseModel):
             self,
             criteria: Optional[CRITERIA_TYPE] = None,
             normalize_by: Optional[float] = None,
-            **kwargs: Any
+            **kwargs: Any,
         ) -> None:
             super().__init__(criteria=criteria, normalize_by=normalize_by, **kwargs)
 

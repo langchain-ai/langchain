@@ -1125,6 +1125,7 @@ def test_compatible_vectorstore_documentation() -> None:
     # These are mentioned in the indexing.ipynb documentation
     documented = {
         "AnalyticDB",
+        "AstraDB",
         "AzureCosmosDBVectorSearch",
         "AwaDB",
         "Bagel",
@@ -1137,6 +1138,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "ElasticsearchStore",
         "FAISS",
         "MomentoVectorIndex",
+        "MyScale",
         "PGVector",
         "Pinecone",
         "Qdrant",
@@ -1144,6 +1146,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "ScaNN",
         "SemaDB",
         "SupabaseVectorStore",
+        "TileDB",
         "TimescaleVector",
         "Vald",
         "Vearch",

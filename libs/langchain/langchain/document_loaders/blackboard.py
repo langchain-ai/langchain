@@ -211,7 +211,9 @@ class BlackboardLoader(WebBaseLoader):
         """
         # Create the document loader
         loader = DirectoryLoader(
-            path=self.folder_path, glob="*.pdf", loader_cls=PyPDFLoader  # type: ignore
+            path=self.folder_path,
+            glob="*.pdf",
+            loader_cls=PyPDFLoader,  # type: ignore
         )
         # Load the documents
         documents = loader.load()

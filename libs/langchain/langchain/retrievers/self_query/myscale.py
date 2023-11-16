@@ -1,4 +1,3 @@
-import datetime
 import re
 import warnings
 from typing import Any, Callable, Dict, Optional, Tuple
@@ -128,10 +127,10 @@ class MyScaleTranslator(Visitor):
         value = f"'{value}'" if isinstance(value, str) else value
 
         # convert timestamp for datetime objects
-        if type(value) is datetime.date:
+        if isinstance(value, dict) and value.get("type") == "date":
             if type(comparison.attribute) is not VirtualColumnName:
                 attr = f"parseDateTime32BestEffort({attr})"
-            value = f"parseDateTime32BestEffort('{value.strftime('%Y-%m-%d')}')"
+            value = f"parseDateTime32BestEffort('{value['date']}')"
 
         # string pattern match
         if comp is Comparator.LIKE:

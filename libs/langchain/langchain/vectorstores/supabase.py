@@ -61,6 +61,7 @@ class SupabaseVectorStore(VectorStore):
             client=supabase_client,
             table_name="documents",
             query_name="match_documents",
+            chunk_size=500,
         )
 
     To load from an existing table:
@@ -88,6 +89,7 @@ class SupabaseVectorStore(VectorStore):
         client: supabase.client.Client,
         embedding: Embeddings,
         table_name: str,
+        chunk_size: int = 500,
         query_name: Union[str, None] = None,
     ) -> None:
         """Initialize with supabase client."""
@@ -103,6 +105,9 @@ class SupabaseVectorStore(VectorStore):
         self._embedding: Embeddings = embedding
         self.table_name = table_name or "documents"
         self.query_name = query_name or "match_documents"
+        self.chunk_size = chunk_size or 500
+        # According to the SupabaseVectorStore JS implementation, the best chunk size
+        # is 500. Though for large datasets it can be too large so it is configurable.
 
     @property
     def embeddings(self) -> Embeddings:
@@ -130,6 +135,7 @@ class SupabaseVectorStore(VectorStore):
         client: Optional[supabase.client.Client] = None,
         table_name: Optional[str] = "documents",
         query_name: Union[str, None] = "match_documents",
+        chunk_size: int = 500,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> "SupabaseVectorStore":
@@ -144,13 +150,14 @@ class SupabaseVectorStore(VectorStore):
         embeddings = embedding.embed_documents(texts)
         ids = [str(uuid.uuid4()) for _ in texts]
         docs = cls._texts_to_documents(texts, metadatas)
-        cls._add_vectors(client, table_name, embeddings, docs, ids)
+        cls._add_vectors(client, table_name, embeddings, docs, ids, chunk_size)
 
         return cls(
             client=client,
             embedding=embedding,
             table_name=table_name,
             query_name=query_name,
+            chunk_size=chunk_size,
         )
 
     def add_vectors(
@@ -159,7 +166,9 @@ class SupabaseVectorStore(VectorStore):
         documents: List[Document],
         ids: List[str],
     ) -> List[str]:
-        return self._add_vectors(self._client, self.table_name, vectors, documents, ids)
+        return self._add_vectors(
+            self._client, self.table_name, vectors, documents, ids, self.chunk_size
+        )
 
     def similarity_search(
         self,
@@ -300,6 +309,7 @@ class SupabaseVectorStore(VectorStore):
         vectors: List[List[float]],
         documents: List[Document],
         ids: List[str],
+        chunk_size: int,
     ) -> List[str]:
         """Add vectors to Supabase table."""
 
@@ -313,9 +323,6 @@ class SupabaseVectorStore(VectorStore):
             for idx, embedding in enumerate(vectors)
         ]
 
-        # According to the SupabaseVectorStore JS implementation, the best chunk size
-        # is 500
-        chunk_size = 500
         id_list: List[str] = []
         for i in range(0, len(rows), chunk_size):
             chunk = rows[i : i + chunk_size]

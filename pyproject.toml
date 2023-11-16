@@ -28,16 +28,86 @@ linkchecker = "^10.2.1"
 sphinx-copybutton = "^0.5.1"
 nbdoc = "^0.0.82"
 
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.1.5"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
 
+[tool.poetry.group.dev.dependencies]
+
+
+[tool.poetry.group.test.dependencies]
+
+
+[tool.poetry.group.typing.dependencies]
+
 [tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates'
 # Ignore latin etc
 ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
 # aapply - async apply
 # unsecure - typo but part of API, decided to not bother for now
 ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin'
+
+[tool.ruff]
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/{cookbook,docs}/*" = [
+    "E402",  # allow imports to appear anywhere in docs
+    "F401",  # allow "imported but unused" example code
+    "F811",  # allow re-importing the same module, so that cells can stay independent
+    "F841",  # allow assignments to variables that are never read -- it's example code
+]
+
+# These files were failing the listed rules at the time ruff was adopted for notebooks.
+# Don't require them to change at once, though we should look into them eventually.
+"cookbook/gymnasium_agent_simulation.ipynb" = ["F821"]
+"cookbook/multi_modal_output_agent.ipynb" = ["F821"]
+"cookbook/multi_modal_RAG_chroma.ipynb" = ["F821"]
+"cookbook/qianfan_baidu_elasticesearch_RAG.ipynb" = ["F821"]
+"cookbook/retrieval_in_sql.ipynb" = ["F821"]
+"cookbook/wikibase_agent.ipynb" = ["E722"]
+"docs/docs/expression_language/how_to/configure.ipynb" = ["F821"]
+"docs/docs/expression_language/how_to/fallbacks.ipynb" = ["E722"]
+"docs/docs/guides/fallbacks.ipynb" = ["E722"]
+"docs/docs/integrations/chat_loaders/imessage.ipynb" = ["F821"]
+"docs/docs/integrations/chat_loaders/langsmith_dataset.ipynb" = ["F821"]
+"docs/docs/integrations/chat/google_vertex_ai_palm.ipynb" = ["F821"]
+"docs/docs/integrations/chat/promptlayer_chatopenai.ipynb" = ["F821"]
+"docs/docs/integrations/document_loaders/arcgis.ipynb" = ["F821"]
+"docs/docs/integrations/document_loaders/datadog_logs.ipynb" = ["F821"]
+"docs/docs/integrations/document_loaders/embaas.ipynb" = ["F821"]
+"docs/docs/integrations/document_loaders/etherscan.ipynb" = ["F821"]
+"docs/docs/integrations/document_loaders/larksuite.ipynb" = ["F821"]
+"docs/docs/integrations/document_loaders/tensorflow_datasets.ipynb" = ["F821"]
+"docs/docs/integrations/llms/anyscale.ipynb" = ["F821"]
+"docs/docs/integrations/llms/bittensor.ipynb" = ["F821"]
+"docs/docs/integrations/llms/databricks.ipynb" = ["F821"]
+"docs/docs/integrations/llms/llm_caching.ipynb" = ["F821"]
+"docs/docs/integrations/llms/runhouse.ipynb" = ["F821"]
+"docs/docs/integrations/retrievers/Activeloop DeepMemory+LangChain.ipynb" = ["F821"]
+"docs/docs/integrations/text_embedding/cohere.ipynb" = ["F821"]
+"docs/docs/integrations/text_embedding/elasticsearch.ipynb" = ["F821"]
+"docs/docs/integrations/text_embedding/embaas.ipynb" = ["F821"]
+"docs/docs/integrations/text_embedding/jina.ipynb" = ["F821"]
+"docs/docs/integrations/text_embedding/localai.ipynb" = ["F821"]
+"docs/docs/integrations/text_embedding/openai.ipynb" = ["F821"]
+"docs/docs/integrations/tools/dalle_image_generator.ipynb" = ["E722"]
+"docs/docs/integrations/tools/gradio_tools.ipynb" = ["F821"]
+"docs/docs/integrations/vectorstores/async_faiss.ipynb" = ["F821"]
+"docs/docs/integrations/vectorstores/awadb.ipynb" = ["F821"]
+"docs/docs/integrations/vectorstores/baiducloud_vector_search.ipynb" = ["F821"]
+"docs/docs/integrations/vectorstores/faiss.ipynb" = ["F821"]
+"docs/docs/integrations/vectorstores/mongodb_atlas.ipynb" = ["F821"]
+"docs/docs/integrations/vectorstores/nucliadb.ipynb" = ["F821"]
+"docs/docs/integrations/vectorstores/opensearch.ipynb" = ["F821"]
+"docs/docs/modules/agents/agent_types/chat_conversation_agent.ipynb" = ["F821"]
+"docs/docs/modules/chains/how_to/call_methods.ipynb" = ["F821"]
+"docs/docs/modules/data_connection/retrievers/ensemble.ipynb" = ["F821"]
+"docs/docs/modules/data_connection/retrievers/multi_vector.ipynb" = ["E741"]
+"docs/docs/modules/data_connection/retrievers/parent_document_retriever.ipynb" = ["E741"]
+"docs/docs/modules/data_connection/text_embedding/caching_embeddings.ipynb" = ["F821"]

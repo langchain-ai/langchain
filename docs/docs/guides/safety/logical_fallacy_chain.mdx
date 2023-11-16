@@ -1,5 +1,12 @@
-# Removing logical fallacies from model output
-Logical fallacies are flawed reasoning or false arguments that can undermine the validity of a model's outputs. Examples include circular reasoning, false
+# Logical Fallacy chain
+
+This example shows how to remove logical fallacies from model output.
+
+## Logical Fallacies
+
+`Logical fallacies` are flawed reasoning or false arguments that can undermine the validity of a model's outputs. 
+
+Examples include circular reasoning, false
 dichotomies, ad hominem attacks, etc.  Machine learning models are optimized to perform well on specific metrics like accuracy, perplexity, or loss. However, 
 optimizing for metrics alone does not guarantee logically sound reasoning.
 
@@ -10,6 +17,7 @@ Monitoring and testing specifically for logical flaws is challenging unlike othe
 Therefore, it is crucial that model developers proactively address logical fallacies after optimizing metrics. Specialized techniques like causal modeling, robustness testing, and bias mitigation can help avoid flawed reasoning.  Overall, allowing logical flaws to persist makes models less safe and ethical. Eliminating fallacies ensures model outputs remain logically valid and aligned with human reasoning. This maintains user trust and mitigates risks.
 
 
+## Example
 
 ```python
 # Imports
@@ -31,9 +39,7 @@ Bad answer:""",
 )
 
 llm = OpenAI(temperature=0)
-
 misleading_chain = LLMChain(llm=llm, prompt=misleading_prompt)
-
 misleading_chain.run(question="How do I know the earth is round?")
 ```
 

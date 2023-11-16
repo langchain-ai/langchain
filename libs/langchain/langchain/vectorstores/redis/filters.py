@@ -81,7 +81,7 @@ def check_operator_misuse(func: Callable) -> Callable:
     """Decorator to check for misuse of equality operators."""
 
     @wraps(func)
-    def wrapper(instance: Any, *args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+    def wrapper(instance: Any, *args: Any, **kwargs: Any) -> Any:
         # Extracting 'other' from positional arguments or keyword arguments
         other = kwargs.get("other") if "other" in kwargs else None
         if not other:

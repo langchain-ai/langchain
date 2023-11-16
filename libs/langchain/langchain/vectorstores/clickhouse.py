@@ -410,7 +410,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                   alone. The default name for it is `metadata`.
 
         Returns:
-            List[Document]: List of (Document, similarity)
+            List[Document]: List of documents
         """
         q_str = self._build_query_sql(embedding, k, where_str)
         try:
@@ -442,7 +442,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                   alone. The default name for it is `metadata`.
 
         Returns:
-            List[Document]: List of documents
+            List[Document]: List of (Document, similarity)
         """
         q_str = self._build_query_sql(
             self.embedding_function.embed_query(query), k, where_str

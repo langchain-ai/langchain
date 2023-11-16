@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -57,8 +57,9 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
 
     vertex_messages, context = [], None
     for i, message in enumerate(history):
+        content = cast(str, message.content)
         if i == 0 and isinstance(message, SystemMessage):
-            context = message.content
+            context = content
         elif isinstance(message, AIMessage):
             vertex_message = ChatMessage(content=message.content, author="bot")
             vertex_messages.append(vertex_message)
@@ -120,6 +121,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
     model_name: str = "chat-bison"
     "Underlying model name."
+    examples: Optional[List[BaseMessage]] = None
 
     @classmethod
     def is_lc_serializable(self) -> bool:
@@ -175,7 +177,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
         params = self._prepare_params(stop=stop, stream=False, **kwargs)
-        examples = kwargs.get("examples", None)
+        examples = kwargs.get("examples") or self.examples
         if examples:
             params["examples"] = _parse_examples(examples)
 

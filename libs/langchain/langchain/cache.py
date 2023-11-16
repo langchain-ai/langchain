@@ -506,7 +506,7 @@ class RedisSemanticCache(BaseCache):
                 index_schema=cast(Dict, self.DEFAULT_SCHEMA),
             )
             _embedding = self.embedding.embed_query(text="test")
-            redis._create_index(dim=len(_embedding))
+            redis._create_index_if_not_exist(dim=len(_embedding))
             self._cache_dict[index_name] = redis
 
         return self._cache_dict[index_name]

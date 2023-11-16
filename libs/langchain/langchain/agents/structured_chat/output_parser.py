@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class StructuredChatOutputParser(AgentOutputParser):
     """Output parser for the structured chat agent."""
 
-    pattern = re.compile(r"```(?:json)?\n(.*?)```", re.DOTALL)
+    pattern = re.compile(r"```(?:json\s+)?(\W.*?)```", re.DOTALL)
 
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS

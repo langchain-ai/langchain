@@ -2,7 +2,7 @@
 
 This covers how to load all documents in a directory.
 
-Under the hood, by default this uses the [UnstructuredLoader](/docs/integrations/document_loaders/unstructured_file.html).
+Under the hood, by default this uses the [UnstructuredLoader](/docs/integrations/document_loaders/unstructured_file).
 
 ```python
 from langchain.document_loaders import DirectoryLoader
@@ -127,9 +127,9 @@ len(docs)
 
 ## Auto-detect file encodings with TextLoader
 
-In this example we will see some strategies that can be useful when loading a big list of arbitrary files from a directory using the `TextLoader` class.
+In this example we will see some strategies that can be useful when loading a large list of arbitrary files from a directory using the `TextLoader` class.
 
-First to illustrate the problem, let's try to load multiple text with arbitrary encodings.
+First to illustrate the problem, let's try to load multiple texts with arbitrary encodings.
 
 
 ```python
