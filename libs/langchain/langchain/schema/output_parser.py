@@ -101,7 +101,7 @@ class BaseGenerationOutputParser(
     async def ainvoke(
         self,
         input: str | BaseMessage,
-        config: RunnableConfig | None = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
@@ -190,7 +190,7 @@ class BaseOutputParser(
     async def ainvoke(
         self,
         input: str | BaseMessage,
-        config: RunnableConfig | None = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):

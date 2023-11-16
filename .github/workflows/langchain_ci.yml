@@ -12,6 +12,7 @@ on:
       - '.github/workflows/_test.yml'
       - '.github/workflows/_pydantic_compatibility.yml'
       - '.github/workflows/langchain_ci.yml'
+      - 'libs/*'
       - 'libs/langchain/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 

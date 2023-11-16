@@ -11,7 +11,7 @@ on:
       - '.github/workflows/_lint.yml'
       - '.github/workflows/_test.yml'
       - '.github/workflows/langchain_experimental_ci.yml'
-      - 'libs/langchain/**'
+      - 'libs/*'
       - 'libs/experimental/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
@@ -35,6 +35,7 @@ jobs:
       ./.github/workflows/_lint.yml
     with:
       working-directory: libs/experimental
+      langchain-location: ../langchain
     secrets: inherit
 
   test:

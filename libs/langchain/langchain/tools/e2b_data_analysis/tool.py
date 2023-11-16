@@ -9,9 +9,10 @@ from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
+    CallbackManager,
     CallbackManagerForToolRun,
 )
-from langchain.pydantic_v1 import BaseModel, Field
+from langchain.pydantic_v1 import BaseModel, Field, PrivateAttr
 from langchain.tools import BaseTool, Tool
 from langchain.tools.e2b_data_analysis.unparse import Unparser
 
@@ -26,9 +27,7 @@ Script should be pure python code that can be evaluated. \
 It should be in python format NOT markdown. \
 The code should NOT be wrapped in backticks. \
 All python packages including requests, matplotlib, scipy, numpy, pandas, \
-etc are available. \
-If you have any files outputted write them to "/home/user" directory \
-path."""
+etc are available. Create and display chart using `plt.show()`."""
 
 
 def _unparse(tree: ast.AST) -> str:
@@ -99,7 +98,7 @@ class E2BDataAnalysisTool(BaseTool):
     name = "e2b_data_analysis"
     args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
     session: Any
-    _uploaded_files: List[UploadedFile] = Field(default_factory=list)
+    _uploaded_files: List[UploadedFile] = PrivateAttr(default_factory=list)
 
     def __init__(
         self,
@@ -121,7 +120,8 @@ class E2BDataAnalysisTool(BaseTool):
 
         # If no API key is provided, E2B will try to read it from the environment
         # variable E2B_API_KEY
-        session = DataAnalysis(
+        super().__init__(description=base_description, **kwargs)
+        self.session = DataAnalysis(
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,
@@ -130,10 +130,6 @@ class E2BDataAnalysisTool(BaseTool):
             on_exit=on_exit,
             on_artifact=on_artifact,
         )
-        super().__init__(session=session, **kwargs)
-        self.description = (
-            base_description + "\n\n" + self.uploaded_files_description
-        ).strip()
 
     def close(self) -> None:
         """Close the cloud sandbox."""
@@ -156,14 +152,26 @@ class E2BDataAnalysisTool(BaseTool):
         return "\n".join(lines)
 
     def _run(
-        self, python_code: str, run_manager: Optional[CallbackManagerForToolRun] = None
+        self,
+        python_code: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        callbacks: Optional[CallbackManager] = None,
     ) -> str:
         python_code = add_last_line_print(python_code)
-        stdout, stderr, _ = self.session.run_python(python_code)
+
+        if callbacks is not None:
+            on_artifact = getattr(callbacks.metadata, "on_artifact", None)
+        else:
+            on_artifact = None
+
+        stdout, stderr, artifacts = self.session.run_python(
+            python_code, on_artifact=on_artifact
+        )
 
         out = {
             "stdout": stdout,
             "stderr": stderr,
+            "artifacts": list(map(lambda artifact: artifact.name, artifacts)),
         }
         return json.dumps(out)
 
@@ -211,6 +219,7 @@ class E2BDataAnalysisTool(BaseTool):
             description=description,
         )
         self._uploaded_files.append(f)
+        self.description = self.description + "\n" + self.uploaded_files_description
         return f
 
     def remove_uploaded_file(self, uploaded_file: UploadedFile) -> None:
@@ -221,6 +230,7 @@ class E2BDataAnalysisTool(BaseTool):
             for f in self._uploaded_files
             if f.remote_path != uploaded_file.remote_path
         ]
+        self.description = self.description + "\n" + self.uploaded_files_description
 
     def as_tool(self) -> Tool:
         return Tool.from_function(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
+import uuid
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -19,8 +20,12 @@ from typing import (
     cast,
 )
 
-from langsmith import Client, RunEvaluator
+from langsmith.client import Client
+from langsmith.evaluation import RunEvaluator
+from langsmith.run_helpers import as_runnable, is_traceable_function
 from langsmith.schemas import Dataset, DataType, Example
+from langsmith.utils import LangSmithError
+from requests import HTTPError
 
 from langchain._api import warn_deprecated
 from langchain.callbacks.manager import Callbacks
@@ -152,6 +157,9 @@ def _wrap_in_chain_factory(
         lcf = llm_or_chain_factory
         return lambda: lcf
     elif callable(llm_or_chain_factory):
+        if is_traceable_function(llm_or_chain_factory):
+            runnable_ = as_runnable(cast(Callable, llm_or_chain_factory))
+            return lambda: runnable_
         try:
             _model = llm_or_chain_factory()  # type: ignore[call-arg]
         except TypeError:
@@ -166,6 +174,9 @@ def _wrap_in_chain_factory(
             # It's not uncommon to do an LLM constructor instead of raw LLM,
             # so we'll unpack it for the user.
             return _model
+        elif is_traceable_function(cast(Callable, _model)):
+            runnable_ = as_runnable(cast(Callable, _model))
+            return lambda: runnable_
         elif not isinstance(_model, Runnable):
             # This is unlikely to happen - a constructor for a model function
             return lambda: RunnableLambda(constructor)
@@ -872,14 +883,24 @@ def _prepare_eval_run(
             reference_dataset_id=dataset.id,
             project_extra={"metadata": project_metadata} if project_metadata else {},
         )
-    except ValueError as e:
+    except (HTTPError, ValueError, LangSmithError) as e:
         if "already exists " not in str(e):
             raise e
+        uid = uuid.uuid4()
+        example_msg = f"""
+run_on_dataset(
+    ...
+    project_name="{project_name} - {uid}", # Update since {project_name} already exists
+)
+"""
         raise ValueError(
-            f"Project {project_name} already exists. Please use a different name."
+            f"Test project {project_name} already exists. Please use a different name:"
+            f"\n\n{example_msg}"
         )
     print(
-        f"View the evaluation results for project '{project_name}' at:\n{project.url}",
+        f"View the evaluation results for project '{project_name}'"
+        f" at:\n{project.url}?eval=true\n\n"
+        f"View all tests for Dataset {dataset_name} at:\n{dataset.url}",
         flush=True,
     )
     examples = list(client.list_examples(dataset_id=dataset.id))
@@ -909,7 +930,7 @@ def _prepare_run_on_dataset(
     )
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
     run_evaluators = _setup_evaluation(
-        wrapped_model, examples, evaluation, dataset.data_type
+        wrapped_model, examples, evaluation, dataset.data_type or DataType.kv
     )
     _validate_example_inputs(examples[0], wrapped_model, input_mapper)
     progress_bar = progress.ProgressBarCallback(len(examples))

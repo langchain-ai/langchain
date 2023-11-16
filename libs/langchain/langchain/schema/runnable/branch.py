@@ -86,7 +86,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         default = branches[-1]
 
         if not isinstance(
-            default, (Runnable, Callable, Mapping)  # type: ignore[arg-type]
+            default,
+            (Runnable, Callable, Mapping),  # type: ignore[arg-type]
         ):
             raise TypeError(
                 "RunnableBranch default must be runnable, callable or mapping."

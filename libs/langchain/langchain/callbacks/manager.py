@@ -25,6 +25,7 @@ from typing import (
 )
 from uuid import UUID
 
+from langsmith import utils as ls_utils
 from langsmith.run_helpers import get_run_tree_context
 from tenacity import RetryCallState
 
@@ -64,20 +65,14 @@ logger = logging.getLogger(__name__)
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
 )
-tracing_callback_var: ContextVar[
-    Optional[LangChainTracerV1]
-] = ContextVar(  # noqa: E501
+tracing_callback_var: ContextVar[Optional[LangChainTracerV1]] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
-wandb_tracing_callback_var: ContextVar[
-    Optional[WandbTracer]
-] = ContextVar(  # noqa: E501
+wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(  # noqa: E501
     "tracing_wandb_callback", default=None
 )
 
-tracing_v2_callback_var: ContextVar[
-    Optional[LangChainTracer]
-] = ContextVar(  # noqa: E501
+tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
 )
 run_collector_var: ContextVar[
@@ -130,9 +125,11 @@ def tracing_enabled(
     """
     cb = LangChainTracerV1()
     session = cast(TracerSessionV1, cb.load_session(session_name))
-    tracing_callback_var.set(cb)
-    yield session
-    tracing_callback_var.set(None)
+    try:
+        tracing_callback_var.set(cb)
+        yield session
+    finally:
+        tracing_callback_var.set(None)
 
 
 @contextmanager
@@ -197,9 +194,11 @@ def tracing_v2_enabled(
         tags=tags,
         client=client,
     )
-    tracing_v2_callback_var.set(cb)
-    yield cb
-    tracing_v2_callback_var.set(None)
+    try:
+        tracing_v2_callback_var.set(cb)
+        yield cb
+    finally:
+        tracing_v2_callback_var.set(None)
 
 
 @contextmanager
@@ -218,6 +217,33 @@ def collect_runs() -> Generator[run_collector.RunCollectorCallbackHandler, None,
     run_collector_var.set(cb)
     yield cb
     run_collector_var.set(None)
+
+
+def _get_trace_callbacks(
+    project_name: Optional[str] = None,
+    example_id: Optional[Union[str, UUID]] = None,
+    callback_manager: Optional[Union[CallbackManager, AsyncCallbackManager]] = None,
+) -> Callbacks:
+    if _tracing_v2_is_enabled():
+        project_name_ = project_name or _get_tracer_project()
+        tracer = tracing_v2_callback_var.get() or LangChainTracer(
+            project_name=project_name_,
+            example_id=example_id,
+        )
+        if callback_manager is None:
+            cb = cast(Callbacks, [tracer])
+        else:
+            if not any(
+                isinstance(handler, LangChainTracer)
+                for handler in callback_manager.handlers
+            ):
+                callback_manager.add_handler(tracer, True)
+                # If it already has a LangChainTracer, we don't need to add another one.
+                # this would likely mess up the trace hierarchy.
+            cb = callback_manager
+    else:
+        cb = None
+    return cb
 
 
 @contextmanager
@@ -247,6 +273,8 @@ def trace_as_chain_group(
         tags (List[str], optional): The inheritable tags to apply to all runs.
             Defaults to None.
 
+    Note: must have LANGCHAIN_TRACING_V2 env var set to true to see the trace in LangSmith.
+
     Returns:
         CallbackManagerForChainGroup: The callback manager for the chain group.
 
@@ -259,16 +287,8 @@ def trace_as_chain_group(
                 res = llm.predict(llm_input, callbacks=manager)
                 manager.on_chain_end({"output": res})
     """  # noqa: E501
-    cb = cast(
-        Callbacks,
-        [
-            LangChainTracer(
-                project_name=project_name,
-                example_id=example_id,
-            )
-        ]
-        if callback_manager is None
-        else callback_manager,
+    cb = _get_trace_callbacks(
+        project_name, example_id, callback_manager=callback_manager
     )
     cm = CallbackManager.configure(
         inheritable_callbacks=cb,
@@ -327,6 +347,8 @@ async def atrace_as_chain_group(
     Returns:
         AsyncCallbackManager: The async callback manager for the chain group.
 
+    Note: must have LANGCHAIN_TRACING_V2 env var set to true to see the trace in LangSmith.
+
     Example:
         .. code-block:: python
 
@@ -336,16 +358,8 @@ async def atrace_as_chain_group(
                 res = await llm.apredict(llm_input, callbacks=manager)
                 await manager.on_chain_end({"output": res})
     """  # noqa: E501
-    cb = cast(
-        Callbacks,
-        [
-            LangChainTracer(
-                project_name=project_name,
-                example_id=example_id,
-            )
-        ]
-        if callback_manager is None
-        else callback_manager,
+    cb = _get_trace_callbacks(
+        project_name, example_id, callback_manager=callback_manager
     )
     cm = AsyncCallbackManager.configure(inheritable_callbacks=cb, inheritable_tags=tags)
 
@@ -1481,8 +1495,8 @@ class CallbackManagerForChainGroup(CallbackManager):
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
-        inheritable_handlers: List[BaseCallbackHandler] | None = None,
-        parent_run_id: UUID | None = None,
+        inheritable_handlers: Optional[List[BaseCallbackHandler]] = None,
+        parent_run_id: Optional[UUID] = None,
         *,
         parent_run_manager: CallbackManagerForChainRun,
         **kwargs: Any,
@@ -1495,6 +1509,18 @@ class CallbackManagerForChainGroup(CallbackManager):
         )
         self.parent_run_manager = parent_run_manager
         self.ended = False
+
+    def copy(self) -> CallbackManagerForChainGroup:
+        return self.__class__(
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
+            parent_run_manager=self.parent_run_manager,
+        )
 
     def on_chain_end(self, outputs: Union[Dict[str, Any], Any], **kwargs: Any) -> None:
         """Run when traced chain group ends.
@@ -1817,8 +1843,8 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
-        inheritable_handlers: List[BaseCallbackHandler] | None = None,
-        parent_run_id: UUID | None = None,
+        inheritable_handlers: Optional[List[BaseCallbackHandler]] = None,
+        parent_run_id: Optional[UUID] = None,
         *,
         parent_run_manager: AsyncCallbackManagerForChainRun,
         **kwargs: Any,
@@ -1831,6 +1857,18 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         )
         self.parent_run_manager = parent_run_manager
         self.ended = False
+
+    def copy(self) -> AsyncCallbackManagerForChainGroup:
+        return self.__class__(
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
+            parent_run_manager=self.parent_run_manager,
+        )
 
     async def on_chain_end(
         self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
@@ -1874,6 +1912,34 @@ def env_var_is_set(env_var: str) -> bool:
         "0",
         "false",
         "False",
+    )
+
+
+def _tracing_v2_is_enabled() -> bool:
+    return (
+        env_var_is_set("LANGCHAIN_TRACING_V2")
+        or tracing_v2_callback_var.get() is not None
+        or get_run_tree_context() is not None
+    )
+
+
+def _get_tracer_project() -> str:
+    run_tree = get_run_tree_context()
+    return getattr(
+        run_tree,
+        "session_name",
+        getattr(
+            # Note, if people are trying to nest @traceable functions and the
+            # tracing_v2_enabled context manager, this will likely mess up the
+            # tree structure.
+            tracing_v2_callback_var.get(),
+            "project",
+            # Have to set this to a string even though it always will return
+            # a string because `get_tracer_project` technically can return
+            # None, but only when a specific argument is supplied.
+            # Therefore, this just tricks the mypy type checker
+            str(ls_utils.get_tracer_project()),
+        ),
     )
 
 
@@ -1955,16 +2021,8 @@ def _configure(
     )
 
     tracer_v2 = tracing_v2_callback_var.get()
-    tracing_v2_enabled_ = (
-        env_var_is_set("LANGCHAIN_TRACING_V2") or tracer_v2 is not None
-    )
-    tracer_project = getattr(
-        run_tree,
-        "session_name",
-        os.environ.get(
-            "LANGCHAIN_PROJECT", os.environ.get("LANGCHAIN_SESSION", "default")
-        ),
-    )
+    tracing_v2_enabled_ = _tracing_v2_is_enabled()
+    tracer_project = _get_tracer_project()
     run_collector_ = run_collector_var.get()
     debug = _get_debug()
     if (

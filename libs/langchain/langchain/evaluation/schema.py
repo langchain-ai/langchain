@@ -6,7 +6,7 @@ import logging
 from abc import ABC, abstractmethod
 from enum import Enum
 from functools import partial
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence, Tuple, Union
 from warnings import warn
 
 from langchain.chains.base import Chain
@@ -64,6 +64,10 @@ class EvaluatorType(str, Enum):
     """Check if a prediction is valid JSON."""
     JSON_EQUALITY = "json_equality"
     """Check if a prediction is equal to a reference JSON."""
+    JSON_EDIT_DISTANCE = "json_edit_distance"
+    """Compute the edit distance between two JSON strings after canonicalization."""
+    JSON_SCHEMA_VALIDATION = "json_schema_validation"
+    """Check if a prediction is valid JSON according to a JSON schema."""
 
 
 class LLMEvalChain(Chain):
@@ -142,9 +146,9 @@ class StringEvaluator(_EvalArgsMixin, ABC):
     def _evaluate_strings(
         self,
         *,
-        prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        prediction: Union[str, Any],
+        reference: Optional[Union[str, Any]] = None,
+        input: Optional[Union[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
         """Evaluate Chain or LLM output, based on optional input and label.
@@ -165,9 +169,9 @@ class StringEvaluator(_EvalArgsMixin, ABC):
     async def _aevaluate_strings(
         self,
         *,
-        prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        prediction: Union[str, Any],
+        reference: Optional[Union[str, Any]] = None,
+        input: Optional[Union[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate Chain or LLM output, based on optional input and label.

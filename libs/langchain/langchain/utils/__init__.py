@@ -16,6 +16,7 @@ from langchain.utils.math import cosine_similarity, cosine_similarity_top_k
 from langchain.utils.strings import comma_list, stringify_dict, stringify_value
 from langchain.utils.utils import (
     check_package_version,
+    convert_to_secret_str,
     get_pydantic_field_names,
     guard_import,
     mock_now,
@@ -27,6 +28,7 @@ __all__ = [
     "StrictFormatter",
     "check_package_version",
     "comma_list",
+    "convert_to_secret_str",
     "cosine_similarity",
     "cosine_similarity_top_k",
     "formatter",

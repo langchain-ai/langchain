@@ -7,8 +7,8 @@ import numpy as np
 
 try:
     import deeplake
+    from deeplake import VectorStore as DeepLakeVectorStore
     from deeplake.core.fast_forwarding import version_compare
-    from deeplake.core.vectorstore import DeepLakeVectorStore
 
     _DEEPLAKE_INSTALLED = True
 except ImportError:
@@ -63,6 +63,7 @@ class DeepLake(VectorStore):
         verbose: bool = True,
         exec_option: Optional[str] = None,
         runtime: Optional[Dict] = None,
+        index_params: Optional[Dict[str, Union[int, str]]] = None,
         **kwargs: Any,
     ) -> None:
         """Creates an empty DeepLakeVectorStore or loads an existing one.
@@ -119,6 +120,23 @@ class DeepLake(VectorStore):
                 Deep Lake's Managed Tensor Database. Not applicable when loading an
                 existing Vector Store. To create a Vector Store in the Managed Tensor
                 Database, set `runtime = {"tensor_db": True}`.
+            index_params (Optional[Dict[str, Union[int, str]]], optional): Dictionary
+                containing information about vector index that will be created. Defaults
+                to None, which will utilize ``DEFAULT_VECTORSTORE_INDEX_PARAMS`` from
+                ``deeplake.constants``. The specified key-values override the default
+                ones.
+                - threshold: The threshold for the dataset size above which an index
+                    will be created for the embedding tensor. When the threshold value
+                    is set to -1, index creation is turned off. Defaults to -1, which
+                    turns off the index.
+                - distance_metric: This key specifies the method of calculating the
+                    distance between vectors when creating the vector database (VDB)
+                    index. It can either be a string that corresponds to a member of
+                    the DistanceType enumeration, or the string value itself.
+                    - If no value is provided, it defaults to "L2".
+                    - "L2" corresponds to DistanceType.L2_NORM.
+                    - "COS" corresponds to DistanceType.COSINE_SIMILARITY.
+                - additional_params: Additional parameters for fine-tuning the index.
             **kwargs: Other optional keyword arguments.
 
         Raises:
@@ -161,6 +179,7 @@ class DeepLake(VectorStore):
             exec_option=exec_option,
             verbose=verbose,
             runtime=runtime,
+            index_params=index_params,
             **kwargs,
         )
 
@@ -295,12 +314,13 @@ class DeepLake(VectorStore):
         embedding: Optional[Union[List[float], np.ndarray]] = None,
         embedding_function: Optional[Callable] = None,
         k: int = 4,
-        distance_metric: str = "L2",
+        distance_metric: Optional[str] = None,
         use_maximal_marginal_relevance: bool = False,
         fetch_k: Optional[int] = 20,
         filter: Optional[Union[Dict, Callable]] = None,
         return_score: bool = False,
         exec_option: Optional[str] = None,
+        deep_memory: bool = False,
         **kwargs: Any,
     ) -> Any[List[Document], List[Tuple[Document, float]]]:
         """
@@ -312,9 +332,9 @@ class DeepLake(VectorStore):
             embedding_function (Callable, optional): Function to convert `query`
                 into embedding.
             k (int): Number of Documents to return.
-            distance_metric (str): `L2` for Euclidean, `L1` for Nuclear, `max`
-                for L-infinity distance, `cos` for cosine similarity, 'dot' for dot
-                product.
+            distance_metric (Optional[str], optional): `L2` for Euclidean, `L1` for
+                Nuclear, `max` for L-infinity distance, `cos` for cosine similarity,
+                'dot' for dot product.
             filter (Union[Dict, Callable], optional): Additional filter prior
                 to the embedding search.
                 - ``Dict`` - Key-value search on tensors of htype json, on an
@@ -334,6 +354,13 @@ class DeepLake(VectorStore):
                 - ``tensor_db`` - Hosted Managed Tensor Database for storage
                     and query execution. Only for data in Deep Lake Managed Database.
                     Use runtime = {"db_engine": True} during dataset creation.
+            deep_memory (bool): Whether to use the Deep Memory model for improving
+                search results. Defaults to False if deep_memory is not specified in
+                the Vector Store initialization. If True, the distance metric is set
+                to "deepmemory_distance", which represents the metric with which the
+                model was trained. The search is performed using the Deep Memory model.
+                If False, the distance metric is set to "COS" or whatever distance
+                metric user specifies.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -386,7 +413,8 @@ class DeepLake(VectorStore):
             distance_metric=distance_metric,
             filter=filter,
             exec_option=exec_option,
-            return_tensors=["embedding", "metadata", "text"],
+            return_tensors=["embedding", "metadata", "text", "id"],
+            deep_memory=deep_memory,
         )
 
         scores = result["score"]
@@ -467,6 +495,13 @@ class DeepLake(VectorStore):
                     - 'tensor_db': Managed Tensor Database for storage and query.
                         Only for data in Deep Lake Managed Database.
                         Use `runtime = {"db_engine": True}` during dataset creation.
+                deep_memory (bool): Whether to use the Deep Memory model for improving
+                    search results. Defaults to False if deep_memory is not specified
+                    in the Vector Store initialization. If True, the distance metric
+                    is set to "deepmemory_distance", which represents the metric with
+                    which the model was trained. The search is performed using the Deep
+                    Memory model. If False, the distance metric is set to "COS" or
+                    whatever distance metric user specifies.
 
         Returns:
             List[Document]: List of Documents most similar to the query vector.
@@ -530,6 +565,13 @@ class DeepLake(VectorStore):
                 distance_metric (str): `L2` for Euclidean, `L1` for Nuclear,
                     `max` for L-infinity distance, `cos` for cosine similarity,
                     'dot' for dot product. Defaults to `L2`.
+                deep_memory (bool): Whether to use the Deep Memory model for improving
+                    search results. Defaults to False if deep_memory is not specified
+                    in the Vector Store initialization. If True, the distance metric
+                    is set to "deepmemory_distance", which represents the metric with
+                    which the model was trained. The search is performed using the Deep
+                    Memory model. If False, the distance metric is set to "COS" or
+                    whatever distance metric user specifies.
 
         Returns:
             List[Document]: List of Documents most similar to the query vector.
@@ -586,6 +628,13 @@ class DeepLake(VectorStore):
                         data stored in the Deep Lake Managed Database. To store datasets
                         in this database, specify `runtime = {"db_engine": True}`
                         during dataset creation.
+                deep_memory (bool): Whether to use the Deep Memory model for improving
+                    search results. Defaults to False if deep_memory is not specified
+                    in the Vector Store initialization. If True, the distance metric
+                    is set to "deepmemory_distance", which represents the metric with
+                    which the model was trained. The search is performed using the Deep
+                    Memory model. If False, the distance metric is set to "COS" or
+                    whatever distance metric user specifies.
 
         Returns:
             List[Tuple[Document, float]]: List of documents most similar to the query
@@ -641,6 +690,13 @@ class DeepLake(VectorStore):
                     data stored in the Deep Lake Managed Database. To store datasets
                     in this database, specify `runtime = {"db_engine": True}`
                     during dataset creation.
+            deep_memory (bool): Whether to use the Deep Memory model for improving
+                search results. Defaults to False if deep_memory is not specified
+                in the Vector Store initialization. If True, the distance metric
+                is set to "deepmemory_distance", which represents the metric with
+                which the model was trained. The search is performed using the Deep
+                Memory model. If False, the distance metric is set to "COS" or
+                whatever distance metric user specifies.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -701,6 +757,13 @@ class DeepLake(VectorStore):
                         for data stored in the Deep Lake Managed Database. To store
                         datasets in this database, specify
                         `runtime = {"db_engine": True}` during dataset creation.
+            deep_memory (bool): Whether to use the Deep Memory model for improving
+                search results. Defaults to False if deep_memory is not specified
+                in the Vector Store initialization. If True, the distance metric
+                is set to "deepmemory_distance", which represents the metric with
+                which the model was trained. The search is performed using the Deep
+                Memory model. If False, the distance metric is set to "COS" or
+                whatever distance metric user specifies.
             **kwargs: Additional keyword arguments
 
         Returns:

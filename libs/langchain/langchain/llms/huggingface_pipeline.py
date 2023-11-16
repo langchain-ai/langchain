@@ -70,6 +70,7 @@ class HuggingFacePipeline(BaseLLM):
         model_id: str,
         task: str,
         device: Optional[int] = -1,
+        device_map: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
         pipeline_kwargs: Optional[dict] = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
@@ -108,6 +109,9 @@ class HuggingFacePipeline(BaseLLM):
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token_id = model.config.eos_token_id
+
         if (
             getattr(model, "is_loaded_in_4bit", False)
             or getattr(model, "is_loaded_in_8bit", False)
@@ -129,7 +133,9 @@ class HuggingFacePipeline(BaseLLM):
                     f"Got device=={device}, "
                     f"device is required to be within [-1, {cuda_device_count})"
                 )
-            if device < 0 and cuda_device_count > 0:
+            if device_map is not None and device < 0:
+                device = None
+            if device is not None and device < 0 and cuda_device_count > 0:
                 logger.warning(
                     "Device has %d GPUs available. "
                     "Provide device={deviceId} to `from_model_id` to use available"
@@ -147,6 +153,7 @@ class HuggingFacePipeline(BaseLLM):
             model=model,
             tokenizer=tokenizer,
             device=device,
+            device_map=device_map,
             batch_size=batch_size,
             model_kwargs=_model_kwargs,
             **_pipeline_kwargs,

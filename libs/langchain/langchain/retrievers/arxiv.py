@@ -12,7 +12,12 @@ class ArxivRetriever(BaseRetriever, ArxivAPIWrapper):
     It uses all ArxivAPIWrapper arguments without any change.
     """
 
+    get_full_documents: bool = False
+
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        return self.load(query=query)
+        if self.get_full_documents:
+            return self.load(query=query)
+        else:
+            return self.get_summaries_as_docs(query)

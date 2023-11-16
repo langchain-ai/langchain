@@ -52,7 +52,7 @@ class TextFieldSchema(RedisField):
             self.name,
             weight=self.weight,
             no_stem=self.no_stem,
-            phonetic_matcher=self.phonetic_matcher,
+            phonetic_matcher=self.phonetic_matcher,  # type: ignore
             sortable=self.sortable,
             no_index=self.no_index,
         )
@@ -97,9 +97,9 @@ class RedisVectorField(RedisField):
     algorithm: object = Field(...)
     datatype: str = Field(default="FLOAT32")
     distance_metric: RedisDistanceMetric = Field(default="COSINE")
-    initial_cap: int = Field(default=20000)
+    initial_cap: Optional[int] = None
 
-    @validator("distance_metric", pre=True)
+    @validator("algorithm", "datatype", "distance_metric", pre=True, each_item=True)
     def uppercase_strings(cls, v: str) -> str:
         return v.upper()
 
@@ -111,27 +111,30 @@ class RedisVectorField(RedisField):
             )
         return v.upper()
 
+    def _fields(self) -> Dict[str, Any]:
+        field_data = {
+            "TYPE": self.datatype,
+            "DIM": self.dims,
+            "DISTANCE_METRIC": self.distance_metric,
+        }
+        if self.initial_cap is not None:  # Only include it if it's set
+            field_data["INITIAL_CAP"] = self.initial_cap
+        return field_data
+
 
 class FlatVectorField(RedisVectorField):
     """Schema for flat vector fields in Redis."""
 
     algorithm: Literal["FLAT"] = "FLAT"
-    block_size: int = Field(default=1000)
+    block_size: Optional[int] = None
 
     def as_field(self) -> VectorField:
         from redis.commands.search.field import VectorField  # type: ignore
 
-        return VectorField(
-            self.name,
-            self.algorithm,
-            {
-                "TYPE": self.datatype,
-                "DIM": self.dims,
-                "DISTANCE_METRIC": self.distance_metric,
-                "INITIAL_CAP": self.initial_cap,
-                "BLOCK_SIZE": self.block_size,
-            },
-        )
+        field_data = super()._fields()
+        if self.block_size is not None:
+            field_data["BLOCK_SIZE"] = self.block_size
+        return VectorField(self.name, self.algorithm, field_data)
 
 
 class HNSWVectorField(RedisVectorField):
@@ -141,25 +144,21 @@ class HNSWVectorField(RedisVectorField):
     m: int = Field(default=16)
     ef_construction: int = Field(default=200)
     ef_runtime: int = Field(default=10)
-    epsilon: float = Field(default=0.8)
+    epsilon: float = Field(default=0.01)
 
     def as_field(self) -> VectorField:
         from redis.commands.search.field import VectorField  # type: ignore
 
-        return VectorField(
-            self.name,
-            self.algorithm,
+        field_data = super()._fields()
+        field_data.update(
             {
-                "TYPE": self.datatype,
-                "DIM": self.dims,
-                "DISTANCE_METRIC": self.distance_metric,
-                "INITIAL_CAP": self.initial_cap,
                 "M": self.m,
                 "EF_CONSTRUCTION": self.ef_construction,
                 "EF_RUNTIME": self.ef_runtime,
                 "EPSILON": self.epsilon,
-            },
+            }
         )
+        return VectorField(self.name, self.algorithm, field_data)
 
 
 class RedisModel(BaseModel):
@@ -284,7 +283,7 @@ class RedisModel(BaseModel):
 
 
 def read_schema(
-    index_schema: Optional[Union[Dict[str, str], str, os.PathLike]]
+    index_schema: Optional[Union[Dict[str, List[Any]], str, os.PathLike]]
 ) -> Dict[str, Any]:
     """Reads in the index schema from a dict or yaml file.
 

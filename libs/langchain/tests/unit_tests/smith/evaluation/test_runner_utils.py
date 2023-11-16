@@ -318,9 +318,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     ), mock.patch.object(Client, "list_examples", new=mock_list_examples), mock.patch(
         "langchain.smith.evaluation.runner_utils._arun_llm_or_chain",
         new=mock_arun_chain,
-    ), mock.patch.object(
-        Client, "create_project", new=mock_create_project
-    ):
+    ), mock.patch.object(Client, "create_project", new=mock_create_project):
         client = Client(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
         chain.input_keys = ["foothing"]
@@ -331,14 +329,17 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             project_name="test_project",
             client=client,
         )
-
         expected = {
             str(example.id): {
                 "output": {
                     "result": f"Result for example {uuid.UUID(str(example.id))}"
                 },
                 "input": {"input": example.inputs["input"]},
-                "reference": {"output": example.outputs["output"]},
+                "reference": {
+                    "output": example.outputs["output"]
+                    if example.outputs is not None
+                    else None
+                },
                 "feedback": [],
             }
             for example in examples

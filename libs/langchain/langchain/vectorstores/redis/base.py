@@ -24,10 +24,7 @@ import numpy as np
 import yaml
 
 from langchain._api import deprecated
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
@@ -386,7 +383,7 @@ class Redis(VectorStore):
             generated_schema = _generate_field_schema(metadatas[0])
             if index_schema:
                 # read in the schema solely to compare to the generated schema
-                user_schema = read_schema(index_schema)
+                user_schema = read_schema(index_schema)  # type: ignore
 
                 # the very rare case where a super user decides to pass the index
                 # schema and a document loader is used that has metadata which
@@ -1166,7 +1163,7 @@ class Redis(VectorStore):
         # read in schema (yaml file or dict) and
         # pass to the Pydantic validators
         if index_schema:
-            schema_values = read_schema(index_schema)
+            schema_values = read_schema(index_schema)  # type: ignore
             schema = RedisModel(**schema_values)
 
             # ensure user did not exclude the content field
@@ -1449,11 +1446,6 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError("RedisVectorStoreRetriever does not support async")
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""

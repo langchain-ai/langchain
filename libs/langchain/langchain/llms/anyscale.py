@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    cast,
 )
 
 from langchain.callbacks.manager import (
@@ -20,10 +21,10 @@ from langchain.llms.openai import (
     acompletion_with_retry,
     completion_with_retry,
 )
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 def update_token_usage(
@@ -84,7 +85,7 @@ class Anyscale(BaseOpenAI):
 
     """Key word arguments to pass to the model."""
     anyscale_api_base: Optional[str] = None
-    anyscale_api_key: Optional[str] = None
+    anyscale_api_key: Optional[SecretStr] = None
 
     prefix_messages: List = Field(default_factory=list)
 
@@ -94,9 +95,10 @@ class Anyscale(BaseOpenAI):
         values["anyscale_api_base"] = get_from_dict_or_env(
             values, "anyscale_api_base", "ANYSCALE_API_BASE"
         )
-        values["anyscale_api_key"] = get_from_dict_or_env(
-            values, "anyscale_api_key", "ANYSCALE_API_KEY"
+        values["anyscale_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "anyscale_api_key", "ANYSCALE_API_KEY")
         )
+
         try:
             import openai
 
@@ -126,7 +128,7 @@ class Anyscale(BaseOpenAI):
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
         openai_creds: Dict[str, Any] = {
-            "api_key": self.anyscale_api_key,
+            "api_key": cast(SecretStr, self.anyscale_api_key).get_secret_value(),
             "api_base": self.anyscale_api_base,
         }
         return {**openai_creds, **{"model": self.model_name}, **super()._default_params}

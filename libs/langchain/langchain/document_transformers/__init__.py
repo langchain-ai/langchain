@@ -28,6 +28,7 @@ from langchain.document_transformers.embeddings_redundant_filter import (
     EmbeddingsRedundantFilter,
     get_stateful_documents,
 )
+from langchain.document_transformers.google_translate import GoogleTranslateTransformer
 from langchain.document_transformers.html2text import Html2TextTransformer
 from langchain.document_transformers.long_context_reorder import LongContextReorder
 from langchain.document_transformers.nuclia_text_transform import NucliaTextTransformer
@@ -40,6 +41,7 @@ __all__ = [
     "DoctranPropertyExtractor",
     "EmbeddingsClusteringFilter",
     "EmbeddingsRedundantFilter",
+    "GoogleTranslateTransformer",
     "get_stateful_documents",
     "LongContextReorder",
     "NucliaTextTransformer",

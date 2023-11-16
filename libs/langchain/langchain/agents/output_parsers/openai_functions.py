@@ -72,7 +72,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
             )
 
         return AgentFinish(
-            return_values={"output": message.content}, log=message.content
+            return_values={"output": message.content}, log=str(message.content)
         )
 
     def parse_result(

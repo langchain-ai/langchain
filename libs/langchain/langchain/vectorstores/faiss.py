@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import operator
 import os
 import pickle
 import uuid
 import warnings
+from functools import partial
 from pathlib import Path
 from typing import (
     Any,
@@ -86,7 +88,10 @@ class FAISS(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Union[Callable, Embeddings],
+        embedding_function: Union[
+            Callable[[str], List[float]],
+            Embeddings,
+        ],
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
@@ -131,11 +136,33 @@ class FAISS(VectorStore):
         else:
             return [self.embedding_function(text) for text in texts]
 
+    async def _aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        if isinstance(self.embedding_function, Embeddings):
+            return await self.embedding_function.aembed_documents(texts)
+        else:
+            # return await asyncio.gather(
+            #     [self.embedding_function(text) for text in texts]
+            # )
+            raise Exception(
+                "`embedding_function` is expected to be an Embeddings object, support "
+                "for passing in a function will soon be removed."
+            )
+
     def _embed_query(self, text: str) -> List[float]:
         if isinstance(self.embedding_function, Embeddings):
             return self.embedding_function.embed_query(text)
         else:
             return self.embedding_function(text)
+
+    async def _aembed_query(self, text: str) -> List[float]:
+        if isinstance(self.embedding_function, Embeddings):
+            return await self.embedding_function.aembed_query(text)
+        else:
+            # return await self.embedding_function(text)
+            raise Exception(
+                "`embedding_function` is expected to be an Embeddings object, support "
+                "for passing in a function will soon be removed."
+            )
 
     def __add(
         self,
@@ -194,6 +221,28 @@ class FAISS(VectorStore):
         """
         texts = list(texts)
         embeddings = self._embed_documents(texts)
+        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
+
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore
+            asynchronously.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        texts = list(texts)
+        embeddings = await self._aembed_documents(texts)
         return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
 
     def add_embeddings(
@@ -281,6 +330,42 @@ class FAISS(VectorStore):
             ]
         return docs[:k]
 
+    async def asimilarity_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query asynchronously.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, Any]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+            **kwargs: kwargs to be passed to similarity search. Can include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of documents most similar to the query text and L2 distance
+            in float for each. Lower score represents more similarity.
+        """
+
+        # This is a temporary workaround to make the similarity search asynchronous.
+        func = partial(
+            self.similarity_search_with_score_by_vector,
+            embedding,
+            k=k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
     def similarity_search_with_score(
         self,
         query: str,
@@ -304,6 +389,37 @@ class FAISS(VectorStore):
         """
         embedding = self._embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
+            embedding,
+            k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        return docs
+
+    async def asimilarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query asynchronously.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+
+        Returns:
+            List of documents most similar to the query text with
+            L2 distance in float. Lower score represents more similarity.
+        """
+        embedding = await self._aembed_query(query)
+        docs = await self.asimilarity_search_with_score_by_vector(
             embedding,
             k,
             filter=filter,
@@ -341,6 +457,35 @@ class FAISS(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    async def asimilarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector asynchronously.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+
+        Returns:
+            List of Documents most similar to the embedding.
+        """
+        docs_and_scores = await self.asimilarity_search_with_score_by_vector(
+            embedding,
+            k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        return [doc for doc, _ in docs_and_scores]
+
     def similarity_search(
         self,
         query: str,
@@ -362,6 +507,31 @@ class FAISS(VectorStore):
             List of Documents most similar to the query.
         """
         docs_and_scores = self.similarity_search_with_score(
+            query, k, filter=filter, fetch_k=fetch_k, **kwargs
+        )
+        return [doc for doc, _ in docs_and_scores]
+
+    async def asimilarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to query asynchronously.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
+                      Defaults to 20.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        docs_and_scores = await self.asimilarity_search_with_score(
             query, k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
@@ -438,6 +608,45 @@ class FAISS(VectorStore):
             docs_and_scores.append((doc, score))
         return docs_and_scores
 
+    async def amax_marginal_relevance_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        *,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and their similarity scores selected using the maximal marginal
+            relevance asynchronously.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch before filtering to
+                     pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents and similarity scores selected by maximal marginal
+                relevance and score for each.
+        """
+        # This is a temporary workaround to make the similarity search asynchronous.
+        func = partial(
+            self.max_marginal_relevance_search_with_score_by_vector,
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+        )
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -469,6 +678,39 @@ class FAISS(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance asynchronously.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch before filtering to
+                     pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        docs_and_scores = (
+            await self.amax_marginal_relevance_search_with_score_by_vector(
+                embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, filter=filter
+            )
+        )
+        return [doc for doc, _ in docs_and_scores]
+
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -497,6 +739,43 @@ class FAISS(VectorStore):
         """
         embedding = self._embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )
+        return docs
+
+    async def amax_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance asynchronously.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch before filtering (if needed) to
+                     pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        embedding = await self._aembed_query(query)
+        docs = await self.amax_marginal_relevance_search_by_vector(
             embedding,
             k=k,
             fetch_k=fetch_k,
@@ -640,6 +919,43 @@ class FAISS(VectorStore):
         )
 
     @classmethod
+    async def afrom_texts(
+        cls,
+        texts: list[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> FAISS:
+        """Construct FAISS wrapper from raw documents asynchronously.
+
+        This is a user friendly interface that:
+            1. Embeds documents.
+            2. Creates an in memory docstore
+            3. Initializes the FAISS database
+
+        This is intended to be a quick way to get started.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.vectorstores import FAISS
+                from langchain.embeddings import OpenAIEmbeddings
+
+                embeddings = OpenAIEmbeddings()
+                faiss = await FAISS.afrom_texts(texts, embeddings)
+        """
+        embeddings = await embedding.aembed_documents(texts)
+        return cls.__from(
+            texts,
+            embeddings,
+            embedding,
+            metadatas=metadatas,
+            ids=ids,
+            **kwargs,
+        )
+
+    @classmethod
     def from_embeddings(
         cls,
         text_embeddings: Iterable[Tuple[str, List[float]]],
@@ -673,6 +989,24 @@ class FAISS(VectorStore):
         return cls.__from(
             texts,
             embeddings,
+            embedding,
+            metadatas=metadatas,
+            ids=ids,
+            **kwargs,
+        )
+
+    @classmethod
+    async def afrom_embeddings(
+        cls,
+        text_embeddings: Iterable[Tuple[str, List[float]]],
+        embedding: Embeddings,
+        metadatas: Optional[Iterable[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> FAISS:
+        """Construct FAISS wrapper from raw documents asynchronously."""
+        return cls.from_embeddings(
+            text_embeddings,
             embedding,
             metadatas=metadatas,
             ids=ids,
@@ -715,6 +1049,7 @@ class FAISS(VectorStore):
                 and index_to_docstore_id from.
             embeddings: Embeddings to use when generating queries
             index_name: for saving with a specific index file name
+            asynchronous: whether to use async version or not
         """
         path = Path(folder_path)
         # load index separately since it is not picklable
@@ -788,6 +1123,35 @@ class FAISS(VectorStore):
                 " FAISS constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(
+            query,
+            k=k,
+            filter=filter,
+            fetch_k=fetch_k,
+            **kwargs,
+        )
+        docs_and_rel_scores = [
+            (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
+        ]
+        return docs_and_rel_scores
+
+    async def _asimilarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and their similarity scores on a scale from 0 to 1."""
+        # Pop score threshold so that only relevancy scores, not raw scores, are
+        # filtered.
+        relevance_score_fn = self._select_relevance_score_fn()
+        if relevance_score_fn is None:
+            raise ValueError(
+                "normalize_score_fn must be provided to"
+                " FAISS constructor to normalize scores"
+            )
+        docs_and_scores = await self.asimilarity_search_with_score(
             query,
             k=k,
             filter=filter,
