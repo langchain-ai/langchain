@@ -69,7 +69,7 @@ def _get_json_format(request: FileProcessingRequest):
                 "contents": "Entity ID",
             }
         ],
-        ensure_ascii=False
+        ensure_ascii=False,
     )
 
 
