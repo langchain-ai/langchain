@@ -37,6 +37,7 @@ def login() -> WebClient:
             "been set."
         )
 
+
 # def login() -> WebClient:
 #     try:
 #         from slack_sdk import WebClient
@@ -44,15 +45,17 @@ def login() -> WebClient:
 #         raise ImportError(
 #             "Cannot import slack_sdk. Please install the package with `pip install slack_sdk`."
 #         ) from e
-        
+
 #     client = WebClient(token="xoxp-6040211441731-6052945665441-6048335428100-5909cdff7e6e11a55541834dc69dd9b6")
 #     return client
+
 
 def authenticate() -> WebClient:
     """Authenticate using the Microsoft Grah API"""
     try:
         logger.error("slack auth start")
         from slack_sdk import WebClient
+
         client = WebClient(token=os.environ.get("SLACK_USR_TOKEN"))
         logger.error("get client")
         return client

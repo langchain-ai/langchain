@@ -1,10 +1,13 @@
+import logging
 from typing import List, Optional, Type
+
+from slack_sdk.errors import SlackApiError
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.slack.base import SlackBaseTool
-from slack_sdk.errors import SlackApiError
-import logging
+
+
 class SendMessageSchema(BaseModel):
     """Input for SendMessageTool."""
 
@@ -48,4 +51,3 @@ class SlackSendMessage(SlackBaseTool):
         #     logger.error("Error: %s", e)
         #     logger.error("Failed to send message")
         #     return "Failed to send message"
-        
