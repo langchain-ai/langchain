@@ -1,12 +1,9 @@
 import json
 import logging
-import os
-from typing import List, Optional, Type
-
-from slack_sdk.errors import SlackApiError
+from typing import Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
+from langchain.pydantic_v1 import BaseModel
 from langchain.tools.slack.base import SlackBaseTool
 
 
@@ -26,13 +23,13 @@ class SlackGetChannelIdNameDict(SlackBaseTool):
         # channelid_name: dict,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> dict:
-        logger = logging.getLogger(__name__)
+        logging.getLogger(__name__)
 
         result = self.client.conversations_list()
         channelId_Name = {}
         self.save_conversations(result["channels"], channelId_Name)
 
-        channelId_Name_json = json.dumps(channelId_Name)
+        json.dumps(channelId_Name)
         # print(channelId_Name_json)
         # return channelId_Name_json
         return json.dumps(result["channels"])

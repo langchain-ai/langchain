@@ -1,7 +1,5 @@
 import logging
-from typing import List, Optional, Type
-
-from slack_sdk.errors import SlackApiError
+from typing import Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field

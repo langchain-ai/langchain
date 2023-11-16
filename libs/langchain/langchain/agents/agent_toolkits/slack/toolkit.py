@@ -11,7 +11,6 @@ from langchain.tools.slack.utils import login
 
 if TYPE_CHECKING:
     from slack_sdk import WebClient
-    from slack_sdk.errors import SlackApiError
 
 
 class SlackToolkit(BaseToolkit):
