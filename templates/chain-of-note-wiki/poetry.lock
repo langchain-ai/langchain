@@ -835,6 +835,21 @@ typer = {version = ">=0.9.0,<0.10.0", extras = ["all"]}
 uvicorn = ">=0.23.2,<0.24.0"
 
 [[package]]
+name = "langchainhub"
+version = "0.1.14"
+description = ""
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = [
+    {file = "langchainhub-0.1.14-py3-none-any.whl", hash = "sha256:3d58a050a3a70684bca2e049a2425a2418d199d0b14e3c8aa318123b7f18b21a"},
+    {file = "langchainhub-0.1.14.tar.gz", hash = "sha256:c1aeda38d66df1146f9e60e47bde7fb12bad902eb19dba78ac02f89e0f1f1867"},
+]
+
+[package.dependencies]
+requests = ">=2,<3"
+types-requests = ">=2.31.0.2,<3.0.0.0"
+
+[[package]]
 name = "langserve"
 version = "0.0.28"
 description = ""
@@ -1727,6 +1742,20 @@ doc = ["cairosvg (>=2.5.2,<3.0.0)", "mdx-include (>=1.4.1,<2.0.0)", "mkdocs (>=1
 test = ["black (>=22.3.0,<23.0.0)", "coverage (>=6.2,<7.0)", "isort (>=5.0.6,<6.0.0)", "mypy (==0.910)", "pytest (>=4.4.0,<8.0.0)", "pytest-cov (>=2.10.0,<5.0.0)", "pytest-sugar (>=0.9.4,<0.10.0)", "pytest-xdist (>=1.32.0,<4.0.0)", "rich (>=10.11.0,<14.0.0)", "shellingham (>=1.3.0,<2.0.0)"]
 
 [[package]]
+name = "types-requests"
+version = "2.31.0.10"
+description = "Typing stubs for requests"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "types-requests-2.31.0.10.tar.gz", hash = "sha256:dc5852a76f1eaf60eafa81a2e50aefa3d1f015c34cf0cba130930866b1b22a92"},
+    {file = "types_requests-2.31.0.10-py3-none-any.whl", hash = "sha256:b32b9a86beffa876c0c3ac99a4cd3b8b51e973fb8e3bd4e0a6bb32c7efad80fc"},
+]
+
+[package.dependencies]
+urllib3 = ">=2"
+
+[[package]]
 name = "typing-extensions"
 version = "4.8.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -1891,4 +1920,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "7b8ee3bc2f167682a83334080d89abfc715c7f5ab6db12e0a10907affbcbbdd3"
+content-hash = "3c2ab5578092e04cb391f3745b525d8c863353eb5d3098744d8e3cdbc4eb2f88"
