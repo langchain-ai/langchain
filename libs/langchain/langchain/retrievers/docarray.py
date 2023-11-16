@@ -1,19 +1,11 @@
-from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.schema import BaseRetriever, Document
+from langchain.schema import BaseRetriever, Document, SearchType
 from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.utils import maximal_marginal_relevance
-
-
-class SearchType(str, Enum):
-    """Enumerator of the types of search to perform."""
-
-    similarity = "similarity"
-    mmr = "mmr"
 
 
 class DocArrayRetriever(BaseRetriever):

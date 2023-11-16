@@ -8,7 +8,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.pydantic_v1 import root_validator
-from langchain.schema import BaseRetriever, Document
+from langchain.schema import BaseRetriever, Document, SearchType
 
 if TYPE_CHECKING:
     from zep_python.memory import MemorySearchResult
@@ -21,15 +21,6 @@ class SearchScope(str, Enum):
     """Search chat history messages."""
     summary = "summary"
     """Search chat history summaries."""
-
-
-class SearchType(str, Enum):
-    """Enumerator of the types of search to perform."""
-
-    similarity = "similarity"
-    """Similarity search."""
-    mmr = "mmr"
-    """Maximal Marginal Relevance reranking of similarity search."""
 
 
 class ZepRetriever(BaseRetriever):
