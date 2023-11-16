@@ -17,7 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import BaseModel, root_validator
+from langchain.pydantic_v1 import BaseModel, root_validator, SecretStr
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -29,7 +29,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, convert_to_secret_str
 
 if TYPE_CHECKING:
     import google.generativeai as genai
@@ -234,7 +234,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     client: Any  #: :meta private:
     model_name: str = "models/chat-bison-001"
     """Model name to use."""
-    google_api_key: Optional[str] = None
+    google_api_key: Optional[SecretStr] = None
     temperature: Optional[float] = None
     """Run inference with this temperature. Must by in the closed
        interval [0.0, 1.0]."""
@@ -259,13 +259,13 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
-        google_api_key = get_from_dict_or_env(
-            values, "google_api_key", "GOOGLE_API_KEY"
+        google_api_key = convert_to_secret_str(get_from_dict_or_env(
+            values, "google_api_key", "GOOGLE_API_KEY")
         )
         try:
             import google.generativeai as genai
 
-            genai.configure(api_key=google_api_key)
+            genai.configure(api_key=values["google_api_key"].get_secret_value())
         except ImportError:
             raise ChatGooglePalmError(
                 "Could not import google.generativeai python package. "
