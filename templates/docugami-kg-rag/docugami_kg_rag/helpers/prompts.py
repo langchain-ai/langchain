@@ -1,7 +1,7 @@
 ASSISTANT_SYSTEM_MESSAGE = """You are a helpful assistant. \
 Use tools (only if necessary) to best answer the users questions."""
 
-CREATE_TOOL_DESCRIPTION_PROMPT = """Here is a brief snippet from a document:
+CREATE_TOOL_DESCRIPTION_PROMPT = """Here is a brief snippet from a document of type {docset_name}:
 
 ***  START DOCUMENT
 {doc_fragment}

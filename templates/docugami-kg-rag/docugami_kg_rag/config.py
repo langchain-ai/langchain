@@ -7,7 +7,7 @@ from langchain.storage.in_memory import InMemoryStore
 
 LLM = ChatOpenAI(temperature=0, model="gpt-4-1106-preview")
 
-EMBEDDINGS = OpenAIEmbeddings(mode="text-embedding-ada-002")
+EMBEDDINGS = OpenAIEmbeddings(model="text-embedding-ada-002")
 EMBEDDINGS_DIMENSIONS = 1536  # known size of text-embedding-ada-002
 
 DOCUGAMI_API_KEY = os.environ.get("DOCUGAMI_API_KEY")
@@ -45,7 +45,7 @@ MAX_CHUNK_TEXT_LENGTH = 1024 * 128  # ~32k tokens
 MIN_CHUNK_TEXT_LENGTH = 256
 SUB_CHUNK_TABLES = False
 INCLUDE_XML_TAGS = False
-PARENT_HIERARCHY_LEVELS = 3
+PARENT_HIERARCHY_LEVELS = 1000
 RETRIEVER_K = 6
 
 # LangSmith options (set for tracing)

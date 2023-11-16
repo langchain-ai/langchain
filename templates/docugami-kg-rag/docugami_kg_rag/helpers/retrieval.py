@@ -41,15 +41,11 @@ def docset_name_to_retriever_tool_function_name(name: str) -> str:
 
 
 def chunks_to_retriever_tool_description(name: str, chunks: List[Document]):
-    doc_fragment = "\n".join(chunks[:100])[: 2048 * 2]  # approximately 2 pages from max 100 chunks
+    texts = [c.page_content for c in chunks[:100]]
+    doc_fragment = "\n".join(texts)[: 2048 * 2]  # approximately 2 pages from max 100 chunks
 
-    chain = (
-        {"doc_fragment": doc_fragment}
-        | ChatPromptTemplate.from_template(CREATE_TOOL_DESCRIPTION_PROMPT)
-        | LLM
-        | StrOutputParser(name)
-    )
-    return chain.invoke()
+    chain = ChatPromptTemplate.from_template(CREATE_TOOL_DESCRIPTION_PROMPT) | LLM | StrOutputParser()
+    return chain.invoke({"docset_name": name, "doc_fragment": doc_fragment})
 
 
 def get_retrieval_tool_for_docset(docset_id: str, local_state: Dict[str, LocalIndexState]) -> BaseTool:

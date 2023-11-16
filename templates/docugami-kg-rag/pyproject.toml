@@ -21,6 +21,7 @@ typer = "^0.9.0"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"
+ipykernel = "*"
 black = "*"
 pytest = "*"
 pyyaml = "*"

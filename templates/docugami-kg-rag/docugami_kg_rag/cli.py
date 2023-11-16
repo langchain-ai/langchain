@@ -16,16 +16,15 @@ def main(
     docsets_response = docugami_client.docsets.list()
 
     if not docsets_response or not docsets_response.docsets:
-        raise typer.Exit("The workspace corresponding to the provided DOCUGAMI_API_KEY does not have any docsets.")
+        raise Exception("The workspace corresponding to the provided DOCUGAMI_API_KEY does not have any docsets.")
 
     docsets = docsets_response.docsets
-    docset_ids = [d.id for d in docsets]
     if all_docsets:
-        selected_docsets = docset_ids
+        selected_docsets = [d for d in docsets]
     elif docset_id:
-        if docset_id not in docset_ids:
-            raise typer.Exit(f"Error: Docset with ID {docset_id} does not exist.")
-        selected_docsets = [docset_id]
+        if docset_id not in [d.id for d in docsets]:
+            raise Exception(f"Error: Docset with ID {docset_id} does not exist.")
+        selected_docsets = [d for d in docsets if d.id == docset_id]
     else:
         typer.echo("Your workspace contains the following Docsets:\n")
         for idx, docset in enumerate(docsets, start=1):
@@ -35,12 +34,15 @@ def main(
         )
 
         if user_input.lower() == "all":
-            selected_docsets = docset_ids
+            selected_docsets = [d for d in docsets]
         else:
             selected_indices = [int(i.strip()) for i in user_input.split(",")]
             selected_docsets = [docsets[idx - 1] for idx in selected_indices if 0 < idx <= len(docsets)]
 
-    for docset in selected_docsets:
+    for docset in [d for d in selected_docsets if d is not None]:
+        if not docset.id or not docset.name:
+            raise Exception(f"Docset must have ID as well as Name: {docset}")
+
         index_docset(docset.id, docset.name)
 
 

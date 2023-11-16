@@ -19,7 +19,7 @@ from langchain.prompts import (
 from docugami_kg_rag.config import LLM
 from docugami_kg_rag.helpers.indexing import read_all_local_index_state
 from docugami_kg_rag.helpers.prompts import ASSISTANT_SYSTEM_MESSAGE
-from docugami_kg_rag.helpers.retrieval import build_retrieval_tool_for_docset
+from docugami_kg_rag.helpers.retrieval import get_retrieval_tool_for_docset
 
 
 local_state = read_all_local_index_state()
@@ -27,7 +27,7 @@ local_state = read_all_local_index_state()
 # add a retrieval tool for each indexed docset
 tools: List[BaseTool] = []
 for docset_id in local_state:
-    tools.append(build_retrieval_tool_for_docset(docset_id))
+    tools.append(get_retrieval_tool_for_docset(docset_id, local_state))
 
 
 prompt = ChatPromptTemplate.from_messages(
@@ -41,7 +41,7 @@ prompt = ChatPromptTemplate.from_messages(
 
 
 def llm_with_tools(input: Dict) -> Runnable:
-    return RunnableLambda(lambda x: x["input"]) | LLM.bind(functions=input["functions"])
+    return RunnableLambda(lambda x: x["input"]) | LLM.bind(functions=input["functions"])  # type: ignore
 
 
 def _format_chat_history(chat_history: List[Tuple[str, str]]):

@@ -14,7 +14,6 @@ from docugami_kg_rag.config import (
     EMBEDDINGS_DIMENSIONS,
     INCLUDE_XML_TAGS,
     INDEXING_LOCAL_STATE_PATH,
-    MAX_CHUNK_TEXT_LENGTH,
     MIN_CHUNK_TEXT_LENGTH,
     PARENT_HIERARCHY_LEVELS,
     PINECONE_INDEX,
@@ -63,7 +62,7 @@ def update_local_index(docset_id: str, name: str, chunks: List[Document]):
 def populate_pinecode_index(index_name: str, chunks: List[Document]):
     # Populate pinecone with the given chunks
 
-    if not index_name not in pinecone.list_indexes():
+    if index_name not in pinecone.list_indexes():
         # Create index if it does not exist
         print(f"Creating pinecone index {index_name}...")
         pinecone.create_index(name=index_name, dimension=EMBEDDINGS_DIMENSIONS)
@@ -88,7 +87,6 @@ def index_docset(docset_id: str, name: str):
     loader = DocugamiLoader(
         docset_id=docset_id,
         min_text_length=MIN_CHUNK_TEXT_LENGTH,
-        max_text_length=MAX_CHUNK_TEXT_LENGTH,
         sub_chunk_tables=SUB_CHUNK_TABLES,
         include_xml_tags=INCLUDE_XML_TAGS,
         parent_hierarchy_levels=PARENT_HIERARCHY_LEVELS,
