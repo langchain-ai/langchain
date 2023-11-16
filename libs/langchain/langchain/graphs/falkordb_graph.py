@@ -61,7 +61,8 @@ class FalkorDBGraph(GraphStore):
                 "Please install it with `pip install redis`."
             )
 
-        self._driver = redis.Redis(host=host, port=port, username=username, password=password, ssl=ssl)
+        self._driver = redis.Redis(host=host, port=port, username=username,
+                                    password=password, ssl=ssl)
         self._graph = Graph(self._driver, database)
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
