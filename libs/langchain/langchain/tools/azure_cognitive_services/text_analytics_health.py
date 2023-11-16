@@ -26,7 +26,7 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
     name: str = "azure_cognitive_services_text_analyics_health"
     description: str = (
         "A wrapper around Azure Cognitive Services Text Analytics for Health. "
-        "Useful for when you need to analyze text in healthcare data. "
+        "Useful for when you need to identify entities in healthcare data. "
         "Input should be text."
     )
 
@@ -43,9 +43,11 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
 
         try:
             import azure.ai.textanalytics as sdk
+            from azure.core.credentials import AzureKeyCredential
 
             values["text_analytics_client"] = sdk.TextAnalyticsClient(
-                endpoint=azure_cogs_endpoint, key=azure_cogs_key
+                endpoint=azure_cogs_endpoint,
+                credential=AzureKeyCredential(azure_cogs_key),
             )
 
         except ImportError:
@@ -62,14 +64,16 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
         )
 
         result = poller.result()
+
         res_dict = {}
 
-        doc = result.next()
+        docs = [doc for doc in result if not doc.is_error]
 
-        if doc.content is not None:
+        if docs is not None:
             res_dict["entities"] = [
-                f"{x.text} ({x.category}) found at offset {str(x.offset)}"
-                for x in result.entities
+                f"{x.text} is a healthcare entity of type {x.category}"
+                for y in docs
+                for x in y.entities
             ]
 
         return res_dict
@@ -78,10 +82,12 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
         formatted_result = []
         if "entities" in text_analysis_result:
             formatted_result.append(
-                f"Entities: {', '.join(text_analysis_result['entities'])}".replace(
+                f"The text conatins the following healthcare entities: {', '.join(text_analysis_result['entities'])}".replace(
                     "\n", " "
                 )
             )
+
+        return "\n".join(formatted_result)
 
     def _run(
         self,
