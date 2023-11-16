@@ -117,8 +117,7 @@ class LangChainTracer(BaseTracer):
         start_time = datetime.utcnow()
         if metadata:
             kwargs.update({"metadata": metadata})
-        batch_size = len(messages)
-        kwargs.update({"batch_size": batch_size})
+        kwargs.setdefault("batch_size", len(messages))
         chat_model_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
