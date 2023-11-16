@@ -354,7 +354,7 @@ class AmazonKendraRetriever(BaseRetriever):
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
     user_context: Optional[Dict] = None
-    score_confidence: float = 0
+    min_score_confidence: Optional[float] = None
 
     @validator("top_k")
     def validate_top_k(cls, value: int) -> int:
@@ -363,8 +363,10 @@ class AmazonKendraRetriever(BaseRetriever):
         return value
 
     def validate_score_confidence(self) -> None:
-        if self.score_confidence > 1 or self.score_confidence < 0:
-            raise ValueError("score_confidence must lie between 0 and 1.")
+        if self.min_score_confidence and (
+            self.min_score_confidence > 1.0 or self.min_score_confidence < 0.0
+        ):
+            raise ValueError("min_score_confidence must lie between 0 and 1.")
 
     @root_validator(pre=True)
     def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -431,6 +433,8 @@ class AmazonKendraRetriever(BaseRetriever):
         """
         Filter out the records which have score confidence less than required
         """
+        if not self.min_score_confidence:
+            return docs
         filtered_docs = [
             item
             for item in docs
@@ -438,7 +442,7 @@ class AmazonKendraRetriever(BaseRetriever):
                 item.metadata.get("score") is not None
                 and isinstance(item.metadata["score"], str)
                 and KENDRA_CONFIDENCE_MAPPING.get(str(item.metadata["score"]), 0.0)
-                >= self.score_confidence
+                >= self.min_score_confidence
             )
         ]
         return filtered_docs
@@ -457,10 +461,7 @@ class AmazonKendraRetriever(BaseRetriever):
             docs = retriever.get_relevant_documents('This is my query')
 
         """
+        self.validate_score_confidence()
         result_items = self._kendra_query(query)
         top_k_docs = self._get_top_k_docs(result_items)
-        if self.score_confidence != 0:
-            # Filter results only if confidence higher than default (NOT_AVAILABLE).
-            self.validate_score_confidence()
-            return self._filter_by_score_confidence(top_k_docs)
-        return top_k_docs
+        return self._filter_by_score_confidence(top_k_docs)
