@@ -2358,9 +2358,12 @@ class RunnableLambda(Runnable[Input, Output]):
             )
 
         if not hasattr(self, "afunc"):
-            async def f(*args,**kwargs):
+
+            async def f(*args, **kwargs):
                 return await asyncio.get_running_loop().run_in_executor(
-                    None, partial(self.func, **kwargs), *args)
+                    None, partial(self.func, **kwargs), *args
+                )
+
             self.afunc = f
 
     @property
