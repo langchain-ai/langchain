@@ -831,10 +831,20 @@ class Runnable(Generic[Input, Output], ABC):
         message_history_key: Optional[str] = None,
         **kwargs: Any,
     ) -> RunnableWithMessageHistory:
-        from langchain.schema.runnable.history import RunnableWithMessageHistory
+        from langchain.schema.messages import BaseMessage
+        from langchain.schema.runnable.history import (
+            MessagesOrDictWithMessages,
+            RunnableWithMessageHistory,
+        )
 
         return RunnableWithMessageHistory(
-            self,  # type: ignore
+            cast(
+                Runnable[
+                    MessagesOrDictWithMessages,
+                    Union[BaseMessage, MessagesOrDictWithMessages],
+                ],
+                self,
+            ),
             factory,
             input_messages_key=input_messages_key,
             output_messages_key=output_messages_key,

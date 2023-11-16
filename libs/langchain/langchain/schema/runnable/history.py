@@ -28,12 +28,19 @@ if TYPE_CHECKING:
     from langchain.callbacks.tracers.schemas import Run
     from langchain.schema.messages import BaseMessage
 
-InputOutputType = Union[str, "BaseMessage", Sequence["BaseMessage"], Dict[str, Any]]
+MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
 
 
 class RunnableWithMessageHistory(RunnableBindingBase):
     """
     A runnable that manages chat message history for another runnable.
+
+    Base runnable must have inputs and outputs that can be converted to a list of
+        BaseMessages.
+
+    RunnableWithMessageHistory must always be called with a config that contains
+        {"configurable": {"thread_id": "<THREAD_ID>"}} and can optionally include
+        {"configurable": {"thread_id": "<THREAD_ID>", "user_id": "<USER_ID>"}}.
 
     Example:
         .. code-block:: python
@@ -51,7 +58,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
     def __init__(
         self,
-        runnable: Runnable[InputOutputType, InputOutputType],
+        runnable: Runnable[
+            MessagesOrDictWithMessages,
+            Union[str, BaseMessage, MessagesOrDictWithMessages],
+        ],
         factory: Callable[[str], BaseChatMessageHistory],
         *,
         input_messages_key: Optional[str] = None,
@@ -62,22 +72,29 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         """Initialize RunnableWithMessageHistory.
 
         Args:
-            runnable: The base Runnable to be wrapped. Should be stateless and take as
-                input either a dict with a key for an input message(s) and optionally
-                a key for historical messages, or just a message(s). Should return as
-                output a(n) message(s) or a dictionary with a key containing a(n)
-                message(s).
+            runnable: The base Runnable to be wrapped.
+
+                Must take as input one of:
+                - A sequence of BaseMessages
+                - A dict with one key for all messages
+                - A dict with one key for the current input string/message(s) and
+                    a separate key for historical messages. If the input key points
+                    to a string, it will be treated as a HumanMessage in history.
+
+                Must return as output one of:
+                - A string which can be treated as an AIMessage
+                - A BaseMessage or sequence of BaseMessages
+                - A dict with a key for a BaseMessage or sequence of BaseMessages
+
             factory: Function that returns a new BaseChatMessageHistory given a
                 session id. Should take a single parameter `session_id` which is a
                 string.
-            input_messages_key: The base runnable input key for accepting the latest
-                message in the input. Needs to be specified if base runnable input is
-                a dictionary.
-            output_messages_key: The base runnable output key which should point to a
-                sequence of messages in the output. Needs to be specified if base
-                runnable output is a dictionary.
-            message_history_key: The base runnable history key which should point to a
-                sequence of historical messages in the input.
+            input_messages_key: Must be specified if the base runnable accepts a dict
+                as input.
+            output_messages_key: Must be specified if the base runnable returns a dict
+                as output.
+            message_history_key: Must be specified if the base runnable accepts a dict
+                as input and expects a separate key for historical messages.
             **kwargs: Arbitrary additional kwargs to pass to parent class
                 ``RunnableBindingBase`` init.
         """
@@ -156,9 +173,12 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             )
 
     def _get_output_messages(
-        self, output_val: Union[str, BaseMessage, Sequence[BaseMessage]]
+        self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> List[BaseMessage]:
         from langchain.schema.messages import BaseMessage
+
+        if isinstance(output_val, dict):
+            output_val = output_val[self.output_messages_key or "output"]
 
         if isinstance(output_val, str):
             from langchain.schema.messages import AIMessage
@@ -199,8 +219,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         input_messages = self._get_input_messages(input_val)
 
         # Get the output messages
-        outputs = load(run.outputs)
-        output_val = outputs[self.output_messages_key or "output"]
+        output_val = load(run.outputs)
         output_messages = self._get_output_messages(output_val)
 
         for m in input_messages + output_messages:
@@ -209,11 +228,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
         config = super()._merge_configs(*configs)
         # extract thread_id
-        config["configurable"] = config.get("configurable", {})
-        if "thread_id" not in config["configurable"]:
-            from langchain.schema.messages import HumanMessage
-
-            example_input = {self.input_messages_key: HumanMessage(content="foo")}
+        if "thread_id" not in config.get("configurable", {}):
+            example_input = {self.input_messages_key: "foo"}
             example_config = {"configurable": {"thread_id": "123"}}
             raise ValueError(
                 "thread_id is required."
