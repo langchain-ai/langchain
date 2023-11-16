@@ -4,18 +4,18 @@ from typing import List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.document_loaders.unstructured import UnstructuredFileIOLoader
 
 
 class AzureAIDataLoader(BaseLoader):
     """Load from Azure AI Data."""
 
-    def __init__(self, url: str, glob_pattern: Optional[str] = None):
+    def __init__(self, url: str, glob: Optional[str] = None):
         """Initialize with URL to a data asset or storage location
         ."""
         self.url = url
         """URL to the data asset or storage location."""
-        self.glob_pattern = glob_pattern
+        self.glob_pattern = glob
         """Optional glob pattern to select files. Defaults to None."""
 
     def load(self) -> List[Document]:
@@ -38,12 +38,8 @@ class AzureAIDataLoader(BaseLoader):
 
         docs = []
         for remote_path in remote_paths_list:
-            with tempfile.TemporaryDirectory() as tmp:
-                local_path = os.path.join(tmp, os.path.basename(remote_path))
-                fs.download(remote_path, tmp)
-                # check file exists
-                if os.path.exists(local_path):
-                    loader = UnstructuredFileLoader(local_path)
-                    docs.extend(loader.load())
+            with fs.open(remote_path) as f:
+                loader = UnstructuredFileIOLoader(file=f)
+                docs.extend(loader.load())
 
         return docs
