@@ -111,7 +111,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         start_time = datetime.utcnow()
         if metadata:
             kwargs.update({"metadata": metadata})
-        kwargs.setdefault("batch_size", len(prompts))
         llm_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
