@@ -21,6 +21,16 @@ typer = "^0.9.0"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"
+black = "*"
+pytest = "*"
+pyyaml = "*"
+ruff = "*"
+
+[tool.black]
+line-length = 127
+
+[tool.ruff]
+ignore = ["E501"]
 
 [tool.langserve]
 export_module = "docugami_kg_rag"
@@ -28,6 +38,16 @@ export_attr = "chain"
 
 [tool.poetry.scripts]
 index = "docugami_kg_rag.cli:app"
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
+norecursedirs = ".venv"
+
+[tool.pyright]
+include = ["dgml_utils", "tests"]
+ignore = ["**/node_modules", "**/__pycache__", ".venv"]
+reportMissingImports = true
+reportMissingTypeStubs = false
 
 [build-system]
 requires = [

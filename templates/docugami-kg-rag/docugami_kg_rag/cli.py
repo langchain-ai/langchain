@@ -1,10 +1,8 @@
-import os
+from docugami import Docugami
 import typer
 from typing import Optional
 
-from docugami import Docugami
-
-from docugami_kg_rag.helpers import index_docset
+from docugami_kg_rag.helpers.indexing import index_docset
 
 app = typer.Typer()
 docugami_client = Docugami()
@@ -18,9 +16,7 @@ def main(
     docsets_response = docugami_client.docsets.list()
 
     if not docsets_response or not docsets_response.docsets:
-        raise typer.Exit(
-            f"The workspace corresponding to the provided DOCUGAMI_API_KEY does not have any docsets."
-        )
+        raise typer.Exit("The workspace corresponding to the provided DOCUGAMI_API_KEY does not have any docsets.")
 
     docsets = docsets_response.docsets
     docset_ids = [d.id for d in docsets]
@@ -42,14 +38,10 @@ def main(
             selected_docsets = docset_ids
         else:
             selected_indices = [int(i.strip()) for i in user_input.split(",")]
-            selected_docsets = [
-                docsets[idx - 1].id
-                for idx in selected_indices
-                if 0 < idx <= len(docsets)
-            ]
+            selected_docsets = [docsets[idx - 1] for idx in selected_indices if 0 < idx <= len(docsets)]
 
-    for id in selected_docsets:
-        index_docset(id)
+    for docset in selected_docsets:
+        index_docset(docset.id, docset.name)
 
 
 if __name__ == "__main__":
