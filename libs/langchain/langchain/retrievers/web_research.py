@@ -18,7 +18,7 @@ from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.vectorstore import VectorStore
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
-from langchain.utilities import GoogleSearchAPIWrapper, Requests
+from langchain.utilities import GoogleSearchAPIWrapper
 
 logger = logging.getLogger(__name__)
 
