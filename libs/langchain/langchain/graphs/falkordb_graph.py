@@ -54,7 +54,7 @@ class FalkorDBGraph(GraphStore):
         port: int = 6379,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        ssl: Optional[bool] = False,
+        ssl: bool = False,
     ) -> None:
         """Create a new FalkorDB graph wrapper instance."""
         try:
