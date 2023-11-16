@@ -75,7 +75,7 @@ class EdenAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        values["edenai_api_key"] = conver_to_secret_str(get_from_dict_or_env(
+        values["edenai_api_key"] = convert_to_secret_str(get_from_dict_or_env(
             values, "edenai_api_key", "EDENAI_API_KEY"
         ))
         return values
@@ -142,7 +142,7 @@ class EdenAI(LLM):
 
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key}",
+            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
             "User-Agent": self.get_user_agent(),
         }
         payload: Dict[str, Any] = {
@@ -218,7 +218,7 @@ class EdenAI(LLM):
 
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key}",
+            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
             "User-Agent": self.get_user_agent(),
         }
         payload: Dict[str, Any] = {
