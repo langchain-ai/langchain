@@ -81,7 +81,7 @@ def _get_search_client(
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
-        HnswVectorSearchAlgorithmConfiguration,
+        HnswAlgorithmConfiguration, # HnswVectorSearchAlgorithmConfiguration outdated in version 11.4.0
         PrioritizedFields,
         SearchIndex,
         SemanticConfiguration,
@@ -137,7 +137,7 @@ def _get_search_client(
         if vector_search is None:
             vector_search = VectorSearch(
                 algorithm_configurations=[
-                    HnswVectorSearchAlgorithmConfiguration(
+                    HnswAlgorithmConfiguration(
                         name="default",
                         kind="hnsw",
                         parameters={  # type: ignore
