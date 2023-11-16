@@ -112,11 +112,12 @@ class MinimaxCommon(BaseModel):
 
     def __init__(self, **data: Any):
         super().__init__(**data)
-        self._client = _MinimaxEndpointClient(
+        _client = _MinimaxEndpointClient(
             host=self.minimax_api_host,
             api_key=self.minimax_api_key,
             group_id=self.minimax_group_id,
         )
+        object.__setattr__(self, "_client", _client)
 
 
 class Minimax(MinimaxCommon, LLM):
