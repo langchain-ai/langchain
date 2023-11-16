@@ -72,9 +72,6 @@ class DocugamiLoader(BaseLoader, BaseModel):
     include_project_metadata_in_doc_metadata: bool = True
     """Set to True if you want to include the project metadata in the doc metadata."""
 
-    include_project_metadata_in_page_content: bool = False
-    """Set to True if you want to include the project metadata in the page content."""
-
     @root_validator
     def validate_local_or_remote(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that either local file paths are given, or remote API docset ID.
@@ -136,11 +133,6 @@ class DocugamiLoader(BaseLoader, BaseModel):
             if additional_doc_metadata:
                 if self.include_project_metadata_in_doc_metadata:
                     metadata.update(additional_doc_metadata)
-
-                # Embed formatted metadata at the end of chunk text
-                if self.include_project_metadata_in_page_content:
-                    for key in additional_doc_metadata:
-                        text += f"\n{key}: {additional_doc_metadata[key]}"
 
             return Document(
                 page_content=text[: self.max_text_length],
@@ -327,11 +319,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
             _project_details = self._project_details_for_docset_id(self.docset_id)
             combined_project_metadata: Dict[str, Dict] = {}
-            fetch_metadata = (
-                self.include_project_metadata_in_doc_metadata
-                or self.include_project_metadata_in_page_content
-            )
-            if _project_details and fetch_metadata:
+            if _project_details and self.include_project_metadata_in_doc_metadata:
                 # If there are any projects for this docset and the caller requested
                 # project metadata, load it.
                 for project in _project_details:

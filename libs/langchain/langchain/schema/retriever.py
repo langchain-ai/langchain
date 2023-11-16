@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from enum import Enum
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
@@ -18,6 +19,14 @@ if TYPE_CHECKING:
         Callbacks,
     )
 
+
+class SearchType(str, Enum):
+    """Enumerator of the types of search to perform."""
+
+    similarity = "similarity"
+    """Similarity search."""
+    mmr = "mmr"
+    """Maximal Marginal Relevance reranking of similarity search."""
 
 class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
     """Abstract base class for a Document retrieval system.
