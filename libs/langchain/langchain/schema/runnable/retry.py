@@ -21,7 +21,7 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
-from langchain.schema.runnable.base import Input, Output, RunnableBinding
+from langchain.schema.runnable.base import Input, Output, RunnableBindingBase
 from langchain.schema.runnable.config import RunnableConfig, patch_config
 
 if TYPE_CHECKING:
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 U = TypeVar("U")
 
 
-class RunnableRetry(RunnableBinding[Input, Output]):
+class RunnableRetry(RunnableBindingBase[Input, Output]):
     """Retry a Runnable if it fails.
 
     A RunnableRetry helps can be used to add retry logic to any object
