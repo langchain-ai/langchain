@@ -81,7 +81,7 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
         formatted_result = []
         if "entities" in text_analysis_result:
             formatted_result.append(
-                f"""The text conatins the following healthcare entities: {
+                f"""The text contains the following healthcare entities: {
                         ', '.join(text_analysis_result['entities'])
                     }""".replace("\n", " ")
             )
