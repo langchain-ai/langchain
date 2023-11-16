@@ -22,6 +22,7 @@ from docugami_kg_rag.config import (
     LocalIndexState,
 )
 from docugami_kg_rag.helpers.documents import get_parent_id_mappings
+from docugami_kg_rag.helpers.retrieval import docset_name_to_retriever_tool_function_name, chunks_to_retriever_tool_description
 
 
 def read_all_local_index_state() -> Dict[str, LocalIndexState]:
@@ -32,7 +33,7 @@ def read_all_local_index_state() -> Dict[str, LocalIndexState]:
         return pickle.load(file)
 
 
-def update_local_index(docset_id: str, chunks: List[Document]):
+def update_local_index(docset_id: str, name: str, chunks: List[Document]):
     # Populate local index
 
     state = read_all_local_index_state()
@@ -41,7 +42,16 @@ def update_local_index(docset_id: str, chunks: List[Document]):
     parents_by_id = InMemoryStore()
     parents_by_id.mset(parents.items())
 
-    state[docset_id] = LocalIndexState(parents_by_id=parents_by_id)
+    tool_function_name = docset_name_to_retriever_tool_function_name(name)
+    tool_description = chunks_to_retriever_tool_description(name, chunks)
+
+    docset_state = LocalIndexState(
+        parents_by_id=parents_by_id,
+        retrieval_tool_function_name=tool_function_name,
+        retrieval_tool_description=tool_description,
+    )
+    print(docset_state)
+    state[docset_id] = docset_state
 
     # Serialize state to disk (Deserialized in chain)
     store_local_path = Path(INDEXING_LOCAL_STATE_PATH)
@@ -88,4 +98,4 @@ def index_docset(docset_id: str, name: str):
     chunks = loader.load()
     docset_pinecone_index_name = f"{PINECONE_INDEX}-{docset_id}"
     populate_pinecode_index(docset_pinecone_index_name, chunks)
-    update_local_index(docset_id, chunks)
+    update_local_index(docset_id, name, chunks)

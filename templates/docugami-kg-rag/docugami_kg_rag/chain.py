@@ -19,7 +19,7 @@ from langchain.prompts import (
 from docugami_kg_rag.config import LLM
 from docugami_kg_rag.helpers.indexing import read_all_local_index_state
 from docugami_kg_rag.helpers.prompts import ASSISTANT_SYSTEM_MESSAGE
-from docugami_kg_rag.helpers.tools import build_retrieval_tool_for_docset
+from docugami_kg_rag.helpers.retrieval import build_retrieval_tool_for_docset
 
 
 local_state = read_all_local_index_state()

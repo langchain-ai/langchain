@@ -1,6 +1,7 @@
 from typing import Dict, List
 from langchain.schema import Document
 
+
 def get_parent_id_mappings(chunks: List[Document]) -> Dict[str, Document]:
     # Separate out unique child and parent chunks for small-to-big retrieval.
 
