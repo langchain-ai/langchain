@@ -549,6 +549,11 @@ class ChatOpenAI(BaseChatModel):
         """Return type of chat model."""
         return "openai-chat"
 
+    @property
+    def supports_oai_functions(self) -> bool:
+        """Return whether class supports OpenAI functions."""
+        return True
+
     def _get_encoding_model(self) -> Tuple[str, tiktoken.Encoding]:
         tiktoken_ = _import_tiktoken()
         if self.tiktoken_model_name is not None:

@@ -56,7 +56,7 @@ def create_conversational_retrieval_agent(
         An agent executor initialized appropriately
     """
 
-    if not isinstance(llm, ChatOpenAI):
+    if not (hasattr(llm, "supports_oai_functions") and llm.supports_oai_functions):
         raise ValueError("Only supported with ChatOpenAI models.")
     if remember_intermediate_steps:
         memory: BaseMemory = AgentTokenBufferMemory(

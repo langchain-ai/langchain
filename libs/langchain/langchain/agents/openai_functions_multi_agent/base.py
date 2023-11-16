@@ -114,7 +114,10 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
 
     @root_validator
     def validate_llm(cls, values: dict) -> dict:
-        if not isinstance(values["llm"], ChatOpenAI):
+        if not (
+            hasattr(values["llm"], "supports_oai_functions")
+            and values["llm"].supports_oai_functions
+        ):
             raise ValueError("Only supported with ChatOpenAI models.")
         return values
 
