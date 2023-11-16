@@ -144,11 +144,18 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         super_schema = super().get_input_schema(config)
-        if super_schema.__custom_root_type__ is not None and self.input_messages_key:
+        if super_schema.__custom_root_type__ is not None:
+            from langchain.schema.messages import BaseMessage
+
             # The schema is not correct so we'll default to dict with input_messages_key
+            fields: Dict = {}
+            if self.input_messages_key:
+                fields[self.input_messages_key] = (str, ...)
+            if self.message_history_key:
+                fields[self.message_history_key] = (Sequence[BaseMessage], ...)
             return create_model(  # type: ignore[call-overload]
                 "RunnableWithChatHistoryInput",
-                **{self.input_messages_key: (str, ...)},
+                **fields,
             )
         else:
             return super_schema

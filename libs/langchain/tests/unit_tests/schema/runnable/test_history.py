@@ -1,7 +1,8 @@
-from typing import Callable
+from typing import Callable, Sequence
 
 from langchain.memory import ChatMessageHistory
-from langchain.schema import AIMessage, HumanMessage
+from langchain.pydantic_v1 import BaseModel
+from langchain.schema import AIMessage, BaseMessage, HumanMessage
 from langchain.schema.runnable import RunnableConfig, RunnableLambda
 
 
@@ -139,7 +140,10 @@ def test_output_dict() -> None:
     )
     factory = get_factory()
     with_history = runnable.with_message_history(
-        factory, input_messages_key="input", message_history_key="history"
+        factory,
+        input_messages_key="input",
+        message_history_key="history",
+        output_messages_key="output",
     )
     config: RunnableConfig = {"configurable": {"thread_id": "foo"}}
     output = with_history.invoke({"input": "hello"}, config)
@@ -149,4 +153,35 @@ def test_output_dict() -> None:
 
 
 def test_get_input_schema() -> None:
-    pass
+    class RunnableWithChatHistoryInput(BaseModel):
+        input: str
+        history: Sequence[BaseMessage]
+
+    runnable = RunnableLambda(
+        lambda input: {
+            "output": [
+                AIMessage(
+                    content="you said: "
+                    + "\n".join(
+                        [
+                            str(m.content)
+                            for m in input["history"]
+                            if isinstance(m, HumanMessage)
+                        ]
+                        + [input["input"]]
+                    )
+                )
+            ]
+        }
+    )
+    factory = get_factory()
+    with_history = runnable.with_message_history(
+        factory,
+        input_messages_key="input",
+        message_history_key="history",
+        output_messages_key="output",
+    )
+    assert (
+        with_history.get_input_schema().schema()
+        == RunnableWithChatHistoryInput.schema()
+    )
