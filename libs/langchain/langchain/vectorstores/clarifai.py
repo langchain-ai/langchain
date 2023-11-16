@@ -98,13 +98,13 @@ class Clarifai(VectorStore):
             assert length == len(
                 metadatas
             ), "Number of texts and metadatas should be the same."
-        
+
         if ids is not None:
             assert len(texts) == len(
                 ids
             ), "Number of text inputs and input ids should be the same."
-            
-        input_obj=Inputs(app_id=self._app_id, user_id=self._user_id)
+
+        input_obj = Inputs(app_id=self._app_id, user_id=self._user_id)
         batch_size = 32
         for idx in range(0, length, batch_size):
             try:
@@ -112,15 +112,20 @@ class Clarifai(VectorStore):
                 batch_metadatas = (
                     metadatas[idx : idx + batch_size] if metadatas else None
                 )
-                meta_list=[]
+                meta_list = []
                 for meta in batch_metadatas:
                     meta_struct = Struct()
                     meta_struct.update(meta)
                     meta_list.append(meta_struct)
                 if ids is None:
-                    ids=[uuid.uuid4().hex for _ in range(len(batch_texts))]
+                    ids = [uuid.uuid4().hex for _ in range(len(batch_texts))]
 
-                input_batch=[input_obj.get_text_input(input_id=ids[id], raw_text=inp, metadata=meta_list[id]) for id,inp in enumerate(batch_texts)]
+                input_batch = [
+                    input_obj.get_text_input(
+                        input_id=ids[id], raw_text=inp, metadata=meta_list[id]
+                    )
+                    for id, inp in enumerate(batch_texts)
+                ]
                 input_obj.upload_inputs(inputs=input_batch)
                 logger.debug(f"Input posted successfully.")
 
@@ -160,18 +165,18 @@ class Clarifai(VectorStore):
         # Get number of docs to return
         if self._number_of_docs is not None:
             k = self._number_of_docs
-        
+
         search_obj = Search(user_id=self._user_id, app_id=self._app_id)
-        rank=[{"text_raw":query}]
-         # Add filter by metadata if provided.
+        rank = [{"text_raw": query}]
+        # Add filter by metadata if provided.
         if filters is not None:
-            search_metadata = {'metadata':filters}
-            search_response=search_obj.query(ranks=rank,filters=[search_metadata])
+            search_metadata = {"metadata": filters}
+            search_response = search_obj.query(ranks=rank, filters=[search_metadata])
         else:
-            search_response=search_obj.query(ranks=rank)
+            search_response = search_obj.query(ranks=rank)
 
         # Retrieve hits
-        hits =[data.hits[0] for data in search_response]
+        hits = [data.hits[0] for data in search_response]
         executor = ThreadPoolExecutor(max_workers=10)
 
         def hit_to_document(hit: resources_pb2.Hit) -> Tuple[Document, float]:

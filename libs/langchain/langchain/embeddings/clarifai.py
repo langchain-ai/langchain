@@ -62,7 +62,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
                 raise ValueError("Please provide a user_id and app_id.")
 
         return values
-    
+
     def _model_init(self):
         """Verifies the parameter passed, Initializes and returns the clarifai model object."""
         try:
@@ -73,14 +73,13 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install clarifai`."
             )
         if self.model_url is not None:
-            model=Model(url_init=self.model_url)
+            model = Model(url_init=self.model_url)
         else:
-            model=Model(model_id=self.model_id,
-                        user_id=self.user_id,
-                        app_id=self.app_id)
-            
-        return model
+            model = Model(
+                model_id=self.model_id, user_id=self.user_id, app_id=self.app_id
+            )
 
+        return model
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to Clarifai's embedding models.
@@ -93,32 +92,34 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
         """
         try:
             from clarifai.client.input import Inputs
-        except ImportError: 
+        except ImportError:
             raise ImportError(
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
             )
-        input_obj=Inputs()
+        input_obj = Inputs()
         batch_size = 32
         embeddings = []
 
         try:
             for i in range(0, len(texts), batch_size):
                 batch = texts[i : i + batch_size]
-                model_obj=self._model_init()
-                input_batch=[input_obj.get_text_input(input_id=str(id), raw_text=inp) for id,inp in enumerate(batch)]
-                predict_response = model_obj.predict(input_batch) 
-                embeddings.extend(
-                [
-                    list(output.data.embeddings[0].vector)
-                    for output in predict_response.outputs
+                model_obj = self._model_init()
+                input_batch = [
+                    input_obj.get_text_input(input_id=str(id), raw_text=inp)
+                    for id, inp in enumerate(batch)
                 ]
-            )
-        
+                predict_response = model_obj.predict(input_batch)
+                embeddings.extend(
+                    [
+                        list(output.data.embeddings[0].vector)
+                        for output in predict_response.outputs
+                    ]
+                )
+
         except Exception as e:
             logger.error(f"Predict failed, exception: {e}")
 
-        
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
@@ -131,13 +132,14 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         try:
-            model_obj=self._model_init()
-            predict_response = model_obj.predict_by_bytes(bytes(text, 'utf-8'),input_type="text")
+            model_obj = self._model_init()
+            predict_response = model_obj.predict_by_bytes(
+                bytes(text, "utf-8"), input_type="text"
+            )
             embeddings = [
-                list(op.data.embeddings[0].vector)
-                for op in predict_response.outputs
+                list(op.data.embeddings[0].vector) for op in predict_response.outputs
             ]
-        
+
         except Exception as e:
             logger.error(f"Predict failed, exception: {e}")
 

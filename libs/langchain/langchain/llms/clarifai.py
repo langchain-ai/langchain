@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
 
+
 class Clarifai(LLM):
     """Clarifai large language models.
 
@@ -50,7 +51,7 @@ class Clarifai(LLM):
         extra = Extra.forbid
 
     @root_validator()
-    def validate_environment(c1q , values: Dict) -> Dict:
+    def validate_environment(c1q, values: Dict) -> Dict:
         """Validate that we have all required info to access Clarifai
         platform and python package exists in environment."""
         values["pat"] = get_from_dict_or_env(values, "pat", "CLARIFAI_PAT")
@@ -70,7 +71,7 @@ class Clarifai(LLM):
                 raise ValueError("Please provide a user_id and app_id.")
 
         return values
-    
+
     def _model_init(self):
         """Verifies the parameter passed, Initializes and returns the clarifai model object."""
         try:
@@ -81,11 +82,11 @@ class Clarifai(LLM):
                 "Please install it with `pip install clarifai`."
             )
         if self.model_url is not None:
-            model=Model(url_init=self.model_url)
+            model = Model(url_init=self.model_url)
         else:
-            model=Model(model_id=self.model_id,
-                                  user_id=self.user_id,
-                                  app_id=self.app_id)
+            model = Model(
+                model_id=self.model_id, user_id=self.user_id, app_id=self.app_id
+            )
         return model
 
     @property
@@ -134,20 +135,22 @@ class Clarifai(LLM):
         """
         # If version_id None, Defaults to the latest model version
         try:
-            model_obj=self._model_init()
+            model_obj = self._model_init()
             (inference_params := {}) if inference_params is None else inference_params
-            predict_response = model_obj.predict_by_bytes(bytes(prompt, 'utf-8'),
-                                                          input_type='text',
-                                                          inference_params=inference_params)
+            predict_response = model_obj.predict_by_bytes(
+                bytes(prompt, "utf-8"),
+                input_type="text",
+                inference_params=inference_params,
+            )
             text = predict_response.outputs[0].data.text.raw
             if stop is not None:
                 text = enforce_stop_tokens(text, stop)
-        
+
         except Exception as e:
             logger.error(f"Predict failed, exception: {e}")
 
         return text
-    
+
     def _generate(
         self,
         prompts: List[str],
@@ -161,23 +164,29 @@ class Clarifai(LLM):
         # TODO: add caching here.
         try:
             from clarifai.client.input import Inputs
-        except ImportError: 
+        except ImportError:
             raise ImportError(
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
             )
-        
+
         generations = []
         batch_size = 32
-        input_obj=Inputs()
-        model_obj=self._model_init()
+        input_obj = Inputs()
+        model_obj = self._model_init()
         try:
             for i in range(0, len(prompts), batch_size):
                 batch = prompts[i : i + batch_size]
-                input_batch=[input_obj.get_text_input(input_id=str(id), raw_text=inp) for id,inp in enumerate(batch)]
-                (inference_params := {}) if inference_params is None else inference_params
-                predict_response = model_obj.predict(inputs=input_batch,
-                                                     inference_params=inference_params)
+                input_batch = [
+                    input_obj.get_text_input(input_id=str(id), raw_text=inp)
+                    for id, inp in enumerate(batch)
+                ]
+                (
+                    inference_params := {}
+                ) if inference_params is None else inference_params
+                predict_response = model_obj.predict(
+                    inputs=input_batch, inference_params=inference_params
+                )
 
             for output in predict_response.outputs:
                 if stop is not None:
@@ -189,6 +198,5 @@ class Clarifai(LLM):
 
         except Exception as e:
             logger.error(f"Predict failed, exception: {e}")
-
 
         return LLMResult(generations=generations)
