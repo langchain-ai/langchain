@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import root_validator
-from langchain.tools.azure_cognitive_services.utils import detect_file_src_type
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
 
@@ -82,9 +81,9 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
         formatted_result = []
         if "entities" in text_analysis_result:
             formatted_result.append(
-                f"The text conatins the following healthcare entities: {', '.join(text_analysis_result['entities'])}".replace(
-                    "\n", " "
-                )
+                f"""The text conatins the following healthcare entities: {
+                        ', '.join(text_analysis_result['entities'])
+                    }""".replace("\n", " ")
             )
 
         return "\n".join(formatted_result)
