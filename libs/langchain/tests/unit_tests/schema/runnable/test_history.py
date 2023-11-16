@@ -1,3 +1,4 @@
+import datetime
 from typing import Callable, Sequence
 
 from langchain.memory import ChatMessageHistory
@@ -24,10 +25,10 @@ def test_input_messages() -> None:
     )
     factory = get_factory()
     with_history = runnable.with_message_history(factory)
-    config: RunnableConfig = {"configurable": {"thread_id": "foo"}}
-    output = with_history.invoke(HumanMessage(content="hello"), config)
+    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
+    output = with_history.invoke([HumanMessage(content="hello")], config)
     assert output == "you said: hello"
-    output = with_history.invoke(HumanMessage(content="good bye"), config)
+    output = with_history.invoke([HumanMessage(content="good bye")], config)
     assert output == "you said: hello\ngood bye"
 
 
@@ -40,7 +41,7 @@ def test_input_dict() -> None:
     )
     factory = get_factory()
     with_history = runnable.with_message_history(factory, input_messages_key="messages")
-    config: RunnableConfig = {"configurable": {"thread_id": "foo"}}
+    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
     output = with_history.invoke({"messages": [HumanMessage(content="hello")]}, config)
     assert output == "you said: hello"
     output = with_history.invoke(
@@ -61,7 +62,7 @@ def test_input_dict_with_history_key() -> None:
     with_history = runnable.with_message_history(
         factory, input_messages_key="input", message_history_key="history"
     )
-    config: RunnableConfig = {"configurable": {"thread_id": "foo"}}
+    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
     output = with_history.invoke({"input": "hello"}, config)
     assert output == "you said: hello"
     output = with_history.invoke({"input": "good bye"}, config)
@@ -86,7 +87,7 @@ def test_output_message() -> None:
     with_history = runnable.with_message_history(
         factory, input_messages_key="input", message_history_key="history"
     )
-    config: RunnableConfig = {"configurable": {"thread_id": "foo"}}
+    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
     output = with_history.invoke({"input": "hello"}, config)
     assert output == AIMessage(content="you said: hello")
     output = with_history.invoke({"input": "good bye"}, config)
@@ -113,7 +114,7 @@ def test_output_messages() -> None:
     with_history = runnable.with_message_history(
         factory, input_messages_key="input", message_history_key="history"
     )
-    config: RunnableConfig = {"configurable": {"thread_id": "foo"}}
+    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
     output = with_history.invoke({"input": "hello"}, config)
     assert output == [AIMessage(content="you said: hello")]
     output = with_history.invoke({"input": "good bye"}, config)
@@ -145,14 +146,14 @@ def test_output_dict() -> None:
         message_history_key="history",
         output_messages_key="output",
     )
-    config: RunnableConfig = {"configurable": {"thread_id": "foo"}}
+    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
     output = with_history.invoke({"input": "hello"}, config)
     assert output == {"output": [AIMessage(content="you said: hello")]}
     output = with_history.invoke({"input": "good bye"}, config)
     assert output == {"output": [AIMessage(content="you said: hello\ngood bye")]}
 
 
-def test_get_input_schema() -> None:
+def test_get_input_schema_input_dict() -> None:
     class RunnableWithChatHistoryInput(BaseModel):
         input: str
         history: Sequence[BaseMessage]
@@ -179,6 +180,37 @@ def test_get_input_schema() -> None:
         factory,
         input_messages_key="input",
         message_history_key="history",
+        output_messages_key="output",
+    )
+    assert (
+        with_history.get_input_schema().schema()
+        == RunnableWithChatHistoryInput.schema()
+    )
+
+
+def test_get_input_schema_input_messages() -> None:
+    class RunnableWithChatHistoryInput(BaseModel):
+        __root__: Sequence[BaseMessage]
+
+    runnable = RunnableLambda(
+        lambda messages: {
+            "output": [
+                AIMessage(
+                    content="you said: "
+                    + "\n".join(
+                        [
+                            str(m.content)
+                            for m in messages
+                            if isinstance(m, HumanMessage)
+                        ]
+                    )
+                )
+            ]
+        }
+    )
+    factory = get_factory()
+    with_history = runnable.with_message_history(
+        factory,
         output_messages_key="output",
     )
     assert (

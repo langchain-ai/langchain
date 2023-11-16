@@ -147,10 +147,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         if super_schema.__custom_root_type__ is not None:
             from langchain.schema.messages import BaseMessage
 
-            # The schema is not correct so we'll default to dict with input_messages_key
             fields: Dict = {}
             if self.input_messages_key:
                 fields[self.input_messages_key] = (str, ...)
+            else:
+                fields["__root__"] = (Sequence[BaseMessage], ...)
             if self.message_history_key:
                 fields[self.message_history_key] = (Sequence[BaseMessage], ...)
             return create_model(  # type: ignore[call-overload]
