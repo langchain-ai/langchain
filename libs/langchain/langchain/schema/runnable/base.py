@@ -2357,15 +2357,6 @@ class RunnableLambda(Runnable[Input, Output]):
                 f"Instead got an unsupported type: {type(func)}"
             )
 
-        if not hasattr(self, "afunc"):
-
-            async def f(*args, **kwargs):
-                return await asyncio.get_running_loop().run_in_executor(
-                    None, partial(self.func, **kwargs), *args
-                )
-
-            self.afunc = f
-
     @property
     def InputType(self) -> Any:
         """The type of the input to this runnable."""
@@ -2480,8 +2471,19 @@ class RunnableLambda(Runnable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Output:
+        if hasattr(self, "func"):
+            afunc = self.afunc
+        else:
+
+            async def f(*args, **kwargs):
+                return await asyncio.get_running_loop().run_in_executor(
+                    None, partial(self.func, **kwargs), *args
+                )
+
+            afunc = f
+
         output = await acall_func_with_variable_args(
-            self.afunc, input, config, run_manager, **kwargs
+            afunc, input, config, run_manager, **kwargs
         )
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
