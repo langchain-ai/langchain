@@ -33,7 +33,7 @@ class MatchingEngine(VectorStore):
     An existing Index and corresponding Endpoint are preconditions for
     using this module.
 
-    See usage in docs/modules/indexes/vectorstores/examples/matchingengine.ipynb
+    See usage in docs/integrations/vectorstores/google_vertex_ai_vector_search.ipynb
 
     Note that this implementation is mostly meant for reading if you are
     planning to do a real time implementation. While reading is a real time
@@ -58,7 +58,7 @@ class MatchingEngine(VectorStore):
         using this module.
 
         See usage in
-        docs/modules/indexes/vectorstores/examples/matchingengine.ipynb.
+        docs/modules/indexes/vectorstores/examples/google_vertex_ai_vector_search.ipynb.
 
         Note that this implementation is mostly meant for reading if you are
         planning to do a real time implementation. While reading is a real time
