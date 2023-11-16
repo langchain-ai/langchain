@@ -1146,7 +1146,7 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 type = "git"
 url = "https://github.com/docugami/langchain.git"
 reference = "kgrag/docugami_loader"
-resolved_reference = "ee1fd746b378e67fa15b025fec973c1a222bfef5"
+resolved_reference = "80f55ad329cb58ff75b435ab67bb7319b7aa6003"
 subdirectory = "libs/langchain"
 
 [[package]]
