@@ -16,6 +16,8 @@ pinecone-client = ">=2.2.4"
 beautifulsoup4 = "^4.12.2"
 lxml = "^4.9.3"
 dgml-utils = "^0.2.0"
+docugami = "^0.0.4"
+typer = "^0.9.0"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"
@@ -23,6 +25,9 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "docugami_kg_rag"
 export_attr = "chain"
+
+[tool.poetry.scripts]
+index = "docugami_kg_rag.cli:app"
 
 [build-system]
 requires = [

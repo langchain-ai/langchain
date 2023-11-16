@@ -1,21 +1,30 @@
 
 # Docugami KG RAG
 
-This template is used for [conversational](https://python.langchain.com/docs/expression_language/cookbook/retrieval#conversational-retrieval-chain) [retrieval](https://python.langchain.com/docs/use_cases/question_answering/), which is one of the most popular LLM use-cases. 
+This template contains a reference architecture for Retrieval Augmented Generation against a set of documents using Docugami's XML Knowledge Graph (KG-RAG).
 
-It passes both a conversation history and retrieved documents into an LLM for synthesis.
+### Configuring Environment Variables
 
-## Environment Setup
+You need to set some required environment variables before using your new app based on this template. These are used to index as well as run the application, and exceptions are raised if the following required environment variables are not set:
 
-This template uses Pinecone as a vectorstore and requires that `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, and `PINECONE_INDEX` are set. 
+1. `OPENAI_API_KEY`: from the OpenAI platform.
+1. `PINECONE_API_KEY` and `PINECONE_ENVIRONMENT`: from pinecone.io
+1. `DOCUGAMI_API_KEY`from the [Docugami Developer Playground](https://help.docugami.com/home/docugami-api)
 
-Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
-## Indexing
+(Optional) You can also configure LangSmith to trace, monitor and debug LangChain applications. LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). If you don't have access, you can skip this section
 
-This template uses the Docugami loader to create semantic chunks out of your documents. Refer to this [documentation](https://python.langchain.com/docs/integrations/document_loaders/docugami) for details on how to upload your documents to Docugami.
+```shell
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY=<your-api-key>
+export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+```
 
-Then navigate to the `docugami_kg_rag` directory and set the Docset ID and Document ID in `indexing.py` and run it. Do this only once.
+### Indexing
+
+Before you can run your app, you need to build your index in Pinecone.io. See [cli.py](./docugami_kg_rag/cli.py) which you can directly run via `poetry run index` after setting the environment variables as specified above. The CLI will query docsets in the workspace corresponding to your `DOCUGAMI_API_KEY` and let you pick which one(s) you want to index. When this is done, you can check to make your index is created and populated in Pinecone.io.
+
+Indexing in this template uses the Docugami Loader for LangChain to create semantic chunks out of your documents. Refer to this [documentation](https://python.langchain.com/docs/integrations/document_loaders/docugami) for details.
 
 ## Usage
 
@@ -44,26 +53,6 @@ from docugami_kg_rag import chain as docugami_kg_rag_chain
 
 add_routes(app, docugami_kg_rag, path="/docugami-kg-rag")
 ```
-
-### Configuring Environment Variables
-
-You need to set some required environment variables before using your new app based on this template. There are read in `chain.py` and exceptions are raised if the following required environment variables are not set:
-
-1. `OPENAI_API_KEY`: from the OpenAI platform.
-2. `PINECONE_API_KEY` and `PINECONE_ENVIRONMENT`: from pinecone.io
-
-
-(Optional) You can also configure LangSmith to help us trace, monitor and debug LangChain applications. LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). If you don't have access, you can skip this section
-
-```shell
-export LANGCHAIN_TRACING_V2=true
-export LANGCHAIN_API_KEY=<your-api-key>
-export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
-```
-
-### Indexing
-
-Before you can run your app, you need to build your index in Pinecone.io. See `indexing.py` which you can directly run after modifying the variables as needed. When this is done, make sure your index is created and populated in Pinecone.io.
 
 ### Running app
 If you are inside the app directory, then you can spin up a LangServe instance directly by:

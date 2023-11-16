@@ -370,6 +370,17 @@ lxml = ">=4.9.3,<5.0.0"
 tabulate = ">=0.9.0,<0.10.0"
 
 [[package]]
+name = "distro"
+version = "1.8.0"
+description = "Distro - an OS platform information API"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "distro-1.8.0-py3-none-any.whl", hash = "sha256:99522ca3e365cac527b44bde033f64c6945d90eb9f769703caaec52b09bbd3ff"},
+    {file = "distro-1.8.0.tar.gz", hash = "sha256:02e111d1dc6a50abb8eed6bf31c3e48ed8b0830d1ea2a1b78c61765c2513fdd8"},
+]
+
+[[package]]
 name = "dnspython"
 version = "2.4.2"
 description = "DNS toolkit"
@@ -387,6 +398,24 @@ doq = ["aioquic (>=0.9.20)"]
 idna = ["idna (>=2.1,<4.0)"]
 trio = ["trio (>=0.14,<0.23)"]
 wmi = ["wmi (>=1.5.1,<2.0.0)"]
+
+[[package]]
+name = "docugami"
+version = "0.0.4"
+description = "The official Python library for the docugami API"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "docugami-0.0.4-py3-none-any.whl", hash = "sha256:29156e58d4ed587d426d95d3df8eb9bac88beaabbf9a86ddb0715855ea34cb65"},
+    {file = "docugami-0.0.4.tar.gz", hash = "sha256:ed08c683469163b80ca826d3d225694d390cf0843b4c7d92d4d510e3d39ec42d"},
+]
+
+[package.dependencies]
+anyio = ">=3.5.0,<4"
+distro = ">=1.7.0,<2"
+httpx = ">=0.23.0,<1"
+pydantic = ">=1.9.0,<3"
+typing-extensions = ">=4.5,<5"
 
 [[package]]
 name = "exceptiongroup"
@@ -2050,4 +2079,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e6d5c577b7bbe63a911dbc244d6f204c3a6f4d7cdbce3764e5ae56f6f97d3f76"
+content-hash = "9e5fcf3ab0f24eecc7c4fd70c3841f67ba4120358886a894cda96de451315621"
