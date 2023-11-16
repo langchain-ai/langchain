@@ -23,11 +23,13 @@ def messages_2() -> list:
 
 
 def test_batch_size(messages: list, messages_2: list) -> None:
+    # The base endpoint doesn't support native batching,
+    # so we expect batch_size to always be 1
     llm = FakeChatModel()
     with collect_runs() as cb:
         llm.batch([messages, messages_2], {"callbacks": [cb]})
         assert len(cb.traced_runs) == 2
-        assert all([(r.extra or {}).get("batch_size") == 2 for r in cb.traced_runs])
+        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
     with collect_runs() as cb:
         llm.batch([messages], {"callbacks": [cb]})
         assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
@@ -47,12 +49,14 @@ def test_batch_size(messages: list, messages_2: list) -> None:
 @pytest.mark.asyncio
 async def test_async_batch_size(messages: list, messages_2: list) -> None:
     llm = FakeChatModel()
+    # The base endpoint doesn't support native batching,
+    # so we expect batch_size to always be 1
     with collect_runs() as cb:
-        await llm.abatch([messages, messages_2])
-        assert all([(r.extra or {}).get("batch_size") == 2 for r in cb.traced_runs])
+        await llm.abatch([messages, messages_2], {"callbacks": [cb]})
+        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
         assert len(cb.traced_runs) == 2
     with collect_runs() as cb:
-        await llm.abatch([messages])
+        await llm.abatch([messages], {"callbacks": [cb]})
         assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
         assert len(cb.traced_runs) == 1
 
