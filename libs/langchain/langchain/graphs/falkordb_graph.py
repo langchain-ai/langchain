@@ -48,7 +48,8 @@ class FalkorDBGraph(GraphStore):
     """
 
     def __init__(
-        self, database: str, host: str = "localhost", port: int = 6379
+        self, database: str, host: str = "localhost", port: int = 6379,
+        username=None, password=None, ssl=False
     ) -> None:
         """Create a new FalkorDB graph wrapper instance."""
         try:
@@ -60,7 +61,7 @@ class FalkorDBGraph(GraphStore):
                 "Please install it with `pip install redis`."
             )
 
-        self._driver = redis.Redis(host=host, port=port)
+        self._driver = redis.Redis(host=host, port=port, username=username, password=password, ssl=ssl)
         self._graph = Graph(self._driver, database)
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
