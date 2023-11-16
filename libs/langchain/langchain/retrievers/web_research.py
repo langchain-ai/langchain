@@ -155,17 +155,6 @@ class WebResearchRetriever(BaseRetriever):
         result = self.search.results(query_clean, num_search_results)
         return result
     
-    def fetch_valid_documents(self, url_list: List[str]) -> List[str]:
-        clean_urls = []
-        for url in url_list:
-            try:
-                Requests().get(url).status_code
-                clean_urls.append(url)
-            except Exception as e:
-                logger.error(f"Error loading urls: {e}")
-        
-        return clean_urls
-
     def _get_relevant_documents(
         self,
         query: str,
@@ -206,13 +195,10 @@ class WebResearchRetriever(BaseRetriever):
         # Check for any new urls that we have not processed
         new_urls = list(urls.difference(self.url_database))
 
-        # Removes urls with connection errors from list
-        new_urls = self.fetch_valid_documents(new_urls)
-
         logger.info(f"New URLs to load: {new_urls}")
         # Load, split, and add new urls to vectorstore
         if new_urls:
-            loader = AsyncHtmlLoader(new_urls)
+            loader = AsyncHtmlLoader(new_urls, ignore_load_errors=True)
             html2text = Html2TextTransformer()
             logger.info("Indexing new urls...")
             docs = loader.load()
