@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain.graphs.graph_document import GraphDocument
 from langchain.graphs.graph_store import GraphStore
@@ -52,9 +52,9 @@ class FalkorDBGraph(GraphStore):
         database: str,
         host: str = "localhost",
         port: int = 6379,
-        username=None,
-        password=None,
-        ssl=False,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        ssl: Optional[bool] = False,
     ) -> None:
         """Create a new FalkorDB graph wrapper instance."""
         try:
