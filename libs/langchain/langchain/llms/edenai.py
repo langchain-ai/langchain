@@ -10,9 +10,9 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, Field, root_validator
+from langchain.pydantic_v1 import Extra, Field, SecretStr, root_validator
 from langchain.utilities.requests import Requests
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class EdenAI(LLM):
 
     base_url: str = "https://api.edenai.run/v2"
 
-    edenai_api_key: Optional[str] = None
+    edenai_api_key: Optional[SecretStr] = None
 
     feature: Literal["text", "image"] = "text"
     """Which generative feature to use, use text by default"""
@@ -75,9 +75,9 @@ class EdenAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        values["edenai_api_key"] = get_from_dict_or_env(
+        values["edenai_api_key"] = conver_to_secret_str(get_from_dict_or_env(
             values, "edenai_api_key", "EDENAI_API_KEY"
-        )
+        ))
         return values
 
     @root_validator(pre=True)
