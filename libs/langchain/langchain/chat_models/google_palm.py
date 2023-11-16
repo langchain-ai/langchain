@@ -31,6 +31,8 @@ from langchain.schema.messages import (
 )
 from langchain.utils import get_from_dict_or_env, convert_to_secret_str
 
+
+
 if TYPE_CHECKING:
     import google.generativeai as genai
 
@@ -262,15 +264,20 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         google_api_key = convert_to_secret_str(get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY")
         )
+
+
+        
         try:
             import google.generativeai as genai
-
-            genai.configure(api_key=values["google_api_key"].get_secret_value())
+            genai.configure(api_key = (google_api_key.get_secret_value()))
         except ImportError:
             raise ChatGooglePalmError(
                 "Could not import google.generativeai python package. "
                 "Please install it with `pip install google-generativeai`"
             )
+        
+        # Set google_api_key to the class attribute
+        values["google_api_key"] = google_api_key
 
         values["client"] = genai
 
