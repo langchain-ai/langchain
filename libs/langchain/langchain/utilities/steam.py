@@ -126,26 +126,45 @@ class SteamWebAPIWrapper(BaseModel):
         steam_id = user["player"]["steamid"]
         return steam_id
 
+    # def recommended_games(self, name: str) -> dict:
+    #     steam_id = self.get_steam_id(name)
+    #     user_games_data = self.steam.users.get_owned_games(steam_id)
+
+    #     appids_with_playtime = [
+    #         (game["appid"], game.get("playtime_forever", 0))
+    #         for game in user_games_data["response"]["games"]
+    #     ]
+    #     sorted_appids = sorted(appids_with_playtime, key=lambda x: x[1], reverse=True)
+
+    #     app_details = []
+    #     for app_id, _ in sorted_appids:
+    #         app_detail = self.steam.apps.get_app_details(app_id)
+    #         # app_details.append(app_detail)
+
+    #         # TODO: implement recommended games
+    #         game_name = app_detail[app_id]["data"]["name"]
+    #         app_details.append(self.details_of_games(game_name))
+
+    #     # TODO: send the app_details to the langchain to get recommended games
+
     def recommended_games(self, name: str) -> dict:
-        steam_id = self.get_steam_id(name)
-        user_games_data = self.steam.users.get_owned_games(steam_id)
+        user_name = self.get_steam_id(name)
+        user_games_data = self.steam.users.get_owned_games(user_name, False, False)
+        result = {}
 
-        appids_with_playtime = [
-            (game["appid"], game.get("playtime_forever", 0))
-            for game in user_games_data["response"]["games"]
-        ]
-        sorted_appids = sorted(appids_with_playtime, key=lambda x: x[1], reverse=True)
+        for game in user_games_data["games"]:
+            appid = game["appid"]
+            data_request = {"request": "appdetails", "appid": appid}
+            genreStore = self.steamspypi.download(data_request)
+            genreList = genreStore.get("genre", "").split(", ")
 
-        app_details = []
-        for app_id, _ in sorted_appids:
-            app_detail = self.steam.apps.get_app_details(app_id)
-            # app_details.append(app_detail)
+            for genre in genreList:
+                if genre in result:
+                    result[genre] += 1
+                else:
+                    result[genre] = 1
 
-            # TODO: implement recommended games
-            game_name = app_detail[app_id]["data"]["name"]
-            app_details.append(self.details_of_games(game_name))
-
-        # TODO: send the app_details to the langchain to get recommended games
+        return result
 
     def run(self, mode: str, game: str) -> str:
         if mode == "get_game_details":
@@ -154,39 +173,3 @@ class SteamWebAPIWrapper(BaseModel):
             return self.recommended_games(game)
         else:
             raise ValueError(f"Invalid mode {mode} for Steam API.")
-
-    # def recommended_games(steam_id: str) -> dict:
-    #     # steam_id = get_steam_id(name)
-    #     user_games_data = steam.users.get_owned_games(steam_id, False, False)
-    #     # print(user_games_data)
-    #     result = []
-    #     for game in user_games_data["games"]:
-    #         appid = game["appid"]
-    #         data_request = dict()
-    #         data_request["request"] = "appdetails"
-    #         data_request["appid"] = appid
-    #         genreStore = steamspypi.download(data_request)
-    #         genreList = genreStore["genre"].split(", ")
-    #         print(genreList)
-    #         d = {}
-    #         for item in genreList:
-    #             if item == d:
-    #                 d[genreStore["genre"]] += 1
-    #             # if genreStore["genre"] in d:
-    #             else:
-    #                 d[genreStore["genre"]] = 1
-    #         print(d)
-    #         # result.append(genreDict)
-    #     print(json.dumps(genreStore))
-    #     # [[appid, playtime, GameName], ...]
-
-    #     # app_details = []
-    #     # for app_id, _ in sorted_appids:
-    #     #     app_detail = steam.apps.get_app_details(app_id)
-    #     #     # app_details.append(app_detail)
-
-    #     #     # TODO: implement recommended games
-    #     #     game_name = app_detail[app_id]["data"]["name"]
-    #     #     app_details.append(details_of_games(game_name))
-
-    #     # TODO: send the app_details to the langchain to get recommended games
