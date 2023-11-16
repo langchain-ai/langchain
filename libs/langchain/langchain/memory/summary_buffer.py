@@ -12,10 +12,15 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
     max_token_limit: int = 2000
     moving_summary_buffer: str = ""
     memory_key: str = "history"
+    chat_messages: List[BaseMessage] = []
 
     @property
     def buffer(self) -> List[BaseMessage]:
-        return self.chat_memory.messages
+        return (
+            self.chat_memory.messages
+            if self.moving_summary_buffer == ""
+            else self.chat_messages
+        )
 
     @property
     def memory_variables(self) -> List[str]:
@@ -30,7 +35,9 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
         buffer = self.buffer
         if self.moving_summary_buffer != "":
             first_messages: List[BaseMessage] = [
-                self.summary_message_cls(content=self.moving_summary_buffer)
+                self.summary_message_cls(
+                    content=self.moving_summary_buffer, type="system"
+                )
             ]
             buffer = first_messages + buffer
         if self.return_messages:
@@ -70,6 +77,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
             self.moving_summary_buffer = self.predict_new_summary(
                 pruned_memory, self.moving_summary_buffer
             )
+            self.chat_messages = buffer
 
     def clear(self) -> None:
         """Clear memory contents."""
