@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Union
 
-from langsmith import RunEvaluator
+from langsmith.evaluation.evaluator import RunEvaluator, run_evaluator
 
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
 from langchain.evaluation.embedding_distance.base import (
@@ -16,6 +16,7 @@ from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
+from langchain.pydantic_v1 import root_validator
 
 
 class EvalConfig(BaseModel):
@@ -112,6 +113,19 @@ class RunEvalConfig(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+    @root_validator(pre=True)
+    def validate_custom_evaluators(cls, values: dict) -> dict:
+        if "custom_evaluators" in values:
+            custom_evaluators = []
+            for evaluator in values["custom_evaluators"]:
+                if not isinstance(evaluator, (RunEvaluator, StringEvaluator)):
+                    # Promote functions to RunEvaluators
+                    if callable(evaluator):
+                        evaluator = run_evaluator(evaluator)
+                custom_evaluators.append(evaluator)
+            values["custom_evaluators"] = custom_evaluators
+        return values
 
     class Criteria(EvalConfig):
         """Configuration for a reference-free criteria evaluator.
