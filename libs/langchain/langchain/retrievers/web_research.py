@@ -154,7 +154,7 @@ class WebResearchRetriever(BaseRetriever):
         query_clean = self.clean_search_query(query)
         result = self.search.results(query_clean, num_search_results)
         return result
-    
+
     def _get_relevant_documents(
         self,
         query: str,
