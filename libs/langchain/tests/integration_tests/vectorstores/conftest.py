@@ -6,7 +6,7 @@ from vcr.request import Request
 
 from langchain.document_loaders import TextLoader
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.schema import Document
+from langchain_core.schema import Document
 from langchain.text_splitter import CharacterTextSplitter
 
 # Those environment variables turn on Deep Lake pytest mode.

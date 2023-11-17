@@ -9,9 +9,9 @@ from typing import Any, Iterable, List, Optional, Tuple
 
 import requests
 
-from langchain.pydantic_v1 import Field
-from langchain.schema import Document
-from langchain.schema.embeddings import Embeddings
+from langchain_core.pydantic_v1 import Field
+from langchain_core.schema import Document
+from langchain_core.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 

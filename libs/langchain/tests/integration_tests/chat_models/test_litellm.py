@@ -5,11 +5,11 @@ from langchain.callbacks.manager import (
     CallbackManager,
 )
 from langchain.chat_models.litellm import ChatLiteLLM
-from langchain.schema import (
+from langchain_core.schema import (
     ChatGeneration,
     LLMResult,
 )
-from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.schema.messages import AIMessage, BaseMessage, HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

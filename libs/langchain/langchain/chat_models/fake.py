@@ -8,9 +8,9 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel, SimpleChatModel
-from langchain.schema import ChatResult
-from langchain.schema.messages import AIMessageChunk, BaseMessage
-from langchain.schema.output import ChatGeneration, ChatGenerationChunk
+from langchain_core.schema import ChatResult
+from langchain_core.schema.messages import AIMessageChunk, BaseMessage
+from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
 
 
 class FakeMessagesListChatModel(BaseChatModel):

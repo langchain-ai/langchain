@@ -3,7 +3,7 @@ from typing import List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.utils import stringify_dict
+from langchain_core.utils import stringify_dict
 
 
 class AirbyteJSONLoader(BaseLoader):

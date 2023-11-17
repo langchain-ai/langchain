@@ -6,12 +6,12 @@ import pytest
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models import AzureChatOpenAI
-from langchain.schema import (
+from langchain_core.schema import (
     ChatGeneration,
     ChatResult,
     LLMResult,
 )
-from langchain.schema.messages import BaseMessage, HumanMessage
+from langchain_core.schema.messages import BaseMessage, HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "")

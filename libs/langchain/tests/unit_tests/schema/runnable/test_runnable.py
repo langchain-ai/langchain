@@ -34,7 +34,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.summarize import load_summarize_chain
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
-from langchain.load.dump import dumpd, dumps
+from langchain_core.load.dump import dumpd, dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
 from langchain.prompts import PromptTemplate
 from langchain.prompts.base import StringPromptValue
@@ -45,17 +45,17 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.document import Document
-from langchain.schema.messages import (
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.schema.document import Document
+from langchain_core.schema.messages import (
     AIMessage,
     AIMessageChunk,
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output_parser import BaseOutputParser, StrOutputParser
-from langchain.schema.retriever import BaseRetriever
-from langchain.schema.runnable import (
+from langchain_core.schema.output_parser import BaseOutputParser, StrOutputParser
+from langchain_core.schema.retriever import BaseRetriever
+from langchain_core.runnable import (
     RouterRunnable,
     Runnable,
     RunnableBranch,
@@ -66,12 +66,12 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
-from langchain.schema.runnable.base import (
+from langchain_core.runnable.base import (
     ConfigurableField,
     RunnableBinding,
     RunnableGenerator,
 )
-from langchain.schema.runnable.utils import (
+from langchain_core.runnable.utils import (
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
     add,

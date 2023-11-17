@@ -11,8 +11,8 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.pydantic_v1 import Field
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.pydantic_v1 import Field
+from langchain_core.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.powerbi.prompt import (
     QUESTION_TO_QUERY_BASE,

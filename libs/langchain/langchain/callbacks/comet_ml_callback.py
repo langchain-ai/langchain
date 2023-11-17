@@ -12,7 +12,7 @@ from langchain.callbacks.utils import (
     import_spacy,
     import_textstat,
 )
-from langchain.schema import AgentAction, AgentFinish, Generation, LLMResult
+from langchain_core.schema import AgentAction, AgentFinish, Generation, LLMResult
 
 LANGCHAIN_MODEL_NAME = "langchain-model"
 

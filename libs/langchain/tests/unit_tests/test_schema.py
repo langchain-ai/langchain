@@ -6,16 +6,16 @@ import pytest
 
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValueConcrete
-from langchain.pydantic_v1 import BaseModel, ValidationError
-from langchain.schema import (
+from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.schema import (
     AgentAction,
     AgentFinish,
     ChatGeneration,
     Document,
     Generation,
 )
-from langchain.schema.agent import AgentActionMessageLog
-from langchain.schema.messages import (
+from langchain_core.schema.agent import AgentActionMessageLog
+from langchain_core.schema.messages import (
     AIMessage,
     AIMessageChunk,
     ChatMessage,
@@ -30,7 +30,7 @@ from langchain.schema.messages import (
     messages_from_dict,
     messages_to_dict,
 )
-from langchain.schema.output import ChatGenerationChunk
+from langchain_core.schema.output import ChatGenerationChunk
 
 
 class TestGetBufferString(unittest.TestCase):

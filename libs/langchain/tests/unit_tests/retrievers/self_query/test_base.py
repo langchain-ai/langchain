@@ -16,7 +16,7 @@ from langchain.chains.query_constructor.ir import (
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers import SelfQueryRetriever
-from langchain.schema import Document
+from langchain_core.schema import Document
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

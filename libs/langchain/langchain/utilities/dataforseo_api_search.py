@@ -5,8 +5,8 @@ from urllib.parse import quote
 import aiohttp
 import requests
 
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.utils import get_from_dict_or_env
 
 
 class DataForSeoAPIWrapper(BaseModel):

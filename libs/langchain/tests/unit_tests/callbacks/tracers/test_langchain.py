@@ -10,7 +10,7 @@ from langsmith import Client
 
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.callbacks.tracers.schemas import Run
-from langchain.schema.output import LLMResult
+from langchain_core.schema.output import LLMResult
 
 
 def test_example_id_assignment_threadsafe() -> None:

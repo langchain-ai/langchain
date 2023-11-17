@@ -2,7 +2,7 @@ import re
 from typing import Union
 
 from langchain.agents.agent import AgentOutputParser
-from langchain.schema import AgentAction, AgentFinish, OutputParserException
+from langchain_core.schema import AgentAction, AgentFinish, OutputParserException
 
 
 class ReActOutputParser(AgentOutputParser):

@@ -5,7 +5,7 @@ import pytest
 from pytest import CaptureFixture
 
 from langchain.chat_models import ChatFireworks
-from langchain.pydantic_v1 import SecretStr
+from langchain_core.pydantic_v1 import SecretStr
 
 if sys.version_info < (3, 9):
     pytest.skip("fireworks-ai requires Python > 3.8", allow_module_level=True)

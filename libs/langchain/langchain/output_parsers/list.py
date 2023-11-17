@@ -4,7 +4,7 @@ import re
 from abc import abstractmethod
 from typing import List
 
-from langchain.schema import BaseOutputParser
+from langchain_core.schema import BaseOutputParser
 
 
 class ListOutputParser(BaseOutputParser[List[str]]):

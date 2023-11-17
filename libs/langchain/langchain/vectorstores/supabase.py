@@ -17,8 +17,8 @@ from typing import (
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
+from langchain_core.schema.embeddings import Embeddings
+from langchain_core.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -46,7 +46,7 @@ class SupabaseVectorStore(VectorStore):
     .. code-block:: python
 
         from langchain.embeddings.openai import OpenAIEmbeddings
-        from langchain.schema import Document
+        from langchain_core.schema import Document
         from langchain.vectorstores import SupabaseVectorStore
         from supabase.client import create_client
 

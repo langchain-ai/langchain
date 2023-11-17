@@ -23,18 +23,18 @@ from typing import (
 import numpy as np
 import yaml
 
-from langchain._api import deprecated
+from langchain_core._api import deprecated
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
+from langchain_core.schema.embeddings import Embeddings
+from langchain_core.schema.vectorstore import VectorStore, VectorStoreRetriever
 from langchain.utilities.redis import (
     _array_to_buffer,
     _buffer_to_array,
     check_redis_module_exist,
     get_client,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env
 from langchain.vectorstores.redis.constants import (
     REDIS_REQUIRED_MODULES,
     REDIS_TAG_SEPARATOR,

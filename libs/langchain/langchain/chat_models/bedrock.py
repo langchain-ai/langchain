@@ -6,9 +6,9 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.anthropic import convert_messages_to_prompt_anthropic
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.bedrock import BedrockBase
-from langchain.pydantic_v1 import Extra
-from langchain.schema.messages import AIMessage, AIMessageChunk, BaseMessage
-from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Extra
+from langchain_core.schema.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,

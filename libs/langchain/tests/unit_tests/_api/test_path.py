@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from langchain._api import path
+from langchain_core._api import path
 
 HERE = Path(__file__).parent
 

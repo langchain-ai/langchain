@@ -4,17 +4,17 @@ from json import JSONDecodeError
 from typing import List, Union
 
 from langchain.agents.agent import MultiActionAgentOutputParser
-from langchain.schema import (
+from langchain_core.schema import (
     AgentAction,
     AgentFinish,
     OutputParserException,
 )
-from langchain.schema.agent import AgentActionMessageLog
-from langchain.schema.messages import (
+from langchain_core.schema.agent import AgentActionMessageLog
+from langchain_core.schema.messages import (
     AIMessage,
     BaseMessage,
 )
-from langchain.schema.output import ChatGeneration, Generation
+from langchain_core.schema.output import ChatGeneration, Generation
 
 
 class OpenAIToolAgentAction(AgentActionMessageLog):

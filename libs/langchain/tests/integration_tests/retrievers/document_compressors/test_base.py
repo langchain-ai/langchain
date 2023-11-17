@@ -5,7 +5,7 @@ from langchain.retrievers.document_compressors import (
     DocumentCompressorPipeline,
     EmbeddingsFilter,
 )
-from langchain.schema import Document
+from langchain_core.schema import Document
 from langchain.text_splitter import CharacterTextSplitter
 
 

@@ -8,8 +8,8 @@ import yaml
 
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, StrOutputParser
-from langchain.utils.loading import try_load_from_hub
+from langchain_core.schema import BaseLLMOutputParser, BasePromptTemplate, StrOutputParser
+from langchain_core.utils.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
 logger = logging.getLogger(__name__)

@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import (
+from langchain_core.schema import (
     ChatGeneration,
     LLMResult,
 )
-from langchain.schema.messages import (
+from langchain_core.schema.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,

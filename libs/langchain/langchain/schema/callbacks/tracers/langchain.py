@@ -18,10 +18,10 @@ from tenacity import (
 )
 
 from langchain.env import get_runtime_environment
-from langchain.load.dump import dumpd
-from langchain.schema.callbacks.tracers.base import BaseTracer
-from langchain.schema.callbacks.tracers.schemas import Run
-from langchain.schema.messages import BaseMessage
+from langchain_core.load.dump import dumpd
+from langchain_core.callbacks.tracers.base import BaseTracer
+from langchain_core.callbacks.tracers.schemas import Run
+from langchain_core.schema.messages import BaseMessage
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()

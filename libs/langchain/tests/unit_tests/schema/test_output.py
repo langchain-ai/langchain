@@ -1,5 +1,5 @@
-from langchain.schema.messages import HumanMessageChunk
-from langchain.schema.output import ChatGenerationChunk, GenerationChunk
+from langchain_core.schema.messages import HumanMessageChunk
+from langchain_core.schema.output import ChatGenerationChunk, GenerationChunk
 
 
 def test_generation_chunk() -> None:

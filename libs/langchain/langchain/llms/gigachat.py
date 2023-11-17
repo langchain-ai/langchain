@@ -9,9 +9,9 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM
-from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import root_validator
-from langchain.schema.output import Generation, GenerationChunk, LLMResult
+from langchain_core.load.serializable import Serializable
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.schema.output import Generation, GenerationChunk, LLMResult
 
 logger = logging.getLogger(__name__)
 

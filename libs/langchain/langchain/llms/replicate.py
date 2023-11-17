@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Extra, Field, root_validator
-from langchain.schema.output import GenerationChunk
-from langchain.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.schema.output import GenerationChunk
+from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     from replicate.prediction import Prediction

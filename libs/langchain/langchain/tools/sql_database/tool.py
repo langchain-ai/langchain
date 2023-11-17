@@ -2,9 +2,9 @@
 """Tools for interacting with a SQL database."""
 from typing import Any, Dict, Optional
 
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.schema.language_model import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,

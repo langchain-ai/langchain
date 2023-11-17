@@ -10,7 +10,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
+from langchain_core.schema import BaseRetriever, Document
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

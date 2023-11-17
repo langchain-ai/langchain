@@ -1,7 +1,7 @@
 from typing import Any, Optional, Sequence
 
-from langchain.schema import BaseDocumentTransformer, Document
-from langchain.utils import get_from_env
+from langchain_core.schema import BaseDocumentTransformer, Document
+from langchain_core.utils import get_from_env
 
 
 class DoctranQATransformer(BaseDocumentTransformer):

@@ -4,7 +4,7 @@ import warnings
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain_core.schema import AgentAction, AgentFinish, LLMResult
 
 
 class DeepEvalCallbackHandler(BaseCallbackHandler):

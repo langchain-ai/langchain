@@ -34,9 +34,9 @@ from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
 from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import Field
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.pydantic_v1 import Field
+from langchain_core.schema import BasePromptTemplate
+from langchain_core.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.requests.tool import BaseRequestsTool
 from langchain.utilities.requests import RequestsWrapper

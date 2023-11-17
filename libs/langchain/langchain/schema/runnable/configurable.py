@@ -18,14 +18,14 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.runnable.base import Runnable, RunnableSerializable
-from langchain.schema.runnable.config import (
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnable.base import Runnable, RunnableSerializable
+from langchain_core.runnable.config import (
     RunnableConfig,
     get_config_list,
     get_executor_for_config,
 )
-from langchain.schema.runnable.utils import (
+from langchain_core.runnable.utils import (
     AnyConfigurableField,
     ConfigurableField,
     ConfigurableFieldMultiOption,

@@ -17,8 +17,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
-from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import (
+from langchain_core.load.serializable import Serializable
+from langchain_core.pydantic_v1 import (
     BaseModel,
     Extra,
     Field,
@@ -26,7 +26,7 @@ from langchain.pydantic_v1 import (
     root_validator,
     validate_arguments,
 )
-from langchain.schema.runnable import Runnable, RunnableConfig, RunnableSerializable
+from langchain_core.runnable import Runnable, RunnableConfig, RunnableSerializable
 
 
 class SchemaAnnotationError(TypeError):

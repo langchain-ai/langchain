@@ -10,7 +10,7 @@ from langchain.chains.router.base import MultiRouteChain
 from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParser
 from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMPLATE
 from langchain.prompts import PromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.schema.language_model import BaseLanguageModel
 
 
 class MultiPromptChain(MultiRouteChain):

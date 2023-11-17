@@ -3,8 +3,8 @@ import re
 from typing import Any, Iterator
 
 from langchain.chat_loaders.base import BaseChatLoader
-from langchain.schema.chat import ChatSession
-from langchain.schema.messages import HumanMessage
+from langchain_core.schema.chat import ChatSession
+from langchain_core.schema.messages import HumanMessage
 
 
 def _extract_email_content(msg: Any) -> HumanMessage:

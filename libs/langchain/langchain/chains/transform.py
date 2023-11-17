@@ -8,7 +8,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from langchain.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import Field
 
 logger = logging.getLogger(__name__)
 

@@ -2,8 +2,8 @@ import time
 from typing import Any, Dict, List, Optional, cast
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
-from langchain.schema.messages import BaseMessage
+from langchain_core.schema import AgentAction, AgentFinish, LLMResult
+from langchain_core.schema.messages import BaseMessage
 
 
 def import_infino() -> Any:

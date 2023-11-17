@@ -16,8 +16,8 @@ from langchain.chains.graph_qa.prompts import (
 from langchain.chains.llm import LLMChain
 from langchain.graphs.rdf_graph import RdfGraph
 from langchain.prompts.base import BasePromptTemplate
-from langchain.pydantic_v1 import Field
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.pydantic_v1 import Field
+from langchain_core.schema.language_model import BaseLanguageModel
 
 
 class GraphSparqlQAChain(Chain):

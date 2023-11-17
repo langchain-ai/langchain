@@ -15,19 +15,19 @@ from typing import (
 
 from typing_extensions import TypedDict
 
-from langchain.schema.runnable.base import (
+from langchain_core.runnable.base import (
     Input,
     Output,
     Runnable,
     RunnableSerializable,
     coerce_to_runnable,
 )
-from langchain.schema.runnable.config import (
+from langchain_core.runnable.config import (
     RunnableConfig,
     get_config_list,
     get_executor_for_config,
 )
-from langchain.schema.runnable.utils import (
+from langchain_core.runnable.utils import (
     ConfigurableFieldSpec,
     gather_with_concurrency,
     get_unique_config_specs,

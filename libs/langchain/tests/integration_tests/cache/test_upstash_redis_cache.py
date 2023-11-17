@@ -5,7 +5,7 @@ import pytest
 
 import langchain
 from langchain.cache import UpstashRedisCache
-from langchain.schema import Generation, LLMResult
+from langchain_core.schema import Generation, LLMResult
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

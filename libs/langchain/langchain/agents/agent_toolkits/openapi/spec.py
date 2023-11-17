@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from langchain.utils.json_schema import dereference_refs
+from langchain_core.utils.json_schema import dereference_refs
 
 
 @dataclass(frozen=True)

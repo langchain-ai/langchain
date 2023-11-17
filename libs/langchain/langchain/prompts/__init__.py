@@ -51,7 +51,7 @@ from langchain.prompts.few_shot_with_templates import FewShotPromptWithTemplates
 from langchain.prompts.loading import load_prompt
 from langchain.prompts.pipeline import PipelinePromptTemplate
 from langchain.prompts.prompt import Prompt, PromptTemplate
-from langchain.schema.prompt_template import BasePromptTemplate
+from langchain_core.schema.prompt_template import BasePromptTemplate
 
 __all__ = [
     "AIMessagePromptTemplate",

@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import LLMResult
-from langchain.schema.messages import (
+from langchain_core.schema import LLMResult
+from langchain_core.schema.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,

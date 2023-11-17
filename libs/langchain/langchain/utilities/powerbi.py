@@ -11,7 +11,7 @@ import requests
 from aiohttp import ServerTimeoutError
 from requests.exceptions import Timeout
 
-from langchain.pydantic_v1 import BaseModel, Field, root_validator, validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator, validator
 
 logger = logging.getLogger(__name__)
 

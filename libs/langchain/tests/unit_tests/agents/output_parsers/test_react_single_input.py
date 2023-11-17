@@ -3,8 +3,8 @@ import pytest
 from langchain.agents.output_parsers.react_single_input import (
     ReActSingleInputOutputParser,
 )
-from langchain.schema.agent import AgentAction, AgentFinish
-from langchain.schema.output_parser import OutputParserException
+from langchain_core.schema.agent import AgentAction, AgentFinish
+from langchain_core.schema.output_parser import OutputParserException
 
 
 def test_action() -> None:

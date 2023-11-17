@@ -15,9 +15,9 @@ except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
-from langchain.utils import get_from_dict_or_env
+from langchain_core.schema.embeddings import Embeddings
+from langchain_core.schema.vectorstore import VectorStore
+from langchain_core.utils import get_from_dict_or_env
 
 Base = declarative_base()  # type: Any
 

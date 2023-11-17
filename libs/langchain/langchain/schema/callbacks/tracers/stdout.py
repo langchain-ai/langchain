@@ -1,9 +1,9 @@
 import json
 from typing import Any, Callable, List
 
-from langchain.schema.callbacks.tracers.base import BaseTracer
-from langchain.schema.callbacks.tracers.schemas import Run
-from langchain.utils.input import get_bolded_text, get_colored_text
+from langchain_core.callbacks.tracers.base import BaseTracer
+from langchain_core.callbacks.tracers.schemas import Run
+from langchain_core.utils.input import get_bolded_text, get_colored_text
 
 
 def try_json_stringify(obj: Any, fallback: str) -> str:

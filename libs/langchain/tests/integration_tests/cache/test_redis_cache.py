@@ -6,11 +6,11 @@ import pytest
 
 from langchain.cache import RedisCache, RedisSemanticCache
 from langchain.globals import get_llm_cache, set_llm_cache
-from langchain.load.dump import dumps
-from langchain.schema import Generation, LLMResult
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
-from langchain.schema.output import ChatGeneration
+from langchain_core.load.dump import dumps
+from langchain_core.schema import Generation, LLMResult
+from langchain_core.schema.embeddings import Embeddings
+from langchain_core.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.schema.output import ChatGeneration
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,

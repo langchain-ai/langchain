@@ -30,13 +30,13 @@ from langsmith import utils as ls_utils
 from langsmith.run_helpers import get_run_tree_context
 from tenacity import RetryCallState
 
-from langchain.schema import (
+from langchain_core.schema import (
     AgentAction,
     AgentFinish,
     Document,
     LLMResult,
 )
-from langchain.schema.callbacks.base import (
+from langchain_core.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
     Callbacks,
@@ -46,18 +46,18 @@ from langchain.schema.callbacks.base import (
     RunManagerMixin,
     ToolManagerMixin,
 )
-from langchain.schema.callbacks.stdout import StdOutCallbackHandler
-from langchain.schema.callbacks.tracers import run_collector
-from langchain.schema.callbacks.tracers.langchain import (
+from langchain_core.callbacks.stdout import StdOutCallbackHandler
+from langchain_core.callbacks.tracers import run_collector
+from langchain_core.callbacks.tracers.langchain import (
     LangChainTracer,
 )
-from langchain.schema.callbacks.tracers.langchain_v1 import (
+from langchain_core.callbacks.tracers.langchain_v1 import (
     LangChainTracerV1,
     TracerSessionV1,
 )
-from langchain.schema.callbacks.tracers.stdout import ConsoleCallbackHandler
-from langchain.schema.messages import BaseMessage, get_buffer_string
-from langchain.schema.output import ChatGenerationChunk, GenerationChunk
+from langchain_core.callbacks.tracers.stdout import ConsoleCallbackHandler
+from langchain_core.schema.messages import BaseMessage, get_buffer_string
+from langchain_core.schema.output import ChatGenerationChunk, GenerationChunk
 
 if TYPE_CHECKING:
     from langsmith import Client as LangSmithClient

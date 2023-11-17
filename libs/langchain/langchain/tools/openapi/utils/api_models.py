@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from langchain.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
 logger = logging.getLogger(__name__)

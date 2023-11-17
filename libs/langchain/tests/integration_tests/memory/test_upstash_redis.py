@@ -6,7 +6,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories.upstash_redis import (
     UpstashRedisChatMessageHistory,
 )
-from langchain.schema.messages import _message_to_dict
+from langchain_core.schema.messages import _message_to_dict
 
 URL = "<UPSTASH_REDIS_REST_URL>"
 TOKEN = "<UPSTASH_REDIS_REST_TOKEN>"

@@ -1,8 +1,8 @@
 """Util that calls Jira."""
 from typing import Any, Dict, List, Optional
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.utils import get_from_dict_or_env
 
 
 # TODO: think about error handling, more specific api specs, and jql/project limits

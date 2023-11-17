@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterator, List, Optional, Union
 from langchain.docstore.document import Document
 from langchain.document_loaders import PyPDFLoader
 from langchain.document_loaders.base import BaseLoader
-from langchain.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env
 
 
 class RSpaceLoader(BaseLoader):

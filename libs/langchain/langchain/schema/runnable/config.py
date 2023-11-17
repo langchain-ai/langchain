@@ -17,7 +17,7 @@ from typing import (
 
 from typing_extensions import TypedDict
 
-from langchain.schema.runnable.utils import (
+from langchain_core.runnable.utils import (
     Input,
     Output,
     accepts_config,

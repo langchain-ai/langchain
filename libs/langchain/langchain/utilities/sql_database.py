@@ -11,7 +11,7 @@ from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.types import NullType
 
-from langchain.utils import get_from_env
+from langchain_core.utils import get_from_env
 
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:

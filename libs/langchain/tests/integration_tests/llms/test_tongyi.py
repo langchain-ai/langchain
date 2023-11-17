@@ -1,6 +1,6 @@
 """Test Tongyi API wrapper."""
 from langchain.llms.tongyi import Tongyi
-from langchain.schema import LLMResult
+from langchain_core.schema import LLMResult
 
 
 def test_tongyi_call() -> None:

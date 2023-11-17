@@ -27,7 +27,7 @@ from langsmith.schemas import Dataset, DataType, Example
 from langsmith.utils import LangSmithError
 from requests import HTTPError
 
-from langchain._api import warn_deprecated
+from langchain_core._api import warn_deprecated
 from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.evaluation import (
     EvaluatorCallbackHandler,
@@ -41,12 +41,12 @@ from langchain.evaluation.schema import (
     PairwiseStringEvaluator,
     StringEvaluator,
 )
-from langchain.schema import ChatResult, LLMResult
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage, messages_from_dict
-from langchain.schema.runnable import Runnable, RunnableConfig, RunnableLambda
-from langchain.schema.runnable import config as runnable_config
-from langchain.schema.runnable import utils as runnable_utils
+from langchain_core.schema import ChatResult, LLMResult
+from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.schema.messages import BaseMessage, messages_from_dict
+from langchain_core.runnable import Runnable, RunnableConfig, RunnableLambda
+from langchain_core.runnable import config as runnable_config
+from langchain_core.runnable import utils as runnable_utils
 from langchain.smith import evaluation as smith_eval
 from langchain.smith.evaluation import config as smith_eval_config
 from langchain.smith.evaluation import name_generation, progress

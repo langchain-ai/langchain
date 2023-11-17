@@ -3,8 +3,8 @@ from typing import List
 
 import numpy as np
 
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.schema.embeddings import Embeddings
 
 
 class FakeEmbeddings(Embeddings, BaseModel):

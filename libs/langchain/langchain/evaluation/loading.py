@@ -32,7 +32,7 @@ from langchain.evaluation.string_distance.base import (
     PairwiseStringDistanceEvalChain,
     StringDistanceEvalChain,
 )
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.schema.language_model import BaseLanguageModel
 
 
 def load_dataset(uri: str) -> List[Dict]:

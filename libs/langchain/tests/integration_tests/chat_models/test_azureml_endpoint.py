@@ -4,7 +4,7 @@ from langchain.chat_models.azureml_endpoint import (
     AzureMLChatOnlineEndpoint,
     LlamaContentFormatter,
 )
-from langchain.schema import (
+from langchain_core.schema import (
     AIMessage,
     BaseMessage,
     ChatGeneration,

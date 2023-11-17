@@ -18,12 +18,12 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
-from langchain.pydantic_v1 import BaseModel, Field, root_validator
-from langchain.schema import (
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.schema import (
     Generation,
     LLMResult,
 )
-from langchain.schema.output import GenerationChunk
+from langchain_core.schema.output import GenerationChunk
 from langchain.utilities.vertexai import (
     get_client_info,
     init_vertexai,

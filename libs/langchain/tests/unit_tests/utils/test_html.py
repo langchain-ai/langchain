@@ -1,4 +1,4 @@
-from langchain.utils.html import (
+from langchain_core.utils.html import (
     PREFIXES_TO_IGNORE,
     SUFFIXES_TO_IGNORE,
     extract_sub_links,

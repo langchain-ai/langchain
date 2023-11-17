@@ -12,21 +12,21 @@ from typing import (
     cast,
 )
 
-from langchain.load.dump import dumpd
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.runnable.base import (
+from langchain_core.load.dump import dumpd
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnable.base import (
     Runnable,
     RunnableLike,
     RunnableSerializable,
     coerce_to_runnable,
 )
-from langchain.schema.runnable.config import (
+from langchain_core.runnable.config import (
     RunnableConfig,
     ensure_config,
     get_callback_manager_for_config,
     patch_config,
 )
-from langchain.schema.runnable.utils import (
+from langchain_core.runnable.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
@@ -49,7 +49,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         .. code-block:: python
 
-            from langchain.schema.runnable import RunnableBranch
+            from langchain_core.runnable import RunnableBranch
 
             branch = RunnableBranch(
                 (lambda x: isinstance(x, str), lambda x: x.upper()),

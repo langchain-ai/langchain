@@ -18,10 +18,10 @@ from uuid import UUID
 import jsonpatch
 from anyio import create_memory_object_stream
 
-from langchain.load.load import load
-from langchain.schema.callbacks.tracers.base import BaseTracer
-from langchain.schema.callbacks.tracers.schemas import Run
-from langchain.schema.output import ChatGenerationChunk, GenerationChunk
+from langchain_core.load.load import load
+from langchain_core.callbacks.tracers.base import BaseTracer
+from langchain_core.callbacks.tracers.schemas import Run
+from langchain_core.schema.output import ChatGenerationChunk, GenerationChunk
 
 
 class LogEntry(TypedDict):
