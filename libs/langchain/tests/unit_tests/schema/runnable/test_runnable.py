@@ -704,26 +704,27 @@ def test_lambda_schemas() -> None:
             "byebye": input["yo"],
         }
 
-    assert RunnableLambda(
-        aget_values_typed
-    ).input_schema.schema() == {  # type: ignore[arg-type]
-        "title": "RunnableLambdaInput",
-        "$ref": "#/definitions/InputType",
-        "definitions": {
-            "InputType": {
-                "properties": {
-                    "variable_name": {
-                        "title": "Variable " "Name",
-                        "type": "string",
+    assert (
+        RunnableLambda(aget_values_typed).input_schema.schema()
+        == {  # type: ignore[arg-type]
+            "title": "RunnableLambdaInput",
+            "$ref": "#/definitions/InputType",
+            "definitions": {
+                "InputType": {
+                    "properties": {
+                        "variable_name": {
+                            "title": "Variable " "Name",
+                            "type": "string",
+                        },
+                        "yo": {"title": "Yo", "type": "integer"},
                     },
-                    "yo": {"title": "Yo", "type": "integer"},
-                },
-                "required": ["variable_name", "yo"],
-                "title": "InputType",
-                "type": "object",
-            }
-        },
-    }
+                    "required": ["variable_name", "yo"],
+                    "title": "InputType",
+                    "type": "object",
+                }
+            },
+        }
+    )
 
     assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
         "title": "RunnableLambdaOutput",
@@ -2275,8 +2276,6 @@ async def test_stream_log_retriever() -> None:
             "value": "2023-01-01T00:00:00.000",
         },
     )
-
-   
 
     middle_steps = stream_log[2:6]
     lambda_steps = [i for i in middle_steps if i in [lambda_start, lambda_end]]
