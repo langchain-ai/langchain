@@ -45,7 +45,9 @@ class Pinecone(VectorStore):
         embedding: Union[Embeddings, Callable],
         text_key: str,
         namespace: Optional[str] = None,
-        distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE_SIMILARITY,
+        distance_strategy: Optional[
+            DistanceStrategy
+        ] = DistanceStrategy.COSINE_SIMILARITY,
     ):
         """Initialize with Pinecone client."""
         try:

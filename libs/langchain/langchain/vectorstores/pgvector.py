@@ -35,7 +35,7 @@ from langchain_core.vectorstores import VectorStore
 
 from langchain.docstore.document import Document
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.utils import maximal_marginal_relevance, DistanceStrategy
+from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from langchain.vectorstores._pgvector_data_models import CollectionStore
