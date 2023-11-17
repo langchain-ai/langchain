@@ -29,6 +29,7 @@ from langchain.agents.agent_toolkits.powerbi.base import create_pbi_agent
 from langchain.agents.agent_toolkits.powerbi.chat_base import create_pbi_chat_agent
 from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
 from langchain.agents.agent_toolkits.python.base import create_python_agent
+from langchain.agents.agent_toolkits.slack.toolkit import SlackToolkit
 from langchain.agents.agent_toolkits.spark.base import create_spark_dataframe_agent
 from langchain.agents.agent_toolkits.spark_sql.base import create_spark_sql_agent
 from langchain.agents.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
@@ -60,6 +61,7 @@ __all__ = [
     "OpenAPIToolkit",
     "PlayWrightBrowserToolkit",
     "PowerBIToolkit",
+    "SlackToolkit",
     "SQLDatabaseToolkit",
     "SparkSQLToolkit",
     "VectorStoreInfo",
