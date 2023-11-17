@@ -20,6 +20,6 @@ class SlackBaseTool(BaseTool):
 
     def _run(
         self, *args, run_manager: Optional[CallbackManagerForToolRun] = None, **kwargs
-    ):
+    ) -> Any:
         # Call the parent class's _run method
         super()._run(*args, **kwargs)

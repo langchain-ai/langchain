@@ -26,7 +26,7 @@ class SlackGetChannelIdNameDict(SlackBaseTool):
         logging.getLogger(__name__)
 
         result = self.client.conversations_list()
-        channelId_Name = {}
+        channelId_Name: Dict[str,str] = {}
         self.save_conversations(result["channels"], channelId_Name)
 
         json.dumps(channelId_Name)
@@ -41,7 +41,7 @@ class SlackGetChannelIdNameDict(SlackBaseTool):
     # channelId_Name = {}
 
     @classmethod
-    def save_conversations(self, conversations, channelId_Name):
+    def save_conversations(self, conversations, channelId_Name)->None:
         conversation_id = ""
         for conversation in conversations:
             conversation_id = conversation["id"]
