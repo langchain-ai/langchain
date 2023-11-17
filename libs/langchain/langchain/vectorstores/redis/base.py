@@ -60,9 +60,9 @@ def check_index_exists(client: RedisType, index_name: str) -> bool:
     try:
         client.ft(index_name).info()
     except:  # noqa: E722
-        logger.info("Index does not exist")
+        logger.debug("Index does not exist")
         return False
-    logger.info("Index already exists")
+    logger.debug("Index already exists")
     return True
 
 
@@ -404,6 +404,7 @@ class Redis(VectorStore):
                 index_schema = generated_schema
 
         # Create instance
+        # init the class -- if Redis is unavailable, will throw exception
         instance = cls(
             redis_url,
             index_name,
@@ -543,9 +544,8 @@ class Redis(VectorStore):
         if "redis_url" in kwargs:
             kwargs.pop("redis_url")
 
-        print("kwargs", kwargs, flush=True)
-        print("key prefix", key_prefix, flush=True)
-
+        # Create instance
+        # init the class -- if Redis is unavailable, will throw exception
         instance = cls(
             redis_url,
             index_name,
@@ -555,7 +555,10 @@ class Redis(VectorStore):
             **kwargs,
         )
 
+        # Check for existence of the declared index
         if not check_index_exists(instance.client, index_name):
+            # Will only raise if the running Redis server does not
+            # have a record of this particular index
             raise ValueError(
                 f"Redis failed to connect: Index {index_name} does not exist."
             )
