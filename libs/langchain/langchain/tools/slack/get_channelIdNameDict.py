@@ -22,7 +22,7 @@ class SlackGetChannelIdNameDict(SlackBaseTool):
         self,
         # channelid_name: dict,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> dict:
+    ) -> str:
         logging.getLogger(__name__)
 
         result = self.client.conversations_list()
@@ -39,7 +39,8 @@ class SlackGetChannelIdNameDict(SlackBaseTool):
 
     # You probably want to use a database to store any conversations information ;)
     # channelId_Name = {}
-
+    
+    @classmethod
     def save_conversations(self, conversations, channelId_Name):
         conversation_id = ""
         for conversation in conversations:

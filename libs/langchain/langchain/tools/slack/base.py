@@ -16,7 +16,7 @@ class SlackBaseTool(BaseTool):
 
     client: WebClient = Field(default_factory=login)
     """The WebClient object."""
-
-    def _run(self, *args, run_manager=None, **kwargs):
+    
+    def _run(self, *args, run_manager: Optional[CallbackManagerForToolRun] = None, **kwargs):
         # Call the parent class's _run method
         super()._run(*args, **kwargs)
