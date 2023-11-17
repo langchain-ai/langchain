@@ -343,4 +343,3 @@ NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT = PromptTemplate(
     input_variables=["schema", "question", "extra_instructions"],
     template=NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE,
 )
-

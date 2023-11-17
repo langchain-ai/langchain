@@ -173,10 +173,11 @@ class NeptuneOpenCypherQAChain(Chain):
 
         generated_cypher = self.cypher_generation_chain.run(
             {
-                "question": question, 
-                "schema": self.graph.get_schema, 
-                "extra_instructions": self.extra_instructions or ""
-            }, callbacks=callbacks
+                "question": question,
+                "schema": self.graph.get_schema,
+                "extra_instructions": self.extra_instructions or "",
+            },
+            callbacks=callbacks,
         )
 
         # Extract Cypher code if it is wrapped in backticks
@@ -203,10 +204,7 @@ class NeptuneOpenCypherQAChain(Chain):
             intermediate_steps.append({"context": context})
 
             result = self.qa_chain(
-                {
-                    "question": question,
-                    "context": context
-                },
+                {"question": question, "context": context},
                 callbacks=callbacks,
             )
             final_result = result[self.qa_chain.output_key]
