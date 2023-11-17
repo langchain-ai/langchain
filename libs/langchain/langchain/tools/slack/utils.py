@@ -36,4 +36,3 @@ def login() -> WebClient:
             "Error: The SLACK_BOT_TOKEN or SLACK_USER_TOKEN \
             environment variable have not been set."
         )
-
