@@ -219,6 +219,23 @@ class WatsonxLLM(BaseLLM):
         """Return type of llm."""
         return "IBM watsonx.ai"
 
+    @staticmethod
+    def _extract_token_usage(response: Optional[List[str]] = None):
+        input_token_count = 0
+        generated_token_count = 0
+
+        def get_count_value(key: str) -> int:
+            return res.get("results")[0].get(key, 0) or 0
+
+        for res in response:
+            input_token_count += get_count_value("input_token_count")
+            generated_token_count += get_count_value("generated_token_count")
+
+        return {
+            "generated_token_count": generated_token_count,
+            "input_token_count": input_token_count,
+        }
+
     def _create_llm_result(self, response: Any) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
@@ -226,16 +243,11 @@ class WatsonxLLM(BaseLLM):
             finish_reason = res.get("results")[0].get("stop_reason")
             gen = Generation(
                 text=res.get("results")[0].get("generated_text"),
-                generation_info={
-                    "generated_token_count": res.get("results")[0].get(
-                        "generated_token_count"
-                    ),
-                    "input_token_count": res.get("results")[0].get("input_token_count"),
-                    "finish_reason": finish_reason,
-                },
+                generation_info={"finish_reason": finish_reason},
             )
             generations.append([gen])
-        llm_output = {"model_id": self.model_id}
+        final_token_usage = self._extract_token_usage(response)
+        llm_output = {"token_usage": final_token_usage, "model_id": self.model_id}
         return LLMResult(generations=generations, llm_output=llm_output)
 
     def _call(
@@ -284,7 +296,11 @@ class WatsonxLLM(BaseLLM):
         """
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
-            generation: Optional[GenerationChunk] = None
+            if len(prompts) > 1:
+                raise ValueError(
+                    f"WatsonxLLM currently only supports single prompt, got {prompts}"
+                )
+            generation = GenerationChunk(text="")
             stream_iter = self._stream(
                 prompts[0], stop=stop, run_manager=run_manager, **kwargs
             )
