@@ -220,32 +220,43 @@ class WatsonxLLM(BaseLLM):
         return "IBM watsonx.ai"
 
     @staticmethod
-    def _extract_token_usage(response: Optional[List[str]] = None):
+    def _extract_token_usage(
+        response: Optional[List[Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
+        if response is None:
+            return {"generated_token_count": 0, "input_token_count": 0}
+
         input_token_count = 0
         generated_token_count = 0
 
-        def get_count_value(key: str) -> int:
-            return res.get("results")[0].get(key, 0) or 0
+        def get_count_value(key: str, result: Dict[str, Any]) -> int:
+            return result.get(key, 0) or 0
 
         for res in response:
-            input_token_count += get_count_value("input_token_count")
-            generated_token_count += get_count_value("generated_token_count")
+            results = res.get("results")
+            if results:
+                input_token_count += get_count_value("input_token_count", results[0])
+                generated_token_count += get_count_value(
+                    "generated_token_count", results[0]
+                )
 
         return {
             "generated_token_count": generated_token_count,
             "input_token_count": input_token_count,
         }
 
-    def _create_llm_result(self, response: Any) -> LLMResult:
+    def _create_llm_result(self, response: List[dict]) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
         for res in response:
-            finish_reason = res.get("results")[0].get("stop_reason")
-            gen = Generation(
-                text=res.get("results")[0].get("generated_text"),
-                generation_info={"finish_reason": finish_reason},
-            )
-            generations.append([gen])
+            results = res.get("results")
+            if results:
+                finish_reason = results[0].get("stop_reason")
+                gen = Generation(
+                    text=results[0].get("generated_text"),
+                    generation_info={"finish_reason": finish_reason},
+                )
+                generations.append([gen])
         final_token_usage = self._extract_token_usage(response)
         llm_output = {"token_usage": final_token_usage, "model_id": self.model_id}
         return LLMResult(generations=generations, llm_output=llm_output)
