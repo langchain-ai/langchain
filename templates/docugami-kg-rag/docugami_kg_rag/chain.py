@@ -28,7 +28,9 @@ local_state = read_all_local_index_state()
 # add a retrieval tool for each indexed docset
 tools: List[BaseTool] = []
 for docset_id in local_state:
-    tools.append(get_retrieval_tool_for_docset(docset_id, local_state))
+    tool = get_retrieval_tool_for_docset(docset_id, local_state)
+    if tool:
+        tools.append(tool)
 
 
 prompt = ChatPromptTemplate.from_messages(
