@@ -1,0 +1,13 @@
+diff --git a/node_modules/@docusaurus/theme-common/lib/hooks/useWindowSize.js b/node_modules/@docusaurus/theme-common/lib/hooks/useWindowSize.js
+index 2c9dcb0..13eda59 100644
+--- a/node_modules/@docusaurus/theme-common/lib/hooks/useWindowSize.js
++++ b/node_modules/@docusaurus/theme-common/lib/hooks/useWindowSize.js
+@@ -11,7 +11,7 @@ const windowSizes = {
+     mobile: 'mobile',
+     ssr: 'ssr',
+ };
+-const DesktopThresholdWidth = 996;
++const DesktopThresholdWidth = 1280;
+ function getWindowSize() {
+     if (!ExecutionEnvironment.canUseDOM) {
+         return windowSizes.ssr;
