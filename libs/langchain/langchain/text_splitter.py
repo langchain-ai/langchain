@@ -391,16 +391,23 @@ class MarkdownHeaderTextSplitter:
         initial_metadata: Dict[str, str] = {}
 
         in_code_block = False
+        opening_fence = ""
 
         for line in lines:
             stripped_line = line.strip()
 
-            if stripped_line.startswith("```"):
-                # code block in one row
-                if stripped_line.count("```") >= 2:
+            if not in_code_block:
+                # Exclude inline code spans
+                if stripped_line.startswith("```") and stripped_line.count("```") == 1:
+                    in_code_block = True
+                    opening_fence = "```"
+                elif stripped_line.startswith("~~~"):
+                    in_code_block = True
+                    opening_fence = "~~~"
+            else:
+                if stripped_line.startswith(opening_fence):
                     in_code_block = False
-                else:
-                    in_code_block = not in_code_block
+                    opening_fence = ""
 
             if in_code_block:
                 current_content.append(stripped_line)
