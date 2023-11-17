@@ -7,16 +7,9 @@ from langchain.pydantic_v1 import BaseModel
 from langchain.tools.slack.base import SlackBaseTool
 
 
-class SlackGetChannelIdNameDictSchema(BaseModel):
-    description: str = (
-        "Use this tool to send a message with the provided message fields."
-    )
-
-
 class SlackGetChannelIdNameDict(SlackBaseTool):
     name: str = "get_channelid_name_dict"
     description: str = "Use this tool to get channelid-name dict."
-    args_schema: Type[SlackGetChannelIdNameDictSchema] = SlackGetChannelIdNameDictSchema
 
     def _run(
         self,
