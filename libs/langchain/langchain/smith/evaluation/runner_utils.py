@@ -450,7 +450,7 @@ def _determine_prediction_key(
     elif run_outputs and len(run_outputs) == 1:
         prediction_key = run_outputs[0]
     elif run_outputs is not None and len(run_outputs) > 1:
-        raise logger.warning(
+        logger.warning(
             f"Chain expects multiple output keys: {run_outputs},"
             f" Evaluation behavior may be undefined. Specify a prediction_key"
             " in the RunEvalConfig to avoid this warning."
@@ -989,7 +989,9 @@ def _collect_test_results(
             elif isinstance(callback, LangChainTracer):
                 run = callback.latest_run
                 execution_time = (
-                    (run.end_time - run.start_time).total_seconds() if run else None
+                    (run.end_time - run.start_time).total_seconds()
+                    if run and run.end_time
+                    else None
                 )
 
     results = {}
