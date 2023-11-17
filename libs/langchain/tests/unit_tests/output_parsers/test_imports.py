@@ -19,6 +19,9 @@ EXPECTED_ALL = [
     "RetryWithErrorOutputParser",
     "StructuredOutputParser",
     "XMLOutputParser",
+    "JsonOutputToolsParser",
+    "PydanticToolsParser",
+    "JsonOutputKeyToolsParser",
 ]
 
 

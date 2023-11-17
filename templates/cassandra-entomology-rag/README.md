@@ -1,7 +1,7 @@
 
 # cassandra-entomology-rag
 
-This template will perform RAG using Astra DB and Apache Cassandra®.
+This template will perform RAG using Apache Cassandra® or Astra DB through CQL (`Cassandra` vector store class)
 
 ## Environment Setup
 
@@ -52,16 +52,6 @@ export LANGCHAIN_TRACING_V2=true
 export LANGCHAIN_API_KEY=<your-api-key>
 export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
 ```
-
-To populate the vector store, ensure that you have set all the environment variables, then from this directory, execute the following just once:
-
-```shell
-poetry run bash -c "cd [...]/cassandra_entomology_rag; python setup.py"
-```
-
-The output will be something like `Done (29 lines inserted).`.
-
-Note: In a full application, the vector store might be populated in other ways. This step is to pre-populate the vector store with some rows for the demo RAG chains to work sensibly.
 
 If you are inside this directory, then you can spin up a LangServe instance directly by:
 

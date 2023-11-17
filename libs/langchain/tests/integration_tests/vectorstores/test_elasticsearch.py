@@ -254,6 +254,35 @@ class TestElasticsearch:
         )
         assert output == [Document(page_content="foo", metadata={"page": 1})]
 
+    def test_similarity_search_with_doc_builder(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        texts = ["foo", "foo", "foo"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            metadatas=metadatas,
+            **elasticsearch_connection,
+            index_name=index_name,
+        )
+
+        def custom_document_builder(_: Dict) -> Document:
+            return Document(
+                page_content="Mock content!",
+                metadata={
+                    "page_number": -1,
+                    "original_filename": "Mock filename!",
+                },
+            )
+
+        output = docsearch.similarity_search(
+            query="foo", k=1, doc_builder=custom_document_builder
+        )
+        assert output[0].page_content == "Mock content!"
+        assert output[0].metadata["page_number"] == -1
+        assert output[0].metadata["original_filename"] == "Mock filename!"
+
     def test_similarity_search_exact_search(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:

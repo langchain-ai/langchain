@@ -64,7 +64,7 @@ class BaseMessage(Serializable):
     Messages are the inputs and outputs of ChatModels.
     """
 
-    content: str
+    content: Union[str, List[Union[str, Dict]]]
     """The string contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
@@ -85,6 +85,33 @@ class BaseMessage(Serializable):
 
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
+
+
+def merge_content(
+    first_content: Union[str, List[Union[str, Dict]]],
+    second_content: Union[str, List[Union[str, Dict]]],
+) -> Union[str, List[Union[str, Dict]]]:
+    # If first chunk is a string
+    if isinstance(first_content, str):
+        # If the second chunk is also a string, then merge them naively
+        if isinstance(second_content, str):
+            return first_content + second_content
+        # If the second chunk is a list, add the first chunk to the start of the list
+        else:
+            return_list: List[Union[str, Dict]] = [first_content]
+            return return_list + second_content
+    # If both are lists, merge them naively
+    elif isinstance(second_content, List):
+        return first_content + second_content
+    # If the first content is a list, and the second content is a string
+    else:
+        # If the last element of the first content is a string
+        # Add the second content to the last element
+        if isinstance(first_content[-1], str):
+            return first_content[:-1] + [first_content[-1] + second_content]
+        else:
+            # Otherwise, add the second content as a new element of the list
+            return first_content + [second_content]
 
 
 class BaseMessageChunk(BaseMessage):
@@ -121,13 +148,13 @@ class BaseMessageChunk(BaseMessage):
             if isinstance(self, ChatMessageChunk):
                 return self.__class__(
                     role=self.role,
-                    content=self.content + other.content,
+                    content=merge_content(self.content, other.content),
                     additional_kwargs=self._merge_kwargs_dict(
                         self.additional_kwargs, other.additional_kwargs
                     ),
                 )
             return self.__class__(
-                content=self.content + other.content,
+                content=merge_content(self.content, other.content),
                 additional_kwargs=self._merge_kwargs_dict(
                     self.additional_kwargs, other.additional_kwargs
                 ),
@@ -194,7 +221,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
             return self.__class__(
                 example=self.example,
-                content=self.content + other.content,
+                content=merge_content(self.content, other.content),
                 additional_kwargs=self._merge_kwargs_dict(
                     self.additional_kwargs, other.additional_kwargs
                 ),
@@ -252,7 +279,45 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
 
             return self.__class__(
                 name=self.name,
-                content=self.content + other.content,
+                content=merge_content(self.content, other.content),
+                additional_kwargs=self._merge_kwargs_dict(
+                    self.additional_kwargs, other.additional_kwargs
+                ),
+            )
+
+        return super().__add__(other)
+
+
+class ToolMessage(BaseMessage):
+    """A Message for passing the result of executing a tool back to a model."""
+
+    tool_call_id: str
+    """Tool call that this message is responding to."""
+
+    type: Literal["tool"] = "tool"
+
+
+ToolMessage.update_forward_refs()
+
+
+class ToolMessageChunk(ToolMessage, BaseMessageChunk):
+    """A Tool Message chunk."""
+
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["ToolMessageChunk"] = "ToolMessageChunk"  # type: ignore[assignment]
+
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+        if isinstance(other, ToolMessageChunk):
+            if self.tool_call_id != other.tool_call_id:
+                raise ValueError(
+                    "Cannot concatenate ToolMessageChunks with different names."
+                )
+
+            return self.__class__(
+                tool_call_id=self.tool_call_id,
+                content=merge_content(self.content, other.content),
                 additional_kwargs=self._merge_kwargs_dict(
                     self.additional_kwargs, other.additional_kwargs
                 ),
@@ -290,7 +355,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
 
             return self.__class__(
                 role=self.role,
-                content=self.content + other.content,
+                content=merge_content(self.content, other.content),
                 additional_kwargs=self._merge_kwargs_dict(
                     self.additional_kwargs, other.additional_kwargs
                 ),
@@ -299,7 +364,9 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
         return super().__add__(other)
 
 
-AnyMessage = Union[AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage]
+AnyMessage = Union[
+    AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage, ToolMessage
+]
 
 
 def _message_to_dict(message: BaseMessage) -> dict:
@@ -330,6 +397,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return ChatMessage(**message["data"])
     elif _type == "function":
         return FunctionMessage(**message["data"])
+    elif _type == "tool":
+        return ToolMessage(**message["data"])
     else:
         raise ValueError(f"Got unexpected message type: {_type}")
 
