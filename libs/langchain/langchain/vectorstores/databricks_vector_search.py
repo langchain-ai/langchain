@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
@@ -145,6 +146,16 @@ class DatabricksVectorSearch(VectorStore):
             self.columns.append(self.primary_key)
         if self.text_column and self.text_column not in self.columns:
             self.columns.append(self.text_column)
+
+        # Validate specified columns are in the index
+        if self._is_direct_access_index():
+            index_schema = self._index_schema()
+            if index_schema:
+                for col in self.columns:
+                    if col not in index_schema:
+                        raise ValueError(
+                            f"column '{col}' is not in the index's schema."
+                        )
 
         # embedding model
         if not self._is_databricks_managed_embeddings():
@@ -366,6 +377,15 @@ class DatabricksVectorSearch(VectorStore):
             doc = Document(page_content=text_content, metadata=metadata)
             docs_with_score.append((doc, score))
         return docs_with_score
+
+    def _index_schema(self) -> Optional[dict]:
+        """Return the index schema as a dictionary.
+        Return None if no schema found.
+        """
+        if self._is_direct_access_index():
+            schema_json = self._direct_access_index_spec().get("schema_json")
+            if schema_json is not None:
+                return json.loads(schema_json)
 
     def _embedding_vector_column_name(self) -> Optional[str]:
         """Return the name of the embedding vector column.
