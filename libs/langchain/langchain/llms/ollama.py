@@ -95,11 +95,15 @@ class _OllamaCommon(BaseLanguageModel):
     template: Optional[str] = None
     """full prompt or prompt template (overrides what is defined in the Modelfile)"""
 
+    format: Optional[str] = None
+    """Specify the format of the output (e.g., JSON)"""
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
         return {
             "model": self.model,
+            "format": self.format,
             "options": {
                 "mirostat": self.mirostat,
                 "mirostat_eta": self.mirostat_eta,
@@ -122,7 +126,7 @@ class _OllamaCommon(BaseLanguageModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
+        return {**{"model": self.model,"format": self.format}, **self._default_params}
 
     def _create_stream(
         self,
