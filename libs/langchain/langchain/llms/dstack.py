@@ -1,50 +1,70 @@
 import copy
-from typing import Optional, List, Any, Dict, cast
+import logging
+from typing import Any, Dict, List, Optional, cast
 
 import requests
 
-from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.utils import convert_to_secret_str, get_from_dict_or_env
+
+logger = logging.getLogger(__name__)
 
 
 class Dstack(LLM):
     """
     dstack gateway API
 
-    To use, provider credentials in environment variables: `DSTACK_SERVER_URL`, `DSTACK_TOKEN`, `DSTACK_PROJECT`
+    To use, provide credentials in environment variables:
+    `DSTACK_API_BASE_URL`, `DSTACK_API_TOKEN`, `DSTACK_PROJECT`
 
     TODO example
     """
 
     run_name: str
     """dstack run_name to connect to"""
-    dstack_server_url: Optional[str] = None
+    api_base_url: str
     """dstack server url"""
-    dstack_token: Optional[SecretStr] = None
-    """dstack token"""
-    dstack_project: Optional[str] = None
+    api_token: SecretStr
+    """dstack server token"""
+    project: str
     """dstack project"""
-    dstack_service_url: Optional[str] = None
+    service_url: str
     """dstack service url"""
 
     parameters: Dict[str, Any] = Field(default_factory=dict)
     """TGI /generate parameters"""
 
-    @root_validator()
+    tokenizer: Any = None
+
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Load credentials from environment variables."""
 
-        values["dstack_server_url"] = get_from_dict_or_env(values, "dstack_server_url", "DSTACK_SERVER_URL")
-        values["dstack_token"] = convert_to_secret_str(get_from_dict_or_env(values, "dstack_token", "DSTACK_TOKEN"))
-        values["dstack_project"] = get_from_dict_or_env(values, "dstack_project", "DSTACK_PROJECT")
+        if values.get("service_url") is None:
+            values["api_base_url"] = get_from_dict_or_env(
+                values, "api_base_url", "DSTACK_API_BASE_URL"
+            )
+            values["api_token"] = convert_to_secret_str(
+                get_from_dict_or_env(values, "api_token", "DSTACK_API_TOKEN")
+            )
+            values["project"] = get_from_dict_or_env(
+                values, "project", "DSTACK_PROJECT"
+            )
 
-        if values["dstack_service_url"] is None:
             try:
-                run = _dstack_get_run(values["dstack_server_url"], values["dstack_token"], values["dstack_project"], values["run_name"])
-            except requests.RequestException as e:
-                raise ValueError("Failed to fetch a run from the dstack server, please check your credentials")
+                run = _dstack_get_run(
+                    values["api_base_url"],
+                    values["api_token"],
+                    values["project"],
+                    values["run_name"],
+                )
+            except requests.RequestException:
+                raise ValueError(
+                    "Failed to fetch a run from the dstack server,"
+                    " please check your credentials"
+                )
 
             if len(run["jobs"]) > 1:
                 raise ValueError("Too many jobs")
@@ -56,21 +76,61 @@ class Dstack(LLM):
             if configuration_type == "service":
                 gateway = job["job_spec"]["gateway"]
                 schema = "https" if gateway["secure"] else "http"
-                values["dstack_service_url"] = f"{schema}://{gateway['hostname']}:{gateway['public_port']}"
+                values[
+                    "service_url"
+                ] = f"{schema}://{gateway['hostname']}:{gateway['public_port']}"
             else:
                 raise ValueError(f"The run type is not supported: {configuration_type}")
 
+        try:
+            from transformers import AutoTokenizer
+
+            info = _dstack_tgi_info(values["service_url"])
+            tokenizer = AutoTokenizer.from_pretrained(info["model_id"])
+            _ = tokenizer.apply_chat_template  # test if presented
+            values["tokenizer"] = tokenizer
+        except ImportError:
+            logger.warning(
+                "Transformers is not installed, you won't be able to use chat template"
+            )
+        except AttributeError:
+            logger.warning(
+                "Transformers is installed, but it's too old,"
+                " you won't be able to use chat template"
+            )
+        except requests.RequestException:
+            raise ValueError(
+                "Failed to fetch info from the service, check if the service is running"
+            )
+
         return values
 
-    def _call_parameters(self, stop: Optional[List[str]], **kwargs) -> Dict[str, Any]:
+    def _call_parameters(
+        self, stop: Optional[List[str]], **kwargs: Any
+    ) -> Dict[str, Any]:
         parameters = copy.deepcopy(self.parameters)
         parameters.update(kwargs)
-        parameters["stop_sequences"] = parameters.get("stop_sequences", []) + (stop or [])
+        parameters["stop_sequences"] = parameters.get("stop_sequences", []) + (
+            stop or []
+        )
         return parameters
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None,
-              run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any) -> str:
-        resp = _dstack_tgi_generate(self.dstack_service_url, self._call_parameters(stop, **kwargs), prompt)
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        if self.tokenizer is not None:
+            prompt = self.tokenizer.apply_chat_template(
+                [{"role": "user", "content": prompt}], tokenize=False
+            )
+            logger.debug("Prompt after chat templating: %s", prompt)
+
+        resp = _dstack_tgi_generate(
+            self.service_url, self._call_parameters(stop, **kwargs), prompt
+        )
         return resp["generated_text"]
 
     # TODO async support
@@ -83,17 +143,28 @@ class Dstack(LLM):
 def _dstack_get_run(server_url: str, token: str, project: str, run_name: str) -> Dict:
     resp = requests.post(
         f"{server_url.rstrip('/')}/api/project/{project}/runs/get",
-        headers={"Authorization": f"Bearer {cast(SecretStr, token).get_secret_value()}"},
-        json={"run_name": run_name}
+        headers={
+            "Authorization": f"Bearer {cast(SecretStr, token).get_secret_value()}"
+        },
+        json={"run_name": run_name},
     )
     resp.raise_for_status()
     return resp.json()
 
 
 def _dstack_tgi_generate(service_url: str, parameters: Dict, prompt: str) -> Dict:
-    resp = requests.post(f"{service_url.rstrip('/')}/generate", json={
-        "inputs": prompt,
-        "parameters": parameters,
-    })
+    resp = requests.post(
+        f"{service_url.rstrip('/')}/generate",
+        json={
+            "inputs": prompt,
+            "parameters": parameters,
+        },
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _dstack_tgi_info(service_url: str) -> Dict:
+    resp = requests.get(f"{service_url.rstrip('/')}/info")
     resp.raise_for_status()
     return resp.json()
