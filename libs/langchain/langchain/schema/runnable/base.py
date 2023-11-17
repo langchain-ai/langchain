@@ -2471,11 +2471,11 @@ class RunnableLambda(Runnable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Output:
-        if hasattr(self, "func"):
+        if hasattr(self, "afunc"):
             afunc = self.afunc
         else:
 
-            async def f(*args, **kwargs):
+            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
                 return await asyncio.get_running_loop().run_in_executor(
                     None, partial(self.func, **kwargs), *args
                 )
@@ -2544,10 +2544,11 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         """Invoke this runnable asynchronously."""
+        the_func = self.afunc if hasattr(self, "afunc") else self.func
         return await self._acall_with_config(
             self._ainvoke,
             input,
-            self._config(config, self.afunc),
+            self._config(config, the_func),
             **kwargs,
         )
 

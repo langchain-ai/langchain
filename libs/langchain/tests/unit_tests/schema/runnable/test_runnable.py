@@ -4402,3 +4402,22 @@ def test_with_config_callbacks() -> None:
     # ConfigError: field "callbacks" not yet prepared so type is still a ForwardRef,
     # you might need to call RunnableConfig.update_forward_refs().
     assert isinstance(result, RunnableBinding)
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_on_returned_runnable() -> None:
+    """Verify that a runnable returned by a sync runnable in the async path will
+    be runthroughaasync path (issue #13407)"""
+
+    def idchain_sync(__input: dict) -> bool:
+        return False
+
+    async def idchain_async(__input: dict) -> bool:
+        return True
+
+    idchain = RunnableLambda(func=idchain_sync, afunc=idchain_async)
+
+    def func(__input: dict) -> Runnable:
+        return idchain
+
+    assert await RunnableLambda(func).ainvoke({})
