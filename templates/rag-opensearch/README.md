@@ -1,10 +1,18 @@
 # rag-opensearch
 
-TODO: What does this package do
+This Template performs RAG using [OpenSearch](https://python.langchain.com/docs/integrations/vectorstores/opensearch).
 
 ## Environment Setup
 
-TODO: What environment variables need to be set (if any)
+Set the following environment variables. 
+
+- `OPENAI_API_KEY` -  To access OpenAI Embeddings and Models.
+- `OPENSEARCH_URL` - URL of the hosted OpenSearch Instance
+- `OPENSEARCH_USERNAME` - User name for the OpenSearch instance
+- `OPENSEARCH_PASSWORD` - Password for the OpenSearch instance
+- `OPENSEARCH_INDEX_NAME` - Name of the indexghfmngh m 
+
+Note: Consider using `OpenSearch >= 2.11.x`
 
 ## Usage
 

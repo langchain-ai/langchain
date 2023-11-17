@@ -1,14 +1,16 @@
 [tool.poetry]
 name = "rag-opensearch"
 version = "0.0.1"
-description = ""
-authors = []
+description = "RAG template for OpenSearch"
+authors = ["Kalyan Reddy <kalyan.ben10@live.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.313, <0.1"
 openai = "^0.28.1"
+opensearch-py = "^2.0.0"
+
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.4"
