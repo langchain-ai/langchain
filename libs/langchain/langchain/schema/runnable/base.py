@@ -32,12 +32,12 @@ from typing import (
 from typing_extensions import Literal, get_args
 
 if TYPE_CHECKING:
-    from langchain.callbacks.manager import (
+    from langchain.schema.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
-    from langchain.callbacks.tracers.log_stream import RunLog, RunLogPatch
-    from langchain.callbacks.tracers.root_listeners import Listener
+    from langchain.schema.callbacks.tracers.log_stream import RunLog, RunLogPatch
+    from langchain.schema.callbacks.tracers.root_listeners import Listener
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
