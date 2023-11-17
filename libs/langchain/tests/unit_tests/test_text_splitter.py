@@ -1092,7 +1092,9 @@ def test_md_header_text_splitter_fenced_code_block_interleaved(
 
     expected_output = [
         Document(
-            page_content=f"{fence}\nfoo\n# Not a header\n{other_fence}\n# Not a header\n{fence}",
+            page_content=(
+                f"{fence}\nfoo\n# Not a header\n{other_fence}\n# Not a header\n{fence}"
+            ),
             metadata={"Header 1": "This is a Header"},
         ),
     ]
