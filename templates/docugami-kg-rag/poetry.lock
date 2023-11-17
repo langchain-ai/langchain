@@ -1146,18 +1146,18 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 type = "git"
 url = "https://github.com/docugami/langchain.git"
 reference = "kgrag/docugami_loader"
-resolved_reference = "80f55ad329cb58ff75b435ab67bb7319b7aa6003"
+resolved_reference = "f86b4a9f372bab942d8b4bf0446a4bb833a523e9"
 subdirectory = "libs/langchain"
 
 [[package]]
 name = "langchain-cli"
-version = "0.0.17"
+version = "0.0.18"
 description = "CLI for interacting with LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain_cli-0.0.17-py3-none-any.whl", hash = "sha256:b6300ee19ccf8b63b79c1058a9500ca9a1bc65fe71512e6ddc9cc60b9f9d8c5f"},
-    {file = "langchain_cli-0.0.17.tar.gz", hash = "sha256:820055544a038e094b14be960627b4233f17f80272153d6a631bb524257586fe"},
+    {file = "langchain_cli-0.0.18-py3-none-any.whl", hash = "sha256:abda5dd3bddd4aa0dfaba9a1cc4304c301618a2baf02c138fa7574f40693830c"},
+    {file = "langchain_cli-0.0.18.tar.gz", hash = "sha256:386dc5fa3d58c555c2d6e8a4b68de9877d5da42db3067fe3e0a6b550b8bb3caf"},
 ]
 
 [package.dependencies]
