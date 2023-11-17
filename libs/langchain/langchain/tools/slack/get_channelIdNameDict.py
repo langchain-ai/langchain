@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Optional, Type, Dict
+from typing import Dict, Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel
