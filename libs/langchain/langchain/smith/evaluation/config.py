@@ -34,16 +34,6 @@ class EvalConfig(BaseModel):
     """
 
     evaluator_type: EvaluatorType
-    reference_key: Optional[str] = None
-    """The key in the dataset run to use as the reference string.
-    If not provided, we will attempt to infer automatically."""
-    prediction_key: Optional[str] = None
-    """The key from the traced run's outputs dictionary to use to
-    represent the prediction. If not provided, it will be inferred
-    automatically."""
-    input_key: Optional[str] = None
-    """The key from the traced run's inputs dictionary to use to represent the
-    input. If not provided, it will be inferred automatically."""
 
     def get_kwargs(self) -> Dict[str, Any]:
         """Get the keyword arguments for the load_evaluator call.
@@ -56,16 +46,31 @@ class EvalConfig(BaseModel):
         """
         kwargs = {}
         for field, val in self:
-            if field in {
-                "evaluator_type",
-                "reference_key",
-                "prediction_key",
-                "input_key",
-            }:
+            if field == "evaluator_type":
                 continue
             elif val is None:
                 continue
             kwargs[field] = val
+        return kwargs
+
+
+class SingleKeyEvalConfig(EvalConfig):
+    reference_key: Optional[str] = None
+    """The key in the dataset run to use as the reference string.
+    If not provided, we will attempt to infer automatically."""
+    prediction_key: Optional[str] = None
+    """The key from the traced run's outputs dictionary to use to
+    represent the prediction. If not provided, it will be inferred
+    automatically."""
+    input_key: Optional[str] = None
+    """The key from the traced run's inputs dictionary to use to represent the
+    input. If not provided, it will be inferred automatically."""
+
+    def get_kwargs(self) -> Dict[str, Any]:
+        kwargs = super().get_kwargs()
+        # Filer out the keys that are not needed for the evaluator.
+        for key in ["reference_key", "prediction_key", "input_key"]:
+            kwargs.pop(key, None)
         return kwargs
 
 
@@ -128,7 +133,7 @@ class RunEvalConfig(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    class Criteria(EvalConfig):
+    class Criteria(SingleKeyEvalConfig):
         """Configuration for a reference-free criteria evaluator.
 
         Parameters
@@ -149,7 +154,7 @@ class RunEvalConfig(BaseModel):
         ) -> None:
             super().__init__(criteria=criteria, **kwargs)
 
-    class LabeledCriteria(EvalConfig):
+    class LabeledCriteria(SingleKeyEvalConfig):
         """Configuration for a labeled (with references) criteria evaluator.
 
         Parameters
@@ -169,7 +174,7 @@ class RunEvalConfig(BaseModel):
         ) -> None:
             super().__init__(criteria=criteria, **kwargs)
 
-    class EmbeddingDistance(EvalConfig):
+    class EmbeddingDistance(SingleKeyEvalConfig):
         """Configuration for an embedding distance evaluator.
 
         Parameters
@@ -189,7 +194,7 @@ class RunEvalConfig(BaseModel):
         class Config:
             arbitrary_types_allowed = True
 
-    class StringDistance(EvalConfig):
+    class StringDistance(SingleKeyEvalConfig):
         """Configuration for a string distance evaluator.
 
         Parameters
@@ -211,7 +216,7 @@ class RunEvalConfig(BaseModel):
         """Whether to normalize the distance to between 0 and 1.
         Applies only to the Levenshtein and Damerau-Levenshtein distances."""
 
-    class QA(EvalConfig):
+    class QA(SingleKeyEvalConfig):
         """Configuration for a QA evaluator.
 
         Parameters
@@ -226,7 +231,7 @@ class RunEvalConfig(BaseModel):
         llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
-    class ContextQA(EvalConfig):
+    class ContextQA(SingleKeyEvalConfig):
         """Configuration for a context-based QA evaluator.
 
         Parameters
@@ -242,7 +247,7 @@ class RunEvalConfig(BaseModel):
         llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
-    class CoTQA(EvalConfig):
+    class CoTQA(SingleKeyEvalConfig):
         """Configuration for a context-based QA evaluator.
 
         Parameters
@@ -258,7 +263,7 @@ class RunEvalConfig(BaseModel):
         llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
-    class JsonValidity(EvalConfig):
+    class JsonValidity(SingleKeyEvalConfig):
         """Configuration for a json validity evaluator.
 
         Parameters
@@ -276,7 +281,7 @@ class RunEvalConfig(BaseModel):
 
         evaluator_type: EvaluatorType = EvaluatorType.JSON_EQUALITY
 
-    class ExactMatch(EvalConfig):
+    class ExactMatch(SingleKeyEvalConfig):
         """Configuration for an exact match string evaluator.
 
         Parameters
@@ -294,7 +299,7 @@ class RunEvalConfig(BaseModel):
         ignore_punctuation: bool = False
         ignore_numbers: bool = False
 
-    class RegexMatch(EvalConfig):
+    class RegexMatch(SingleKeyEvalConfig):
         """Configuration for a regex match string evaluator.
 
         Parameters
@@ -306,7 +311,7 @@ class RunEvalConfig(BaseModel):
         evaluator_type: EvaluatorType = EvaluatorType.REGEX_MATCH
         flags: int = 0
 
-    class ScoreString(EvalConfig):
+    class ScoreString(SingleKeyEvalConfig):
         """Configuration for a score string evaluator.
         This is like the criteria evaluator but it is configured by
         default to return a score on the scale from 1-10.
