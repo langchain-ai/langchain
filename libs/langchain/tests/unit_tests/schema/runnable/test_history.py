@@ -1,5 +1,4 @@
-import datetime
-from typing import Callable, Optional, Sequence
+from typing import Any, Callable, Sequence
 
 from langchain.memory import ChatMessageHistory
 from langchain.pydantic_v1 import BaseModel
@@ -7,13 +6,10 @@ from langchain.schema import AIMessage, BaseMessage, HumanMessage
 from langchain.schema.runnable import RunnableConfig, RunnableLambda
 
 
-def _get_get_session_history() -> Callable:
+def _get_get_session_history() -> Callable[..., ChatMessageHistory]:
     chat_history_store = {}
 
-    def get_session_history(
-        thread_id: str, *, user_id: Optional[str] = None
-    ) -> ChatMessageHistory:
-        session_id = thread_id if user_id is None else f"{user_id}:{thread_id}"
+    def get_session_history(session_id: str, **kwargs: Any) -> ChatMessageHistory:
         if session_id not in chat_history_store:
             chat_history_store[session_id] = ChatMessageHistory()
         return chat_history_store[session_id]
@@ -28,7 +24,7 @@ def test_input_messages() -> None:
     )
     get_session_history = _get_get_session_history()
     with_history = runnable.with_message_history(get_session_history)
-    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
+    config: RunnableConfig = {"configurable": {"session_id": "1"}}
     output = with_history.invoke([HumanMessage(content="hello")], config)
     assert output == "you said: hello"
     output = with_history.invoke([HumanMessage(content="good bye")], config)
@@ -46,7 +42,7 @@ def test_input_dict() -> None:
     with_history = runnable.with_message_history(
         get_session_history, input_messages_key="messages"
     )
-    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
+    config: RunnableConfig = {"configurable": {"session_id": "2"}}
     output = with_history.invoke({"messages": [HumanMessage(content="hello")]}, config)
     assert output == "you said: hello"
     output = with_history.invoke(
@@ -67,7 +63,7 @@ def test_input_dict_with_history_key() -> None:
     with_history = runnable.with_message_history(
         get_session_history, input_messages_key="input", history_messages_key="history"
     )
-    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
+    config: RunnableConfig = {"configurable": {"session_id": "3"}}
     output = with_history.invoke({"input": "hello"}, config)
     assert output == "you said: hello"
     output = with_history.invoke({"input": "good bye"}, config)
@@ -92,7 +88,7 @@ def test_output_message() -> None:
     with_history = runnable.with_message_history(
         get_session_history, input_messages_key="input", history_messages_key="history"
     )
-    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
+    config: RunnableConfig = {"configurable": {"session_id": "4"}}
     output = with_history.invoke({"input": "hello"}, config)
     assert output == AIMessage(content="you said: hello")
     output = with_history.invoke({"input": "good bye"}, config)
@@ -119,7 +115,7 @@ def test_output_messages() -> None:
     with_history = runnable.with_message_history(
         get_session_history, input_messages_key="input", history_messages_key="history"
     )
-    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
+    config: RunnableConfig = {"configurable": {"session_id": "5"}}
     output = with_history.invoke({"input": "hello"}, config)
     assert output == [AIMessage(content="you said: hello")]
     output = with_history.invoke({"input": "good bye"}, config)
@@ -151,7 +147,7 @@ def test_output_dict() -> None:
         history_messages_key="history",
         output_messages_key="output",
     )
-    config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
+    config: RunnableConfig = {"configurable": {"session_id": "6"}}
     output = with_history.invoke({"input": "hello"}, config)
     assert output == {"output": [AIMessage(content="you said: hello")]}
     output = with_history.invoke({"input": "good bye"}, config)

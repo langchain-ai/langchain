@@ -4,14 +4,13 @@ import asyncio
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Optional,
-    Protocol,
     Sequence,
     Type,
     Union,
-    runtime_checkable,
 )
 
 from langchain.load import load
@@ -30,14 +29,7 @@ if TYPE_CHECKING:
     from langchain.schema.runnable.config import RunnableConfig
 
 MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
-
-
-@runtime_checkable
-class GetSessionHistoryCallable(Protocol):
-    def __call__(
-        self, thread_id: str, *, user_id: Optional[str] = None
-    ) -> BaseChatMessageHistory:
-        ...
+GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
 class RunnableWithMessageHistory(RunnableBindingBase):
@@ -46,11 +38,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     Base runnable must have inputs and outputs that can be converted to a list of
         BaseMessages.
 
-    RunnableWithMessageHistory must always be called with a config that contains thread_id, e.g.:
-        ``{"configurable": {"thread_id": "<THREAD_ID>"}}``
-
-        Can optionally include user_id, e.g.:
-        ``{"configurable": {"thread_id": "<THREAD_ID>", "user_id": "<USER_ID>"}}``.
+    RunnableWithMessageHistory must always be called with a config that contains session_id, e.g.:
+        ``{"configurable": {"session_id": "<SESSION_ID>"}}``
 
     Example (dict input):
         .. code-block:: python
@@ -71,29 +60,21 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             chain = prompt | ChatAnthropic(model="claude-2")
 
-            def get_session_history(
-                thread_id: str,
-                *,
-                user_id: Optional[str]=None
-            ) -> RedisChatMessageHistory:
-                session_id = thread_id if user_id is None else f"{user_id}:{thread_id}"
-                return RedisChatMessageHistory(session_id)
-
             chain_with_history = RunnableWithMessageHistory(
                 chain,
-                get_session_history,
+                RedisChatMessageHistory,
                 input_messages_key="question",
                 history_messages_key="history",
             )
 
             chain_with_history.invoke(
                 {"ability": "math", "question": "What does cosine mean?"},
-                config={"configurable": {"thread_id": "foo"}}
+                config={"configurable": {"session_id": "foo"}}
             )
             # -> "Cosine is ..."
             chain_with_history.invoke(
                 {"ability": "math", "question": "What's its inverse"},
-                config={"configurable": {"thread_id": "foo"}}
+                config={"configurable": {"session_id": "foo"}}
             )
             # -> "The inverse of cosine is called arccosine ..."
 
@@ -135,13 +116,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 - A dict with a key for a BaseMessage or sequence of BaseMessages
 
             get_session_history: Function that returns a new BaseChatMessageHistory
-                given a thread id and optionally a user id. Should take a single
-                positional argument `thread_id` which is a string and a named argument
+                given a session id. Should take a single
+                positional argument `session_id` which is a string and a named argument
                 `user_id` which can be a string or None. e.g.:
 
                 ```python
                 def get_session_history(
-                    thread_id: str,
+                    session_id: str,
                     *,
                     user_id: Optional[str]=None
                 ) -> BaseChatMessageHistory:
@@ -183,17 +164,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             super().config_specs
             + [
                 ConfigurableFieldSpec(
-                    id="user_id",
+                    id="session_id",
                     annotation=str,
-                    name="User ID",
-                    description="Unique identifier for a user.",
-                    default=None,
-                ),
-                ConfigurableFieldSpec(
-                    id="thread_id",
-                    annotation=str,
-                    name="Thread ID",
-                    description="Unique identifier for a thread.",
+                    name="Session ID",
+                    description="Unique identifier for a session.",
                     default="",
                 ),
             ]
@@ -207,8 +181,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             from langchain.schema.messages import BaseMessage
 
             fields: Dict = {}
-            if self.input_messages_key:
-                fields[self.input_messages_key] = (str, ...)
+            if self.input_messages_key and self.history_messages_key:
+                fields[self.input_messages_key] = (
+                    Union[str, BaseMessage, Sequence[BaseMessage]],
+                    ...,
+                )
+            elif self.input_messages_key:
+                fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
             else:
                 fields["__root__"] = (Sequence[BaseMessage], ...)
             if self.history_messages_key:
@@ -294,19 +273,16 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
         config = super()._merge_configs(*configs)
-        # extract thread_id
-        if "thread_id" not in config.get("configurable", {}):
+        # extract session_id
+        if "session_id" not in config.get("configurable", {}):
             example_input = {self.input_messages_key: "foo"}
-            example_config = {"configurable": {"thread_id": "123"}}
+            example_config = {"configurable": {"session_id": "123"}}
             raise ValueError(
-                "thread_id is required."
+                "session_id_id is required."
                 " Pass it in as part of the config argument to .invoke() or .stream()"
                 f"\neg. chain.invoke({example_input}, {example_config})"
             )
         # attach message_history
-        thread_id = config["configurable"]["thread_id"]
-        user_id = config["configurable"].get("user_id")
-        config["configurable"]["message_history"] = self.get_session_history(
-            thread_id, user_id=user_id
-        )
+        session_id = config["configurable"]["session_id"]
+        config["configurable"]["message_history"] = self.get_session_history(session_id)
         return config
