@@ -42,7 +42,6 @@ if TYPE_CHECKING:
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
 
-
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import BaseModel, Field, create_model
@@ -298,7 +297,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         """List configurable fields for this runnable."""
         return []
 
@@ -1357,7 +1356,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return self.last.get_output_schema(config)
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec for step in self.steps for spec in step.config_specs
         )
@@ -1885,7 +1884,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         )
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec for step in self.steps.values() for spec in step.config_specs
         )
@@ -2591,7 +2590,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         )
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
     @classmethod
@@ -2763,7 +2762,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         return self.bound.get_output_schema(merge_configs(self.config, config))
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
     @classmethod

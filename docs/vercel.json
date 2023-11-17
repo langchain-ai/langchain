@@ -501,6 +501,10 @@
       "destination": "/docs/integrations/vectorstores/astradb"
     },
     {
+      "source": "/docs/integrations/vectorstores/async_faiss",
+      "destination": "/docs/integrations/vectorstores/faiss_async"
+    },
+    {
       "source": "/docs/integrations/cerebriumai",
       "destination": "/docs/integrations/providers/cerebriumai"
     },
