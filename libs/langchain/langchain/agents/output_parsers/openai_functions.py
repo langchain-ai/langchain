@@ -44,7 +44,12 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         if function_call:
             function_name = function_call["name"]
             try:
-                _tool_input = json.loads(function_call["arguments"])
+                if len(function_call["arguments"].strip()) == 0:
+                    # OpenAI returns an empty string for functions containing no args
+                    _tool_input = {}
+                else:
+                    # otherwise it returns a json object
+                    _tool_input = json.loads(function_call["arguments"])
             except JSONDecodeError:
                 raise OutputParserException(
                     f"Could not parse tool input: {function_call} because "
