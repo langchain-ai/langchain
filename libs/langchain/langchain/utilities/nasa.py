@@ -18,7 +18,7 @@ class NasaAPIWrapper(BaseModel):
     def get_media(self, query: str) -> str:
         params = json.loads(query)
         #params needs to have a query q, and optionally a bunch of params
-        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/search?q=", params=params)
+        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/search?q=" + params['q'], params=params)
         data = response.json()
         return data
     
