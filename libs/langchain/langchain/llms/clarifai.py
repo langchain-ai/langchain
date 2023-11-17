@@ -7,13 +7,11 @@ from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
-from google.protobuf.json_format import MessageToDict
-
 
 logger = logging.getLogger(__name__)
 
 
-EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
+EXAMPLE_URL = "https://clarifai.com/openai/chat-completion/models/GPT-4"
 
 
 class Clarifai(LLM):
@@ -43,6 +41,8 @@ class Clarifai(LLM):
     """Clarifai application id to use."""
     user_id: Optional[str] = None
     """Clarifai user id to use."""
+    pat: Optional[str] = None
+    """Clarifai personal access token to use."""
     api_base: str = "https://api.clarifai.com"
 
     class Config:
@@ -73,7 +73,8 @@ class Clarifai(LLM):
         return values
 
     def _model_init(self):
-        """Verifies the parameter passed, Initializes and returns the clarifai model object."""
+        """Verifies the parameter passed,
+        Initializes and returns the clarifai model object."""
         try:
             from clarifai.client.model import Model
         except ImportError:

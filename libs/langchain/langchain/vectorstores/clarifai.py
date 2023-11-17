@@ -1,12 +1,15 @@
 from __future__ import annotations
+
 import logging
 import os
-import uuid
 import traceback
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Iterable, List, Optional, Tuple
-from google.protobuf.struct_pb2 import Struct
+
 import requests
+from google.protobuf.struct_pb2 import Struct
+
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
@@ -34,6 +37,7 @@ class Clarifai(VectorStore):
         user_id: Optional[str] = None,
         app_id: Optional[str] = None,
         number_of_docs: Optional[int] = None,
+        pat: Optional[str] = None,
     ) -> None:
         """Initialize with Clarifai client.
 
@@ -50,6 +54,8 @@ class Clarifai(VectorStore):
         """
         self._user_id = user_id or os.environ.get("CLARIFAI_USER_ID")
         self._app_id = app_id or os.environ.get("CLARIFAI_APP_ID")
+        if pat:
+            os.environ["CLARIFAI_PAT"] = pat
         self._pat = os.environ.get("CLARIFAI_PAT")
         if self._user_id is None or self._app_id is None or self._pat is None:
             raise ValueError(
@@ -127,7 +133,7 @@ class Clarifai(VectorStore):
                     for id, inp in enumerate(batch_texts)
                 ]
                 input_obj.upload_inputs(inputs=input_batch)
-                logger.debug(f"Input posted successfully.")
+                logger.debug("Input posted successfully.")
 
             except Exception as error:
                 logger.warning(f"Post inputs failed: {error}")
@@ -166,7 +172,7 @@ class Clarifai(VectorStore):
         if self._number_of_docs is not None:
             k = self._number_of_docs
 
-        search_obj = Search(user_id=self._user_id, app_id=self._app_id)
+        search_obj = Search(user_id=self._user_id, app_id=self._app_id, top_k=k)
         rank = [{"text_raw": query}]
         # Add filter by metadata if provided.
         if filters is not None:
@@ -176,7 +182,7 @@ class Clarifai(VectorStore):
             search_response = search_obj.query(ranks=rank)
 
         # Retrieve hits
-        hits = [data.hits[0] for data in search_response]
+        hits = [hit for data in search_response for hit in data.hits]
         executor = ThreadPoolExecutor(max_workers=10)
 
         def hit_to_document(hit: resources_pb2.Hit) -> Tuple[Document, float]:
@@ -227,6 +233,7 @@ class Clarifai(VectorStore):
         user_id: Optional[str] = None,
         app_id: Optional[str] = None,
         number_of_docs: Optional[int] = None,
+        pat: Optional[str] = None,
         **kwargs: Any,
     ) -> Clarifai:
         """Create a Clarifai vectorstore from a list of texts.
@@ -247,6 +254,7 @@ class Clarifai(VectorStore):
             user_id=user_id,
             app_id=app_id,
             number_of_docs=number_of_docs,
+            pat=pat,
         )
         clarifai_vector_db.add_texts(texts=texts, metadatas=metadatas)
         return clarifai_vector_db
@@ -259,6 +267,7 @@ class Clarifai(VectorStore):
         user_id: Optional[str] = None,
         app_id: Optional[str] = None,
         number_of_docs: Optional[int] = None,
+        pat: Optional[str] = None,
         **kwargs: Any,
     ) -> Clarifai:
         """Create a Clarifai vectorstore from a list of documents.
@@ -280,5 +289,6 @@ class Clarifai(VectorStore):
             app_id=app_id,
             texts=texts,
             number_of_docs=number_of_docs,
+            pat=pat,
             metadatas=metadatas,
         )
