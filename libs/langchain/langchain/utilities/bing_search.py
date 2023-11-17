@@ -3,7 +3,7 @@
 In order to set this up, follow instructions at:
 https://levelup.gitconnected.com/api-tutorial-how-to-use-bing-web-search-api-in-python-4165d5592a7e
 """
-from typing import Dict, List, Any
+from typing import Dict, List
 
 import requests
 
