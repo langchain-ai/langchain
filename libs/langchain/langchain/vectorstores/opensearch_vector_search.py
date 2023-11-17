@@ -208,10 +208,10 @@ def _approximate_search_query_with_boolean_filter(
         "size": k,
         "query": {
             "bool": {
-                "filter": boolean_filter,
                 subquery_clause: [
                     {"knn": {vector_field: {"vector": query_vector, "k": k}}}
                 ],
+                "filter": [boolean_filter],
             }
         },
     }
