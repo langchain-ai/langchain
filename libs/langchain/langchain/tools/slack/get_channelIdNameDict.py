@@ -32,7 +32,8 @@ class SlackGetChannelIdNameDict(SlackBaseTool):
         return json.dumps(result["channels"])
 
     @classmethod
-    def save_conversations(self, conversations, channelId_Name)->None:
+    def save_conversations(self, conversations, channelId_Name,
+    ) -> None:
         conversation_id = ""
         for conversation in conversations:
             conversation_id = conversation["id"]
