@@ -208,6 +208,20 @@ def test_init_fail_no_text_column(index_details: dict) -> None:
 
 
 @pytest.mark.requires("databricks.vector_search")
+@pytest.mark.parametrize("index_details", [DIRECT_ACCESS_INDEX])
+def test_init_fail_columns_not_in_schema(index_details: dict) -> None:
+    index = mock_index(index_details)
+    with pytest.raises(ValueError) as ex:
+        DatabricksVectorSearch(
+            index,
+            embedding=DEFAULT_EMBEDDING_MODEL,
+            text_column=DEFAULT_TEXT_COLUMN,
+            columns=["some_random_column"],
+        )
+    assert "column 'some_random_column' is not in the index's schema." in str(ex.value)
+
+
+@pytest.mark.requires("databricks.vector_search")
 @pytest.mark.parametrize(
     "index_details", [DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS, DIRECT_ACCESS_INDEX]
 )
@@ -271,16 +285,12 @@ def is_valid_uuid(val: str) -> bool:
 
 
 @pytest.mark.requires("databricks.vector_search")
-@pytest.mark.parametrize(
-    "text_column",
-    ["text", "text2"],
-)
-def test_add_texts(text_column: str) -> None:
+def test_add_texts() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = DatabricksVectorSearch(
         index,
         embedding=DEFAULT_EMBEDDING_MODEL,
-        text_column=text_column,
+        text_column=DEFAULT_TEXT_COLUMN,
     )
     ids = [idx for idx, i in enumerate(fake_texts)]
     vectors = DEFAULT_EMBEDDING_MODEL.embed_documents(fake_texts)
@@ -290,7 +300,7 @@ def test_add_texts(text_column: str) -> None:
         [
             {
                 DEFAULT_PRIMARY_KEY: id_,
-                text_column: text,
+                DEFAULT_TEXT_COLUMN: text,
                 DEFAULT_VECTOR_COLUMN: vector,
             }
             for text, vector, id_ in zip(fake_texts, vectors, ids)
