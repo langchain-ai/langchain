@@ -1276,7 +1276,7 @@ class Redis(VectorStore):
             return self.relevance_score_fn
 
         metric_map = {
-            "COSINE": self._cosine_relevance_score_fn,
+            "COSINE": self._cosine_distance_relevance_score_fn,
             "IP": self._max_inner_product_relevance_score_fn,
             "L2": self._euclidean_relevance_score_fn,
         }

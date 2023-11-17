@@ -329,7 +329,7 @@ class Bagel(VectorStore):
             distance = metadata[distance_key]
 
         if distance == "cosine":
-            return self._cosine_relevance_score_fn
+            return self._cosine_distance_relevance_score_fn
         elif distance == "l2":
             return self._euclidean_relevance_score_fn
         elif distance == "ip":

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import enum
 import logging
 import uuid
 from functools import partial

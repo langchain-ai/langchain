@@ -21,7 +21,12 @@ class SemaDB(VectorStore):
 
             from langchain.vectorstores import SemaDB
 
-            db = SemaDB('mycollection', 768, embeddings, DistanceStrategy.COSINE_DISTANCE)
+            db = SemaDB(
+                'mycollection',
+                768,
+                embeddings,
+                DistanceStrategy.COSINE_DISTANCE
+            )
 
     """
 
