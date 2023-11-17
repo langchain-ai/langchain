@@ -22,7 +22,9 @@ arxiv = ArxivRetriever(top_k_results=5).with_config(run_name="arxiv")
 sec = KayAiRetriever.create(
     dataset_id="company", data_types=["10-K"], num_contexts=5
 ).with_config(run_name="sec_filings")
-wiki = WikipediaRetriever(top_k_results=5).with_config(run_name="wiki")
+wiki = WikipediaRetriever(top_k_results=5, doc_content_chars_max=2000).with_config(
+    run_name="wiki"
+)
 
 embeddings = OpenAIEmbeddings()
 
@@ -31,21 +33,19 @@ def fuse_retrieved_docs(input):
     results_map = input["sources"]
     query = input["question"]
     embedded_query = embeddings.embed_query(query)
-    names, docs_2d = zip(*((name, docs) for name, docs in results_map.items()))
-    retrievals_per_source = len(docs_2d[0])
-    embedded_docs = [
-        embeddings.embed_documents([doc.page_content for doc in docs])
-        for docs in docs_2d
-    ]
+    names, docs = zip(
+        *((name, doc) for name, docs in results_map.items() for doc in docs)
+    )
+    embedded_docs = embeddings.embed_documents([doc.page_content for doc in docs])
     similarity = cosine_similarity(
         [embedded_query],
-        [doc for docs in embedded_docs for doc in docs],
+        embedded_docs,
     )
     most_similar = np.flip(np.argsort(similarity[0]))[:5]
     return [
         (
-            names[i // retrievals_per_source],
-            docs_2d[i // retrievals_per_source][i % retrievals_per_source],
+            names[i],
+            docs[i],
         )
         for i in most_similar
     ]
@@ -94,7 +94,7 @@ chain = (
             ).with_config(run_name="fuse_and_format")
         ).with_config(run_name="update_sources")
         | prompt
-        | ChatOpenAI(model="gpt-3.5-turbo")
+        | ChatOpenAI(model="gpt-3.5-turbo-1106")
         | StrOutputParser()
     )
     .with_config(run_name="QA with fused results")

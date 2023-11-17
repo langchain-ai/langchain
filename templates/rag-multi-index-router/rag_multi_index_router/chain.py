@@ -24,9 +24,11 @@ arxiv = ArxivRetriever(top_k_results=5).with_config(run_name="arxiv")
 sec = KayAiRetriever.create(
     dataset_id="company", data_types=["10-K"], num_contexts=5
 ).with_config(run_name="sec_filings")
-wiki = WikipediaRetriever(top_k_results=5).with_config(run_name="wiki")
+wiki = WikipediaRetriever(top_k_results=5, doc_content_chars_max=2000).with_config(
+    run_name="wiki"
+)
 
-llm = ChatOpenAI(model="gpt-3.5-turbo")
+llm = ChatOpenAI(model="gpt-3.5-turbo-1106")
 
 
 class Search(BaseModel):
