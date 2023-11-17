@@ -216,6 +216,9 @@ class DatabricksVectorSearch(VectorStore):
         """
         self._op_require_direct_access_index("add_texts")
         assert self.embeddings is not None, "embedding model is required."
+        # Wrap to list if input texts is a single string
+        if isinstance(texts, str):
+            texts = [texts]
         texts = list(texts)
         vectors = self.embeddings.embed_documents(texts)
         ids = ids or [str(uuid.uuid4()) for _ in texts]

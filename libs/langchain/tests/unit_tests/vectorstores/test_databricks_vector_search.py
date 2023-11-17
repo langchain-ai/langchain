@@ -311,6 +311,31 @@ def test_add_texts() -> None:
 
 
 @pytest.mark.requires("databricks.vector_search")
+def test_add_texts_handle_single_text() -> None:
+    index = mock_index(DIRECT_ACCESS_INDEX)
+    vectorsearch = DatabricksVectorSearch(
+        index,
+        embedding=DEFAULT_EMBEDDING_MODEL,
+        text_column=DEFAULT_TEXT_COLUMN,
+    )
+    vectors = DEFAULT_EMBEDDING_MODEL.embed_documents(fake_texts)
+
+    added_ids = vectorsearch.add_texts(fake_texts[0])
+    index.upsert.assert_called_once_with(
+        [
+            {
+                DEFAULT_PRIMARY_KEY: id_,
+                DEFAULT_TEXT_COLUMN: text,
+                DEFAULT_VECTOR_COLUMN: vector,
+            }
+            for text, vector, id_ in zip(fake_texts, vectors, added_ids)
+        ]
+    )
+    assert len(added_ids) == 1
+    assert is_valid_uuid(added_ids[0])
+
+
+@pytest.mark.requires("databricks.vector_search")
 def test_add_texts_with_default_id() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = default_databricks_vector_search(index)
