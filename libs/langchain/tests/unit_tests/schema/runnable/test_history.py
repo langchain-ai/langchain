@@ -1,5 +1,5 @@
 import datetime
-from typing import Callable, Sequence
+from typing import Callable, Optional, Sequence
 
 from langchain.memory import ChatMessageHistory
 from langchain.pydantic_v1 import BaseModel
@@ -10,7 +10,10 @@ from langchain.schema.runnable import RunnableConfig, RunnableLambda
 def _get_get_session_history() -> Callable:
     chat_history_store = {}
 
-    def get_session_history(session_id: str) -> ChatMessageHistory:
+    def get_session_history(
+        thread_id: str, *, user_id: Optional[str] = None
+    ) -> ChatMessageHistory:
+        session_id = thread_id if user_id is None else f"{user_id}:{thread_id}"
         if session_id not in chat_history_store:
             chat_history_store[session_id] = ChatMessageHistory()
         return chat_history_store[session_id]
