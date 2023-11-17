@@ -231,7 +231,16 @@ class DatabricksVectorSearch(VectorStore):
             for text, vector, id_, metadata in zip(texts, vectors, ids, metadatas)
         ]
 
-        self.index.upsert(updates)
+        upsert_resp = self.index.upsert(updates)
+        if upsert_resp.get("status") in ("PARTIAL_SUCCESS", "FAILURE"):
+            failed_ids = upsert_resp.get("result", dict()).get(
+                "failed_primary_keys", []
+            )
+            if upsert_resp.get("status") == "FAILURE":
+                logger.error(f"Failed to add texts to the index.")
+            else:
+                logger.warning(f"Some texts failed to be added to the index.")
+            return [id_ for id_ in ids if id_ not in failed_ids]
 
         return ids
 
