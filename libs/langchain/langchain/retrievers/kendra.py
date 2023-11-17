@@ -1,10 +1,20 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+)
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator, validator
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator, validator
 from langchain.schema import BaseRetriever
 
 
@@ -354,19 +364,13 @@ class AmazonKendraRetriever(BaseRetriever):
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
     user_context: Optional[Dict] = None
-    min_score_confidence: Optional[float] = None
+    min_score_confidence: Annotated[Optional[float], Field(ge=0.0, le=1.0)]
 
     @validator("top_k")
     def validate_top_k(cls, value: int) -> int:
         if value < 0:
             raise ValueError(f"top_k ({value}) cannot be negative.")
         return value
-
-    def validate_score_confidence(self) -> None:
-        if self.min_score_confidence and (
-            self.min_score_confidence > 1.0 or self.min_score_confidence < 0.0
-        ):
-            raise ValueError("min_score_confidence must lie between 0 and 1.")
 
     @root_validator(pre=True)
     def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -461,7 +465,6 @@ class AmazonKendraRetriever(BaseRetriever):
             docs = retriever.get_relevant_documents('This is my query')
 
         """
-        self.validate_score_confidence()
         result_items = self._kendra_query(query)
         top_k_docs = self._get_top_k_docs(result_items)
         return self._filter_by_score_confidence(top_k_docs)
