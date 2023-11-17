@@ -108,7 +108,6 @@ from langchain.tools.requests.tool import (
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
-from langchain.tools.slack.get_channelIdNameDict import SlackGetChannelIdNameDict
 from langchain.tools.slack.send_message import SlackSendMessage
 from langchain.tools.slack.utils import login
 from langchain.tools.sleep.tool import SleepTool
