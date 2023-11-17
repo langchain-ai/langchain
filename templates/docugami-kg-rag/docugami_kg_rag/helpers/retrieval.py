@@ -5,6 +5,7 @@ from langchain.agents.agent_toolkits import create_retriever_tool
 from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.schema import Document, StrOutputParser
+from langchain.schema.retriever import SearchType
 from langchain.tools.base import BaseTool
 from langchain.vectorstores.pinecone import Pinecone
 import pinecone
@@ -60,6 +61,7 @@ def get_retrieval_tool_for_docset(docset_id: str, local_state: Dict[str, LocalIn
         vectorstore=chunk_vectorstore,
         docstore=local_state[docset_id].parents_by_id,
         search_kwargs={"k": RETRIEVER_K},
+        search_type=SearchType.mmr,
     )
 
     return create_retriever_tool(
