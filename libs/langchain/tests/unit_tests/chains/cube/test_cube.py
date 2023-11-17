@@ -78,6 +78,20 @@ CUBES = [
     },
 ]
 
+
+def _get_format_instructions() -> str:
+    schema = Query.schema()
+
+    # Remove extraneous fields.
+    reduced_schema = schema
+    if "title" in reduced_schema:
+        del reduced_schema["title"]
+    if "type" in reduced_schema:
+        del reduced_schema["type"]
+
+    return json.dumps(reduced_schema)
+
+
 PROMPT = f"""Given an input question, first create a syntactically correct Cube query to run, then look at the results of the query and return the answer. Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most 5 results. You can order the results by a relevant column to return the most interesting examples in the database.
 Never query for all the columns from a specific model, only ask for a the few relevant columns given the question.
 Pay attention to use only the column names that you can see in the schema description. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
@@ -95,7 +109,7 @@ the object {{"foo": ["bar", "baz"]}} is a well-formatted instance of the schema.
 
 Here is the output schema:
 ```
-{{"properties": {{"measures": {{"title": "Measures", "description": "measure columns", "type": "array", "items": {{"type": "string"}}}}, "dimensions": {{"title": "Dimensions", "description": "dimension columns", "type": "array", "items": {{"type": "string"}}}}, "filters": {{"title": "Filters", "type": "array", "items": {{"$ref": "#/definitions/Filter"}}}}, "timeDimensions": {{"title": "Timedimensions", "type": "array", "items": {{"$ref": "#/definitions/TimeDimension"}}}}, "limit": {{"title": "Limit", "type": "integer"}}, "offset": {{"title": "Offset", "type": "integer"}}, "order": {{"description": "The keys are measures columns or dimensions columns to order by.", "type": "object", "additionalProperties": {{"$ref": "#/definitions/Order"}}}}}}, "definitions": {{"Operator": {{"title": "Operator", "description": "An enumeration.", "enum": ["equals", "notEquals", "contains", "notContains", "startsWith", "endsWith", "gt", "gte", "lt", "lte", "set", "notSet", "inDateRange", "notInDateRange", "beforeDate", "afterDate", "measureFilter"]}}, "Filter": {{"title": "Filter", "type": "object", "properties": {{"member": {{"title": "Member", "description": "dimension or measure column", "type": "string"}}, "operator": {{"$ref": "#/definitions/Operator"}}, "values": {{"title": "Values", "type": "array", "items": {{"type": "string"}}}}}}, "required": ["member", "operator", "values"]}}, "Granularity": {{"title": "Granularity", "description": "An enumeration.", "enum": ["second", "minute", "hour", "day", "week", "month", "quarter", "year"]}}, "TimeDimension": {{"title": "TimeDimension", "type": "object", "properties": {{"dimension": {{"title": "Dimension", "description": "dimension column", "type": "string"}}, "dateRange": {{"title": "Daterange", "description": "An array of dates with the following format YYYY-MM-DD or in YYYY-MM-DDTHH:mm:ss.SSS format.", "minItems": 2, "maxItems": 2, "type": "array", "items": {{"anyOf": [{{"type": "string", "format": "date-time"}}, {{"type": "string", "format": "date"}}]}}}}, "granularity": {{"description": "A granularity for a time dimension. If you pass null to the granularity, Cube will only perform filtering by a specified time dimension, without grouping.", "allOf": [{{"$ref": "#/definitions/Granularity"}}]}}}}, "required": ["dimension", "dateRange"]}}, "Order": {{"title": "Order", "description": "An enumeration.", "enum": ["asc", "desc"]}}}}}}
+{_get_format_instructions()}
 ```Only use the following meta-information for Cubes defined in the data model:
 ## Model: Orders
 
@@ -170,6 +184,7 @@ def test_create_cube_query_chain(mocked_responses: responses.RequestsMock) -> No
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
     )
+    print("666", PROMPT)
 
     chain = create_cube_query_chain(llm, cube)
 

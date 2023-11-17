@@ -12,7 +12,7 @@ from langchain.tools.cube.tool import (
     LoadCubeTool,
     MetaInformationCubeTool,
 )
-from langchain.utilities.cube import Cube
+from langchain.utilities.cube import Cube, Query
 
 CUBE_API_URL = "http://cube-api:4000"
 CUBE_API_TOKEN = "TOKEN"
@@ -156,6 +156,19 @@ def mocked_sql(mocked_responses: responses.RequestsMock) -> None:
     )
 
 
+def _get_format_instructions() -> str:
+    schema = Query.schema()
+
+    # Remove extraneous fields.
+    reduced_schema = schema
+    if "title" in reduced_schema:
+        del reduced_schema["title"]
+    if "type" in reduced_schema:
+        del reduced_schema["type"]
+
+    return json.dumps(reduced_schema).replace("{", "{{").replace("}", "}}")
+
+
 def test_load_cube_tool(mocked_responses: responses.RequestsMock) -> None:
     """Test the load cube tool."""
     mocked_mata(mocked_responses)
@@ -174,7 +187,7 @@ As an example, for the schema {{{{"properties": {{{{"foo": {{{{"title": "Foo", "
 the object {{{{"foo": ["bar", "baz"]}}}} is a well-formatted instance of the schema. The object {{{{"properties": {{{{"foo": ["bar", "baz"]}}}}}}}} is not well-formatted.
 Here is the input schema:
 ```
-{{{{"properties": {{{{"measures": {{{{"title": "Measures", "description": "measure columns", "type": "array", "items": {{{{"type": "string"}}}}}}}}, "dimensions": {{{{"title": "Dimensions", "description": "dimension columns", "type": "array", "items": {{{{"type": "string"}}}}}}}}, "filters": {{{{"title": "Filters", "type": "array", "items": {{{{"$ref": "#/definitions/Filter"}}}}}}}}, "timeDimensions": {{{{"title": "Timedimensions", "type": "array", "items": {{{{"$ref": "#/definitions/TimeDimension"}}}}}}}}, "limit": {{{{"title": "Limit", "type": "integer"}}}}, "offset": {{{{"title": "Offset", "type": "integer"}}}}, "order": {{{{"description": "The keys are measures columns or dimensions columns to order by.", "type": "object", "additionalProperties": {{{{"$ref": "#/definitions/Order"}}}}}}}}}}}}, "definitions": {{{{"Operator": {{{{"title": "Operator", "description": "An enumeration.", "enum": ["equals", "notEquals", "contains", "notContains", "startsWith", "endsWith", "gt", "gte", "lt", "lte", "set", "notSet", "inDateRange", "notInDateRange", "beforeDate", "afterDate", "measureFilter"]}}}}, "Filter": {{{{"title": "Filter", "type": "object", "properties": {{{{"member": {{{{"title": "Member", "description": "dimension or measure column", "type": "string"}}}}, "operator": {{{{"$ref": "#/definitions/Operator"}}}}, "values": {{{{"title": "Values", "type": "array", "items": {{{{"type": "string"}}}}}}}}}}}}, "required": ["member", "operator", "values"]}}}}, "Granularity": {{{{"title": "Granularity", "description": "An enumeration.", "enum": ["second", "minute", "hour", "day", "week", "month", "quarter", "year"]}}}}, "TimeDimension": {{{{"title": "TimeDimension", "type": "object", "properties": {{{{"dimension": {{{{"title": "Dimension", "description": "dimension column", "type": "string"}}}}, "dateRange": {{{{"title": "Daterange", "description": "An array of dates with the following format YYYY-MM-DD or in YYYY-MM-DDTHH:mm:ss.SSS format.", "minItems": 2, "maxItems": 2, "type": "array", "items": {{{{"anyOf": [{{{{"type": "string", "format": "date-time"}}}}, {{{{"type": "string", "format": "date"}}}}]}}}}}}}}, "granularity": {{{{"description": "A granularity for a time dimension. If you pass null to the granularity, Cube will only perform filtering by a specified time dimension, without grouping.", "allOf": [{{{{"$ref": "#/definitions/Granularity"}}}}]}}}}}}}}, "required": ["dimension", "dateRange"]}}}}, "Order": {{{{"title": "Order", "description": "An enumeration.", "enum": ["asc", "desc"]}}}}}}}}}}}}
+{_get_format_instructions()}
 ```"""  # noqa: E501
 
     assert tool.description == description

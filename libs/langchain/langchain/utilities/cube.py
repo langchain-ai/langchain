@@ -8,7 +8,11 @@ import requests
 from langchain.pydantic_v1 import BaseModel, Field, SecretStr
 
 
-class Operator(Enum):
+class StrEnum(str, Enum):
+    """StrEnum string-based enum"""
+
+
+class Operator(StrEnum):
     equals = "equals"
     notEquals = "notEquals"
     contains = "contains"
@@ -28,12 +32,12 @@ class Operator(Enum):
     measureFilter = "measureFilter"
 
 
-class Order(Enum):
+class Order(StrEnum):
     asc = "asc"
     desc = "desc"
 
 
-class Granularity(Enum):
+class Granularity(StrEnum):
     second = "second"
     minute = "minute"
     hour = "hour"
@@ -50,11 +54,6 @@ class Filter(BaseModel):
     )
     operator: Operator = Field(...)
     values: List[str] = Field(...)
-
-    class Config:
-        json_encoders = {
-            Operator: lambda v: v.value,
-        }
 
 
 class TimeDimension(BaseModel):
@@ -76,7 +75,6 @@ class TimeDimension(BaseModel):
         json_encoders = {
             datetime: lambda v: v.isoformat(),
             date: lambda v: v.isoformat(),
-            Granularity: lambda v: v.value,
         }
 
 
@@ -105,11 +103,6 @@ class Query(BaseModel):
         default=None,
         description="The keys are measures columns or dimensions columns to order by.",
     )
-
-    class Config:
-        json_encoders = {
-            Order: lambda v: v.value,
-        }
 
 
 class Cube:
@@ -258,7 +251,7 @@ class Cube:
                 for measure in m["measures"]:
                     information += (
                         f"| {measure.get('shortTitle')} "
-                        f"| {measure.get('description','')} "
+                        f"| {measure.get('description', '')} "
                         f"| {measure.get('name')} "
                         f"| {measure.get('type')} |\n"
                     )
@@ -271,7 +264,7 @@ class Cube:
                 for dimension in m["dimensions"]:
                     information += (
                         f"| {dimension.get('shortTitle')} "
-                        f"| {dimension.get('description','')} "
+                        f"| {dimension.get('description', '')} "
                         f"| {dimension.get('name')} "
                         f"| {dimension.get('type')} |\n"
                     )
