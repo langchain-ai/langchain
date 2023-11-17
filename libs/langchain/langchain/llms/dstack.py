@@ -6,31 +6,23 @@ import requests
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field, SecretStr, root_validator
 from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
-class Dstack(LLM):
-    """
-    dstack gateway API
-
-    To use, provide credentials in environment variables:
-    `DSTACK_API_BASE_URL`, `DSTACK_API_TOKEN`, `DSTACK_PROJECT`
-
-    TODO example
-    """
-
+class _BaseDstack(Serializable):
     run_name: str
     """dstack run_name to connect to"""
-    api_base_url: str
+    api_base_url: str = ""
     """dstack server url"""
-    api_token: SecretStr
+    api_token: SecretStr = SecretStr("")
     """dstack server token"""
-    project: str
+    project: str = ""
     """dstack project"""
-    service_url: str
+    service_url: str = ""
     """dstack service url"""
 
     parameters: Dict[str, Any] = Field(default_factory=dict)
@@ -38,11 +30,11 @@ class Dstack(LLM):
 
     tokenizer: Any = None
 
-    @root_validator(pre=True)
+    @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Load credentials from environment variables."""
 
-        if values.get("service_url") is None:
+        if not values["service_url"]:
             values["api_base_url"] = get_from_dict_or_env(
                 values, "api_base_url", "DSTACK_API_BASE_URL"
             )
@@ -105,7 +97,11 @@ class Dstack(LLM):
 
         return values
 
-    def _call_parameters(
+    @property
+    def _llm_type(self) -> str:
+        return "dstack_service"
+
+    def _tgi_parameters(
         self, stop: Optional[List[str]], **kwargs: Any
     ) -> Dict[str, Any]:
         parameters = copy.deepcopy(self.parameters)
@@ -114,6 +110,28 @@ class Dstack(LLM):
             stop or []
         )
         return parameters
+
+    def _tgi_generate(self, inputs: str, parameters: Dict[str, Any]) -> Dict:
+        resp = requests.post(
+            f"{self.service_url.rstrip('/')}/generate",
+            json={
+                "inputs": inputs,
+                "parameters": parameters,
+            },
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+class Dstack(_BaseDstack, LLM):
+    """
+    dstack gateway API
+
+    To use, provide credentials in environment variables:
+    `DSTACK_API_BASE_URL`, `DSTACK_API_TOKEN`, `DSTACK_PROJECT`
+
+    TODO example
+    """
 
     def _call(
         self,
@@ -128,16 +146,10 @@ class Dstack(LLM):
             )
             logger.debug("Prompt after chat templating: %s", prompt)
 
-        resp = _dstack_tgi_generate(
-            self.service_url, self._call_parameters(stop, **kwargs), prompt
-        )
+        resp = self._tgi_generate(prompt, self._tgi_parameters(stop, **kwargs))
         return resp["generated_text"]
 
     # TODO async support
-
-    @property
-    def _llm_type(self) -> str:
-        return "dstack_gateway"
 
 
 def _dstack_get_run(server_url: str, token: str, project: str, run_name: str) -> Dict:
@@ -147,18 +159,6 @@ def _dstack_get_run(server_url: str, token: str, project: str, run_name: str) ->
             "Authorization": f"Bearer {cast(SecretStr, token).get_secret_value()}"
         },
         json={"run_name": run_name},
-    )
-    resp.raise_for_status()
-    return resp.json()
-
-
-def _dstack_tgi_generate(service_url: str, parameters: Dict, prompt: str) -> Dict:
-    resp = requests.post(
-        f"{service_url.rstrip('/')}/generate",
-        json={
-            "inputs": prompt,
-            "parameters": parameters,
-        },
     )
     resp.raise_for_status()
     return resp.json()
