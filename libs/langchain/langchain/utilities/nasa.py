@@ -15,9 +15,10 @@ EXOPLANETS_URL = "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph
 
 class NasaAPIWrapper(BaseModel):
 
-    def get_image_or_video(self, query: str) -> str:
+    def get_media(self, query: str) -> str:
         params = json.loads(query)
-        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL, params=params)
+        #params needs to have a query q, and optionally a bunch of params
+        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/search?q=", params=params)
         data = response.json()
         return data
     
@@ -31,9 +32,9 @@ class NasaAPIWrapper(BaseModel):
     
 
     def run(self, mode: str, query: str) -> str:
-        if mode == 'image_and_video_library':
-            output = self.get_image_or_video(query)
-        elif mode == 'exoplanet_database':
+        if mode == 'get_media':
+            output = self.get_media(query)
+        elif mode == 'exoplanet':
             output = self.get_expoplanet_info(query)
         else:
             output = {"ModeError": f"Got unexpected mode {mode}."}
