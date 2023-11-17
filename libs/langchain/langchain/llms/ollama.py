@@ -126,7 +126,7 @@ class _OllamaCommon(BaseLanguageModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model,"format": self.format}, **self._default_params}
+        return {**{"model": self.model, "format": self.format}, **self._default_params}
 
     def _create_stream(
         self,
