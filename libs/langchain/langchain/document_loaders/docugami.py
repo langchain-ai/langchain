@@ -15,6 +15,7 @@ TABLE_NAME = "{http://www.w3.org/1999/xhtml}table"
 
 XPATH_KEY = "xpath"
 ID_KEY = "id"
+PARENT_DOC_ID_KEY = "doc_id"
 DOCUMENT_SOURCE_KEY = "source"
 DOCUMENT_NAME_KEY = "name"
 STRUCTURE_KEY = "structure"
@@ -158,6 +159,10 @@ class DocugamiLoader(BaseLoader, BaseModel):
             framework_chunk = _build_framework_chunk(dg_chunk)
             if hasattr(dg_chunk, "parent") and dg_chunk.parent:
                 framework_chunk.parent = _build_framework_chunk(dg_chunk.parent)
+                if framework_chunk.parent and framework_chunk.parent.page_content:
+                    framework_chunk.metadata[
+                        PARENT_DOC_ID_KEY
+                    ] = framework_chunk.parent.metadata[ID_KEY]
             framework_chunks.append(framework_chunk)
 
         return framework_chunks
