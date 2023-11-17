@@ -34,7 +34,7 @@ DocDict = Dict[str, Any]  # dicts expressing entries to insert
 #   (20 is the max batch size for the HTTP API at the time of writing)
 DEFAULT_BATCH_SIZE = 20
 # Number of threads to insert batches concurrently:
-DEFAULT_BULK_INSERT_BATCH_CONCURRENCY = 5
+DEFAULT_BULK_INSERT_BATCH_CONCURRENCY = 16
 # Number of threads in a batch to insert pre-existing entries:
 DEFAULT_BULK_INSERT_OVERWRITE_CONCURRENCY = 10
 # Number of threads (for deleting multiple rows concurrently):
@@ -139,6 +139,20 @@ class AstraDB(VectorStore):
                 threads in a batch to insert pre-existing entries.
             bulk_delete_concurrency (Optional[int]): Number of threads
                 (for deleting multiple rows concurrently).
+
+        A note on concurrency: as a rule of thumb, on a typical client machine
+        it is suggested to keep the quantity
+            bulk_insert_batch_concurrency * bulk_insert_overwrite_concurrency
+        much below 1000 to avoid exhausting the client multithreading/networking
+        resources. The hardcoded defaults are somewhat conservative to meet
+        most machines' specs, but a sensible choice to test may be:
+            bulk_insert_batch_concurrency = 80
+            bulk_insert_overwrite_concurrency = 10
+        A bit of experimentation is required to nail the best results here,
+        depending on both the machine/network specs and the expected workload
+        (specifically, how often a write is an update of an existing id).
+        Remember you can pass concurrency settings to individual calls to
+        add_texts and add_documents as well.
         """
 
         # Conflicting-arg checks:
@@ -329,6 +343,12 @@ class AstraDB(VectorStore):
             overwrite_concurrency (Optional[int]):  number of threads to process
                 pre-existing documents in each batch (which require individual
                 API calls). Defaults to instance-level setting if not provided.
+
+        A note on metadata: there are constraints on the allowed field names
+        in this dictionary, coming from the underlying Astra DB API.
+        For instance, the `$` (dollar sign) cannot be used in the dict keys.
+        See this document for details:
+            docs.datastax.com/en/astra-serverless/docs/develop/dev-with-json.html
 
         Returns:
             List[str]: List of ids of the added texts.
