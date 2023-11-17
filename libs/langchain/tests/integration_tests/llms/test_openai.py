@@ -87,6 +87,20 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
     assert loaded_llm == llm
 
 
+def test_saving_loading_llm_with_params(tmp_path: Path) -> None:
+    """Test saving/loading an OpenAI LLM."""
+    import os
+    api_key = os.environ['OPENAI_API_KEY']
+    if api_key:
+        del os.environ['OPENAI_API_KEY']
+    llm = OpenAI(max_tokens=10)
+    llm.save(file_path=tmp_path / "openai.yaml")
+    loaded_llm = load_llm(tmp_path / "openai.yaml", **{'openai_api_key': api_key})
+    assert loaded_llm == llm
+    if api_key:
+        os.environ['OPENAI_API_KEY'] = api_key
+
+
 @pytest.mark.scheduled
 def test_openai_streaming() -> None:
     """Test streaming tokens from OpenAI."""

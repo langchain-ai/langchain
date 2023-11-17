@@ -37,9 +37,9 @@ def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
     """Load LLM chain from config dict."""
     if "llm" in config:
         llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
+        llm = load_llm_from_config(llm_config, **(kwargs.get('llm_extras', {})))
     elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+        llm = load_llm(config.pop("llm_path"), **(kwargs.get('llm_extras', {})))
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
 
@@ -194,11 +194,11 @@ def _load_llm_bash_chain(config: dict, **kwargs: Any) -> Any:
     # llm attribute is deprecated in favor of llm_chain, here to support old configs
     elif "llm" in config:
         llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
+        llm = load_llm_from_config(llm_config, **(kwargs.get('llm_extras', {})))
     # llm_path attribute is deprecated in favor of llm_chain_path,
     # its to support old configs
     elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+        llm = load_llm(config.pop("llm_path"), **(kwargs.get('llm_extras', {})))
     else:
         raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
     if "prompt" in config:
@@ -215,9 +215,9 @@ def _load_llm_bash_chain(config: dict, **kwargs: Any) -> Any:
 def _load_llm_checker_chain(config: dict, **kwargs: Any) -> LLMCheckerChain:
     if "llm" in config:
         llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
+        llm = load_llm_from_config(llm_config, **(kwargs.get('llm_extras', {})))
     elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+        llm = load_llm(config.pop("llm_path"), **(kwargs.get('llm_extras', {})))
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
     if "create_draft_answer_prompt" in config:
@@ -268,11 +268,11 @@ def _load_llm_math_chain(config: dict, **kwargs: Any) -> LLMMathChain:
     # llm attribute is deprecated in favor of llm_chain, here to support old configs
     elif "llm" in config:
         llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
+        llm = load_llm_from_config(llm_config, **(kwargs.get('llm_extras', {})))
     # llm_path attribute is deprecated in favor of llm_chain_path,
     # its to support old configs
     elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+        llm = load_llm(config.pop("llm_path"), **(kwargs.get('llm_extras', {})))
     else:
         raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
     if "prompt" in config:
@@ -371,9 +371,9 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
         return SQLDatabaseChain(llm_chain=chain, database=database, **config)
     if "llm" in config:
         llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
+        llm = load_llm_from_config(llm_config, **(kwargs.get('llm_extras', {})))
     elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+        llm = load_llm(config.pop("llm_path"), **(kwargs.get('llm_extras', {})))
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
     if "prompt" in config:
