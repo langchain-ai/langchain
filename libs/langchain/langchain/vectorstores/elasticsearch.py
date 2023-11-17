@@ -784,9 +784,10 @@ class ElasticsearchStore(VectorStore):
         )
 
         def default_doc_builder(hit: Dict) -> Document:
+            metadataInESMapping = "metadata" in hit["_source"]
             return Document(
                 page_content=hit["_source"].get(self.query_field, ""),
-                metadata=hit["_source"]["metadata"] if "metadata" in hit["_source"] else {},
+                metadata=hit["_source"]["metadata"] if metadataInESMapping else {},
             )
 
         doc_builder = doc_builder or default_doc_builder
