@@ -38,12 +38,13 @@ if TYPE_CHECKING:
     )
     from langchain.schema.callbacks.tracers.log_stream import RunLog, RunLogPatch
     from langchain.schema.callbacks.tracers.root_listeners import Listener
-    from langchain.schema.chat_history import BaseChatMessageHistory
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
-    from langchain.schema.runnable.history import RunnableWithMessageHistory
-
+    from langchain.schema.runnable.history import (
+        GetSessionHistoryCallable,
+        RunnableWithMessageHistory,
+    )
 
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
@@ -824,7 +825,7 @@ class Runnable(Generic[Input, Output], ABC):
 
     def with_message_history(
         self,
-        factory: Callable[[str], BaseChatMessageHistory],
+        get_session_history: GetSessionHistoryCallable,
         *,
         input_messages_key: Optional[str] = None,
         output_messages_key: Optional[str] = None,
@@ -845,7 +846,7 @@ class Runnable(Generic[Input, Output], ABC):
                 ],
                 self,
             ),
-            factory,
+            get_session_history,
             input_messages_key=input_messages_key,
             output_messages_key=output_messages_key,
             message_history_key=message_history_key,

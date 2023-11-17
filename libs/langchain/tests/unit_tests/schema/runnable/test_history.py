@@ -7,15 +7,15 @@ from langchain.schema import AIMessage, BaseMessage, HumanMessage
 from langchain.schema.runnable import RunnableConfig, RunnableLambda
 
 
-def get_factory() -> Callable:
+def _get_get_session_history() -> Callable:
     chat_history_store = {}
 
-    def history_factory(session_id: str) -> ChatMessageHistory:
+    def get_session_history(session_id: str) -> ChatMessageHistory:
         if session_id not in chat_history_store:
             chat_history_store[session_id] = ChatMessageHistory()
         return chat_history_store[session_id]
 
-    return history_factory
+    return get_session_history
 
 
 def test_input_messages() -> None:
@@ -23,8 +23,8 @@ def test_input_messages() -> None:
         lambda messages: "you said: "
         + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
     )
-    factory = get_factory()
-    with_history = runnable.with_message_history(factory)
+    get_session_history = _get_get_session_history()
+    with_history = runnable.with_message_history(get_session_history)
     config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
     output = with_history.invoke([HumanMessage(content="hello")], config)
     assert output == "you said: hello"
@@ -39,8 +39,10 @@ def test_input_dict() -> None:
             str(m.content) for m in input["messages"] if isinstance(m, HumanMessage)
         )
     )
-    factory = get_factory()
-    with_history = runnable.with_message_history(factory, input_messages_key="messages")
+    get_session_history = _get_get_session_history()
+    with_history = runnable.with_message_history(
+        get_session_history, input_messages_key="messages"
+    )
     config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
     output = with_history.invoke({"messages": [HumanMessage(content="hello")]}, config)
     assert output == "you said: hello"
@@ -58,9 +60,9 @@ def test_input_dict_with_history_key() -> None:
             + [input["input"]]
         )
     )
-    factory = get_factory()
+    get_session_history = _get_get_session_history()
     with_history = runnable.with_message_history(
-        factory, input_messages_key="input", message_history_key="history"
+        get_session_history, input_messages_key="input", history_messages_key="history"
     )
     config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
     output = with_history.invoke({"input": "hello"}, config)
@@ -83,9 +85,9 @@ def test_output_message() -> None:
             )
         )
     )
-    factory = get_factory()
+    get_session_history = _get_get_session_history()
     with_history = runnable.with_message_history(
-        factory, input_messages_key="input", message_history_key="history"
+        get_session_history, input_messages_key="input", history_messages_key="history"
     )
     config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
     output = with_history.invoke({"input": "hello"}, config)
@@ -110,9 +112,9 @@ def test_output_messages() -> None:
             )
         ]
     )
-    factory = get_factory()
+    get_session_history = _get_get_session_history()
     with_history = runnable.with_message_history(
-        factory, input_messages_key="input", message_history_key="history"
+        get_session_history, input_messages_key="input", history_messages_key="history"
     )
     config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
     output = with_history.invoke({"input": "hello"}, config)
@@ -139,11 +141,11 @@ def test_output_dict() -> None:
             ]
         }
     )
-    factory = get_factory()
+    get_session_history = _get_get_session_history()
     with_history = runnable.with_message_history(
-        factory,
+        get_session_history,
         input_messages_key="input",
-        message_history_key="history",
+        history_messages_key="history",
         output_messages_key="output",
     )
     config: RunnableConfig = {"configurable": {"thread_id": datetime.datetime.now()}}
@@ -175,11 +177,11 @@ def test_get_input_schema_input_dict() -> None:
             ]
         }
     )
-    factory = get_factory()
+    get_session_history = _get_get_session_history()
     with_history = runnable.with_message_history(
-        factory,
+        get_session_history,
         input_messages_key="input",
-        message_history_key="history",
+        history_messages_key="history",
         output_messages_key="output",
     )
     assert (
@@ -208,9 +210,9 @@ def test_get_input_schema_input_messages() -> None:
             ]
         }
     )
-    factory = get_factory()
+    get_session_history = _get_get_session_history()
     with_history = runnable.with_message_history(
-        factory,
+        get_session_history,
         output_messages_key="output",
     )
     assert (
