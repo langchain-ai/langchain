@@ -134,18 +134,25 @@ class BaseConversationalRetrievalChain(Chain):
             docs = self._get_docs(new_question, inputs, run_manager=_run_manager)
         else:
             docs = self._get_docs(new_question, inputs)  # type: ignore[call-arg]
+
         new_inputs = inputs.copy()
         if self.rephrase_question:
             new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer = self.combine_docs_chain.run(
+        # new_inputs["input_documents"] = docs
+        # answer = self.combine_docs_chain(inputs=new_inputs, callbacks=_run_manager.get_child())
+        answer = self.combine_docs_chain.run(   # When running ConversationalRetrievalChain with Map Reduce, this combine_docs_chain is of type MapReduceDocumentsChain. Calling run(), it invokes the _call() method of MapReduceDocumentsChain
             input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
         )
         output: Dict[str, Any] = {self.output_key: answer}
+
+
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
             output["generated_question"] = new_question
+        ## if "intermediate_steps" in answer:
+        ##     output["intermediate_steps"] = answer["intermediate_steps"]
         return output
 
     @abstractmethod
@@ -358,6 +365,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             combine_docs_chain=doc_chain,
             question_generator=condense_question_chain,
             callbacks=callbacks,
+            
             **kwargs,
         )
 
