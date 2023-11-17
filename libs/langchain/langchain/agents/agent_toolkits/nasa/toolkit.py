@@ -12,8 +12,8 @@ class NasaToolkit(BaseToolkit):
     def from_nasa_api_wrapper(cls, nasa_api_wrapper: NasaAPIWrapper) -> "NasaToolkit":
         operations: List[Dict] = [
             {
-                "mode": "get_media",
-                "name": "Get NASA Image and Video Library media",
+                "mode": "search_media",
+                "name": "Search NASA Image and Video Library media",
                 "description": NASA_MEDIA_SEARCH_PROMPT,
             },
             {
@@ -30,11 +30,6 @@ class NasaToolkit(BaseToolkit):
                 "mode": "get_video_captions_location",
                 "name": "Get NASA Image and Video Library video captions location",
                 "description": NASA_VIDEO_CAPTIONS_LOCATION_PROMPT,
-            },
-            {
-                "mode": "exoplanet",
-                "name": "query NASA Exoplanet API",
-                "description": NASA_EXOPLANET_PROMPT
             }
             # TODO: update list above with correct mode, name, descriptions strings
         ]
