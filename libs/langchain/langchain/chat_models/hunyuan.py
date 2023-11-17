@@ -140,7 +140,7 @@ class ChatHunyuan(BaseChatModel):
 
     hunyuan_api_base: str = Field(default=DEFAULT_API_BASE)
     """Hunyuan custom endpoints"""
-    hunyuan_app_id: Optional[str] = None
+    hunyuan_app_id: Optional[int] = None
     """Hunyuan App ID"""
     hunyuan_secret_id: Optional[str] = None
     """Hunyuan Secret ID"""
