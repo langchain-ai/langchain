@@ -1,12 +1,12 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import BaseModel, Extra
+from langchain.pydantic_v1 import BaseModel, Extra, SecretStr
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -65,7 +65,7 @@ class ChatJavelinAIGateway(BaseChatModel):
     client: Any
     """javelin client."""
 
-    javelin_api_key: Optional[str] = None
+    javelin_api_key: Optional[SecretStr] = None
     """The API key for the Javelin AI Gateway."""
 
     def __init__(self, **kwargs: Any):
@@ -84,7 +84,8 @@ class ChatJavelinAIGateway(BaseChatModel):
         if self.gateway_uri:
             try:
                 self.client = JavelinClient(
-                    base_url=self.gateway_uri, api_key=self.javelin_api_key
+                    base_url=self.gateway_uri,
+                    api_key=cast(SecretStr, self.javelin_api_key).get_secret_value(),
                 )
             except UnauthorizedError as e:
                 raise ValueError("Javelin: Incorrect API Key.") from e
@@ -93,7 +94,7 @@ class ChatJavelinAIGateway(BaseChatModel):
     def _default_params(self) -> Dict[str, Any]:
         params: Dict[str, Any] = {
             "gateway_uri": self.gateway_uri,
-            "javelin_api_key": self.javelin_api_key,
+            "javelin_api_key": cast(SecretStr, self.javelin_api_key).get_secret_value(),
             "route": self.route,
             **(self.params.dict() if self.params else {}),
         }
