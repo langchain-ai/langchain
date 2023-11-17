@@ -22,7 +22,10 @@ from docugami_kg_rag.config import (
     LocalIndexState,
 )
 from docugami_kg_rag.helpers.documents import get_parent_id_mappings
-from docugami_kg_rag.helpers.retrieval import docset_name_to_retriever_tool_function_name, chunks_to_retriever_tool_description
+from docugami_kg_rag.helpers.retrieval import (
+    docset_name_to_retriever_tool_function_name,
+    chunks_to_retriever_tool_description,
+)
 
 
 def read_all_local_index_state() -> Dict[str, LocalIndexState]:
@@ -77,7 +80,9 @@ def populate_pinecode_index(index_name: str, chunks: List[Document]):
 
         print(f"Done embedding documents to pinecode index {index_name}!")
     else:
-        raise Exception(f"Index {index_name} already exists. Please delete it to re-index, or you will get duplicate chunks.")
+        raise Exception(
+            f"Index {index_name} already exists. Please delete it to re-index, or you will get duplicate chunks."
+        )
 
 
 def index_docset(docset_id: str, name: str):

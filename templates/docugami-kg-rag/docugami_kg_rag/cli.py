@@ -17,7 +17,9 @@ def main(
     docsets_response = docugami_client.docsets.list()
 
     if not docsets_response or not docsets_response.docsets:
-        raise Exception("The workspace corresponding to the provided DOCUGAMI_API_KEY does not have any docsets.")
+        raise Exception(
+            "The workspace corresponding to the provided DOCUGAMI_API_KEY does not have any docsets."
+        )
 
     docsets = docsets_response.docsets
     if all_docsets:
@@ -38,7 +40,9 @@ def main(
             selected_docsets = [d for d in docsets]
         else:
             selected_indices = [int(i.strip()) for i in user_input.split(",")]
-            selected_docsets = [docsets[idx - 1] for idx in selected_indices if 0 < idx <= len(docsets)]
+            selected_docsets = [
+                docsets[idx - 1] for idx in selected_indices if 0 < idx <= len(docsets)
+            ]
 
     for docset in [d for d in selected_docsets if d is not None]:
         if not docset.id or not docset.name:

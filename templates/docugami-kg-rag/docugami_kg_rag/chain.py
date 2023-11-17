@@ -60,8 +60,12 @@ agent = (
         {
             "input": lambda x: x["input"],
             "chat_history": lambda x: _format_chat_history(x["chat_history"]),
-            "agent_scratchpad": lambda x: format_to_openai_functions(x["intermediate_steps"]),
-            "functions": lambda x: [format_tool_to_openai_function(tool) for tool in tools],
+            "agent_scratchpad": lambda x: format_to_openai_functions(
+                x["intermediate_steps"]
+            ),
+            "functions": lambda x: [
+                format_tool_to_openai_function(tool) for tool in tools
+            ],
         }
     )
     | {
@@ -75,7 +79,9 @@ agent = (
 
 class AgentInput(BaseModel):
     input: str = ""
-    chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat", "input": "input", "output": "output"}})
+    chat_history: List[Tuple[str, str]] = Field(
+        ..., extra={"widget": {"type": "chat", "input": "input", "output": "output"}}
+    )
 
 
 chain = AgentExecutor(agent=agent, tools=tools).with_types(input_type=AgentInput)
