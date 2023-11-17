@@ -22,10 +22,10 @@ from langchain.docstore.document import Document
 from langchain.utils import get_from_env
 from langchain.vectorstores.utils import DistanceStrategy
 
-DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
+DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE_SIMILARITY
 DISTANCE_MAPPING = {
     DistanceStrategy.EUCLIDEAN_DISTANCE: "euclidean",
-    DistanceStrategy.COSINE: "cosine",
+    DistanceStrategy.COSINE_SIMILARITY: "cosine",
 }
 
 
@@ -144,7 +144,7 @@ class Neo4jVector(VectorStore):
         # Allow only cosine and euclidean distance strategies
         if distance_strategy not in [
             DistanceStrategy.EUCLIDEAN_DISTANCE,
-            DistanceStrategy.COSINE,
+            DistanceStrategy.COSINE_SIMILARITY,
         ]:
             raise ValueError(
                 "distance_strategy must be either 'EUCLIDEAN_DISTANCE' or 'COSINE'"
@@ -929,10 +929,10 @@ class Neo4jVector(VectorStore):
 
         # Default strategy is to rely on distance strategy provided
         # in vectorstore constructor
-        if self._distance_strategy == DistanceStrategy.COSINE:
-            return lambda x: x
+        if self._distance_strategy == DistanceStrategy.COSINE_SIMILARITY:
+            return self._cosine_similarity_relevance_score_fn
         elif self._distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-            return lambda x: x
+            return self._euclidean_relevance_score_fn
         else:
             raise ValueError(
                 "No supported normalization function"

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from timescale_vector import Predicates
 
 
-DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
+DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE_DISTANCE
 
 ADA_TOKEN_COUNT = 1536
 
@@ -48,7 +48,7 @@ class TimescaleVector(VectorStore):
             `langchain.embeddings.base.Embeddings` interface.
         collection_name: The name of the collection to use. (default: langchain_store)
             This will become the table name used for the collection.
-        distance_strategy: The distance strategy to use. (default: COSINE)
+        distance_strategy: The distance strategy to use. (default: COSINE_DISTANCE)
         pre_delete_collection: If True, will delete the collection if it exists.
             (default: False). Useful for testing.
 
@@ -797,8 +797,8 @@ class TimescaleVector(VectorStore):
 
         # Default strategy is to rely on distance strategy provided
         # in vectorstore constructor
-        if self._distance_strategy == DistanceStrategy.COSINE:
-            return self._cosine_relevance_score_fn
+        if self._distance_strategy == DistanceStrategy.COSINE_DISTANCE:
+            return self._cosine_distance_relevance_score_fn
         elif self._distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             return self._euclidean_relevance_score_fn
         elif self._distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:

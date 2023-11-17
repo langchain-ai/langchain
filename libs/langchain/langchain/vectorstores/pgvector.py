@@ -35,21 +35,13 @@ from langchain_core.vectorstores import VectorStore
 
 from langchain.docstore.document import Document
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.utils import maximal_marginal_relevance
+from langchain.vectorstores.utils import maximal_marginal_relevance, DistanceStrategy
 
 if TYPE_CHECKING:
     from langchain.vectorstores._pgvector_data_models import CollectionStore
 
 
-class DistanceStrategy(str, enum.Enum):
-    """Enumerator of the Distance strategies."""
-
-    EUCLIDEAN = "l2"
-    COSINE = "cosine"
-    MAX_INNER_PRODUCT = "inner"
-
-
-DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
+DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE_DISTANCE
 
 Base = declarative_base()  # type: Any
 
@@ -382,9 +374,9 @@ class PGVector(VectorStore):
 
     @property
     def distance_strategy(self) -> Any:
-        if self._distance_strategy == DistanceStrategy.EUCLIDEAN:
+        if self._distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             return self.EmbeddingStore.embedding.l2_distance
-        elif self._distance_strategy == DistanceStrategy.COSINE:
+        elif self._distance_strategy == DistanceStrategy.COSINE_DISTANCE:
             return self.EmbeddingStore.embedding.cosine_distance
         elif self._distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             return self.EmbeddingStore.embedding.max_inner_product
@@ -675,9 +667,9 @@ class PGVector(VectorStore):
 
         # Default strategy is to rely on distance strategy provided
         # in vectorstore constructor
-        if self._distance_strategy == DistanceStrategy.COSINE:
-            return self._cosine_relevance_score_fn
-        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN:
+        if self._distance_strategy == DistanceStrategy.COSINE_DISTANCE:
+            return self._cosine_distance_relevance_score_fn
+        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             return self._euclidean_relevance_score_fn
         elif self._distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             return self._max_inner_product_relevance_score_fn

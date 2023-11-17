@@ -205,7 +205,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
     ) -> Dict:
         """Create the mapping for the Elasticsearch index."""
 
-        if similarity is DistanceStrategy.COSINE:
+        if similarity is DistanceStrategy.COSINE_SIMILARITY:
             similarityAlgo = "cosine"
         elif similarity is DistanceStrategy.EUCLIDEAN_DISTANCE:
             similarityAlgo = "l2_norm"
@@ -242,7 +242,7 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
         filter: Union[List[dict], None],
         similarity: Union[DistanceStrategy, None],
     ) -> Dict:
-        if similarity is DistanceStrategy.COSINE:
+        if similarity is DistanceStrategy.COSINE_SIMILARITY:
             similarityAlgo = (
                 f"cosineSimilarity(params.query_vector, '{vector_query_field}') + 1.0"
             )
@@ -503,7 +503,7 @@ class ElasticsearchStore(VectorStore):
         query_field: str = "text",
         distance_strategy: Optional[
             Literal[
-                DistanceStrategy.COSINE,
+                DistanceStrategy.COSINE_SIMILARITY,
                 DistanceStrategy.DOT_PRODUCT,
                 DistanceStrategy.EUCLIDEAN_DISTANCE,
             ]
@@ -515,7 +515,7 @@ class ElasticsearchStore(VectorStore):
         self.query_field = query_field
         self.vector_query_field = vector_query_field
         self.distance_strategy = (
-            DistanceStrategy.COSINE
+            DistanceStrategy.COSINE_SIMILARITY
             if distance_strategy is None
             else DistanceStrategy[distance_strategy]
         )

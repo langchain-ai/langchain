@@ -59,7 +59,7 @@ class MomentoVectorIndex(VectorStore):
         embedding: Embeddings,
         client: "PreviewVectorIndexClient",
         index_name: str = "default",
-        distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
+        distance_strategy: DistanceStrategy = DistanceStrategy.COSINE_SIMILARITY,
         text_field: str = "text",
         ensure_index_exists: bool = True,
         **kwargs: Any,
@@ -75,7 +75,7 @@ class MomentoVectorIndex(VectorStore):
             index_name (str, optional): The name of the index to store the documents in.
                 Defaults to "default".
             distance_strategy (DistanceStrategy, optional): The distance strategy to
-                use. Defaults to DistanceStrategy.COSINE. If you select
+                use. Defaults to DistanceStrategy.COSINE_SIMILARITY. If you select
                 DistanceStrategy.EUCLIDEAN_DISTANCE, Momento uses the squared
                 Euclidean distance.
             text_field (str, optional): The name of the metadata field to store the
@@ -102,7 +102,7 @@ class MomentoVectorIndex(VectorStore):
     @staticmethod
     def __validate_distance_strategy(distance_strategy: DistanceStrategy) -> None:
         if distance_strategy not in [
-            DistanceStrategy.COSINE,
+            DistanceStrategy.COSINE_SIMILARITY,
             DistanceStrategy.MAX_INNER_PRODUCT,
             DistanceStrategy.MAX_INNER_PRODUCT,
         ]:
@@ -118,7 +118,7 @@ class MomentoVectorIndex(VectorStore):
         from momento.responses.vector_index import CreateIndex
 
         similarity_metric = None
-        if self.distance_strategy == DistanceStrategy.COSINE:
+        if self.distance_strategy == DistanceStrategy.COSINE_SIMILARITY:
             similarity_metric = SimilarityMetric.COSINE_SIMILARITY
         elif self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             similarity_metric = SimilarityMetric.INNER_PRODUCT
@@ -355,7 +355,7 @@ class MomentoVectorIndex(VectorStore):
             - text_field (str, optional): The name of the metadata field to store the
                 original text in. Defaults to "text".
             - distance_strategy (DistanceStrategy, optional): The distance strategy to
-                use. Defaults to DistanceStrategy.COSINE. If you select
+                use. Defaults to DistanceStrategy.COSINE_SIMILARITY. If you select
                 DistanceStrategy.EUCLIDEAN_DISTANCE, Momento uses the squared
                 Euclidean distance.
             - ensure_index_exists (bool, optional): Whether to ensure that the index
