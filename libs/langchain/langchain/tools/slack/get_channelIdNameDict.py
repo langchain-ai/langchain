@@ -39,7 +39,7 @@ class SlackGetChannelIdNameDict(SlackBaseTool):
 
     # You probably want to use a database to store any conversations information ;)
     # channelId_Name = {}
-    
+
     @classmethod
     def save_conversations(self, conversations, channelId_Name):
         conversation_id = ""
