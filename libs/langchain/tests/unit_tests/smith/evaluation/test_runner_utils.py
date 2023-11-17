@@ -5,13 +5,13 @@ from typing import Any, Dict, Iterator, List, Optional, Union
 from unittest import mock
 
 import pytest
+from freezegun import freeze_time
 from langsmith.client import Client
 from langsmith.schemas import Dataset, Example
 
 from langchain.chains.base import Chain
 from langchain.chains.transform import TransformChain
 from langchain.schema.language_model import BaseLanguageModel
-from freezegun import freeze_time
 from langchain.smith.evaluation.runner_utils import (
     InputFormatError,
     _get_messages,
@@ -320,9 +320,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     ), mock.patch.object(Client, "list_examples", new=mock_list_examples), mock.patch(
         "langchain.smith.evaluation.runner_utils._arun_llm_or_chain",
         new=mock_arun_chain,
-    ), mock.patch.object(
-        Client, "create_project", new=mock_create_project
-    ):
+    ), mock.patch.object(Client, "create_project", new=mock_create_project):
         client = Client(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
         chain.input_keys = ["foothing"]
