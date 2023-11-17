@@ -17,10 +17,23 @@ class NasaAPIWrapper(BaseModel):
 
     def get_media(self, query: str) -> str:
         params = json.loads(query)
-        #params needs to have a query q, and optionally a bunch of params
-        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/search?q=" + params['q'], params=params)
+        queryText = params['q']
+        params.pop('q')
+        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/search?q=" + queryText, params=params)
         data = response.json()
         return data
+    
+    def get_media_metadata_manifest(self, query: str) -> str:
+        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/assets/" + query)
+        return response.json()
+    
+    def get_media_metadata_location(self, query: str) -> str:
+        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/metadata/" + query)
+        return response.json()
+        
+    def get_video_captions_location(self, query: str) -> str:
+        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/captions/" + query)
+        return response.json()
     
 
 
@@ -34,6 +47,12 @@ class NasaAPIWrapper(BaseModel):
     def run(self, mode: str, query: str) -> str:
         if mode == 'get_media':
             output = self.get_media(query)
+        elif mode == 'get_media_metadata_manifest':
+            output = self.get_media_metadata_manifest(query)
+        elif mode == 'get_media_metadata_location':
+            output = self.get_media_metadata_location(query)
+        elif mode == 'get_video_captions_location':
+            output = self.get_video_captions_location(query)
         elif mode == 'exoplanet':
             output = self.get_expoplanet_info(query)
         else:
