@@ -488,9 +488,10 @@ def _construct_run_evaluator(
         evaluator_ = load_evaluator(eval_config.evaluator_type, **kwargs)
         eval_type_tag = eval_config.evaluator_type.value
         # Override keys if specified in the config
-        input_key = eval_config.input_key or input_key
-        prediction_key = eval_config.prediction_key or prediction_key
-        reference_key = eval_config.reference_key or reference_key
+        if isinstance(eval_config, smith_eval_config.SingleKeyEvalConfig):
+            input_key = eval_config.input_key or input_key
+            prediction_key = eval_config.prediction_key or prediction_key
+            reference_key = eval_config.reference_key or reference_key
 
     if isinstance(evaluator_, StringEvaluator):
         if evaluator_.requires_reference and reference_key is None:
