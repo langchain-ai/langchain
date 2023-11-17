@@ -786,7 +786,7 @@ class ElasticsearchStore(VectorStore):
         def default_doc_builder(hit: Dict) -> Document:
             return Document(
                 page_content=hit["_source"].get(self.query_field, ""),
-                metadata=hit["_source"].get("metadata", {})
+                metadata=hit["_source"].get("metadata", {}),
             )
 
         doc_builder = doc_builder or default_doc_builder
