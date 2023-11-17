@@ -14,6 +14,7 @@ from docugami_kg_rag.config import (
     EMBEDDINGS_DIMENSIONS,
     INCLUDE_XML_TAGS,
     INDEXING_LOCAL_STATE_PATH,
+    MAX_CHUNK_TEXT_LENGTH,
     MIN_CHUNK_TEXT_LENGTH,
     PARENT_HIERARCHY_LEVELS,
     PINECONE_INDEX,
@@ -87,6 +88,7 @@ def index_docset(docset_id: str, name: str):
     loader = DocugamiLoader(
         docset_id=docset_id,
         min_text_length=MIN_CHUNK_TEXT_LENGTH,
+        max_text_length=MAX_CHUNK_TEXT_LENGTH,
         sub_chunk_tables=SUB_CHUNK_TABLES,
         include_xml_tags=INCLUDE_XML_TAGS,
         parent_hierarchy_levels=PARENT_HIERARCHY_LEVELS,

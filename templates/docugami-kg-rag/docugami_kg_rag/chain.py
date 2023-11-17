@@ -1,3 +1,4 @@
+import sys
 from typing import Dict, List, Tuple
 
 from langchain.agents import AgentExecutor
@@ -76,3 +77,14 @@ class AgentInput(BaseModel):
 
 
 chain = AgentExecutor(agent=agent, tools=tools).with_types(input_type=AgentInput)
+
+if __name__ == "__main__":
+    if sys.gettrace():
+        # This code will only run if a debugger is attached
+
+        chain.invoke(
+            {
+                "input": "What happened to aircraft N23161?",
+                "chat_history": [],
+            }
+        )

@@ -1,3 +1,4 @@
+import sys
 from docugami import Docugami
 import typer
 from typing import Optional
@@ -47,4 +48,8 @@ def main(
 
 
 if __name__ == "__main__":
-    app()
+    if sys.gettrace():
+        # This code will only run if a debugger is attached
+        main(docset_id="s79br3gqd0g6")
+    else:
+        app()
