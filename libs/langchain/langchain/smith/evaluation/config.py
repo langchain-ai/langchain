@@ -34,6 +34,16 @@ class EvalConfig(BaseModel):
     """
 
     evaluator_type: EvaluatorType
+    reference_key: Optional[str] = None
+    """The key in the dataset run to use as the reference string.
+    If not provided, we will attempt to infer automatically."""
+    prediction_key: Optional[str] = None
+    """The key from the traced run's outputs dictionary to use to
+    represent the prediction. If not provided, it will be inferred
+    automatically."""
+    input_key: Optional[str] = None
+    """The key from the traced run's inputs dictionary to use to represent the
+    input. If not provided, it will be inferred automatically."""
 
     def get_kwargs(self) -> Dict[str, Any]:
         """Get the keyword arguments for the load_evaluator call.
@@ -46,7 +56,12 @@ class EvalConfig(BaseModel):
         """
         kwargs = {}
         for field, val in self:
-            if field == "evaluator_type":
+            if field in {
+                "evaluator_type",
+                "reference_key",
+                "prediction_key",
+                "input_key",
+            }:
                 continue
             elif val is None:
                 continue
