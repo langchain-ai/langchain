@@ -11,10 +11,12 @@ from typing import (
     Sequence,
     Type,
     Union,
+    runtime_checkable,
 )
 
 from langchain.load import load
 from langchain.pydantic_v1 import BaseModel, create_model
+from langchain.schema.chat_history import BaseChatMessageHistory
 from langchain.schema.runnable.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain.schema.runnable.passthrough import RunnablePassthrough
 from langchain.schema.runnable.utils import (
@@ -24,13 +26,13 @@ from langchain.schema.runnable.utils import (
 
 if TYPE_CHECKING:
     from langchain.callbacks.tracers.schemas import Run
-    from langchain.schema.chat_history import BaseChatMessageHistory
     from langchain.schema.messages import BaseMessage
     from langchain.schema.runnable.config import RunnableConfig
 
 MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
 
 
+@runtime_checkable
 class GetSessionHistoryCallable(Protocol):
     def __call__(
         self, thread_id: str, *, user_id: Optional[str] = None
