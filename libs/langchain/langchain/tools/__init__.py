@@ -234,8 +234,6 @@ __all__ = [
     "StdInInquireTool",
     "SteamshipImageGenerationTool",
     "StructuredTool",
-    "SlackGetChannelIdNameDict",
-    "authenticate",
     "Tool",
     "VectorStoreQATool",
     "VectorStoreQAWithSourcesTool",

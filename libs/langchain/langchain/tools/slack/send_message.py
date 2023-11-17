@@ -39,13 +39,4 @@ class SlackSendMessage(SlackBaseTool):
         logger.error("Channel: %s", channel)
         result = self.client.chat_postMessage(channel=channel, text=message)
         output = "Message sent: " + str(result)
-        # output = "msg sent"
         return output
-        # try:
-        #     result = self.client.chat_postMessage(channel=channel, text=message)
-        #     output = "Message sent: " + str(result)
-        #     return output
-        # except SlackApiError as e:
-        #     logger.error("Error: %s", e)
-        #     logger.error("Failed to send message")
-        #     return "Failed to send message"
