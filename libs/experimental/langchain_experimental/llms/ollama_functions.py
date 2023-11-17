@@ -79,12 +79,15 @@ class OllamaFunctions(BaseChatModel):
                     'If "function_call" is specified, you must also pass a matching \
 function in "functions".'
                 )
+            del kwargs["function_call"]
         elif not functions:
             functions.append(DEFAULT_RESPONSE_FUNCTION)
         default_content = self.tool_system_prompt.format(
             tools=json.dumps(functions, indent=2)
         )
         system_message = SystemMessage(content=default_content)
+        if "functions" in kwargs:
+            del kwargs["functions"]
         response_message = self.llm.predict_messages(
             [system_message] + messages, stop=stop, callbacks=run_manager, **kwargs
         )
