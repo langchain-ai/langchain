@@ -25,7 +25,7 @@ logger = logging.getLogger()
 
 
 class MatchingEngine(VectorStore):
-    """`Google Vertex AI Matching Engine` vector store.
+    """`Google Vertex AI Vector Search` (previous Matching Engine) vector store.
 
     While the embeddings are stored in the Matching Engine, the embedded
     documents will be stored in GCS.
@@ -49,7 +49,8 @@ class MatchingEngine(VectorStore):
         gcs_bucket_name: str,
         credentials: Optional[Credentials] = None,
     ):
-        """Vertex Matching Engine implementation of the vector store.
+        """Google Vertex AI Vector Search (previous Matching Engine)
+         implementation of the vector store.
 
         While the embeddings are stored in the Matching Engine, the embedded
         documents will be stored in GCS.
@@ -58,7 +59,7 @@ class MatchingEngine(VectorStore):
         using this module.
 
         See usage in
-        docs/modules/indexes/vectorstores/examples/google_vertex_ai_vector_search.ipynb.
+        docs/integrations/vectorstores/google_vertex_ai_vector_search.ipynb.
 
         Note that this implementation is mostly meant for reading if you are
         planning to do a real time implementation. While reading is a real time
