@@ -41,10 +41,6 @@ if TYPE_CHECKING:
     from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
-    from langchain.schema.runnable.history import (
-        GetSessionHistoryCallable,
-        RunnableWithMessageHistory,
-    )
 
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
@@ -821,36 +817,6 @@ class Runnable(Generic[Input, Output], ABC):
             runnable=self,
             fallbacks=fallbacks,
             exceptions_to_handle=exceptions_to_handle,
-        )
-
-    def with_message_history(
-        self,
-        get_session_history: GetSessionHistoryCallable,
-        *,
-        input_messages_key: Optional[str] = None,
-        output_messages_key: Optional[str] = None,
-        message_history_key: Optional[str] = None,
-        **kwargs: Any,
-    ) -> RunnableWithMessageHistory:
-        from langchain.schema.messages import BaseMessage
-        from langchain.schema.runnable.history import (
-            MessagesOrDictWithMessages,
-            RunnableWithMessageHistory,
-        )
-
-        return RunnableWithMessageHistory(
-            cast(
-                Runnable[
-                    MessagesOrDictWithMessages,
-                    Union[BaseMessage, MessagesOrDictWithMessages],
-                ],
-                self,
-            ),
-            get_session_history,
-            input_messages_key=input_messages_key,
-            output_messages_key=output_messages_key,
-            message_history_key=message_history_key,
-            **kwargs,
         )
 
     """ --- Helper methods for Subclasses --- """

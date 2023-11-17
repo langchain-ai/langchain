@@ -1,9 +1,10 @@
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Sequence, Union
 
 from langchain.memory import ChatMessageHistory
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema import AIMessage, BaseMessage, HumanMessage
 from langchain.schema.runnable import RunnableConfig, RunnableLambda
+from langchain.schema.runnable.history import RunnableWithMessageHistory
 
 
 def _get_get_session_history() -> Callable[..., ChatMessageHistory]:
@@ -23,7 +24,7 @@ def test_input_messages() -> None:
         + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
     )
     get_session_history = _get_get_session_history()
-    with_history = runnable.with_message_history(get_session_history)
+    with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config: RunnableConfig = {"configurable": {"session_id": "1"}}
     output = with_history.invoke([HumanMessage(content="hello")], config)
     assert output == "you said: hello"
@@ -39,8 +40,8 @@ def test_input_dict() -> None:
         )
     )
     get_session_history = _get_get_session_history()
-    with_history = runnable.with_message_history(
-        get_session_history, input_messages_key="messages"
+    with_history = RunnableWithMessageHistory(
+        runnable, get_session_history, input_messages_key="messages"
     )
     config: RunnableConfig = {"configurable": {"session_id": "2"}}
     output = with_history.invoke({"messages": [HumanMessage(content="hello")]}, config)
@@ -60,8 +61,11 @@ def test_input_dict_with_history_key() -> None:
         )
     )
     get_session_history = _get_get_session_history()
-    with_history = runnable.with_message_history(
-        get_session_history, input_messages_key="input", history_messages_key="history"
+    with_history = RunnableWithMessageHistory(
+        runnable,
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="history",
     )
     config: RunnableConfig = {"configurable": {"session_id": "3"}}
     output = with_history.invoke({"input": "hello"}, config)
@@ -85,8 +89,11 @@ def test_output_message() -> None:
         )
     )
     get_session_history = _get_get_session_history()
-    with_history = runnable.with_message_history(
-        get_session_history, input_messages_key="input", history_messages_key="history"
+    with_history = RunnableWithMessageHistory(
+        runnable,
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="history",
     )
     config: RunnableConfig = {"configurable": {"session_id": "4"}}
     output = with_history.invoke({"input": "hello"}, config)
@@ -112,8 +119,11 @@ def test_output_messages() -> None:
         ]
     )
     get_session_history = _get_get_session_history()
-    with_history = runnable.with_message_history(
-        get_session_history, input_messages_key="input", history_messages_key="history"
+    with_history = RunnableWithMessageHistory(
+        runnable,
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="history",
     )
     config: RunnableConfig = {"configurable": {"session_id": "5"}}
     output = with_history.invoke({"input": "hello"}, config)
@@ -141,7 +151,8 @@ def test_output_dict() -> None:
         }
     )
     get_session_history = _get_get_session_history()
-    with_history = runnable.with_message_history(
+    with_history = RunnableWithMessageHistory(
+        runnable,
         get_session_history,
         input_messages_key="input",
         history_messages_key="history",
@@ -156,7 +167,7 @@ def test_output_dict() -> None:
 
 def test_get_input_schema_input_dict() -> None:
     class RunnableWithChatHistoryInput(BaseModel):
-        input: str
+        input: Union[str, BaseMessage, Sequence[BaseMessage]]
         history: Sequence[BaseMessage]
 
     runnable = RunnableLambda(
@@ -177,7 +188,8 @@ def test_get_input_schema_input_dict() -> None:
         }
     )
     get_session_history = _get_get_session_history()
-    with_history = runnable.with_message_history(
+    with_history = RunnableWithMessageHistory(
+        runnable,
         get_session_history,
         input_messages_key="input",
         history_messages_key="history",
@@ -210,9 +222,8 @@ def test_get_input_schema_input_messages() -> None:
         }
     )
     get_session_history = _get_get_session_history()
-    with_history = runnable.with_message_history(
-        get_session_history,
-        output_messages_key="output",
+    with_history = RunnableWithMessageHistory(
+        runnable, get_session_history, output_messages_key="output"
     )
     assert (
         with_history.get_input_schema().schema()
