@@ -1,12 +1,12 @@
 """Base class for Slack tools."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING,Optional
+from typing import TYPE_CHECKING, Optional
 
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
 from langchain.tools.slack.utils import login
-from langchain.callbacks.manager import CallbackManagerForToolRun
 
 if TYPE_CHECKING:
     from slack_sdk import WebClient
