@@ -26,7 +26,7 @@ sec = KayAiRetriever.create(
 ).with_config(run_name="sec_filings")
 wiki = WikipediaRetriever(top_k_results=5).with_config(run_name="wiki")
 
-llm = ChatOpenAI(model="gpt-3.5-turbo")
+llm = ChatOpenAI(model="gpt-3.5-turbo-16k")
 
 
 class Search(BaseModel):
