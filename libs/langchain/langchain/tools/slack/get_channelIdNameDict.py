@@ -1,9 +1,8 @@
 import json
 import logging
-from typing import Dict, Optional, Type
+from typing import Dict, Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel
 from langchain.tools.slack.base import SlackBaseTool
 
 
