@@ -1,0 +1,432 @@
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/AnnouncementBar/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/AnnouncementBar/styles.module.css
+index b09a217..930ede8 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/AnnouncementBar/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/AnnouncementBar/styles.module.css
+@@ -50,7 +50,7 @@ html[data-announcement-bar-initially-dismissed='true'] .announcementBar {
+   }
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   :root {
+     --docusaurus-announcement-bar-height: 30px;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/BlogSidebar/Desktop/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/BlogSidebar/Desktop/styles.module.css
+index 73a4bd8..008a8f8 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/BlogSidebar/Desktop/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/BlogSidebar/Desktop/styles.module.css
+@@ -38,7 +38,7 @@
+   color: var(--ifm-color-primary) !important;
+ }
+ 
+-@media (max-width: 996px) {
++@media (max-width: 1280px) {
+   .sidebar {
+     display: none;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/DocCategoryGeneratedIndexPage/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/DocCategoryGeneratedIndexPage/styles.module.css
+index 94f6951..17ac45f 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/DocCategoryGeneratedIndexPage/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/DocCategoryGeneratedIndexPage/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .generatedIndexPage {
+     max-width: 75% !important;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/Footer/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/Footer/styles.module.css
+index 7d05961..1f94f96 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/Footer/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/Footer/styles.module.css
+@@ -11,7 +11,7 @@
+   font-size: smaller;
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .lastUpdated {
+     text-align: right;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/Layout/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/Layout/styles.module.css
+index 784498f..e7c6043 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/Layout/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/Layout/styles.module.css
+@@ -10,7 +10,7 @@
+   margin-top: 0;
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .docItemCol {
+     max-width: 75% !important;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/TOC/Mobile/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/TOC/Mobile/styles.module.css
+index a298b5e..e110e10 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/TOC/Mobile/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/DocItem/TOC/Mobile/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   /* Prevent hydration FOUC, as the mobile TOC needs to be server-rendered */
+   .tocMobile {
+     display: none;
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Main/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Main/styles.module.css
+index 0754fce..aef0565 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Main/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Main/styles.module.css
+@@ -10,7 +10,7 @@
+   width: 100%;
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .docMainContainer {
+     flex-grow: 1;
+     max-width: calc(100% - var(--doc-sidebar-width));
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Sidebar/ExpandButton/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Sidebar/ExpandButton/styles.module.css
+index f5e5878..23390f9 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Sidebar/ExpandButton/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Sidebar/ExpandButton/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .expandButton {
+     position: absolute;
+     top: 0;
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Sidebar/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Sidebar/styles.module.css
+index f821f3b..3321785 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Sidebar/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/DocPage/Layout/Sidebar/styles.module.css
+@@ -14,7 +14,7 @@
+   display: none;
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .docSidebarContainer {
+     display: block;
+     width: var(--doc-sidebar-width);
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/CollapseButton/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/CollapseButton/styles.module.css
+index c5026e8..901e80d 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/CollapseButton/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/CollapseButton/styles.module.css
+@@ -15,7 +15,7 @@
+   --docusaurus-collapse-button-bg-hover: rgb(255 255 255 / 10%);
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .collapseSidebarButton {
+     display: block !important;
+     background-color: var(--docusaurus-collapse-button-bg);
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/Content/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/Content/styles.module.css
+index 8d8c7e8..7cadb05 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/Content/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/Content/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .menu {
+     flex-grow: 1;
+     padding: 0.5rem;
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/styles.module.css
+index e4d4724..8c16f4a 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebar/Desktop/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .sidebar {
+     display: flex;
+     flex-direction: column;
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebarItem/Html/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebarItem/Html/styles.module.css
+index 2bb6934..af33ba1 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebarItem/Html/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/DocSidebarItem/Html/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .menuHtmlItem {
+     padding: var(--ifm-menu-link-padding-vertical)
+       var(--ifm-menu-link-padding-horizontal);
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/Navbar/Content/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/Navbar/Content/styles.module.css
+index 3cbe701..b504f5c 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/Navbar/Content/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/Navbar/Content/styles.module.css
+@@ -8,7 +8,7 @@
+ /*
+ Hide color mode toggle in small viewports
+  */
+-@media (max-width: 996px) {
++@media (max-width: 1280px) {
+   .colorModeToggle {
+     display: none;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/Navbar/Search/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/Navbar/Search/styles.module.css
+index ca386bb..d062be9 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/Navbar/Search/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/Navbar/Search/styles.module.css
+@@ -5,14 +5,14 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (max-width: 996px) {
++@media (max-width: 1280px) {
+   .searchBox {
+     position: absolute;
+     right: var(--ifm-navbar-padding-horizontal);
+   }
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .searchBox {
+     padding: var(--ifm-navbar-item-padding-vertical)
+       var(--ifm-navbar-item-padding-horizontal);
+diff --git a/node_modules/@docusaurus/theme-classic/lib/theme/TOC/styles.module.css b/node_modules/@docusaurus/theme-classic/lib/theme/TOC/styles.module.css
+index 4b6d2bc..397a75f 100644
+--- a/node_modules/@docusaurus/theme-classic/lib/theme/TOC/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/lib/theme/TOC/styles.module.css
+@@ -12,7 +12,7 @@
+   top: calc(var(--ifm-navbar-height) + 1rem);
+ }
+ 
+-@media (max-width: 996px) {
++@media (max-width: 1280px) {
+   .tableOfContents {
+     display: none;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/AnnouncementBar/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/AnnouncementBar/styles.module.css
+index b09a217..930ede8 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/AnnouncementBar/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/AnnouncementBar/styles.module.css
+@@ -50,7 +50,7 @@ html[data-announcement-bar-initially-dismissed='true'] .announcementBar {
+   }
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   :root {
+     --docusaurus-announcement-bar-height: 30px;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/BlogSidebar/Desktop/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/BlogSidebar/Desktop/styles.module.css
+index 73a4bd8..008a8f8 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/BlogSidebar/Desktop/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/BlogSidebar/Desktop/styles.module.css
+@@ -38,7 +38,7 @@
+   color: var(--ifm-color-primary) !important;
+ }
+ 
+-@media (max-width: 996px) {
++@media (max-width: 1280px) {
+   .sidebar {
+     display: none;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/DocCategoryGeneratedIndexPage/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/DocCategoryGeneratedIndexPage/styles.module.css
+index 94f6951..17ac45f 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/DocCategoryGeneratedIndexPage/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/DocCategoryGeneratedIndexPage/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .generatedIndexPage {
+     max-width: 75% !important;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/DocItem/Footer/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/DocItem/Footer/styles.module.css
+index 7d05961..1f94f96 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/DocItem/Footer/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/DocItem/Footer/styles.module.css
+@@ -11,7 +11,7 @@
+   font-size: smaller;
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .lastUpdated {
+     text-align: right;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/DocItem/Layout/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/DocItem/Layout/styles.module.css
+index 784498f..e7c6043 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/DocItem/Layout/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/DocItem/Layout/styles.module.css
+@@ -10,7 +10,7 @@
+   margin-top: 0;
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .docItemCol {
+     max-width: 75% !important;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/DocItem/TOC/Mobile/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/DocItem/TOC/Mobile/styles.module.css
+index a298b5e..e110e10 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/DocItem/TOC/Mobile/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/DocItem/TOC/Mobile/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   /* Prevent hydration FOUC, as the mobile TOC needs to be server-rendered */
+   .tocMobile {
+     display: none;
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Main/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Main/styles.module.css
+index 0754fce..aef0565 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Main/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Main/styles.module.css
+@@ -10,7 +10,7 @@
+   width: 100%;
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .docMainContainer {
+     flex-grow: 1;
+     max-width: calc(100% - var(--doc-sidebar-width));
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Sidebar/ExpandButton/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Sidebar/ExpandButton/styles.module.css
+index f5e5878..23390f9 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Sidebar/ExpandButton/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Sidebar/ExpandButton/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .expandButton {
+     position: absolute;
+     top: 0;
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Sidebar/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Sidebar/styles.module.css
+index f821f3b..3321785 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Sidebar/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/DocPage/Layout/Sidebar/styles.module.css
+@@ -14,7 +14,7 @@
+   display: none;
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .docSidebarContainer {
+     display: block;
+     width: var(--doc-sidebar-width);
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/CollapseButton/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/CollapseButton/styles.module.css
+index c5026e8..901e80d 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/CollapseButton/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/CollapseButton/styles.module.css
+@@ -15,7 +15,7 @@
+   --docusaurus-collapse-button-bg-hover: rgb(255 255 255 / 10%);
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .collapseSidebarButton {
+     display: block !important;
+     background-color: var(--docusaurus-collapse-button-bg);
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/Content/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/Content/styles.module.css
+index 8d8c7e8..7cadb05 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/Content/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/Content/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .menu {
+     flex-grow: 1;
+     padding: 0.5rem;
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/styles.module.css
+index e4d4724..8c16f4a 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/DocSidebar/Desktop/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .sidebar {
+     display: flex;
+     flex-direction: column;
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/DocSidebarItem/Html/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/DocSidebarItem/Html/styles.module.css
+index 2bb6934..af33ba1 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/DocSidebarItem/Html/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/DocSidebarItem/Html/styles.module.css
+@@ -5,7 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .menuHtmlItem {
+     padding: var(--ifm-menu-link-padding-vertical)
+       var(--ifm-menu-link-padding-horizontal);
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/Navbar/Content/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/Navbar/Content/styles.module.css
+index 3cbe701..b504f5c 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/Navbar/Content/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/Navbar/Content/styles.module.css
+@@ -8,7 +8,7 @@
+ /*
+ Hide color mode toggle in small viewports
+  */
+-@media (max-width: 996px) {
++@media (max-width: 1280px) {
+   .colorModeToggle {
+     display: none;
+   }
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/Navbar/Search/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/Navbar/Search/styles.module.css
+index ca386bb..d062be9 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/Navbar/Search/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/Navbar/Search/styles.module.css
+@@ -5,14 +5,14 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-@media (max-width: 996px) {
++@media (max-width: 1280px) {
+   .searchBox {
+     position: absolute;
+     right: var(--ifm-navbar-padding-horizontal);
+   }
+ }
+ 
+-@media (min-width: 997px) {
++@media (min-width: 1281px) {
+   .searchBox {
+     padding: var(--ifm-navbar-item-padding-vertical)
+       var(--ifm-navbar-item-padding-horizontal);
+diff --git a/node_modules/@docusaurus/theme-classic/src/theme/TOC/styles.module.css b/node_modules/@docusaurus/theme-classic/src/theme/TOC/styles.module.css
+index 4b6d2bc..397a75f 100644
+--- a/node_modules/@docusaurus/theme-classic/src/theme/TOC/styles.module.css
++++ b/node_modules/@docusaurus/theme-classic/src/theme/TOC/styles.module.css
+@@ -12,7 +12,7 @@
+   top: calc(var(--ifm-navbar-height) + 1rem);
+ }
+ 
+-@media (max-width: 996px) {
++@media (max-width: 1280px) {
+   .tableOfContents {
+     display: none;
+   }

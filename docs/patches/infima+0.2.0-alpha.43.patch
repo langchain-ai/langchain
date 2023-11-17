@@ -1,0 +1,13 @@
+diff --git a/node_modules/infima/dist/css/default/default.css b/node_modules/infima/dist/css/default/default.css
+index 3ffe402..515944f 100644
+--- a/node_modules/infima/dist/css/default/default.css
++++ b/node_modules/infima/dist/css/default/default.css
+@@ -2930,7 +2930,7 @@ html[data-theme='dark'] {
+     }
+ }
+ 
+-@media (max-width: 996px) {
++@media (max-width: 1280px) {
+     .col {
+       --ifm-col-width: 100%;
+       flex-basis: var(--ifm-col-width);
