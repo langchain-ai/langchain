@@ -22,6 +22,8 @@ class XMLOutputParser(BaseOutputParser):
         encoding_match = self.encoding_matcher.search(text)
         if encoding_match:
             text = encoding_match.group(2)
+
+        text = text.strip()
         if (text.startswith("<") or text.startswith("\n<")) and (
             text.endswith(">") or text.endswith(">\n")
         ):

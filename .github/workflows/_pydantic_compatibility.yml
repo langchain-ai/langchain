@@ -9,7 +9,7 @@ on:
         description: "From which folder this pipeline executes"
 
 env:
-  POETRY_VERSION: "1.5.1"
+  POETRY_VERSION: "1.6.1"
 
 jobs:
   build:
@@ -26,7 +26,7 @@ jobs:
           - "3.11"
     name: Pydantic v1/v2 compatibility - Python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"

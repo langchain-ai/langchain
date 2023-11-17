@@ -5,14 +5,37 @@ from langchain.prompts.chat import (
     BaseChatPromptTemplate,
 )
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain.schema.vectorstore import VectorStoreRetriever
 from langchain.tools.base import BaseTool
-from langchain.vectorstores.base import VectorStoreRetriever
 
 from langchain_experimental.autonomous_agents.autogpt.prompt_generator import get_prompt
 from langchain_experimental.pydantic_v1 import BaseModel
 
 
-class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
+# This class has a metaclass conflict: both `BaseChatPromptTemplate` and `BaseModel`
+# define a metaclass to use, and the two metaclasses attempt to define
+# the same functions but in mutually-incompatible ways.
+# It isn't clear how to resolve this, and this code predates mypy
+# beginning to perform that check.
+#
+# Mypy errors:
+# ```
+# Definition of "__private_attributes__" in base class "BaseModel" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Definition of "__repr_name__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Definition of "__pretty__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Definition of "__repr_str__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Definition of "__rich_repr__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Metaclass conflict: the metaclass of a derived class must be
+#   a (non-strict) subclass of the metaclasses of all its bases  [misc]
+# ```
+#
+# TODO: look into refactoring this class in a way that avoids the mypy type errors
+class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):  # type: ignore[misc]
     """Prompt for AutoGPT."""
 
     ai_name: str

@@ -127,7 +127,9 @@ class ObsidianLoader(BaseLoader):
             }
 
             if tags or front_matter.get("tags"):
-                metadata["tags"] = ",".join(tags | set(front_matter.get("tags", [])))
+                metadata["tags"] = ",".join(
+                    tags | set(front_matter.get("tags", []) or [])
+                )
 
             docs.append(Document(page_content=text, metadata=metadata))
 

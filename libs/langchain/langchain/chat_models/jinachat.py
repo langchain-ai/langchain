@@ -12,6 +12,7 @@ from typing import (
     Mapping,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 
@@ -91,7 +92,7 @@ async def acompletion_with_retry(llm: JinaChat, **kwargs: Any) -> Any:
 
 
 def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
@@ -164,8 +165,9 @@ class JinaChat(BaseChatModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"jinachat_api_key": "JINACHAT_API_KEY"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     client: Any  #: :meta private:

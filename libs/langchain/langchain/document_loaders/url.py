@@ -26,7 +26,7 @@ class UnstructuredURLLoader(BaseLoader):
     from langchain.document_loaders import UnstructuredURLLoader
 
     loader = UnstructuredURLLoader(
-        ursl=["<url-1>", "<url-2>"], mode="elements", strategy="fast",
+        urls=["<url-1>", "<url-2>"], mode="elements", strategy="fast",
     )
     docs = loader.load()
 

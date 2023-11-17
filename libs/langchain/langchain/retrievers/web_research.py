@@ -16,9 +16,9 @@ from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts import BasePromptTemplate, PromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.vectorstore import VectorStore
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.utilities import GoogleSearchAPIWrapper
-from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger(__name__)
 

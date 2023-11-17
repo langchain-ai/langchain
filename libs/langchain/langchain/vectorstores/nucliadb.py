@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterable, List, Optional, Type
 
 from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores.base import VST, VectorStore
+from langchain.schema.vectorstore import VST, VectorStore
 
 FIELD_TYPES = {
     "f": "files",

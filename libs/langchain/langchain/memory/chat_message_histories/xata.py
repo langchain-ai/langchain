@@ -56,7 +56,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
                     {"name": "role", "type": "string"},
                     {"name": "content", "type": "text"},
                     {"name": "name", "type": "string"},
-                    {"name": "additionalKwargs", "type": "text"},
+                    {"name": "additionalKwargs", "type": "json"},
                 ]
             },
         )
@@ -101,7 +101,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
                         "content": m["content"],
                         "role": m.get("role"),
                         "name": m.get("name"),
-                        "additionalKwargs": json.loads(m["additionalKwargs"]),
+                        "additional_kwargs": json.loads(m["additionalKwargs"]),
                     },
                 }
                 for m in r["records"]

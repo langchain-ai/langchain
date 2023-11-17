@@ -1,6 +1,7 @@
 from typing import List, Type
 
 import langchain.tools
+from langchain.tools import _DEPRECATED_TOOLS
 from langchain.tools import __all__ as tools_all
 from langchain.tools.base import BaseTool, StructuredTool
 
@@ -13,6 +14,8 @@ _EXCLUDE = {
 def _get_tool_classes(skip_tools_without_default_names: bool) -> List[Type[BaseTool]]:
     results = []
     for tool_class_name in tools_all:
+        if tool_class_name in _DEPRECATED_TOOLS:
+            continue
         # Resolve the str to the class
         tool_class = getattr(langchain.tools, tool_class_name)
         if isinstance(tool_class, type) and issubclass(tool_class, BaseTool):

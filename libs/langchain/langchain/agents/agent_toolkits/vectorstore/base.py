@@ -20,7 +20,7 @@ def create_vectorstore_agent(
     prefix: str = PREFIX,
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a VectorStore agent from an LLM and tools.
 
@@ -61,7 +61,7 @@ def create_vectorstore_router_agent(
     prefix: str = ROUTER_PREFIX,
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a VectorStore router agent from an LLM and tools.
 

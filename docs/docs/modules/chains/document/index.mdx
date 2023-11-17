@@ -1,0 +1,21 @@
+---
+sidebar_position: 2
+---
+# Documents
+
+These are the core chains for working with documents. They are useful for summarizing documents, answering questions over documents, extracting information from documents, and more.
+
+These chains all implement a common interface:
+
+```python
+class BaseCombineDocumentsChain(Chain, ABC):
+    """Base interface for chains combining documents."""
+
+    @abstractmethod
+    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
+        """Combine documents into a single string."""
+
+```
+import DocCardList from "@theme/DocCardList";
+
+<DocCardList />

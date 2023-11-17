@@ -18,7 +18,7 @@ Example:
     ...        " there are two hydrogen atoms and one oxygen atom."
     ...     reference = "The chemical formula for water is H2O.",
     ... )
-    >>> print(result["text"])
+    >>> print(result)
     # {
     #    "value": "B",
     #    "comment": "Both responses accurately state"

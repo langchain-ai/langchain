@@ -12,9 +12,10 @@ def test_async_recursive_url_loader() -> None:
         use_async=True,
         max_depth=3,
         timeout=None,
+        check_response_status=True,
     )
     docs = loader.load()
-    assert len(docs) == 890
+    assert len(docs) == 513
     assert docs[0].page_content == "placeholder"
 
 

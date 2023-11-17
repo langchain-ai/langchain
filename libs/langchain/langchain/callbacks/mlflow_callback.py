@@ -371,7 +371,9 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                         nlp=self.nlp,
                     )
                 )
-                complexity_metrics: Dict[str, float] = generation_resp.pop("text_complexity_metrics")  # type: ignore  # noqa: E501
+                complexity_metrics: Dict[str, float] = generation_resp.pop(
+                    "text_complexity_metrics"
+                )  # type: ignore  # noqa: E501
                 self.mlflg.metrics(
                     complexity_metrics,
                     step=self.metrics["step"],

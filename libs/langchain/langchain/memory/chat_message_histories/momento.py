@@ -97,7 +97,8 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         ttl: timedelta,
         *,
         configuration: Optional[momento.config.Configuration] = None,
-        auth_token: Optional[str] = None,
+        api_key: Optional[str] = None,
+        auth_token: Optional[str] = None,  # for backwards compatibility
         **kwargs: Any,
     ) -> MomentoChatMessageHistory:
         """Construct cache from CacheClient parameters."""
@@ -110,8 +111,13 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
             )
         if configuration is None:
             configuration = Configurations.Laptop.v1()
-        auth_token = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
-        credentials = CredentialProvider.from_string(auth_token)
+
+        # Try checking `MOMENTO_AUTH_TOKEN` first for backwards compatibility
+        try:
+            api_key = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
+        except ValueError:
+            api_key = api_key or get_from_env("api_key", "MOMENTO_API_KEY")
+        credentials = CredentialProvider.from_string(api_key)
         cache_client = CacheClient(configuration, credentials, default_ttl=ttl)
         return cls(session_id, cache_client, cache_name, ttl=ttl, **kwargs)
 

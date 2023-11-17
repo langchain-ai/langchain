@@ -9,11 +9,15 @@ from langchain.tools.ainetwork.base import AINBaseTool
 
 
 class AppOperationType(str, Enum):
+    """Type of app operation as enumerator."""
+
     SET_ADMIN = "SET_ADMIN"
     GET_CONFIG = "GET_CONFIG"
 
 
 class AppSchema(BaseModel):
+    """Schema for app operations."""
+
     type: AppOperationType = Field(...)
     appName: str = Field(..., description="Name of the application on the blockchain")
     address: Optional[Union[str, List[str]]] = Field(
@@ -26,6 +30,8 @@ class AppSchema(BaseModel):
 
 
 class AINAppOps(AINBaseTool):
+    """Tool for app operations."""
+
     name: str = "AINappOps"
     description: str = """
 Create an app in the AINetwork Blockchain database by creating the /apps/<appName> path.

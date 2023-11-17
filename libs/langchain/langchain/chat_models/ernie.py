@@ -107,6 +107,7 @@ class ErnieBotChat(BaseChatModel):
         model_paths = {
             "ERNIE-Bot-turbo": "eb-instant",
             "ERNIE-Bot": "completions",
+            "ERNIE-Bot-4": "completions_pro",
             "BLOOMZ-7B": "bloomz_7b1",
             "Llama-2-7b-chat": "llama_2_7b",
             "Llama-2-13b-chat": "llama_2_13b",
