@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class _BaseDstack(Serializable):
-    run_name: str
+    run_name: str = ""
     """dstack run_name to connect to"""
     api_base_url: str = ""
     """dstack server url"""
