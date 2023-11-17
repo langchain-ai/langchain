@@ -24,6 +24,7 @@ from langchain.chat_models.baichuan import ChatBaichuan
 from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from langchain.chat_models.bedrock import BedrockChat
 from langchain.chat_models.cohere import ChatCohere
+from langchain.chat_models.dstack import ChatDstack
 from langchain.chat_models.ernie import ErnieBotChat
 from langchain.chat_models.everlyai import ChatEverlyAI
 from langchain.chat_models.fake import FakeListChatModel
@@ -73,4 +74,5 @@ __all__ = [
     "ChatBaichuan",
     "ChatHunyuan",
     "GigaChat",
+    "ChatDstack",
 ]
