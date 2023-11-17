@@ -180,8 +180,8 @@ class ChatOpenAI(BaseChatModel):
         """Return whether this model can be serialized by Langchain."""
         return True
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -307,12 +307,17 @@ class ChatOpenAI(BaseChatModel):
                 "default_query": values["default_query"],
                 "http_client": values["http_client"],
             }
-            values["client"] = openai.OpenAI(**client_params).chat.completions
-            values["async_client"] = openai.AsyncOpenAI(
-                **client_params
-            ).chat.completions
-        else:
+
+            if not values.get("client"):
+                values["client"] = openai.OpenAI(**client_params).chat.completions
+            if not values.get("async_client"):
+                values["async_client"] = openai.AsyncOpenAI(
+                    **client_params
+                ).chat.completions
+        elif not values.get("client"):
             values["client"] = openai.ChatCompletion
+        else:
+            pass
         return values
 
     @property
