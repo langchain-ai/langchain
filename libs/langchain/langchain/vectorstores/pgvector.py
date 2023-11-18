@@ -147,6 +147,10 @@ class PGVector(VectorStore):
         self.create_tables_if_not_exists()
         self.create_collection()
 
+    def __del__(self) -> None:
+        if self._conn:
+            self._conn.close()
+
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
@@ -762,6 +766,7 @@ class PGVector(VectorStore):
             k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
+            filter=filter,
             **kwargs,
         )
 

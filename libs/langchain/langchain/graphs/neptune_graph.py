@@ -30,6 +30,7 @@ class NeptuneGraph:
         credentials_profile_name: optional AWS profile name
         region_name: optional AWS region, e.g., us-west-2
         service: optional service name, default is neptunedata
+        sign: optional, whether to sign the request payload, default is True
 
     Example:
         .. code-block:: python
@@ -60,6 +61,7 @@ class NeptuneGraph:
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
         service: str = "neptunedata",
+        sign: bool = True,
     ) -> None:
         """Create a new Neptune graph wrapper instance."""
 
@@ -83,7 +85,17 @@ class NeptuneGraph:
 
                 client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
 
-                self.client = session.client(service, **client_params)
+                if sign:
+                    self.client = session.client(service, **client_params)
+                else:
+                    from botocore import UNSIGNED
+                    from botocore.config import Config
+
+                    self.client = session.client(
+                        service,
+                        **client_params,
+                        config=Config(signature_version=UNSIGNED),
+                    )
 
         except ImportError:
             raise ModuleNotFoundError(
@@ -120,7 +132,15 @@ class NeptuneGraph:
 
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
         """Query Neptune database."""
-        return self.client.execute_open_cypher_query(openCypherQuery=query)
+        try:
+            return self.client.execute_open_cypher_query(openCypherQuery=query)
+        except Exception as e:
+            raise NeptuneQueryException(
+                {
+                    "message": "An error occurred while executing the query.",
+                    "details": str(e),
+                }
+            )
 
     def _get_summary(self) -> Dict:
         try:
