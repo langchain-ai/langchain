@@ -183,16 +183,21 @@ SPARQL_GENERATION_UPDATE_PROMPT = PromptTemplate(
     input_variables=["schema", "prompt"], template=SPARQL_GENERATION_UPDATE_TEMPLATE
 )
 
-SPARQL_QA_TEMPLATE = """Task: Generate a natural language response from the results of a SPARQL query.
-You are an assistant that creates well-written and human understandable answers.
-The information part contains the information provided, which you can use to construct an answer.
-The information provided is authoritative, you must never doubt it or try to use your internal knowledge to correct it.
-Make your response sound like the information is coming from an AI assistant, but don't add any information.
+SPARQL_QA_TEMPLATE = """\
+You are an assistant that helps to form nice and human understandable answers from the results of SPARQL queries.
+The information part contains the provided information that you must use to construct an answer.
+The provided information is authoritative, you must never doubt it or try to use your internal knowledge to correct it.
+Make the answer sound as a response to the question. Do not mention that you based the result on the given information.
+If the provided information is empty, say that you don't know the answer.
+
 Information:
 {context}
 
-Question: {prompt}
-Helpful Answer:"""
+Question:
+{prompt}
+
+Helpful Answer:
+"""
 SPARQL_QA_PROMPT = PromptTemplate(
     input_variables=["context", "prompt"], template=SPARQL_QA_TEMPLATE
 )
