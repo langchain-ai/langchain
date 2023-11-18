@@ -96,7 +96,10 @@ class _OllamaCommon(BaseLanguageModel):
     """full prompt or prompt template (overrides what is defined in the Modelfile)"""
 
     format: Optional[str] = None
-    """Specify the format of the output (e.g., JSON)"""
+    """Specify the format of the output (e.g., json)"""
+
+    timeout: Optional[int] = None
+    """Timeout for the request stream"""
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -160,6 +163,7 @@ class _OllamaCommon(BaseLanguageModel):
             headers={"Content-Type": "application/json"},
             json={"prompt": prompt, **params},
             stream=True,
+            timeout=self.timeout,
         )
         response.encoding = "utf-8"
         if response.status_code != 200:
