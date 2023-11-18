@@ -1,6 +1,5 @@
 """Util that calls several NASA APIs."""
 import json
-from dataclasses import asdict, dataclass, fields
 
 import requests
 
