@@ -493,8 +493,16 @@
       "destination": "/docs/integrations/providers/astradb"
     },
     {
+      "source": "/docs/integrations/vectorstores/vectorstores/semadb",
+      "destination": "/docs/integrations/vectorstores/semadb"
+    },
+    {
       "source": "/docs/integrations/vectorstores/cassandra",
       "destination": "/docs/integrations/vectorstores/astradb"
+    },
+    {
+      "source": "/docs/integrations/vectorstores/async_faiss",
+      "destination": "/docs/integrations/vectorstores/faiss_async"
     },
     {
       "source": "/docs/integrations/cerebriumai",
