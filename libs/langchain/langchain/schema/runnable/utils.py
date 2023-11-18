@@ -308,7 +308,7 @@ class ConfigurableFieldSpec(NamedTuple):
 
 def get_unique_config_specs(
     specs: Iterable[ConfigurableFieldSpec],
-) -> Sequence[ConfigurableFieldSpec]:
+) -> List[ConfigurableFieldSpec]:
     """Get the unique config specs from a sequence of config specs."""
     grouped = groupby(sorted(specs, key=lambda s: s.id), lambda s: s.id)
     unique: List[ConfigurableFieldSpec] = []

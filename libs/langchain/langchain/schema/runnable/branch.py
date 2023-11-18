@@ -147,7 +147,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return super().get_input_schema(config)
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec
             for step in (
