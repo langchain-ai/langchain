@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.schema import BaseOutputParser
 
 

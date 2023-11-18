@@ -7,8 +7,8 @@ from typing import Dict, List
 
 import numpy as np
 
-from langchain.prompts.example_selector.base import BaseExampleSelector
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.example_selector.base import BaseExampleSelector
+from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 

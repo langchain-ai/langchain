@@ -7,7 +7,7 @@ from langchain.chains.openai_functions import (
     create_openai_fn_chain,
 )
 from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.schema import (
     AIMessage,
     BaseMessage,

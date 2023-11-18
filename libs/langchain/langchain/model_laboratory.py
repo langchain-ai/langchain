@@ -6,7 +6,7 @@ from typing import List, Optional, Sequence
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.utils.input import get_color_mapping, print_text
 
 

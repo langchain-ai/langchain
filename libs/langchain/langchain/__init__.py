@@ -233,19 +233,19 @@ def __getattr__(name: str) -> Any:
 
         return HuggingFacePipeline
     elif name == "FewShotPromptTemplate":
-        from langchain.prompts import FewShotPromptTemplate
+        from langchain_core.prompts import FewShotPromptTemplate
 
         _warn_on_import(name, replacement="langchain.prompts.FewShotPromptTemplate")
 
         return FewShotPromptTemplate
     elif name == "Prompt":
-        from langchain.prompts import Prompt
+        from langchain_core.prompts import Prompt
 
         _warn_on_import(name, replacement="langchain.prompts.Prompt")
 
         return Prompt
     elif name == "PromptTemplate":
-        from langchain.prompts import PromptTemplate
+        from langchain_core.prompts import PromptTemplate
 
         _warn_on_import(name, replacement="langchain.prompts.PromptTemplate")
 

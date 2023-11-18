@@ -14,7 +14,7 @@ from langchain.chains.llm_checker.prompt import (
     REVISED_ANSWER_PROMPT,
 )
 from langchain.chains.sequential import SequentialChain
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, root_validator
 from langchain_core.schema.language_model import BaseLanguageModel
 

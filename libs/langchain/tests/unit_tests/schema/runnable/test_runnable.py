@@ -36,9 +36,9 @@ from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain_core.load.dump import dumpd, dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
-from langchain.prompts import PromptTemplate
-from langchain.prompts.base import StringPromptValue
-from langchain.prompts.chat import (
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts.base import StringPromptValue
+from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     ChatPromptValue,
     HumanMessagePromptTemplate,

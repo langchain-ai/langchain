@@ -144,7 +144,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             from langchain.chains import (
                 StuffDocumentsChain, LLMChain, ReduceDocumentsChain
             )
-            from langchain.prompts import PromptTemplate
+            from langchain_core.prompts import PromptTemplate
             from langchain.llms import OpenAI
 
             # This controls how each document will be formatted. Specifically,

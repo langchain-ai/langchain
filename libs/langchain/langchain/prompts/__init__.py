@@ -27,8 +27,8 @@ from multiple components. Prompt classes and functions make constructing
                     ChatPromptValue
 
 """  # noqa: E501
-from langchain.prompts.base import StringPromptTemplate
-from langchain.prompts.chat import (
+from langchain_core.prompts.base import StringPromptTemplate
+from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseChatPromptTemplate,
     ChatMessagePromptTemplate,
@@ -37,20 +37,20 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
-from langchain.prompts.example_selector import (
+from langchain_core.prompts.example_selector import (
     LengthBasedExampleSelector,
     MaxMarginalRelevanceExampleSelector,
     NGramOverlapExampleSelector,
     SemanticSimilarityExampleSelector,
 )
-from langchain.prompts.few_shot import (
+from langchain_core.prompts.few_shot import (
     FewShotChatMessagePromptTemplate,
     FewShotPromptTemplate,
 )
-from langchain.prompts.few_shot_with_templates import FewShotPromptWithTemplates
-from langchain.prompts.loading import load_prompt
-from langchain.prompts.pipeline import PipelinePromptTemplate
-from langchain.prompts.prompt import Prompt, PromptTemplate
+from langchain_core.prompts.few_shot_with_templates import FewShotPromptWithTemplates
+from langchain_core.prompts.loading import load_prompt
+from langchain_core.prompts.pipeline import PipelinePromptTemplate
+from langchain_core.prompts.prompt import Prompt, PromptTemplate
 from langchain_core.schema.prompt_template import BasePromptTemplate
 
 __all__ = [

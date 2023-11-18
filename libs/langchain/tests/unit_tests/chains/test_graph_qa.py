@@ -12,7 +12,7 @@ from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_Q
 from langchain.graphs.graph_document import GraphDocument
 from langchain.graphs.graph_store import GraphStore
 from langchain.memory import ConversationBufferMemory, ReadOnlySharedMemory
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

@@ -6,8 +6,8 @@ import pytest
 
 from langchain.chains import LLMChain
 from langchain.llms.fireworks import Fireworks
-from langchain.prompts import PromptTemplate
-from langchain.prompts.chat import (
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )

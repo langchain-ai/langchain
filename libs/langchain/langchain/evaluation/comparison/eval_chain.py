@@ -20,7 +20,7 @@ from langchain.evaluation.criteria.eval_chain import (
     Criteria,
 )
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.schema import RUN_KEY, BaseOutputParser
 from langchain_core.schema.language_model import BaseLanguageModel

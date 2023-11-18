@@ -17,7 +17,7 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.schema import BaseRetriever, Document
 from langchain_core.schema.language_model import BaseLanguageModel

@@ -6,8 +6,8 @@ from langchain.output_parsers.openai_functions import (
     OutputFunctionsParser,
     PydanticOutputFunctionsParser,
 )
-from langchain.prompts import PromptTemplate
-from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.schema import BaseLLMOutputParser
 from langchain_core.schema.language_model import BaseLanguageModel

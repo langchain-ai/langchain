@@ -14,7 +14,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
 from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.schema import BasePromptTemplate
 from langchain_core.schema.language_model import BaseLanguageModel
 from langchain.tools import APIOperation

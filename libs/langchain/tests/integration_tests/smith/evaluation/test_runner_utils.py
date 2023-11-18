@@ -9,7 +9,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.evaluation import EvaluatorType
 from langchain.llms.openai import OpenAI
-from langchain.prompts.chat import ChatPromptTemplate
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.schema.messages import BaseMessage, HumanMessage
 from langchain.smith import RunEvalConfig, run_on_dataset
 from langchain.smith.evaluation import InputFormatError

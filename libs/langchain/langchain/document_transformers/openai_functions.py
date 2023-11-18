@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions import create_tagging_chain
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.schema import BaseDocumentTransformer, Document
 from langchain_core.schema.language_model import BaseLanguageModel

@@ -13,7 +13,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain_core.load.dump import dumpd
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.schema import (
     BaseLLMOutputParser,
@@ -47,7 +47,7 @@ class LLMChain(Chain):
 
             from langchain.chains import LLMChain
             from langchain.llms import OpenAI
-            from langchain.prompts import PromptTemplate
+            from langchain_core.prompts import PromptTemplate
             prompt_template = "Tell me a {adjective} joke"
             prompt = PromptTemplate(
                 input_variables=["adjective"], template=prompt_template

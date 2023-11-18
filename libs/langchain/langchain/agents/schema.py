@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
-from langchain.prompts.chat import ChatPromptTemplate
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.schema import AgentAction
 
 

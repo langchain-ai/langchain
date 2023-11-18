@@ -33,7 +33,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import Field
 from langchain_core.schema import BasePromptTemplate
 from langchain_core.schema.language_model import BaseLanguageModel

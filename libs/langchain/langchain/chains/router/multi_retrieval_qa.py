@@ -13,7 +13,7 @@ from langchain.chains.router.multi_retrieval_prompt import (
     MULTI_RETRIEVAL_ROUTER_TEMPLATE,
 )
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.schema import BaseRetriever
 from langchain_core.schema.language_model import BaseLanguageModel
 

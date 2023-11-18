@@ -7,9 +7,9 @@ from typing import Iterator
 import pytest
 
 from langchain.output_parsers import RegexParser
-from langchain.prompts.few_shot import FewShotPromptTemplate
-from langchain.prompts.loading import load_prompt
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.few_shot import FewShotPromptTemplate
+from langchain_core.prompts.loading import load_prompt
+from langchain_core.prompts.prompt import PromptTemplate
 
 EXAMPLE_DIR = Path("tests/unit_tests/examples").absolute()
 

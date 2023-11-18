@@ -7,7 +7,7 @@ from langchain.agents.openai_functions_agent.agent_token_buffer_memory import (
 from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.memory.token_buffer import ConversationTokenBufferMemory
-from langchain.prompts.chat import MessagesPlaceholder
+from langchain_core.prompts.chat import MessagesPlaceholder
 from langchain_core.schema.language_model import BaseLanguageModel
 from langchain_core.schema.memory import BaseMemory
 from langchain_core.schema.messages import SystemMessage

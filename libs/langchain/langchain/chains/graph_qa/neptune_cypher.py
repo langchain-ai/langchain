@@ -14,7 +14,7 @@ from langchain.chains.graph_qa.prompts import (
 from langchain.chains.llm import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.graphs import NeptuneGraph
-from langchain.prompts.base import BasePromptTemplate
+from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"

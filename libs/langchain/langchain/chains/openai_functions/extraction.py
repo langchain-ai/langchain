@@ -11,7 +11,7 @@ from langchain.output_parsers.openai_functions import (
     JsonKeyOutputFunctionsParser,
     PydanticAttrOutputFunctionsParser,
 )
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.schema import BasePromptTemplate
 from langchain_core.schema.language_model import BaseLanguageModel
