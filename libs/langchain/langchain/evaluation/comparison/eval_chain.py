@@ -179,7 +179,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         # .     " by explaining what the formula means.\\n[[B]]"
         # }
 
-    """ # noqa: E501
+    """  # noqa: E501
 
     output_key: str = "results"  #: :meta private:
     output_parser: BaseOutputParser = Field(
