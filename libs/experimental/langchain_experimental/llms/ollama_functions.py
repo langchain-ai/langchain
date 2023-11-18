@@ -6,25 +6,26 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.chat_models.ollama import ChatOllama
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import BasePromptTemplate, ChatGeneration, ChatResult
+from langchain.prompts import SystemMessagePromptTemplate
+from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
-    SystemMessage,
 )
 
 from langchain_experimental.pydantic_v1 import root_validator
 
-DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools.
+DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 
 {tools}
 
-To use a tool, respond with a JSON object with the following structure:
+You must always select one of the above tools and respond with only a JSON object matching the following schema:
+
 {{
-  "tool": <name of the called tool>,
-  "tool_input": <parameters for the tool matching the above JSON schema>
-}}"""
+  "tool": <name of the selected tool>,
+  "tool_input": <parameters for the selected tool, matching the tool's JSON schema>
+}}
+"""
 
 
 DEFAULT_RESPONSE_FUNCTION = {
@@ -47,14 +48,14 @@ should be called for a given query.",
 class OllamaFunctions(BaseChatModel):
     llm: ChatOllama
 
-    tool_system_prompt: BasePromptTemplate
+    tool_system_prompt_template: str
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["llm"] = values.get("llm") or ChatOllama(**values, format="json")
-        values["tool_system_prompt"] = values.get(
-            "tool_system_prompt"
-        ) or ChatPromptTemplate.from_template(DEFAULT_SYSTEM_TEMPLATE)
+        values["tool_system_prompt_template"] = (
+            values.get("tool_system_prompt_template") or DEFAULT_SYSTEM_TEMPLATE
+        )
         return values
 
     @property
@@ -82,10 +83,12 @@ function in "functions".'
             del kwargs["function_call"]
         elif not functions:
             functions.append(DEFAULT_RESPONSE_FUNCTION)
-        default_content = self.tool_system_prompt.format(
+        system_message_prompt_template = SystemMessagePromptTemplate.from_template(
+            self.tool_system_prompt_template
+        )
+        system_message = system_message_prompt_template.format(
             tools=json.dumps(functions, indent=2)
         )
-        system_message = SystemMessage(content=default_content)
         if "functions" in kwargs:
             del kwargs["functions"]
         response_message = self.llm.predict_messages(
@@ -97,7 +100,6 @@ function in "functions".'
         try:
             parsed_chat_result = json.loads(chat_generation_content)
         except json.JSONDecodeError:
-            print(chat_generation_content)
             raise ValueError(
                 f'"{self.llm.model}" did not respond with valid JSON. Please try again.'
             )

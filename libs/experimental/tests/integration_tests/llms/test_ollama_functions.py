@@ -12,7 +12,7 @@ class TestOllamaFunctions(unittest.TestCase):
     Test OllamaFunctions
     """
 
-    def test_default_chat_anthropic(self) -> None:
+    def test_default_ollama_functions(self) -> None:
         base_model = OllamaFunctions(model="mistral")
         self.assertIsInstance(base_model.model, ChatOllama)
 
