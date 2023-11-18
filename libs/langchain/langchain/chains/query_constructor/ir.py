@@ -88,6 +88,8 @@ class Comparator(str, Enum):
     LTE = "lte"
     CONTAIN = "contain"
     LIKE = "like"
+    IN = "in"
+    NIN = "nin"
 
 
 class FilterDirective(Expr, ABC):

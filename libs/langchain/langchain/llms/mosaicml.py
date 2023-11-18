@@ -53,7 +53,7 @@ class MosaicML(LLM):
     inject_instruction_format: bool = False
     """Whether to inject the instruction format into the prompt."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
     retry_sleep: float = 1.0
     """How long to try sleeping for if a rate limit is encountered"""
 

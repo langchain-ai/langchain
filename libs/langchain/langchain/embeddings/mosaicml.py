@@ -64,7 +64,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
     def _embed(
         self, input: List[Tuple[str, str]], is_retry: bool = False
     ) -> List[List[float]]:
-        payload = {"input_strings": input}
+        payload = {"inputs": input}
 
         # HTTP headers for authorization
         headers = {

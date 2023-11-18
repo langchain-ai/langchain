@@ -23,12 +23,17 @@ import numpy as np
 import sqlalchemy
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.orm import Session
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -79,6 +84,7 @@ class PGVector(VectorStore):
         distance_strategy: The distance strategy to use. (default: COSINE)
         pre_delete_collection: If True, will delete the collection if it exists.
             (default: False). Useful for testing.
+        engine_args: SQLAlchemy's create engine arguments.
 
     Example:
         .. code-block:: python
@@ -109,6 +115,9 @@ class PGVector(VectorStore):
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
+        *,
+        connection: Optional[sqlalchemy.engine.Connection] = None,
+        engine_args: Optional[dict[str, Any]] = None,
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
@@ -118,16 +127,16 @@ class PGVector(VectorStore):
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
+        self.engine_args = engine_args or {}
+        # Create a connection if not provided, otherwise use the provided connection
+        self._conn = connection if connection else self.connect()
         self.__post_init__()
 
     def __post_init__(
         self,
     ) -> None:
-        """
-        Initialize the store.
-        """
-        self._conn = self.connect()
-        # self.create_vector_extension()
+        """Initialize the store."""
+        self.create_vector_extension()
         from langchain.vectorstores._pgvector_data_models import (
             CollectionStore,
             EmbeddingStore,
@@ -138,23 +147,37 @@ class PGVector(VectorStore):
         self.create_tables_if_not_exists()
         self.create_collection()
 
+    def __del__(self) -> None:
+        if self._conn:
+            self._conn.close()
+
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
 
     def connect(self) -> sqlalchemy.engine.Connection:
-        engine = sqlalchemy.create_engine(self.connection_string)
+        engine = sqlalchemy.create_engine(self.connection_string, **self.engine_args)
         conn = engine.connect()
         return conn
 
     def create_vector_extension(self) -> None:
         try:
             with Session(self._conn) as session:
-                statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
+                # The advisor lock fixes issue arising from concurrent
+                # creation of the vector extension.
+                # https://github.com/langchain-ai/langchain/issues/12933
+                # For more information see:
+                # https://www.postgresql.org/docs/16/explicit-locking.html#ADVISORY-LOCKS
+                statement = sqlalchemy.text(
+                    "BEGIN;"
+                    "SELECT pg_advisory_xact_lock(1573678846307946496);"
+                    "CREATE EXTENSION IF NOT EXISTS vector;"
+                    "COMMIT;"
+                )
                 session.execute(statement)
                 session.commit()
         except Exception as e:
-            self.logger.exception(e)
+            raise Exception(f"Failed to create vector extension: {e}") from e
 
     def create_tables_if_not_exists(self) -> None:
         with self._conn.begin():
@@ -555,7 +578,7 @@ class PGVector(VectorStore):
         **kwargs: Any,
     ) -> PGVector:
         """
-        Get intsance of an existing PGVector store.This method will
+        Get instance of an existing PGVector store.This method will
         return the instance of the store without inserting any new
         embeddings
         """
@@ -743,6 +766,7 @@ class PGVector(VectorStore):
             k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
+            filter=filter,
             **kwargs,
         )
 

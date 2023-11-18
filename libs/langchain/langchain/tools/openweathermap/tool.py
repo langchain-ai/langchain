@@ -5,7 +5,7 @@ from typing import Optional
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
-from langchain.utilities import OpenWeatherMapAPIWrapper
+from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 
 
 class OpenWeatherMapQueryRun(BaseTool):

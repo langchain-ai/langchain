@@ -5,7 +5,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms import OpenAI, OpenAIChat
+from langchain.llms.openai import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
 
 

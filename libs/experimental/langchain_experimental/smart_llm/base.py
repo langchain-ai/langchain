@@ -83,7 +83,9 @@ class SmartLLMChain(Chain):
     class Config:
         extra = Extra.forbid
 
-    @root_validator
+    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
+    #       and causes mypy type-checking failures (hence the `type: ignore`)
+    @root_validator  # type: ignore[call-overload]
     @classmethod
     def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Ensure we have an LLM for each step."""

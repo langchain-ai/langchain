@@ -10,7 +10,7 @@ from tests.integration_tests.llms.utils import assert_llm_equality
 def test_huggingface_pipeline_text_generation() -> None:
     """Test valid call to HuggingFace text generation model."""
     llm = HuggingFacePipeline.from_model_id(
-        model_id="gpt2", task="text-generation", model_kwargs={"max_new_tokens": 10}
+        model_id="gpt2", task="text-generation", pipeline_kwargs={"max_new_tokens": 10}
     )
     output = llm("Say foo:")
     assert isinstance(output, str)
@@ -20,6 +20,18 @@ def test_huggingface_pipeline_text2text_generation() -> None:
     """Test valid call to HuggingFace text2text generation model."""
     llm = HuggingFacePipeline.from_model_id(
         model_id="google/flan-t5-small", task="text2text-generation"
+    )
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
+def test_huggingface_pipeline_device_map() -> None:
+    """Test pipelines specifying the device map parameter."""
+    llm = HuggingFacePipeline.from_model_id(
+        model_id="gpt2",
+        task="text-generation",
+        device_map="auto",
+        pipeline_kwargs={"max_new_tokens": 10},
     )
     output = llm("Say foo:")
     assert isinstance(output, str)
@@ -37,7 +49,7 @@ def text_huggingface_pipeline_summarization() -> None:
 def test_saving_loading_llm(tmp_path: Path) -> None:
     """Test saving/loading an HuggingFaceHub LLM."""
     llm = HuggingFacePipeline.from_model_id(
-        model_id="gpt2", task="text-generation", model_kwargs={"max_new_tokens": 10}
+        model_id="gpt2", task="text-generation", pipeline_kwargs={"max_new_tokens": 10}
     )
     llm.save(file_path=tmp_path / "hf.yaml")
     loaded_llm = load_llm(tmp_path / "hf.yaml")

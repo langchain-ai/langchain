@@ -9,6 +9,10 @@ from langchain.llms.bedrock import BedrockBase
 from langchain.pydantic_v1 import Extra
 from langchain.schema.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain.utilities.anthropic import (
+    get_num_tokens_anthropic,
+    get_token_ids_anthropic,
+)
 
 
 class ChatPromptAdapter:
@@ -30,10 +34,28 @@ class ChatPromptAdapter:
 
 
 class BedrockChat(BaseChatModel, BedrockBase):
+    """A chat model that uses the Bedrock API."""
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "amazon_bedrock_chat"
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        print(self.region_name)
+
+        if self.region_name:
+            attributes["region_name"] = self.region_name
+
+        return attributes
 
     class Config:
         """Configuration for this pydantic object."""
@@ -86,3 +108,15 @@ class BedrockChat(BaseChatModel, BedrockBase):
 
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
+
+    def get_num_tokens(self, text: str) -> int:
+        if self._model_is_anthropic:
+            return get_num_tokens_anthropic(text)
+        else:
+            return super().get_num_tokens(text)
+
+    def get_token_ids(self, text: str) -> List[int]:
+        if self._model_is_anthropic:
+            return get_token_ids_anthropic(text)
+        else:
+            return super().get_token_ids(text)

@@ -1,0 +1,110 @@
+# CnosDB
+> [CnosDB](https://github.com/cnosdb/cnosdb) is an open-source distributed time series database with high performance, high compression rate and high ease of use.
+
+## Installation and Setup
+
+```python
+pip install cnos-connector
+```
+
+## Connecting to CnosDB
+You can connect to CnosDB using the `SQLDatabase.from_cnosdb()` method.
+### Syntax
+```python
+def SQLDatabase.from_cnosdb(url: str = "127.0.0.1:8902",
+                              user: str = "root",
+                              password: str = "",
+                              tenant: str = "cnosdb",
+                              database: str = "public")
+```
+Args:
+1. url (str): The HTTP connection host name and port number of the CnosDB
+                service, excluding "http://" or "https://", with a default value
+                of "127.0.0.1:8902".
+2. user (str): The username used to connect to the CnosDB service, with a
+                default value of "root".
+3. password (str): The password of the user connecting to the CnosDB service,
+                with a default value of "".
+4. tenant (str): The name of the tenant used to connect to the CnosDB service,
+                with a default value of "cnosdb".
+5. database (str): The name of the database in the CnosDB tenant.
+## Examples
+```python
+# Connecting to CnosDB with SQLDatabase Wrapper
+from langchain.utilities import SQLDatabase
+
+db = SQLDatabase.from_cnosdb()
+```
+```python
+# Creating a OpenAI Chat LLM Wrapper
+from langchain.chat_models import ChatOpenAI
+
+llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+```
+
+### SQL Database Chain
+This example demonstrates the use of the SQL Chain for answering a question over a CnosDB.
+```python
+from langchain.utilities import SQLDatabaseChain
+
+db_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True)
+
+db_chain.run(
+    "What is the average temperature of air at station XiaoMaiDao between October 19, 2022 and Occtober 20, 2022?"
+)
+```
+```shell
+> Entering new  chain...
+What is the average temperature of air at station XiaoMaiDao between October 19, 2022 and Occtober 20, 2022?
+SQLQuery:SELECT AVG(temperature) FROM air WHERE station = 'XiaoMaiDao' AND time >= '2022-10-19' AND time < '2022-10-20'
+SQLResult: [(68.0,)]
+Answer:The average temperature of air at station XiaoMaiDao between October 19, 2022 and October 20, 2022 is 68.0.
+> Finished chain.
+```
+### SQL Database Agent
+This example demonstrates the use of the SQL Database Agent for answering questions over a CnosDB.
+```python
+from langchain.agents import create_sql_agent
+from langchain.agents.agent_toolkits import SQLDatabaseToolkit
+
+toolkit = SQLDatabaseToolkit(db=db, llm=llm)
+agent = create_sql_agent(llm=llm, toolkit=toolkit, verbose=True)
+```
+```python
+agent.run(
+    "What is the average temperature of air at station XiaoMaiDao between October 19, 2022 and Occtober 20, 2022?"
+)
+```
+```shell
+> Entering new  chain...
+Action: sql_db_list_tables
+Action Input: ""
+Observation: air
+Thought:The "air" table seems relevant to the question. I should query the schema of the "air" table to see what columns are available.
+Action: sql_db_schema
+Action Input: "air"
+Observation:
+CREATE TABLE air (
+	pressure FLOAT,
+	station STRING,
+	temperature FLOAT,
+	time TIMESTAMP,
+	visibility FLOAT
+)
+
+/*
+3 rows from air table:
+pressure	station	temperature	time	visibility
+75.0	XiaoMaiDao	67.0	2022-10-19T03:40:00	54.0
+77.0	XiaoMaiDao	69.0	2022-10-19T04:40:00	56.0
+76.0	XiaoMaiDao	68.0	2022-10-19T05:40:00	55.0
+*/
+Thought:The "temperature" column in the "air" table is relevant to the question. I can query the average temperature between the specified dates.
+Action: sql_db_query
+Action Input: "SELECT AVG(temperature) FROM air WHERE station = 'XiaoMaiDao' AND time >= '2022-10-19' AND time <= '2022-10-20'"
+Observation: [(68.0,)]
+Thought:The average temperature of air at station XiaoMaiDao between October 19, 2022 and October 20, 2022 is 68.0.
+Final Answer: 68.0
+
+> Finished chain.
+```

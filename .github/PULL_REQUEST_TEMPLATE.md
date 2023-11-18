@@ -10,7 +10,7 @@ Replace this entire comment with:
 Please make sure your PR is passing linting and testing before submitting. Run `make format`, `make lint` and `make test` to check this locally.
 
 See contribution guidelines for more information on how to write/run tests, lint, etc: 
-https://github.com/hwchase17/langchain/blob/master/.github/CONTRIBUTING.md
+https://github.com/langchain-ai/langchain/blob/master/.github/CONTRIBUTING.md
 
 If you're adding a new integration, please include:
   1. a test for the integration, preferably unit tests that do not rely on network access,

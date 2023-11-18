@@ -90,7 +90,7 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
                 params["endpoint"] = values["endpoint"]
             values["client"] = qianfan.Embedding(**params)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "qianfan package not found, please install it with "
                 "`pip install qianfan`"
             )

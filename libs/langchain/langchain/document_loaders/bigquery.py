@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
     from google.auth.credentials import Credentials
@@ -57,7 +58,19 @@ class BigQueryLoader(BaseLoader):
                 "Please install it with `pip install google-cloud-bigquery`."
             ) from ex
 
-        bq_client = bigquery.Client(credentials=self.credentials, project=self.project)
+        bq_client = bigquery.Client(
+            credentials=self.credentials,
+            project=self.project,
+            client_info=get_client_info(module="bigquery"),
+        )
+        if not bq_client.project:
+            error_desc = (
+                "GCP project for Big Query is not set! Either provide a "
+                "`project` argument during BigQueryLoader instantiation, "
+                "or set a default project with `gcloud config set project` "
+                "command."
+            )
+            raise ValueError(error_desc)
         query_result = bq_client.query(self.query).result()
         docs: List[Document] = []
 

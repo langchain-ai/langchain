@@ -101,14 +101,10 @@ def _test_documents(
         assert document.page_content == search_results[i].message.get(  # type: ignore
             "content"
         )
-        assert document.metadata.get("uuid") == search_results[
-            i
-        ].message.get(  # type: ignore
+        assert document.metadata.get("uuid") == search_results[i].message.get(  # type: ignore
             "uuid"
         )
-        assert document.metadata.get("role") == search_results[
-            i
-        ].message.get(  # type: ignore
+        assert document.metadata.get("role") == search_results[i].message.get(  # type: ignore
             "role"
         )
         assert document.metadata.get("score") == search_results[i].dist

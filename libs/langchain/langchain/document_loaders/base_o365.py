@@ -44,6 +44,7 @@ class _FileType(str, Enum):
 
 
 def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
+    """Fetch the mime types for the specified file types."""
     mime_types_mapping = {}
     for file_type in file_types:
         if file_type.value == "doc":
@@ -58,6 +59,8 @@ def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
 
 
 class O365BaseLoader(BaseLoader, BaseModel):
+    """Base class for all loaders that uses O365 Package"""
+
     settings: _O365Settings = Field(default_factory=_O365Settings)
     """Settings for the Office365 API client."""
     auth_with_token: bool = False

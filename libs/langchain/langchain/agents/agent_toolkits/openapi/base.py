@@ -28,9 +28,22 @@ def create_openapi_agent(
     verbose: bool = False,
     return_intermediate_steps: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
-    """Construct an OpenAPI agent from an LLM and tools."""
+    """Construct an OpenAPI agent from an LLM and tools.
+
+    *Security Note*: When creating an OpenAPI agent, check the permissions
+        and capabilities of the underlying toolkit.
+
+        For example, if the default implementation of OpenAPIToolkit
+        uses the RequestsToolkit which contains tools to make arbitrary
+        network requests against any URL (e.g., GET, POST, PATCH, PUT, DELETE),
+
+        Control access to who can submit issue requests using this toolkit and
+        what network access it has.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(
         tools,

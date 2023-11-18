@@ -25,6 +25,7 @@ import hashlib
 import inspect
 import json
 import logging
+import uuid
 import warnings
 from datetime import timedelta
 from functools import lru_cache
@@ -41,7 +42,7 @@ from typing import (
     cast,
 )
 
-from sqlalchemy import Column, Integer, String, create_engine, select
+from sqlalchemy import Column, Integer, Row, String, create_engine, select
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
@@ -49,7 +50,6 @@ try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
-
 
 from langchain.llms.base import LLM, get_prompts
 from langchain.load.dump import dumps
@@ -261,6 +261,92 @@ class SQLiteCache(SQLAlchemyCache):
         super().__init__(engine)
 
 
+class UpstashRedisCache(BaseCache):
+    """Cache that uses Upstash Redis as a backend."""
+
+    def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
+        """
+        Initialize an instance of UpstashRedisCache.
+
+        This method initializes an object with Upstash Redis caching capabilities.
+        It takes a `redis_` parameter, which should be an instance of an Upstash Redis
+        client class, allowing the object to interact with Upstash Redis
+        server for caching purposes.
+
+        Parameters:
+            redis_: An instance of Upstash Redis client class
+                (e.g., Redis) used for caching.
+                This allows the object to communicate with
+                Redis server for caching operations on.
+            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
+                If provided, it sets the time duration for how long cached
+                items will remain valid. If not provided, cached items will not
+                have an automatic expiration.
+        """
+        try:
+            from upstash_redis import Redis
+        except ImportError:
+            raise ValueError(
+                "Could not import upstash_redis python package. "
+                "Please install it with `pip install upstash_redis`."
+            )
+        if not isinstance(redis_, Redis):
+            raise ValueError("Please pass in Upstash Redis object.")
+        self.redis = redis_
+        self.ttl = ttl
+
+    def _key(self, prompt: str, llm_string: str) -> str:
+        """Compute key from prompt and llm_string"""
+        return _hash(prompt + llm_string)
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        generations = []
+        # Read from a HASH
+        results = self.redis.hgetall(self._key(prompt, llm_string))
+        if results:
+            for _, text in results.items():
+                generations.append(Generation(text=text))
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "UpstashRedisCache supports caching of normal LLM generations, "
+                    f"got {type(gen)}"
+                )
+            if isinstance(gen, ChatGeneration):
+                warnings.warn(
+                    "NOTE: Generation has not been cached. UpstashRedisCache does not"
+                    " support caching ChatModel outputs."
+                )
+                return
+        # Write to a HASH
+        key = self._key(prompt, llm_string)
+
+        mapping = {
+            str(idx): generation.text for idx, generation in enumerate(return_val)
+        }
+        self.redis.hset(key=key, values=mapping)
+
+        if self.ttl is not None:
+            self.redis.expire(key, self.ttl)
+
+    def clear(self, **kwargs: Any) -> None:
+        """
+        Clear cache. If `asynchronous` is True, flush asynchronously.
+        This flushes the *whole* db.
+        """
+        asynchronous = kwargs.get("asynchronous", False)
+        if asynchronous:
+            asynchronous = "ASYNC"
+        else:
+            asynchronous = "SYNC"
+        self.redis.flushdb(flush_type=asynchronous)
+
+
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
 
@@ -306,7 +392,18 @@ class RedisCache(BaseCache):
         results = self.redis.hgetall(self._key(prompt, llm_string))
         if results:
             for _, text in results.items():
-                generations.append(Generation(text=text))
+                try:
+                    generations.append(loads(text))
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+                    # In a previous life we stored the raw text directly
+                    # in the table, so assume it's in that format.
+                    generations.append(Generation(text=text))
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -317,12 +414,6 @@ class RedisCache(BaseCache):
                     "RedisCache only supports caching of normal LLM generations, "
                     f"got {type(gen)}"
                 )
-            if isinstance(gen, ChatGeneration):
-                warnings.warn(
-                    "NOTE: Generation has not been cached. RedisCache does not"
-                    " support caching ChatModel outputs."
-                )
-                return
         # Write to a Redis HASH
         key = self._key(prompt, llm_string)
 
@@ -330,7 +421,7 @@ class RedisCache(BaseCache):
             pipe.hset(
                 key,
                 mapping={
-                    str(idx): generation.text
+                    str(idx): dumps(generation)
                     for idx, generation in enumerate(return_val)
                 },
             )
@@ -372,15 +463,15 @@ class RedisSemanticCache(BaseCache):
 
         .. code-block:: python
 
-            import langchain
+            from langchain.globals import set_llm_cache
 
             from langchain.cache import RedisSemanticCache
             from langchain.embeddings import OpenAIEmbeddings
 
-            langchain.llm_cache = RedisSemanticCache(
+            set_llm_cache(RedisSemanticCache(
                 redis_url="redis://localhost:6379",
                 embedding=OpenAIEmbeddings()
-            )
+            ))
 
         """
         self._cache_dict: Dict[str, RedisVectorstore] = {}
@@ -415,7 +506,7 @@ class RedisSemanticCache(BaseCache):
                 index_schema=cast(Dict, self.DEFAULT_SCHEMA),
             )
             _embedding = self.embedding.embed_query(text="test")
-            redis._create_index(dim=len(_embedding))
+            redis._create_index_if_not_exist(dim=len(_embedding))
             self._cache_dict[index_name] = redis
 
         return self._cache_dict[index_name]
@@ -441,9 +532,20 @@ class RedisSemanticCache(BaseCache):
         )
         if results:
             for document in results:
-                generations.extend(
-                    _load_generations_from_json(document.metadata["return_val"])
-                )
+                try:
+                    generations.extend(loads(document.metadata["return_val"]))
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+                    # In a previous life we stored the raw text directly
+                    # in the table, so assume it's in that format.
+                    generations.extend(
+                        _load_generations_from_json(document.metadata["return_val"])
+                    )
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -454,18 +556,12 @@ class RedisSemanticCache(BaseCache):
                     "RedisSemanticCache only supports caching of "
                     f"normal LLM generations, got {type(gen)}"
                 )
-            if isinstance(gen, ChatGeneration):
-                warnings.warn(
-                    "NOTE: Generation has not been cached. RedisSentimentCache does not"
-                    " support caching ChatModel outputs."
-                )
-                return
         llm_cache = self._get_llm_cache(llm_string)
-        _dump_generations_to_json([g for g in return_val])
+
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
-            "return_val": _dump_generations_to_json([g for g in return_val]),
+            "return_val": dumps([g for g in return_val]),
         }
         llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
 
@@ -492,6 +588,7 @@ class GPTCache(BaseCache):
             import gptcache
             from gptcache.processor.pre import get_prompt
             from gptcache.manager.factory import get_data_manager
+            from langchain.globals import set_llm_cache
 
             # Avoid multiple caches using the same file,
             causing different llm model caches to affect each other
@@ -505,7 +602,7 @@ class GPTCache(BaseCache):
                     ),
                 )
 
-            langchain.llm_cache = GPTCache(init_gptcache)
+            set_llm_cache(GPTCache(init_gptcache))
 
         """
         try:
@@ -675,7 +772,8 @@ class MomentoCache(BaseCache):
         ttl: timedelta,
         *,
         configuration: Optional[momento.config.Configuration] = None,
-        auth_token: Optional[str] = None,
+        api_key: Optional[str] = None,
+        auth_token: Optional[str] = None,  # for backwards compatibility
         **kwargs: Any,
     ) -> MomentoCache:
         """Construct cache from CacheClient parameters."""
@@ -688,8 +786,13 @@ class MomentoCache(BaseCache):
             )
         if configuration is None:
             configuration = Configurations.Laptop.v1()
-        auth_token = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
-        credentials = CredentialProvider.from_string(auth_token)
+
+        # Try checking `MOMENTO_AUTH_TOKEN` first for backwards compatibility
+        try:
+            api_key = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
+        except ValueError:
+            api_key = api_key or get_from_env("api_key", "MOMENTO_API_KEY")
+        credentials = CredentialProvider.from_string(api_key)
         cache_client = CacheClient(configuration, credentials, default_ttl=ttl)
         return cls(cache_client, cache_name, ttl=ttl, **kwargs)
 
@@ -1051,3 +1154,87 @@ class CassandraSemanticCache(BaseCache):
     def clear(self, **kwargs: Any) -> None:
         """Clear the *whole* semantic cache."""
         self.table.clear()
+
+
+class FullMd5LLMCache(Base):  # type: ignore
+    """SQLite table for full LLM Cache (all generations)."""
+
+    __tablename__ = "full_md5_llm_cache"
+    id = Column(String, primary_key=True)
+    prompt_md5 = Column(String, index=True)
+    llm = Column(String, index=True)
+    idx = Column(Integer, index=True)
+    prompt = Column(String)
+    response = Column(String)
+
+
+class SQLAlchemyMd5Cache(BaseCache):
+    """Cache that uses SQAlchemy as a backend."""
+
+    def __init__(
+        self, engine: Engine, cache_schema: Type[FullMd5LLMCache] = FullMd5LLMCache
+    ):
+        """Initialize by creating all tables."""
+        self.engine = engine
+        self.cache_schema = cache_schema
+        self.cache_schema.metadata.create_all(self.engine)
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        rows = self._search_rows(prompt, llm_string)
+        if rows:
+            return [loads(row[0]) for row in rows]
+        return None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update based on prompt and llm_string."""
+        self._delete_previous(prompt, llm_string)
+        prompt_md5 = self.get_md5(prompt)
+        items = [
+            self.cache_schema(
+                id=str(uuid.uuid1()),
+                prompt=prompt,
+                prompt_md5=prompt_md5,
+                llm=llm_string,
+                response=dumps(gen),
+                idx=i,
+            )
+            for i, gen in enumerate(return_val)
+        ]
+        with Session(self.engine) as session, session.begin():
+            for item in items:
+                session.merge(item)
+
+    def _delete_previous(self, prompt: str, llm_string: str) -> None:
+        stmt = (
+            select(self.cache_schema.response)
+            .where(self.cache_schema.prompt_md5 == self.get_md5(prompt))  # type: ignore
+            .where(self.cache_schema.llm == llm_string)
+            .where(self.cache_schema.prompt == prompt)
+            .order_by(self.cache_schema.idx)
+        )
+        with Session(self.engine) as session, session.begin():
+            rows = session.execute(stmt).fetchall()
+            for item in rows:
+                session.delete(item)
+
+    def _search_rows(self, prompt: str, llm_string: str) -> List[Row]:
+        prompt_pd5 = self.get_md5(prompt)
+        stmt = (
+            select(self.cache_schema.response)
+            .where(self.cache_schema.prompt_md5 == prompt_pd5)  # type: ignore
+            .where(self.cache_schema.llm == llm_string)
+            .where(self.cache_schema.prompt == prompt)
+            .order_by(self.cache_schema.idx)
+        )
+        with Session(self.engine) as session:
+            return session.execute(stmt).fetchall()
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache."""
+        with Session(self.engine) as session:
+            session.execute(self.cache_schema.delete())
+
+    @staticmethod
+    def get_md5(input_string: str) -> str:
+        return hashlib.md5(input_string.encode()).hexdigest()

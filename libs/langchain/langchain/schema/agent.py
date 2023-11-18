@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Sequence, Union
+from typing import Any, Literal, Sequence, Union
 
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage
@@ -21,17 +21,17 @@ class AgentAction(Serializable):
     thoughts. This is useful when (tool, tool_input) does not contain
     full information about the LLM prediction (for example, any `thought`
     before the tool/tool_input)."""
+    type: Literal["AgentAction"] = "AgentAction"
 
     def __init__(
         self, tool: str, tool_input: Union[str, dict], log: str, **kwargs: Any
     ):
+        """Override init to support instantiation by position for backward compat."""
         super().__init__(tool=tool, tool_input=tool_input, log=log, **kwargs)
 
-    @property
-    def lc_serializable(self) -> bool:
-        """
-        Return whether or not the class is serializable.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return True
 
 
@@ -44,6 +44,10 @@ class AgentActionMessageLog(AgentAction):
     prediction, and you need that LLM prediction (for future agent iteration).
     Compared to `log`, this is useful when the underlying LLM is a
     ChatModel (and therefore returns messages rather than a string)."""
+    # Ignoring type because we're overriding the type from AgentAction.
+    # And this is the correct thing to do in this case.
+    # The type literal is used for serialization purposes.
+    type: Literal["AgentActionMessageLog"] = "AgentActionMessageLog"  # type: ignore
 
 
 class AgentFinish(Serializable):
@@ -58,13 +62,13 @@ class AgentFinish(Serializable):
     `Final Answer: 2` you may want to just return `2` as a return value, but pass
     along the full string as a `log` (for debugging or observability purposes).
     """
+    type: Literal["AgentFinish"] = "AgentFinish"
 
     def __init__(self, return_values: dict, log: str, **kwargs: Any):
+        """Override init to support instantiation by position for backward compat."""
         super().__init__(return_values=return_values, log=log, **kwargs)
 
-    @property
-    def lc_serializable(self) -> bool:
-        """
-        Return whether or not the class is serializable.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether or not the class is serializable."""
         return True
