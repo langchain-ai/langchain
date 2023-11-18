@@ -1,13 +1,10 @@
 """Util that calls several NASA APIs."""
 import json
-import warnings
 from dataclasses import asdict, dataclass, fields
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import requests
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import BaseModel
 
 IMAGE_AND_VIDEO_LIBRARY_URL = "https://images-api.nasa.gov"
 EXOPLANETS_URL = "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?"
