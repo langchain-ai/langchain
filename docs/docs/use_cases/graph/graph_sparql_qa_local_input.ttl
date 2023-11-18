@@ -1,0 +1,59 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix : <http://example.org/example/> .
+
+
+:Actor
+    a owl:Class ;
+    rdfs:comment "An actor or actress is a person who acts in a dramatic production and who works in film, television, theatre, or radio in that capacity."@en ;
+    rdfs:label "actor"@en ;
+    rdfs:subClassOf :Person .
+
+:AdministrativeRegion
+    a owl:Class ;
+    rdfs:comment "A PopulatedPlace under the jurisdiction of an administrative body. This body may administer either a whole region or one or more adjacent Settlements (town administration)"@en ;
+    rdfs:label "administrative region"@en ;
+    rdfs:subClassOf :Place .
+
+:Animal
+    a owl:Class ;
+    rdfs:comment "Kingdom of multicellular eukaryotic organisms."@en ;
+    rdfs:label "animal"@en .
+
+:Person
+    a owl:Class ;
+    rdfs:comment "Being that has certain capacities or attributes constituting personhood."@en ;
+    rdfs:label "person"@en ;
+    rdfs:subClassOf :Animal .
+
+:Place
+    a owl:Class ;
+    rdfs:comment "A small area known by a geographical name."@en ;
+    rdfs:label "place"@en .
+
+:birthPlace
+    a rdf:Property, owl:ObjectProperty ;
+    rdfs:comment "where the person was born"@en ;
+    rdfs:domain :Person ;
+    rdfs:label "birth place"@en ;
+    rdfs:range :Place .
+
+:age
+    a rdf:Property, owl:DatatypeProperty ;
+    rdfs:comment "age"@en ;
+    rdfs:domain :Animal ;
+    rdfs:label "age"@en ;
+    rdfs:range xsd:integer .
+
+:name
+    a rdf:Property, owl:DatatypeProperty ;
+    rdfs:comment "name"@en ;
+    rdfs:domain :Animal ;
+    rdfs:label "name"@en ;
+    rdfs:range xsd:string .
+
+:TomCruise a :Actor ;
+    :name "Tom Cruise" ;
+    :age "40"^^xsd:integer .
