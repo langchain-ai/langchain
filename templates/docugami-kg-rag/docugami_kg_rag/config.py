@@ -26,19 +26,22 @@ PINECONE_ENVIRONMENT = os.environ.get("PINECONE_ENVIRONMENT")
 if not PINECONE_ENVIRONMENT:
     raise Exception("Missing `PINECONE_ENVIRONMENT` environment variable.")
 
-INDEXING_LOCAL_STATE_PATH = os.environ.get(
-    "INDEXING_LOCAL_STATE_PATH", "temp/indexing_local_state.pkl"
-)
+INDEXING_LOCAL_STATE_PATH = os.environ.get("INDEXING_LOCAL_STATE_PATH", "temp/indexing_local_state.pkl")
 
 
 @dataclass
 class LocalIndexState:
     parents_by_id: InMemoryStore
+    """Mapping of ID to parent chunks."""
+
+    summaries_by_id: InMemoryStore
+    """Mapping of ID to document summaries."""
+
     retrieval_tool_function_name: str
-    """e.g. "search_earnings_calls"""
+    """Function name for retrieval tool e.g. "search_earnings_calls."""
 
     retrieval_tool_description: str
-    """e.g. Searches for and returns chunks from earnings call documents."""
+    """Description of retrieval tool e.g. Searches for and returns chunks from earnings call documents."""
 
 
 # Lengths for the loader are in terms of characters, 1 token ~= 4 chars in English

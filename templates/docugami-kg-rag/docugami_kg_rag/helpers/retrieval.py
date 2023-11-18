@@ -17,7 +17,7 @@ from docugami_kg_rag.config import (
     LocalIndexState,
     LLM,
 )
-from docugami_kg_rag.helpers.prompts import CREATE_TOOL_DESCRIPTION_PROMPT
+from docugami_kg_rag.helpers.prompts import ASSISTANT_SYSTEM_MESSAGE, CREATE_TOOL_DESCRIPTION_PROMPT
 
 
 def docset_name_to_retriever_tool_function_name(name: str) -> str:
@@ -49,30 +49,29 @@ def docset_name_to_retriever_tool_function_name(name: str) -> str:
 
 def chunks_to_retriever_tool_description(name: str, chunks: List[Document]):
     texts = [c.page_content for c in chunks[:100]]
-    doc_fragment = "\n".join(texts)[
-        : 2048 * 2
-    ]  # approximately 2 pages from max 100 chunks
+    doc_fragment = "\n".join(texts)[: 2048 * 2]  # Up to approximately 2 pages from max 100 chunks
 
     chain = (
-        ChatPromptTemplate.from_template(CREATE_TOOL_DESCRIPTION_PROMPT)
+        ChatPromptTemplate.from_messages(
+            [
+                ("system", ASSISTANT_SYSTEM_MESSAGE),
+                ("human", CREATE_TOOL_DESCRIPTION_PROMPT),
+            ]
+        )
         | LLM
         | StrOutputParser()
     )
     return chain.invoke({"docset_name": name, "doc_fragment": doc_fragment})
 
 
-def get_retrieval_tool_for_docset(
-    docset_id: str, local_state: Dict[str, LocalIndexState]
-) -> Optional[BaseTool]:
+def get_retrieval_tool_for_docset(docset_id: str, local_state: Dict[str, LocalIndexState]) -> Optional[BaseTool]:
     # Chunks are in the vector store, and full documents are in the store inside the local state
 
     docset_pinecone_index_name = f"{PINECONE_INDEX}-{docset_id}"
     if docset_pinecone_index_name not in pinecone.list_indexes():
         return None
 
-    chunk_vectorstore = Pinecone.from_existing_index(
-        docset_pinecone_index_name, EMBEDDINGS
-    )
+    chunk_vectorstore = Pinecone.from_existing_index(docset_pinecone_index_name, EMBEDDINGS)
     retriever = MultiVectorRetriever(
         vectorstore=chunk_vectorstore,
         docstore=local_state[docset_id].parents_by_id,
