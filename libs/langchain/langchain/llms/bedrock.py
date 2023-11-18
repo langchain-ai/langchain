@@ -12,6 +12,7 @@ from langchain.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,
 )
+from langchain.utils import get_from_dict_or_env
 
 HUMAN_PROMPT = "\n\nHuman:"
 ASSISTANT_PROMPT = "\n\nAssistant:"
@@ -198,6 +199,13 @@ class BedrockBase(BaseModel, ABC):
                 # use default credentials
                 session = boto3.Session()
 
+            values["region_name"] = get_from_dict_or_env(
+                values,
+                "region_name",
+                "AWS_DEFAULT_REGION",
+                default=None,
+            )
+
             client_params = {}
             if values["region_name"]:
                 client_params["region_name"] = values["region_name"]
@@ -342,6 +350,20 @@ class Bedrock(LLM, BedrockBase):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "amazon_bedrock"
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        if self.region_name:
+            attributes["region_name"] = self.region_name
+
+        return attributes
 
     class Config:
         """Configuration for this pydantic object."""

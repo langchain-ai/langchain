@@ -209,7 +209,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     fields: Dict[str, AnyConfigurableField]
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             [
                 ConfigurableFieldSpec(
@@ -300,7 +300,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     default_key: str = "default"
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         with _enums_for_spec_lock:
             if which_enum := _enums_for_spec.get(self.which):
                 pass

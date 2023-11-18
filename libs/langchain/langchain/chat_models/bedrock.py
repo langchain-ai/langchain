@@ -44,6 +44,22 @@ class BedrockChat(BaseChatModel, BedrockBase):
         """Return type of chat model."""
         return "amazon_bedrock_chat"
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        print(self.region_name)
+
+        if self.region_name:
+            attributes["region_name"] = self.region_name
+
+        return attributes
+
     class Config:
         """Configuration for this pydantic object."""
 
