@@ -7,7 +7,7 @@ from typing import Dict, List
 
 import requests
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator, Field
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env
 
 
