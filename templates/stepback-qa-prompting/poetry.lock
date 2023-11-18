@@ -543,7 +543,7 @@ files = [
 name = "duckduckgo-search"
 version = "3.9.6"
 description = "Search for words, documents, images, news, maps and text translation using the DuckDuckGo.com search engine."
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "duckduckgo_search-3.9.6-py3-none-any.whl", hash = "sha256:d9b34554339b85425060794e6f166afa64e978a2fff894c5654af85c2d5b6c94"},
