@@ -32,7 +32,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         except ImportError:
             raise ImportError(
                 "Could not import duckduckgo-search python package. "
-                "Please install it with `pip install duckduckgo-search`."
+                "Please install it with `pip install -U duckduckgo_search`."
             )
         return values
 

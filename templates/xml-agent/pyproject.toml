@@ -12,7 +12,7 @@ python = ">=3.8.1,<4.0"
 langchain = ">=0.0.325"
 anthropic = ">=0.5.0"
 langchainhub = ">=0.1.13"
-duckduckgo-search = "^3.8.3"
+duckduckgo-search = "^3.9.6"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"
