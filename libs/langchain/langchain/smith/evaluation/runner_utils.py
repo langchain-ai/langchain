@@ -742,7 +742,7 @@ async def _arun_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\n{repr(e)}"
         )
-        result = {"Error": repr(e)}
+        result = {"Error": e}
     return result
 
 
@@ -874,7 +874,7 @@ def _run_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\nError Type: {error_type}, Message: {e}"
         )
-        result = {"Error": repr(e)}
+        result = {"Error": e}
     return result
 
 
