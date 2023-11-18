@@ -4,7 +4,7 @@ from typing import cast
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain.llms.ai21 import AI21
-from langchain_core.pydantic_v1 import SecretStr
+from langchain.pydantic_v1 import SecretStr
 
 
 def test_api_key_is_secret_string() -> None:

@@ -3,9 +3,9 @@ from typing import Callable, List, Tuple
 
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLLM
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.schema import BasePromptTemplate
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.pydantic_v1 import BaseModel, Field
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class BasePromptSelector(BaseModel, ABC):

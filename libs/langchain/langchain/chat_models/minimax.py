@@ -9,7 +9,7 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.minimax import MinimaxCommon
 from langchain.llms.utils import enforce_stop_tokens
-from langchain_core.schema import (
+from langchain.schema import (
     AIMessage,
     BaseMessage,
     ChatResult,

@@ -18,8 +18,8 @@ from langchain.chains.question_answering import (
 from langchain.chains.question_answering.map_rerank_prompt import (
     PROMPT as MAP_RERANK_PROMPT,
 )
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.prompt_template import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.prompt_template import BasePromptTemplate
 
 
 class LoadingCallable(Protocol):

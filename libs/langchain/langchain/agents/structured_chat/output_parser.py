@@ -8,9 +8,9 @@ from typing import Optional, Union
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS
 from langchain.output_parsers import OutputFixingParser
-from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import AgentAction, AgentFinish, OutputParserException
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.pydantic_v1 import Field
+from langchain.schema import AgentAction, AgentFinish, OutputParserException
+from langchain.schema.language_model import BaseLanguageModel
 
 logger = logging.getLogger(__name__)
 

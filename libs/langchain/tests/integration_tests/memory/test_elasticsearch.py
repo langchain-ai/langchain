@@ -7,7 +7,7 @@ import pytest
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import ElasticsearchChatMessageHistory
-from langchain_core.schema.messages import _message_to_dict
+from langchain.schema.messages import _message_to_dict
 
 """
 cd tests/integration_tests/memory/docker-compose

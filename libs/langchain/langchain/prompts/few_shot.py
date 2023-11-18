@@ -13,8 +13,8 @@ from langchain.prompts.base import (
 from langchain.prompts.chat import BaseChatPromptTemplate, BaseMessagePromptTemplate
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain_core.schema.messages import BaseMessage, get_buffer_string
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
@@ -250,7 +250,7 @@ class FewShotChatMessagePromptTemplate(
                 vectorstore=vectorstore
             )
 
-            from langchain_core.schema import SystemMessage
+            from langchain.schema import SystemMessage
             from langchain.prompts import HumanMessagePromptTemplate
             from langchain.prompts.few_shot import FewShotChatMessagePromptTemplate
 

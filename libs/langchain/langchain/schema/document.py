@@ -5,8 +5,8 @@ from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Literal, Sequence
 
-from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Field
+from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Field
 
 
 class Document(Serializable):

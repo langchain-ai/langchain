@@ -21,8 +21,8 @@ from langchain.embeddings.base import Embeddings
 from langchain.indexes import aindex, index
 from langchain.indexes._api import _abatch
 from langchain.indexes._sql_record_manager import SQLRecordManager
-from langchain_core.schema import Document
-from langchain_core.schema.vectorstore import VST, VectorStore
+from langchain.schema import Document
+from langchain.schema.vectorstore import VST, VectorStore
 
 
 class ToyLoader(BaseLoader):

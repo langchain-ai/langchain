@@ -15,11 +15,11 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from langchain_core.schema.messages import AnyMessage, BaseMessage, get_buffer_string
-from langchain_core.schema.output import LLMResult
-from langchain_core.schema.prompt import PromptValue
-from langchain_core.runnable import RunnableSerializable
-from langchain_core.utils import get_pydantic_field_names
+from langchain.schema.messages import AnyMessage, BaseMessage, get_buffer_string
+from langchain.schema.output import LLMResult
+from langchain.schema.prompt import PromptValue
+from langchain.schema.runnable import RunnableSerializable
+from langchain.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import Callbacks

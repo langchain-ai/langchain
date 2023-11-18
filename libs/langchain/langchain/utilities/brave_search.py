@@ -3,8 +3,8 @@ from typing import List
 
 import requests
 
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.schema import Document
+from langchain.pydantic_v1 import BaseModel, Field
+from langchain.schema import Document
 
 
 class BraveSearchWrapper(BaseModel):

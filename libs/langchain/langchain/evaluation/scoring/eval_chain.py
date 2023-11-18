@@ -22,9 +22,9 @@ from langchain.evaluation.scoring.prompt import (
     SCORING_TEMPLATE_WITH_REFERENCE,
 )
 from langchain.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field
-from langchain_core.schema import RUN_KEY, BaseOutputParser
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.pydantic_v1 import Extra, Field
+from langchain.schema import RUN_KEY, BaseOutputParser
+from langchain.schema.language_model import BaseLanguageModel
 
 logger = logging.getLogger(__name__)
 

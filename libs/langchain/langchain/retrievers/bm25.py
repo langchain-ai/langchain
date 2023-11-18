@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain_core.schema import BaseRetriever, Document
+from langchain.schema import BaseRetriever, Document
 
 
 def default_preprocessing_func(text: str) -> List[str]:

@@ -23,27 +23,27 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.globals import get_llm_cache
-from langchain_core.load.dump import dumpd, dumps
+from langchain.load.dump import dumpd, dumps
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import (
+from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema import (
     ChatGeneration,
     ChatResult,
     LLMResult,
     PromptValue,
     RunInfo,
 )
-from langchain_core.schema.language_model import BaseLanguageModel, LanguageModelInput
-from langchain_core.schema.messages import (
+from langchain.schema.language_model import BaseLanguageModel, LanguageModelInput
+from langchain.schema.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
 )
-from langchain_core.schema.output import ChatGenerationChunk
-from langchain_core.runnable import RunnableConfig
+from langchain.schema.output import ChatGenerationChunk
+from langchain.schema.runnable import RunnableConfig
 
 
 def _get_verbosity() -> bool:

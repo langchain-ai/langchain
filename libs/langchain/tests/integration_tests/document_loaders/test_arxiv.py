@@ -3,7 +3,7 @@ from typing import List
 import pytest
 
 from langchain.document_loaders.arxiv import ArxivLoader
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 
 def assert_docs(docs: List[Document]) -> None:

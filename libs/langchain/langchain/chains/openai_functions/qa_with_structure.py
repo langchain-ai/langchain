@@ -8,10 +8,10 @@ from langchain.output_parsers.openai_functions import (
 )
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.schema import BaseLLMOutputParser
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.messages import HumanMessage, SystemMessage
+from langchain.pydantic_v1 import BaseModel, Field
+from langchain.schema import BaseLLMOutputParser
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import HumanMessage, SystemMessage
 
 
 class AnswerWithSources(BaseModel):

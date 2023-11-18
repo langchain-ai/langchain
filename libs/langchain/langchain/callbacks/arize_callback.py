@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import import_pandas
-from langchain_core.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class ArizeCallbackHandler(BaseCallbackHandler):

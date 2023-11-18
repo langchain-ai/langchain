@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 import pytest
 
 from langchain.document_loaders.tensorflow_datasets import TensorflowDatasetLoader
-from langchain_core.pydantic_v1 import ValidationError
-from langchain_core.schema.document import Document
+from langchain.pydantic_v1 import ValidationError
+from langchain.schema.document import Document
 
 if TYPE_CHECKING:
     import tensorflow as tf  # noqa: E402

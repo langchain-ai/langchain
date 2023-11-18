@@ -1,4 +1,4 @@
-from langchain_core._api import __all__
+from langchain._api import __all__
 
 EXPECTED_ALL = [
     "deprecated",

@@ -18,16 +18,16 @@ from typing import (
     overload,
 )
 
-from langchain_core._api import deprecated
-from langchain_core.load.serializable import Serializable
+from langchain._api import deprecated
+from langchain.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import (
+from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema import (
     BasePromptTemplate,
     PromptValue,
 )
-from langchain_core.schema.messages import (
+from langchain.schema.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
@@ -84,6 +84,9 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
 
     variable_name: str
     """Name of variable to use as messages."""
+
+    def __init__(self, variable_name: str, **kwargs: Any):
+        return super().__init__(variable_name=variable_name, **kwargs)
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.

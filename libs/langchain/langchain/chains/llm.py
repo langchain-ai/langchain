@@ -12,10 +12,10 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.chains.base import Chain
-from langchain_core.load.dump import dumpd
+from langchain.load.dump import dumpd
 from langchain.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field
-from langchain_core.schema import (
+from langchain.pydantic_v1 import Extra, Field
+from langchain.schema import (
     BaseLLMOutputParser,
     BaseMessage,
     BasePromptTemplate,
@@ -25,18 +25,18 @@ from langchain_core.schema import (
     PromptValue,
     StrOutputParser,
 )
-from langchain_core.schema.language_model import (
+from langchain.schema.language_model import (
     BaseLanguageModel,
     LanguageModelInput,
 )
-from langchain_core.runnable import (
+from langchain.schema.runnable import (
     Runnable,
     RunnableBinding,
     RunnableBranch,
     RunnableWithFallbacks,
 )
-from langchain_core.runnable.configurable import DynamicRunnable
-from langchain_core.utils.input import get_colored_text
+from langchain.schema.runnable.configurable import DynamicRunnable
+from langchain.utils.input import get_colored_text
 
 
 class LLMChain(Chain):

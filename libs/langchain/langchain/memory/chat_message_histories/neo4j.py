@@ -1,8 +1,8 @@
 from typing import List, Optional, Union
 
-from langchain_core.schema import BaseChatMessageHistory
-from langchain_core.schema.messages import BaseMessage, messages_from_dict
-from langchain_core.utils import get_from_env
+from langchain.schema import BaseChatMessageHistory
+from langchain.schema.messages import BaseMessage, messages_from_dict
+from langchain.utils import get_from_env
 
 
 class Neo4jChatMessageHistory(BaseChatMessageHistory):

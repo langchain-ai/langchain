@@ -16,8 +16,8 @@ from langchain.callbacks.utils import (
     import_spacy,
     import_textstat,
 )
-from langchain_core.schema import AgentAction, AgentFinish, LLMResult
-from langchain_core.utils import get_from_dict_or_env
+from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.utils import get_from_dict_or_env
 
 
 def import_mlflow() -> Any:

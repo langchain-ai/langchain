@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import requests
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.utils import get_from_dict_or_env
 
 DEFAULT_URL = "https://api.clickup.com/api/v2"
 

@@ -4,8 +4,8 @@ import uuid
 from typing import Any, Iterable, List, Optional
 
 from langchain.docstore.document import Document
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.vectorstore import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 
 
 class LanceDB(VectorStore):

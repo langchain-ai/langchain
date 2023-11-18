@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union
 
 from typing_extensions import Literal
 
-from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Extra, Field
+from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Extra, Field
 
 if TYPE_CHECKING:
     from langchain.prompts.chat import ChatPromptTemplate
@@ -27,7 +27,7 @@ def get_buffer_string(
     Example:
         .. code-block:: python
 
-            from langchain_core.schema import AIMessage, HumanMessage
+            from langchain.schema import AIMessage, HumanMessage
 
             messages = [
                 HumanMessage(content="Hi, how are you?"),

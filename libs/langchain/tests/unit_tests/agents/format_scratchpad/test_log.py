@@ -1,5 +1,5 @@
 from langchain.agents.format_scratchpad.log import format_log_to_str
-from langchain_core.schema.agent import AgentAction
+from langchain.schema.agent import AgentAction
 
 
 def test_single_agent_action_observation() -> None:

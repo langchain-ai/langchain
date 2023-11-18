@@ -1,3 +1,3 @@
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 __all__ = ["Document"]

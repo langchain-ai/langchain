@@ -13,7 +13,7 @@ from langchain.callbacks.utils import (
     import_spacy,
     import_textstat,
 )
-from langchain_core.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 if TYPE_CHECKING:
     import flytekit

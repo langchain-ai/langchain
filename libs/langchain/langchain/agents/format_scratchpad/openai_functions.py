@@ -1,8 +1,8 @@
 import json
 from typing import List, Sequence, Tuple
 
-from langchain_core.schema.agent import AgentAction, AgentActionMessageLog
-from langchain_core.schema.messages import AIMessage, BaseMessage, FunctionMessage
+from langchain.schema.agent import AgentAction, AgentActionMessageLog
+from langchain.schema.messages import AIMessage, BaseMessage, FunctionMessage
 
 
 def _convert_agent_action_to_messages(

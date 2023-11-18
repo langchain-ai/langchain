@@ -1,9 +1,9 @@
 from typing import List
 
-from langchain_core.schema import (
+from langchain.schema import (
     BaseChatMessageHistory,
 )
-from langchain_core.schema.messages import BaseMessage
+from langchain.schema.messages import BaseMessage
 
 
 class StreamlitChatMessageHistory(BaseChatMessageHistory):

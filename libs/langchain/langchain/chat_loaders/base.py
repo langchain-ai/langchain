@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterator, List
 
-from langchain_core.schema.chat import ChatSession
+from langchain.schema.chat import ChatSession
 
 
 class BaseChatLoader(ABC):

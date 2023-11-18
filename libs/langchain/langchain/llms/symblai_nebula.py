@@ -15,9 +15,9 @@ from tenacity import (
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str
-from langchain_core.utils.env import get_from_dict_or_env
+from langchain.pydantic_v1 import Extra, SecretStr, root_validator
+from langchain.utils import convert_to_secret_str
+from langchain.utils.env import get_from_dict_or_env
 
 DEFAULT_NEBULA_SERVICE_URL = "https://api-nebula.symbl.ai"
 DEFAULT_NEBULA_SERVICE_PATH = "/v1/model/generate"

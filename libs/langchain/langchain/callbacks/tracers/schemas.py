@@ -1,4 +1,4 @@
-from langchain_core.callbacks.tracers.schemas import (
+from langchain.schema.callbacks.tracers.schemas import (
     BaseRun,
     ChainRun,
     LLMRun,

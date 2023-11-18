@@ -1,8 +1,8 @@
 from langchain.agents.format_scratchpad.openai_functions import (
     format_to_openai_function_messages,
 )
-from langchain_core.schema.agent import AgentActionMessageLog
-from langchain_core.schema.messages import AIMessage, FunctionMessage
+from langchain.schema.agent import AgentActionMessageLog
+from langchain.schema.messages import AIMessage, FunctionMessage
 
 
 def test_calls_convert_agent_action_to_messages() -> None:

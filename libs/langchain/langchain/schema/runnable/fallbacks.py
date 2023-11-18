@@ -11,10 +11,10 @@ from typing import (
     Union,
 )
 
-from langchain_core.load.dump import dumpd
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnable.base import Runnable, RunnableSerializable
-from langchain_core.runnable.config import (
+from langchain.load.dump import dumpd
+from langchain.pydantic_v1 import BaseModel
+from langchain.schema.runnable.base import Runnable, RunnableSerializable
+from langchain.schema.runnable.config import (
     RunnableConfig,
     ensure_config,
     get_async_callback_manager_for_config,
@@ -22,7 +22,7 @@ from langchain_core.runnable.config import (
     get_config_list,
     patch_config,
 )
-from langchain_core.runnable.utils import (
+from langchain.schema.runnable.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
@@ -66,8 +66,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             # response.
 
             from langchain.prompts import PromptTemplate
-            from langchain_core.schema.output_parser import StrOutputParser
-            from langchain_core.runnable import RunnableLambda
+            from langchain.schema.output_parser import StrOutputParser
+            from langchain.schema.runnable import RunnableLambda
 
             def when_all_is_lost(inputs):
                 return ("Looks like our LLM providers are down. "
@@ -112,7 +112,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return self.runnable.get_output_schema(config)
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec
             for step in [self.runnable, *self.fallbacks]

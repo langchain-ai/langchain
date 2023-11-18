@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict
 
-from langchain_core.load.serializable import Serializable, to_json_not_implemented
+from langchain.load.serializable import Serializable, to_json_not_implemented
 
 
 def default(obj: Any) -> Any:

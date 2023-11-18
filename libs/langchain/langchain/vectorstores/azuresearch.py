@@ -23,11 +23,11 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.schema import BaseRetriever
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.vectorstore import VectorStore
-from langchain_core.utils import get_from_env
+from langchain.pydantic_v1 import root_validator
+from langchain.schema import BaseRetriever
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
+from langchain.utils import get_from_env
 
 logger = logging.getLogger()
 

@@ -18,12 +18,12 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain_core.schema import BasePromptTemplate, BaseRetriever, Document
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.messages import BaseMessage
-from langchain_core.runnable.config import RunnableConfig
-from langchain_core.schema.vectorstore import VectorStore
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.schema import BasePromptTemplate, BaseRetriever, Document
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import BaseMessage
+from langchain.schema.runnable.config import RunnableConfig
+from langchain.schema.vectorstore import VectorStore
 
 # Depending on the memory type and configuration, the chat history format may differ.
 # This needs to be consolidated.

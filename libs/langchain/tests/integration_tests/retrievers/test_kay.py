@@ -2,7 +2,7 @@
 import pytest
 
 from langchain.retrievers import KayAiRetriever
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 
 @pytest.mark.requires("kay")

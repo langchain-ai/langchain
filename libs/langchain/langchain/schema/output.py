@@ -4,9 +4,9 @@ from copy import deepcopy
 from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
-from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.schema.messages import BaseMessage, BaseMessageChunk
+from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import BaseModel, root_validator
+from langchain.schema.messages import BaseMessage, BaseMessageChunk
 
 
 class Generation(Serializable):

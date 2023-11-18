@@ -1,7 +1,7 @@
 import pytest
 
 from langchain.chat_models.ernie import _convert_message_to_dict
-from langchain_core.schema.messages import (
+from langchain.schema.messages import (
     AIMessage,
     FunctionMessage,
     HumanMessage,

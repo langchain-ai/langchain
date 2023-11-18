@@ -30,9 +30,9 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
     TOOL_FREE_EVAL_CHAT_PROMPT,
 )
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
-from langchain_core.pydantic_v1 import Extra, Field
-from langchain_core.schema import AgentAction, BaseOutputParser, OutputParserException
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.pydantic_v1 import Extra, Field
+from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 

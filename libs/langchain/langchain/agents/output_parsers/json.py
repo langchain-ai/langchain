@@ -5,7 +5,7 @@ from typing import Union
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.output_parsers.json import parse_json_markdown
-from langchain_core.schema import AgentAction, AgentFinish, OutputParserException
+from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 logger = logging.getLogger(__name__)
 

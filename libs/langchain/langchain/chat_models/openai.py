@@ -31,10 +31,10 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.language_model import LanguageModelInput
-from langchain_core.schema.messages import (
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
+from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.language_model import LanguageModelInput
+from langchain.schema.messages import (
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
@@ -44,13 +44,13 @@ from langchain_core.schema.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
-from langchain_core.runnable import Runnable
-from langchain_core.utils import (
+from langchain.schema.output import ChatGenerationChunk
+from langchain.schema.runnable import Runnable
+from langchain.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
-from langchain_core.utils.openai import is_openai_v1
+from langchain.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
     import tiktoken

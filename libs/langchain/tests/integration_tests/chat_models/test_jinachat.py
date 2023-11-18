@@ -5,7 +5,7 @@ import pytest
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.jinachat import JinaChat
-from langchain_core.schema import (
+from langchain.schema import (
     BaseMessage,
     ChatGeneration,
     HumanMessage,

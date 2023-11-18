@@ -4,7 +4,7 @@ from typing import Dict, Iterator, Optional, Tuple
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 logger = logging.getLogger(__name__)
 

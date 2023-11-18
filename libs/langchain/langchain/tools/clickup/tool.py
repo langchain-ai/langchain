@@ -29,7 +29,7 @@ agent = initialize_agent(
 from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field
+from langchain.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
 from langchain.utilities.clickup import ClickupAPIWrapper
 

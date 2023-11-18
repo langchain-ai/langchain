@@ -3,7 +3,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
-from langchain_core.load.serializable import Serializable
+from langchain.load.serializable import Serializable
 
 
 class Reviver:

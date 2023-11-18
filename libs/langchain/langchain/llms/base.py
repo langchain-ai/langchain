@@ -46,16 +46,16 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.globals import get_llm_cache
-from langchain_core.load.dump import dumpd
+from langchain.load.dump import dumpd
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator, validator
-from langchain_core.schema import Generation, LLMResult, PromptValue, RunInfo
-from langchain_core.schema.language_model import BaseLanguageModel, LanguageModelInput
-from langchain_core.schema.messages import AIMessage, BaseMessage, get_buffer_string
-from langchain_core.schema.output import GenerationChunk
-from langchain_core.runnable import RunnableConfig
-from langchain_core.runnable.config import get_config_list
+from langchain.pydantic_v1 import Field, root_validator, validator
+from langchain.schema import Generation, LLMResult, PromptValue, RunInfo
+from langchain.schema.language_model import BaseLanguageModel, LanguageModelInput
+from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
+from langchain.schema.output import GenerationChunk
+from langchain.schema.runnable import RunnableConfig
+from langchain.schema.runnable.config import get_config_list
 
 logger = logging.getLogger(__name__)
 

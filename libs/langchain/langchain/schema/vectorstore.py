@@ -21,10 +21,10 @@ from typing import (
     TypeVar,
 )
 
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import BaseRetriever
-from langchain_core.schema.document import Document
-from langchain_core.schema.embeddings import Embeddings
+from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema import BaseRetriever
+from langchain.schema.document import Document
+from langchain.schema.embeddings import Embeddings
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (

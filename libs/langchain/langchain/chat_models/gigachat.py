@@ -11,8 +11,8 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.gigachat import _BaseGigaChat
-from langchain_core.schema import ChatResult
-from langchain_core.schema.messages import (
+from langchain.schema import ChatResult
+from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -20,7 +20,7 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
+from langchain.schema.output import ChatGeneration, ChatGenerationChunk
 
 logger = logging.getLogger(__name__)
 

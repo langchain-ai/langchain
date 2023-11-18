@@ -26,12 +26,12 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import (
+from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
-from langchain_core.schema.messages import (
+from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -45,8 +45,8 @@ from langchain_core.schema.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
-from langchain_core.utils import get_from_dict_or_env
+from langchain.schema.output import ChatGenerationChunk
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

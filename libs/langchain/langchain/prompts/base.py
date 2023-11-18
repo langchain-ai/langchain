@@ -6,10 +6,10 @@ from abc import ABC
 from string import Formatter
 from typing import Any, Callable, Dict, List, Literal, Set
 
-from langchain_core.schema.messages import BaseMessage, HumanMessage
-from langchain_core.schema.prompt import PromptValue
-from langchain_core.schema.prompt_template import BasePromptTemplate
-from langchain_core.utils.formatting import formatter
+from langchain.schema.messages import BaseMessage, HumanMessage
+from langchain.schema.prompt import PromptValue
+from langchain.schema.prompt_template import BasePromptTemplate
+from langchain.utils.formatting import formatter
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:

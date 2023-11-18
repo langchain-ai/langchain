@@ -2,7 +2,7 @@
 from typing import Tuple
 
 from langchain.agents.structured_chat.output_parser import StructuredChatOutputParser
-from langchain_core.schema import AgentAction, AgentFinish
+from langchain.schema import AgentAction, AgentFinish
 
 output_parser = StructuredChatOutputParser()
 

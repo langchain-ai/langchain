@@ -21,9 +21,9 @@ from langchain.evaluation.criteria.eval_chain import (
 )
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field
-from langchain_core.schema import RUN_KEY, BaseOutputParser
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.pydantic_v1 import Extra, Field
+from langchain.schema import RUN_KEY, BaseOutputParser
+from langchain.schema.language_model import BaseLanguageModel
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +160,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     Example:
         >>> from langchain.chat_models import ChatOpenAI
         >>> from langchain.evaluation.comparison import PairwiseStringEvalChain
-        >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4")
+        >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4", model_kwargs={"random_seed": 42})
         >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
         >>> result = chain.evaluate_string_pairs(
         ...     input = "What is the chemical formula for water?",
@@ -179,7 +179,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         # .     " by explaining what the formula means.\\n[[B]]"
         # }
 
-    """
+    """  # noqa: E501
 
     output_key: str = "results"  #: :meta private:
     output_parser: BaseOutputParser = Field(

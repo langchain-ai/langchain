@@ -15,7 +15,7 @@ from langchain.callbacks.utils import (
     import_textstat,
     load_json,
 )
-from langchain_core.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 if TYPE_CHECKING:
     import pandas as pd

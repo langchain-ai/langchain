@@ -4,8 +4,8 @@ import pytest
 
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
-from langchain_core.load.dump import dumpd, dumps
-from langchain_core.load.load import load, loads
+from langchain.load.dump import dumpd, dumps
+from langchain.load.load import load, loads
 from langchain.prompts.prompt import PromptTemplate
 
 

@@ -8,12 +8,12 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain_core.pydantic_v1 import BaseModel, Extra
-from langchain_core.schema import (
+from langchain.pydantic_v1 import BaseModel, Extra
+from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
-from langchain_core.schema.messages import (
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,

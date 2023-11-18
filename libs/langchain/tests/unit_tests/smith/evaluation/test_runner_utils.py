@@ -5,12 +5,13 @@ from typing import Any, Dict, Iterator, List, Optional, Union
 from unittest import mock
 
 import pytest
+from freezegun import freeze_time
 from langsmith.client import Client
 from langsmith.schemas import Dataset, Example
 
 from langchain.chains.base import Chain
 from langchain.chains.transform import TransformChain
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.smith.evaluation.runner_utils import (
     InputFormatError,
     _get_messages,
@@ -239,6 +240,7 @@ def test_run_chat_model_all_formats(inputs: Dict[str, Any]) -> None:
 
 
 @pytest.mark.asyncio
+@freeze_time("2023-01-01")
 async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     dataset = Dataset(
         id=uuid.uuid4(),
@@ -341,6 +343,8 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
                     else None
                 },
                 "feedback": [],
+                # No run since we mock the call to the llm above
+                "execution_time": None,
             }
             for example in examples
         }

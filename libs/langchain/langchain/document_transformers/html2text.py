@@ -1,6 +1,6 @@
 from typing import Any, Sequence
 
-from langchain_core.schema import BaseDocumentTransformer, Document
+from langchain.schema import BaseDocumentTransformer, Document
 
 
 class Html2TextTransformer(BaseDocumentTransformer):

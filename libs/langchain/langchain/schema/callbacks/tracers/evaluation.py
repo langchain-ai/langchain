@@ -11,11 +11,11 @@ from uuid import UUID
 import langsmith
 from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
 
-from langchain_core.callbacks import manager
-from langchain_core.callbacks.tracers import langchain as langchain_tracer
-from langchain_core.callbacks.tracers.base import BaseTracer
-from langchain_core.callbacks.tracers.langchain import _get_executor
-from langchain_core.callbacks.tracers.schemas import Run
+from langchain.schema.callbacks import manager
+from langchain.schema.callbacks.tracers import langchain as langchain_tracer
+from langchain.schema.callbacks.tracers.base import BaseTracer
+from langchain.schema.callbacks.tracers.langchain import _get_executor
+from langchain.schema.callbacks.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
 

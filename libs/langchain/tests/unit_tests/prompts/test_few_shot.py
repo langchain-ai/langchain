@@ -15,7 +15,7 @@ from langchain.prompts.few_shot import (
     FewShotPromptTemplate,
 )
 from langchain.prompts.prompt import PromptTemplate
-from langchain_core.schema import AIMessage, HumanMessage, SystemMessage
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
 
 EXAMPLE_PROMPT = PromptTemplate(
     input_variables=["question", "answer"], template="{question}: {answer}"

@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 import pytest
 
 from langchain.retrievers.tfidf import TFIDFRetriever
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 
 @pytest.mark.requires("sklearn")

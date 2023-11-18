@@ -3,7 +3,7 @@ from typing import Any, Dict
 from pytest_mock import MockerFixture
 
 from langchain.retrievers import RemoteLangChainRetriever
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 
 class MockResponse:

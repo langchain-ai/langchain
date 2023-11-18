@@ -33,8 +33,8 @@ from langchain.chat_models.base import (
     _agenerate_from_stream,
     _generate_from_stream,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import (
+from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema import (
     AIMessage,
     BaseMessage,
     ChatGeneration,
@@ -44,15 +44,15 @@ from langchain_core.schema import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.messages import (
+from langchain.schema.messages import (
     AIMessageChunk,
     BaseMessageChunk,
     ChatMessageChunk,
     HumanMessageChunk,
     SystemMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.schema.output import ChatGenerationChunk
+from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 

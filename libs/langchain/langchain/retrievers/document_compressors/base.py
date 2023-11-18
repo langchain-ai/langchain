@@ -4,8 +4,8 @@ from inspect import signature
 from typing import List, Optional, Sequence, Union
 
 from langchain.callbacks.manager import Callbacks
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.schema import BaseDocumentTransformer, Document
+from langchain.pydantic_v1 import BaseModel
+from langchain.schema import BaseDocumentTransformer, Document
 
 
 class BaseDocumentCompressor(BaseModel, ABC):

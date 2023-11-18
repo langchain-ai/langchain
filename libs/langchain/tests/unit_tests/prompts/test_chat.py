@@ -15,7 +15,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
-from langchain_core.schema.messages import (
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,

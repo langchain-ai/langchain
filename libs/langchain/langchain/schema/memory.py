@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from langchain_core.load.serializable import Serializable
+from langchain.load.serializable import Serializable
 
 
 class BaseMemory(Serializable, ABC):

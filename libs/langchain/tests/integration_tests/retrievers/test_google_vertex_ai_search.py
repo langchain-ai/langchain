@@ -20,7 +20,7 @@ from langchain.retrievers.google_vertex_ai_search import (
     GoogleVertexAIMultiTurnSearchRetriever,
     GoogleVertexAISearchRetriever,
 )
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 
 @pytest.mark.requires("google_api_core")

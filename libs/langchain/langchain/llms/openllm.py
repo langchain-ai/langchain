@@ -20,7 +20,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
-from langchain_core.pydantic_v1 import PrivateAttr
+from langchain.pydantic_v1 import PrivateAttr
 
 if TYPE_CHECKING:
     import openllm

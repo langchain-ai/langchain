@@ -8,7 +8,7 @@ from langchain.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
 from langchain.prompts import ChatPromptTemplate
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def _get_tagging_function(schema: dict) -> dict:

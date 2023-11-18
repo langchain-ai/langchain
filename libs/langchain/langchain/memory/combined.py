@@ -2,8 +2,8 @@ import warnings
 from typing import Any, Dict, List, Set
 
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain_core.pydantic_v1 import validator
-from langchain_core.schema import BaseMemory
+from langchain.pydantic_v1 import validator
+from langchain.schema import BaseMemory
 
 
 class CombinedMemory(BaseMemory):

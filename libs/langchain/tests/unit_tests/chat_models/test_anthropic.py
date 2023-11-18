@@ -6,7 +6,7 @@ import pytest
 
 from langchain.chat_models import ChatAnthropic
 from langchain.chat_models.anthropic import convert_messages_to_prompt_anthropic
-from langchain_core.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 

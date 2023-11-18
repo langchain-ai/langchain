@@ -2,7 +2,7 @@
 import pytest
 
 from langchain.document_transformers import BeautifulSoupTransformer
-from langchain_core.schema.document import Document
+from langchain.schema.document import Document
 
 
 @pytest.mark.requires("bs4")

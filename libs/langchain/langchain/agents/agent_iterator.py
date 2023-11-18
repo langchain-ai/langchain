@@ -25,11 +25,11 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain_core.load.dump import dumpd
-from langchain_core.schema import RUN_KEY, AgentAction, AgentFinish, RunInfo
+from langchain.load.dump import dumpd
+from langchain.schema import RUN_KEY, AgentAction, AgentFinish, RunInfo
 from langchain.tools import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
-from langchain_core.utils.input import get_color_mapping
+from langchain.utils.input import get_color_mapping
 
 if TYPE_CHECKING:
     from langchain.agents.agent import AgentExecutor

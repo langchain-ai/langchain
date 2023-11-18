@@ -11,7 +11,7 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain_core.schema import LLMResult
+from langchain.schema import LLMResult
 
 if sys.version_info < (3, 9):
     pytest.skip("fireworks-ai requires Python > 3.8", allow_module_level=True)

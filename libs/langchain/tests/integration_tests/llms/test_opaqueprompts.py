@@ -4,8 +4,8 @@ from langchain.llms import OpenAI
 from langchain.llms.opaqueprompts import OpaquePrompts
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import PromptTemplate
-from langchain_core.schema.output_parser import StrOutputParser
-from langchain_core.runnable import RunnableParallel
+from langchain.schema.output_parser import StrOutputParser
+from langchain.schema.runnable import RunnableParallel
 
 prompt_template = """
 As an AI assistant, you will answer questions according to given context.

@@ -3,7 +3,7 @@ from typing import List
 import pytest as pytest
 
 from langchain.retrievers.multi_query import _unique_documents
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 
 @pytest.mark.parametrize(

@@ -5,7 +5,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
 
 if TYPE_CHECKING:

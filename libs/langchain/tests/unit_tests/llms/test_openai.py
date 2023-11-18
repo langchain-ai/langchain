@@ -8,7 +8,7 @@ from tenacity import wait_none
 
 from langchain.llms import base
 from langchain.llms.openai import OpenAI
-from langchain_core.utils.openai import is_openai_v1
+from langchain.utils.openai import is_openai_v1
 from tests.unit_tests.callbacks.fake_callback_handler import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,

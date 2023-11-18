@@ -6,8 +6,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.ollama import _OllamaCommon
-from langchain_core.schema import ChatResult
-from langchain_core.schema.messages import (
+from langchain.schema import ChatResult
+from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -15,7 +15,7 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
+from langchain.schema.output import ChatGeneration, ChatGenerationChunk
 
 
 def _stream_response_to_chat_generation_chunk(

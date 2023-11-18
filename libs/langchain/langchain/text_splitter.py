@@ -53,7 +53,7 @@ from typing import (
 import requests
 
 from langchain.docstore.document import Document
-from langchain_core.schema import BaseDocumentTransformer
+from langchain.schema import BaseDocumentTransformer
 
 logger = logging.getLogger(__name__)
 

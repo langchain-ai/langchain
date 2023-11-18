@@ -2,7 +2,7 @@
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.tongyi import ChatTongyi
-from langchain_core.schema import (
+from langchain.schema import (
     AIMessage,
     BaseMessage,
     ChatGeneration,

@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from langchain_core.pydantic_v1 import BaseModel
+from langchain.pydantic_v1 import BaseModel
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,

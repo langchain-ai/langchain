@@ -7,10 +7,10 @@ import warnings
 from typing import Any, Dict, Union
 
 from langchain.chat_models.openai import ChatOpenAI
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.schema import ChatResult
-from langchain_core.utils import get_from_dict_or_env
-from langchain_core.utils.openai import is_openai_v1
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
+from langchain.schema import ChatResult
+from langchain.utils import get_from_dict_or_env
+from langchain.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
 

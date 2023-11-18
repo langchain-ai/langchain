@@ -9,7 +9,7 @@ from requests.auth import HTTPBasicAuth
 
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredBaseLoader
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 
 class LakeFSClient:

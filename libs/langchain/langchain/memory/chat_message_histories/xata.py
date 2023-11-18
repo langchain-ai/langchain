@@ -1,10 +1,10 @@
 import json
 from typing import List
 
-from langchain_core.schema import (
+from langchain.schema import (
     BaseChatMessageHistory,
 )
-from langchain_core.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
+from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
 
 
 class XataChatMessageHistory(BaseChatMessageHistory):

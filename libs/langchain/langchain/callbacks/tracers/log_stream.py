@@ -1,4 +1,4 @@
-from langchain_core.callbacks.tracers.log_stream import (
+from langchain.schema.callbacks.tracers.log_stream import (
     LogEntry,
     LogStreamCallbackHandler,
     RunLog,

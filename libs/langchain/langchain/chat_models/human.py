@@ -12,14 +12,14 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.utils import enforce_stop_tokens
-from langchain_core.pydantic_v1 import Field
-from langchain_core.schema.messages import (
+from langchain.pydantic_v1 import Field
+from langchain.schema.messages import (
     BaseMessage,
     HumanMessage,
     _message_from_dict,
     messages_to_dict,
 )
-from langchain_core.schema.output import ChatGeneration, ChatResult
+from langchain.schema.output import ChatGeneration, ChatResult
 
 
 def _display_messages(messages: List[BaseMessage]) -> None:

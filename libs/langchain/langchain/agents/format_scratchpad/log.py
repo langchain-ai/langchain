@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from langchain_core.schema.agent import AgentAction
+from langchain.schema.agent import AgentAction
 
 
 def format_log_to_str(

@@ -5,7 +5,7 @@ import pytest
 
 from langchain.callbacks import OpenAICallbackHandler
 from langchain.llms.openai import BaseOpenAI
-from langchain_core.schema import LLMResult
+from langchain.schema import LLMResult
 
 
 @pytest.fixture

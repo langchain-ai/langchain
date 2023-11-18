@@ -29,9 +29,9 @@ from langchain.chains.query_constructor.prompt import (
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.output_parsers.json import parse_and_check_json_markdown
 from langchain.prompts.few_shot import FewShotPromptTemplate
-from langchain_core.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.runnable import Runnable
+from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.runnable import Runnable
 
 
 class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):

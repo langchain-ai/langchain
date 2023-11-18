@@ -5,8 +5,8 @@ import requests
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import Extra, root_validator
+from langchain.utils import get_from_dict_or_env
 
 INSTRUCTION_KEY = "### Instruction:"
 RESPONSE_KEY = "### Response:"

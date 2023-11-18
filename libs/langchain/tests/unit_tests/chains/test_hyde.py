@@ -10,8 +10,8 @@ from langchain.callbacks.manager import (
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.llms.base import BaseLLM
-from langchain_core.schema import Generation, LLMResult
-from langchain_core.schema.embeddings import Embeddings
+from langchain.schema import Generation, LLMResult
+from langchain.schema.embeddings import Embeddings
 
 
 class FakeEmbeddings(Embeddings):

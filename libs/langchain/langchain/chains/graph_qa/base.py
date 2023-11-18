@@ -8,9 +8,9 @@ from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import ENTITY_EXTRACTION_PROMPT, GRAPH_QA_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.graphs.networkx_graph import NetworkxEntityGraph, get_entities
-from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import BasePromptTemplate
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.pydantic_v1 import Field
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class GraphQAChain(Chain):

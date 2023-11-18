@@ -16,16 +16,16 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.schema import (
+from langchain.pydantic_v1 import root_validator
+from langchain.schema import (
     AgentAction,
     AgentFinish,
     BasePromptTemplate,
     OutputParserException,
 )
-from langchain_core.schema.agent import AgentActionMessageLog
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.messages import (
+from langchain.schema.agent import AgentActionMessageLog
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     SystemMessage,

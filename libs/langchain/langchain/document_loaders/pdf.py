@@ -24,7 +24,7 @@ from langchain.document_loaders.parsers.pdf import (
     PyPDFParser,
 )
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
-from langchain_core.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__file__)
 

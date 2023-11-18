@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from langchain.document_loaders import PolarsDataFrameLoader
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 if TYPE_CHECKING:
     import polars as pl

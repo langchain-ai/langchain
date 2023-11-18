@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, Optional, Set, Tuple, Union
 from packaging.version import parse
 from requests import HTTPError, Response
 
-from langchain_core.pydantic_v1 import SecretStr
+from langchain.pydantic_v1 import SecretStr
 
 
 def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:

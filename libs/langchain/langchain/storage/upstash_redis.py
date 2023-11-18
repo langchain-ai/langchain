@@ -1,6 +1,6 @@
 from typing import Any, Iterator, List, Optional, Sequence, Tuple, cast
 
-from langchain_core.schema import BaseStore
+from langchain.schema import BaseStore
 
 
 class UpstashRedisStore(BaseStore[str, str]):

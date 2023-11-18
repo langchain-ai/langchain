@@ -6,7 +6,7 @@ import pytest
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.llms import AzureOpenAI
-from langchain_core.schema import (
+from langchain.schema import (
     LLMResult,
 )
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler

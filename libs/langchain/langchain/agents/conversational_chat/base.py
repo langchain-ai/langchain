@@ -19,10 +19,10 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
-from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import AgentAction, BaseOutputParser, BasePromptTemplate
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain.pydantic_v1 import Field
+from langchain.schema import AgentAction, BaseOutputParser, BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 from langchain.tools.base import BaseTool
 
 

@@ -13,8 +13,8 @@ from typing import (
 )
 
 from langchain.docstore.document import Document
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.vectorstore import VectorStore
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch

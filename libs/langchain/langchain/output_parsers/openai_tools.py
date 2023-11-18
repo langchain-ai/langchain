@@ -2,13 +2,13 @@ import copy
 import json
 from typing import Any, List, Type
 
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.schema import (
+from langchain.pydantic_v1 import BaseModel
+from langchain.schema import (
     ChatGeneration,
     Generation,
     OutputParserException,
 )
-from langchain_core.schema.output_parser import (
+from langchain.schema.output_parser import (
     BaseGenerationOutputParser,
 )
 

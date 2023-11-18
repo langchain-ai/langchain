@@ -9,10 +9,10 @@ from langchain.memory.prompt import (
     KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
 )
 from langchain.memory.utils import get_prompt_input_key
-from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import BasePromptTemplate
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.messages import BaseMessage, SystemMessage, get_buffer_string
+from langchain.pydantic_v1 import Field
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import BaseMessage, SystemMessage, get_buffer_string
 
 
 class ConversationKGMemory(BaseChatMemory):

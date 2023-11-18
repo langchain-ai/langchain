@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain_core.schema import (
+from langchain.schema import (
     AgentAction,
     AgentFinish,
     BaseMessage,

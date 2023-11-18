@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Dict, Optional
 
-from langchain_core.schema import BaseOutputParser
+from langchain.schema import BaseOutputParser
 
 
 class RegexDictParser(BaseOutputParser):

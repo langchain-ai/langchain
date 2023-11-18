@@ -4,10 +4,10 @@ import logging
 from typing import Any, Dict, Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
+from langchain.pydantic_v1 import root_validator
 from langchain.tools.azure_cognitive_services.utils import detect_file_src_type
 from langchain.tools.base import BaseTool
-from langchain_core.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

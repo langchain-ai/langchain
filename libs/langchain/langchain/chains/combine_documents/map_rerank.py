@@ -9,8 +9,8 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.output_parsers.regex import RegexParser
-from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
-from langchain_core.runnable.config import RunnableConfig
+from langchain.pydantic_v1 import BaseModel, Extra, create_model, root_validator
+from langchain.schema.runnable.config import RunnableConfig
 
 
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):

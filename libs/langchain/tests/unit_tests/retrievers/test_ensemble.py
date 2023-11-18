@@ -2,7 +2,7 @@ import pytest
 
 from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.ensemble import EnsembleRetriever
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 
 @pytest.mark.requires("rank_bm25")

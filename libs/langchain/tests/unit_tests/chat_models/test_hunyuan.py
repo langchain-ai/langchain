@@ -6,8 +6,8 @@ from langchain.chat_models.hunyuan import (
     _convert_message_to_dict,
     _signature,
 )
-from langchain_core.pydantic_v1 import SecretStr
-from langchain_core.schema.messages import (
+from langchain.pydantic_v1 import SecretStr
+from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     ChatMessage,

@@ -4,8 +4,8 @@ import requests
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class AI21PenaltyData(BaseModel):

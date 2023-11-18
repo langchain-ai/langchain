@@ -6,10 +6,10 @@ from uuid import UUID
 
 from tenacity import RetryCallState
 
-from langchain_core.schema.agent import AgentAction, AgentFinish
-from langchain_core.schema.document import Document
-from langchain_core.schema.messages import BaseMessage
-from langchain_core.schema.output import ChatGenerationChunk, GenerationChunk, LLMResult
+from langchain.schema.agent import AgentAction, AgentFinish
+from langchain.schema.document import Document
+from langchain.schema.messages import BaseMessage
+from langchain.schema.output import ChatGenerationChunk, GenerationChunk, LLMResult
 
 
 class RetrieverManagerMixin:

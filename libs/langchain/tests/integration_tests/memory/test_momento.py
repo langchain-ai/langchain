@@ -13,7 +13,7 @@ import pytest
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import MomentoChatMessageHistory
-from langchain_core.schema.messages import _message_to_dict
+from langchain.schema.messages import _message_to_dict
 
 
 def random_string() -> str:

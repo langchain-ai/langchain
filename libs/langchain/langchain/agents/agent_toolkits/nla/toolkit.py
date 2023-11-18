@@ -4,8 +4,8 @@ from typing import Any, List, Optional, Sequence
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.agents.agent_toolkits.nla.tool import NLATool
-from langchain_core.pydantic_v1 import Field
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.pydantic_v1 import Field
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 from langchain.tools.plugin import AIPlugin

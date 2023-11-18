@@ -10,9 +10,9 @@ from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema.messages import BaseMessage
-from langchain_core.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema.messages import BaseMessage
+from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     import tiktoken

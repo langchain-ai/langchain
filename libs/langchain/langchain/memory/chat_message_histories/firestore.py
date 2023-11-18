@@ -4,10 +4,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, List, Optional
 
-from langchain_core.schema import (
+from langchain.schema import (
     BaseChatMessageHistory,
 )
-from langchain_core.schema.messages import BaseMessage, messages_from_dict, messages_to_dict
+from langchain.schema.messages import BaseMessage, messages_from_dict, messages_to_dict
 
 logger = logging.getLogger(__name__)
 

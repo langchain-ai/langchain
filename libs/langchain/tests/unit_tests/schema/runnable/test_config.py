@@ -2,7 +2,7 @@ from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
-from langchain_core.runnable.config import RunnableConfig, merge_configs
+from langchain.schema.runnable.config import RunnableConfig, merge_configs
 
 
 def test_merge_config_callbacks() -> None:

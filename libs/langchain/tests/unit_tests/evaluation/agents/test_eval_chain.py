@@ -10,8 +10,8 @@ from langchain.evaluation.agents.trajectory_eval_chain import (
     TrajectoryEvalChain,
     TrajectoryOutputParser,
 )
-from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import AgentAction, BaseMessage, OutputParserException
+from langchain.pydantic_v1 import Field
+from langchain.schema import AgentAction, BaseMessage, OutputParserException
 from langchain.tools.base import tool
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 

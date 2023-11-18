@@ -4,7 +4,7 @@ from typing import Any, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain_core.utils import stringify_dict
+from langchain.utils import stringify_dict
 
 
 class FigmaFileLoader(BaseLoader):

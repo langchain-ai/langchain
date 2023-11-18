@@ -4,11 +4,11 @@ import json
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Optional
 
-from langchain_core.schema import (
+from langchain.schema import (
     BaseChatMessageHistory,
 )
-from langchain_core.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
-from langchain_core.utils import get_from_env
+from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
+from langchain.utils import get_from_env
 
 if TYPE_CHECKING:
     import momento

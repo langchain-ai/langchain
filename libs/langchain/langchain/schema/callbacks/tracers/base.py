@@ -9,11 +9,11 @@ from uuid import UUID
 
 from tenacity import RetryCallState
 
-from langchain_core.load.dump import dumpd
-from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.callbacks.tracers.schemas import Run
-from langchain_core.schema.document import Document
-from langchain_core.schema.output import (
+from langchain.load.dump import dumpd
+from langchain.schema.callbacks.base import BaseCallbackHandler
+from langchain.schema.callbacks.tracers.schemas import Run
+from langchain.schema.document import Document
+from langchain.schema.output import (
     ChatGeneration,
     ChatGenerationChunk,
     GenerationChunk,

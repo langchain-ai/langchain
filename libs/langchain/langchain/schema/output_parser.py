@@ -18,15 +18,15 @@ from typing import (
 
 from typing_extensions import get_args
 
-from langchain_core.schema.messages import AnyMessage, BaseMessage, BaseMessageChunk
-from langchain_core.schema.output import (
+from langchain.schema.messages import AnyMessage, BaseMessage, BaseMessageChunk
+from langchain.schema.output import (
     ChatGeneration,
     ChatGenerationChunk,
     Generation,
     GenerationChunk,
 )
-from langchain_core.schema.prompt import PromptValue
-from langchain_core.runnable import RunnableConfig, RunnableSerializable
+from langchain.schema.prompt import PromptValue
+from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 
 T = TypeVar("T")
 

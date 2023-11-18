@@ -6,8 +6,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils.input import get_color_mapping
+from langchain.pydantic_v1 import Extra, root_validator
+from langchain.utils.input import get_color_mapping
 
 
 class SequentialChain(Chain):

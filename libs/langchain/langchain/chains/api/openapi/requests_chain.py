@@ -7,8 +7,8 @@ from typing import Any
 from langchain.chains.api.openapi.prompts import REQUEST_TEMPLATE
 from langchain.chains.llm import LLMChain
 from langchain.prompts.prompt import PromptTemplate
-from langchain_core.schema import BaseOutputParser
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.schema import BaseOutputParser
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class APIRequesterOutputParser(BaseOutputParser):

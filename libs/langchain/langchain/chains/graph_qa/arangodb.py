@@ -14,8 +14,8 @@ from langchain.chains.graph_qa.prompts import (
 )
 from langchain.chains.llm import LLMChain
 from langchain.graphs.arangodb_graph import ArangoGraph
-from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import BasePromptTemplate
+from langchain.pydantic_v1 import Field
+from langchain.schema import BasePromptTemplate
 
 
 class ArangoGraphQAChain(Chain):

@@ -10,7 +10,7 @@ from typing import (
     Union,
 )
 
-from langchain_core.schema import BaseStore
+from langchain.schema import BaseStore
 
 K = TypeVar("K")
 V = TypeVar("V")

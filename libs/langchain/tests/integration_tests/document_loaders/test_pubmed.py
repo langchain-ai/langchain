@@ -4,7 +4,7 @@ from typing import List
 import pytest
 
 from langchain.document_loaders import PubMedLoader
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 xmltodict = pytest.importorskip("xmltodict")
 

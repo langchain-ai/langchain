@@ -2,7 +2,7 @@
 import pytest
 
 from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 
 def test_azure_cognitive_search_get_relevant_documents() -> None:

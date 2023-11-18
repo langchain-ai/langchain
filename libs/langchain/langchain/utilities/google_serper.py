@@ -5,8 +5,8 @@ import aiohttp
 import requests
 from typing_extensions import Literal
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import BaseModel, root_validator
+from langchain.utils import get_from_dict_or_env
 
 
 class GoogleSerperAPIWrapper(BaseModel):

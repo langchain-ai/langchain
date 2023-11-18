@@ -1,7 +1,7 @@
 import pytest
 
 from langchain.indexes._api import _HashedDocument
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 
 def test_hashed_document_hashing() -> None:

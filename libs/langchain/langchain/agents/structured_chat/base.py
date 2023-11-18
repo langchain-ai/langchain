@@ -13,9 +13,9 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import AgentAction, BasePromptTemplate
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.pydantic_v1 import Field
+from langchain.schema import AgentAction, BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"

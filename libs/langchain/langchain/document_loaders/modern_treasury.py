@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain_core.utils import get_from_env, stringify_value
+from langchain.utils import get_from_env, stringify_value
 
 MODERN_TREASURY_ENDPOINTS = {
     "payment_orders": "https://app.moderntreasury.com/api/payment_orders",

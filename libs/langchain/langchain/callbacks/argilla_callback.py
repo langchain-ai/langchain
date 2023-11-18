@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from packaging.version import parse
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain_core.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class ArgillaCallbackHandler(BaseCallbackHandler):

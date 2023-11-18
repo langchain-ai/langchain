@@ -5,7 +5,7 @@ primarily for unit testing purposes.
 """
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
-from langchain_core.schema import BaseStore
+from langchain.schema import BaseStore
 
 
 class InMemoryStore(BaseStore[str, Any]):

@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain.pydantic_v1 import BaseModel, root_validator
 
 
 class DropboxLoader(BaseLoader, BaseModel):

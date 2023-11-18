@@ -17,19 +17,19 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.schema import (
+from langchain.pydantic_v1 import BaseModel, root_validator
+from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
-from langchain_core.schema.messages import (
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     import google.generativeai as genai

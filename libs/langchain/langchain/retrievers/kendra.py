@@ -4,8 +4,8 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator, validator
-from langchain_core.schema import BaseRetriever
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator, validator
+from langchain.schema import BaseRetriever
 
 
 def clean_excerpt(excerpt: str) -> str:

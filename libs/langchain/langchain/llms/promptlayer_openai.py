@@ -6,7 +6,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.openai import OpenAI, OpenAIChat
-from langchain_core.schema import LLMResult
+from langchain.schema import LLMResult
 
 
 class PromptLayerOpenAI(OpenAI):

@@ -7,7 +7,7 @@ import pytest
 
 from langchain.adapters.openai import convert_dict_to_message
 from langchain.chat_models.openai import ChatOpenAI
-from langchain_core.schema.messages import (
+from langchain.schema.messages import (
     AIMessage,
     FunctionMessage,
     HumanMessage,

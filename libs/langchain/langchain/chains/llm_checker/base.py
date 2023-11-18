@@ -15,8 +15,8 @@ from langchain.chains.llm_checker.prompt import (
 )
 from langchain.chains.sequential import SequentialChain
 from langchain.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.pydantic_v1 import Extra, root_validator
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def _load_question_to_checked_assertions_chain(

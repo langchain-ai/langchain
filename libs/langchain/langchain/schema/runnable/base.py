@@ -32,21 +32,20 @@ from typing import (
 from typing_extensions import Literal, get_args
 
 if TYPE_CHECKING:
-    from langchain_core.callbacks.manager import (
+    from langchain.schema.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
-    from langchain_core.callbacks.tracers.log_stream import RunLog, RunLogPatch
-    from langchain_core.callbacks.tracers.root_listeners import Listener
-    from langchain_core.runnable.fallbacks import (
+    from langchain.schema.callbacks.tracers.log_stream import RunLog, RunLogPatch
+    from langchain.schema.callbacks.tracers.root_listeners import Listener
+    from langchain.schema.runnable.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
 
-
-from langchain_core.load.dump import dumpd
-from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
-from langchain_core.runnable.config import (
+from langchain.load.dump import dumpd
+from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import BaseModel, Field, create_model
+from langchain.schema.runnable.config import (
     RunnableConfig,
     acall_func_with_variable_args,
     call_func_with_variable_args,
@@ -58,7 +57,7 @@ from langchain_core.runnable.config import (
     merge_configs,
     patch_config,
 )
-from langchain_core.runnable.utils import (
+from langchain.schema.runnable.utils import (
     AddableDict,
     AnyConfigurableField,
     ConfigurableField,
@@ -73,8 +72,8 @@ from langchain_core.runnable.utils import (
     get_unique_config_specs,
     indent_lines_after_first,
 )
-from langchain_core.utils.aiter import atee, py_anext
-from langchain_core.utils.iter import safetee
+from langchain.utils.aiter import atee, py_anext
+from langchain.utils.iter import safetee
 
 Other = TypeVar("Other")
 
@@ -127,7 +126,7 @@ class Runnable(Generic[Input, Output], ABC):
 
     .. code-block:: python
 
-        from langchain_core.runnable import RunnableLambda
+        from langchain.schema.runnable import RunnableLambda
 
         # A RunnableSequence constructed using the `|` operator
         sequence = RunnableLambda(lambda x: x + 1) | RunnableLambda(lambda x: x * 2)
@@ -155,7 +154,7 @@ class Runnable(Generic[Input, Output], ABC):
 
     .. code-block:: python
 
-        from langchain_core.runnable import RunnableLambda
+        from langchain.schema.runnable import RunnableLambda
 
         import random
 
@@ -298,7 +297,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         """List configurable fields for this runnable."""
         return []
 
@@ -778,7 +777,7 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             A new Runnable that retries the original runnable on exceptions.
         """
-        from langchain_core.runnable.retry import RunnableRetry
+        from langchain.schema.runnable.retry import RunnableRetry
 
         return RunnableRetry(
             bound=self,
@@ -812,7 +811,7 @@ class Runnable(Generic[Input, Output], ABC):
             A new Runnable that will try the original runnable, and then each
             fallback in order, upon failures.
         """
-        from langchain_core.runnable.fallbacks import RunnableWithFallbacks
+        from langchain.schema.runnable.fallbacks import RunnableWithFallbacks
 
         return RunnableWithFallbacks(
             runnable=self,
@@ -1190,7 +1189,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
-        from langchain_core.runnable.configurable import RunnableConfigurableFields
+        from langchain.schema.runnable.configurable import RunnableConfigurableFields
 
         for key in kwargs:
             if key not in self.__fields__:
@@ -1207,7 +1206,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         default_key: str = "default",
         **kwargs: Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ) -> RunnableSerializable[Input, Output]:
-        from langchain_core.runnable.configurable import (
+        from langchain.schema.runnable.configurable import (
             RunnableConfigurableAlternatives,
         )
 
@@ -1255,7 +1254,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
         .. code-block:: python
 
-            from langchain_core.runnable import RunnableLambda
+            from langchain.schema.runnable import RunnableLambda
 
             def add_one(x: int) -> int:
                 return x + 1
@@ -1332,7 +1331,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        from langchain_core.runnable.passthrough import RunnableAssign
+        from langchain.schema.runnable.passthrough import RunnableAssign
 
         if isinstance(self.first, RunnableAssign):
             first = cast(RunnableAssign, self.first)
@@ -1357,7 +1356,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return self.last.get_output_schema(config)
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec for step in self.steps for spec in step.config_specs
         )
@@ -1885,7 +1884,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         )
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec for step in self.steps.values() for spec in step.config_specs
         )
@@ -2274,7 +2273,7 @@ class RunnableLambda(Runnable[Input, Output]):
         .. code-block:: python
 
             # This is a RunnableLambda
-            from langchain_core.runnable import RunnableLambda
+            from langchain.schema.runnable import RunnableLambda
 
             def add_one(x: int) -> int:
                 return x + 1
@@ -2591,7 +2590,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         )
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
     @classmethod
@@ -2763,7 +2762,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         return self.bound.get_output_schema(merge_configs(self.config, config))
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
     @classmethod

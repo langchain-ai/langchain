@@ -11,8 +11,8 @@ import requests
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel, _generate_from_stream
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.schema import (
+from langchain.pydantic_v1 import Field, SecretStr, root_validator
+from langchain.schema import (
     AIMessage,
     BaseMessage,
     ChatGeneration,
@@ -20,14 +20,14 @@ from langchain_core.schema import (
     ChatResult,
     HumanMessage,
 )
-from langchain_core.schema.messages import (
+from langchain.schema.messages import (
     AIMessageChunk,
     BaseMessageChunk,
     ChatMessageChunk,
     HumanMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
-from langchain_core.utils import (
+from langchain.schema.output import ChatGenerationChunk
+from langchain.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,

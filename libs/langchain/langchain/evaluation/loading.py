@@ -32,7 +32,7 @@ from langchain.evaluation.string_distance.base import (
     PairwiseStringDistanceEvalChain,
     StringDistanceEvalChain,
 )
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def load_dataset(uri: str) -> List[Dict]:
@@ -130,7 +130,9 @@ def load_evaluator(
     evaluator_cls = _EVALUATOR_MAP[evaluator]
     if issubclass(evaluator_cls, LLMEvalChain):
         try:
-            llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
+            llm = llm or ChatOpenAI(
+                model="gpt-4", model_kwargs={"seed": 42}, temperature=0
+            )
         except Exception as e:
             raise ValueError(
                 f"Evaluation with the {evaluator_cls} requires a "

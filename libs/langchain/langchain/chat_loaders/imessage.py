@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
 from langchain.chat_loaders.base import BaseChatLoader
-from langchain_core.schema import HumanMessage
-from langchain_core.schema.chat import ChatSession
+from langchain.schema import HumanMessage
+from langchain.schema.chat import ChatSession
 
 if TYPE_CHECKING:
     import sqlite3

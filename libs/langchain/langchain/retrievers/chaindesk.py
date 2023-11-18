@@ -7,7 +7,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain_core.schema import BaseRetriever, Document
+from langchain.schema import BaseRetriever, Document
 
 
 class ChaindeskRetriever(BaseRetriever):

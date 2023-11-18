@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from langchain.memory.chat_message_histories import SQLChatMessageHistory
 from langchain.memory.chat_message_histories.sql import DefaultMessageConverter
-from langchain_core.schema.messages import AIMessage, HumanMessage
+from langchain.schema.messages import AIMessage, HumanMessage
 
 
 @pytest.fixture()

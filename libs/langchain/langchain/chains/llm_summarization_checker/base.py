@@ -11,8 +11,8 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
 from langchain.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.pydantic_v1 import Extra, root_validator
+from langchain.schema.language_model import BaseLanguageModel
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 

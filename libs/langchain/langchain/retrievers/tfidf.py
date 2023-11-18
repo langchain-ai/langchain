@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain_core.schema import BaseRetriever, Document
+from langchain.schema import BaseRetriever, Document
 
 
 class TFIDFRetriever(BaseRetriever):

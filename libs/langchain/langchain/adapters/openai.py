@@ -15,8 +15,8 @@ from typing import (
 
 from typing_extensions import Literal
 
-from langchain_core.schema.chat import ChatSession
-from langchain_core.schema.messages import (
+from langchain.schema.chat import ChatSession
+from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,

@@ -14,7 +14,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.utilities.vertexai import get_client_info
-from langchain_core.utils.iter import batch_iterate
+from langchain.utils.iter import batch_iterate
 
 if TYPE_CHECKING:
     from google.api_core.operation import Operation

@@ -18,14 +18,14 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnable.base import Runnable, RunnableSerializable
-from langchain_core.runnable.config import (
+from langchain.pydantic_v1 import BaseModel
+from langchain.schema.runnable.base import Runnable, RunnableSerializable
+from langchain.schema.runnable.config import (
     RunnableConfig,
     get_config_list,
     get_executor_for_config,
 )
-from langchain_core.runnable.utils import (
+from langchain.schema.runnable.utils import (
     AnyConfigurableField,
     ConfigurableField,
     ConfigurableFieldMultiOption,
@@ -209,7 +209,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     fields: Dict[str, AnyConfigurableField]
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             [
                 ConfigurableFieldSpec(
@@ -300,7 +300,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     default_key: str = "default"
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         with _enums_for_spec_lock:
             if which_enum := _enums_for_spec.get(self.which):
                 pass

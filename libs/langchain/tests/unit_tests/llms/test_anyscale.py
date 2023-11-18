@@ -3,7 +3,7 @@ import pytest
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain.llms.anyscale import Anyscale
-from langchain_core.pydantic_v1 import SecretStr
+from langchain.pydantic_v1 import SecretStr
 
 
 @pytest.mark.requires("openai")

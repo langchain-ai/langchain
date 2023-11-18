@@ -12,9 +12,9 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.utils import enforce_stop_tokens
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.messages import (
+from langchain.pydantic_v1 import root_validator
+from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -22,8 +22,8 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGenerationChunk
-from langchain_core.utils import get_from_dict_or_env
+from langchain.schema.output import ChatGenerationChunk
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

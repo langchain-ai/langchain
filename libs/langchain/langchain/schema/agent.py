@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Literal, Sequence, Union
 
-from langchain_core.load.serializable import Serializable
-from langchain_core.schema.messages import BaseMessage
+from langchain.load.serializable import Serializable
+from langchain.schema.messages import BaseMessage
 
 
 class AgentAction(Serializable):

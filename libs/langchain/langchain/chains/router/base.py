@@ -10,7 +10,7 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.chains.base import Chain
-from langchain_core.pydantic_v1 import Extra
+from langchain.pydantic_v1 import Extra
 
 
 class Route(NamedTuple):

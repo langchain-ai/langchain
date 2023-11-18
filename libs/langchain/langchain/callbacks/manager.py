@@ -10,7 +10,7 @@ from typing import (
 
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.tracers.wandb import WandbTracer
-from langchain_core.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainGroup,
     AsyncCallbackManagerForChainRun,

@@ -5,7 +5,7 @@ from urllib3.exceptions import ConnectionError
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.document_loaders.web_base import WebBaseLoader
-from langchain_core.schema import Document
+from langchain.schema import Document
 from langchain.tools.base import BaseTool
 
 

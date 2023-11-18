@@ -9,7 +9,7 @@ import pytest
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob, FileSystemBlobLoader
 from langchain.document_loaders.generic import GenericLoader
-from langchain_core.schema import Document
+from langchain.schema import Document
 
 
 @pytest.fixture

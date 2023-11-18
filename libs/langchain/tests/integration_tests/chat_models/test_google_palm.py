@@ -7,12 +7,12 @@ Note: This test must be run with the GOOGLE_API_KEY environment variable set to 
 import pytest
 
 from langchain.chat_models import ChatGooglePalm
-from langchain_core.schema import (
+from langchain.schema import (
     ChatGeneration,
     ChatResult,
     LLMResult,
 )
-from langchain_core.schema.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 
 
 def test_chat_google_palm() -> None:

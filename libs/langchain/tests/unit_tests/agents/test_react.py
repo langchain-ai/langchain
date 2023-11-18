@@ -8,7 +8,7 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.fake import FakeListLLM
 from langchain.prompts.prompt import PromptTemplate
-from langchain_core.schema import AgentAction
+from langchain.schema import AgentAction
 
 _PAGE_CONTENT = """This is a page about LangChain.
 

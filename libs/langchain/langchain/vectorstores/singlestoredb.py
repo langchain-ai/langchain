@@ -15,8 +15,8 @@ from typing import (
 from sqlalchemy.pool import QueuePool
 
 from langchain.docstore.document import Document
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.vectorstore import VectorStore, VectorStoreRetriever
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
 from langchain.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.DOT_PRODUCT

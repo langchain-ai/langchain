@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from langchain.agents.tools import Tool
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 from langchain.utilities.requests import Requests

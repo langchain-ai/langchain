@@ -8,9 +8,9 @@ from typing_extensions import NotRequired, TypedDict
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser, BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
-from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
+from langchain.pydantic_v1 import BaseModel, root_validator, validator
 from langchain.text_splitter import TextSplitter
-from langchain_core.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 EMBAAS_DOC_API_URL = "https://api.embaas.io/v1/document/extract-text/bytes/"
 
