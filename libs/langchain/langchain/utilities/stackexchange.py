@@ -26,19 +26,24 @@ class StackExchangeAPIWrapper:
         return values
 
     def run(self, title: str) -> str:
-        """Run query through StackExchange API and parse results."""
-        output = self.stackapi_client.fetch('search/excerpts', title=title)
+    """Run query through StackExchange API and parse results."""
+    output = self.stackapi_client.fetch('search/excerpts', title=title)
 
-        result_text = ""
-        for ans in output['items']:
-            if ans['item_type'] == 'question':
-                result_text += f"Title: {ans['title']}\n"
-                if ans['answer_count'] > 0:
-                    index = output['items'].index(ans)
-                    result_text += f"Answer: {html.unescape(output['items'][index + 1]['excerpt'])}\n"
-                result_text += "\n"
+    result_text = ""
+    count = 0  # Track the number of results processed
+    for ans in output['items']:
+        if count >= 3:  # Limit the number of results to 3
+            break
 
-        if not result_text:
-            result_text = f"No relevant results found for '{title}' on Stack Overflow"
+        if ans['item_type'] == 'question':
+            result_text += f"Title: {ans['title']}\n"
+            if ans['answer_count'] > 0:
+                index = output['items'].index(ans)
+                result_text += f"Answer: {html.unescape(output['items'][index + 1]['excerpt'])}\n"
+            result_text += "\n"
+            count += 1
 
-        return result_text
+    if not result_text:
+        result_text = f"No relevant results found for '{title}' on Stack Overflow"
+
+    return result_text
