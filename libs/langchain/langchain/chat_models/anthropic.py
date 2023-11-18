@@ -10,7 +10,7 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.anthropic import _AnthropicCommon
-from langchain.schema.messages import (
+from langchain_core.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -18,8 +18,8 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain.schema.prompt import PromptValue
+from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.schema.prompt import PromptValue
 
 
 def _convert_one_message_to_text(

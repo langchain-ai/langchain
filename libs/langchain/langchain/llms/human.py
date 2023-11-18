@@ -3,7 +3,7 @@ from typing import Any, Callable, List, Mapping, Optional
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import Field
 
 
 def _display_prompt(prompt: str) -> None:

@@ -10,7 +10,7 @@ from langchain.document_loaders.base_o365 import (
     _FileType,
 )
 from langchain.document_loaders.parsers.registry import get_parser
-from langchain.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import Field
 
 if TYPE_CHECKING:
     from O365.drive import Drive, Folder

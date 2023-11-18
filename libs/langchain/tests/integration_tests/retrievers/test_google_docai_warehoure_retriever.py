@@ -2,7 +2,7 @@
 import os
 
 from langchain.retrievers import GoogleDocumentAIWarehouseRetriever
-from langchain.schema import Document
+from langchain_core.schema import Document
 
 
 def test_google_documentai_warehoure_retriever() -> None:

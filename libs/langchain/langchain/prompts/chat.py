@@ -18,16 +18,16 @@ from typing import (
     overload,
 )
 
-from langchain._api import deprecated
-from langchain.load.serializable import Serializable
+from langchain_core._api import deprecated
+from langchain_core.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema import (
+from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.schema import (
     BasePromptTemplate,
     PromptValue,
 )
-from langchain.schema.messages import (
+from langchain_core.schema.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,

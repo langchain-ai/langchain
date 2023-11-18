@@ -9,7 +9,7 @@ from langchain.callbacks.manager import (
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
-from langchain.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.dashvector import DashvectorTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
@@ -24,10 +24,10 @@ from langchain.retrievers.self_query.supabase import SupabaseVectorTranslator
 from langchain.retrievers.self_query.timescalevector import TimescaleVectorTranslator
 from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
-from langchain.schema import BaseRetriever, Document
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.runnable import Runnable
-from langchain.schema.vectorstore import VectorStore
+from langchain_core.schema import BaseRetriever, Document
+from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.runnable import Runnable
+from langchain_core.schema.vectorstore import VectorStore
 from langchain.vectorstores import (
     Chroma,
     DashVector,

@@ -6,7 +6,7 @@ from langchain.chains.conversation.memory import (
     ConversationSummaryMemory,
 )
 from langchain.memory import ReadOnlySharedMemory, SimpleMemory
-from langchain.schema import BaseMemory
+from langchain_core.schema import BaseMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

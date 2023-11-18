@@ -6,7 +6,7 @@ from typing import List, Tuple, Type
 import numpy as np
 
 from langchain.docstore.document import Document
-from langchain.utils.math import cosine_similarity
+from langchain_core.utils.math import cosine_similarity
 
 
 class DistanceStrategy(str, Enum):

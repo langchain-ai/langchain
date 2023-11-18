@@ -18,7 +18,7 @@ import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.utils.html import extract_sub_links
+from langchain_core.utils.html import extract_sub_links
 
 if TYPE_CHECKING:
     import aiohttp

@@ -7,7 +7,7 @@ from uuid import uuid4
 import pytest
 from pytest_mock import MockerFixture
 
-from langchain.schema import Document
+from langchain_core.schema import Document
 from langchain.vectorstores import ZepVectorStore
 from langchain.vectorstores.zep import CollectionConfig
 

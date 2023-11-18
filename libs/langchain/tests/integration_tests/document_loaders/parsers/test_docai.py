@@ -8,7 +8,7 @@ import os
 
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers import DocAIParser
-from langchain.schema import Document
+from langchain_core.schema import Document
 
 
 def test_docai_parser() -> None:

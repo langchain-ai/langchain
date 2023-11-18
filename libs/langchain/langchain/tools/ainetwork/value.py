@@ -3,7 +3,7 @@ import json
 from typing import Optional, Type, Union
 
 from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.tools.ainetwork.base import AINBaseTool, OperationType
 
 

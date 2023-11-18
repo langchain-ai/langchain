@@ -6,9 +6,9 @@ import warnings
 from typing import Dict, Optional, Union
 
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.utils import get_from_dict_or_env
-from langchain.utils.openai import is_openai_v1
+from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils.openai import is_openai_v1
 
 
 class AzureOpenAIEmbeddings(OpenAIEmbeddings):

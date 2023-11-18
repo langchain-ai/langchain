@@ -6,7 +6,7 @@ from langchain.document_transformers.embeddings_redundant_filter import (
 )
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers.document_compressors import EmbeddingsFilter
-from langchain.schema import Document
+from langchain_core.schema import Document
 
 
 def test_embeddings_filter() -> None:

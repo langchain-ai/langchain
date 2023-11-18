@@ -9,7 +9,7 @@ import numpy as np
 import yaml
 from typing_extensions import TYPE_CHECKING, Literal
 
-from langchain.pydantic_v1 import BaseModel, Field, validator
+from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from langchain.vectorstores.redis.constants import REDIS_VECTOR_DTYPE_MAP
 
 if TYPE_CHECKING:

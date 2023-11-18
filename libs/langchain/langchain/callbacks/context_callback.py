@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import (
+from langchain_core.schema import (
     BaseMessage,
     LLMResult,
 )

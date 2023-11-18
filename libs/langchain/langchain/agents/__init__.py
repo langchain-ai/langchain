@@ -31,7 +31,7 @@ Agents select and use **Tools** and **Toolkits** for actions.
 from pathlib import Path
 from typing import Any
 
-from langchain._api.path import as_import_path
+from langchain_core._api.path import as_import_path
 from langchain.agents.agent import (
     Agent,
     AgentExecutor,

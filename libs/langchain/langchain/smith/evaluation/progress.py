@@ -4,8 +4,8 @@ from typing import Any, Dict, Optional, Sequence
 from uuid import UUID
 
 from langchain.callbacks import base as base_callbacks
-from langchain.schema.document import Document
-from langchain.schema.output import LLMResult
+from langchain_core.schema.document import Document
+from langchain_core.schema.output import LLMResult
 
 
 class ProgressBarCallback(base_callbacks.BaseCallbackHandler):

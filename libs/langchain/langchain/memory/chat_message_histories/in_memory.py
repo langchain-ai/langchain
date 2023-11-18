@@ -1,10 +1,10 @@
 from typing import List
 
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema import (
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.schema import (
     BaseChatMessageHistory,
 )
-from langchain.schema.messages import BaseMessage
+from langchain_core.schema.messages import BaseMessage
 
 
 class ChatMessageHistory(BaseChatMessageHistory, BaseModel):

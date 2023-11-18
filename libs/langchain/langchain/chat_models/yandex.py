@@ -9,7 +9,7 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.llms.yandex import _BaseYandexGPT
-from langchain.schema import (
+from langchain_core.schema import (
     AIMessage,
     BaseMessage,
     ChatGeneration,

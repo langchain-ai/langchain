@@ -11,7 +11,7 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.schema.language_model import BaseLanguageModel
 
 
 def create_openapi_agent(

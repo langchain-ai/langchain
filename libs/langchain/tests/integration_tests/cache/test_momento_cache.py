@@ -14,7 +14,7 @@ import pytest
 
 from langchain.cache import MomentoCache
 from langchain.globals import set_llm_cache
-from langchain.schema import Generation, LLMResult
+from langchain_core.schema import Generation, LLMResult
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

@@ -11,7 +11,7 @@ from langsmith.schemas import Dataset, Example
 
 from langchain.chains.base import Chain
 from langchain.chains.transform import TransformChain
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.schema.language_model import BaseLanguageModel
 from langchain.smith.evaluation.runner_utils import (
     InputFormatError,
     _get_messages,

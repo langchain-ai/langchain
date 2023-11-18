@@ -8,8 +8,8 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import BaseRetriever, Document
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.schema import BaseRetriever, Document
 
 
 class EnsembleRetriever(BaseRetriever):

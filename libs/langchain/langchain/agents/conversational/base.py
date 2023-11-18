@@ -11,8 +11,8 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import Field
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.pydantic_v1 import Field
+from langchain_core.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 

@@ -6,7 +6,7 @@ from typing import Iterator, Mapping, Optional
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders.schema import Blob
-from langchain.schema import Document
+from langchain_core.schema import Document
 
 
 class MimeTypeBasedParser(BaseBlobParser):

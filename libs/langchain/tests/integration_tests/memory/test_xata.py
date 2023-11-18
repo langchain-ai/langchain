@@ -8,7 +8,7 @@ import os
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import XataChatMessageHistory
-from langchain.schema.messages import _message_to_dict
+from langchain_core.schema.messages import _message_to_dict
 
 
 class TestXata:

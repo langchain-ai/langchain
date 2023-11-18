@@ -12,7 +12,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 from langchain.tools.base import (
     BaseTool,
     SchemaAnnotationError,

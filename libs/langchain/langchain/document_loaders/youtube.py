@@ -8,8 +8,8 @@ from urllib.parse import parse_qs, urlparse
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.pydantic_v1 import root_validator
-from langchain.pydantic_v1.dataclasses import dataclass
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1.dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 

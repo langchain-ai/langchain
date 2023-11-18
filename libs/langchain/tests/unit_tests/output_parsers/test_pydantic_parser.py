@@ -3,8 +3,8 @@ from enum import Enum
 from typing import Optional
 
 from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema import OutputParserException
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.schema import OutputParserException
 
 
 class Actions(Enum):

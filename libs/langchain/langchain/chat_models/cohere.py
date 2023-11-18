@@ -10,7 +10,7 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.cohere import BaseCohere
-from langchain.schema.messages import (
+from langchain_core.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -18,7 +18,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
 
 
 def get_role(message: BaseMessage) -> str:
@@ -102,7 +102,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         .. code-block:: python
 
             from langchain.chat_models import ChatCohere
-            from langchain.schema import HumanMessage
+            from langchain_core.schema import HumanMessage
 
             chat = ChatCohere(model="foo")
             result = chat([HumanMessage(content="Hello")])

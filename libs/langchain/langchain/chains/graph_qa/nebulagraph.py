@@ -8,9 +8,9 @@ from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import CYPHER_QA_PROMPT, NGQL_GENERATION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.graphs.nebula_graph import NebulaGraph
-from langchain.pydantic_v1 import Field
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.pydantic_v1 import Field
+from langchain_core.schema import BasePromptTemplate
+from langchain_core.schema.language_model import BaseLanguageModel
 
 
 class NebulaGraphQAChain(Chain):

@@ -2,7 +2,7 @@ import pytest
 
 from langchain.embeddings import FakeEmbeddings
 from langchain.retrievers.svm import SVMRetriever
-from langchain.schema import Document
+from langchain_core.schema import Document
 
 
 class TestSVMRetriever:

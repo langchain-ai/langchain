@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Extra, Field, SecretStr, root_validator
-from langchain.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

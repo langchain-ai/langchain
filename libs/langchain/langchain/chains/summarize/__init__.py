@@ -9,8 +9,8 @@ from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.summarize import map_reduce_prompt, refine_prompts, stuff_prompt
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.schema import BasePromptTemplate
+from langchain_core.schema.language_model import BaseLanguageModel
 
 
 class LoadingCallable(Protocol):

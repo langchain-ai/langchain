@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 from langchain.prompts.base import DEFAULT_FORMATTER_MAPPING, StringPromptTemplate
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import Extra, root_validator
 
 
 class FewShotPromptWithTemplates(StringPromptTemplate):

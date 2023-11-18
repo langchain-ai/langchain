@@ -21,11 +21,11 @@ from langchain.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
 from langchain.prompts import BasePromptTemplate
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema import BaseLLMOutputParser
-from langchain.schema.output_parser import BaseGenerationOutputParser, BaseOutputParser
-from langchain.schema.runnable import Runnable
-from langchain.utils.openai_functions import convert_pydantic_to_openai_function
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.schema import BaseLLMOutputParser
+from langchain_core.schema.output_parser import BaseGenerationOutputParser, BaseOutputParser
+from langchain_core.runnable import Runnable
+from langchain_core.utils.openai_functions import convert_pydantic_to_openai_function
 
 PYTHON_TO_JSON_TYPES = {
     "str": "string",
@@ -237,7 +237,7 @@ def create_openai_fn_runnable(
                 from langchain.chains.openai_functions import create_openai_fn_chain
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate
-                from langchain.pydantic_v1 import BaseModel, Field
+                from langchain_core.pydantic_v1 import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -311,7 +311,7 @@ def create_structured_output_runnable(
                 from langchain.chains.openai_functions import create_structured_output_chain
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate
-                from langchain.pydantic_v1 import BaseModel, Field
+                from langchain_core.pydantic_v1 import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"
@@ -409,7 +409,7 @@ def create_openai_fn_chain(
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate
 
-                from langchain.pydantic_v1 import BaseModel, Field
+                from langchain_core.pydantic_v1 import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -496,7 +496,7 @@ def create_structured_output_chain(
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate
 
-                from langchain.pydantic_v1 import BaseModel, Field
+                from langchain_core.pydantic_v1 import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"

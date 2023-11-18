@@ -15,7 +15,7 @@ from pytest_mock import MockerFixture
 from langchain.chains.summarize import load_summarize_chain
 from langchain.docstore.document import Document
 from langchain.llms import VertexAI, VertexAIModelGarden
-from langchain.schema import LLMResult
+from langchain_core.schema import LLMResult
 
 
 def test_vertex_initialization() -> None:

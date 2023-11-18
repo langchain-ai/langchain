@@ -1,10 +1,10 @@
 from typing import List, Optional, TypedDict, Union
 
 from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.output_parser import NoOpOutputParser
-from langchain.schema.prompt_template import BasePromptTemplate
-from langchain.schema.runnable import Runnable, RunnableParallel
+from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.schema.output_parser import NoOpOutputParser
+from langchain_core.schema.prompt_template import BasePromptTemplate
+from langchain_core.runnable import Runnable, RunnableParallel
 from langchain.utilities.sql_database import SQLDatabase
 
 

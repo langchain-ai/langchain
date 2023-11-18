@@ -3,7 +3,7 @@ from typing import Optional, Type
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
-from langchain.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.tools.amadeus.base import AmadeusBaseTool
 
 

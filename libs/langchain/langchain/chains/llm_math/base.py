@@ -13,9 +13,9 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.schema import BasePromptTemplate
+from langchain_core.schema.language_model import BaseLanguageModel
 
 
 class LLMMathChain(Chain):

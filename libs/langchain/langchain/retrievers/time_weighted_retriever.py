@@ -3,9 +3,9 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.pydantic_v1 import Field
-from langchain.schema import BaseRetriever, Document
-from langchain.schema.vectorstore import VectorStore
+from langchain_core.pydantic_v1 import Field
+from langchain_core.schema import BaseRetriever, Document
+from langchain_core.schema.vectorstore import VectorStore
 
 
 def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> float:

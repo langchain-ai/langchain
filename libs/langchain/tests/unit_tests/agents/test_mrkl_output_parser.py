@@ -5,7 +5,7 @@ from langchain.agents.mrkl.output_parser import (
     MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE,
     MRKLOutputParser,
 )
-from langchain.schema import AgentAction, AgentFinish, OutputParserException
+from langchain_core.schema import AgentAction, AgentFinish, OutputParserException
 
 mrkl_output_parser = MRKLOutputParser()
 

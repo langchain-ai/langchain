@@ -1,9 +1,9 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.embeddings import Embeddings
-from langchain.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.schema.embeddings import Embeddings
+from langchain_core.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

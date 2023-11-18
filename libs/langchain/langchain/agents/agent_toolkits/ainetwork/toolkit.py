@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Literal, Optional
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import root_validator
 from langchain.tools import BaseTool
 from langchain.tools.ainetwork.app import AINAppOps
 from langchain.tools.ainetwork.owner import AINOwnerOps

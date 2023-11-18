@@ -9,8 +9,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Field
-from langchain.schema.output import GenerationChunk
+from langchain_core.pydantic_v1 import Field
+from langchain_core.schema.output import GenerationChunk
 
 logger = logging.getLogger(__name__)
 

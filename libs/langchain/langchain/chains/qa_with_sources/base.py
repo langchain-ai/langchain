@@ -24,9 +24,9 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
     QUESTION_PROMPT,
 )
 from langchain.docstore.document import Document
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.schema import BasePromptTemplate
+from langchain_core.schema.language_model import BaseLanguageModel
 
 
 class BaseQAWithSourcesChain(Chain, ABC):

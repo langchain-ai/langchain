@@ -9,8 +9,8 @@ from langchain.retrievers.document_compressors.base import BaseDocumentCompresso
 from langchain.retrievers.document_compressors.chain_filter_prompt import (
     prompt_template,
 )
-from langchain.schema import BasePromptTemplate, Document
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.schema import BasePromptTemplate, Document
+from langchain_core.schema.language_model import BaseLanguageModel
 
 
 def _get_default_chain_prompt() -> PromptTemplate:

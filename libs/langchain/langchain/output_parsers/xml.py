@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
 
 from langchain.output_parsers.format_instructions import XML_FORMAT_INSTRUCTIONS
-from langchain.schema import BaseOutputParser
+from langchain_core.schema import BaseOutputParser
 
 
 class XMLOutputParser(BaseOutputParser):

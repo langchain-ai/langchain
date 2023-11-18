@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, List
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.schema import BaseRetriever, Document
+from langchain_core.schema import BaseRetriever, Document
 
 
 class KayAiRetriever(BaseRetriever):

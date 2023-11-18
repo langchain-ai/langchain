@@ -11,9 +11,9 @@ import requests
 from packaging.version import parse
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema.agent import AgentAction, AgentFinish
-from langchain.schema.messages import BaseMessage
-from langchain.schema.output import LLMResult
+from langchain_core.schema.agent import AgentAction, AgentFinish
+from langchain_core.schema.messages import BaseMessage
+from langchain_core.schema.output import LLMResult
 
 logger = logging.getLogger(__name__)
 

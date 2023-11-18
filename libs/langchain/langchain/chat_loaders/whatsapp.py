@@ -5,8 +5,8 @@ import zipfile
 from typing import Iterator, List, Union
 
 from langchain.chat_loaders.base import BaseChatLoader
-from langchain.schema import AIMessage, HumanMessage
-from langchain.schema.chat import ChatSession
+from langchain_core.schema import AIMessage, HumanMessage
+from langchain_core.schema.chat import ChatSession
 
 logger = logging.getLogger(__name__)
 

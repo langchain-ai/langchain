@@ -7,7 +7,7 @@ from typing import Any, Iterable, List
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
-from langchain.schema import BaseRetriever
+from langchain_core.schema import BaseRetriever
 
 
 class ElasticSearchBM25Retriever(BaseRetriever):
