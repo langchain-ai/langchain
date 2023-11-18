@@ -150,7 +150,7 @@ class VLLMOpenAI(BaseOpenAI):
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
 
-        params: Dict[str:Any] = {
+        params: Dict[str, Any] = {
             "model": self.model_name,
             **self._default_params,
             "logit_bias": None,
