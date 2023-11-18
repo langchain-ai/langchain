@@ -36,14 +36,18 @@ cls_query_rdfs = prefixes["rdfs"] + (
     """}"""
 )
 
-cls_query_owl = prefixes["rdfs"] + prefixes["owl"] + (
-    """SELECT DISTINCT ?cls ?com\n"""
-    """WHERE { \n"""
-    """    ?cls a owl:Class . \n"""
-    """    FILTER (isIRI(?cls)) . \n"""
-    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
-    """    FILTER NOT EXISTS { ?cls a rdf:Property } \n"""
-    """}"""
+cls_query_owl = (
+    prefixes["rdfs"]
+    + prefixes["owl"]
+    + (
+        """SELECT DISTINCT ?cls ?com\n"""
+        """WHERE { \n"""
+        """    ?cls a owl:Class . \n"""
+        """    FILTER (isIRI(?cls)) . \n"""
+        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+        """    FILTER NOT EXISTS { ?cls a rdf:Property } \n"""
+        """}"""
+    )
 )
 
 rel_query_rdf = prefixes["rdfs"] + (
