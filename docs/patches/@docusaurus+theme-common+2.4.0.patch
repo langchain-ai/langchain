@@ -11,16 +11,3 @@ index 2c9dcb0..13eda59 100644
  function getWindowSize() {
      if (!ExecutionEnvironment.canUseDOM) {
          return windowSizes.ssr;
-diff --git a/node_modules/@docusaurus/theme-common/src/hooks/useWindowSize.ts b/node_modules/@docusaurus/theme-common/src/hooks/useWindowSize.ts
-index a9583b1..fed8659 100644
---- a/node_modules/@docusaurus/theme-common/src/hooks/useWindowSize.ts
-+++ b/node_modules/@docusaurus/theme-common/src/hooks/useWindowSize.ts
-@@ -17,7 +17,7 @@ const windowSizes = {
- 
- type WindowSize = keyof typeof windowSizes;
- 
--const DesktopThresholdWidth = 996;
-+const DesktopThresholdWidth = 1280;
- 
- function getWindowSize() {
-   if (!ExecutionEnvironment.canUseDOM) {
