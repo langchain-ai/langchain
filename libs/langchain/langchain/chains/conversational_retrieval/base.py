@@ -141,7 +141,7 @@ class BaseConversationalRetrievalChain(Chain):
         new_inputs["chat_history"] = chat_history_str
         new_inputs["input_documents"] = docs
         answer = self.combine_docs_chain(inputs=new_inputs, callbacks=_run_manager.get_child())
-        output: Dict[str, Any] = {self.output_key: answer}
+        output: Dict[str, Any] = {self.output_key: answer["output_text"]}
 
         if self.return_source_documents:
             output["source_documents"] = docs
