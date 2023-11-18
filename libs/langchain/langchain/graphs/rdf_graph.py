@@ -16,28 +16,33 @@ prefixes = {
     "xsd": """PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n""",
 }
 
+# NOTE: here, being a class is defined as having instances.
+#   this may lead to false negatives, but avoids mistaking instances for classes
 cls_query_rdf = prefixes["rdfs"] + (
     """SELECT DISTINCT ?cls ?com\n"""
     """WHERE { \n"""
-    """    ?instance a ?cls . \n"""
-    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+    """    ?instance a ?cls .\n"""
+    """    OPTIONAL { ?cls rdfs:comment ?com } . \n"""
+    """    FILTER NOT EXISTS { ?cls a rdf:Property } \n"""
     """}"""
 )
 
 cls_query_rdfs = prefixes["rdfs"] + (
     """SELECT DISTINCT ?cls ?com\n"""
     """WHERE { \n"""
-    """    ?instance a/rdfs:subClassOf* ?cls . \n"""
+    """    ?cls a rdfs:Class . \n"""
     """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+    """    FILTER NOT EXISTS { ?cls a rdf:Property } \n"""
     """}"""
 )
 
-cls_query_owl = prefixes["rdfs"] + (
+cls_query_owl = prefixes["rdfs"] + prefixes["owl"] + (
     """SELECT DISTINCT ?cls ?com\n"""
     """WHERE { \n"""
-    """    ?instance a/rdfs:subClassOf* ?cls . \n"""
+    """    ?cls a owl:Class . \n"""
     """    FILTER (isIRI(?cls)) . \n"""
     """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+    """    FILTER NOT EXISTS { ?cls a rdf:Property } \n"""
     """}"""
 )
 
@@ -55,7 +60,7 @@ rel_query_rdfs = (
     + (
         """SELECT DISTINCT ?rel ?com\n"""
         """WHERE { \n"""
-        """    ?rel a/rdfs:subPropertyOf* rdf:Property . \n"""
+        """    ?rel a rdf:Property . \n"""
         """    OPTIONAL { ?rel rdfs:comment ?com } \n"""
         """}"""
     )
@@ -67,7 +72,7 @@ op_query_owl = (
     + (
         """SELECT DISTINCT ?op ?com\n"""
         """WHERE { \n"""
-        """    ?op a/rdfs:subPropertyOf* owl:ObjectProperty . \n"""
+        """    ?op a owl:ObjectProperty . \n"""
         """    OPTIONAL { ?op rdfs:comment ?com } \n"""
         """}"""
     )
@@ -79,7 +84,7 @@ dp_query_owl = (
     + (
         """SELECT DISTINCT ?dp ?com\n"""
         """WHERE { \n"""
-        """    ?dp a/rdfs:subPropertyOf* owl:DatatypeProperty . \n"""
+        """    ?dp a owl:DatatypeProperty . \n"""
         """    OPTIONAL { ?dp rdfs:comment ?com } \n"""
         """}"""
     )
