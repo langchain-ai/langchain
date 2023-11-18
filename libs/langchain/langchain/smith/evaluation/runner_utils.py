@@ -126,6 +126,14 @@ class TestResult(dict):
         return pd.DataFrame(records, index=indices)
 
 
+class EvalError(dict):
+    """Your architecture raised an error."""
+
+    def __init__(self, error: BaseException, **kwargs):
+        super().__init__(**kwargs)
+        self.error = error
+
+
 def _wrap_in_chain_factory(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     dataset_name: str = "<my_dataset>",
@@ -742,7 +750,7 @@ async def _arun_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\n{repr(e)}"
         )
-        result = {"Error": e}
+        result = EvalError(error=e)
     return result
 
 
@@ -874,7 +882,7 @@ def _run_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\nError Type: {error_type}, Message: {e}"
         )
-        result = {"Error": e}
+        result = EvalError(error=e)
     return result
 
 
@@ -998,11 +1006,14 @@ def _collect_test_results(
     for example, output in zip(examples, batch_results):
         feedback = all_eval_results.get(str(example.id), [])
         results[str(example.id)] = {
-            "output": output,
             "input": example.inputs,
             "feedback": feedback,
             "execution_time": execution_time,
         }
+        if isinstance(output, EvalError):
+            results[str(example.id)]["error"] = output.error
+        else:
+            results[str(example.id)]["output"] = output
         if example.outputs:
             results[str(example.id)]["reference"] = example.outputs
     return TestResult(
