@@ -12,7 +12,6 @@ EXPECTED_ALL = [
     "LengthBasedExampleSelector",
     "MaxMarginalRelevanceExampleSelector",
     "MessagesPlaceholder",
-    "NGramOverlapExampleSelector",
     "PipelinePromptTemplate",
     "Prompt",
     "PromptTemplate",

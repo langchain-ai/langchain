@@ -190,7 +190,7 @@ def get_llm_cache() -> "BaseCache":
             # to use `set_llm_cache()` when they import `langhchain.llm_cache`.
             old_llm_cache = langchain.llm_cache
     except ImportError:
-        old_llm_cache = False
+        old_llm_cache = None
 
     global _llm_cache
     return _llm_cache or old_llm_cache

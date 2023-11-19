@@ -5,8 +5,6 @@ EXPECTED_ALL = [
     "check_package_version",
     "comma_list",
     "convert_to_secret_str",
-    "cosine_similarity",
-    "cosine_similarity_top_k",
     "formatter",
     "get_bolded_text",
     "get_color_mapping",
