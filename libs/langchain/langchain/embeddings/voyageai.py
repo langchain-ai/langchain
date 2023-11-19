@@ -114,9 +114,15 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         return params
 
     def _get_embeddings(
-        self, texts: List[str], batch_size: int, input_type: Optional[str] = None
+        self,
+        texts: List[str],
+        batch_size: Optional[int] = None,
+        input_type: Optional[str] = None,
     ) -> List[List[float]]:
         embeddings: List[List[float]] = []
+
+        if batch_size is None:
+            batch_size = self.batch_size
 
         if self.show_progress_bar:
             try:
@@ -170,6 +176,21 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
+        return self._get_embeddings([text], input_type="query")[0]
+
+    def embed_general_texts(
+        self, texts: List[str], input_type: Optional[str] = None
+    ) -> List[List[float]]:
+        """Call out to Voyage Embedding endpoint for embedding general text.
+
+        Args:
+            texts: The list of texts to embed.
+            input_type: Type of the input text. Defalut to None, meaning the type is
+                unspecified. Other options: query, document.
+
+        Returns:
+            Embedding for the text.
+        """
         return self._get_embeddings(
-            [text], batch_size=self.batch_size, input_type="query"
-        )[0]
+            texts, batch_size=self.batch_size, input_type=input_type
+        )
