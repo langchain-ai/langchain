@@ -281,7 +281,8 @@ class Vectara(VectorStore):
                 to minimum diversity and 1 to maximum diversity.
                 Defaults to 0.3.
                 Note: mmr_diversity_bias is equivalent 1-lambda_mult
-                where lambda_mult is the value often used in max_marginall_relevance_search()
+                where lambda_mult is the value often used in 
+                max_marginal_relevance_search()
                 We chose to use that since we believe it's more intuitive to the user.
 
         Returns:
