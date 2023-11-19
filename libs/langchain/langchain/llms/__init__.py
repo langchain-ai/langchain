@@ -28,6 +28,12 @@ def _import_ai21() -> Any:
     return AI21
 
 
+def _import_aiplay() -> Any:
+    from langchain.llms.nv_aiplay import AIPlayLLM
+
+    return AIPlayLLM
+
+
 def _import_aleph_alpha() -> Any:
     from langchain.llms.aleph_alpha import AlephAlpha
 
@@ -507,6 +513,8 @@ def _import_yandex_gpt() -> Any:
 def __getattr__(name: str) -> Any:
     if name == "AI21":
         return _import_ai21()
+    elif name == "AIPlay":
+        return _import_aiplay()
     elif name == "AlephAlpha":
         return _import_aleph_alpha()
     elif name == "AmazonAPIGateway":
@@ -677,6 +685,7 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "AI21",
+    "AIPlay",
     "AlephAlpha",
     "AmazonAPIGateway",
     "Anthropic",
@@ -761,6 +770,7 @@ __all__ = [
 def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
     return {
         "ai21": _import_ai21,
+        "aiplay": _import_aiplay,
         "aleph_alpha": _import_aleph_alpha,
         "amazon_api_gateway": _import_amazon_api_gateway,
         "amazon_bedrock": _import_bedrock,
