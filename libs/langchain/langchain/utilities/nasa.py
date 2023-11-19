@@ -6,8 +6,6 @@ import requests
 from langchain.pydantic_v1 import BaseModel
 
 IMAGE_AND_VIDEO_LIBRARY_URL = "https://images-api.nasa.gov"
-EXOPLANETS_URL = "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?"
-
 
 class NasaAPIWrapper(BaseModel):
 
@@ -32,16 +30,8 @@ class NasaAPIWrapper(BaseModel):
         return response.json()
     
 
-
-    def get_expoplanet_info(self, query: str) -> str:
-        params = json.loads(query)
-        response = requests.get(EXOPLANETS_URL, params=params)
-        data = response.json()
-        return data
-    
-
     def run(self, mode: str, query: str) -> str:
-        if mode == 'get_media':
+        if mode == 'search_media':
             output = self.get_media(query)
         elif mode == 'get_media_metadata_manifest':
             output = self.get_media_metadata_manifest(query)
@@ -49,8 +39,6 @@ class NasaAPIWrapper(BaseModel):
             output = self.get_media_metadata_location(query)
         elif mode == 'get_video_captions_location':
             output = self.get_video_captions_location(query)
-        elif mode == 'exoplanet':
-            output = self.get_expoplanet_info(query)
         else:
             output = {"ModeError": f"Got unexpected mode {mode}."}
 

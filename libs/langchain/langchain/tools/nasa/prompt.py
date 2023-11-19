@@ -1,7 +1,7 @@
 # flake8: noqa
 NASA_SEARCH_PROMPT = """
-    This tool is a wrapper around NASAS's search API, useful when you need to seacrh through NASA's Image and Video Library. 
-    The input to this tool is a query specified by the user, and will be passed into NASAS's `search` function.
+    This tool is a wrapper around NASA's search API, useful when you need to search through NASA's Image and Video Library. 
+    The input to this tool is a query specified by the user, and will be passed into NASA's `search` function.
     
     At least one parameter must be provided.
 
@@ -47,7 +47,7 @@ NASA_ASSET_PROMPT = """
 
     For example, if you want to retrieve the manifest of a media asset, you would pass in the following dictionary:
     {{
-        "nasa_id": "12345"
+        "nasa_id": "as11-40-5874"
     }}
     This will return asset manifest results in the form of Collection+JSON file.
 """
@@ -60,7 +60,7 @@ NASA_METADATA_PROMPT = """
     For example, if you want to retrieve the location of the media assets metadata, create a similair 
     request as the following:
     {{
-        "nasa_id": "9876"
+        "nasa_id": "as11-40-5874"
     }}
     This will return a JSON file at the location specified by the reponse to access the media assets metadata. 
 """
@@ -73,7 +73,7 @@ NASA_CAPTIONS_PROMPT = """
     For example, if you want to retrieve the captions of a video, create a similar request as the 
     following: 
     {{
-        "nasa_id": "5678"
+        "nasa_id": "172_ISS-Slosh.sr"
     }} 
     This will return a SRT or VTT file at the location specified by the response to access the videos captions. 
 """
