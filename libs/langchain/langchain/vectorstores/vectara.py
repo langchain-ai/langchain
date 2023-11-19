@@ -404,11 +404,8 @@ class Vectara(VectorStore):
         self,
         query: str,
         k: int = 5,
-        lambda_val: float = 0.025,
-        n_sentence_context: int = 2,
         fetch_k: int = 50,
         lambda_mult: float = 0.5,
-        filter: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -419,6 +416,12 @@ class Vectara(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        kwargs (passed to Vectara):
             lambda_val: lexical match parameter for hybrid search.
             filter: Dictionary of argument(s) to filter on metadata. For example a
                 filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
@@ -426,15 +429,14 @@ class Vectara(VectorStore):
                 details.
             n_sentence_context: number of sentences before/after the matching segment
                 to add, defaults to 2
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
-
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+
+        lambda_val = kwargs.get("lambda_val", 0.025)
+        n_sentence_context = kwargs.get("n_sentence_context", 2)
+        filter = kwargs.get("filter", None)
+
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,
@@ -444,7 +446,7 @@ class Vectara(VectorStore):
             n_sentence_context=n_sentence_context,
             mmr=True,
             mmr_k=fetch_k,
-            mmr_diversity_bias=1 - lambda_mult,
+            mmr_diversity_bias=1-lambda_mult,
             **kwargs,
         )
         return [doc for doc, _ in docs_and_scores]
