@@ -211,6 +211,11 @@ def _import_zapier() -> Any:
 
     return ZapierNLAWrapper
 
+def _import_nasa() -> Any:
+    from langchain.utilities.nasa import NasaAPIWrapper
+
+    return NasaAPIWrapper
+
 
 def __getattr__(name: str) -> Any:
     if name == "AlphaVantageAPIWrapper":
@@ -249,6 +254,8 @@ def __getattr__(name: str) -> Any:
         return _import_max_compute()
     elif name == "MetaphorSearchAPIWrapper":
         return _import_metaphor_search()
+    elif name == "NasaAPIWrapper":
+        return _import_nasa()
     elif name == "OpenWeatherMapAPIWrapper":
         return _import_openweathermap()
     elif name == "Portkey":
@@ -304,6 +311,7 @@ __all__ = [
     "LambdaWrapper",
     "MaxComputeAPIWrapper",
     "MetaphorSearchAPIWrapper",
+    "NasaAPIWrapper",
     "OpenWeatherMapAPIWrapper",
     "Portkey",
     "PowerBIDataset",
