@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-from enum import Enum
 import warnings
 from abc import ABC, abstractmethod
+from enum import Enum
 from functools import partial
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional

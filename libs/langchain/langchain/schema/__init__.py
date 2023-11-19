@@ -33,7 +33,7 @@ from langchain.schema.output_parser import (
 )
 from langchain.schema.prompt import PromptValue
 from langchain.schema.prompt_template import BasePromptTemplate, format_document
-from langchain.schema.retriever import BaseRetriever, SearchType
+from langchain.schema.retriever import BaseRetriever
 from langchain.schema.storage import BaseStore
 
 RUN_KEY = "__run"

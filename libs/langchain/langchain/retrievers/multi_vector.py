@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import Field
