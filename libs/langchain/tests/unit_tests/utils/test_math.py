@@ -3,7 +3,7 @@ from typing import List
 
 import numpy as np
 import pytest
-from langchain_core.utils.math import cosine_similarity, cosine_similarity_top_k
+from langchain.utils.math import cosine_similarity, cosine_similarity_top_k
 
 
 @pytest.fixture

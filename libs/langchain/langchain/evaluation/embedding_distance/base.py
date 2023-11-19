@@ -6,7 +6,7 @@ import numpy as np
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.schema import RUN_KEY
 from langchain_core.schema.embeddings import Embeddings
-from langchain_core.utils.math import cosine_similarity
+from langchain.utils.math import cosine_similarity
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

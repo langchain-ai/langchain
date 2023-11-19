@@ -1,4 +1,4 @@
-from langchain_core.tools.base import (
+from langchain_core.tool import (
     BaseTool,
     SchemaAnnotationError,
     StructuredTool,
