@@ -1837,6 +1837,11 @@ class Qdrant(VectorStore):
         )
         return qdrant
 
+    @staticmethod
+    def _cosine_relevance_score_fn(distance: float) -> float:
+        """Normalize the distance to a score on a scale [0, 1]."""
+        return (distance + 1.0) / 2.0
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
         The 'correct' relevance function

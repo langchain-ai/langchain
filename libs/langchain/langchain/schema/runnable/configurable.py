@@ -34,6 +34,7 @@ from langchain.schema.runnable.utils import (
     Input,
     Output,
     gather_with_concurrency,
+    get_unique_config_specs,
 )
 
 
@@ -208,23 +209,26 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     fields: Dict[str, AnyConfigurableField]
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
-        return [
-            ConfigurableFieldSpec(
-                id=spec.id,
-                name=spec.name,
-                description=spec.description
-                or self.default.__fields__[field_name].field_info.description,
-                annotation=spec.annotation
-                or self.default.__fields__[field_name].annotation,
-                default=getattr(self.default, field_name),
-            )
-            if isinstance(spec, ConfigurableField)
-            else make_options_spec(
-                spec, self.default.__fields__[field_name].field_info.description
-            )
-            for field_name, spec in self.fields.items()
-        ]
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
+        return get_unique_config_specs(
+            [
+                ConfigurableFieldSpec(
+                    id=spec.id,
+                    name=spec.name,
+                    description=spec.description
+                    or self.default.__fields__[field_name].field_info.description,
+                    annotation=spec.annotation
+                    or self.default.__fields__[field_name].annotation,
+                    default=getattr(self.default, field_name),
+                )
+                if isinstance(spec, ConfigurableField)
+                else make_options_spec(
+                    spec, self.default.__fields__[field_name].field_info.description
+                )
+                for field_name, spec in self.fields.items()
+            ]
+            + list(self.default.config_specs)
+        )
 
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
@@ -296,7 +300,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     default_key: str = "default"
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         with _enums_for_spec_lock:
             if which_enum := _enums_for_spec.get(self.which):
                 pass

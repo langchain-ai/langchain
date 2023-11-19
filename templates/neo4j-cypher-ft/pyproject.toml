@@ -11,7 +11,10 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.325"
 neo4j = ">5.12"
-openai = "^0.28.1"
+openai = "<2"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
 
 [tool.langserve]
 export_module = "neo4j_cypher_ft"

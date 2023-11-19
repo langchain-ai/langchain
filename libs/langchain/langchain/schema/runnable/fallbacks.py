@@ -34,13 +34,61 @@ if TYPE_CHECKING:
 
 
 class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
-    """
-    A Runnable that can fallback to other Runnables if it fails.
+    """A Runnable that can fallback to other Runnables if it fails.
+
+    External APIs (e.g., APIs for a language model) may at times experience
+    degraded performance or even downtime.
+
+    In these cases, it can be useful to have a fallback runnable that can be
+    used in place of the original runnable (e.g., fallback to another LLM provider).
+
+    Fallbacks can be defined at the level of a single runnable, or at the level
+    of a chain of runnables. Fallbacks are tried in order until one succeeds or
+    all fail.
+
+    While you can instantiate a ``RunnableWithFallbacks`` directly, it is usually
+    more convenient to use the ``with_fallbacks`` method on a runnable.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain.chat_models.openai import ChatOpenAI
+            from langchain.chat_models.anthropic import ChatAnthropic
+
+            model = ChatAnthropic().with_fallbacks([ChatOpenAI()])
+            # Will usually use ChatAnthropic, but fallback to ChatOpenAI
+            # if ChatAnthropic fails.
+            model.invoke('hello')
+
+            # And you can also use fallbacks at the level of a chain.
+            # Here if both LLM providers fail, we'll fallback to a good hardcoded
+            # response.
+
+            from langchain.prompts import PromptTemplate
+            from langchain.schema.output_parser import StrOutputParser
+            from langchain.schema.runnable import RunnableLambda
+
+            def when_all_is_lost(inputs):
+                return ("Looks like our LLM providers are down. "
+                        "Here's a nice 🦜️ emoji for you instead.")
+
+            chain_with_fallback = (
+                PromptTemplate.from_template('Tell me a joke about {topic}')
+                | model
+                | StrOutputParser()
+            ).with_fallbacks([RunnableLambda(when_all_is_lost)])
     """
 
     runnable: Runnable[Input, Output]
+    """The runnable to run first."""
     fallbacks: Sequence[Runnable[Input, Output]]
+    """A sequence of fallbacks to try."""
     exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,)
+    """The exceptions on which fallbacks should be tried.
+    
+    Any exception that is not a subclass of these exceptions will be raised immediately.
+    """
 
     class Config:
         arbitrary_types_allowed = True
@@ -64,15 +112,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return self.runnable.get_output_schema(config)
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec
             for step in [self.runnable, *self.fallbacks]
             for spec in step.config_specs
         )
-
-    def config_schema(self, *, include: Sequence[str]) -> Type[BaseModel]:
-        return self.runnable.config_schema(include=include)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

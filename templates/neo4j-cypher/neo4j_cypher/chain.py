@@ -2,6 +2,7 @@ from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chat_models import ChatOpenAI
 from langchain.graphs import Neo4jGraph
 from langchain.prompts import ChatPromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
 
@@ -71,3 +72,12 @@ chain = (
     | qa_llm
     | StrOutputParser()
 )
+
+# Add typing for input
+
+
+class Question(BaseModel):
+    question: str
+
+
+chain = chain.with_types(input_type=Question)

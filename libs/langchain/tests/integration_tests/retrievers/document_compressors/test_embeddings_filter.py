@@ -35,7 +35,9 @@ def test_embeddings_filter_with_state() -> None:
     state = {"embedded_doc": np.zeros(len(embedded_query))}
     docs = [_DocumentWithState(page_content=t, state=state) for t in texts]
     docs[-1].state = {"embedded_doc": embedded_query}
-    relevant_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.75)
+    relevant_filter = EmbeddingsFilter(
+        embeddings=embeddings, similarity_threshold=0.75, return_similarity_scores=True
+    )
     actual = relevant_filter.compress_documents(docs, query)
     assert len(actual) == 1
     assert texts[-1] == actual[0].page_content
