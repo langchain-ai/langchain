@@ -14,6 +14,7 @@ from docugami_kg_rag.config import (
     RETRIEVER_K,
     LocalIndexState,
     LLM,
+    SMALL_FRAGMENT_MAX_TEXT_LENGTH,
 )
 from docugami_kg_rag.helpers.fused_summary_retriever import (
     FusedSummaryRetriever,
@@ -54,7 +55,7 @@ def docset_name_to_retriever_tool_function_name(name: str) -> str:
 
 def chunks_to_retriever_tool_description(name: str, chunks: List[Document]):
     texts = [c.page_content for c in chunks[:100]]
-    doc_fragment = "\n".join(texts)[: 2048 * 2]  # Up to approximately 2 pages from max 100 chunks
+    doc_fragment = "\n".join(texts)[:SMALL_FRAGMENT_MAX_TEXT_LENGTH]
 
     chain = (
         ChatPromptTemplate.from_messages(

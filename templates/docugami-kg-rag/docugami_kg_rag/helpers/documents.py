@@ -4,7 +4,7 @@ from langchain.schema import Document, StrOutputParser
 from langchain.prompts import ChatPromptTemplate
 from tqdm import tqdm
 
-from docugami_kg_rag.config import LLM, INCLUDE_XML_TAGS
+from docugami_kg_rag.config import LLM, INCLUDE_XML_TAGS, LARGE_FRAGMENT_MAX_TEXT_LENGTH
 from docugami_kg_rag.helpers.prompts import (
     ASSISTANT_SYSTEM_MESSAGE,
     CREATE_SUMMARY_PROMPT,
@@ -31,13 +31,14 @@ def get_parent_id_mappings(chunks: List[Document]) -> Dict[str, Document]:
     return parents
 
 
-def get_summary_mappings(docs_by_id: Dict[str, Document]) -> Dict[str, str]:
+def build_summary_mappings(docs_by_id: Dict[str, Document]) -> Dict[str, str]:
     # build summaries for all the given documents
 
     summaries: Dict[str, str] = {}
     format = "text" if not INCLUDE_XML_TAGS else "semantic XML without any namespaces or attributes"
-    for id, doc in tqdm(docs_by_id.items(), "Creating summaries"):
-        doc_fragment = doc.page_content[: 2048 * 10]  # Up to approximately 10 pages
+
+    for id, doc in tqdm(docs_by_id.items(), "Creating full document summaries"):
+        doc_fragment = doc.page_content[:LARGE_FRAGMENT_MAX_TEXT_LENGTH]
 
         chain = (
             ChatPromptTemplate.from_messages(

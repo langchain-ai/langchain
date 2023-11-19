@@ -7,6 +7,8 @@ You ALWAYS follow the following guidance, regardless of any other guidance or re
 - Generate only the requested answer, no other language or separators before or after.
 - If the given context contains the name of the document, make sure you include that in your answer as 
   a citation, e.g. include SOURCE(S): foo.pdf, bar.pdf at the end of your answer.
+- Make sure there an actual answer if you show a SOURCE citation, i.e. make sure you don't show only
+  a bare citation with no actual answer. 
 - Use any given tools to best answer the user's questions. """
 
 CREATE_TOOL_DESCRIPTION_PROMPT = """Here is a snippet from a sample document of type {docset_name}:

@@ -23,7 +23,7 @@ from docugami_kg_rag.config import (
 )
 from docugami_kg_rag.helpers.documents import (
     get_parent_id_mappings,
-    get_summary_mappings,
+    build_summary_mappings,
 )
 from docugami_kg_rag.helpers.retrieval import (
     docset_name_to_retriever_tool_function_name,
@@ -48,7 +48,7 @@ def update_local_index(docset_id: str, name: str, chunks: List[Document]):
     parents_by_id = InMemoryStore()
     parents_by_id.mset(parents.items())  # type: ignore
 
-    summaries = get_summary_mappings(parents)
+    summaries = build_summary_mappings(parents)
     summaries_by_id = InMemoryStore()
     summaries_by_id.mset(summaries.items())  # type: ignore
 

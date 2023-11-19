@@ -37,7 +37,9 @@ DOCUMENT_SUMMARY_TEMPLATE: str = """
 
 
 class FusedSummaryRetriever(BaseRetriever):
-    """Retrieve from a set of multiple embeddings for the same document."""
+    """
+    Retrieve a fused document that consist of pre-calculated summaries.
+    """
 
     vectorstore: VectorStore
     """The underlying vectorstore to use to store small chunks
