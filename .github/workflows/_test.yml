@@ -66,7 +66,9 @@ jobs:
 
       - name: Run core tests
         shell: bash
-        run: make test
+        run: |
+          pip install -e ../core
+          make test
 
       - name: Ensure the tests did not create any additional files
         shell: bash
