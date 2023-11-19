@@ -381,7 +381,6 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             combine_docs_chain=doc_chain,
             question_generator=condense_question_chain,
             callbacks=callbacks,
-            
             **kwargs,
         )
 
