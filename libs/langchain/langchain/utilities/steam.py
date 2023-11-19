@@ -136,7 +136,7 @@ class SteamWebAPIWrapper(BaseModel):
         for game in users_games["games"]:
             appid = game["appid"]
             data_request = {"request": "appdetails", "appid": appid}
-            genreStore = self.steamspypi.download(data_request)
+            genreStore = steamspypi.download(data_request)
             genreList = genreStore.get("genre", "").split(", ")
         
             for genre in genreList:
@@ -149,19 +149,15 @@ class SteamWebAPIWrapper(BaseModel):
                     most_popular_genre = genre
 
         data_request = dict()
-        data_request['request'] = 'genre'
-        data_request['genre'] = most_popular_genre
+        data_request["request"] = "genre"
+        data_request["genre"] = most_popular_genre
         data = steamspypi.download(data_request)
-        sorted_data = sorted(data, key=lambda x: x.get('average_forever', 0), reverse=True)
-
-        # Filter out games that the user already owns
+        sorted_data = sorted(
+            data.values(), key=lambda x: x.get("average_forever", 0), reverse=True
+        )
         owned_games = [game["appid"] for game in users_games["games"]]
         remaining_games = [game for game in sorted_data if game["appid"] not in owned_games]
-
-        # Select top 5 games by popularity from the remaining games list
         top_5_popular_not_owned = [game["name"] for game in remaining_games[:5]]
-        # print(top_5_popular_not_owned)
-        # Return the top 5 games by popularity that the user doesn't own
         return top_5_popular_not_owned
     
 
