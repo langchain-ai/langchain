@@ -1,4 +1,4 @@
-from langchain_core.prompts import __all__
+from langchain.prompts import __all__
 
 EXPECTED_ALL = [
     "AIMessagePromptTemplate",

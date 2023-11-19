@@ -37,12 +37,6 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
-from langchain_core.prompts.example_selector import (
-    LengthBasedExampleSelector,
-    MaxMarginalRelevanceExampleSelector,
-    NGramOverlapExampleSelector,
-    SemanticSimilarityExampleSelector,
-)
 from langchain_core.prompts.few_shot import (
     FewShotChatMessagePromptTemplate,
     FewShotPromptTemplate,
@@ -52,6 +46,13 @@ from langchain_core.prompts.loading import load_prompt
 from langchain_core.prompts.pipeline import PipelinePromptTemplate
 from langchain_core.prompts.prompt import Prompt, PromptTemplate
 from langchain_core.schema.prompt_template import BasePromptTemplate
+
+from langchain.prompts.example_selector import (
+    LengthBasedExampleSelector,
+    MaxMarginalRelevanceExampleSelector,
+    NGramOverlapExampleSelector,
+    SemanticSimilarityExampleSelector,
+)
 
 __all__ = [
     "AIMessagePromptTemplate",

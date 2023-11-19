@@ -50,7 +50,7 @@ jobs:
         env:
           LANGCHAIN_CORE_LOCATION: ${{ inputs.langchain-core-location }}
         run: |
-          pip install -e "$LANGCHAIN_CORE_LOCATION"
+          poetry run pip install -e "$LANGCHAIN_CORE_LOCATION"
 
       - name: Check integration tests compile
         shell: bash
