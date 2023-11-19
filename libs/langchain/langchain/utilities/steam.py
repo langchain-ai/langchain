@@ -1,7 +1,7 @@
 """Util that calls Steam-WebAPI."""
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from typing import Any, dict, List, Optional
+from typing import Any, dict
 from langchain.langchain.tools.steam.prompt import (
     STEAM_GET_GAMES_ID,
     STEAM_GET_GAMES_DETAILS,
@@ -19,7 +19,7 @@ class SteamWebAPIWrapper(BaseModel):
     steam: Any  # for python-steam-api
 
     # oprations: a list of dictionaries, each representing a specific operation that can be performed with the API
-    operations: List[dict] = [
+    operations: list[dict] = [
         {
             "mode": "get_games_id",
             "name": "Get Games ID",
@@ -42,7 +42,7 @@ class SteamWebAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    def list(self) -> List[dict]:
+    def get_operations(self) -> list[dict]:
         """Return a list of operations."""
         return self.operations
 
@@ -126,33 +126,14 @@ class SteamWebAPIWrapper(BaseModel):
         steam_id = user["player"]["steamid"]
         return steam_id
 
-    # def recommended_games(self, name: str) -> dict:
-    #     steam_id = self.get_steam_id(name)
-    #     user_games_data = self.steam.users.get_owned_games(steam_id)
+    def get_users_games(self, steam_id: str) -> list[str]:
+        return self.steam.users.get_owned_games(steam_id, False, False)
 
-    #     appids_with_playtime = [
-    #         (game["appid"], game.get("playtime_forever", 0))
-    #         for game in user_games_data["response"]["games"]
-    #     ]
-    #     sorted_appids = sorted(appids_with_playtime, key=lambda x: x[1], reverse=True)
-
-    #     app_details = []
-    #     for app_id, _ in sorted_appids:
-    #         app_detail = self.steam.apps.get_app_details(app_id)
-    #         # app_details.append(app_detail)
-
-    #         # TODO: implement recommended games
-    #         game_name = app_detail[app_id]["data"]["name"]
-    #         app_details.append(self.details_of_games(game_name))
-
-    #     # TODO: send the app_details to the langchain to get recommended games
-
-    def recommended_games(self, name: str) -> dict:
-        user_name = self.get_steam_id(name)
-        user_games_data = self.steam.users.get_owned_games(user_name, False, False)
+    def recommended_games(self, steam_id: str) -> dict:
+        users_games = self.get_users_games(steam_id)
         result = {}
 
-        for game in user_games_data["games"]:
+        for game in users_games["games"]:
             appid = game["appid"]
             data_request = {"request": "appdetails", "appid": appid}
             genreStore = self.steamspypi.download(data_request)
@@ -164,7 +145,7 @@ class SteamWebAPIWrapper(BaseModel):
                 else:
                     result[genre] = 1
 
-        return result
+        return sorted(result, key=result.get, reverse=True)[:3]
 
     def run(self, mode: str, game: str) -> str:
         if mode == "get_game_details":
