@@ -87,11 +87,10 @@ class SteamWebAPIWrapper(BaseModel):
 
         game_info = {}
         for app in games["apps"]:
-            if app["name"].lower() == name.lower():
-                game_info["id"] = app["id"]
-                game_info["link"] = app["link"]
-                game_info["price"] = app["price"]
-                break
+            game_info["id"] = app["id"]
+            game_info["link"] = app["link"]
+            game_info["price"] = app["price"]
+            break
         return game_info
 
     def remove_html_tags(html_string):
