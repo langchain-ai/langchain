@@ -192,7 +192,11 @@ class AddableDict(Dict[str, Any]):
             if key not in chunk or chunk[key] is None:
                 chunk[key] = other[key]
             elif other[key] is not None:
-                chunk[key] = chunk[key] + other[key]
+                try:
+                    added = chunk[key] + other[key]
+                except TypeError:
+                    added = other[key]
+                chunk[key] = added
         return chunk
 
     def __radd__(self, other: AddableDict) -> AddableDict:
@@ -201,7 +205,11 @@ class AddableDict(Dict[str, Any]):
             if key not in chunk or chunk[key] is None:
                 chunk[key] = self[key]
             elif self[key] is not None:
-                chunk[key] = chunk[key] + self[key]
+                try:
+                    added = chunk[key] + self[key]
+                except TypeError:
+                    added = self[key]
+                chunk[key] = added
         return chunk
 
 
@@ -265,7 +273,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
     description: Optional[str] = None
 
     def __hash__(self) -> int:
-        return hash((self.id, tuple(self.options.items()), self.default))
+        return hash((self.id, tuple(self.options.keys()), self.default))
 
 
 class ConfigurableFieldMultiOption(NamedTuple):
@@ -279,7 +287,7 @@ class ConfigurableFieldMultiOption(NamedTuple):
     description: Optional[str] = None
 
     def __hash__(self) -> int:
-        return hash((self.id, tuple(self.options.items()), tuple(self.default)))
+        return hash((self.id, tuple(self.options.keys()), tuple(self.default)))
 
 
 AnyConfigurableField = Union[
@@ -300,7 +308,7 @@ class ConfigurableFieldSpec(NamedTuple):
 
 def get_unique_config_specs(
     specs: Iterable[ConfigurableFieldSpec],
-) -> Sequence[ConfigurableFieldSpec]:
+) -> List[ConfigurableFieldSpec]:
     """Get the unique config specs from a sequence of config specs."""
     grouped = groupby(sorted(specs, key=lambda s: s.id), lambda s: s.id)
     unique: List[ConfigurableFieldSpec] = []

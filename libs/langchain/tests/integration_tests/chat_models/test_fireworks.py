@@ -1,5 +1,6 @@
 """Test ChatFireworks wrapper."""
 import sys
+from typing import cast
 
 import pytest
 
@@ -152,7 +153,7 @@ def test_fireworks_streaming_stop_words(chat: ChatFireworks) -> None:
 
     last_token = ""
     for token in chat.stream("I'm Pickle Rick", stop=[","]):
-        last_token = token.content
+        last_token = cast(str, token.content)
         assert isinstance(token.content, str)
     assert last_token[-1] == ","
 
@@ -183,6 +184,6 @@ async def test_fireworks_astream(chat: ChatFireworks) -> None:
     async for token in chat.astream(
         "Who's the best quarterback in the NFL?", stop=[","]
     ):
-        last_token = token.content
+        last_token = cast(str, token.content)
         assert isinstance(token.content, str)
     assert last_token[-1] == ","

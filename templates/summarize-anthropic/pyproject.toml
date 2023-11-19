@@ -13,6 +13,9 @@ langchain = ">=0.0.325"
 anthropic = ">=0.5.0"
 langchainhub = ">=0.1.13"
 
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+
 [tool.langserve]
 export_module = "summarize_anthropic"
 export_attr = "chain"

@@ -308,7 +308,7 @@ class MomentoVectorIndex(VectorStore):
         for hit in response.hits:
             text = cast(str, hit.metadata.pop(self.text_field))
             doc = Document(page_content=text, metadata=hit.metadata)
-            pair = (doc, hit.distance)
+            pair = (doc, hit.score)
             results.append(pair)
 
         return results

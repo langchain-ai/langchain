@@ -79,7 +79,7 @@ def __getattr__(name: str) -> Any:
             "for more information.\n"
             f"Please update your import statement from: `{old_path}` to `{new_path}`."
         )
-    raise ImportError(f"{name} does not exist")
+    raise AttributeError(f"{name} does not exist")
 
 
 __all__ = [

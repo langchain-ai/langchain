@@ -8,10 +8,10 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.325"
-openai = "^0.28.1"
+openai = "<2"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.4"
+langchain-cli = ">=0.0.15"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 

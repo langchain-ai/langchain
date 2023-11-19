@@ -178,6 +178,17 @@ Will it get confused{ }?
 
 
 @pytest.mark.requires("jinja2")
+def test_basic_sandboxing_with_jinja2() -> None:
+    """Test basic sandboxing with jinja2."""
+    import jinja2
+
+    template = " {{''.__class__.__bases__[0] }} "  # malicious code
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    with pytest.raises(jinja2.exceptions.SecurityError):
+        assert prompt.format() == []
+
+
+@pytest.mark.requires("jinja2")
 def test_prompt_from_jinja2_template_multiple_inputs() -> None:
     """Test with multiple input variables."""
     # Multiple input variables.

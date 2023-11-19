@@ -210,9 +210,10 @@ class ChatFireworks(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content, chunk=chunk)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     async def _astream(
         self,
@@ -239,9 +240,10 @@ class ChatFireworks(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield chunk
             if run_manager:
-                await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
+                await run_manager.on_llm_new_token(token=chunk.text, chunk=chunk)
 
 
 def conditional_decorator(
