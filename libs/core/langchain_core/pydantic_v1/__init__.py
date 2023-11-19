@@ -1,3 +1,4 @@
+# type: ignore
 from importlib import metadata
 
 ## Create namespaces for pydantic v1 and v2.

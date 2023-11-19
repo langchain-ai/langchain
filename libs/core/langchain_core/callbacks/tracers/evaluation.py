@@ -124,7 +124,8 @@ class EvaluatorCallbackHandler(BaseTracer):
                     else None
                 )
                 evaluation_result = evaluator.evaluate_run(
-                    run,
+                    # This is subclass, but getting errors for some reason
+                    run,  # type: ignore
                     example=reference_example,
                 )
                 eval_results = self._log_evaluation_feedback(
