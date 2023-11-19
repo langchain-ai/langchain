@@ -1,12 +1,19 @@
+from enum import Enum
 from typing import List
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import Field
 from langchain.schema import BaseRetriever, BaseStore, Document
-from langchain.schema.retriever import SearchType
 from langchain.schema.vectorstore import VectorStore
 
+class SearchType(str, Enum):
+    """Enumerator of the types of search to perform."""
 
+    similarity = "similarity"
+    """Similarity search."""
+    mmr = "mmr"
+    """Maximal Marginal Relevance reranking of similarity search."""
+    
 class MultiVectorRetriever(BaseRetriever):
     """Retrieve from a set of multiple embeddings for the same document."""
 

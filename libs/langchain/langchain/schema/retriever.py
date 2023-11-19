@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import warnings
 from abc import ABC, abstractmethod
-from enum import Enum
 from functools import partial
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -18,15 +17,6 @@ if TYPE_CHECKING:
         CallbackManagerForRetrieverRun,
         Callbacks,
     )
-
-
-class SearchType(str, Enum):
-    """Enumerator of the types of search to perform."""
-
-    similarity = "similarity"
-    """Similarity search."""
-    mmr = "mmr"
-    """Maximal Marginal Relevance reranking of similarity search."""
 
 
 class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
