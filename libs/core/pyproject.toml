@@ -20,6 +20,8 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
+types-pyyaml = "^6.0.12.2"
+types-requests = "^2.28.11.5"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"

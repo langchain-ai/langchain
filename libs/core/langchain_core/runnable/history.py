@@ -15,18 +15,18 @@ from typing import (
 
 from langchain_core.load import load
 from langchain_core.pydantic_v1 import BaseModel, create_model
-from langchain_core.schema.chat_history import BaseChatMessageHistory
 from langchain_core.runnable.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain_core.runnable.passthrough import RunnablePassthrough
 from langchain_core.runnable.utils import (
     ConfigurableFieldSpec,
     get_unique_config_specs,
 )
+from langchain_core.schema.chat_history import BaseChatMessageHistory
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.tracers.schemas import Run
-    from langchain_core.schema.messages import BaseMessage
     from langchain_core.runnable.config import RunnableConfig
+    from langchain_core.schema.messages import BaseMessage
 
 MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
 GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]

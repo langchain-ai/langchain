@@ -30,8 +30,6 @@ from langchain_core.callbacks.tracers.base import BaseTracer
 from langchain_core.callbacks.tracers.log_stream import RunLog, RunLogPatch
 from langchain_core.callbacks.tracers.schemas import Run
 from langchain_core.callbacks.tracers.stdout import ConsoleCallbackHandler
-from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
-from tests.unit_tests.fake.chat_model import FakeListChatModel
 from langchain_core.load.dump import dumpd, dumps
 from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -44,15 +42,6 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.schema.document import Document
-from langchain_core.schema.messages import (
-    AIMessage,
-    AIMessageChunk,
-    HumanMessage,
-    SystemMessage,
-)
-from langchain_core.schema.output_parser import BaseOutputParser, StrOutputParser
-from langchain_core.schema.retriever import BaseRetriever
 from langchain_core.runnable import (
     RouterRunnable,
     Runnable,
@@ -74,7 +63,18 @@ from langchain_core.runnable.utils import (
     ConfigurableFieldSingleOption,
     add,
 )
-from langchain_core.tool import tool, BaseTool
+from langchain_core.schema.document import Document
+from langchain_core.schema.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.schema.output_parser import BaseOutputParser, StrOutputParser
+from langchain_core.schema.retriever import BaseRetriever
+from langchain_core.tool import BaseTool, tool
+from tests.unit_tests.fake.chat_model import FakeListChatModel
+from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 
 
 class FakeTracer(BaseTracer):
@@ -581,7 +581,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     }
 
 
-
 def test_passthrough_assign_schema() -> None:
     retriever = FakeRetriever()  # str -> List[Document]
     prompt = PromptTemplate.from_template("{context} {question}")
@@ -798,8 +797,6 @@ def test_schema_complex_seq() -> None:
         "properties": {"person": {"title": "Person", "type": "string"}},
         "required": ["person"],
     }
-
-
 
 
 def test_configurable_fields() -> None:

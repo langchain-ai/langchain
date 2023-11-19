@@ -29,6 +29,3 @@ def test_debug_is_settable_via_setter() -> None:
         # Make sure we don't alter global state, even if the test fails.
         # Always reset `debug` to the value it had before.
         set_debug(previous_value)
-
-
-

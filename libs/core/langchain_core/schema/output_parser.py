@@ -18,6 +18,7 @@ from typing import (
 
 from typing_extensions import get_args
 
+from langchain_core.runnable import RunnableConfig, RunnableSerializable
 from langchain_core.schema.messages import AnyMessage, BaseMessage, BaseMessageChunk
 from langchain_core.schema.output import (
     ChatGeneration,
@@ -26,7 +27,6 @@ from langchain_core.schema.output import (
     GenerationChunk,
 )
 from langchain_core.schema.prompt import PromptValue
-from langchain_core.runnable import RunnableConfig, RunnableSerializable
 
 T = TypeVar("T")
 

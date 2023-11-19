@@ -1,10 +1,10 @@
 from typing import Any, Callable, Sequence, Union
 
-from tests.unit_tests.fake.memory import ChatMessageHistory
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.schema import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnable import RunnableConfig, RunnableLambda
 from langchain_core.runnable.history import RunnableWithMessageHistory
+from langchain_core.schema import AIMessage, BaseMessage, HumanMessage
+from tests.unit_tests.fake.memory import ChatMessageHistory
 
 
 def _get_get_session_history() -> Callable[..., ChatMessageHistory]:

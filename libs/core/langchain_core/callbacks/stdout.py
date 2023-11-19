@@ -1,8 +1,8 @@
 """Callback Handler that prints to std out."""
 from typing import Any, Dict, List, Optional
 
-from langchain_core.schema import AgentAction, AgentFinish, LLMResult
 from langchain_core.callbacks.base import BaseCallbackHandler
+from langchain_core.schema import AgentAction, AgentFinish, LLMResult
 from langchain_core.utils.input import print_text
 
 

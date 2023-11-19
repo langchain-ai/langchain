@@ -175,5 +175,3 @@ def test_loading_few_shot_prompt_example_prompt() -> None:
             suffix="Input: {adjective}\nOutput:",
         )
         assert prompt == expected_prompt
-
-

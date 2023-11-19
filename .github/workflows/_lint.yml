@@ -11,6 +11,10 @@ on:
         required: false
         type: string
         description: "Relative path to the langchain library folder"
+      langchain-core-location:
+        required: false
+        type: string
+        description: "Relative path to the langchain core library folder"
 
 env:
   POETRY_VERSION: "1.6.1"

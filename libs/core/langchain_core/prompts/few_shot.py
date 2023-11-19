@@ -10,7 +10,10 @@ from langchain_core.prompts.base import (
     check_valid_template,
     get_template_variables,
 )
-from langchain_core.prompts.chat import BaseChatPromptTemplate, BaseMessagePromptTemplate
+from langchain_core.prompts.chat import (
+    BaseChatPromptTemplate,
+    BaseMessagePromptTemplate,
+)
 from langchain_core.prompts.example_selector.base import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator

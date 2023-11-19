@@ -7,7 +7,6 @@ from typing import Any, List, Optional, Type, Union
 
 import pytest
 
-from langchain_core.tool import tool, Tool
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -17,7 +16,9 @@ from langchain_core.tool import (
     BaseTool,
     SchemaAnnotationError,
     StructuredTool,
+    Tool,
     ToolException,
+    tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 

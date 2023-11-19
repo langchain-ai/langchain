@@ -2487,6 +2487,31 @@ files = [
 ]
 
 [[package]]
+name = "types-pyyaml"
+version = "6.0.12.12"
+description = "Typing stubs for PyYAML"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-PyYAML-6.0.12.12.tar.gz", hash = "sha256:334373d392fde0fdf95af5c3f1661885fa10c52167b14593eb856289e1855062"},
+    {file = "types_PyYAML-6.0.12.12-py3-none-any.whl", hash = "sha256:c05bc6c158facb0676674b7f11fe3960db4f389718e19e62bd2b84d6205cfd24"},
+]
+
+[[package]]
+name = "types-requests"
+version = "2.31.0.10"
+description = "Typing stubs for requests"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "types-requests-2.31.0.10.tar.gz", hash = "sha256:dc5852a76f1eaf60eafa81a2e50aefa3d1f015c34cf0cba130930866b1b22a92"},
+    {file = "types_requests-2.31.0.10-py3-none-any.whl", hash = "sha256:b32b9a86beffa876c0c3ac99a4cd3b8b51e973fb8e3bd4e0a6bb32c7efad80fc"},
+]
+
+[package.dependencies]
+urllib3 = ">=2"
+
+[[package]]
 name = "typing-extensions"
 version = "4.8.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -2609,4 +2634,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5455c33b7dcc427ddc6e1acfccbc5108ff45086dfffd850351404d356010aecc"
+content-hash = "432c38ddf222d2efa1134751b0159c990d3a0afbd22182ceac0b5ec2a1492f89"
