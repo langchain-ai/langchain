@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
@@ -27,7 +27,9 @@ PINECONE_ENVIRONMENT = os.environ.get("PINECONE_ENVIRONMENT")
 if not PINECONE_ENVIRONMENT:
     raise Exception("Missing `PINECONE_ENVIRONMENT` environment variable.")
 
-INDEXING_LOCAL_STATE_PATH = os.environ.get("INDEXING_LOCAL_STATE_PATH", "temp/indexing_local_state.pkl")
+INDEXING_LOCAL_STATE_PATH = os.environ.get(
+    "INDEXING_LOCAL_STATE_PATH", "temp/indexing_local_state.pkl"
+)
 
 
 @dataclass

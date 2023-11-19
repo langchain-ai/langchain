@@ -1,10 +1,10 @@
 from typing import Dict, List
 
-from langchain.schema import Document, StrOutputParser
 from langchain.prompts import ChatPromptTemplate
+from langchain.schema import Document, StrOutputParser
 from tqdm import tqdm
 
-from docugami_kg_rag.config import LLM, INCLUDE_XML_TAGS, LARGE_FRAGMENT_MAX_TEXT_LENGTH
+from docugami_kg_rag.config import INCLUDE_XML_TAGS, LARGE_FRAGMENT_MAX_TEXT_LENGTH, LLM
 from docugami_kg_rag.helpers.prompts import (
     ASSISTANT_SYSTEM_MESSAGE,
     CREATE_SUMMARY_PROMPT,
@@ -35,7 +35,11 @@ def build_summary_mappings(docs_by_id: Dict[str, Document]) -> Dict[str, str]:
     # build summaries for all the given documents
 
     summaries: Dict[str, str] = {}
-    format = "text" if not INCLUDE_XML_TAGS else "semantic XML without any namespaces or attributes"
+    format = (
+        "text"
+        if not INCLUDE_XML_TAGS
+        else "semantic XML without any namespaces or attributes"
+    )
 
     for id, doc in tqdm(docs_by_id.items(), "Creating full document summaries"):
         doc_fragment = doc.page_content[:LARGE_FRAGMENT_MAX_TEXT_LENGTH]

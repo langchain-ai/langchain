@@ -1,13 +1,13 @@
 import os
-from pathlib import Path
 import pickle
+from pathlib import Path
+from typing import Dict, List
 
+import pinecone
 from langchain.document_loaders import DocugamiLoader
 from langchain.schema import Document
 from langchain.storage.in_memory import InMemoryStore
 from langchain.vectorstores.pinecone import Pinecone
-import pinecone
-from typing import Dict, List
 
 from docugami_kg_rag.config import (
     EMBEDDINGS,
@@ -22,12 +22,12 @@ from docugami_kg_rag.config import (
     LocalIndexState,
 )
 from docugami_kg_rag.helpers.documents import (
-    get_parent_id_mappings,
     build_summary_mappings,
+    get_parent_id_mappings,
 )
 from docugami_kg_rag.helpers.retrieval import (
-    docset_name_to_retriever_tool_function_name,
     chunks_to_retriever_tool_description,
+    docset_name_to_retriever_tool_function_name,
 )
 
 
@@ -70,14 +70,18 @@ def update_local_index(docset_id: str, name: str, chunks: List[Document]):
         pickle.dump(state, file)
 
 
-def populate_pinecode_index(index_name: str, chunks: List[Document], force: bool = False):
+def populate_pinecode_index(
+    index_name: str, chunks: List[Document], force: bool = False
+):
     # Populate pinecone with the given chunks
 
     if index_name in pinecone.list_indexes():
         if force:
             pinecone.delete_index(name=index_name)
         else:
-            print(f"Reusing existing index {index_name} (use --force option to recreate)")
+            print(
+                f"Reusing existing index {index_name} (use --force option to recreate)"
+            )
             return
 
     # Create index if it does not exist

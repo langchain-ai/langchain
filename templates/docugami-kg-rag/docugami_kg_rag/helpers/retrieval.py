@@ -1,20 +1,20 @@
 import re
 from typing import Dict, List, Optional
 
+import pinecone
 from langchain.agents.agent_toolkits import create_retriever_tool
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import Document, StrOutputParser
 from langchain.tools.base import BaseTool
 from langchain.vectorstores.pinecone import Pinecone
-import pinecone
 
 from docugami_kg_rag.config import (
     EMBEDDINGS,
+    LLM,
     PINECONE_INDEX,
     RETRIEVER_K,
-    LocalIndexState,
-    LLM,
     SMALL_FRAGMENT_MAX_TEXT_LENGTH,
+    LocalIndexState,
 )
 from docugami_kg_rag.helpers.fused_summary_retriever import (
     FusedSummaryRetriever,
@@ -70,14 +70,18 @@ def chunks_to_retriever_tool_description(name: str, chunks: List[Document]):
     return chain.invoke({"docset_name": name, "doc_fragment": doc_fragment})
 
 
-def get_retrieval_tool_for_docset(docset_id: str, local_state: Dict[str, LocalIndexState]) -> Optional[BaseTool]:
+def get_retrieval_tool_for_docset(
+    docset_id: str, local_state: Dict[str, LocalIndexState]
+) -> Optional[BaseTool]:
     # Chunks are in the vector store, and full documents are in the store inside the local state
 
     docset_pinecone_index_name = f"{PINECONE_INDEX}-{docset_id}"
     if docset_pinecone_index_name not in pinecone.list_indexes():
         return None
 
-    chunk_vectorstore = Pinecone.from_existing_index(docset_pinecone_index_name, EMBEDDINGS)
+    chunk_vectorstore = Pinecone.from_existing_index(
+        docset_pinecone_index_name, EMBEDDINGS
+    )
     retriever = FusedSummaryRetriever(
         vectorstore=chunk_vectorstore,
         summarystore=local_state[docset_id].summaries_by_id,
