@@ -21,7 +21,7 @@ def get_abbr(s: str) -> str:
     return "".join(first_letters)  # Join the first letters into a single string
 
 
-def test_vectara_add_documents(setup_for_add_documents) -> None:
+def test_vectara_add_documents() -> None:
     """Test end to end construction and search."""
 
     # create a new Vectara instance
