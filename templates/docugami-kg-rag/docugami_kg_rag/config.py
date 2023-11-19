@@ -5,7 +5,8 @@ from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.storage.in_memory import InMemoryStore
 
-LLM = ChatOpenAI(temperature=0, model="gpt-4-1106-preview")
+# LLM = ChatOpenAI(temperature=0, model="gpt-4-1106-preview")
+LLM = ChatOpenAI(temperature=0, model="gpt-4")
 
 EMBEDDINGS = OpenAIEmbeddings(model="text-embedding-ada-002")
 EMBEDDINGS_DIMENSIONS = 1536  # known size of text-embedding-ada-002
