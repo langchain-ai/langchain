@@ -223,10 +223,9 @@ def test_vectara_mmr() -> None:
         in output2[0].page_content
     )
     assert (
-        ("Neural LLM systems are excellent at understanding the context and meaning "
-         "of end-user queries")
-        in output2[1].page_content
-    )
+        "Neural LLM systems are excellent at understanding the context and meaning "
+        "of end-user queries"
+    ) in output2[1].page_content
 
     # delete the docs from the corpus
     for doc_id in doc_ids:
