@@ -43,11 +43,20 @@ The customer_id, corpus_id and api_key are optional, and if they are not supplie
 After you have the vectorstore, you can `add_texts` or `add_documents` as per the standard `VectorStore` interface, for example:
 
 ```python
-vectara.add_texts(["to be or not to be", "that is the question"])
+texts = ["to be or not to be", "that is the question"]
+vectara.add_texts(texts)
 ```
 
+Note that when using `add_texts` or `add_documents` with Vectara, each of the text strings or LangChain `Document` objects will become a "section" in a Vectara document. 
+If instead you want to add each text string or document as a separate document in Vectara, you can use the following code instead:
 
-Since Vectara supports file-upload, we also added the ability to upload files (PDF, TXT, HTML, PPT, DOC, etc) directly as file. When using this method, the file is uploaded directly to the Vectara backend, processed and chunked optimally there, so you don't have to use the LangChain document loader or chunking mechanism.
+```python
+texts = ["to be or not to be", "that is the question"]
+for text in texts:
+    vectara.add_documents([text])
+```
+
+Since Vectara supports file-upload natively in the API, we also added the ability to upload files (PDF, TXT, HTML, PPT, DOC, etc) directly as file. When using this method, the file is uploaded directly to the Vectara backend, processed and chunked optimally there, so you don't have to use the LangChain document loader or chunking mechanism.
 
 As an example:
 
@@ -67,6 +76,17 @@ results = vectara.similarity_score("what is LangChain?")
 - `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results. This defaults to 2.
 
 The results are returned as a list of relevant documents, and a relevance score of each document.
+
+Vectara also support max-marginal-similarity, implemented in the backend (so very fast). To use that functionality use the `max_marginal_relevance_search` function:
+```python
+results = vectara.max_marginal_relevance_search("what is LangChain?")
+```
+We implemented the interface for `max_marginal_relevance_search` to match other implementations of MMR, with the following arguments:
+- `fetch_k`: the number of results to fetch before reranking using MMR
+- `lambda_mult`: a value between 0...1 that determines the amount of diversity in the results (defaults to 0.5). 
+Note however that unlike many other vectorstore langchain implementations, with Vectara the MMR is computed in the backend, so the results are much faster, especially with large values of `fetch_k`.
+Furthermore, with `lambda_mult` 0 means full diversity, whereas 1 means no diversity (as if not using MMR). Vectara uses internally the `mmr_diversity_bias` parameter which behaves in the exact
+opposite manner (0 means no diversity, 1 means full diversity), so we convert the value of `lambda_mult` before sending it to Vectara.
 
 
 For a more detailed examples of using the Vectara wrapper, see one of these two sample notebooks:

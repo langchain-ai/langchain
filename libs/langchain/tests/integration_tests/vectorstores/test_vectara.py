@@ -148,3 +148,65 @@ models can greatly improve the training of DNNs and other deep discriminative mo
 
     for doc_id in doc_ids:
         docsearch._delete_doc(doc_id)
+
+def test_vectara_mmr() -> None:
+    """Test end to end construction and search."""
+
+    # create a new Vectara instance
+    docsearch: Vectara = Vectara()
+
+    # start with some initial texts, added with add_texts
+    texts = [
+        '''
+        The way Grounded Generation with Vectara works is we only use valid responses from your data relative to the search query. 
+        This dramatically reduces hallucinations in Vectara's responses. 
+        You can try it out on your own on our newly launched AskNews demo to experience Grounded Generation, 
+        or register an account to ground generative summaries on your own data.
+        ''',
+        '''
+        Generative AI promises to revolutionize how you can benefit from your data, 
+        but you need it to provide dependable information without the risk of data leakage. 
+        This is why today we're adding a fundamental capability to our platform to make generative AI safer to use. 
+        It enables you to ask your data questions and get reliable, accurate answers by retrieving and summarizing only the relevant information. 
+        We call it “Grounded Generation”. 
+        ''',
+        '''
+        We are incredibly excited to share another feature with this launch: Hybrid Search! 
+        Neural LLM systems are excellent at understanding the context and meaning of end-user queries, 
+        but they can still underperform when matching exact product SKUs, unusual names of people or companies, 
+        barcodes, and other text which identifies entities rather than conveying semantics. 
+        We're bridging this gap by introducing a lexical configuration that matches exact keywords, supports Boolean operators, 
+        and executes phrase searches, and incorporates the results into our neural search results.
+        '''
+    ]
+
+    doc_ids = []
+    for text in texts:
+        ids = docsearch.add_documents(
+            [Document(page_content=text, metadata={})]
+        )
+        doc_ids.extend(ids)
+
+    # test max marginal relevance
+    output1 = docsearch.max_marginal_relevance_search(
+        "generative AI", 
+        k=2, fetch_k=6, lambda_mult=1.0,     # no diversity bias
+        n_sentence_context=0
+    )
+    assert len(output1) == 2
+    assert "This is why today we're adding a fundamental capability to our platform" in output1[0].page_content
+    assert "Generative AI promises to revolutionize how you can benefit from your data" in output1[1].page_content
+
+    output2 = docsearch.max_marginal_relevance_search(
+        "generative AI", 
+        k=2, fetch_k=6, lambda_mult=0.0,     # only diversity bias
+        n_sentence_context=0
+    )
+    assert len(output2) == 2
+    assert "This is why today we're adding a fundamental capability to our platform" in output2[0].page_content
+    assert "You can try it out on your own on our newly launched AskNews demo" in output2[1].page_content
+
+    # delete the docs from the corpus
+    for doc_id in doc_ids:
+        docsearch._delete_doc(doc_id)
+

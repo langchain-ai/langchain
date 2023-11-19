@@ -251,6 +251,9 @@ class Vectara(VectorStore):
         filter: Optional[str] = None,
         score_threshold: Optional[float] = None,
         n_sentence_context: int = 2,
+        mmr: bool = False,
+        mmr_k: int = 50,
+        mmr_diversity_bias: float = 0.3,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return Vectara documents most similar to query, along with scores.
@@ -268,38 +271,52 @@ class Vectara(VectorStore):
                 filtered out.
             n_sentence_context: number of sentences before/after the matching segment
                 to add, defaults to 2
+            mmr: if True, use maximal marginal relevance to select the results
+            mmr_k: number of results to fetch for MMR, defaults to 50
+            mmr_diversity_bias: number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to minimum diversity and 1 to maximum diversity.
+                Defaults to 0.3.
+                Note: mmr_diversity_bias is equivalent 1-lambda_mult
+                where lambda_mult is the value often used in max_marginall_relevance_search()
+                We chose to use that since we believe it's more intuitive to the user.
 
         Returns:
             List of Documents most similar to the query and score for each.
         """
-        data = json.dumps(
-            {
-                "query": [
-                    {
-                        "query": query,
-                        "start": 0,
-                        "num_results": k,
-                        "context_config": {
-                            "sentences_before": n_sentence_context,
-                            "sentences_after": n_sentence_context,
-                        },
-                        "corpus_key": [
-                            {
-                                "customer_id": self._vectara_customer_id,
-                                "corpus_id": self._vectara_corpus_id,
-                                "metadataFilter": filter,
-                                "lexical_interpolation_config": {"lambda": lambda_val},
-                            }
-                        ],
-                    }
-                ]
+        data = {
+            "query": [
+                {
+                    "query": query,
+                    "start": 0,
+                    "numResults": mmr_k if mmr else k,
+                    "contextConfig": {
+                        "sentencesBefore": n_sentence_context,
+                        "sentencesAfter": n_sentence_context,
+                    },
+                    "corpusKey": [
+                        {
+                            "customerId": self._vectara_customer_id,
+                            "corpusId": self._vectara_corpus_id,
+                            "metadataFilter": filter,
+                            "lexicalInterpolationConfig": {"lambda": lambda_val},
+                        }
+                    ],
+                }
+            ]
+        }
+        if mmr:
+            data['query'][0]['rerankingConfig'] = {
+                'rerankerId': 272725718,
+                'mmrConfig': {
+                    'diversityBias': mmr_diversity_bias
+                }
             }
-        )
 
         response = self._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
-            data=data,
+            data=json.dumps(data),
             timeout=self.vectara_api_timeout,
         )
 
@@ -341,9 +358,11 @@ class Vectara(VectorStore):
             )
             for x, md in zip(responses, metadatas)
         ]
+        if mmr:
+            docs_with_score = docs_with_score[:k]
 
         return docs_with_score
-
+    
     def similarity_search(
         self,
         query: str,
@@ -378,6 +397,55 @@ class Vectara(VectorStore):
             **kwargs,
         )
         return [doc for doc, _ in docs_and_scores]
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 5,
+        lambda_val: float = 0.025,
+        n_sentence_context: int = 2,
+        fetch_k: int = 50,
+        lambda_mult: float = 0.5,
+        filter: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            lambda_val: lexical match parameter for hybrid search.
+            filter: Dictionary of argument(s) to filter on metadata. For example a
+                filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
+                https://docs.vectara.com/docs/search-apis/sql/filter-overview for more
+                details.
+            n_sentence_context: number of sentences before/after the matching segment
+                to add, defaults to 2
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        docs_and_scores = self.similarity_search_with_score(
+            query,
+            k=k,
+            lambda_val=lambda_val,
+            filter=filter,
+            score_threshold=None,
+            n_sentence_context=n_sentence_context,
+            mmr=True, mmr_k=fetch_k, mmr_diversity_bias=1-lambda_mult,
+            **kwargs,
+        )
+        return [doc for doc, _ in docs_and_scores]
+
+
 
     @classmethod
     def from_texts(
