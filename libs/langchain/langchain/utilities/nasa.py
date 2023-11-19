@@ -13,7 +13,8 @@ class NasaAPIWrapper(BaseModel):
         params = json.loads(query)
         queryText = params['q']
         params.pop('q')
-        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/search?q=" + queryText, params=params)
+        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL +
+                                 "/search?q=" + queryText, params=params)
         data = response.json()
         return data
     

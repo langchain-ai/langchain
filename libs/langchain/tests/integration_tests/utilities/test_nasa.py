@@ -5,8 +5,8 @@ from langchain.utilities.nasa import NasaAPIWrapper
 def test_media_search() -> None:
     """Test for NASA Image and Video Library media search"""
     nasa = NasaAPIWrapper()
-    output = nasa.run("search_media", '{"q": "saturn", "year_start": "2002", "year_end": "2010", "page": 2}')
-    print(output)
+    query = '{"q": "saturn", + "year_start": "2002", "year_end": "2010", "page": 2}'
+    output = nasa.run("search_media", query)
     assert output is not None
     assert "collection" in output
 
