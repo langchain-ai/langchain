@@ -446,7 +446,7 @@ class Vectara(VectorStore):
             n_sentence_context=n_sentence_context,
             mmr=True,
             mmr_k=fetch_k,
-            mmr_diversity_bias=1-lambda_mult,
+            mmr_diversity_bias=1 - lambda_mult,
             **kwargs,
         )
         return [doc for doc, _ in docs_and_scores]
