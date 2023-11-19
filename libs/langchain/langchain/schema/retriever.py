@@ -28,6 +28,7 @@ class SearchType(str, Enum):
     mmr = "mmr"
     """Maximal Marginal Relevance reranking of similarity search."""
 
+
 class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
     """Abstract base class for a Document retrieval system.
 
