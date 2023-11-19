@@ -1,15 +1,5 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import (
-    BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
-)
-from langchain.llms.anthropic import _AnthropicCommon
 from langchain_core.schema.messages import (
     AIMessage,
     AIMessageChunk,
@@ -20,6 +10,17 @@ from langchain_core.schema.messages import (
 )
 from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.schema.prompt import PromptValue
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _agenerate_from_stream,
+    _generate_from_stream,
+)
+from langchain.llms.anthropic import _AnthropicCommon
 
 
 def _convert_one_message_to_text(

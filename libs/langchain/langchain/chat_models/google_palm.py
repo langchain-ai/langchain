@@ -4,19 +4,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast
 
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.schema import (
     ChatGeneration,
@@ -30,6 +17,19 @@ from langchain_core.schema.messages import (
     SystemMessage,
 )
 from langchain_core.utils import get_from_dict_or_env
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
 
 if TYPE_CHECKING:
     import google.generativeai as genai

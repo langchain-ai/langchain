@@ -2,10 +2,10 @@
 from typing import Any, Dict, List, Optional
 
 import pytest
+from langchain_core.schema import RUN_KEY, BaseMemory
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain_core.schema import RUN_KEY, BaseMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

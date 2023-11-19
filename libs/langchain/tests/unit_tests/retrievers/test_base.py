@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 
 import pytest
+from langchain_core.schema import BaseRetriever, Document
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain_core.schema import BaseRetriever, Document
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

@@ -1,5 +1,6 @@
-from langchain.agents.output_parsers.json import JSONAgentOutputParser
 from langchain_core.schema.agent import AgentAction, AgentFinish
+
+from langchain.agents.output_parsers.json import JSONAgentOutputParser
 
 
 def test_tool_usage() -> None:

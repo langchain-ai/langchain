@@ -4,6 +4,7 @@ import uuid
 from typing import Any, Sequence
 
 from langchain_core.schema.document import BaseDocumentTransformer, Document
+
 from langchain.tools.nuclia.tool import NucliaUnderstandingAPI
 
 

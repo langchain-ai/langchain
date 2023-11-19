@@ -1,12 +1,13 @@
 """Retriever wrapper for Google Cloud Document AI Warehouse."""
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.docstore.document import Document
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.schema import BaseRetriever
-from langchain.utilities.vertexai import get_client_info
 from langchain_core.utils import get_from_dict_or_env
+
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.docstore.document import Document
+from langchain.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
     from google.cloud.contentwarehouse_v1 import (

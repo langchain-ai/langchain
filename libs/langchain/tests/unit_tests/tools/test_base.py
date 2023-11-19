@@ -6,13 +6,13 @@ from functools import partial
 from typing import Any, List, Optional, Type, Union
 
 import pytest
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain.agents.tools import Tool, tool
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel
 from langchain.tools.base import (
     BaseTool,
     SchemaAnnotationError,

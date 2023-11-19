@@ -7,10 +7,10 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Iterable, List, Optional, Tuple
 
 import requests
-
-from langchain.docstore.document import Document
 from langchain_core.schema.embeddings import Embeddings
 from langchain_core.schema.vectorstore import VectorStore
+
+from langchain.docstore.document import Document
 
 logger = logging.getLogger(__name__)
 

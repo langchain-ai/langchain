@@ -2,9 +2,10 @@ import base64
 import re
 from typing import Any, Iterator
 
-from langchain.chat_loaders.base import BaseChatLoader
 from langchain_core.schema.chat import ChatSession
 from langchain_core.schema.messages import HumanMessage
+
+from langchain.chat_loaders.base import BaseChatLoader
 
 
 def _extract_email_content(msg: Any) -> HumanMessage:

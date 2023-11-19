@@ -1,7 +1,6 @@
 from typing import List
 
 import pytest
-
 from langchain_core.utils.iter import batch_iterate
 
 

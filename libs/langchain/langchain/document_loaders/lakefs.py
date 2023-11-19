@@ -5,11 +5,11 @@ from typing import Any, List, Optional
 from urllib.parse import urljoin
 
 import requests
+from langchain_core.schema import Document
 from requests.auth import HTTPBasicAuth
 
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredBaseLoader
-from langchain_core.schema import Document
 
 
 class LakeFSClient:

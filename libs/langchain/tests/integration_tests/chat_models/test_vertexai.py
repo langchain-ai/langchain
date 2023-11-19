@@ -11,11 +11,11 @@ from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from langchain_core.schema import LLMResult
+from langchain_core.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 from langchain.chat_models import ChatVertexAI
 from langchain.chat_models.vertexai import _parse_chat_history, _parse_examples
-from langchain_core.schema import LLMResult
-from langchain_core.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
 @pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])

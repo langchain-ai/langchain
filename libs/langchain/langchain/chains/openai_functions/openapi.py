@@ -6,6 +6,10 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.schema import BasePromptTemplate
+from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.utils.input import get_colored_text
 from requests import Response
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
@@ -14,12 +18,8 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
 from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.schema import BasePromptTemplate
-from langchain_core.schema.language_model import BaseLanguageModel
 from langchain.tools import APIOperation
 from langchain.utilities.openapi import OpenAPISpec
-from langchain_core.utils.input import get_colored_text
 
 if TYPE_CHECKING:
     from openapi_pydantic import Parameter

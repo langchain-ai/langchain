@@ -5,7 +5,6 @@ import datetime
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from langchain.callbacks.base import BaseCallbackHandler
 from langchain_core.schema import (
     ChatGeneration,
     LLMResult,
@@ -17,6 +16,8 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+
+from langchain.callbacks.base import BaseCallbackHandler
 
 if TYPE_CHECKING:
     import promptlayer

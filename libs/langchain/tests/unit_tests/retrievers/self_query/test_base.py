@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Tuple, Union
 
 import pytest
+from langchain_core.schema import Document
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -16,7 +17,6 @@ from langchain.chains.query_constructor.ir import (
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers import SelfQueryRetriever
-from langchain_core.schema import Document
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

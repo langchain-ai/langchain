@@ -2,8 +2,9 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.schema.embeddings import Embeddings
-from langchain.utilities.requests import Requests
 from langchain_core.utils import get_from_dict_or_env
+
+from langchain.utilities.requests import Requests
 
 
 class EdenAiEmbeddings(BaseModel, Embeddings):

@@ -1,8 +1,9 @@
 """Callback Handler that prints to std out."""
 from typing import Any, Dict, List
 
-from langchain.callbacks.base import BaseCallbackHandler
 from langchain_core.schema import LLMResult
+
+from langchain.callbacks.base import BaseCallbackHandler
 
 MODEL_COST_PER_1K_TOKENS = {
     # GPT-4 input

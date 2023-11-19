@@ -13,8 +13,6 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Literal
-
 from langchain_core.schema.chat import ChatSession
 from langchain_core.schema.messages import (
     AIMessage,
@@ -27,6 +25,7 @@ from langchain_core.schema.messages import (
     SystemMessage,
     ToolMessage,
 )
+from typing_extensions import Literal
 
 
 async def aenumerate(

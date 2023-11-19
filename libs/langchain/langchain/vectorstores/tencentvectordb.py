@@ -7,11 +7,11 @@ import time
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
-
-from langchain.docstore.document import Document
 from langchain_core.schema.embeddings import Embeddings
 from langchain_core.schema.vectorstore import VectorStore
 from langchain_core.utils import guard_import
+
+from langchain.docstore.document import Document
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)

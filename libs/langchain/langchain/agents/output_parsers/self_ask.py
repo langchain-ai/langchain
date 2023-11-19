@@ -1,7 +1,8 @@
 from typing import Sequence, Union
 
-from langchain.agents.agent import AgentOutputParser
 from langchain_core.schema import AgentAction, AgentFinish, OutputParserException
+
+from langchain.agents.agent import AgentOutputParser
 
 
 class SelfAskOutputParser(AgentOutputParser):

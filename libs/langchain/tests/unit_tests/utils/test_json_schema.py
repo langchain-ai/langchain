@@ -1,5 +1,4 @@
 import pytest
-
 from langchain_core.utils.json_schema import dereference_refs
 
 

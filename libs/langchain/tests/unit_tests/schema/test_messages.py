@@ -1,5 +1,4 @@
 import pytest
-
 from langchain_core.schema.messages import (
     AIMessageChunk,
     ChatMessageChunk,

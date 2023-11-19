@@ -1,7 +1,8 @@
 from typing import Any, Callable, Iterator, List, Optional, Tuple
 
-from langchain.document_loaders.base import BaseLoader
 from langchain_core.schema import Document
+
+from langchain.document_loaders.base import BaseLoader
 
 
 def default_joiner(docs: List[Tuple[str, Any]]) -> str:

@@ -22,9 +22,8 @@ from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
-    from pymongo.collection import Collection
-
     from langchain_core.schema.embeddings import Embeddings
+    from pymongo.collection import Collection
 
 
 # Before Python 3.11 native StrEnum is not available

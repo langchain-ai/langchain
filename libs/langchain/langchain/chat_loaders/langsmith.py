@@ -3,9 +3,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Union, cast
 
-from langchain.chat_loaders.base import BaseChatLoader
 from langchain_core.load import load
 from langchain_core.schema.chat import ChatSession
+
+from langchain.chat_loaders.base import BaseChatLoader
 
 if TYPE_CHECKING:
     from langsmith.client import Client

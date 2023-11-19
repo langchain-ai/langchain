@@ -1,9 +1,10 @@
 from typing import List
 
-from langchain.chains.llm import LLMChain
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.schema.language_model import BaseLanguageModel
+
+from langchain.chains.llm import LLMChain
 
 TEST_GEN_TEMPLATE_SUFFIX = "Add another example."
 

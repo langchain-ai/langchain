@@ -2,14 +2,6 @@
 from typing import Any, List, Optional, Union
 
 import pytest
-
-from langchain.callbacks.base import AsyncCallbackHandler
-from langchain.callbacks.manager import CallbackManager
-from langchain.chains.openai_functions import (
-    create_openai_fn_chain,
-)
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.schema import (
@@ -19,6 +11,14 @@ from langchain_core.schema import (
 )
 from langchain_core.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.schema.output import ChatGenerationChunk, GenerationChunk
+
+from langchain.callbacks.base import AsyncCallbackHandler
+from langchain.callbacks.manager import CallbackManager
+from langchain.chains.openai_functions import (
+    create_openai_fn_chain,
+)
+from langchain.chat_models.openai import ChatOpenAI
+from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

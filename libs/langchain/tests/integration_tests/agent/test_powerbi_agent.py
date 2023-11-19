@@ -1,9 +1,9 @@
 import pytest
+from langchain_core.utils import get_from_env
 
 from langchain.agents.agent_toolkits import PowerBIToolkit, create_pbi_agent
 from langchain.chat_models import ChatOpenAI
 from langchain.utilities.powerbi import PowerBIDataset
-from langchain_core.utils import get_from_env
 
 
 def azure_installed() -> bool:

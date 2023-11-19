@@ -4,10 +4,10 @@ import copy
 from typing import TYPE_CHECKING, List
 
 import pytest
+from langchain_core.schema import Document
 from pytest_mock import MockerFixture
 
 from langchain.retrievers import ZepRetriever
-from langchain_core.schema import Document
 
 if TYPE_CHECKING:
     from zep_python import MemorySearchResult, ZepClient

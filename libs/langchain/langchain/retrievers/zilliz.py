@@ -1,10 +1,11 @@
 import warnings
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.schema import BaseRetriever, Document
 from langchain_core.schema.embeddings import Embeddings
+
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.vectorstores.zilliz import Zilliz
 
 # TODO: Update to ZillizClient + Hybrid Search when available

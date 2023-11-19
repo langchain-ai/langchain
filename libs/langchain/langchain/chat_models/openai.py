@@ -20,18 +20,8 @@ from typing import (
     Union,
 )
 
-from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import (
-    BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
-)
-from langchain.llms.base import create_base_retry_decorator
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.runnable import Runnable
 from langchain_core.schema import ChatGeneration, ChatResult
 from langchain_core.schema.language_model import LanguageModelInput
 from langchain_core.schema.messages import (
@@ -45,12 +35,23 @@ from langchain_core.schema.messages import (
     ToolMessageChunk,
 )
 from langchain_core.schema.output import ChatGenerationChunk
-from langchain_core.runnable import Runnable
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
 from langchain_core.utils.openai import is_openai_v1
+
+from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _agenerate_from_stream,
+    _generate_from_stream,
+)
+from langchain.llms.base import create_base_retry_decorator
 
 if TYPE_CHECKING:
     import tiktoken

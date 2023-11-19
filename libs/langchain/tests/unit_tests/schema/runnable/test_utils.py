@@ -2,7 +2,6 @@ import sys
 from typing import Callable
 
 import pytest
-
 from langchain_core.runnable.utils import (
     get_lambda_source,
     indent_lines_after_first,

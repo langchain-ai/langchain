@@ -1,6 +1,7 @@
 from time import sleep
 
 from langchain_core.schema import Document
+
 from langchain.vectorstores import DashVector
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 

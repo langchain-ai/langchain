@@ -1,11 +1,10 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from typing_extensions import NotRequired, TypedDict
-
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.schema.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
+from typing_extensions import NotRequired, TypedDict
 
 # Currently supported maximum batch size for embedding requests
 MAX_BATCH_SIZE = 256

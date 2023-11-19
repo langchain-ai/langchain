@@ -4,6 +4,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.schema.embeddings import Embeddings
+
 from langchain.vectorstores.milvus import Milvus
 
 logger = logging.getLogger(__name__)

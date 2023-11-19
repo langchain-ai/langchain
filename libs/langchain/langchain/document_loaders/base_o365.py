@@ -9,10 +9,17 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, List, Sequence, Union
 
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    BaseSettings,
+    Field,
+    FilePath,
+    SecretStr,
+)
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders.file_system import FileSystemBlobLoader
 from langchain.document_loaders.blob_loaders.schema import Blob
-from langchain_core.pydantic_v1 import BaseModel, BaseSettings, Field, FilePath, SecretStr
 
 if TYPE_CHECKING:
     from O365 import Account

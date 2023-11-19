@@ -7,7 +7,6 @@ from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
-
 from langchain_core.pydantic_v1 import Field
 from langchain_core.schema import Document
 from langchain_core.schema.embeddings import Embeddings

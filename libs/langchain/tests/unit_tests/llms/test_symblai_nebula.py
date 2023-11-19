@@ -1,9 +1,9 @@
 """Test the Nebula model by Symbl.ai"""
 
+from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain.llms.symblai_nebula import Nebula
-from langchain_core.pydantic_v1 import SecretStr
 
 
 def test_api_key_is_secret_string() -> None:

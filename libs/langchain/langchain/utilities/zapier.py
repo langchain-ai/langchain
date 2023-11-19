@@ -16,10 +16,9 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from requests import Request, Session
-
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from requests import Request, Session
 
 
 class ZapierNLAWrapper(BaseModel):

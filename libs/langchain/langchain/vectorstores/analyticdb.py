@@ -12,10 +12,11 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-from langchain.docstore.document import Document
 from langchain_core.schema.embeddings import Embeddings
 from langchain_core.schema.vectorstore import VectorStore
 from langchain_core.utils import get_from_dict_or_env
+
+from langchain.docstore.document import Document
 
 _LANGCHAIN_DEFAULT_EMBEDDING_DIM = 1536
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain_document"

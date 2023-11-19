@@ -2,15 +2,15 @@
 from typing import Any
 
 import pytest
-
-from langchain.callbacks.manager import CallbackManager
-from langchain.chat_models.konko import ChatKonko
 from langchain_core.schema import (
     ChatGeneration,
     ChatResult,
     LLMResult,
 )
 from langchain_core.schema.messages import BaseMessage, HumanMessage, SystemMessage
+
+from langchain.callbacks.manager import CallbackManager
+from langchain.chat_models.konko import ChatKonko
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

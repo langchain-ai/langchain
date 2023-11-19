@@ -5,10 +5,11 @@ import logging
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
-from langchain.docstore.document import Document
 from langchain_core.schema.embeddings import Embeddings
 from langchain_core.schema.vectorstore import VectorStore
 from langchain_core.utils import get_from_dict_or_env
+
+from langchain.docstore.document import Document
 
 ADA_TOKEN_COUNT = 1536
 _LANGCHAIN_DEFAULT_TABLE_NAME = "langchain_pg_embedding"

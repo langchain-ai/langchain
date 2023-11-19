@@ -6,9 +6,10 @@ Before running this test, please create a Xata database.
 import json
 import os
 
+from langchain_core.schema.messages import _message_to_dict
+
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import XataChatMessageHistory
-from langchain_core.schema.messages import _message_to_dict
 
 
 class TestXata:

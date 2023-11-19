@@ -2,8 +2,9 @@ from typing import Any
 from unittest.mock import Mock, patch
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.runnables.hub import HubRunnable
 from langchain_core.runnable.base import ConfigurableField
+
+from langchain.runnables.hub import HubRunnable
 
 
 @patch("langchain.hub.pull")

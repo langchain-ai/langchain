@@ -1,10 +1,10 @@
 """Test Aleph Alpha specific stuff."""
 
 import pytest
+from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain.llms.aleph_alpha import AlephAlpha
-from langchain_core.pydantic_v1 import SecretStr
 
 
 @pytest.mark.requires("aleph_alpha_client")

@@ -1,7 +1,8 @@
 from typing import List
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.schema import BaseRetriever, Document
+
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 
 

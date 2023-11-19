@@ -7,12 +7,12 @@ from uuid import uuid4
 
 import pytest
 from freezegun import freeze_time
+from langchain_core.schema import LLMResult
+from langchain_core.schema.messages import HumanMessage
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.tracers.base import BaseTracer, TracerException
 from langchain.callbacks.tracers.schemas import Run
-from langchain_core.schema import LLMResult
-from langchain_core.schema.messages import HumanMessage
 
 SERIALIZED = {"id": ["llm"]}
 SERIALIZED_CHAT = {"id": ["chat_model"]}

@@ -22,12 +22,12 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.schema.embeddings import Embeddings
+from langchain_core.schema.vectorstore import VectorStore
 
 from langchain.docstore.base import AddableMixin, Docstore
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)

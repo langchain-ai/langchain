@@ -2,10 +2,10 @@
 import uuid
 
 import pytest
+from langchain_core.schema import Generation, LLMResult
 
 import langchain
 from langchain.cache import UpstashRedisCache
-from langchain_core.schema import Generation, LLMResult
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

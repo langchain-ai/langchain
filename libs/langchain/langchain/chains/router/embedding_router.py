@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.chains.router.base import RouterChain
-from langchain.docstore.document import Document
 from langchain_core.pydantic_v1 import Extra
 from langchain_core.schema.embeddings import Embeddings
 from langchain_core.schema.vectorstore import VectorStore
+
+from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.chains.router.base import RouterChain
+from langchain.docstore.document import Document
 
 
 class EmbeddingRouterChain(RouterChain):

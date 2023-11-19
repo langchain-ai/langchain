@@ -5,9 +5,6 @@ import time
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 
 import requests
-
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import BaseChatModel, _generate_from_stream
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.schema import (
     AIMessage,
@@ -29,6 +26,9 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.chat_models.base import BaseChatModel, _generate_from_stream
 
 logger = logging.getLogger(__name__)
 

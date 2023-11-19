@@ -1,9 +1,10 @@
 from typing import Any, Dict, List
 
-from langchain.memory.chat_memory import BaseChatMemory
-from langchain.memory.summary import SummarizerMixin
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.schema.messages import BaseMessage, get_buffer_string
+
+from langchain.memory.chat_memory import BaseChatMemory
+from langchain.memory.summary import SummarizerMixin
 
 
 class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):

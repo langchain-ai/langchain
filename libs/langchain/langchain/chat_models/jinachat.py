@@ -16,23 +16,6 @@ from typing import (
     Union,
 )
 
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import (
-    BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
-)
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.schema import (
     AIMessage,
@@ -53,6 +36,23 @@ from langchain_core.schema.messages import (
 )
 from langchain_core.schema.output import ChatGenerationChunk
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _agenerate_from_stream,
+    _generate_from_stream,
+)
 
 logger = logging.getLogger(__name__)
 

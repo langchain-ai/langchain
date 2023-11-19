@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
-from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
-from langchain_core.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
+from langchain_core.schema import (
+    BaseOutputParser,
+    BasePromptTemplate,
+    OutputParserException,
+)
 from langchain_core.schema.language_model import BaseLanguageModel
+
+from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
 
 T = TypeVar("T")
 

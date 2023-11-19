@@ -9,7 +9,6 @@ from urllib.parse import urljoin
 
 import pytest
 import responses
-
 from langchain_core.utils.loading import DEFAULT_REF, URL_BASE, try_load_from_hub
 
 

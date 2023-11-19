@@ -3,11 +3,6 @@ from __future__ import annotations
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.schema import ChatGeneration, ChatResult
 from langchain_core.schema.messages import (
@@ -21,6 +16,12 @@ from langchain_core.schema.messages import (
 )
 from langchain_core.schema.output import ChatGenerationChunk
 from langchain_core.utils import get_from_dict_or_env
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
 
 logger = logging.getLogger(__name__)
 

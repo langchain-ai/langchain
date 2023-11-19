@@ -1,5 +1,15 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
+from langchain_core.schema.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -10,15 +20,6 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.cohere import BaseCohere
-from langchain_core.schema.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
-)
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
 
 
 def get_role(message: BaseMessage) -> str:

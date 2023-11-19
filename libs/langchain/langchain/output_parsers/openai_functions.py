@@ -3,8 +3,6 @@ import json
 from typing import Any, Dict, List, Optional, Type, Union
 
 import jsonpatch
-
-from langchain.output_parsers.json import parse_partial_json
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.schema import (
     ChatGeneration,
@@ -15,6 +13,8 @@ from langchain_core.schema.output_parser import (
     BaseCumulativeTransformOutputParser,
     BaseGenerationOutputParser,
 )
+
+from langchain.output_parsers.json import parse_partial_json
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):

@@ -1,5 +1,6 @@
-from langchain.docstore.arbitrary_fn import DocstoreFn
 from langchain_core.schema import Document
+
+from langchain.docstore.arbitrary_fn import DocstoreFn
 
 
 def test_document_found() -> None:

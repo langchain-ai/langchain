@@ -3,7 +3,6 @@ import unittest
 from typing import Union
 
 import pytest
-
 from langchain_core.prompts.base import StringPromptValue
 from langchain_core.prompts.chat import ChatPromptValueConcrete
 from langchain_core.pydantic_v1 import BaseModel, ValidationError

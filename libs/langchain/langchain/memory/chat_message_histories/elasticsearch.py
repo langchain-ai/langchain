@@ -4,7 +4,11 @@ from time import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.schema import BaseChatMessageHistory
-from langchain_core.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
+from langchain_core.schema.messages import (
+    BaseMessage,
+    _message_to_dict,
+    messages_from_dict,
+)
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch

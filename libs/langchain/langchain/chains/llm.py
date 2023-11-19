@@ -4,17 +4,16 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForChainRun,
-    CallbackManager,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
-from langchain.chains.base import Chain
 from langchain_core.load.dump import dumpd
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.runnable import (
+    Runnable,
+    RunnableBinding,
+    RunnableBranch,
+    RunnableWithFallbacks,
+)
+from langchain_core.runnable.configurable import DynamicRunnable
 from langchain_core.schema import (
     BaseLLMOutputParser,
     BaseMessage,
@@ -29,14 +28,16 @@ from langchain_core.schema.language_model import (
     BaseLanguageModel,
     LanguageModelInput,
 )
-from langchain_core.runnable import (
-    Runnable,
-    RunnableBinding,
-    RunnableBranch,
-    RunnableWithFallbacks,
-)
-from langchain_core.runnable.configurable import DynamicRunnable
 from langchain_core.utils.input import get_colored_text
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
+    CallbackManager,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
+from langchain.chains.base import Chain
 
 
 class LLMChain(Chain):

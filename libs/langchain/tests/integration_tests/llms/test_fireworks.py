@@ -3,15 +3,15 @@ import sys
 from typing import Generator
 
 import pytest
-
-from langchain.chains import LLMChain
-from langchain.llms.fireworks import Fireworks
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
 from langchain_core.schema import LLMResult
+
+from langchain.chains import LLMChain
+from langchain.llms.fireworks import Fireworks
 
 if sys.version_info < (3, 9):
     pytest.skip("fireworks-ai requires Python > 3.8", allow_module_level=True)

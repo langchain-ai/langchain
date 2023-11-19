@@ -5,13 +5,12 @@ import warnings
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
 
 import sqlalchemy
+from langchain_core.utils import get_from_env
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.types import NullType
-
-from langchain_core.utils import get_from_env
 
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:

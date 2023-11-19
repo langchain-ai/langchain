@@ -3,9 +3,6 @@ import threading
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import BaseChatModel
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.schema import (
     AIMessage,
@@ -16,6 +13,9 @@ from langchain_core.schema import (
     HumanMessage,
 )
 from langchain_core.utils import get_from_dict_or_env
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.chat_models.base import BaseChatModel
 
 logger = logging.getLogger(__name__)
 

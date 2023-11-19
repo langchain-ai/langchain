@@ -14,16 +14,15 @@ from typing import (
 )
 
 import requests
+from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.schema.embeddings import Embeddings
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
     retry,
     stop_after_attempt,
     wait_exponential,
 )
-
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

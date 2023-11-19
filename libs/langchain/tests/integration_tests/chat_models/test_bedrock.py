@@ -2,11 +2,11 @@
 from typing import Any
 
 import pytest
+from langchain_core.schema import ChatGeneration, LLMResult
+from langchain_core.schema.messages import BaseMessage, HumanMessage, SystemMessage
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models import BedrockChat
-from langchain_core.schema import ChatGeneration, LLMResult
-from langchain_core.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

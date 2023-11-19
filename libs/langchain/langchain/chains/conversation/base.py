@@ -1,11 +1,12 @@
 """Chain that carries on a conversation and calls an LLM."""
 from typing import Dict, List
 
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.schema import BaseMemory, BasePromptTemplate
+
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.memory.buffer import ConversationBufferMemory
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.schema import BaseMemory, BasePromptTemplate
 
 
 class ConversationChain(LLMChain):

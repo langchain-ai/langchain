@@ -4,15 +4,16 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Callable, Dict, Optional, Sequence
 
+from langchain_core.prompts import PromptTemplate
+from langchain_core.schema import BaseOutputParser, Document
+from langchain_core.schema.language_model import BaseLanguageModel
+
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
-from langchain_core.prompts import PromptTemplate
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_extract_prompt import (
     prompt_template,
 )
-from langchain_core.schema import BaseOutputParser, Document
-from langchain_core.schema.language_model import BaseLanguageModel
 
 
 def default_get_input(query: str, doc: Document) -> Dict[str, Any]:

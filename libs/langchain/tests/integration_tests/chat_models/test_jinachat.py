@@ -2,9 +2,6 @@
 
 
 import pytest
-
-from langchain.callbacks.manager import CallbackManager
-from langchain.chat_models.jinachat import JinaChat
 from langchain_core.schema import (
     BaseMessage,
     ChatGeneration,
@@ -12,6 +9,9 @@ from langchain_core.schema import (
     LLMResult,
     SystemMessage,
 )
+
+from langchain.callbacks.manager import CallbackManager
+from langchain.chat_models.jinachat import JinaChat
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

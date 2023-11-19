@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Literal, Optional
 
 from langchain_core.schema.embeddings import Embeddings
+
 from langchain.vectorstores.docarray.base import (
     DocArrayIndex,
     _check_docarray_import,

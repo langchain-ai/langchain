@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Iterator
 
 import pytest
-
-from langchain.output_parsers import RegexParser
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.loading import load_prompt
 from langchain_core.prompts.prompt import PromptTemplate
+
+from langchain.output_parsers import RegexParser
 
 EXAMPLE_DIR = Path("tests/unit_tests/examples").absolute()
 

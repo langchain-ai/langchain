@@ -2,8 +2,8 @@
 from typing import List
 
 import pytest
-
 from langchain_core.schema import Document
+
 from langchain.utilities import WikipediaAPIWrapper
 
 

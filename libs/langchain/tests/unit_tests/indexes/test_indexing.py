@@ -14,6 +14,8 @@ from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
+from langchain_core.schema import Document
+from langchain_core.schema.vectorstore import VST, VectorStore
 
 import langchain.vectorstores
 from langchain.document_loaders.base import BaseLoader
@@ -21,8 +23,6 @@ from langchain.embeddings.base import Embeddings
 from langchain.indexes import aindex, index
 from langchain.indexes._api import _abatch
 from langchain.indexes._sql_record_manager import SQLRecordManager
-from langchain_core.schema import Document
-from langchain_core.schema.vectorstore import VST, VectorStore
 
 
 class ToyLoader(BaseLoader):

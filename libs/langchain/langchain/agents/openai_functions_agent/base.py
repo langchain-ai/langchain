@@ -1,16 +1,6 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
-from langchain.agents import BaseSingleActionAgent
-from langchain.agents.format_scratchpad.openai_functions import (
-    format_to_openai_function_messages,
-)
-from langchain.agents.output_parsers.openai_functions import (
-    OpenAIFunctionsAgentOutputParser,
-)
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
-from langchain.chat_models.openai import ChatOpenAI
 from langchain_core.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
@@ -28,6 +18,17 @@ from langchain_core.schema.messages import (
     BaseMessage,
     SystemMessage,
 )
+
+from langchain.agents import BaseSingleActionAgent
+from langchain.agents.format_scratchpad.openai_functions import (
+    format_to_openai_function_messages,
+)
+from langchain.agents.output_parsers.openai_functions import (
+    OpenAIFunctionsAgentOutputParser,
+)
+from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
+from langchain.chat_models.openai import ChatOpenAI
 from langchain.tools.base import BaseTool
 from langchain.tools.render import format_tool_to_openai_function
 

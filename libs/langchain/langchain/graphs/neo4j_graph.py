@@ -1,8 +1,9 @@
 from typing import Any, Dict, List, Optional
 
+from langchain_core.utils import get_from_env
+
 from langchain.graphs.graph_document import GraphDocument
 from langchain.graphs.graph_store import GraphStore
-from langchain_core.utils import get_from_env
 
 node_properties_query = """
 CALL apoc.meta.data()

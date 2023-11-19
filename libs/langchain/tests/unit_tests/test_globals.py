@@ -2,8 +2,9 @@ from langchain.globals import get_debug, get_verbose, set_debug, set_verbose
 
 
 def test_debug_is_settable_directly() -> None:
-    import langchain
     from langchain_core.callbacks.manager import _get_debug
+
+    import langchain
 
     previous_value = langchain.debug
     previous_fn_reading = _get_debug()
@@ -32,8 +33,9 @@ def test_debug_is_settable_directly() -> None:
 
 
 def test_debug_is_settable_via_setter() -> None:
-    from langchain import globals
     from langchain_core.callbacks.manager import _get_debug
+
+    from langchain import globals
 
     previous_value = globals._debug
     previous_fn_reading = _get_debug()

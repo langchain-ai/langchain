@@ -1,11 +1,6 @@
 import json
 from typing import Any, Iterator, List, Optional
 
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
-from langchain.llms.ollama import _OllamaCommon
 from langchain_core.schema import ChatResult
 from langchain_core.schema.messages import (
     AIMessage,
@@ -16,6 +11,12 @@ from langchain_core.schema.messages import (
     SystemMessage,
 )
 from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
+
+from langchain.callbacks.manager import (
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
+from langchain.llms.ollama import _OllamaCommon
 
 
 def _stream_response_to_chat_generation_chunk(

@@ -3,7 +3,6 @@ import json
 from json import JSONDecodeError
 from typing import List, Union
 
-from langchain.agents.agent import AgentOutputParser
 from langchain_core.schema import (
     AgentAction,
     AgentFinish,
@@ -15,6 +14,8 @@ from langchain_core.schema.messages import (
     BaseMessage,
 )
 from langchain_core.schema.output import ChatGeneration, Generation
+
+from langchain.agents.agent import AgentOutputParser
 
 
 class OpenAIFunctionsAgentOutputParser(AgentOutputParser):

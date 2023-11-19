@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional
 
+from langchain_core.pydantic_v1 import Field
+from langchain_core.schema import BasePromptTemplate
+from langchain_core.schema.language_model import BaseLanguageModel
+
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.qa_generation.prompt import PROMPT_SELECTOR
-from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import BasePromptTemplate
-from langchain_core.schema.language_model import BaseLanguageModel
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 

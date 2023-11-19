@@ -1,8 +1,6 @@
 """Test AliCloud Pai Eas Chat Model."""
 import os
 
-from langchain.callbacks.manager import CallbackManager
-from langchain.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
 from langchain_core.schema import (
     AIMessage,
     BaseMessage,
@@ -10,6 +8,9 @@ from langchain_core.schema import (
     HumanMessage,
     LLMResult,
 )
+
+from langchain.callbacks.manager import CallbackManager
+from langchain.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

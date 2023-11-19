@@ -1,6 +1,5 @@
 """Test functionality related to prompts."""
 import pytest
-
 from langchain_core.prompts.prompt import PromptTemplate
 
 

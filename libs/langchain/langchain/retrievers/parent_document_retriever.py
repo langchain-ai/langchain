@@ -1,8 +1,9 @@
 import uuid
 from typing import List, Optional
 
-from langchain.retrievers import MultiVectorRetriever
 from langchain_core.schema.document import Document
+
+from langchain.retrievers import MultiVectorRetriever
 from langchain.text_splitter import TextSplitter
 
 

@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Any, List, Union
 
 import pytest
-
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,

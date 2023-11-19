@@ -1,6 +1,7 @@
-from langchain.agents.format_scratchpad.log_to_messages import format_log_to_messages
 from langchain_core.schema.agent import AgentAction
 from langchain_core.schema.messages import AIMessage, HumanMessage
+
+from langchain.agents.format_scratchpad.log_to_messages import format_log_to_messages
 
 
 def test_single_intermediate_step_default_response() -> None:

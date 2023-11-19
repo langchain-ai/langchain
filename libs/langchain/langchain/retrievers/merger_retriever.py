@@ -1,11 +1,12 @@
 import asyncio
 from typing import List
 
+from langchain_core.schema import BaseRetriever, Document
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain_core.schema import BaseRetriever, Document
 
 
 class MergerRetriever(BaseRetriever):

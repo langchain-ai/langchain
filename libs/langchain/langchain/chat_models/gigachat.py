@@ -1,16 +1,6 @@
 import logging
 from typing import Any, AsyncIterator, Iterator, List, Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import (
-    BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
-)
-from langchain.llms.gigachat import _BaseGigaChat
 from langchain_core.schema import ChatResult
 from langchain_core.schema.messages import (
     AIMessage,
@@ -21,6 +11,17 @@ from langchain_core.schema.messages import (
     SystemMessage,
 )
 from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _agenerate_from_stream,
+    _generate_from_stream,
+)
+from langchain.llms.gigachat import _BaseGigaChat
 
 logger = logging.getLogger(__name__)
 

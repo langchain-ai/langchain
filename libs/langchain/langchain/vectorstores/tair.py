@@ -5,10 +5,11 @@ import logging
 import uuid
 from typing import Any, Iterable, List, Optional, Type
 
-from langchain.docstore.document import Document
 from langchain_core.schema.embeddings import Embeddings
 from langchain_core.schema.vectorstore import VectorStore
 from langchain_core.utils import get_from_dict_or_env
+
+from langchain.docstore.document import Document
 
 logger = logging.getLogger(__name__)
 

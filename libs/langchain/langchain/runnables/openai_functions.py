@@ -1,12 +1,12 @@
 from operator import itemgetter
 from typing import Any, Callable, List, Mapping, Optional, Union
 
+from langchain_core.runnable import RouterRunnable, Runnable
+from langchain_core.runnable.base import RunnableBindingBase
+from langchain_core.schema.messages import BaseMessage
 from typing_extensions import TypedDict
 
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain_core.schema.messages import BaseMessage
-from langchain_core.runnable import RouterRunnable, Runnable
-from langchain_core.runnable.base import RunnableBindingBase
 
 
 class OpenAIFunction(TypedDict):

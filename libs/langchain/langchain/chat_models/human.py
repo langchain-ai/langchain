@@ -5,13 +5,6 @@ from io import StringIO
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import yaml
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
-from langchain.llms.utils import enforce_stop_tokens
 from langchain_core.pydantic_v1 import Field
 from langchain_core.schema.messages import (
     BaseMessage,
@@ -20,6 +13,13 @@ from langchain_core.schema.messages import (
     messages_to_dict,
 )
 from langchain_core.schema.output import ChatGeneration, ChatResult
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
+from langchain.llms.utils import enforce_stop_tokens
 
 
 def _display_messages(messages: List[BaseMessage]) -> None:

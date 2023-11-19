@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from langchain_core.pydantic_v1 import Field
+
 from langchain.tools.base import BaseTool
 from langchain.tools.office365.utils import authenticate
 

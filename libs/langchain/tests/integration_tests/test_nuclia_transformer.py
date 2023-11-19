@@ -4,9 +4,9 @@ from typing import Any
 from unittest import mock
 
 import pytest
+from langchain_core.schema.document import Document
 
 from langchain.document_transformers.nuclia_text_transform import NucliaTextTransformer
-from langchain_core.schema.document import Document
 from langchain.tools.nuclia.tool import NucliaUnderstandingAPI
 
 

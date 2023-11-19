@@ -1,5 +1,6 @@
-from langchain.chat_models.baichuan import ChatBaichuan
 from langchain_core.schema.messages import AIMessage, HumanMessage
+
+from langchain.chat_models.baichuan import ChatBaichuan
 
 
 def test_chat_baichuan() -> None:

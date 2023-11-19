@@ -13,20 +13,6 @@ from typing import (
     Type,
 )
 
-from requests.exceptions import HTTPError
-from tenacity import (
-    RetryCallState,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
-
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import (
-    BaseChatModel,
-    _generate_from_stream,
-)
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.schema import ChatGeneration, ChatResult
 from langchain_core.schema.messages import (
@@ -45,6 +31,20 @@ from langchain_core.schema.messages import (
 )
 from langchain_core.schema.output import ChatGenerationChunk, GenerationChunk
 from langchain_core.utils import get_from_dict_or_env
+from requests.exceptions import HTTPError
+from tenacity import (
+    RetryCallState,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _generate_from_stream,
+)
 
 logger = logging.getLogger(__name__)
 

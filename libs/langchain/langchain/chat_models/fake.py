@@ -3,14 +3,15 @@ import asyncio
 import time
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
+from langchain_core.schema import ChatResult
+from langchain_core.schema.messages import AIMessageChunk, BaseMessage
+from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel, SimpleChatModel
-from langchain_core.schema import ChatResult
-from langchain_core.schema.messages import AIMessageChunk, BaseMessage
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
 
 
 class FakeMessagesListChatModel(BaseChatModel):

@@ -2,7 +2,6 @@
 from typing import Any, Dict, List, Sequence, Tuple
 
 import pytest
-
 from langchain_core.prompts import (
     AIMessagePromptTemplate,
     ChatPromptTemplate,

@@ -1,9 +1,6 @@
 import json
 from typing import Any, Dict, List, Optional, cast
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import SimpleChatModel
-from langchain.llms.azureml_endpoint import AzureMLEndpointClient, ContentFormatterBase
 from langchain_core.pydantic_v1 import SecretStr, validator
 from langchain_core.schema.messages import (
     AIMessage,
@@ -13,6 +10,10 @@ from langchain_core.schema.messages import (
     SystemMessage,
 )
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.chat_models.base import SimpleChatModel
+from langchain.llms.azureml_endpoint import AzureMLEndpointClient, ContentFormatterBase
 
 
 class LlamaContentFormatter(ContentFormatterBase):

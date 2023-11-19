@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from langchain.chains.llm import LLMChain
-from langchain.evaluation.qa.generate_prompt import PROMPT
-from langchain.output_parsers.regex import RegexParser
 from langchain_core.pydantic_v1 import Field
 from langchain_core.schema.language_model import BaseLanguageModel
 from langchain_core.schema.output_parser import BaseLLMOutputParser
+
+from langchain.chains.llm import LLMChain
+from langchain.evaluation.qa.generate_prompt import PROMPT
+from langchain.output_parsers.regex import RegexParser
 
 _QA_OUTPUT_PARSER = RegexParser(
     regex=r"QUESTION: (.*?)\n+ANSWER: (.*)", output_keys=["query", "answer"]

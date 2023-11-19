@@ -2,10 +2,10 @@
 from typing import Generator
 
 import pytest
+from langchain_core.schema import LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.llms.anthropic import Anthropic
-from langchain_core.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

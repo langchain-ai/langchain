@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
+from langchain_core.schema import LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI
-from langchain_core.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
     FakeCallbackHandler,
 )

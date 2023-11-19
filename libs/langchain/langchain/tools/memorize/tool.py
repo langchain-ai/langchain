@@ -1,12 +1,13 @@
 from abc import abstractmethod
 from typing import Any, Optional, Protocol, Sequence, runtime_checkable
 
+from langchain_core.pydantic_v1 import Field
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain.llms.gradient_ai import TrainResult
-from langchain_core.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
 
 

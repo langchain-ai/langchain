@@ -1,8 +1,9 @@
 from typing import Any, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.schema import BaseRetriever, Document
+
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 
 
 class MetalRetriever(BaseRetriever):

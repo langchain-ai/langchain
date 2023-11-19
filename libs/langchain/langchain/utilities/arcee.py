@@ -6,7 +6,6 @@ from enum import Enum
 from typing import Any, Dict, List, Literal, Mapping, Optional, Union
 
 import requests
-
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.schema.retriever import Document
 
