@@ -91,6 +91,7 @@ jobs:
 
           echo "Editably installing langchain outside of poetry, to avoid messing up lockfile..."
           poetry run pip install -e ../langchain
+          poetry run pip install -e ../core
 
       - name: Run tests
         run: make test
