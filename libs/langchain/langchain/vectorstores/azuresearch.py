@@ -14,6 +14,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    Union,
 )
 
 import numpy as np
@@ -36,10 +37,12 @@ if TYPE_CHECKING:
     from azure.search.documents.indexes.models import (
         ScoringProfile,
         SearchField,
-        SemanticSettings,
         VectorSearch,
     )
-
+    try:
+        from azure.search.documents.indexes.models import SemanticSearch
+    except ImportError:
+        from azure.search.documents.indexes.models import SemanticSettings # <11.4.0
 
 # Allow overriding field names for Azure Search
 FIELDS_ID = get_from_env(
@@ -69,7 +72,7 @@ def _get_search_client(
     semantic_configuration_name: Optional[str] = None,
     fields: Optional[List[SearchField]] = None,
     vector_search: Optional[VectorSearch] = None,
-    semantic_settings: Optional[SemanticSettings] = None,
+    semantic_settings: Optional[Union[SemanticSearch, SemanticSettings]] = None,
     scoring_profiles: Optional[List[ScoringProfile]] = None,
     default_scoring_profile: Optional[str] = None,
     default_fields: Optional[List[SearchField]] = None,
@@ -81,14 +84,27 @@ def _get_search_client(
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
-        HnswAlgorithmConfiguration, # HnswVectorSearchAlgorithmConfiguration outdated in version 11.4.0
-        PrioritizedFields,
         SearchIndex,
         SemanticConfiguration,
         SemanticField,
-        SemanticSettings,
         VectorSearch,
     )
+
+    # class names changed for versions >= 11.4.0
+    try:
+        from azure.search.documents.indexes.models import (
+            HnswAlgorithmConfiguration, #HnswVectorSearchAlgorithmConfiguration outdated
+            SemanticPrioritizedFields,  #PrioritizedFields outdated
+            SemanticSearch,             #SemanticSettings outdated
+        )
+        NEW_VERSION = True
+    except ImportError:
+        from azure.search.documents.indexes.models import (
+            HnswVectorSearchAlgorithmConfiguration, 
+            PrioritizedFields,
+            SemanticSettings,
+        )
+        NEW_VERSION = False
 
     default_fields = default_fields or []
     if key is None:
@@ -135,34 +151,71 @@ def _get_search_client(
             fields = default_fields
         # Vector search configuration
         if vector_search is None:
-            vector_search = VectorSearch(
-                algorithm_configurations=[
-                    HnswAlgorithmConfiguration(
-                        name="default",
-                        kind="hnsw",
-                        parameters={  # type: ignore
-                            "m": 4,
-                            "efConstruction": 400,
-                            "efSearch": 500,
-                            "metric": "cosine",
-                        },
-                    )
-                ]
-            )
+            
+            if NEW_VERSION: 
+                # >= 11.4.0: VectorSearch(algorithm_configuration) --> VectorSearch(algorithms)
+                # HnswVectorSearchAlgorithmConfiguration --> HnswAlgorithmConfiguration
+                vector_search = VectorSearch(    
+                    algorithms=[
+                        HnswAlgorithmConfiguration(
+                            name="default",
+                            kind="hnsw",
+                            parameters={  # type: ignore
+                                "m": 4,
+                                "efConstruction": 400,
+                                "efSearch": 500,
+                                "metric": "cosine",
+                            },
+                        )
+                    ]
+                )
+            else: # < 11.4.0
+                vector_search = VectorSearch(    
+                    algorithm_configurations=[
+                        HnswVectorSearchAlgorithmConfiguration(
+                            name="default",
+                            kind="hnsw",
+                            parameters={  # type: ignore
+                                "m": 4,
+                                "efConstruction": 400,
+                                "efSearch": 500,
+                                "metric": "cosine",
+                            },
+                        )
+                    ]
+                )
+
         # Create the semantic settings with the configuration
         if semantic_settings is None and semantic_configuration_name is not None:
-            semantic_settings = SemanticSettings(
-                configurations=[
-                    SemanticConfiguration(
-                        name=semantic_configuration_name,
-                        prioritized_fields=PrioritizedFields(
-                            prioritized_content_fields=[
-                                SemanticField(field_name=FIELDS_CONTENT)
-                            ],
-                        ),
-                    )
-                ]
-            )
+
+            if NEW_VERSION:
+                # <=11.4.0: SemanticSettings --> SemanticSearch 
+                # PrioritizedFields(prioritized_content_fields) --> SemanticPrioritizedFields(content_fields)
+                semantic_settings = SemanticSearch(
+                    configurations=[
+                        SemanticConfiguration(
+                            name=semantic_configuration_name,
+                            prioritized_fields=SemanticPrioritizedFields(
+                                content_fields=[
+                                    SemanticField(field_name=FIELDS_CONTENT)
+                                ],
+                            ),
+                        )
+                    ]
+                )
+            else: # < 11.4.0
+                semantic_settings = SemanticSettings(
+                    configurations=[
+                        SemanticConfiguration(
+                            name=semantic_configuration_name,
+                            prioritized_fields=PrioritizedFields(
+                                prioritized_content_fields=[
+                                    SemanticField(field_name=FIELDS_CONTENT)
+                                ],
+                            ),
+                        )
+                    ]
+                )
         # Create the search index with the semantic settings and vector search
         index = SearchIndex(
             name=index_name,
@@ -196,7 +249,7 @@ class AzureSearch(VectorStore):
         semantic_query_language: str = "en-us",
         fields: Optional[List[SearchField]] = None,
         vector_search: Optional[VectorSearch] = None,
-        semantic_settings: Optional[SemanticSettings] = None,
+        semantic_settings: Optional[Union[SemanticSearch, SemanticSettings]] = None,
         scoring_profiles: Optional[List[ScoringProfile]] = None,
         default_scoring_profile: Optional[str] = None,
         **kwargs: Any,
