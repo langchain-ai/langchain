@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.load.serializable import Serializable
 
+DEFAULT_NAMESPACES = ["langchain", "langchain_core"]
+
 
 class Reviver:
     """Reviver for JSON objects."""
@@ -17,7 +19,9 @@ class Reviver:
         self.secrets_map = secrets_map or dict()
         # By default only support langchain, but user can pass in additional namespaces
         self.valid_namespaces = (
-            ["langchain", *valid_namespaces] if valid_namespaces else ["langchain"]
+            [*DEFAULT_NAMESPACES, *valid_namespaces]
+            if valid_namespaces
+            else DEFAULT_NAMESPACES
         )
 
     def __call__(self, value: Dict[str, Any]) -> Any:
