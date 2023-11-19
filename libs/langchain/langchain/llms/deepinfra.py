@@ -9,7 +9,8 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM, GenerationChunk
+from langchain.llms.base import LLM
+from langchain.schema.output import GenerationChunk
 from langchain.utilities.requests import Requests
 
 DEFAULT_MODEL_ID = "google/flan-t5-xl"

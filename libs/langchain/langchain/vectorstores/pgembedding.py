@@ -402,7 +402,7 @@ class PGEmbedding(VectorStore):
                     page_content=result.EmbeddingStore.document,
                     metadata=result.EmbeddingStore.cmetadata,
                 ),
-                result.distance if self.embedding_function is not None else None,
+                result.distance if self.embedding_function is not None else 0.0,
             )
             for result in results
         ]

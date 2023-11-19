@@ -99,6 +99,7 @@ class E2BDataAnalysisTool(BaseTool):
     name = "e2b_data_analysis"
     args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
     session: Any
+    description: str
     _uploaded_files: List[UploadedFile] = PrivateAttr(default_factory=list)
 
     def __init__(

@@ -7,7 +7,8 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.tools.base import BaseTool, Field
+from langchain.pydantic_v1 import Field
+from langchain.tools.base import BaseTool
 from langchain.utilities.searx_search import SearxSearchWrapper
 
 
