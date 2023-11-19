@@ -146,7 +146,7 @@ class YoutubeLoader(BaseLoader):
         video_id: str,
         add_video_info: bool = False,
         language: Union[str, Sequence[str]] = "en",
-        translation: str = "en",
+        translation: str = None,
         continue_on_failure: bool = False,
     ):
         """Initialize with YouTube video ID."""
@@ -206,8 +206,10 @@ class YoutubeLoader(BaseLoader):
         try:
             transcript = transcript_list.find_transcript(self.language)
         except NoTranscriptFound:
-            en_transcript = transcript_list.find_transcript(["en"])
-            transcript = en_transcript.translate(self.translation)
+            transcript = transcript_list.find_transcript(["en"])
+      
+        if self.translation is not None:
+            transcript = transcript.translate(self.translation)
 
         transcript_pieces = transcript.fetch()
 
