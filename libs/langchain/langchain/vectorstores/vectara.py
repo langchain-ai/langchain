@@ -103,6 +103,9 @@ class Vectara(VectorStore):
             headers=self._get_post_headers(),
             timeout=self.vectara_api_timeout,
         )
+
+        print(f"DEBUG del code = {response.status_code}")
+
         if response.status_code != 200:
             logger.error(
                 f"Delete request failed for doc_id = {doc_id} with status code "

@@ -20,8 +20,7 @@ def get_abbr(s: str) -> str:
     first_letters = [word[0] for word in words]  # Extract the first letter of each word
     return "".join(first_letters)  # Join the first letters into a single string
 
-
-def test_vectara_add_documents() -> None:
+def test_vectara_add_documents(setup_for_add_documents) -> None:
     """Test end to end construction and search."""
 
     # create a new Vectara instance
@@ -49,12 +48,13 @@ def test_vectara_add_documents() -> None:
         "large language model",
         k=2,
         n_sentence_context=0,
+        lambda_val=0,
     )
     assert len(output1) == 2
     assert output1[0].page_content == "large language model"
     assert output1[0].metadata["abbr"] == "llm"
-    assert output1[1].page_content == "information retrieval"
-    assert output1[1].metadata["abbr"] == "ir"
+    assert output1[1].page_content == "grounded generation"
+    assert output1[1].metadata["abbr"] == "gg"
 
     # test with metadata filter (doc level)
     # since the query does not match test_num=1 directly we get "RAG" as the result
@@ -65,8 +65,8 @@ def test_vectara_add_documents() -> None:
         filter="doc.test_num = 1",
     )
     assert len(output2) == 1
-    assert output2[0].page_content == "retrieval augmented generation"
-    assert output2[0].metadata["abbr"] == "rag"
+    assert output2[0].page_content == "grounded generation"
+    assert output2[0].metadata["abbr"] == "gg"
 
     # test without filter but with similarity score
     # this is similar to the first test, but given the score threshold
@@ -74,7 +74,7 @@ def test_vectara_add_documents() -> None:
     output3 = docsearch.similarity_search_with_score(
         "large language model",
         k=2,
-        score_threshold=0.1,
+        score_threshold=0.6,
         n_sentence_context=0,
     )
     assert len(output3) == 1
@@ -194,8 +194,8 @@ def test_vectara_mmr() -> None:
         n_sentence_context=0
     )
     assert len(output1) == 2
-    assert "This is why today we're adding a fundamental capability to our platform" in output1[0].page_content
-    assert "Generative AI promises to revolutionize how you can benefit from your data" in output1[1].page_content
+    assert "Generative AI promises to revolutionize how you can benefit from your data" in output1[0].page_content
+    assert "This is why today we're adding a fundamental capability to our platform" in output1[1].page_content
 
     output2 = docsearch.max_marginal_relevance_search(
         "generative AI", 
@@ -203,8 +203,8 @@ def test_vectara_mmr() -> None:
         n_sentence_context=0
     )
     assert len(output2) == 2
-    assert "This is why today we're adding a fundamental capability to our platform" in output2[0].page_content
-    assert "You can try it out on your own on our newly launched AskNews demo" in output2[1].page_content
+    assert "Generative AI promises to revolutionize how you can benefit from your data" in output2[0].page_content
+    assert "Neural LLM systems are excellent at understanding the context and meaning of end-user queries" in output2[1].page_content
 
     # delete the docs from the corpus
     for doc_id in doc_ids:
