@@ -309,11 +309,9 @@ class Vectara(VectorStore):
             ]
         }
         if mmr:
-            data['query'][0]['rerankingConfig'] = {
-                'rerankerId': 272725718,
-                'mmrConfig': {
-                    'diversityBias': mmr_diversity_bias
-                }
+            data["query"][0]["rerankingConfig"] = {
+                "rerankerId": 272725718,
+                "mmrConfig": {"diversityBias": mmr_diversity_bias},
             }
 
         response = self._session.post(
@@ -365,7 +363,7 @@ class Vectara(VectorStore):
             docs_with_score = docs_with_score[:k]
 
         return docs_with_score
-    
+
     def similarity_search(
         self,
         query: str,
@@ -443,12 +441,12 @@ class Vectara(VectorStore):
             filter=filter,
             score_threshold=None,
             n_sentence_context=n_sentence_context,
-            mmr=True, mmr_k=fetch_k, mmr_diversity_bias=1-lambda_mult,
+            mmr=True,
+            mmr_k=fetch_k,
+            mmr_diversity_bias=1 - lambda_mult,
             **kwargs,
         )
         return [doc for doc, _ in docs_and_scores]
-
-
 
     @classmethod
     def from_texts(
