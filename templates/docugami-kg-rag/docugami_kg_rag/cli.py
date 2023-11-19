@@ -1,7 +1,8 @@
 import sys
-from docugami import Docugami
-import typer
 from typing import Optional
+
+import typer
+from docugami import Docugami
 
 from docugami_kg_rag.helpers.indexing import index_docset
 
@@ -11,8 +12,7 @@ docugami_client = Docugami()
 
 @app.command()
 def main(
-    docset_id: Optional[str] = typer.Option(None, help="ID of the docset to ingest"),
-    all_docsets: bool = typer.Option(False, help="Flag to ingest all docsets"),
+    docset_id: Optional[str] = None, all_docsets: bool = False, force: bool = False
 ):
     docsets_response = docugami_client.docsets.list()
 
@@ -33,7 +33,7 @@ def main(
         for idx, docset in enumerate(docsets, start=1):
             print(f"{idx}: {docset.name} (ID: {docset.id})")
         user_input = typer.prompt(
-            "\nPlease enter the number(s) of the docset(s) to index (comma-separated) or 'all' in index all docsets"
+            "\nPlease enter the number(s) of the docset(s) to index (comma-separated) or 'all' to index all docsets"
         )
 
         if user_input.lower() == "all":
@@ -48,12 +48,12 @@ def main(
         if not docset.id or not docset.name:
             raise Exception(f"Docset must have ID as well as Name: {docset}")
 
-        index_docset(docset.id, docset.name)
+        index_docset(docset.id, docset.name, force)
 
 
 if __name__ == "__main__":
     if sys.gettrace():
         # This code will only run if a debugger is attached
-        main(docset_id="s79br3gqd0g6")
+        main(docset_id="s79br3gqd0g6", force=True)
     else:
         app()

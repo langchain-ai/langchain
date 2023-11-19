@@ -1,11 +1,12 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.storage.in_memory import InMemoryStore
 
 LLM = ChatOpenAI(temperature=0, model="gpt-4-1106-preview")
+# LLM = ChatOpenAI(temperature=0, model="gpt-4")
 
 EMBEDDINGS = OpenAIEmbeddings(model="text-embedding-ada-002")
 EMBEDDINGS_DIMENSIONS = 1536  # known size of text-embedding-ada-002
@@ -34,11 +35,16 @@ INDEXING_LOCAL_STATE_PATH = os.environ.get(
 @dataclass
 class LocalIndexState:
     parents_by_id: InMemoryStore
+    """Mapping of ID to parent chunks."""
+
+    summaries_by_id: InMemoryStore
+    """Mapping of ID to document summaries."""
+
     retrieval_tool_function_name: str
-    """e.g. "search_earnings_calls"""
+    """Function name for retrieval tool e.g. "search_earnings_calls."""
 
     retrieval_tool_description: str
-    """e.g. Searches for and returns chunks from earnings call documents."""
+    """Description of retrieval tool e.g. Searches for and returns chunks from earnings call documents."""
 
 
 # Lengths for the loader are in terms of characters, 1 token ~= 4 chars in English
@@ -46,9 +52,12 @@ class LocalIndexState:
 MAX_CHUNK_TEXT_LENGTH = 1024 * 128  # ~32k tokens
 MIN_CHUNK_TEXT_LENGTH = 256
 SUB_CHUNK_TABLES = False
-INCLUDE_XML_TAGS = False
+INCLUDE_XML_TAGS = True
 PARENT_HIERARCHY_LEVELS = 1000
-RETRIEVER_K = 3
+RETRIEVER_K = 10
+
+SMALL_FRAGMENT_MAX_TEXT_LENGTH = 2048 * 2
+LARGE_FRAGMENT_MAX_TEXT_LENGTH = 2048 * 10
 
 # LangSmith options (set for tracing)
 LANGCHAIN_TRACING_V2 = True

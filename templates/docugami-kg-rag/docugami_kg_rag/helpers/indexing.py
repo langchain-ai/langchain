@@ -1,13 +1,13 @@
 import os
-from pathlib import Path
 import pickle
+from pathlib import Path
+from typing import Dict, List
 
+import pinecone
 from langchain.document_loaders import DocugamiLoader
 from langchain.schema import Document
 from langchain.storage.in_memory import InMemoryStore
 from langchain.vectorstores.pinecone import Pinecone
-import pinecone
-from typing import Dict, List
 
 from docugami_kg_rag.config import (
     EMBEDDINGS,
@@ -21,10 +21,13 @@ from docugami_kg_rag.config import (
     SUB_CHUNK_TABLES,
     LocalIndexState,
 )
-from docugami_kg_rag.helpers.documents import get_parent_id_mappings
+from docugami_kg_rag.helpers.documents import (
+    build_summary_mappings,
+    get_parent_id_mappings,
+)
 from docugami_kg_rag.helpers.retrieval import (
-    docset_name_to_retriever_tool_function_name,
     chunks_to_retriever_tool_description,
+    docset_name_to_retriever_tool_function_name,
 )
 
 
@@ -43,17 +46,21 @@ def update_local_index(docset_id: str, name: str, chunks: List[Document]):
 
     parents = get_parent_id_mappings(chunks)
     parents_by_id = InMemoryStore()
-    parents_by_id.mset(parents.items())
+    parents_by_id.mset(parents.items())  # type: ignore
+
+    summaries = build_summary_mappings(parents)
+    summaries_by_id = InMemoryStore()
+    summaries_by_id.mset(summaries.items())  # type: ignore
 
     tool_function_name = docset_name_to_retriever_tool_function_name(name)
     tool_description = chunks_to_retriever_tool_description(name, chunks)
 
     docset_state = LocalIndexState(
         parents_by_id=parents_by_id,
+        summaries_by_id=summaries_by_id,
         retrieval_tool_function_name=tool_function_name,
         retrieval_tool_description=tool_description,
     )
-    print(docset_state)
     state[docset_id] = docset_state
 
     # Serialize state to disk (Deserialized in chain)
@@ -63,37 +70,45 @@ def update_local_index(docset_id: str, name: str, chunks: List[Document]):
         pickle.dump(state, file)
 
 
-def populate_pinecode_index(index_name: str, chunks: List[Document]):
+def populate_pinecode_index(
+    index_name: str, chunks: List[Document], force: bool = False
+):
     # Populate pinecone with the given chunks
 
-    if index_name not in pinecone.list_indexes():
-        # Create index if it does not exist
-        print(f"Creating pinecone index {index_name}...")
-        pinecone.create_index(name=index_name, dimension=EMBEDDINGS_DIMENSIONS)
+    if index_name in pinecone.list_indexes():
+        if force:
+            pinecone.delete_index(name=index_name)
+        else:
+            print(
+                f"Reusing existing index {index_name} (use --force option to recreate)"
+            )
+            return
 
-        print(f"Done creating pinecone index {index_name}, now embedding...")
-        Pinecone.from_documents(
-            documents=chunks,
-            embedding=EMBEDDINGS,
-            index_name=index_name,
-        )
+    # Create index if it does not exist
+    print(f"Creating pinecone index {index_name}...")
+    pinecone.create_index(name=index_name, dimension=EMBEDDINGS_DIMENSIONS)
 
-        print(f"Done embedding documents to pinecode index {index_name}!")
-    else:
-        raise Exception(
-            f"Index {index_name} already exists. Please delete it to re-index, or you will get duplicate chunks."
-        )
+    print(f"Done creating pinecone index {index_name}, now embedding...")
+    Pinecone.from_documents(
+        documents=chunks,
+        embedding=EMBEDDINGS,
+        index_name=index_name,
+    )
+
+    print(f"Done embedding documents to pinecode index {index_name}!")
 
 
-def index_docset(docset_id: str, name: str):
+def index_docset(docset_id: str, name: str, force: bool = False):
     # Indexes the given docset
 
     print(f"Indexing {name} (ID: {docset_id})")
 
     loader = DocugamiLoader(
         docset_id=docset_id,
+        file_paths=None,
+        document_ids=None,
         min_text_length=MIN_CHUNK_TEXT_LENGTH,
-        max_text_length=MAX_CHUNK_TEXT_LENGTH,
+        max_text_length=MAX_CHUNK_TEXT_LENGTH,  # type: ignore
         sub_chunk_tables=SUB_CHUNK_TABLES,
         include_xml_tags=INCLUDE_XML_TAGS,
         parent_hierarchy_levels=PARENT_HIERARCHY_LEVELS,
@@ -102,5 +117,5 @@ def index_docset(docset_id: str, name: str):
 
     chunks = loader.load()
     docset_pinecone_index_name = f"{PINECONE_INDEX}-{docset_id}"
-    populate_pinecode_index(docset_pinecone_index_name, chunks)
+    populate_pinecode_index(docset_pinecone_index_name, chunks, force)
     update_local_index(docset_id, name, chunks)

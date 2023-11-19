@@ -4,24 +4,20 @@ from typing import Dict, List, Tuple
 from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_to_openai_functions
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
-
-
-from langchain.tools.base import BaseTool
-from langchain.tools.render import format_tool_to_openai_function
-from langchain.schema.messages import AIMessage, HumanMessage
-from langchain.schema.runnable import Runnable, RunnableLambda, RunnableParallel
-
-from langchain.pydantic_v1 import BaseModel, Field
 from langchain.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
 )
+from langchain.pydantic_v1 import BaseModel, Field
+from langchain.schema.messages import AIMessage, HumanMessage
+from langchain.schema.runnable import Runnable, RunnableLambda, RunnableParallel
+from langchain.tools.base import BaseTool
+from langchain.tools.render import format_tool_to_openai_function
 
 from docugami_kg_rag.config import LLM
 from docugami_kg_rag.helpers.indexing import read_all_local_index_state
 from docugami_kg_rag.helpers.prompts import ASSISTANT_SYSTEM_MESSAGE
 from docugami_kg_rag.helpers.retrieval import get_retrieval_tool_for_docset
-
 
 local_state = read_all_local_index_state()
 
@@ -37,7 +33,7 @@ prompt = ChatPromptTemplate.from_messages(
     [
         ("system", ASSISTANT_SYSTEM_MESSAGE),
         MessagesPlaceholder(variable_name="chat_history"),
-        ("user", "{input}"),
+        ("human", "{input}"),
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ]
 )
@@ -84,7 +80,12 @@ class AgentInput(BaseModel):
     )
 
 
-chain = AgentExecutor(agent=agent, tools=tools).with_types(input_type=AgentInput)
+chain = AgentExecutor(
+    agent=agent,  # type: ignore
+    tools=tools,
+).with_types(
+    input_type=AgentInput,  # type: ignore
+)
 
 if __name__ == "__main__":
     if sys.gettrace():
