@@ -59,6 +59,7 @@ from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchResults
 from langchain.tools.memorize.tool import Memorize
+from langchain.tools.reddit_search.tool import RedditSearchRun
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.golden_query import GoldenQueryAPIWrapper
 from langchain.utilities.pubmed import PubMedAPIWrapper
@@ -78,7 +79,7 @@ from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
-
+from langchain.utilities.reddit_search import RedditSearchAPIWrapper
 
 def _get_python_repl() -> BaseTool:
     raise ImportError(
@@ -344,6 +345,8 @@ def _get_memorize(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
 def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
     return GoogleCloudTextToSpeechTool(**kwargs)
 
+def _get_reddit_search(**kwargs: Any) -> BaseTool:
+    return RedditSearchRun(api_wrapper=RedditSearchAPIWrapper(**kwargs))
 
 _EXTRA_LLM_TOOLS: Dict[
     str,
@@ -411,6 +414,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
     "google_cloud_texttospeech": (_get_google_cloud_texttospeech, []),
+    "twitter_search": (_get_twitter_search, ["twitter_access_token"])
 }
 
 
