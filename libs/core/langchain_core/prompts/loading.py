@@ -9,7 +9,6 @@ import yaml
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.schema import (
-    BaseLLMOutputParser,
     BasePromptTemplate,
     StrOutputParser,
 )

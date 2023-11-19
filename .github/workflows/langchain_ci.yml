@@ -96,7 +96,7 @@ jobs:
       - name: Install langchain core editable
         shell: bash
         run: |
-          pip install -e ../core
+          poetry run pip install -e ../core
 
       - name: Run extended tests
         run: make extended_tests
