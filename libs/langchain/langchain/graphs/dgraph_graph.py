@@ -1,0 +1,77 @@
+from typing import Any, Dict, List
+import json
+
+class DGraph:
+    """DGraph wrapper for graph operations.
+
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
+    def __init__(self, 
+                clientUrl: str,
+                apiToken: str = None,
+                username: str = None,
+                password: str = None,
+                namespace: str = None):
+      try:
+        import pydgraph
+      except ImportError:
+        raise ImportError(
+          "Please install pydgraph with `pip install pydgraph` to use DGraph."
+        )
+      
+      client_stub = None
+      if apiToken != None:
+        client_stub = pydgraph.DgraphClientStub.from_cloud(clientUrl, apiToken)
+      else:
+        client_stub = pydgraph.DgraphClientStub(clientUrl)
+      
+      self.client = pydgraph.DgraphClient(client_stub)
+      if username != None:
+        self.login_name_space(username, password, namespace)
+    
+    def get_schema(self):
+      txn = self.client.txn(read_only=True)
+      try:
+        query = """schema {}"""
+        res =  txn.query(query)
+        return json.loads(res.json)
+      finally:
+        txn.discard()
+      
+    def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
+      """Query DGraph database"""
+      txn = self.client.txn(read_only=True)
+      try:
+        res = txn.query(query, variables=params)
+        return json.loads(res.json)
+      finally:
+        txn.discard()
+      
+    
+    def validate_login_params(username, password, namespace) -> bool:
+      if username == None:
+        return False
+      if password == None:
+        return False
+      if namespace == None:
+        return False
+      return True
+    
+    def login_name_space(self, username, password, namespace):
+      if not self.validate_login_params(username, password, namespace):
+        raise ValueError("Missing login parameters.")
+      self.client.login_into_namespace(username, password, namespace)
+  
+dgraphClient = DGraph("localhost:9080")
+
+schema = dgraphClient.get_schema()
+print(schema)
