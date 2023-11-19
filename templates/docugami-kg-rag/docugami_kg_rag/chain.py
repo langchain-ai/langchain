@@ -78,7 +78,12 @@ class AgentInput(BaseModel):
     chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat", "input": "input", "output": "output"}})
 
 
-chain = AgentExecutor(agent=agent, tools=tools).with_types(input_type=AgentInput)
+chain = AgentExecutor(
+    agent=agent,  # type: ignore
+    tools=tools,
+).with_types(
+    input_type=AgentInput,  # type: ignore
+)
 
 if __name__ == "__main__":
     if sys.gettrace():

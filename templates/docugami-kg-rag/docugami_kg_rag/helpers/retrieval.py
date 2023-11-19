@@ -3,9 +3,7 @@ from typing import Dict, List, Optional
 
 from langchain.agents.agent_toolkits import create_retriever_tool
 from langchain.prompts import ChatPromptTemplate
-from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.schema import Document, StrOutputParser
-from langchain.schema.retriever import SearchType
 from langchain.tools.base import BaseTool
 from langchain.vectorstores.pinecone import Pinecone
 import pinecone
@@ -17,7 +15,14 @@ from docugami_kg_rag.config import (
     LocalIndexState,
     LLM,
 )
-from docugami_kg_rag.helpers.prompts import ASSISTANT_SYSTEM_MESSAGE, CREATE_TOOL_DESCRIPTION_PROMPT
+from docugami_kg_rag.helpers.fused_summary_retriever import (
+    FusedSummaryRetriever,
+    SearchType,
+)
+from docugami_kg_rag.helpers.prompts import (
+    ASSISTANT_SYSTEM_MESSAGE,
+    CREATE_TOOL_DESCRIPTION_PROMPT,
+)
 
 
 def docset_name_to_retriever_tool_function_name(name: str) -> str:
@@ -72,9 +77,9 @@ def get_retrieval_tool_for_docset(docset_id: str, local_state: Dict[str, LocalIn
         return None
 
     chunk_vectorstore = Pinecone.from_existing_index(docset_pinecone_index_name, EMBEDDINGS)
-    retriever = MultiVectorRetriever(
+    retriever = FusedSummaryRetriever(
         vectorstore=chunk_vectorstore,
-        docstore=local_state[docset_id].parents_by_id,
+        summarystore=local_state[docset_id].summaries_by_id,
         search_kwargs={"k": RETRIEVER_K},
         search_type=SearchType.mmr,
     )

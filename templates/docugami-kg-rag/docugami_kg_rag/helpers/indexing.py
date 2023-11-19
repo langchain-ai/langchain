@@ -21,7 +21,10 @@ from docugami_kg_rag.config import (
     SUB_CHUNK_TABLES,
     LocalIndexState,
 )
-from docugami_kg_rag.helpers.documents import get_parent_id_mappings, get_summary_mappings
+from docugami_kg_rag.helpers.documents import (
+    get_parent_id_mappings,
+    get_summary_mappings,
+)
 from docugami_kg_rag.helpers.retrieval import (
     docset_name_to_retriever_tool_function_name,
     chunks_to_retriever_tool_description,
@@ -43,11 +46,11 @@ def update_local_index(docset_id: str, name: str, chunks: List[Document]):
 
     parents = get_parent_id_mappings(chunks)
     parents_by_id = InMemoryStore()
-    parents_by_id.mset(parents.items())
+    parents_by_id.mset(parents.items())  # type: ignore
 
     summaries = get_summary_mappings(parents)
     summaries_by_id = InMemoryStore()
-    summaries_by_id.mset(summaries.items())
+    summaries_by_id.mset(summaries.items())  # type: ignore
 
     tool_function_name = docset_name_to_retriever_tool_function_name(name)
     tool_description = chunks_to_retriever_tool_description(name, chunks)
@@ -98,8 +101,10 @@ def index_docset(docset_id: str, name: str, force: bool = False):
 
     loader = DocugamiLoader(
         docset_id=docset_id,
+        file_paths=None,
+        document_ids=None,
         min_text_length=MIN_CHUNK_TEXT_LENGTH,
-        max_text_length=MAX_CHUNK_TEXT_LENGTH,
+        max_text_length=MAX_CHUNK_TEXT_LENGTH,  # type: ignore
         sub_chunk_tables=SUB_CHUNK_TABLES,
         include_xml_tags=INCLUDE_XML_TAGS,
         parent_hierarchy_levels=PARENT_HIERARCHY_LEVELS,
