@@ -36,6 +36,7 @@ jobs:
     with:
       working-directory: libs/experimental
       langchain-location: ../langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   test:

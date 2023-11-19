@@ -78,6 +78,14 @@ jobs:
         run: |
           pip install -e "$LANGCHAIN_LOCATION"
 
+      - name: Install langchain core editable
+        working-directory: ${{ inputs.working-directory }}
+        if: ${{ inputs.langchain-core-location }}
+        env:
+          LANGCHAIN_CORE_LOCATION: ${{ inputs.langchain-core-location }}
+        run: |
+          pip install -e "$LANGCHAIN_CORE_LOCATION"
+
       - name: Get .mypy_cache to speed up mypy
         uses: actions/cache@v3
         env:
