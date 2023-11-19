@@ -320,7 +320,7 @@ Instructions:
 Generate the query in openCypher format and follow these rules:
 Do not use `NONE`, `ALL` or `ANY` predicate functions, rather use list comprehensions.
 Do not use `REDUCE` function. Rather use a combination of list comprehension and the `UNWIND` clause to achieve similar results.
-Do not use `FOREACH` clause. Rather use a combination of `WITH` and `UNWIND` clauses to achieve similar results.
+Do not use `FOREACH` clause. Rather use a combination of `WITH` and `UNWIND` clauses to achieve similar results.{extra_instructions}
 \n"""
 
 NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
@@ -328,18 +328,18 @@ NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
 )
 
 NEPTUNE_OPENCYPHER_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["schema", "question"],
+    input_variables=["schema", "question", "extra_instructions"],
     template=NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE,
 )
 
 NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE = """
-Write an openCypher query to answer the following question. Do not explain the answer. Only return the query. 
+Write an openCypher query to answer the following question. Do not explain the answer. Only return the query.{extra_instructions}
 Question:  "{question}". 
 Here is the property graph schema: 
 {schema}
 \n"""
 
 NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT = PromptTemplate(
-    input_variables=["schema", "question"],
+    input_variables=["schema", "question", "extra_instructions"],
     template=NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE,
 )
