@@ -54,8 +54,7 @@ jobs:
         env:
           LANGCHAIN_LOCATION: ${{ inputs.langchain-location }}
         run: |
-          poetry shell
-          pip install -e "$LANGCHAIN_LOCATION"
+          poetry run pip install -e "$LANGCHAIN_LOCATION"
 
       - name: Install langchain core editable
         working-directory: ${{ inputs.working-directory }}
@@ -63,8 +62,7 @@ jobs:
         env:
           LANGCHAIN_CORE_LOCATION: ${{ inputs.langchain-core-location }}
         run: |
-          poetry shell
-          pip install -e "$LANGCHAIN_CORE_LOCATION"
+          poetry run pip install -e "$LANGCHAIN_CORE_LOCATION"
 
       - name: Run core tests
         shell: bash
