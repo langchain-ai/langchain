@@ -1,0 +1,4 @@
+- input: happy
+  output: sad
+- input: tall
+  output: short
