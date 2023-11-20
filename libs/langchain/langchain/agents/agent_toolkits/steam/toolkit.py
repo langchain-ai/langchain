@@ -1,3 +1,4 @@
+"""Steam Toolkit."""
 from typing import Dict, List
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
@@ -15,9 +16,11 @@ class SteamToolkit(BaseToolkit):
     """Steam Toolkit."""
 
     tools: List[BaseTool] = []
-    
+
     @classmethod
-    def from_steam_api_wrapper(cls, steam_api_wrapper: SteamWebAPIWrapper) -> "SteamToolkit":
+    def from_steam_api_wrapper(
+        cls, steam_api_wrapper: SteamWebAPIWrapper
+    ) -> "SteamToolkit":
         operations: List[Dict] = [
             {
                 "mode": "get_games_details",
@@ -34,7 +37,6 @@ class SteamToolkit(BaseToolkit):
                 "name": "Get Recommended Games",
                 "description": STEAM_GET_RECOMMENDED_GAMES,
             },
-        
         ]
         tools = [
             SteamWebAPIQueryRun(

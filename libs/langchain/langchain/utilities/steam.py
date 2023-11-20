@@ -81,7 +81,7 @@ class SteamWebAPIWrapper(BaseModel):
             result += "The " + str(key) + " is: " + str(value) + "\n"
         return result
 
-    def get_id_link_price(self, games: dict, name: str) -> dict:
+    def get_id_link_price(self, games: dict) -> dict:
         """The response may contain more than one game, so we need to choose the right one and
         return the id."""
 
@@ -138,7 +138,7 @@ class SteamWebAPIWrapper(BaseModel):
             data_request = {"request": "appdetails", "appid": appid}
             genreStore = steamspypi.download(data_request)
             genreList = genreStore.get("genre", "").split(", ")
-        
+
             for genre in genreList:
                 if genre in result:
                     result[genre] += 1
@@ -156,11 +156,11 @@ class SteamWebAPIWrapper(BaseModel):
             data.values(), key=lambda x: x.get("average_forever", 0), reverse=True
         )
         owned_games = [game["appid"] for game in users_games["games"]]
-        remaining_games = [game for game in sorted_data if game["appid"] not in owned_games]
+        remaining_games = [
+            game for game in sorted_data if game["appid"] not in owned_games
+        ]
         top_5_popular_not_owned = [game["name"] for game in remaining_games[:5]]
         return top_5_popular_not_owned
-    
-
 
     def run(self, mode: str, game: str) -> str:
         if mode == "get_game_details":

@@ -183,7 +183,7 @@ def _import_sql_database() -> Any:
 
 
 def _import_steam_webapi() -> Any:
-    from langchain.utilities.steam_webapi import SteamWebAPIWrapper
+    from langchain.utilities.steam import SteamWebAPIWrapper
 
     return SteamWebAPIWrapper
 
