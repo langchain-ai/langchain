@@ -35,6 +35,7 @@ from langchain.vectorstores import (
     DeepLake,
     ElasticsearchStore,
     Milvus,
+    MongoDBAtlasVectorSearch,
     MyScale,
     OpenSearchVectorSearch,
     Pinecone,
@@ -44,7 +45,6 @@ from langchain.vectorstores import (
     TimescaleVector,
     Vectara,
     Weaviate,
-    MongoDBAtlasVectorSearch,
 )
 
 logger = logging.getLogger(__name__)
