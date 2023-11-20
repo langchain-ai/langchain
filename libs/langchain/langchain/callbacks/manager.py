@@ -29,6 +29,7 @@ from langchain.schema.callbacks.manager import (
     Callbacks,
     ParentRunManager,
     RunManager,
+    ahandle_event,
     atrace_as_chain_group,
     collect_runs,
     env_var_is_set,
@@ -119,6 +120,7 @@ __all__ = [
     "atrace_as_chain_group",
     "trace_as_chain_group",
     "handle_event",
+    "ahandle_event",
     "env_var_is_set",
     "Callbacks",
 ]
