@@ -2,6 +2,7 @@ import json
 from typing import Any, AsyncIterator, Iterator, Tuple
 
 import pytest
+from langchain_core.schema.messages import AIMessageChunk
 
 from langchain.output_parsers.json import (
     SimpleJsonOutputParser,
@@ -9,7 +10,6 @@ from langchain.output_parsers.json import (
     parse_partial_json,
 )
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.schema.messages import AIMessageChunk
 
 GOOD_JSON = """```json
 {

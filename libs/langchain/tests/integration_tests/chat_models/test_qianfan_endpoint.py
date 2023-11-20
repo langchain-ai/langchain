@@ -2,13 +2,8 @@
 
 from typing import Any
 
-from langchain.callbacks.manager import CallbackManager
-from langchain.chains.openai_functions import (
-    create_openai_fn_chain,
-)
-from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.schema import (
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.schema import (
     AIMessage,
     BaseMessage,
     ChatGeneration,
@@ -16,6 +11,12 @@ from langchain.schema import (
     HumanMessage,
     LLMResult,
 )
+
+from langchain.callbacks.manager import CallbackManager
+from langchain.chains.openai_functions import (
+    create_openai_fn_chain,
+)
+from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 _FUNCTIONS: Any = [

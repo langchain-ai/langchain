@@ -4,6 +4,11 @@ from pathlib import Path
 from typing import Any, Union
 
 import yaml
+from langchain_core.prompts.loading import (
+    _load_output_parser,
+    load_prompt,
+    load_prompt_from_config,
+)
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.api.base import APIChain
@@ -23,11 +28,6 @@ from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesCha
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 from langchain.llms.loading import load_llm, load_llm_from_config
-from langchain.prompts.loading import (
-    _load_output_parser,
-    load_prompt,
-    load_prompt_from_config,
-)
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
