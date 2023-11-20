@@ -185,7 +185,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
 
         Args:
             texts: The list of texts to embed.
-            input_type: Type of the input text. Defalut to None, meaning the type is
+            input_type: Type of the input text. Default to None, meaning the type is
                 unspecified. Other options: query, document.
 
         Returns:
