@@ -1,5 +1,3 @@
-import os
-import tempfile
 from typing import List, Optional
 
 from langchain.docstore.document import Document
