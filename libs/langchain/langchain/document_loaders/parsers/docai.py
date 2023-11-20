@@ -67,10 +67,10 @@ class DocAIParser(BaseBlobParser):
                 "a client."
             )
 
-        pattern = "projects\/[0-9]+\/locations\/[a-z\-0-9]+\/processors\/[a-z0-9]+"
+        pattern = r"projects\/[0-9]+\/locations\/[a-z\-0-9]+\/processors\/[a-z0-9]+"
         if processor_name and not re.fullmatch(pattern, processor_name):
             raise ValueError(
-                f"Processor name {processor_name} has a wrong format. If your "
+                f"Processor name {processor_name} has the wrong format. If your "
                 "prediction endpoint looks like https://us-documentai.googleapis.com"
                 "/v1/projects/PROJECT_ID/locations/us/processors/PROCESSOR_ID:process,"
                 " use only projects/PROJECT_ID/locations/us/processors/PROCESSOR_ID "
@@ -140,9 +140,7 @@ class DocAIParser(BaseBlobParser):
                 " `pip install google-cloud-documentai`"
             ) from exc
         try:
-            from google.cloud.documentai_toolbox.wrappers.document import (
-                Document as WrappedDocument,
-            )
+            from google.cloud.documentai_toolbox.wrappers.page import _text_from_layout
         except ImportError as exc:
             raise ImportError(
                 "documentai_toolbox package not found, please install it with"
@@ -172,16 +170,15 @@ class DocAIParser(BaseBlobParser):
                 field_mask=field_mask,
             )
         )
-        wrapped_document = WrappedDocument.from_documentai_document(response.document)
         yield from (
             Document(
-                page_content=page.text,
+                page_content=_text_from_layout(page.layout, response.document.text),
                 metadata={
                     "page": page.page_number,
-                    "source": wrapped_document.gcs_input_uri,
+                    "source": blob.path,
                 },
             )
-            for page in wrapped_document.pages
+            for page in response.document.pages
         )
 
     def batch_parse(
@@ -240,9 +237,8 @@ class DocAIParser(BaseBlobParser):
             from google.cloud.documentai_toolbox.utilities.gcs_utilities import (
                 split_gcs_uri,
             )
-            from google.cloud.documentai_toolbox.wrappers.document import (
-                Document as WrappedDocument,
-            )
+            from google.cloud.documentai_toolbox.wrappers.document import _get_shards
+            from google.cloud.documentai_toolbox.wrappers.page import _text_from_layout
         except ImportError as exc:
             raise ImportError(
                 "documentai_toolbox package not found, please install it with"
@@ -250,18 +246,14 @@ class DocAIParser(BaseBlobParser):
             ) from exc
         for result in results:
             gcs_bucket_name, gcs_prefix = split_gcs_uri(result.parsed_path)
-            wrapped_document = WrappedDocument.from_gcs(
-                gcs_bucket_name, gcs_prefix, gcs_input_uri=result.source_path
-            )
+            shards = _get_shards(gcs_bucket_name, gcs_prefix)
             yield from (
                 Document(
-                    page_content=page.text,
-                    metadata={
-                        "page": page.page_number,
-                        "source": wrapped_document.gcs_input_uri,
-                    },
+                    page_content=_text_from_layout(page.layout, shard.text),
+                    metadata={"page": page.page_number, "source": result.source_path},
                 )
-                for page in wrapped_document.pages
+                for shard in shards
+                for page in shard.pages
             )
 
     def operations_from_names(self, operation_names: List[str]) -> List["Operation"]:
