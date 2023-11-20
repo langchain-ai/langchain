@@ -319,7 +319,6 @@ def _document_langchain() -> None:
             "agents.output_parsers": agents["output_parsers"],
             "agents.format_scratchpad": agents["format_scratchpad"],
             "tools.render": tools["render"],
-            "schema.runnable": schema["runnable"],
         }
     )
 
