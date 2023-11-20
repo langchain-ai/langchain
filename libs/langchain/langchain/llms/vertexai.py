@@ -288,7 +288,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
             The integer number of tokens in the text.
         """
         try:
-            result = self.client.count_tokens(text)
+            result = self.client.count_tokens([text])
         except AttributeError:
             raise NotImplementedError(
                 "Your google-cloud-aiplatform version didn't implement count_tokens."
