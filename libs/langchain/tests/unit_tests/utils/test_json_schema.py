@@ -1,5 +1,5 @@
 import pytest
-from langchain_core.utils.json_schema import dereference_refs
+from langchain.utils.json_schema import dereference_refs
 
 
 def test_dereference_refs_no_refs() -> None:
