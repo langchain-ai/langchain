@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from json import JSONDecodeError
 from time import sleep
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
@@ -335,7 +336,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             ):
                 answer = "\n".join(content.text.value for content in answer)
             return OpenAIAssistantFinish(
-                return_values={"output": answer},
+                return_values={
+                    "output": answer,
+                    "thread_id": run.thread_id,
+                    "run_id": run.id,
+                },
                 log="",
                 run_id=run.id,
                 thread_id=run.thread_id,
@@ -346,7 +351,13 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             actions = []
             for tool_call in run.required_action.submit_tool_outputs.tool_calls:
                 function = tool_call.function
-                args = json.loads(function.arguments)
+                try:
+                    args = json.loads(function.arguments, strict=False)
+                except JSONDecodeError as e:
+                    raise ValueError(
+                        f"Received invalid JSON function arguments: "
+                        f"{function.arguments} for function {function.name}"
+                    ) from e
                 if len(args) == 1 and "__arg1" in args:
                     args = args["__arg1"]
                 actions.append(
