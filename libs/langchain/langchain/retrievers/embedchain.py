@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, List
+from typing import Any, Iterable, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
@@ -16,7 +16,7 @@ class EmbedchainRetriever(BaseRetriever):
     """Embedchain Pipeline."""
 
     @classmethod
-    def create(cls, yaml_path: str = None) -> EmbedchainRetriever:
+    def create(cls, yaml_path: Optional[str] = None) -> EmbedchainRetriever:
         """
         Create a EmbedchainRetriever from a YAML configuration file.
 

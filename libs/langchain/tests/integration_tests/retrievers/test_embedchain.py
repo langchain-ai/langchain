@@ -1,6 +1,7 @@
 """Integration test for Embedchain."""
 
 import os
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -23,7 +24,7 @@ context_value = [
 @pytest.mark.requires("embedchain")
 @patch.object(Pipeline, "search", return_value=context_value)
 @patch.object(Pipeline, "add", return_value=123)
-def test_embedchain_retriever(mock_add, mock_search) -> None:
+def test_embedchain_retriever(mock_add: Any, mock_search: Any) -> None:
     retriever = EmbedchainRetriever.create()
     texts = [
         "This document is about John",
