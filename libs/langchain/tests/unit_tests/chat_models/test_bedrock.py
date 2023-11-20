@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from langchain.chat_models.meta import convert_messages_to_prompt_llama
 from langchain.chat_models import BedrockChat
+from langchain.chat_models.meta import convert_messages_to_prompt_llama
 from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
 
