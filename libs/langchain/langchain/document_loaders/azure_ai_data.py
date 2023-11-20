@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Iterator, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -18,6 +18,10 @@ class AzureAIDataLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
+        return list(self.lazy_load())
+
+    def lazy_load(self) -> Iterator[Document]:
+        """A lazy loader for Documents."""
         try:
             from azureml.fsspec import AzureMachineLearningFileSystem
         except ImportError as exc:
@@ -28,16 +32,12 @@ class AzureAIDataLoader(BaseLoader):
 
         fs = AzureMachineLearningFileSystem(self.url)
 
-        remote_paths_list = []
         if self.glob_pattern:
             remote_paths_list = fs.glob(self.glob_pattern)
         else:
             remote_paths_list = fs.ls()
 
-        docs = []
         for remote_path in remote_paths_list:
             with fs.open(remote_path) as f:
                 loader = UnstructuredFileIOLoader(file=f)
-                docs.extend(loader.load())
-
-        return docs
+                yield from loader.load()
