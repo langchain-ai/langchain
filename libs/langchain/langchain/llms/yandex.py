@@ -2,7 +2,6 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -10,6 +9,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.utils import get_from_dict_or_env
 
 
 class _BaseYandexGPT(Serializable):

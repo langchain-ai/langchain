@@ -9,11 +9,12 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
 from langchain.llms.azureml_endpoint import AzureMLEndpointClient, ContentFormatterBase
+from langchain.utils import get_from_dict_or_env
 
 
 class LlamaContentFormatter(ContentFormatterBase):

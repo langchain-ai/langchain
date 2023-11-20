@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
 from langchain_core.schema.embeddings import Embeddings
 from langchain_core.schema.vectorstore import VectorStore
-from langchain_core.utils import get_from_env
 
 from langchain.docstore.document import Document
+from langchain.utils import get_from_env
 
 if TYPE_CHECKING:
     from typesense.client import Client

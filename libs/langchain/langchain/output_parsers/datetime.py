@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 from typing import List
 
 from langchain_core.schema import BaseOutputParser, OutputParserException
-from langchain_core.utils import comma_list
+
+from langchain.utils import comma_list
 
 
 def _generate_random_datetime_strings(

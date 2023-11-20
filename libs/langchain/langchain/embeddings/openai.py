@@ -22,7 +22,7 @@ from typing import (
 import numpy as np
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.schema.embeddings import Embeddings
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import get_pydantic_field_names
 from packaging.version import Version, parse
 from tenacity import (
     AsyncRetrying,
@@ -32,6 +32,8 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

@@ -10,7 +10,6 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 from urllib.parse import urlparse
 
 import requests
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -25,6 +24,7 @@ from langchain.document_loaders.parsers.pdf import (
     PyPDFParser,
 )
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__file__)
 

@@ -25,7 +25,6 @@ import yaml
 from langchain_core._api import deprecated
 from langchain_core.schema.embeddings import Embeddings
 from langchain_core.schema.vectorstore import VectorStore, VectorStoreRetriever
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
@@ -35,6 +34,7 @@ from langchain.utilities.redis import (
     check_redis_module_exist,
     get_client,
 )
+from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.redis.constants import (
     REDIS_REQUIRED_MODULES,
     REDIS_TAG_SEPARATOR,

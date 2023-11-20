@@ -11,7 +11,6 @@ from typing import (
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.schema.embeddings import Embeddings
-from langchain_core.utils import get_from_dict_or_env
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -20,6 +19,8 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

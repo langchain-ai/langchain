@@ -7,12 +7,12 @@ import aiohttp
 import requests
 from langchain_core.pydantic_v1 import Extra, root_validator
 from langchain_core.schema import BaseRetriever, Document
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+from langchain.utils import get_from_dict_or_env
 
 
 class AzureCognitiveSearchRetriever(BaseRetriever):

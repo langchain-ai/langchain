@@ -35,7 +35,7 @@ from langchain_core.schema.messages import (
     SystemMessageChunk,
 )
 from langchain_core.schema.output import ChatGenerationChunk
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import get_pydantic_field_names
 from tenacity import (
     before_sleep_log,
     retry,
@@ -53,6 +53,7 @@ from langchain.chat_models.base import (
     _agenerate_from_stream,
     _generate_from_stream,
 )
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

@@ -140,7 +140,8 @@ from langchain_core.pydantic_v1 import (
     root_validator,
     validator,
 )
-from langchain_core.utils import get_from_dict_or_env
+
+from langchain.utils import get_from_dict_or_env
 
 
 def _get_default_params() -> dict:

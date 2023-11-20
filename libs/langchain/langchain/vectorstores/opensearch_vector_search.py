@@ -8,8 +8,8 @@ import numpy as np
 from langchain_core.schema import Document
 from langchain_core.schema.embeddings import Embeddings
 from langchain_core.schema.vectorstore import VectorStore
-from langchain_core.utils import get_from_dict_or_env
 
+from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 IMPORT_OPENSEARCH_PY_ERROR = (

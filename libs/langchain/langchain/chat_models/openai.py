@@ -36,7 +36,6 @@ from langchain_core.schema.messages import (
 )
 from langchain_core.schema.output import ChatGenerationChunk
 from langchain_core.utils import (
-    get_from_dict_or_env,
     get_pydantic_field_names,
 )
 from langchain_core.utils.openai import is_openai_v1
@@ -52,6 +51,7 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
+from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     import tiktoken

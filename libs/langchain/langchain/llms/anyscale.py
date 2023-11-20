@@ -15,7 +15,7 @@ from typing import (
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.schema import Generation, LLMResult
 from langchain_core.schema.output import GenerationChunk
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -26,6 +26,7 @@ from langchain.llms.openai import (
     acompletion_with_retry,
     completion_with_retry,
 )
+from langchain.utils import get_from_dict_or_env
 
 
 def update_token_usage(

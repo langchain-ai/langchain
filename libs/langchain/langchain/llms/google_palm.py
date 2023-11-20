@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.schema import Generation, LLMResult
-from langchain_core.utils import get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -16,6 +15,7 @@ from tenacity import (
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms import BaseLLM
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

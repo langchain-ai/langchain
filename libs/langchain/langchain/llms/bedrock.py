@@ -5,7 +5,6 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.schema.output import GenerationChunk
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -14,6 +13,7 @@ from langchain.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,
 )
+from langchain.utils import get_from_dict_or_env
 
 HUMAN_PROMPT = "\n\nHuman:"
 ASSISTANT_PROMPT = "\n\nAssistant:"

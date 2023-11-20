@@ -2,11 +2,11 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.pydantic_v1 import Extra, root_validator
 from langchain_core.schema import BaseRetriever
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
 from langchain.utilities.arcee import ArceeWrapper, DALMFilter
+from langchain.utils import get_from_dict_or_env
 
 
 class ArceeRetriever(BaseRetriever):

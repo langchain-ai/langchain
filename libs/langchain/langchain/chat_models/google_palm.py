@@ -16,7 +16,6 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.utils import get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -30,6 +29,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
+from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     import google.generativeai as genai

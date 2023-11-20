@@ -5,10 +5,10 @@ import tempfile
 from typing import Any, Dict, Optional
 
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

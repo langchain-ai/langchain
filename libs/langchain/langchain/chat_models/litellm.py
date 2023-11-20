@@ -36,7 +36,6 @@ from langchain_core.schema.messages import (
     SystemMessageChunk,
 )
 from langchain_core.schema.output import ChatGenerationChunk
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -48,6 +47,7 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

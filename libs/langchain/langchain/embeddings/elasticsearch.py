@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional
 
-from langchain_core.utils import get_from_env
+from langchain.utils import get_from_env
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch

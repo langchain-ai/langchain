@@ -20,7 +20,6 @@ from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.schema import ChatGeneration, ChatResult
 from langchain_core.schema.messages import AIMessageChunk, BaseMessage
 from langchain_core.schema.output import ChatGenerationChunk
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
@@ -28,6 +27,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel, _generate_from_stream
 from langchain.chat_models.openai import _convert_delta_to_message_chunk
+from langchain.utils import get_from_dict_or_env
 
 DEFAULT_API_BASE = "https://api.konko.ai/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-13b-chat-hf"

@@ -4,10 +4,10 @@ from typing import Dict, Iterator, List, Literal, Optional, Union
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.utils import get_from_dict_or_env
 
 
 class BaseGitHubLoader(BaseLoader, BaseModel, ABC):

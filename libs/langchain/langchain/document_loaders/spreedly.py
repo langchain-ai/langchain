@@ -2,10 +2,9 @@ import json
 import urllib.request
 from typing import List
 
-from langchain_core.utils import stringify_dict
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.utils import stringify_dict
 
 SPREEDLY_ENDPOINTS = {
     "gateways_options": "https://core.spreedly.com/v1/gateways_options.json",

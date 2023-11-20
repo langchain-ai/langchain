@@ -17,7 +17,6 @@ from langchain_core.schema.output import GenerationChunk
 from langchain_core.schema.prompt import PromptValue
 from langchain_core.utils import (
     check_package_version,
-    get_from_dict_or_env,
     get_pydantic_field_names,
 )
 from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
@@ -27,6 +26,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
+from langchain.utils import get_from_dict_or_env
 
 
 class _AnthropicCommon(BaseLanguageModel):
