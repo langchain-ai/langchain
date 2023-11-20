@@ -73,6 +73,7 @@ class LLMInputOutputAdapter:
         "anthropic": "completion",
         "amazon": "outputText",
         "cohere": "text",
+        "meta": "generation",
     }
 
     @classmethod
@@ -82,7 +83,7 @@ class LLMInputOutputAdapter:
         input_body = {**model_kwargs}
         if provider == "anthropic":
             input_body["prompt"] = _human_assistant_format(prompt)
-        elif provider == "ai21" or provider == "cohere":
+        elif provider in ("ai21", "cohere", "meta"):
             input_body["prompt"] = prompt
         elif provider == "amazon":
             input_body = dict()
@@ -108,6 +109,8 @@ class LLMInputOutputAdapter:
             return response_body.get("completions")[0].get("data").get("text")
         elif provider == "cohere":
             return response_body.get("generations")[0].get("text")
+        elif provider == "meta":
+            return response_body.get("generation")
         else:
             return response_body.get("results")[0].get("outputText")
 

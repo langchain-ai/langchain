@@ -414,7 +414,7 @@ class DeepLake(VectorStore):
             distance_metric=distance_metric,
             filter=filter,
             exec_option=exec_option,
-            return_tensors=["embedding", "metadata", "text", "id"],
+            return_tensors=["embedding", "metadata", "text", self._id_tensor_name],
             deep_memory=deep_memory,
         )
 

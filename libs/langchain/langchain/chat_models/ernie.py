@@ -1,3 +1,4 @@
+import json
 import logging
 import threading
 from typing import Any, Dict, List, Mapping, Optional
@@ -179,9 +180,15 @@ class ErnieBotChat(BaseChatModel):
         return self._create_chat_result(resp)
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
-        generations = [
-            ChatGeneration(message=AIMessage(content=response.get("result")))
-        ]
+        if "function_call" in response:
+            fc_str = '{{"function_call": {}}}'.format(
+                json.dumps(response.get("function_call"))
+            )
+            generations = [ChatGeneration(message=AIMessage(content=fc_str))]
+        else:
+            generations = [
+                ChatGeneration(message=AIMessage(content=response.get("result")))
+            ]
         token_usage = response.get("usage", {})
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)

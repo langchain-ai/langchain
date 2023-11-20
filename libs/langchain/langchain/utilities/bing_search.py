@@ -6,7 +6,7 @@ https://levelup.gitconnected.com/api-tutorial-how-to-use-bing-web-search-api-in-
 from typing import Dict, List
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -20,6 +20,8 @@ class BingSearchAPIWrapper(BaseModel):
     bing_subscription_key: str
     bing_search_url: str
     k: int = 10
+    search_kwargs: dict = Field(default_factory=dict)
+    """Additional keyword arguments to pass to the search request."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -33,6 +35,7 @@ class BingSearchAPIWrapper(BaseModel):
             "count": count,
             "textDecorations": True,
             "textFormat": "HTML",
+            **self.search_kwargs,
         }
         response = requests.get(
             self.bing_search_url,
