@@ -192,7 +192,7 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
     bad_result = _run_llm_or_chain(
         example, {"callbacks": [], "tags": []}, llm_or_chain_factory=lambda: mock_chain
     )
-    assert "Error" in bad_result
+    assert "error" in bad_result
 
     # Try with LLM
     def llm_input_mapper(inputs: dict) -> str:

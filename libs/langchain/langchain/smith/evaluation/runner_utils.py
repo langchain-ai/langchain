@@ -107,8 +107,8 @@ class TestResult(dict):
             feedback = result["feedback"]
             r = {
                 **{f.key: f.score for f in feedback},
-                **{f"input.{k}": v for k, v in (result.get("input") or {}).items()},
-                **{f"output.{k}": v for k, v in (result.get("output") or {}).items()},
+                "input": result["input"],
+                "output": result.get("output"),
                 "error": result.get("error"),
                 "execution_time": result["execution_time"],
             }
@@ -124,8 +124,13 @@ class EvalError(dict):
     """Your architecture raised an error."""
 
     def __init__(self, error: BaseException, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.error = error
+        super().__init__(error=error, **kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(f"'EvalError' object has no attribute '{name}'")
 
 
 def _wrap_in_chain_factory(
