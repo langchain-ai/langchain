@@ -19,13 +19,13 @@ from typing import (
 from weakref import WeakValueDictionary
 
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnable.base import Runnable, RunnableSerializable
-from langchain_core.runnable.config import (
+from langchain_core.runnables.base import Runnable, RunnableSerializable
+from langchain_core.runnables.config import (
     RunnableConfig,
     get_config_list,
     get_executor_for_config,
 )
-from langchain_core.runnable.utils import (
+from langchain_core.runnables.utils import (
     AnyConfigurableField,
     ConfigurableField,
     ConfigurableFieldMultiOption,

@@ -27,7 +27,7 @@ from langchain_core.load.dump import dumpd, dumps
 from langchain_core.prompts.base import StringPromptValue
 from langchain_core.prompts.chat import ChatPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.runnable import RunnableConfig
+from langchain_core.runnables import RunnableConfig
 from langchain_core.schema import (
     ChatGeneration,
     ChatResult,

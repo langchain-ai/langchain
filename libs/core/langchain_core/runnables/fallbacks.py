@@ -13,8 +13,8 @@ from typing import (
 
 from langchain_core.load.dump import dumpd
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnable.base import Runnable, RunnableSerializable
-from langchain_core.runnable.config import (
+from langchain_core.runnables.base import Runnable, RunnableSerializable
+from langchain_core.runnables.config import (
     RunnableConfig,
     ensure_config,
     get_async_callback_manager_for_config,
@@ -22,7 +22,7 @@ from langchain_core.runnable.config import (
     get_config_list,
     patch_config,
 )
-from langchain_core.runnable.utils import (
+from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
@@ -67,7 +67,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
             from langchain_core.prompts import PromptTemplate
             from langchain_core.schema.output_parser import StrOutputParser
-            from langchain_core.runnable import RunnableLambda
+            from langchain_core.runnables import RunnableLambda
 
             def when_all_is_lost(inputs):
                 return ("Looks like our LLM providers are down. "

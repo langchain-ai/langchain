@@ -14,19 +14,19 @@ from typing import (
 
 from langchain_core.load.dump import dumpd
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnable.base import (
+from langchain_core.runnables.base import (
     Runnable,
     RunnableLike,
     RunnableSerializable,
     coerce_to_runnable,
 )
-from langchain_core.runnable.config import (
+from langchain_core.runnables.config import (
     RunnableConfig,
     ensure_config,
     get_callback_manager_for_config,
     patch_config,
 )
-from langchain_core.runnable.utils import (
+from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
@@ -49,7 +49,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         .. code-block:: python
 
-            from langchain_core.runnable import RunnableBranch
+            from langchain_core.runnables import RunnableBranch
 
             branch = RunnableBranch(
                 (lambda x: isinstance(x, str), lambda x: x.upper()),

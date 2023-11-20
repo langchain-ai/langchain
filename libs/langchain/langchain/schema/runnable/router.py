@@ -1,3 +1,3 @@
-from langchain_core.runnable.router import RouterInput, RouterRunnable
+from langchain_core.runnables.router import RouterInput, RouterRunnable
 
 __all__ = ["RouterInput", "RouterRunnable"]

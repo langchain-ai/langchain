@@ -22,7 +22,7 @@ import yaml
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.runnable import Runnable
+from langchain_core.runnables import Runnable
 from langchain_core.schema import (
     AgentAction,
     AgentFinish,

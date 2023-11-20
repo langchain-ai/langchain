@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.runnable import Runnable
+from langchain_core.runnables import Runnable
 from langchain_core.schema import BaseRetriever, Document
 from langchain_core.schema.language_model import BaseLanguageModel
 from langchain_core.schema.vectorstore import VectorStore

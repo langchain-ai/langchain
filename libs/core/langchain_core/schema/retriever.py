@@ -8,7 +8,7 @@ from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.load.dump import dumpd
-from langchain_core.runnable import RunnableConfig, RunnableSerializable
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.schema.document import Document
 
 if TYPE_CHECKING:

@@ -1,4 +1,4 @@
-from langchain_core.runnable.utils import (
+from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableField,
     ConfigurableFieldMultiOption,

@@ -20,19 +20,19 @@ from typing import (
 )
 
 from langchain_core.pydantic_v1 import BaseModel, create_model
-from langchain_core.runnable.base import (
+from langchain_core.runnables.base import (
     Other,
     Runnable,
     RunnableParallel,
     RunnableSerializable,
 )
-from langchain_core.runnable.config import (
+from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,
     call_func_with_variable_args,
     get_executor_for_config,
 )
-from langchain_core.runnable.utils import AddableDict, ConfigurableFieldSpec
+from langchain_core.runnables.utils import AddableDict, ConfigurableFieldSpec
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
 
@@ -62,7 +62,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
         .. code-block:: python
 
-            from langchain_core.runnable import RunnablePassthrough, RunnableParallel
+            from langchain_core.runnables import RunnablePassthrough, RunnableParallel
 
             runnable = RunnableParallel(
                 origin=RunnablePassthrough(),
@@ -87,7 +87,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
         .. code-block:: python
 
-            from langchain_core.runnable import RunnablePassthrough, RunnableParallel
+            from langchain_core.runnables import RunnablePassthrough, RunnableParallel
 
              def fake_llm(prompt: str) -> str: # Fake LLM for the example
                 return "completion"

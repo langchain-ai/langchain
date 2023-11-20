@@ -3,7 +3,7 @@ from uuid import UUID
 
 from langchain_core.callbacks.tracers.base import BaseTracer
 from langchain_core.callbacks.tracers.schemas import Run
-from langchain_core.runnable.config import (
+from langchain_core.runnables.config import (
     RunnableConfig,
     call_func_with_variable_args,
 )

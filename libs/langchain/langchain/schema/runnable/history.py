@@ -1,3 +1,3 @@
-from langchain_core.runnable.history import RunnableWithMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
 
 __all__ = ["RunnableWithMessageHistory"]

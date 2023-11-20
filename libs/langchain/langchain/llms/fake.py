@@ -2,7 +2,7 @@ import asyncio
 import time
 from typing import Any, AsyncIterator, Iterator, List, Mapping, Optional
 
-from langchain_core.runnable import RunnableConfig
+from langchain_core.runnables import RunnableConfig
 from langchain_core.schema.language_model import LanguageModelInput
 
 from langchain.callbacks.manager import (

@@ -1,6 +1,6 @@
 from typing import List, Optional, TypedDict, Union
 
-from langchain_core.runnable import Runnable, RunnableParallel
+from langchain_core.runnables import Runnable, RunnableParallel
 from langchain_core.schema.language_model import BaseLanguageModel
 from langchain_core.schema.output_parser import NoOpOutputParser
 from langchain_core.schema.prompt_template import BasePromptTemplate

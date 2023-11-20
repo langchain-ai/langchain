@@ -1,4 +1,4 @@
-from langchain_core.runnable.base import (
+from langchain_core.runnables.base import (
     Runnable,
     RunnableBinding,
     RunnableBindingBase,

@@ -1,3 +1,3 @@
-from langchain_core.runnable.branch import RunnableBranch
+from langchain_core.runnables.branch import RunnableBranch
 
 __all__ = ["RunnableBranch"]

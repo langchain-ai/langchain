@@ -15,7 +15,7 @@ from typing import (
 
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnable import Runnable
+from langchain_core.runnables import Runnable
 from langchain_core.schema import BaseLLMOutputParser
 from langchain_core.schema.output_parser import (
     BaseGenerationOutputParser,

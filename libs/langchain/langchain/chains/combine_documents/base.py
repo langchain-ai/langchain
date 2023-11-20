@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
-from langchain_core.runnable.config import RunnableConfig
+from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

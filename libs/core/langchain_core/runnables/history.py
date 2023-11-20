@@ -15,9 +15,9 @@ from typing import (
 
 from langchain_core.load import load
 from langchain_core.pydantic_v1 import BaseModel, create_model
-from langchain_core.runnable.base import Runnable, RunnableBindingBase, RunnableLambda
-from langchain_core.runnable.passthrough import RunnablePassthrough
-from langchain_core.runnable.utils import (
+from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
+from langchain_core.runnables.passthrough import RunnablePassthrough
+from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     get_unique_config_specs,
 )
@@ -25,7 +25,7 @@ from langchain_core.schema.chat_history import BaseChatMessageHistory
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.tracers.schemas import Run
-    from langchain_core.runnable.config import RunnableConfig
+    from langchain_core.runnables.config import RunnableConfig
     from langchain_core.schema.messages import BaseMessage
 
 MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
@@ -49,7 +49,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             from langchain_core.chat_models import ChatAnthropic
             from langchain_core.memory.chat_message_histories import RedisChatMessageHistory
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-            from langchain_core.runnable.history import RunnableWithMessageHistory
+            from langchain_core.runnables.history import RunnableWithMessageHistory
 
 
             prompt = ChatPromptTemplate.from_messages([
