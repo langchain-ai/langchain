@@ -608,7 +608,6 @@ class VectorStore(ABC):
         """
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
-
         return VectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
