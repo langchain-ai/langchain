@@ -480,12 +480,11 @@ class AstraDB(VectorStore):
             self.collection.paginated_find(
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
-                options={"limit": k},
+                options={"limit": k, "includeSimilarity": True},
                 projection={
                     "_id": 1,
                     "content": 1,
                     "metadata": 1,
-                    "$similarity": 1,
                 },
             )
         )
@@ -609,12 +608,11 @@ class AstraDB(VectorStore):
             self.collection.paginated_find(
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
-                options={"limit": fetch_k},
+                options={"limit": fetch_k, "includeSimilarity": True},
                 projection={
                     "_id": 1,
                     "content": 1,
                     "metadata": 1,
-                    "$similarity": 1,
                     "$vector": 1,
                 },
             )
