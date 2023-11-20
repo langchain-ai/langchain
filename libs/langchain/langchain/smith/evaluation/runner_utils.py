@@ -105,10 +105,18 @@ class TestResult(dict):
         records = []
         for example_id, result in self["results"].items():
             feedback = result["feedback"]
+            output_ = result.get("output")
+            if isinstance(output_, dict):
+                output = {f"outputs.{k}": v for k, v in output_.items()}
+            elif output_ is None:
+                output = {}
+            else:
+                output = {"output": output_}
+
             r = {
                 **{f.key: f.score for f in feedback},
-                ** {f"input.{k}": v for k, v in result["input"].items()},
-                **{f"output.{k}": v for k, v in result["output"].items()},
+                **{f"inputs.{k}": v for k, v in result["input"].items()},
+                **output,
                 "error": result.get("error"),
                 "execution_time": result["execution_time"],
             }
