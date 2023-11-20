@@ -7,7 +7,7 @@ from langchain.document_loaders.parsers.language.code_segmenter import CodeSegme
 class CobolSegmenter(CodeSegmenter):
     """Code segmenter for `COBOL`."""
 
-    PARAGRAPH_PATTERN = re.compile(r"^[A-Z0-9\-]+(\s+.*)?\.$", re.IGNORECASE)
+    PARAGRAPH_PATTERN = re.compile(r"^(?!.*\b(REPOSITORY|SPECIAL-NAMES|SECURITY|DATE-COMPILED|SOURCE-COMPUTER|OBJECT-COMPUTER|FILE-CONTROL|FILE CONTROL|PROGRAM-ID|AUTHOR|DATE-WRITTEN|END-IF|END-PERFORM|GOBACK|EXIT|END IF|END PERFORM|END-PROGRAM|END PROGRAM|GO BACK|END-EXEC|END-EVALUATE)\b)[A-Z0-9\-]+(\s+.*)?\.$", re.IGNORECASE)
     DIVISION_PATTERN = re.compile(
         r"^\s*(IDENTIFICATION|DATA|PROCEDURE|ENVIRONMENT)\s+DIVISION.*$", re.IGNORECASE
     )
@@ -26,23 +26,28 @@ class CobolSegmenter(CodeSegmenter):
 
     def _is_relevant_code(self, line: str) -> bool:
         """Check if a line is part of the procedure division or a relevant section."""
-        if "PROCEDURE DIVISION" in line.upper():
+        if self.DIVISION_PATTERN.match(line):
             return True
-        # Add additional conditions for relevant sections if needed
         return False
 
     def _process_lines(self, func: Callable) -> List[str]:
         """A generic function to process COBOL lines based on provided func."""
         elements: List[str] = []
-        start_idx = None
+        start_idx = 0
         inside_relevant_section = False
 
         for i, line in enumerate(self.source_lines):
             if self._is_relevant_code(line):
                 inside_relevant_section = True
+                start_idx = i
+                break
+    
+        for i, line in enumerate(self.source_lines[start_idx:], start=start_idx):
+            if self._is_relevant_code(line):
+                inside_relevant_section = True
 
             if inside_relevant_section and (
-                self.PARAGRAPH_PATTERN.match(line.strip().split(" ")[0])
+                self.PARAGRAPH_PATTERN.match(line.split(" ")[0])
                 or self.SECTION_PATTERN.match(line.strip())
             ):
                 if start_idx is not None:
@@ -92,5 +97,5 @@ class CobolSegmenter(CodeSegmenter):
                     # after the last header
                     simplified_lines.append("* OMITTED CODE *")
                     omitted_code_added = True
-
-        return "\n".join(simplified_lines)
+            # return "\n".join(simplified_lines)
+            return " "
