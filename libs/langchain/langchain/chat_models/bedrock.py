@@ -5,6 +5,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.anthropic import convert_messages_to_prompt_anthropic
 from langchain.chat_models.base import BaseChatModel
+from langchain.chat_models.meta import convert_messages_to_prompt_llama
 from langchain.llms.bedrock import BedrockBase
 from langchain.pydantic_v1 import Extra
 from langchain.schema.messages import AIMessage, AIMessageChunk, BaseMessage
@@ -26,6 +27,8 @@ class ChatPromptAdapter:
     ) -> str:
         if provider == "anthropic":
             prompt = convert_messages_to_prompt_anthropic(messages=messages)
+        if provider == "meta":
+            prompt = convert_messages_to_prompt_llama(messages=messages)
         else:
             raise NotImplementedError(
                 f"Provider {provider} model does not support chat."
@@ -40,6 +43,22 @@ class BedrockChat(BaseChatModel, BedrockBase):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "amazon_bedrock_chat"
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        print(self.region_name)
+
+        if self.region_name:
+            attributes["region_name"] = self.region_name
+
+        return attributes
 
     class Config:
         """Configuration for this pydantic object."""
