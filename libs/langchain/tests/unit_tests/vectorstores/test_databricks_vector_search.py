@@ -484,7 +484,7 @@ def test_similarity_search_by_vector(index_details: dict) -> None:
 
 @pytest.mark.requires("databricks.vector_search")
 @pytest.mark.parametrize("index_details", ALL_INDEXES)
-def test_similarity_search_empty_result(index_details) -> None:
+def test_similarity_search_empty_result(index_details: dict) -> None:
     index = mock_index(index_details)
     index.similarity_search.return_value = {
         "manifest": {
