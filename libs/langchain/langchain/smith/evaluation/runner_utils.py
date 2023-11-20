@@ -135,8 +135,8 @@ class TestResult(dict):
 class EvalError(dict):
     """Your architecture raised an error."""
 
-    def __init__(self, error: BaseException, **kwargs: Any) -> None:
-        super().__init__(error=error, **kwargs)
+    def __init__(self, Error: BaseException, **kwargs: Any) -> None:
+        super().__init__(Error=Error, **kwargs)
 
     def __getattr__(self, name: str) -> Any:
         try:
@@ -761,7 +761,7 @@ async def _arun_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\n{repr(e)}"
         )
-        result = EvalError(error=e)
+        result = EvalError(Error=e)
     return result
 
 
@@ -893,7 +893,7 @@ def _run_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\nError Type: {error_type}, Message: {e}"
         )
-        result = EvalError(error=e)
+        result = EvalError(Error=e)
     return result
 
 
