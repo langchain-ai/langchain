@@ -15,12 +15,6 @@ tests:
 test_watch:
 	poetry run ptw --snapshot-update --now . -- -x tests/unit_tests
 
-extended_tests:
-	poetry run pytest --only-extended tests/unit_tests
-
-integration_tests:
-	poetry run pytest tests/integration_tests
-
 
 ######################
 # LINTING AND FORMATTING

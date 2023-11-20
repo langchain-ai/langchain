@@ -25,7 +25,10 @@ extended_tests:
 	poetry run pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
 
 test_watch:
-	poetry run ptw --snapshot-update --now . -- -x tests/unit_tests
+	poetry run ptw --snapshot-update --now . -- -x --disable-socket --allow-unix-socket tests/unit_tests
+
+test_watch_extended:
+	poetry run ptw --snapshot-update --now . -- -x --disable-socket --allow-unix-socket --only-extended tests/unit_tests
 
 integration_tests:
 	poetry run pytest tests/integration_tests
