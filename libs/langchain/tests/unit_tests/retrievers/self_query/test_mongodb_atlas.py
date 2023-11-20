@@ -133,3 +133,4 @@ def test_visit_structured_query() -> None:
     )
   actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
   assert expected == actual
+  
