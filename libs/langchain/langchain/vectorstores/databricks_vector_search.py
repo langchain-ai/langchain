@@ -120,7 +120,13 @@ class DatabricksVectorSearch(VectorStore):
             raise TypeError("index must be of type VectorSearchIndex.")
 
         # index_details
-        self.index_details = self.index.describe()
+        index_details = self.index.describe()
+        self.primary_key = index_details["primary_key"]
+        self.index_type = index_details.get("index_type")
+        self._delta_sync_index_spec = index_details.get("delta_sync_index_spec", dict())
+        self._direct_access_index_spec = index_details.get(
+            "direct_access_index_spec", dict()
+        )
 
         # text_column
         if self._is_databricks_managed_embeddings():
@@ -135,9 +141,6 @@ class DatabricksVectorSearch(VectorStore):
         else:
             self._require_arg(text_column, "text_column")
             self.text_column = text_column
-
-        # primary_key
-        self.primary_key = self.index_details["primary_key"]
 
         # columns
         self.columns = columns or []
@@ -395,7 +398,7 @@ class DatabricksVectorSearch(VectorStore):
         Return None if no schema found.
         """
         if self._is_direct_access_index():
-            schema_json = self._direct_access_index_spec().get("schema_json")
+            schema_json = self._direct_access_index_spec.get("schema_json")
             if schema_json is not None:
                 return json.loads(schema_json)
 
@@ -416,9 +419,9 @@ class DatabricksVectorSearch(VectorStore):
         Empty if the index is not a self-managed embedding index.
         """
         index_spec = (
-            self._delta_sync_index_spec()
+            self._delta_sync_index_spec
             if self._is_delta_sync_index()
-            else self._direct_access_index_spec()
+            else self._direct_access_index_spec
         )
         return next(iter(index_spec.get("embedding_vector_columns") or list()), dict())
 
@@ -432,28 +435,16 @@ class DatabricksVectorSearch(VectorStore):
         """Return the embedding source column configs as a dictionary.
         Empty if the index is not a Databricks-managed embedding index.
         """
-        index_spec = self._delta_sync_index_spec()
+        index_spec = self._delta_sync_index_spec
         return next(iter(index_spec.get("embedding_source_columns") or list()), dict())
-
-    def _delta_sync_index_spec(self) -> dict:
-        """Return the delta-sync index configs as a dictionary.
-        Empty if the index is not a delta-sync index.
-        """
-        return self.index_details.get("delta_sync_index_spec", dict())
-
-    def _direct_access_index_spec(self) -> dict:
-        """Return the direct-access index configs as a dictionary.
-        Empty if the index is not a direct-access index.
-        """
-        return self.index_details.get("direct_access_index_spec", dict())
 
     def _is_delta_sync_index(self) -> bool:
         """Return True if the index is a delta-sync index."""
-        return self.index_details.get("index_type") == "DELTA_SYNC"
+        return self.index_type == "DELTA_SYNC"
 
     def _is_direct_access_index(self) -> bool:
         """Return True if the index is a direct-access index."""
-        return self.index_details.get("index_type") == "DIRECT_ACCESS"
+        return self.index_type == "DIRECT_ACCESS"
 
     def _is_databricks_managed_embeddings(self) -> bool:
         """Return True if the embeddings are managed by Databricks Vector Search."""
