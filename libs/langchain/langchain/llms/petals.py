@@ -103,7 +103,7 @@ class Petals(LLM):
             values["huggingface_api_key"] = huggingface_api_key
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import transformers or petals python package."
                 "Please install with `pip install -U transformers petals`."
             )

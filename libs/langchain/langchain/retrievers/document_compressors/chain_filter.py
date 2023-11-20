@@ -53,21 +53,12 @@ class LLMChainFilter(BaseDocumentCompressor):
                 filtered_docs.append(doc)
         return filtered_docs
 
-    async def acompress_documents(
-        self,
-        documents: Sequence[Document],
-        query: str,
-        callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
-        """Filter down documents."""
-        raise NotImplementedError()
-
     @classmethod
     def from_llm(
         cls,
         llm: BaseLanguageModel,
         prompt: Optional[BasePromptTemplate] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> "LLMChainFilter":
         """Create a LLMChainFilter from a language model.
 

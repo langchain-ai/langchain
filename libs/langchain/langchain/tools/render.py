@@ -1,8 +1,15 @@
+"""Different methods for rendering Tools to be passed to LLMs.
+
+Depending on the LLM you are using and the prompting strategy you are using,
+you may want Tools to be rendered in a different way.
+This module contains various ways to render tools.
+"""
 from typing import List
 
 from langchain.tools.base import BaseTool
 from langchain.utils.openai_functions import (
     FunctionDescription,
+    ToolDescription,
     convert_pydantic_to_openai_function,
 )
 
@@ -61,3 +68,9 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
                 "type": "object",
             },
         }
+
+
+def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
+    """Format tool into the OpenAI function API."""
+    function = format_tool_to_openai_function(tool)
+    return {"type": "function", "function": function}

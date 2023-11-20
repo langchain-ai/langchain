@@ -20,7 +20,13 @@ from langchain.output_parsers.fix import OutputFixingParser
 from langchain.output_parsers.list import (
     CommaSeparatedListOutputParser,
     ListOutputParser,
+    MarkdownListOutputParser,
     NumberedListOutputParser,
+)
+from langchain.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    JsonOutputToolsParser,
+    PydanticToolsParser,
 )
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.output_parsers.rail_parser import GuardrailsOutputParser
@@ -38,6 +44,7 @@ __all__ = [
     "EnumOutputParser",
     "GuardrailsOutputParser",
     "ListOutputParser",
+    "MarkdownListOutputParser",
     "NumberedListOutputParser",
     "OutputFixingParser",
     "PydanticOutputParser",
@@ -48,4 +55,7 @@ __all__ = [
     "RetryWithErrorOutputParser",
     "StructuredOutputParser",
     "XMLOutputParser",
+    "JsonOutputToolsParser",
+    "PydanticToolsParser",
+    "JsonOutputKeyToolsParser",
 ]

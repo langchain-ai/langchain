@@ -27,7 +27,7 @@ class ArcGISLoader(BaseLoader):
         where: str = "1=1",
         out_fields: Optional[Union[List[str], str]] = None,
         return_geometry: bool = False,
-        return_all_records: bool = True,
+        result_record_count: Optional[int] = None,
         lyr_desc: Optional[str] = None,
         **kwargs: Any,
     ):
@@ -68,8 +68,19 @@ class ArcGISLoader(BaseLoader):
             self.out_fields = ",".join(out_fields)
 
         self.return_geometry = return_geometry
-        self.return_all_records = return_all_records
-        self.kwargs = kwargs
+
+        self.result_record_count = result_record_count
+        self.return_all_records = not isinstance(result_record_count, int)
+
+        query_params = dict(
+            where=self.where,
+            out_fields=self.out_fields,
+            return_geometry=self.return_geometry,
+            return_all_records=self.return_all_records,
+            result_record_count=self.result_record_count,
+        )
+        query_params.update(kwargs)
+        self.query_params = query_params
 
     def _get_layer_properties(self, lyr_desc: Optional[str] = None) -> dict:
         """Get the layer properties from the FeatureLayer."""
@@ -112,13 +123,7 @@ class ArcGISLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load records from FeatureLayer."""
-        query_response = self.layer.query(
-            where=self.where,
-            out_fields=self.out_fields,
-            return_geometry=self.return_geometry,
-            return_all_records=self.return_all_records,
-            **self.kwargs,
-        )
+        query_response = self.layer.query(**self.query_params)
         features = (feature.as_dict for feature in query_response)
         for feature in features:
             attributes = feature["attributes"]
@@ -135,8 +140,7 @@ class ArcGISLoader(BaseLoader):
 
             if self.return_geometry:
                 try:
-                    geometry = feature["geometry"]
-                    metadata.update({"geometry": geometry})
+                    metadata["geometry"] = feature["geometry"]
                 except KeyError:
                     warnings.warn(
                         "Geometry could not be retrieved from the feature layer."

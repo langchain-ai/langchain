@@ -1,0 +1,57 @@
+name: compile-integration-test
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "From which folder this pipeline executes"
+
+env:
+  POETRY_VERSION: "1.6.1"
+
+jobs:
+  build:
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    name: Python ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: compile-integration
+
+      - name: Install integration dependencies
+        shell: bash
+        run: poetry install --with=test_integration
+
+      - name: Check integration tests compile
+        shell: bash
+        run: poetry run pytest -m compile tests/integration_tests
+
+      - name: Ensure the tests did not create any additional files
+        shell: bash
+        run: |
+          set -eu
+
+          STATUS="$(git status)"
+          echo "$STATUS"
+
+          # grep will exit non-zero if the target message isn't found,
+          # and `set -e` above will cause the step to fail.
+          echo "$STATUS" | grep 'nothing to commit, working tree clean'

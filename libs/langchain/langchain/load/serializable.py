@@ -31,43 +31,65 @@ class SerializedNotImplemented(BaseSerialized):
     repr: Optional[str]
 
 
+def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
+    try:
+        return model.__fields__[key].get_default() != value
+    except Exception:
+        return True
+
+
 class Serializable(BaseModel, ABC):
     """Serializable base class."""
 
-    @property
-    def lc_serializable(self) -> bool:
-        """
-        Return whether or not the class is serializable.
-        """
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Is this class serializable?"""
         return False
 
-    @property
-    def lc_namespace(self) -> List[str]:
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object.
+
+        For example, if the class is `langchain.llms.openai.OpenAI`, then the
+        namespace is ["langchain", "llms", "openai"]
         """
-        Return the namespace of the langchain object.
-        eg. ["langchain", "llms", "openai"]
-        """
-        return self.__class__.__module__.split(".")
+        return cls.__module__.split(".")
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        """
-        Return a map of constructor argument names to secret ids.
-        eg. {"openai_api_key": "OPENAI_API_KEY"}
+        """A map of constructor argument names to secret ids.
+
+        For example,
+            {"openai_api_key": "OPENAI_API_KEY"}
         """
         return dict()
 
     @property
     def lc_attributes(self) -> Dict:
-        """
-        Return a list of attribute names that should be included in the
-        serialized kwargs. These attributes must be accepted by the
-        constructor.
+        """List of attribute names that should be included in the serialized kwargs.
+
+        These attributes must be accepted by the constructor.
         """
         return {}
 
+    @classmethod
+    def lc_id(cls) -> List[str]:
+        """A unique identifier for this class for serialization purposes.
+
+        The unique identifier is a list of strings that describes the path
+        to the object.
+        """
+        return [*cls.get_lc_namespace(), cls.__name__]
+
     class Config:
         extra = "ignore"
+
+    def __repr_args__(self) -> Any:
+        return [
+            (k, v)
+            for k, v in super().__repr_args__()
+            if (k not in self.__fields__ or try_neq_default(v, k, self))
+        ]
 
     _lc_kwargs = PrivateAttr(default_factory=dict)
 
@@ -76,7 +98,7 @@ class Serializable(BaseModel, ABC):
         self._lc_kwargs = kwargs
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
-        if not self.lc_serializable:
+        if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
         secrets = dict()
@@ -92,6 +114,20 @@ class Serializable(BaseModel, ABC):
             # Once we get to Serializable, we're done
             if cls is Serializable:
                 break
+
+            if cls:
+                deprecated_attributes = [
+                    "lc_namespace",
+                    "lc_serializable",
+                ]
+
+                for attr in deprecated_attributes:
+                    if hasattr(cls, attr):
+                        raise ValueError(
+                            f"Class {self.__class__} has a deprecated "
+                            f"attribute {attr}. Please use the corresponding "
+                            f"classmethod instead."
+                        )
 
             # Get a reference to self bound to each class in the MRO
             this = cast(Serializable, self if cls is None else super(cls, self))
@@ -109,7 +145,7 @@ class Serializable(BaseModel, ABC):
         return {
             "lc": 1,
             "type": "constructor",
-            "id": [*self.lc_namespace, self.__class__.__name__],
+            "id": self.lc_id(),
             "kwargs": lc_kwargs
             if not secrets
             else _replace_secrets(lc_kwargs, secrets),

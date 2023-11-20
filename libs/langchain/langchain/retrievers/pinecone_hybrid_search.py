@@ -144,7 +144,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
                 BaseSparseEncoder,  # noqa:F401
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import pinecone_text python package. "
                 "Please install it with `pip install pinecone_text`."
             )

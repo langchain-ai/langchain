@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Type
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.pydantic_v1 import BaseModel, Extra
 from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain.schema.vectorstore import VectorStore
 
 
 def sorted_values(values: Dict[str, str]) -> List[Any]:

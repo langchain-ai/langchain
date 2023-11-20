@@ -17,6 +17,8 @@ from langchain.schema import (
 
 
 class LabelStudioMode(Enum):
+    """Label Studio mode enumerator."""
+
     PROMPT = "prompt"
     CHAT = "chat"
 
@@ -24,6 +26,13 @@ class LabelStudioMode(Enum):
 def get_default_label_configs(
     mode: Union[str, LabelStudioMode]
 ) -> Tuple[str, LabelStudioMode]:
+    """Get default Label Studio configs for the given mode.
+
+    Parameters:
+        mode: Label Studio mode ("prompt" or "chat")
+
+    Returns: Tuple of Label Studio config and mode
+    """
     _default_label_configs = {
         LabelStudioMode.PROMPT.value: """
 <View>

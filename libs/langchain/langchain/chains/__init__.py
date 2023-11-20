@@ -44,7 +44,6 @@ from langchain.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
-from langchain.chains.llm_bash.base import LLMBashChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
@@ -94,7 +93,6 @@ __all__ = [
     "HugeGraphQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",
-    "LLMBashChain",
     "LLMChain",
     "LLMCheckerChain",
     "LLMMathChain",

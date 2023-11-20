@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from langchain.agents import BaseMultiActionAgent
 from langchain.agents.format_scratchpad.openai_functions import (
-    format_to_openai_functions,
+    format_to_openai_function_messages,
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
@@ -45,12 +45,21 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
 
     if function_call:
         try:
-            tools = json.loads(function_call["arguments"])["actions"]
+            arguments = json.loads(function_call["arguments"])
         except JSONDecodeError:
             raise OutputParserException(
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` is not valid JSON."
             )
+
+        try:
+            tools = arguments["actions"]
+        except (TypeError, KeyError):
+            raise OutputParserException(
+                f"Could not parse tool input: {function_call} because "
+                f"the `arguments` JSON does not contain `actions` key."
+            )
+
         final_tools: List[AgentAction] = []
         for tool_schema in tools:
             _tool_input = tool_schema["action"]
@@ -78,7 +87,9 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
             final_tools.append(_tool)
         return final_tools
 
-    return AgentFinish(return_values={"output": message.content}, log=message.content)
+    return AgentFinish(
+        return_values={"output": message.content}, log=str(message.content)
+    )
 
 
 class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
@@ -197,7 +208,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        agent_scratchpad = format_to_openai_functions(intermediate_steps)
+        agent_scratchpad = format_to_openai_function_messages(intermediate_steps)
         selected_inputs = {
             k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
         }
@@ -226,7 +237,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        agent_scratchpad = format_to_openai_functions(intermediate_steps)
+        agent_scratchpad = format_to_openai_function_messages(intermediate_steps)
         selected_inputs = {
             k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
         }

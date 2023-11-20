@@ -27,6 +27,10 @@ class HuggingFaceDatasetLoader(BaseLoader):
         Args:
             path: Path or name of the dataset.
             page_content_column: Page content column name. Default is "text".
+                Note: Currently the function assumes the content is a string.
+                If it is not download the dataset using huggingface library and convert
+                using the json or pandas loaders.
+                https://github.com/langchain-ai/langchain/issues/10674
             name: Name of the dataset configuration.
             data_dir: Data directory of the dataset configuration.
             data_files: Path(s) to source data file(s).

@@ -4,8 +4,9 @@ import re
 import zipfile
 from typing import Iterator, List, Union
 
-from langchain.chat_loaders.base import BaseChatLoader, ChatSession
+from langchain.chat_loaders.base import BaseChatLoader
 from langchain.schema import AIMessage, HumanMessage
+from langchain.schema.chat import ChatSession
 
 logger = logging.getLogger(__name__)
 

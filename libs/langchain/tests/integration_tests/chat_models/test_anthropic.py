@@ -6,13 +6,13 @@ import pytest
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.anthropic import (
     ChatAnthropic,
-    convert_messages_to_prompt_anthropic,
 )
 from langchain.schema import ChatGeneration, LLMResult
 from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
+@pytest.mark.scheduled
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
     chat = ChatAnthropic(model="test")
@@ -22,6 +22,7 @@ def test_anthropic_call() -> None:
     assert isinstance(response.content, str)
 
 
+@pytest.mark.scheduled
 def test_anthropic_generate() -> None:
     """Test generate method of anthropic."""
     chat = ChatAnthropic(model="test")
@@ -38,6 +39,7 @@ def test_anthropic_generate() -> None:
     assert chat_messages == messages_copy
 
 
+@pytest.mark.scheduled
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
     chat = ChatAnthropic(model="test", streaming=True)
@@ -47,6 +49,7 @@ def test_anthropic_streaming() -> None:
     assert isinstance(response.content, str)
 
 
+@pytest.mark.scheduled
 def test_anthropic_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
@@ -62,6 +65,7 @@ def test_anthropic_streaming_callback() -> None:
     assert callback_handler.llm_streams > 1
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
@@ -83,29 +87,3 @@ async def test_anthropic_async_streaming_callback() -> None:
         assert isinstance(response, ChatGeneration)
         assert isinstance(response.text, str)
         assert response.text == response.message.content
-
-
-def test_formatting() -> None:
-    messages: List[BaseMessage] = [HumanMessage(content="Hello")]
-    result = convert_messages_to_prompt_anthropic(messages)
-    assert result == "\n\nHuman: Hello\n\nAssistant:"
-
-    messages = [HumanMessage(content="Hello"), AIMessage(content="Answer:")]
-    result = convert_messages_to_prompt_anthropic(messages)
-    assert result == "\n\nHuman: Hello\n\nAssistant: Answer:"
-
-
-def test_anthropic_model_kwargs() -> None:
-    llm = ChatAnthropic(model_kwargs={"foo": "bar"})
-    assert llm.model_kwargs == {"foo": "bar"}
-
-
-def test_anthropic_invalid_model_kwargs() -> None:
-    with pytest.raises(ValueError):
-        ChatAnthropic(model_kwargs={"max_tokens_to_sample": 5})
-
-
-def test_anthropic_incorrect_field() -> None:
-    with pytest.warns(match="not default parameter"):
-        llm = ChatAnthropic(foo="bar")
-    assert llm.model_kwargs == {"foo": "bar"}
