@@ -5,10 +5,8 @@ import functools
 from abc import ABC, abstractmethod
 from typing import (
     Any,
-    AsyncIterator,
     Dict,
     Generic,
-    Iterator,
     List,
     Optional,
     Type,
@@ -19,12 +17,10 @@ from typing import (
 from typing_extensions import get_args
 
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
-from langchain_core.schema.messages import AnyMessage, BaseMessage, BaseMessageChunk
+from langchain_core.schema.messages import AnyMessage, BaseMessage
 from langchain_core.schema.output import (
     ChatGeneration,
-    ChatGenerationChunk,
     Generation,
-    GenerationChunk,
 )
 from langchain_core.schema.prompt import PromptValue
 
@@ -303,173 +299,3 @@ class BaseOutputParser(
         except NotImplementedError:
             pass
         return output_parser_dict
-
-
-class BaseTransformOutputParser(BaseOutputParser[T]):
-    """Base class for an output parser that can handle streaming input."""
-
-    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[T]:
-        for chunk in input:
-            if isinstance(chunk, BaseMessage):
-                yield self.parse_result([ChatGeneration(message=chunk)])
-            else:
-                yield self.parse_result([Generation(text=chunk)])
-
-    async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
-    ) -> AsyncIterator[T]:
-        async for chunk in input:
-            if isinstance(chunk, BaseMessage):
-                yield self.parse_result([ChatGeneration(message=chunk)])
-            else:
-                yield self.parse_result([Generation(text=chunk)])
-
-    def transform(
-        self,
-        input: Iterator[Union[str, BaseMessage]],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
-    ) -> Iterator[T]:
-        yield from self._transform_stream_with_config(
-            input, self._transform, config, run_type="parser"
-        )
-
-    async def atransform(
-        self,
-        input: AsyncIterator[Union[str, BaseMessage]],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[T]:
-        async for chunk in self._atransform_stream_with_config(
-            input, self._atransform, config, run_type="parser"
-        ):
-            yield chunk
-
-
-class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
-    """Base class for an output parser that can handle streaming input."""
-
-    diff: bool = False
-    """In streaming mode, whether to yield diffs between the previous and current
-    parsed output, or just the current parsed output.
-    """
-
-    def _diff(self, prev: Optional[T], next: T) -> T:
-        """Convert parsed outputs into a diff format. The semantics of this are
-        up to the output parser."""
-        raise NotImplementedError()
-
-    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[Any]:
-        prev_parsed = None
-        acc_gen = None
-        for chunk in input:
-            if isinstance(chunk, BaseMessageChunk):
-                chunk_gen: Generation = ChatGenerationChunk(message=chunk)
-            elif isinstance(chunk, BaseMessage):
-                chunk_gen = ChatGenerationChunk(
-                    message=BaseMessageChunk(**chunk.dict())
-                )
-            else:
-                chunk_gen = GenerationChunk(text=chunk)
-
-            if acc_gen is None:
-                acc_gen = chunk_gen
-            else:
-                acc_gen += chunk_gen
-
-            parsed = self.parse_result([acc_gen], partial=True)
-            if parsed is not None and parsed != prev_parsed:
-                if self.diff:
-                    yield self._diff(prev_parsed, parsed)
-                else:
-                    yield parsed
-                prev_parsed = parsed
-
-    async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
-    ) -> AsyncIterator[T]:
-        prev_parsed = None
-        acc_gen = None
-        async for chunk in input:
-            if isinstance(chunk, BaseMessageChunk):
-                chunk_gen: Generation = ChatGenerationChunk(message=chunk)
-            elif isinstance(chunk, BaseMessage):
-                chunk_gen = ChatGenerationChunk(
-                    message=BaseMessageChunk(**chunk.dict())
-                )
-            else:
-                chunk_gen = GenerationChunk(text=chunk)
-
-            if acc_gen is None:
-                acc_gen = chunk_gen
-            else:
-                acc_gen += chunk_gen
-
-            parsed = self.parse_result([acc_gen], partial=True)
-            if parsed is not None and parsed != prev_parsed:
-                if self.diff:
-                    yield self._diff(prev_parsed, parsed)
-                else:
-                    yield parsed
-                prev_parsed = parsed
-
-
-class StrOutputParser(BaseTransformOutputParser[str]):
-    """OutputParser that parses LLMResult into the top likely string."""
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
-        return True
-
-    @property
-    def _type(self) -> str:
-        """Return the output parser type for serialization."""
-        return "default"
-
-    def parse(self, text: str) -> str:
-        """Returns the input text with no changes."""
-        return text
-
-
-# TODO: Deprecate
-NoOpOutputParser = StrOutputParser
-
-
-class OutputParserException(ValueError):
-    """Exception that output parsers should raise to signify a parsing error.
-
-    This exists to differentiate parsing errors from other code or execution errors
-    that also may arise inside the output parser. OutputParserExceptions will be
-    available to catch and handle in ways to fix the parsing error, while other
-    errors will be raised.
-
-    Args:
-        error: The error that's being re-raised or an error message.
-        observation: String explanation of error which can be passed to a
-            model to try and remediate the issue.
-        llm_output: String model output which is error-ing.
-        send_to_llm: Whether to send the observation and llm_output back to an Agent
-            after an OutputParserException has been raised. This gives the underlying
-            model driving the agent the context that the previous output was improperly
-            structured, in the hopes that it will update the output to the correct
-            format.
-    """
-
-    def __init__(
-        self,
-        error: Any,
-        observation: Optional[str] = None,
-        llm_output: Optional[str] = None,
-        send_to_llm: bool = False,
-    ):
-        super(OutputParserException, self).__init__(error)
-        if send_to_llm:
-            if observation is None or llm_output is None:
-                raise ValueError(
-                    "Arguments 'observation' & 'llm_output'"
-                    " are required if 'send_to_llm' is True"
-                )
-        self.observation = observation
-        self.llm_output = llm_output
-        self.send_to_llm = send_to_llm
