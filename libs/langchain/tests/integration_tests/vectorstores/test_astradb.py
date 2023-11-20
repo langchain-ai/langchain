@@ -207,7 +207,9 @@ class TestAstraDB:
         res2 = store_someemb.similarity_search("Abc", k=10)
         assert len(res2) == 4
         # pick one that was just updated and check its metadata
-        res3 = store_someemb.similarity_search_with_score_id(query="cc", k=1, filter={"k": "c_new"})
+        res3 = store_someemb.similarity_search_with_score_id(
+            query="cc", k=1, filter={"k": "c_new"}
+        )
         print(str(res3))
         doc3, score3, id3 = res3[0]
         assert doc3.page_content == "cc"
