@@ -50,5 +50,5 @@ def test_extra_kwargs() -> None:
     assert chat.temperature == 0.88
     assert chat.top_k == 2
     assert chat.spark_user_id == "test-lc-user"
-    assert chat.streaming == True
+    assert chat.streaming is True
     assert chat.request_timeout == 10
