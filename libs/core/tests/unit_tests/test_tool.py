@@ -572,7 +572,6 @@ def test_create_tool_keyword_args() -> None:
     assert test_tool.description == "test_description"
 
 
-@pytest.mark.asyncio
 async def test_create_async_tool() -> None:
     """Test that async tools are allowed."""
 
@@ -633,7 +632,6 @@ def test_exception_handling_non_tool_exception() -> None:
         _tool.run({})
 
 
-@pytest.mark.asyncio
 async def test_async_exception_handling_bool() -> None:
     _tool = _FakeExceptionTool(handle_tool_error=True)
     expected = "Tool execution error"
@@ -641,7 +639,6 @@ async def test_async_exception_handling_bool() -> None:
     assert expected == actual
 
 
-@pytest.mark.asyncio
 async def test_async_exception_handling_str() -> None:
     expected = "foo bar"
     _tool = _FakeExceptionTool(handle_tool_error=expected)
@@ -649,7 +646,6 @@ async def test_async_exception_handling_str() -> None:
     assert expected == actual
 
 
-@pytest.mark.asyncio
 async def test_async_exception_handling_callable() -> None:
     expected = "foo bar"
     handling = lambda _: expected  # noqa: E731
@@ -658,7 +654,6 @@ async def test_async_exception_handling_callable() -> None:
     assert expected == actual
 
 
-@pytest.mark.asyncio
 async def test_async_exception_handling_non_tool_exception() -> None:
     _tool = _FakeExceptionTool(exception=ValueError())
     with pytest.raises(ValueError):

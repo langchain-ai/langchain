@@ -1139,7 +1139,6 @@ def test_configurable_fields_example() -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     fake = FakeRunnable()
     mock = mocker.Mock()
@@ -1167,7 +1166,6 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     mock.reset_mock()
 
 
-@pytest.mark.asyncio
 async def test_with_config(mocker: MockerFixture) -> None:
     fake = FakeRunnable()
     spy = mocker.spy(fake, "invoke")
@@ -1285,7 +1283,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
     ]
 
 
-@pytest.mark.asyncio
 async def test_default_method_implementations(mocker: MockerFixture) -> None:
     fake = FakeRunnable()
     spy = mocker.spy(fake, "invoke")
@@ -1364,7 +1361,6 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
     ]
 
 
-@pytest.mark.asyncio
 async def test_prompt() -> None:
     prompt = ChatPromptTemplate.from_messages(
         messages=[
@@ -1569,7 +1565,6 @@ def test_with_listeners(mocker: MockerFixture) -> None:
     assert mock_end.call_count == 1
 
 
-@pytest.mark.asyncio
 async def test_with_listeners_async(mocker: MockerFixture) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -1707,7 +1702,6 @@ def test_prompt_with_chat_model(
     )
 
 
-@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_chat_model_async(
     mocker: MockerFixture, snapshot: SnapshotAssertion
@@ -1815,7 +1809,6 @@ async def test_prompt_with_chat_model_async(
     )
 
 
-@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm(
     mocker: MockerFixture, snapshot: SnapshotAssertion
@@ -2008,7 +2001,6 @@ async def test_prompt_with_llm(
     ]
 
 
-@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_stream_log_retriever() -> None:
     prompt = (
@@ -2049,7 +2041,6 @@ async def test_stream_log_retriever() -> None:
     ]
 
 
-@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm_and_async_lambda(
     mocker: MockerFixture, snapshot: SnapshotAssertion
@@ -2330,7 +2321,6 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     assert len(map_run.child_runs) == 2
 
 
-@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_router_runnable(
     mocker: MockerFixture, snapshot: SnapshotAssertion
@@ -2383,7 +2373,6 @@ async def test_router_runnable(
     assert len(router_run.child_runs) == 2
 
 
-@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_higher_order_lambda_runnable(
     mocker: MockerFixture, snapshot: SnapshotAssertion
@@ -2642,7 +2631,6 @@ def test_map_stream_iterator_input() -> None:
     assert final_value.get("passthrough") == "i'm a textbot"
 
 
-@pytest.mark.asyncio
 async def test_map_astream() -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -2765,7 +2753,6 @@ async def test_map_astream() -> None:
     ]
 
 
-@pytest.mark.asyncio
 async def test_map_astream_iterator_input() -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -2982,7 +2969,6 @@ def test_deep_stream_assign() -> None:
     }
 
 
-@pytest.mark.asyncio
 async def test_deep_astream() -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -3009,7 +2995,6 @@ async def test_deep_astream() -> None:
     assert "".join(chunks) == "foo-lish"
 
 
-@pytest.mark.asyncio
 async def test_deep_astream_assign() -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -3123,7 +3108,6 @@ def test_runnable_sequence_transform() -> None:
     assert "".join(chunks) == "foo-lish"
 
 
-@pytest.mark.asyncio
 async def test_runnable_sequence_atransform() -> None:
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
@@ -3171,7 +3155,6 @@ def llm_chain_with_fallbacks() -> Runnable:
     "runnable",
     ["llm_with_fallbacks", "llm_with_multi_fallbacks", "llm_chain_with_fallbacks"],
 )
-@pytest.mark.asyncio
 async def test_llm_with_fallbacks(
     runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion
 ) -> None:
@@ -3314,7 +3297,6 @@ def test_retrying(mocker: MockerFixture) -> None:
     _lambda_mock.reset_mock()
 
 
-@pytest.mark.asyncio
 async def test_async_retrying(mocker: MockerFixture) -> None:
     def _lambda(x: int) -> Union[int, Runnable]:
         if x == 1:
@@ -3499,7 +3481,6 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
     assert [r.error for r in parent_run_qux.child_runs] == [None, None, None, None]
 
 
-@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
     class ControlledExceptionRunnable(Runnable[str, str]):
@@ -3729,7 +3710,6 @@ def test_runnable_branch_batch() -> None:
     assert branch.batch([1, 10, 0]) == [2, 100, -1]
 
 
-@pytest.mark.asyncio
 async def test_runnable_branch_ainvoke() -> None:
     """Test async variant of invoke."""
     branch = RunnableBranch[int, int](
@@ -3785,7 +3765,6 @@ def test_runnable_branch_invoke_callbacks() -> None:
     assert tracer.runs[1].outputs is None
 
 
-@pytest.mark.asyncio
 async def test_runnable_branch_ainvoke_callbacks() -> None:
     """Verify that callbacks are invoked correctly in ainvoke."""
     tracer = FakeTracer()
@@ -3813,7 +3792,6 @@ async def test_runnable_branch_ainvoke_callbacks() -> None:
     assert tracer.runs[1].outputs is None
 
 
-@pytest.mark.asyncio
 async def test_runnable_branch_abatch() -> None:
     """Test async variant of invoke."""
     branch = RunnableBranch[int, int](
@@ -3860,7 +3838,6 @@ def test_representation_of_runnables() -> None:
     ), "repr where code string contains multiple lambdas gives up"
 
 
-@pytest.mark.asyncio
 async def test_tool_from_runnable() -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -3889,7 +3866,6 @@ async def test_tool_from_runnable() -> None:
     }
 
 
-@pytest.mark.asyncio
 async def test_runnable_gen() -> None:
     """Test that a generator can be used as a runnable."""
 
@@ -3922,7 +3898,6 @@ async def test_runnable_gen() -> None:
     assert await arunnable.abatch([None, None]) == [6, 6]
 
 
-@pytest.mark.asyncio
 async def test_runnable_gen_transform() -> None:
     """Test that a generator can be used as a runnable."""
 
