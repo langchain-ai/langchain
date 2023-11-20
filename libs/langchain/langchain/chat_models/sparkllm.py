@@ -12,8 +12,6 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 from urllib.parse import urlencode, urlparse, urlunparse
 from wsgiref.handlers import format_date_time
 
-import websocket
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import (
     BaseChatModel,
@@ -278,6 +276,15 @@ class _SparkLLMClient:
         spark_domain: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
     ):
+        try:
+            import websocket
+            self.websocket_client = websocket
+        except ImportError:
+            raise ImportError(
+                "Could not import websocket client python package. "
+                "Please install it with `pip install websocket-client`."
+            )
+
         self.api_url = (
             "wss://spark-api.xf-yun.com/v3.1/chat" if not api_url else api_url
         )
@@ -344,8 +351,8 @@ class _SparkLLMClient:
         model_kwargs: Optional[dict] = None,
         streaming: bool = False,
     ):
-        websocket.enableTrace(False)
-        ws = websocket.WebSocketApp(
+        self.websocket_client.enableTrace(False)
+        ws = self.websocket_client.WebSocketApp(
             self.ws_url,
             on_message=self.on_message,
             on_error=self.on_error,
