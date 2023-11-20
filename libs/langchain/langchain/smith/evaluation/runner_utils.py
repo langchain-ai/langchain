@@ -107,8 +107,8 @@ class TestResult(dict):
             feedback = result["feedback"]
             r = {
                 **{f.key: f.score for f in feedback},
-                "input": result["input"],
-                "output": result.get("output"),
+                ** {f"input.{k}": v for k, v in result["input"].items()},
+                **{f"output.{k}": v for k, v in result["output"].items()},
                 "error": result.get("error"),
                 "execution_time": result["execution_time"],
             }
