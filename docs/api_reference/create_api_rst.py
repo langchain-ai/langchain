@@ -333,6 +333,7 @@ def main() -> None:
     """Generate the reference.rst file for each package."""
     _document_langchain()
     _document_langchain_experimental()
+    _document_langchain_core()
 
 
 if __name__ == "__main__":
