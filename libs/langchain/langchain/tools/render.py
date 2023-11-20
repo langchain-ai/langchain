@@ -6,13 +6,12 @@ This module contains various ways to render tools.
 """
 from typing import List
 
-from langchain_core.utils.openai_functions import (
+from langchain.tools.base import BaseTool
+from langchain.utils.openai_functions import (
     FunctionDescription,
     ToolDescription,
     convert_pydantic_to_openai_function,
 )
-
-from langchain.tools.base import BaseTool
 
 
 def render_text_description(tools: List[BaseTool]) -> str:
