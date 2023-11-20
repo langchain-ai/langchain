@@ -5,10 +5,14 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
-from embedchain import Pipeline
 
 from langchain.retrievers.embedchain import EmbedchainRetriever
 from langchain.schema import Document
+
+try:
+    from embedchain import Pipeline
+except ImportError:
+    pytest.skip("Requires embedchain", allow_module_level=True)
 
 os.environ["OPENAI_API_KEY"] = "sk-xxxx"
 
