@@ -38,7 +38,7 @@ from langchain_core.schema.output import ChatGenerationChunk
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
-from langchain_core.utils.openai import is_openai_v1
+from langchain.utils.openai import is_openai_v1
 
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (

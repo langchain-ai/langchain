@@ -6,7 +6,7 @@ import warnings
 from typing import Dict, Optional, Union
 
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils.openai import is_openai_v1
+from langchain.utils.openai import is_openai_v1
 
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.utils import get_from_dict_or_env

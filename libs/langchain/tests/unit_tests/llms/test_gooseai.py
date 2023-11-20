@@ -2,7 +2,7 @@
 
 import pytest
 from langchain_core.pydantic_v1 import SecretStr
-from langchain_core.utils.openai import is_openai_v1
+from langchain.utils.openai import is_openai_v1
 from pytest import MonkeyPatch
 
 from langchain.llms.gooseai import GooseAI

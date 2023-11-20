@@ -4,7 +4,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from langchain_core.utils.openai import is_openai_v1
+from langchain.utils.openai import is_openai_v1
 from tenacity import wait_none
 
 from langchain.llms import base

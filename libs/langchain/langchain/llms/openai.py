@@ -25,7 +25,7 @@ from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.schema import Generation, LLMResult
 from langchain_core.schema.output import GenerationChunk
 from langchain_core.utils import get_pydantic_field_names
-from langchain_core.utils.openai import is_openai_v1
+from langchain.utils.openai import is_openai_v1
 from langchain_core.utils.utils import build_extra_kwargs
 
 from langchain.callbacks.manager import (
