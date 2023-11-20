@@ -278,6 +278,7 @@ class _SparkLLMClient:
     ):
         try:
             import websocket
+
             self.websocket_client = websocket
         except ImportError:
             raise ImportError(
