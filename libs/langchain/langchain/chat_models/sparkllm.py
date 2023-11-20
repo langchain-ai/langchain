@@ -7,8 +7,9 @@ import queue
 import ssl
 import threading
 from datetime import datetime
+from queue import Queue
 from time import mktime
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
+from typing import Any, Dict, Generator, Iterator, List, Mapping, Optional, Type
 from urllib.parse import urlencode, urlparse, urlunparse
 from wsgiref.handlers import format_date_time
 
@@ -209,21 +210,22 @@ class ChatSparkLLM(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        messages = [_convert_message_to_dict(m) for m in messages]
         default_chunk_class = AIMessageChunk
 
         self.client.arun(
-            messages, self.spark_user_id, self.model_kwargs, self.streaming
+            [_convert_message_to_dict(m) for m in messages],
+            self.spark_user_id,
+            self.model_kwargs,
+            self.streaming,
         )
         for content in self.client.subscribe(timeout=self.request_timeout):
             if "data" not in content:
                 continue
             delta = content["data"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
-            default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+                run_manager.on_llm_new_token(str(chunk.content))
 
     def _generate(
         self,
@@ -297,7 +299,7 @@ class _SparkLLMClient:
         )
         self.model_kwargs = model_kwargs
         self.spark_domain = spark_domain or "generalv3"
-        self.queue = queue.Queue()
+        self.queue: Queue[Dict] = Queue()
         self.blocking_message = {"content": "", "role": "assistant"}
 
     @staticmethod
@@ -351,7 +353,7 @@ class _SparkLLMClient:
         user_id: str,
         model_kwargs: Optional[dict] = None,
         streaming: bool = False,
-    ):
+    ) -> None:
         self.websocket_client.enableTrace(False)
         ws = self.websocket_client.WebSocketApp(
             self.ws_url,
@@ -385,11 +387,11 @@ class _SparkLLMClient:
         ws_thread.start()
         return ws_thread
 
-    def on_error(self, ws, error):
+    def on_error(self, ws: Any, error: Optional[Any]) -> None:
         self.queue.put({"error": error})
         ws.close()
 
-    def on_close(self, ws, close_status_code, close_reason):
+    def on_close(self, ws: Any, close_status_code: int, close_reason: str) -> None:
         logger.debug(
             {
                 "log": {
@@ -400,7 +402,7 @@ class _SparkLLMClient:
         )
         self.queue.put({"done": True})
 
-    def on_open(self, ws):
+    def on_open(self, ws: Any) -> None:
         self.blocking_message = {"content": "", "role": "assistant"}
         data = json.dumps(
             self.gen_params(
@@ -409,7 +411,7 @@ class _SparkLLMClient:
         )
         ws.send(data)
 
-    def on_message(self, ws, message):
+    def on_message(self, ws: Any, message: str) -> None:
         data = json.loads(message)
         code = data["header"]["code"]
         if code != 0:
@@ -439,7 +441,7 @@ class _SparkLLMClient:
     def gen_params(
         self, messages: list, user_id: str, model_kwargs: Optional[dict] = None
     ) -> dict:
-        data = {
+        data: Dict = {
             "header": {"app_id": self.app_id, "uid": user_id},
             "parameter": {"chat": {"domain": self.spark_domain}},
             "payload": {"message": {"text": messages}},
@@ -450,7 +452,7 @@ class _SparkLLMClient:
         logger.debug(f"Spark Request Parameters: {data}")
         return data
 
-    def subscribe(self, timeout=30):
+    def subscribe(self, timeout: Optional[int] = 30) -> Generator[Dict, None, None]:
         while True:
             try:
                 content = self.queue.get(timeout=timeout)
