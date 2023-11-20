@@ -16,8 +16,8 @@ class CogniswitchAnswerTool(BaseTool):
     )
     """
 
-    name: str = "Cogniswitch"
-    description: str = "A wrapper around cogniswitch. "
+    name: str = "CogniswitchAnswerTool"
+    description: str = "This tool can be used to get answers using natural language queries from your knowledge sources."
     cs_token: str
     OAI_token: str
     apiKey: str
@@ -87,8 +87,8 @@ class CogniswitchStoreTool(BaseTool):
     )
     """
 
-    name: str = "Cogniswitch"
-    description: str = "A wrapper around cogniswitch. "
+    name: str = "CogniswitchStoreTool"
+    description: str = "This tool can be used to analyze, organize and store your knowledge from documents or urls"
     cs_token: str
     OAI_token: str
     apiKey: str

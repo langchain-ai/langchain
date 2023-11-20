@@ -23,6 +23,8 @@ _EXPECTED = [
     "BingSearchRun",
     "BraveSearch",
     "ClickTool",
+    "CogniswitchStoreTool",
+    "CogniswitchAnswerTool",
     "CopyFileTool",
     "CurrentWebPageTool",
     "DeleteFileTool",
