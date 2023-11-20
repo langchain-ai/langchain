@@ -401,6 +401,7 @@ class DatabricksVectorSearch(VectorStore):
             schema_json = self._direct_access_index_spec.get("schema_json")
             if schema_json is not None:
                 return json.loads(schema_json)
+        return None
 
     def _embedding_vector_column_name(self) -> Optional[str]:
         """Return the name of the embedding vector column.
