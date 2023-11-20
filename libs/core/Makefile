@@ -13,7 +13,7 @@ tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
-	poetry run ptw --now . -- tests/unit_tests
+	poetry run ptw --snapshot-update --now . -- -x tests/unit_tests
 
 extended_tests:
 	poetry run pytest --only-extended tests/unit_tests

@@ -35,6 +35,8 @@ pytest = "^7.3.0"
 freezegun = "^1.2.2"
 pytest-mock  = "^3.10.0"
 syrupy = "^4.0.2"
+pytest-watcher = "^0.3.4"
+pytest-asyncio = "^0.21.1"
 
 
 [tool.poetry.group.test_integration]
