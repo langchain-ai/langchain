@@ -243,9 +243,9 @@ class DatabricksVectorSearch(VectorStore):
                 "failed_primary_keys", []
             )
             if upsert_resp.get("status") == "FAILURE":
-                logger.error(f"Failed to add texts to the index.")
+                logger.error("Failed to add texts to the index.")
             else:
-                logger.warning(f"Some texts failed to be added to the index.")
+                logger.warning("Some texts failed to be added to the index.")
             return [id_ for id_ in ids if id_ not in failed_ids]
 
         return ids
