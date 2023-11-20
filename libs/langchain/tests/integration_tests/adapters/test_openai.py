@@ -1,12 +1,13 @@
 from typing import Any
 
-import openai
 import pytest
 
 from langchain.adapters import openai as lcopenai
 
 
 def _test_no_stream(**kwargs: Any) -> None:
+    import openai
+
     result = openai.ChatCompletion.create(**kwargs)
     lc_result = lcopenai.ChatCompletion.create(**kwargs)
     if isinstance(lc_result, dict):
@@ -18,6 +19,8 @@ def _test_no_stream(**kwargs: Any) -> None:
 
 
 def _test_stream(**kwargs: Any) -> None:
+    import openai
+
     result = []
     for c in openai.ChatCompletion.create(**kwargs):
         result.append(c["choices"][0]["delta"].to_dict_recursive())
@@ -29,6 +32,8 @@ def _test_stream(**kwargs: Any) -> None:
 
 
 async def _test_async(**kwargs: Any) -> None:
+    import openai
+
     result = await openai.ChatCompletion.acreate(**kwargs)
     lc_result = await lcopenai.ChatCompletion.acreate(**kwargs)
     if isinstance(lc_result, dict):
@@ -40,6 +45,8 @@ async def _test_async(**kwargs: Any) -> None:
 
 
 async def _test_astream(**kwargs: Any) -> None:
+    import openai
+
     result = []
     async for c in await openai.ChatCompletion.acreate(**kwargs):
         result.append(c["choices"][0]["delta"].to_dict_recursive())

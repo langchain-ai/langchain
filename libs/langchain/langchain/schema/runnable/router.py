@@ -8,7 +8,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Sequence,
     Union,
     cast,
 )
@@ -55,7 +54,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     runnables: Mapping[str, Runnable[Any, Output]]
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec for step in self.runnables.values() for spec in step.config_specs
         )
