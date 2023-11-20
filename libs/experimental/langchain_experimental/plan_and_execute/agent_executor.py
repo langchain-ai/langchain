@@ -36,10 +36,6 @@ class PlanAndExecute(Chain):
     def output_keys(self) -> List[str]:
         return [self.output_key]
 
-    @property
-    def intermediate_steps_keys(self) -> List[tuple]:
-        return [self.intermediate_steps_key]
-
     def _call(
         self,
         inputs: Dict[str, Any],
@@ -72,7 +68,8 @@ class PlanAndExecute(Chain):
                 )
             self.step_container.add_step(step, response)
             tmp.append((step, response))
-        return {self.output_key: self.step_container.get_final_response(), self.intermediate_steps_key:tmp}
+        return {self.output_key: self.step_container.get_final_response(),
+                self.intermediate_steps_key:tmp}
 
     async def _acall(
         self,
@@ -106,4 +103,5 @@ class PlanAndExecute(Chain):
                 )
             self.step_container.add_step(step, response)
             tmp.append((step, response))
-        return {self.output_key: self.step_container.get_final_response(), self.intermediate_steps_key:tmp}
+        return {self.output_key: self.step_container.get_final_response(),
+                self.intermediate_steps_key:tmp}
