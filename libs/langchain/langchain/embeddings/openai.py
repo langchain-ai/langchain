@@ -291,7 +291,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             # Azure OpenAI embedding models allow a maximum of 16 texts
             # at a time in each batch
             # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-            values["chunk_size"] = max(values["chunk_size"], 16)
+            values["chunk_size"] = min(values["chunk_size"], 16)
         else:
             default_api_version = ""
         values["openai_api_version"] = get_from_dict_or_env(
