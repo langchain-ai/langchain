@@ -104,7 +104,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
         try:
             from importlib.metadata import version
 
-            from pymongo import DriverInfo, MongoClient
+            from pymongo import MongoClient
+            from pymongo.driver_info import DriverInfo
         except ImportError:
             raise ImportError(
                 "Could not import pymongo, please install it with "
