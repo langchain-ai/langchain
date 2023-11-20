@@ -3,10 +3,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Type
 
-from langchain_core.prompts.example_selector.base import BaseExampleSelector
+from langchain_core.embeddings import Embeddings
+from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.pydantic_v1 import BaseModel, Extra
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.vectorstore import VectorStore
+from langchain_core.vectorstores import VectorStore
 
 
 def sorted_values(values: Dict[str, str]) -> List[Any]:

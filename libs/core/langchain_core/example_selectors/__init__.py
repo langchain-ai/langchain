@@ -1,13 +1,15 @@
 """Logic for selecting examples to include in prompts."""
-from langchain_core.prompts.example_selector.length_based import (
+from langchain_core.example_selectors.base import BaseExampleSelector
+from langchain_core.example_selectors.length_based import (
     LengthBasedExampleSelector,
 )
-from langchain_core.prompts.example_selector.semantic_similarity import (
+from langchain_core.example_selectors.semantic_similarity import (
     MaxMarginalRelevanceExampleSelector,
     SemanticSimilarityExampleSelector,
 )
 
 __all__ = [
+    "BaseExampleSelector",
     "LengthBasedExampleSelector",
     "MaxMarginalRelevanceExampleSelector",
     "SemanticSimilarityExampleSelector",

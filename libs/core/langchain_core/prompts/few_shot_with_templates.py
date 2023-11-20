@@ -2,9 +2,9 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from langchain_core.prompts.base import DEFAULT_FORMATTER_MAPPING, StringPromptTemplate
-from langchain_core.prompts.example_selector.base import BaseExampleSelector
+from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompts.str import DEFAULT_FORMATTER_MAPPING, StringPromptTemplate
 from langchain_core.pydantic_v1 import Extra, root_validator
 
 

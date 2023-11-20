@@ -6,8 +6,9 @@ from typing import Any, Dict, Optional, Union
 
 import requests
 
-from langchain_core.callbacks.tracers.base import BaseTracer
-from langchain_core.callbacks.tracers.schemas import (
+from langchain_core.messages import get_buffer_string
+from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.schemas import (
     ChainRun,
     LLMRun,
     Run,
@@ -16,7 +17,6 @@ from langchain_core.callbacks.tracers.schemas import (
     TracerSessionV1,
     TracerSessionV1Base,
 )
-from langchain_core.schema.messages import get_buffer_string
 from langchain_core.utils import raise_for_status_with_text
 
 logger = logging.getLogger(__name__)

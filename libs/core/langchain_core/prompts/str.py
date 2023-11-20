@@ -6,9 +6,9 @@ from abc import ABC
 from string import Formatter
 from typing import Any, Callable, Dict, List, Literal, Set
 
-from langchain_core.schema.messages import BaseMessage, HumanMessage
-from langchain_core.schema.prompt import PromptValue
-from langchain_core.schema.prompt_template import BasePromptTemplate
+from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.prompts.value import PromptValue
 from langchain_core.utils.formatting import formatter
 
 

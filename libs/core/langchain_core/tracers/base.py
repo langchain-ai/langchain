@@ -9,22 +9,19 @@ from uuid import UUID
 
 from tenacity import RetryCallState
 
-from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.callbacks.tracers.schemas import Run
-from langchain_core.load.dump import dumpd
-from langchain_core.schema.document import Document
-from langchain_core.schema.output import (
+from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.documents import Document
+from langchain_core.exceptions import TracerException
+from langchain_core.load import dumpd
+from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     GenerationChunk,
     LLMResult,
 )
+from langchain_core.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
-
-
-class TracerException(Exception):
-    """Base class for exceptions in tracers module."""
 
 
 class BaseTracer(BaseCallbackHandler, ABC):

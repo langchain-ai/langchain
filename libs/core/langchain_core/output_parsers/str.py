@@ -1,4 +1,4 @@
-from langchain_core.output_parsers.base import BaseTransformOutputParser
+from langchain_core.output_parsers.transform import BaseTransformOutputParser
 
 
 class StrOutputParser(BaseTransformOutputParser[str]):

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.schema.messages import BaseMessage
+from langchain_core.messages import BaseMessage
 
 
 class PromptValue(Serializable, ABC):

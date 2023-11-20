@@ -5,7 +5,11 @@ class LangChainException(Exception):
     """General LangChain exception."""
 
 
-class OutputParserException(ValueError):
+class TracerException(LangChainException):
+    """Base class for exceptions in tracers module."""
+
+
+class OutputParserException(ValueError, LangChainException):
     """Exception that output parsers should raise to signify a parsing error.
 
     This exists to differentiate parsing errors from other code or execution errors

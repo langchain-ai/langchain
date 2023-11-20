@@ -26,53 +26,55 @@ from langchain_core.callbacks.manager import (
     collect_runs,
     trace_as_chain_group,
 )
-from langchain_core.callbacks.tracers.base import BaseTracer
-from langchain_core.callbacks.tracers.log_stream import RunLog, RunLogPatch
-from langchain_core.callbacks.tracers.schemas import Run
-from langchain_core.callbacks.tracers.stdout import ConsoleCallbackHandler
-from langchain_core.load.dump import dumpd, dumps
-from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
-from langchain_core.prompts import PromptTemplate
-from langchain_core.prompts.base import StringPromptValue
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    ChatPromptValue,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-    SystemMessagePromptTemplate,
-)
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables import (
-    RouterRunnable,
-    Runnable,
-    RunnableBranch,
-    RunnableConfig,
-    RunnableLambda,
-    RunnableParallel,
-    RunnablePassthrough,
-    RunnableSequence,
-    RunnableWithFallbacks,
-)
-from langchain_core.runnables.base import (
-    ConfigurableField,
-    RunnableBinding,
-    RunnableGenerator,
-)
-from langchain_core.runnables.utils import (
-    ConfigurableFieldMultiOption,
-    ConfigurableFieldSingleOption,
-    add,
-)
-from langchain_core.schema.document import Document
-from langchain_core.schema.messages import (
+from langchain_core.documents import Document
+from langchain_core.load import dumpd, dumps
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output_parser import BaseOutputParser, StrOutputParser
-from langchain_core.schema.retriever import BaseRetriever
-from langchain_core.tool import BaseTool, tool
+from langchain_core.output_parsers import (
+    BaseOutputParser,
+    CommaSeparatedListOutputParser,
+    StrOutputParser,
+)
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    ChatPromptValue,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    PromptTemplate,
+    StringPromptValue,
+    SystemMessagePromptTemplate,
+)
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import (
+    ConfigurableField,
+    ConfigurableFieldMultiOption,
+    ConfigurableFieldSingleOption,
+    RouterRunnable,
+    Runnable,
+    RunnableBinding,
+    RunnableBranch,
+    RunnableConfig,
+    RunnableGenerator,
+    RunnableLambda,
+    RunnableParallel,
+    RunnablePassthrough,
+    RunnableSequence,
+    RunnableWithFallbacks,
+    add,
+)
+from langchain_core.tools import BaseTool, tool
+from langchain_core.tracers import (
+    BaseTracer,
+    ConsoleCallbackHandler,
+    Run,
+    RunLog,
+    RunLogPatch,
+)
 from tests.unit_tests.fake.chat_model import FakeListChatModel
 from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 
@@ -1539,7 +1541,7 @@ def test_with_listeners(mocker: MockerFixture) -> None:
     )
     chat = FakeListChatModel(responses=["foo"])
 
-    chain = prompt | chat
+    chain: Runnable = prompt | chat
 
     mock_start = mocker.Mock()
     mock_end = mocker.Mock()
@@ -1572,7 +1574,7 @@ async def test_with_listeners_async(mocker: MockerFixture) -> None:
     )
     chat = FakeListChatModel(responses=["foo"])
 
-    chain = prompt | chat
+    chain: Runnable = prompt | chat
 
     mock_start = mocker.Mock()
     mock_end = mocker.Mock()
@@ -1608,7 +1610,7 @@ def test_prompt_with_chat_model(
     )
     chat = FakeListChatModel(responses=["foo"])
 
-    chain = prompt | chat
+    chain: Runnable = prompt | chat
 
     assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
@@ -1712,7 +1714,7 @@ async def test_prompt_with_chat_model_async(
     )
     chat = FakeListChatModel(responses=["foo"])
 
-    chain = prompt | chat
+    chain: Runnable = prompt | chat
 
     assert repr(chain) == snapshot
     assert isinstance(chain, RunnableSequence)
@@ -1819,7 +1821,7 @@ async def test_prompt_with_llm(
     )
     llm = FakeListLLM(responses=["foo", "bar"])
 
-    chain = prompt | llm
+    chain: Runnable = prompt | llm
 
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
@@ -2325,13 +2327,13 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
 async def test_router_runnable(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
-    chain1 = ChatPromptTemplate.from_template(
+    chain1: Runnable = ChatPromptTemplate.from_template(
         "You are a math genius. Answer the question: {question}"
     ) | FakeListLLM(responses=["4"])
-    chain2 = ChatPromptTemplate.from_template(
+    chain2: Runnable = ChatPromptTemplate.from_template(
         "You are an english major. Answer the question: {question}"
     ) | FakeListLLM(responses=["2"])
-    router = RouterRunnable({"math": chain1, "english": chain2})
+    router: Runnable = RouterRunnable({"math": chain1, "english": chain2})
     chain: Runnable = {
         "key": lambda x: x["key"],
         "input": {"question": lambda x: x["question"]},
@@ -2377,10 +2379,10 @@ async def test_router_runnable(
 async def test_higher_order_lambda_runnable(
     mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
-    math_chain = ChatPromptTemplate.from_template(
+    math_chain: Runnable = ChatPromptTemplate.from_template(
         "You are a math genius. Answer the question: {question}"
     ) | FakeListLLM(responses=["4"])
-    english_chain = ChatPromptTemplate.from_template(
+    english_chain: Runnable = ChatPromptTemplate.from_template(
         "You are an english major. Answer the question: {question}"
     ) | FakeListLLM(responses=["2"])
     input_map: Runnable = RunnableParallel(
@@ -3096,7 +3098,7 @@ async def test_deep_astream_assign() -> None:
 def test_runnable_sequence_transform() -> None:
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
-    chain = llm | StrOutputParser()
+    chain: Runnable = llm | StrOutputParser()
 
     stream = chain.transform(llm.stream("Hi there!"))
 
@@ -3111,7 +3113,7 @@ def test_runnable_sequence_transform() -> None:
 async def test_runnable_sequence_atransform() -> None:
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
-    chain = llm | StrOutputParser()
+    chain: Runnable = llm | StrOutputParser()
 
     stream = chain.atransform(llm.astream("Hi there!"))
 

@@ -27,20 +27,16 @@ from multiple components. Prompt classes and functions make constructing
                     ChatPromptValue
 
 """  # noqa: E501
-from langchain_core.prompts.base import StringPromptTemplate
+from langchain_core.prompts.base import BasePromptTemplate, format_document
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseChatPromptTemplate,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
+    ChatPromptValue,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
-)
-from langchain_core.prompts.example_selector import (
-    LengthBasedExampleSelector,
-    MaxMarginalRelevanceExampleSelector,
-    SemanticSimilarityExampleSelector,
 )
 from langchain_core.prompts.few_shot import (
     FewShotChatMessagePromptTemplate,
@@ -50,7 +46,7 @@ from langchain_core.prompts.few_shot_with_templates import FewShotPromptWithTemp
 from langchain_core.prompts.loading import load_prompt
 from langchain_core.prompts.pipeline import PipelinePromptTemplate
 from langchain_core.prompts.prompt import Prompt, PromptTemplate
-from langchain_core.schema.prompt_template import BasePromptTemplate
+from langchain_core.prompts.str import StringPromptTemplate, StringPromptValue
 
 __all__ = [
     "AIMessagePromptTemplate",
@@ -58,18 +54,21 @@ __all__ = [
     "BasePromptTemplate",
     "ChatMessagePromptTemplate",
     "ChatPromptTemplate",
+    "ChatPromptValue",
     "FewShotPromptTemplate",
     "FewShotPromptWithTemplates",
+    "FewShotChatMessagePromptTemplate",
     "HumanMessagePromptTemplate",
-    "LengthBasedExampleSelector",
-    "MaxMarginalRelevanceExampleSelector",
     "MessagesPlaceholder",
     "PipelinePromptTemplate",
     "Prompt",
     "PromptTemplate",
-    "SemanticSimilarityExampleSelector",
+    "PromptValue",
+    "StringPromptValue",
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
     "load_prompt",
-    "FewShotChatMessagePromptTemplate",
+    "format_document",
 ]
+
+from langchain_core.prompts.value import PromptValue

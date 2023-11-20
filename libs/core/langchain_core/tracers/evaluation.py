@@ -12,10 +12,10 @@ import langsmith
 from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
 
 from langchain_core.callbacks import manager
-from langchain_core.callbacks.tracers import langchain as langchain_tracer
-from langchain_core.callbacks.tracers.base import BaseTracer
-from langchain_core.callbacks.tracers.langchain import _get_executor
-from langchain_core.callbacks.tracers.schemas import Run
+from langchain_core.tracers import langchain as langchain_tracer
+from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.langchain import _get_executor
+from langchain_core.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
 

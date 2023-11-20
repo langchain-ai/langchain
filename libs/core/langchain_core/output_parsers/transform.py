@@ -8,15 +8,15 @@ from typing import (
     Union,
 )
 
+from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.output_parsers.base import BaseOutputParser, T
-from langchain_core.runnables import RunnableConfig
-from langchain_core.schema.messages import BaseMessage, BaseMessageChunk
-from langchain_core.schema.output import (
+from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     Generation,
     GenerationChunk,
 )
+from langchain_core.runnables import RunnableConfig
 
 
 class BaseTransformOutputParser(BaseOutputParser[T]):
