@@ -1,13 +1,11 @@
+import json
 import logging
 import threading
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import (
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.schema import (
     AIMessage,
     BaseMessage,
     ChatGeneration,
@@ -15,6 +13,9 @@ from langchain.schema import (
     ChatResult,
     HumanMessage,
 )
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.chat_models.base import BaseChatModel
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -179,9 +180,15 @@ class ErnieBotChat(BaseChatModel):
         return self._create_chat_result(resp)
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
-        generations = [
-            ChatGeneration(message=AIMessage(content=response.get("result")))
-        ]
+        if "function_call" in response:
+            fc_str = '{{"function_call": {}}}'.format(
+                json.dumps(response.get("function_call"))
+            )
+            generations = [ChatGeneration(message=AIMessage(content=fc_str))]
+        else:
+            generations = [
+                ChatGeneration(message=AIMessage(content=response.get("result")))
+            ]
         token_usage = response.get("usage", {})
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)

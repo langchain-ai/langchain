@@ -2,9 +2,9 @@
 from typing import Generator
 
 import pytest
+from langchain_core.schema import LLMResult
 
 from langchain.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
-from langchain.schema import LLMResult
 
 
 def test_call() -> None:

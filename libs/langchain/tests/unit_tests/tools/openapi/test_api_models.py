@@ -8,7 +8,7 @@ import pytest
 
 # Keep at top of file to ensure that pydantic test can be skipped before
 # pydantic v1 related imports are attempted by openapi_pydantic.
-from langchain.pydantic_v1 import _PYDANTIC_MAJOR_VERSION
+from langchain_core.pydantic_v1 import _PYDANTIC_MAJOR_VERSION
 
 if _PYDANTIC_MAJOR_VERSION != 1:
     pytest.skip(

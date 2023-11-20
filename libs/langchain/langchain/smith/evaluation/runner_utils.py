@@ -20,6 +20,13 @@ from typing import (
     cast,
 )
 
+from langchain_core._api import warn_deprecated
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
+from langchain_core.runnables import config as runnable_config
+from langchain_core.runnables import utils as runnable_utils
+from langchain_core.schema import ChatResult, LLMResult
+from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.schema.messages import BaseMessage, messages_from_dict
 from langsmith.client import Client
 from langsmith.evaluation import RunEvaluator
 from langsmith.run_helpers import as_runnable, is_traceable_function
@@ -27,7 +34,6 @@ from langsmith.schemas import Dataset, DataType, Example
 from langsmith.utils import LangSmithError
 from requests import HTTPError
 
-from langchain._api import warn_deprecated
 from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.evaluation import (
     EvaluatorCallbackHandler,
@@ -41,12 +47,6 @@ from langchain.evaluation.schema import (
     PairwiseStringEvaluator,
     StringEvaluator,
 )
-from langchain.schema import ChatResult, LLMResult
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage, messages_from_dict
-from langchain.schema.runnable import Runnable, RunnableConfig, RunnableLambda
-from langchain.schema.runnable import config as runnable_config
-from langchain.schema.runnable import utils as runnable_utils
 from langchain.smith import evaluation as smith_eval
 from langchain.smith.evaluation import config as smith_eval_config
 from langchain.smith.evaluation import name_generation, progress
@@ -116,6 +116,7 @@ class TestResult(dict):
                 **{f.key: f.score for f in feedback},
                 "input": result["input"],
                 "output": result["output"],
+                "execution_time": result["execution_time"],
             }
             if "reference" in result:
                 r["reference"] = result["reference"]
@@ -418,12 +419,17 @@ def _determine_input_key(
     if config.input_key:
         input_key = config.input_key
         if run_inputs and input_key not in run_inputs:
-            raise ValueError(f"Input key {input_key} not in run inputs {run_inputs}")
+            logger.warning(
+                f"Input key {input_key} not in chain's specified"
+                f" input keys {run_inputs}. Evaluation behavior may be undefined."
+            )
     elif run_inputs and len(run_inputs) == 1:
         input_key = run_inputs[0]
     elif run_inputs is not None and len(run_inputs) > 1:
-        raise ValueError(
-            f"Must specify input key for model with multiple inputs: {run_inputs}"
+        logger.warning(
+            f"Chain expects multiple input keys: {run_inputs},"
+            f" Evaluator is likely to fail. Evaluation behavior may be undefined."
+            " Specify an input_key in the RunEvalConfig to avoid this warning."
         )
 
     return input_key
@@ -437,15 +443,17 @@ def _determine_prediction_key(
     if config.prediction_key:
         prediction_key = config.prediction_key
         if run_outputs and prediction_key not in run_outputs:
-            raise ValueError(
-                f"Prediction key {prediction_key} not in run outputs {run_outputs}"
+            logger.warning(
+                f"Prediction key {prediction_key} not in chain's specified"
+                f" output keys {run_outputs}. Evaluation behavior may be undefined."
             )
     elif run_outputs and len(run_outputs) == 1:
         prediction_key = run_outputs[0]
     elif run_outputs is not None and len(run_outputs) > 1:
-        raise ValueError(
-            f"Must specify prediction key for model"
-            f" with multiple outputs: {run_outputs}"
+        logger.warning(
+            f"Chain expects multiple output keys: {run_outputs},"
+            f" Evaluation behavior may be undefined. Specify a prediction_key"
+            " in the RunEvalConfig to avoid this warning."
         )
     return prediction_key
 
@@ -487,6 +495,11 @@ def _construct_run_evaluator(
         kwargs = {"llm": eval_llm, **eval_config.get_kwargs()}
         evaluator_ = load_evaluator(eval_config.evaluator_type, **kwargs)
         eval_type_tag = eval_config.evaluator_type.value
+        # Override keys if specified in the config
+        if isinstance(eval_config, smith_eval_config.SingleKeyEvalConfig):
+            input_key = eval_config.input_key or input_key
+            prediction_key = eval_config.prediction_key or prediction_key
+            reference_key = eval_config.reference_key or reference_key
 
     if isinstance(evaluator_, StringEvaluator):
         if evaluator_.requires_reference and reference_key is None:
@@ -729,7 +742,7 @@ async def _arun_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\n{repr(e)}"
         )
-        result = {"Error": repr(e)}
+        result = {"Error": e}
     return result
 
 
@@ -861,7 +874,7 @@ def _run_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\nError Type: {error_type}, Message: {e}"
         )
-        result = {"Error": repr(e)}
+        result = {"Error": e}
     return result
 
 
@@ -973,6 +986,14 @@ def _collect_test_results(
                 all_eval_results.update(
                     {example_id: v for (_, example_id), v in eval_results.items()}
                 )
+            elif isinstance(callback, LangChainTracer):
+                run = callback.latest_run
+                execution_time = (
+                    (run.end_time - run.start_time).total_seconds()
+                    if run and run.end_time
+                    else None
+                )
+
     results = {}
     for example, output in zip(examples, batch_results):
         feedback = all_eval_results.get(str(example.id), [])
@@ -980,6 +1001,7 @@ def _collect_test_results(
             "output": output,
             "input": example.inputs,
             "feedback": feedback,
+            "execution_time": execution_time,
         }
         if example.outputs:
             results[str(example.id)]["reference"] = example.outputs
