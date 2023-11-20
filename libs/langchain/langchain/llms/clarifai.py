@@ -72,24 +72,6 @@ class Clarifai(LLM):
 
         return values
 
-    def _model_init(self):
-        """Verifies the parameter passed,
-        Initializes and returns the clarifai model object."""
-        try:
-            from clarifai.client.model import Model
-        except ImportError:
-            raise ImportError(
-                "Could not import clarifai python package. "
-                "Please install it with `pip install clarifai`."
-            )
-        if self.model_url is not None:
-            model = Model(url_init=self.model_url)
-        else:
-            model = Model(
-                model_id=self.model_id, user_id=self.user_id, app_id=self.app_id
-            )
-        return model
-
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Clarifai API."""
@@ -116,8 +98,8 @@ class Clarifai(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-        inference_params: Optional[Dict[str, Any]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        inference_params: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Call out to Clarfai's PostModelOutputs endpoint.
@@ -136,9 +118,21 @@ class Clarifai(LLM):
         """
         # If version_id None, Defaults to the latest model version
         try:
-            model_obj = self._model_init()
+            from clarifai.client.model import Model
+        except ImportError:
+            raise ImportError(
+                "Could not import clarifai python package. "
+                "Please install it with `pip install clarifai`."
+            )
+        if self.model_url is not None:
+            _model_init = Model(url_init=self.model_url)
+        else:
+            _model_init = Model(
+                model_id=self.model_id, user_id=self.user_id, app_id=self.app_id
+            )
+        try:
             (inference_params := {}) if inference_params is None else inference_params
-            predict_response = model_obj.predict_by_bytes(
+            predict_response = _model_init.predict_by_bytes(
                 bytes(prompt, "utf-8"),
                 input_type="text",
                 inference_params=inference_params,
@@ -155,9 +149,9 @@ class Clarifai(LLM):
     def _generate(
         self,
         prompts: List[str],
-        inference_params: Optional[Dict[str, Any]] = None,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        inference_params: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
@@ -165,16 +159,22 @@ class Clarifai(LLM):
         # TODO: add caching here.
         try:
             from clarifai.client.input import Inputs
+            from clarifai.client.model import Model
         except ImportError:
             raise ImportError(
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
             )
+        if self.model_url is not None:
+            _model_init = Model(url_init=self.model_url)
+        else:
+            _model_init = Model(
+                model_id=self.model_id, user_id=self.user_id, app_id=self.app_id
+            )
 
         generations = []
         batch_size = 32
         input_obj = Inputs()
-        model_obj = self._model_init()
         try:
             for i in range(0, len(prompts), batch_size):
                 batch = prompts[i : i + batch_size]
@@ -185,7 +185,7 @@ class Clarifai(LLM):
                 (
                     inference_params := {}
                 ) if inference_params is None else inference_params
-                predict_response = model_obj.predict(
+                predict_response = _model_init.predict(
                     inputs=input_batch, inference_params=inference_params
                 )
 

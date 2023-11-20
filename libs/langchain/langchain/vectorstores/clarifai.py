@@ -85,8 +85,6 @@ class Clarifai(VectorStore):
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]], optional): Optional list of IDs.
 
-        Returns:
-            List[str]: List of IDs of the added texts.
         """
         try:
             from clarifai.client.input import Inputs
@@ -106,45 +104,50 @@ class Clarifai(VectorStore):
             ), "Number of texts and metadatas should be the same."
 
         if ids is not None:
-            assert len(texts) == len(
+            assert len(ltexts) == len(
                 ids
             ), "Number of text inputs and input ids should be the same."
 
         input_obj = Inputs(app_id=self._app_id, user_id=self._user_id)
         batch_size = 32
+        input_job_ids = []
         for idx in range(0, length, batch_size):
             try:
                 batch_texts = ltexts[idx : idx + batch_size]
                 batch_metadatas = (
                     metadatas[idx : idx + batch_size] if metadatas else None
                 )
-                meta_list = []
-                for meta in batch_metadatas:
-                    meta_struct = Struct()
-                    meta_struct.update(meta)
-                    meta_list.append(meta_struct)
+                if batch_metadatas is not None:
+                    meta_list = []
+                    for meta in batch_metadatas:
+                        meta_struct = Struct()
+                        meta_struct.update(meta)
+                        meta_list.append(meta_struct)
                 if ids is None:
                     ids = [uuid.uuid4().hex for _ in range(len(batch_texts))]
-
                 input_batch = [
                     input_obj.get_text_input(
-                        input_id=ids[id], raw_text=inp, metadata=meta_list[id]
+                        input_id=ids[id],
+                        raw_text=inp,
+                        metadata=meta_list[id] if batch_metadatas else None,
                     )
                     for id, inp in enumerate(batch_texts)
                 ]
-                input_obj.upload_inputs(inputs=input_batch)
+                result_id = input_obj.upload_inputs(inputs=input_batch)
+                input_job_ids.extend(result_id)
                 logger.debug("Input posted successfully.")
 
             except Exception as error:
                 logger.warning(f"Post inputs failed: {error}")
                 traceback.print_exc()
 
+        return input_job_ids
+
     def similarity_search_with_score(
         self,
         query: str,
         k: int = 4,
         filters: Optional[dict] = None,
-        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with score using Clarifai.
