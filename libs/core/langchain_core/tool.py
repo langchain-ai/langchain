@@ -26,7 +26,7 @@ from langchain_core.pydantic_v1 import (
     root_validator,
     validate_arguments,
 )
-from langchain_core.runnable import Runnable, RunnableConfig, RunnableSerializable
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
 
 
 class SchemaAnnotationError(TypeError):

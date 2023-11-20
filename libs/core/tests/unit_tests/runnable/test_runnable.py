@@ -42,7 +42,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnable import (
+from langchain_core.runnables import (
     RouterRunnable,
     Runnable,
     RunnableBranch,
@@ -53,12 +53,12 @@ from langchain_core.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
-from langchain_core.runnable.base import (
+from langchain_core.runnables.base import (
     ConfigurableField,
     RunnableBinding,
     RunnableGenerator,
 )
-from langchain_core.runnable.utils import (
+from langchain_core.runnables.utils import (
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
     add,

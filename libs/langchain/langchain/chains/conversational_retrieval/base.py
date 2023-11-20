@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain_core.runnable.config import RunnableConfig
+from langchain_core.runnables.config import RunnableConfig
 from langchain_core.schema import BasePromptTemplate, BaseRetriever, Document
 from langchain_core.schema.language_model import BaseLanguageModel
 from langchain_core.schema.messages import BaseMessage

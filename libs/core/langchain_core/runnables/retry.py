@@ -21,8 +21,8 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
-from langchain_core.runnable.base import Input, Output, RunnableBindingBase
-from langchain_core.runnable.config import RunnableConfig, patch_config
+from langchain_core.runnables.base import Input, Output, RunnableBindingBase
+from langchain_core.runnables.config import RunnableConfig, patch_config
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (

@@ -17,7 +17,7 @@ from langchain_core.pydantic_v1 import (
     root_validator,
     validator,
 )
-from langchain_core.runnable import RunnableConfig, RunnableSerializable
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.schema import RUN_KEY, BaseMemory, RunInfo
 
 from langchain.callbacks.base import BaseCallbackManager

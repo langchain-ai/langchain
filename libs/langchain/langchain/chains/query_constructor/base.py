@@ -5,7 +5,7 @@ import json
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Union, cast
 
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
-from langchain_core.runnable import Runnable
+from langchain_core.runnables import Runnable
 from langchain_core.schema import (
     BaseOutputParser,
     BasePromptTemplate,

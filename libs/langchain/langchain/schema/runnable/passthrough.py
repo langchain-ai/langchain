@@ -1,4 +1,4 @@
-from langchain_core.runnable.passthrough import (
+from langchain_core.runnables.passthrough import (
     RunnableAssign,
     RunnablePassthrough,
     identity,

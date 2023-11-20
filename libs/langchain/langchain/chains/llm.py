@@ -7,13 +7,13 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 from langchain_core.load.dump import dumpd
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field
-from langchain_core.runnable import (
+from langchain_core.runnables import (
     Runnable,
     RunnableBinding,
     RunnableBranch,
     RunnableWithFallbacks,
 )
-from langchain_core.runnable.configurable import DynamicRunnable
+from langchain_core.runnables.configurable import DynamicRunnable
 from langchain_core.schema import (
     BaseLLMOutputParser,
     BaseMessage,

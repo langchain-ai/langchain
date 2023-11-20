@@ -1,5 +1,5 @@
 from langchain_core.prompts import PromptTemplate
-from langchain_core.runnable import RunnableParallel
+from langchain_core.runnables import RunnableParallel
 from langchain_core.schema.output_parser import StrOutputParser
 
 import langchain.utilities.opaqueprompts as op

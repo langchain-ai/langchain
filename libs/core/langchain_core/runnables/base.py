@@ -38,14 +38,14 @@ if TYPE_CHECKING:
     )
     from langchain_core.callbacks.tracers.log_stream import RunLog, RunLogPatch
     from langchain_core.callbacks.tracers.root_listeners import Listener
-    from langchain_core.runnable.fallbacks import (
+    from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
 
 from langchain_core.load.dump import dumpd
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
-from langchain_core.runnable.config import (
+from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,
     call_func_with_variable_args,
@@ -57,7 +57,7 @@ from langchain_core.runnable.config import (
     merge_configs,
     patch_config,
 )
-from langchain_core.runnable.utils import (
+from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
     ConfigurableField,
@@ -126,7 +126,7 @@ class Runnable(Generic[Input, Output], ABC):
 
     .. code-block:: python
 
-        from langchain_core.runnable import RunnableLambda
+        from langchain_core.runnables import RunnableLambda
 
         # A RunnableSequence constructed using the `|` operator
         sequence = RunnableLambda(lambda x: x + 1) | RunnableLambda(lambda x: x * 2)
@@ -154,7 +154,7 @@ class Runnable(Generic[Input, Output], ABC):
 
     .. code-block:: python
 
-        from langchain_core.runnable import RunnableLambda
+        from langchain_core.runnables import RunnableLambda
 
         import random
 
@@ -777,7 +777,7 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             A new Runnable that retries the original runnable on exceptions.
         """
-        from langchain_core.runnable.retry import RunnableRetry
+        from langchain_core.runnables.retry import RunnableRetry
 
         return RunnableRetry(
             bound=self,
@@ -811,7 +811,7 @@ class Runnable(Generic[Input, Output], ABC):
             A new Runnable that will try the original runnable, and then each
             fallback in order, upon failures.
         """
-        from langchain_core.runnable.fallbacks import RunnableWithFallbacks
+        from langchain_core.runnables.fallbacks import RunnableWithFallbacks
 
         return RunnableWithFallbacks(
             runnable=self,
@@ -1189,7 +1189,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
-        from langchain_core.runnable.configurable import RunnableConfigurableFields
+        from langchain_core.runnables.configurable import RunnableConfigurableFields
 
         for key in kwargs:
             if key not in self.__fields__:
@@ -1206,7 +1206,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         default_key: str = "default",
         **kwargs: Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ) -> RunnableSerializable[Input, Output]:
-        from langchain_core.runnable.configurable import (
+        from langchain_core.runnables.configurable import (
             RunnableConfigurableAlternatives,
         )
 
@@ -1254,7 +1254,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
         .. code-block:: python
 
-            from langchain_core.runnable import RunnableLambda
+            from langchain_core.runnables import RunnableLambda
 
             def add_one(x: int) -> int:
                 return x + 1
@@ -1331,7 +1331,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        from langchain_core.runnable.passthrough import RunnableAssign
+        from langchain_core.runnables.passthrough import RunnableAssign
 
         if isinstance(self.first, RunnableAssign):
             first = cast(RunnableAssign, self.first)
@@ -2273,7 +2273,7 @@ class RunnableLambda(Runnable[Input, Output]):
         .. code-block:: python
 
             # This is a RunnableLambda
-            from langchain_core.runnable import RunnableLambda
+            from langchain_core.runnables import RunnableLambda
 
             def add_one(x: int) -> int:
                 return x + 1

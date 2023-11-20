@@ -21,9 +21,9 @@ from typing import (
 )
 
 from langchain_core._api import warn_deprecated
-from langchain_core.runnable import Runnable, RunnableConfig, RunnableLambda
-from langchain_core.runnable import config as runnable_config
-from langchain_core.runnable import utils as runnable_utils
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
+from langchain_core.runnables import config as runnable_config
+from langchain_core.runnables import utils as runnable_utils
 from langchain_core.schema import ChatResult, LLMResult
 from langchain_core.schema.language_model import BaseLanguageModel
 from langchain_core.schema.messages import BaseMessage, messages_from_dict

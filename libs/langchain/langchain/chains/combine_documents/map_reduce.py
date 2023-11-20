@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
-from langchain_core.runnable.config import RunnableConfig
+from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain

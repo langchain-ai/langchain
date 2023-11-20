@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from langchain_core.runnable.base import Input, Output, RunnableBindingBase
+from langchain_core.runnables.base import Input, Output, RunnableBindingBase
 
 
 class HubRunnable(RunnableBindingBase[Input, Output]):

@@ -21,7 +21,7 @@ from typing import (
 )
 
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.runnable import Runnable
+from langchain_core.runnables import Runnable
 from langchain_core.schema import ChatGeneration, ChatResult
 from langchain_core.schema.language_model import LanguageModelInput
 from langchain_core.schema.messages import (
