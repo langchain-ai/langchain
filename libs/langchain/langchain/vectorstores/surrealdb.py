@@ -95,7 +95,7 @@ class SurrealDBStore(VectorStore):
         """Add list of text along with embeddings to the vector store asynchronously
 
         Args:
-            texts (Iterable[str]: collection of text to add to the database
+            texts (Iterable[str]): collection of text to add to the database
 
         Returns:
             List of ids for the newly inserted documents
@@ -118,12 +118,63 @@ class SurrealDBStore(VectorStore):
         """Add list of text along with embeddings to the vector store
 
         Args:
-            texts (Iterable[str]: collection of text to add to the database
+            texts (Iterable[str]): collection of text to add to the database
 
         Returns:
             List of ids for the newly inserted documents
         """
         return asyncio.run(self.aadd_texts(texts, metadatas, **kwargs))
+
+    async def adelete(
+        self,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Optional[bool]:
+        """Delete by document ID asynchronously.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise.
+        """
+
+        if ids is None:
+            await self.sdb.delete(self.collection)
+            return True
+        else:
+            if isinstance(ids, str):
+                await self.sdb.delete(ids)
+                return True
+            else:
+                if isinstance(ids, list) and len(ids) > 0:
+                    _ = [await self.sdb.delete(id) for id in ids]
+                    return True
+        return False
+
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Optional[bool]:
+        """Delete by document ID.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise.
+        """
+
+        async def _delete(ids: Optional[List[str]], **kwargs: Any) -> Optional[bool]:
+            await self.initialize()
+            return await self.adelete(ids=ids, **kwargs)
+
+        return asyncio.run(_delete(ids, **kwargs))
 
     async def _asimilarity_search_by_vector_with_score(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -152,6 +203,9 @@ class SurrealDBStore(VectorStore):
         """.format(**args)
 
         results = await self.sdb.query(query)
+
+        if len(results) == 0:
+            return []
 
         return [
             (
