@@ -11,11 +11,13 @@ from typing import (
 )
 from uuid import uuid4
 
+import numpy as np
+
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_env
-from langchain.vectorstores.utils import DistanceStrategy
+from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 VST = TypeVar("VST", bound="VectorStore")
 
@@ -329,6 +331,81 @@ class MomentoVectorIndex(VectorStore):
             embedding=embedding, k=k, **kwargs
         )
         return [doc for doc, _ in results]
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        from momento.requests.vector_index import ALL_METADATA
+        from momento.responses.vector_index import SearchAndFetchVectors
+
+        response = self._client.search_and_fetch_vectors(
+            self.index_name, embedding, top_k=fetch_k, metadata_fields=ALL_METADATA
+        )
+
+        if not isinstance(response, SearchAndFetchVectors.Success):
+            return []
+
+        mmr_selected = maximal_marginal_relevance(
+            query_embedding=np.array([embedding], dtype=np.float32),
+            embedding_list=[hit.vector for hit in response.hits],
+            lambda_mult=lambda_mult,
+            k=k,
+        )
+        selected = [response.hits[i].metadata for i in mmr_selected]
+        return [
+            Document(page_content=metadata.pop(self.text_field, ""), metadata=metadata)  # type: ignore  # noqa: E501
+            for metadata in selected
+        ]
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        embedding = self._embedding.embed_query(query)
+        return self.max_marginal_relevance_search_by_vector(
+            embedding, k, fetch_k, lambda_mult, **kwargs
+        )
 
     @classmethod
     def from_texts(
