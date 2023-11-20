@@ -1,3 +1,10 @@
-from langchain_core.utils.openai import is_openai_v1
+from __future__ import annotations
 
-__all__ = ["is_openai_v1"]
+from importlib.metadata import version
+
+from packaging.version import parse
+
+
+def is_openai_v1() -> bool:
+    _version = parse(version("openai"))
+    return _version.major >= 1
