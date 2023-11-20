@@ -1,3 +1,4 @@
+import logging
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,6 +22,7 @@ from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_rele
 
 VST = TypeVar("VST", bound="VectorStore")
 
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from momento import PreviewVectorIndexClient
@@ -126,6 +128,7 @@ class MomentoVectorIndex(VectorStore):
         elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             similarity_metric = SimilarityMetric.EUCLIDEAN_SIMILARITY
         else:
+            logger.error(f"Distance strategy {self.distance_strategy} not implemented.")
             raise ValueError(
                 f"Distance strategy {self.distance_strategy} not implemented."
             )
@@ -138,8 +141,10 @@ class MomentoVectorIndex(VectorStore):
         elif isinstance(response, CreateIndex.IndexAlreadyExists):
             return False
         elif isinstance(response, CreateIndex.Error):
+            logger.error(f"Error creating index: {response.inner_exception}")
             raise response.inner_exception
         else:
+            logger.error(f"Unexpected response: {response}")
             raise Exception(f"Unexpected response: {response}")
 
     def add_texts(
@@ -363,8 +368,14 @@ class MomentoVectorIndex(VectorStore):
             self.index_name, embedding, top_k=fetch_k, metadata_fields=ALL_METADATA
         )
 
-        if not isinstance(response, SearchAndFetchVectors.Success):
+        if isinstance(response, SearchAndFetchVectors.Success):
+            pass
+        elif isinstance(response, SearchAndFetchVectors.Error):
+            logger.error(f"Error searching and fetching vectors: {response}")
             return []
+        else:
+            logger.error(f"Unexpected response: {response}")
+            raise Exception(f"Unexpected response: {response}")
 
         mmr_selected = maximal_marginal_relevance(
             query_embedding=np.array([embedding], dtype=np.float32),
