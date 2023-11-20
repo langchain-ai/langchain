@@ -1,3 +1,5 @@
+from operator import itemgetter
+
 import numpy as np
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
@@ -11,7 +13,6 @@ from langchain.retrievers import (
 )
 from langchain.schema import StrOutputParser
 from langchain.schema.runnable import (
-    RunnableLambda,
     RunnableParallel,
     RunnablePassthrough,
 )
@@ -51,14 +52,6 @@ def fuse_retrieved_docs(input):
     ]
 
 
-retriever_map = {
-    "medical paper": pubmed,
-    "scientific paper": arxiv,
-    "public company finances report": sec,
-    "general": wiki,
-}
-
-
 def format_named_docs(named_docs):
     return "\n\n".join(
         f"Source: {source}\n\n{doc.page_content}" for source, doc in named_docs
@@ -83,19 +76,26 @@ class Question(BaseModel):
     __root__: str
 
 
+answer_chain = (
+    {
+        "question": itemgetter("question"),
+        "sources": lambda x: format_named_docs(x["sources"]),
+    }
+    | prompt
+    | ChatOpenAI(model="gpt-3.5-turbo-1106")
+    | StrOutputParser()
+).with_config(run_name="answer")
 chain = (
     (
         RunnableParallel(
             {"question": RunnablePassthrough(), "sources": retrieve_all}
         ).with_config(run_name="add_sources")
-        | RunnablePassthrough.assign(
-            sources=(
-                RunnableLambda(fuse_retrieved_docs) | format_named_docs
-            ).with_config(run_name="fuse_and_format")
-        ).with_config(run_name="update_sources")
-        | prompt
-        | ChatOpenAI(model="gpt-3.5-turbo-1106")
-        | StrOutputParser()
+        | RunnablePassthrough.assign(sources=fuse_retrieved_docs).with_config(
+            run_name="fuse"
+        )
+        | RunnablePassthrough.assign(answer=answer_chain).with_config(
+            run_name="add_answer"
+        )
     )
     .with_config(run_name="QA with fused results")
     .with_types(input_type=Question)
