@@ -31,6 +31,8 @@ Then, run this as described in the [gpt-crawler](https://github.com/BuilderIO/gp
 npm start
 ```
 
+And copy the `output.json` file into hte folder containing this README.
+
 ## Usage
 
 To use this package, you should first have the LangChain CLI installed:
