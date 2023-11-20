@@ -16,7 +16,7 @@ class CogniswitchAnswerTool(BaseTool):
     )
     """
 
-    name: str = "Cogniswitch"
+    name: str = "cogniswitch_answer"
     description: str = "A wrapper around cogniswitch. "
     cs_token: str
     OAI_token: str
@@ -87,7 +87,7 @@ class CogniswitchStoreTool(BaseTool):
     )
     """
 
-    name: str = "Cogniswitch"
+    name: str = "cogniswitch_store"
     description: str = "A wrapper around cogniswitch. "
     cs_token: str
     OAI_token: str

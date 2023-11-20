@@ -719,6 +719,10 @@ def __getattr__(name: str) -> Any:
         return _import_bing_search_tool_BingSearchRun()
     elif name == "BraveSearch":
         return _import_brave_search_tool()
+    elif name == "CogniswitchAnswerTool":
+        return _import_cogniswitch_answer_tool()
+    elif name == "CogniswitchStoreTool":
+        return _import_cogniswitch_store_tool()
     elif name == "DuckDuckGoSearchResults":
         return _import_ddg_search_tool_DuckDuckGoSearchResults()
     elif name == "DuckDuckGoSearchRun":

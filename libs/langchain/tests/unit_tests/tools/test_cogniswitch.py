@@ -7,10 +7,9 @@ from langchain.tools.cogniswitch.tool import CogniswitchAnswerTool, CogniswitchS
 
 class TestCogniswitchAnswerTool(unittest.TestCase):
     def setUp(self) -> None:
-        self.tool = CogniswitchAnswerTool()
-        self.tool.cs_token = "cs_token"
-        self.tool.OAI_token = "OAI_token"
-        self.tool.apiKey = "apiKey"
+        self.tool = CogniswitchAnswerTool(
+            cs_token="cs_token", OAI_token="OAI_token", apiKey="apiKey"
+        )
 
     @patch("requests.post")
     def test_answer_cs(self, mock_post: Any) -> None:
@@ -52,10 +51,9 @@ class TestCogniswitchAnswerTool(unittest.TestCase):
 
 class TestCogniswitchStoreTool(unittest.TestCase):
     def setUp(self) -> None:
-        self.tool = CogniswitchStoreTool()
-        self.tool.cs_token = "cs_token"
-        self.tool.OAI_token = "OAI_token"
-        self.tool.apiKey = "apiKey"
+        self.tool = CogniswitchStoreTool(
+            cs_token="cs_token", OAI_token="OAI_token", apiKey="apiKey"
+        )
 
     @patch("requests.post")
     def test_store_data_with_url(self, mock_post: Any) -> None:
