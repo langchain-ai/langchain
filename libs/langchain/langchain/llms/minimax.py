@@ -56,7 +56,7 @@ class _MinimaxEndpointClient(BaseModel):
 class MinimaxCommon(BaseModel):
     """Common parameters for Minimax large language models."""
 
-    _client: Any = None
+    _client: _MinimaxEndpointClient
     model: str = "abab5.5-chat"
     """Model name to use."""
     max_tokens: int = 256
@@ -87,6 +87,11 @@ class MinimaxCommon(BaseModel):
             "MINIMAX_API_HOST",
             default="https://api.minimax.chat",
         )
+        cls._client = _MinimaxEndpointClient(
+            host=values["minimax_api_host"],
+            api_key=values["minimax_api_key"],
+            group_id=values["minimax_group_id"],
+        )
         return values
 
     @property
@@ -109,15 +114,6 @@ class MinimaxCommon(BaseModel):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "minimax"
-
-    def __init__(self, **data: Any):
-        super().__init__(**data)
-        _client = _MinimaxEndpointClient(
-            host=self.minimax_api_host,
-            api_key=self.minimax_api_key,
-            group_id=self.minimax_group_id,
-        )
-        object.__setattr__(self, "_client", _client)
 
 
 class Minimax(MinimaxCommon, LLM):
