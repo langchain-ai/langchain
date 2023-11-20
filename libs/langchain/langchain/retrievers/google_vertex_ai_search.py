@@ -161,6 +161,7 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
         from google.protobuf.json_format import MessageToDict
 
         documents: List[Document] = []
+        chunk_type = "extractive_answers"
 
         for result in results:
             document_dict = MessageToDict(
