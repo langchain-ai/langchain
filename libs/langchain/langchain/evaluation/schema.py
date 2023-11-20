@@ -9,9 +9,10 @@ from functools import partial
 from typing import Any, Optional, Sequence, Tuple, Union
 from warnings import warn
 
+from langchain_core.schema.agent import AgentAction
+from langchain_core.schema.language_model import BaseLanguageModel
+
 from langchain.chains.base import Chain
-from langchain.schema.agent import AgentAction
-from langchain.schema.language_model import BaseLanguageModel
 
 logger = logging.getLogger(__name__)
 

@@ -7,11 +7,10 @@ from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
-
-from langchain.pydantic_v1 import Field
-from langchain.schema import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
+from langchain_core.pydantic_v1 import Field
+from langchain_core.schema import Document
+from langchain_core.schema.embeddings import Embeddings
+from langchain_core.schema.vectorstore import VectorStore, VectorStoreRetriever
 
 logger = logging.getLogger(__name__)
 
