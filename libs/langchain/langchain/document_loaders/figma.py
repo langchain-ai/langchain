@@ -2,10 +2,9 @@ import json
 import urllib.request
 from typing import Any, List
 
-from langchain.utils import stringify_dict
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.utils import stringify_dict
 
 
 class FigmaFileLoader(BaseLoader):
