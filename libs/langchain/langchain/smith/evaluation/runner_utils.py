@@ -114,14 +114,18 @@ class TestResult(dict):
                 output = {"output": output_}
 
             r = {
-                **{f.key: f.score for f in feedback},
                 **{f"inputs.{k}": v for k, v in result["input"].items()},
                 **output,
-                "error": result.get("error"),
-                "execution_time": result["execution_time"],
             }
             if "reference" in result:
                 r["reference"] = result["reference"]
+            r.update(
+                {
+                    **{f"feedback.{f.key}": f.score for f in feedback},
+                    "error": result.get("error"),
+                    "execution_time": result["execution_time"],
+                }
+            )
             records.append(r)
             indices.append(example_id)
 
