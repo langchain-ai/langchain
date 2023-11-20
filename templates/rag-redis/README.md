@@ -13,7 +13,7 @@ Set the `OPENAI_API_KEY` environment variable to access the [OpenAI](https://pla
 export OPENAI_API_KEY= <YOUR OPENAI API KEY>
 ```
 
-Set the following [Redis](https://redis.com/try-free) environment variables need to be set:
+Set the following [Redis](https://redis.com/try-free) environment variables:
 
 ```bash
 export REDIS_HOST = <YOUR REDIS HOST>
@@ -46,12 +46,10 @@ pip install -U langchain-cli
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app
-cd my-app
+langchain app new my-app --package rag-redis
 ```
 
-Add this template to your project, select `y` when prompted:
-
+If you want to add this to an existing project, you can just run:
 ```shell
 langchain app add rag-redis
 ```
