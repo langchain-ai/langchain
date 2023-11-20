@@ -46,6 +46,22 @@ def test_func_call() -> None:
     assert result.message_log == [msg]
 
 
+# Test: Model response with a function call for a function taking no arguments
+def test_func_call_no_args() -> None:
+    parser = OpenAIFunctionsAgentOutputParser()
+    msg = AIMessage(
+        content="LLM thoughts.",
+        additional_kwargs={"function_call": {"name": "foo", "arguments": ""}},
+    )
+    result = parser.invoke(msg)
+
+    assert isinstance(result, AgentActionMessageLog)
+    assert result.tool == "foo"
+    assert result.tool_input == {}
+    assert result.log == ("\nInvoking: `foo` with `{}`\nresponded: LLM thoughts.\n\n")
+    assert result.message_log == [msg]
+
+
 # Test: Model response with a function call (old style tools).
 def test_func_call_oldstyle() -> None:
     parser = OpenAIFunctionsAgentOutputParser()
