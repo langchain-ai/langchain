@@ -11,81 +11,77 @@ from langchain.retrievers.self_query.mongodb_atlas import MongoDBAtlasTranslator
 
 DEFAULT_TRANSLATOR = MongoDBAtlasTranslator()
 
+
 def test_visit_comparison() -> None:
-  comp = Comparison(comparator=Comparator.LT, attribute="qty", value=20)
-  expected = {"qty": {"$lt": 20}}
-  actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
-  assert expected == actual
+    comp = Comparison(comparator=Comparator.LT, attribute="qty", value=20)
+    expected = {"qty": {"$lt": 20}}
+    actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
+    assert expected == actual
 
-  comp = Comparison(comparator=Comparator.EQ, attribute="qty", value=10)
-  expected = {"qty": {"$eq": 10}}
-  actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
-  assert expected == actual
+    comp = Comparison(comparator=Comparator.EQ, attribute="qty", value=10)
+    expected = {"qty": {"$eq": 10}}
+    actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
+    assert expected == actual
 
-  comp = Comparison(comparator=Comparator.NE, attribute="name", value="foo")
-  expected = {"name": {"$ne": "foo"}}
-  actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
-  assert expected == actual
+    comp = Comparison(comparator=Comparator.NE, attribute="name", value="foo")
+    expected = {"name": {"$ne": "foo"}}
+    actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
+    assert expected == actual
 
-  comp = Comparison(comparator=Comparator.IN, attribute="name", value="foo")
-  expected = {"name": {"$in": ["foo"]}}
-  actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
-  assert expected == actual
+    comp = Comparison(comparator=Comparator.IN, attribute="name", value="foo")
+    expected = {"name": {"$in": ["foo"]}}
+    actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
+    assert expected == actual
 
-  comp = Comparison(comparator=Comparator.NIN, attribute="name", value="foo")
-  expected = {"name": {"$nin": ["foo"]}}
-  actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
-  assert expected == actual
+    comp = Comparison(comparator=Comparator.NIN, attribute="name", value="foo")
+    expected = {"name": {"$nin": ["foo"]}}
+    actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
+    assert expected == actual
 
 
 def test_visit_operation() -> None:
-  op = Operation(
-      operator=Operator.AND,
-      arguments=[
-          Comparison(comparator=Comparator.GTE, attribute="qty", value=10),
-          Comparison(comparator=Comparator.LTE, attribute="qty", value=20),
-          Comparison(comparator=Comparator.EQ, attribute="name", value="foo"),
-      ],
-  )
-  expected = {
-      "$and": [
-          {"qty": {"$gte": 10}},
-          {"qty": {"$lte": 20}},
-          {"name": {"$eq": "foo"}},
-      ]
-  }
-  actual = DEFAULT_TRANSLATOR.visit_operation(op)
-  assert expected == actual
+    op = Operation(
+        operator=Operator.AND,
+        arguments=[
+            Comparison(comparator=Comparator.GTE, attribute="qty", value=10),
+            Comparison(comparator=Comparator.LTE, attribute="qty", value=20),
+            Comparison(comparator=Comparator.EQ, attribute="name", value="foo"),
+        ],
+    )
+    expected = {
+        "$and": [
+            {"qty": {"$gte": 10}},
+            {"qty": {"$lte": 20}},
+            {"name": {"$eq": "foo"}},
+        ]
+    }
+    actual = DEFAULT_TRANSLATOR.visit_operation(op)
+    assert expected == actual
+
 
 def test_visit_structured_query() -> None:
-  query = "What is the capital of France?"
-  structured_query = StructuredQuery(
-      query=query,
-      filter=None,
-  )
-  expected: Tuple[str, Dict] = (query, {})
-  actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
-  assert expected == actual
+    query = "What is the capital of France?"
+    structured_query = StructuredQuery(
+        query=query,
+        filter=None,
+    )
+    expected: Tuple[str, Dict] = (query, {})
+    actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
+    assert expected == actual
 
-  comp = Comparison(comparator=Comparator.IN, attribute="qty", value=[5, 15, 20])
-  structured_query = StructuredQuery(
-      query=query,
-      filter=comp,
-  )
-  expected = (
+    comp = Comparison(comparator=Comparator.IN, attribute="qty", value=[5, 15, 20])
+    structured_query = StructuredQuery(
+        query=query,
+        filter=comp,
+    )
+    expected = (
         query,
-        {
-          "pre_filter": {
-            "qty": {
-              "$in": [5, 15, 20]
-            }
-          }
-        },
-  )
-  actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
-  assert expected == actual
+        {"pre_filter": {"qty": {"$in": [5, 15, 20]}}},
+    )
+    actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
+    assert expected == actual
 
-  op = Operation(
+    op = Operation(
         operator=Operator.AND,
         arguments=[
             Comparison(comparator=Comparator.EQ, attribute="name", value="foo"),
@@ -93,43 +89,29 @@ def test_visit_structured_query() -> None:
                 operator=Operator.OR,
                 arguments=[
                     Comparison(comparator=Comparator.GT, attribute="qty", value=6),
-                    Comparison(comparator=Comparator.NIN, attribute="tags", 
-                               value=["bar", "foo"]),
+                    Comparison(
+                        comparator=Comparator.NIN,
+                        attribute="tags",
+                        value=["bar", "foo"],
+                    ),
                 ],
             ),
         ],
     )
-  structured_query = StructuredQuery(
+    structured_query = StructuredQuery(
         query=query,
         filter=op,
     )
-  expected = (
-      query,
-      {
-        "pre_filter": {
-          "$and": [
-            {
-              "name": {
-                "$eq": "foo"
-              }
-            },
-            {
-              "$or": [
-                {
-                  "qty": {
-                    "$gt": 6
-                  }
-                },
-                {
-                  "tags": {
-                    "$nin": ["bar", "foo"]
-                  }
-                }
-              ]
-            },
-          ]
-        }
-      }
+    expected = (
+        query,
+        {
+            "pre_filter": {
+                "$and": [
+                    {"name": {"$eq": "foo"}},
+                    {"$or": [{"qty": {"$gt": 6}}, {"tags": {"$nin": ["bar", "foo"]}}]},
+                ]
+            }
+        },
     )
-  actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
-  assert expected == actual
+    actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
+    assert expected == actual

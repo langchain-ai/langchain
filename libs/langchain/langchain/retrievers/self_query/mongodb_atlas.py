@@ -12,6 +12,7 @@ from langchain.chains.query_constructor.ir import (
 
 MULTIPLE_ARITY_COMPARATORS = [Comparator.IN, Comparator.NIN]
 
+
 class MongoDBAtlasTranslator(Visitor):
     """Translate Mongo internal query language elements to valid filters."""
 
@@ -28,10 +29,7 @@ class MongoDBAtlasTranslator(Visitor):
     ]
 
     """Subset of allowed logical operators."""
-    allowed_operators = [
-        Operator.AND,
-        Operator.OR
-    ]
+    allowed_operators = [Operator.AND, Operator.OR]
 
     ## Convert a operator or a comparator to Mongo Query Format
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
@@ -50,13 +48,14 @@ class MongoDBAtlasTranslator(Visitor):
         }
         return map_dict[func]
 
-    def visit_operation(self, operation: Operation) -> str:        
+    def visit_operation(self, operation: Operation) -> str:
         args = [arg.accept(self) for arg in operation.arguments]
         return {self._format_func(operation.operator): args}
 
-    def visit_comparison(self, comparison: Comparison) -> str:          
-        if comparison.comparator in MULTIPLE_ARITY_COMPARATORS and \
-           not isinstance(comparison.value, list):
+    def visit_comparison(self, comparison: Comparison) -> str:
+        if comparison.comparator in MULTIPLE_ARITY_COMPARATORS and not isinstance(
+            comparison.value, list
+        ):
             comparison.value = [comparison.value]
 
         comparator = self._format_func(comparison.comparator)
