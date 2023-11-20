@@ -5,7 +5,7 @@ from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional,
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.schema.output import Generation, GenerationChunk, LLMResult
 from langchain_core.utils import convert_to_secret_str
-from langchain_core.utils.env import get_from_dict_or_env
+from langchain.utils.env import get_from_dict_or_env
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
