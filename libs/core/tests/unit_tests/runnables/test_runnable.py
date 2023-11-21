@@ -23,7 +23,6 @@ from typing_extensions import TypedDict
 from langchain_core.callbacks.manager import (
     Callbacks,
     atrace_as_chain_group,
-    collect_runs,
     trace_as_chain_group,
 )
 from langchain_core.documents import Document
@@ -74,6 +73,7 @@ from langchain_core.tracers import (
     RunLog,
     RunLogPatch,
 )
+from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.chat_model import FakeListChatModel
 from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 

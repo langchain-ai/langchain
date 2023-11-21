@@ -11,9 +11,9 @@ from uuid import UUID
 import langsmith
 from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
 
-from langchain_core.callbacks.manager import tracing_v2_enabled
 from langchain_core.tracers import langchain as langchain_tracer
 from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.context import tracing_v2_enabled
 from langchain_core.tracers.langchain import _get_executor
 from langchain_core.tracers.schemas import Run
 

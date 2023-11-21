@@ -30,8 +30,6 @@ EXPECTED_ALL = [
     "AsyncCallbackManagerForChainGroup",
     "StdOutCallbackHandler",
     "StreamingStdOutCallbackHandler",
-    "env_var_is_set",
-    "register_configure_hook",
 ]
 
 
