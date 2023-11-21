@@ -24,7 +24,7 @@ def _get_run_type(run: "Run") -> str:
 def import_comet_llm_api() -> SimpleNamespace:
     """Import comet_llm api and raise an error if it is not installed."""
     try:
-        import comet_llm
+        import comet_llm  # noqa: F401
         from comet_llm import experiment_info  # noqa: F401
         from comet_llm.chains import api as chain_api  # noqa: F401
         from comet_llm.chains import (
