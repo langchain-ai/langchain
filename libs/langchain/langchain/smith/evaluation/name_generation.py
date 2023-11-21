@@ -719,11 +719,9 @@ nouns = [
 ]
 
 
-def random_name(prefix: str = "") -> str:
+def random_name() -> str:
     """Generate a random name."""
     adjective = random.choice(adjectives)
     noun = random.choice(nouns)
     number = random.randint(1, 100)
-    if prefix:
-        prefix = prefix + "-"
-    return f"{prefix}{adjective}-{noun}-{number}"
+    return f"{adjective}-{noun}-{number}"
