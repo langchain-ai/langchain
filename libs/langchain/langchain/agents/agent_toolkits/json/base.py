@@ -1,6 +1,8 @@
 """Json agent."""
 from typing import Any, Dict, List, Optional
 
+from langchain_core.schema.language_model import BaseLanguageModel
+
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.json.prompt import JSON_PREFIX, JSON_SUFFIX
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
@@ -8,7 +10,6 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.schema.language_model import BaseLanguageModel
 
 
 def create_json_agent(

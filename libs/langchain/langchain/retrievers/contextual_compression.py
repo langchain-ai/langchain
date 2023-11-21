@@ -1,5 +1,7 @@
 from typing import Any, List
 
+from langchain_core.schema import BaseRetriever, Document
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -7,7 +9,6 @@ from langchain.callbacks.manager import (
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
-from langchain.schema import BaseRetriever, Document
 
 
 class ContextualCompressionRetriever(BaseRetriever):

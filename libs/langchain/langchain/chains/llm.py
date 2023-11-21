@@ -4,18 +4,17 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForChainRun,
-    CallbackManager,
-    CallbackManagerForChainRun,
-    Callbacks,
+from langchain_core.load.dump import dumpd
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.runnables import (
+    Runnable,
+    RunnableBinding,
+    RunnableBranch,
+    RunnableWithFallbacks,
 )
-from langchain.chains.base import Chain
-from langchain.load.dump import dumpd
-from langchain.prompts.prompt import PromptTemplate
-from langchain.pydantic_v1 import Extra, Field
-from langchain.schema import (
+from langchain_core.runnables.configurable import DynamicRunnable
+from langchain_core.schema import (
     BaseLLMOutputParser,
     BaseMessage,
     BasePromptTemplate,
@@ -25,18 +24,20 @@ from langchain.schema import (
     PromptValue,
     StrOutputParser,
 )
-from langchain.schema.language_model import (
+from langchain_core.schema.language_model import (
     BaseLanguageModel,
     LanguageModelInput,
 )
-from langchain.schema.runnable import (
-    Runnable,
-    RunnableBinding,
-    RunnableBranch,
-    RunnableWithFallbacks,
+from langchain_core.utils.input import get_colored_text
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
+    CallbackManager,
+    CallbackManagerForChainRun,
+    Callbacks,
 )
-from langchain.schema.runnable.configurable import DynamicRunnable
-from langchain.utils.input import get_colored_text
+from langchain.chains.base import Chain
 
 
 class LLMChain(Chain):
@@ -47,7 +48,7 @@ class LLMChain(Chain):
 
             from langchain.chains import LLMChain
             from langchain.llms import OpenAI
-            from langchain.prompts import PromptTemplate
+            from langchain_core.prompts import PromptTemplate
             prompt_template = "Tell me a {adjective} joke"
             prompt = PromptTemplate(
                 input_variables=["adjective"], template=prompt_template

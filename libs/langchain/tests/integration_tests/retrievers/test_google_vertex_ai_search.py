@@ -14,13 +14,13 @@ export DATA_STORE_ID=... - the ID of the search engine to use for the test
 import os
 
 import pytest
+from langchain_core.schema import Document
 
 from langchain.retrievers.google_vertex_ai_search import (
     GoogleCloudEnterpriseSearchRetriever,
     GoogleVertexAIMultiTurnSearchRetriever,
     GoogleVertexAISearchRetriever,
 )
-from langchain.schema import Document
 
 
 @pytest.mark.requires("google_api_core")
