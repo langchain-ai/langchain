@@ -1,14 +1,15 @@
-from typing import Dict, TYPE_CHECKING
 from types import SimpleNamespace
-from uuid import UUID
+from typing import TYPE_CHECKING, Any, Dict
 
 from langchain.callbacks.tracers.base import BaseTracer
 
-
 if TYPE_CHECKING:
-    from langchain.callbacks.tracers.schemas import Run
-    from comet_llm.chains.chain import Chain
+    from uuid import UUID
+
     from comet_llm import Span
+    from comet_llm.chains.chain import Chain
+
+    from langchain.callbacks.tracers.schemas import Run
 
 
 def _get_run_type(run: "Run") -> str:
@@ -24,10 +25,12 @@ def import_comet_llm_api() -> SimpleNamespace:
     """Import comet_llm api and raise an error if it is not installed."""
     try:
         import comet_llm
-        from comet_llm.chains import chain  # noqa: F401
-        from comet_llm.chains import span  # noqa: F401
-        from comet_llm.chains import api as chain_api  # noqa: F401
         from comet_llm import experiment_info  # noqa: F401
+        from comet_llm.chains import api as chain_api  # noqa: F401
+        from comet_llm.chains import (
+            chain,  # noqa: F401
+            span,  # noqa: F401
+        )
 
     except ImportError:
         raise ImportError(
@@ -40,15 +43,15 @@ def import_comet_llm_api() -> SimpleNamespace:
         span=span,
         chain_api=chain_api,
         experiment_info=experiment_info,
-        comet_llm=comet_llm
+        comet_llm=comet_llm,
     )
 
 
 class CometTracer(BaseTracer):
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self._span_map: Dict[UUID, "Span"] = {}
-        self._chains_map: Dict[UUID, "Chain"] = {}
+        self._span_map: Dict["UUID", "Span"] = {}
+        self._chains_map: Dict["UUID", "Chain"] = {}
         self._initialize_comet_modules()
 
     def _initialize_comet_modules(self) -> None:
@@ -70,7 +73,7 @@ class CometTracer(BaseTracer):
             chain_: "Chain" = self._chain.Chain(
                 inputs=run.inputs,
                 metadata=None,
-                experiment_info=self._experiment_info.get()
+                experiment_info=self._experiment_info.get(),
             )
             self._chains_map[run.id] = chain_
         else:
@@ -92,7 +95,7 @@ class CometTracer(BaseTracer):
             span = self._span_map[run.id]
             span.set_outputs(outputs=run.outputs)
             span.__api__end__()
-    
+
     def flush(self) -> None:
         self._comet_llm.flush()
 
