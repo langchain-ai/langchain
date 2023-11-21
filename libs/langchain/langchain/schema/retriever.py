@@ -1,3 +1,3 @@
-from langchain_core.schema.retriever import BaseRetriever
+from langchain_core.retrievers import BaseRetriever
 
 __all__ = ["BaseRetriever"]

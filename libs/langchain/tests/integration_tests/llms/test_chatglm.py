@@ -1,5 +1,5 @@
 """Test ChatGLM API wrapper."""
-from langchain_core.schema import LLMResult
+from langchain_core.outputs import LLMResult
 
 from langchain.llms.chatglm import ChatGLM
 

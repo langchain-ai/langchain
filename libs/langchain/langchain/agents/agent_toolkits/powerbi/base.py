@@ -1,7 +1,7 @@
 """Power BI agent."""
 from typing import Any, Dict, List, Optional
 
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain.agents import AgentExecutor
 from langchain.agents.agent_toolkits.powerbi.prompt import (

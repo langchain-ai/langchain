@@ -2,7 +2,8 @@ from typing import Any, List, Optional
 
 import aiohttp
 import requests
-from langchain_core.schema import BaseRetriever, Document
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,

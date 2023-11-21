@@ -3,6 +3,13 @@ from typing import Any, List, Union
 
 import pytest
 
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    get_buffer_string,
+)
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
@@ -14,13 +21,6 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
     _convert_to_message,
-)
-from langchain_core.schema.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-    get_buffer_string,
 )
 
 

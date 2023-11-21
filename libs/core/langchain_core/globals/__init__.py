@@ -4,7 +4,7 @@ import warnings
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from langchain_core.schema import BaseCache
+    from langchain_core.caches import BaseCache
 
 
 # DO NOT USE THESE VALUES DIRECTLY!
