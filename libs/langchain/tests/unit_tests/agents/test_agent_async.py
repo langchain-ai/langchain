@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, List, Optional
 
-import pytest
 from langchain_core.schema import AgentAction, AgentStep
 
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
@@ -82,7 +81,6 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
     return agent
 
 
-@pytest.mark.asyncio
 async def test_agent_bad_action() -> None:
     """Test react chain when bad action given."""
     agent = _get_agent()
@@ -90,7 +88,6 @@ async def test_agent_bad_action() -> None:
     assert output == "curses foiled again"
 
 
-@pytest.mark.asyncio
 async def test_agent_stopped_early() -> None:
     """Test react chain when max iterations or max execution time is exceeded."""
     # iteration limit
@@ -104,7 +101,6 @@ async def test_agent_stopped_early() -> None:
     assert output == "Agent stopped due to iteration limit or time limit."
 
 
-@pytest.mark.asyncio
 async def test_agent_with_callbacks() -> None:
     """Test react chain with callbacks by setting verbose globally."""
     handler1 = FakeCallbackHandler()
@@ -157,7 +153,6 @@ async def test_agent_with_callbacks() -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_agent_stream() -> None:
     """Test react chain with callbacks by setting verbose globally."""
     tool = "Search"
@@ -288,7 +283,6 @@ async def test_agent_stream() -> None:
     }
 
 
-@pytest.mark.asyncio
 async def test_agent_tool_return_direct() -> None:
     """Test agent using tools that return directly."""
     tool = "Search"
@@ -315,7 +309,6 @@ async def test_agent_tool_return_direct() -> None:
     assert output == "misalignment"
 
 
-@pytest.mark.asyncio
 async def test_agent_tool_return_direct_in_intermediate_steps() -> None:
     """Test agent using tools that return directly."""
     tool = "Search"
@@ -347,7 +340,6 @@ async def test_agent_tool_return_direct_in_intermediate_steps() -> None:
     assert action.tool == "Search"
 
 
-@pytest.mark.asyncio
 async def test_agent_invalid_tool() -> None:
     """Test agent invalid tool and correct suggestions."""
     fake_llm = FakeListLLM(responses=["FooBarBaz\nAction: Foo\nAction Input: Bar"])
