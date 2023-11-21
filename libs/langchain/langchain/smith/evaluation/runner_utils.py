@@ -88,15 +88,8 @@ class TestResult(dict):
             A DataFrame containing the quantiles for each feedback key.
         """
         df = self.to_dataframe()
-        feedback_cols = [
-            col for col in df.columns if col not in ["input", "output", "reference"]
-        ]
-        _quantiles = df[feedback_cols].quantile(
-            quantiles or [0.25, 0.5, 0.75], numeric_only=True
-        )
-        _quantiles.loc["mean"] = df[feedback_cols].mean()
-        _quantiles.loc["mode"] = df[feedback_cols].mode().iloc[0]
-        return _quantiles.transpose()
+        to_drop = {"input", "output", "reference"}.intersection(df.columns)
+        return df.describe(include="all").drop(to_drop, axis=1)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the results to a dataframe."""
@@ -112,18 +105,44 @@ class TestResult(dict):
         records = []
         for example_id, result in self["results"].items():
             feedback = result["feedback"]
+            output_ = result.get("output")
+            if isinstance(output_, dict):
+                output = {f"outputs.{k}": v for k, v in output_.items()}
+            elif output_ is None:
+                output = {}
+            else:
+                output = {"output": output_}
+
             r = {
-                **{f.key: f.score for f in feedback},
-                "input": result["input"],
-                "output": result["output"],
-                "execution_time": result["execution_time"],
+                **{f"inputs.{k}": v for k, v in result["input"].items()},
+                **output,
             }
             if "reference" in result:
                 r["reference"] = result["reference"]
+            r.update(
+                {
+                    **{f"feedback.{f.key}": f.score for f in feedback},
+                    "error": result.get("error"),
+                    "execution_time": result["execution_time"],
+                }
+            )
             records.append(r)
             indices.append(example_id)
 
         return pd.DataFrame(records, index=indices)
+
+
+class EvalError(dict):
+    """Your architecture raised an error."""
+
+    def __init__(self, Error: BaseException, **kwargs: Any) -> None:
+        super().__init__(Error=Error, **kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(f"'EvalError' object has no attribute '{name}'")
 
 
 def _wrap_in_chain_factory(
@@ -742,7 +761,7 @@ async def _arun_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\n{repr(e)}"
         )
-        result = {"Error": repr(e)}
+        result = EvalError(Error=e)
     return result
 
 
@@ -874,7 +893,7 @@ def _run_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\nError Type: {error_type}, Message: {e}"
         )
-        result = {"Error": repr(e)}
+        result = EvalError(Error=e)
     return result
 
 
@@ -979,6 +998,7 @@ def _collect_test_results(
 ) -> TestResult:
     wait_for_all_evaluators()
     all_eval_results = {}
+    all_execution_time = {}
     for c in configs:
         for callback in cast(list, c["callbacks"]):
             if isinstance(callback, EvaluatorCallbackHandler):
@@ -988,21 +1008,26 @@ def _collect_test_results(
                 )
             elif isinstance(callback, LangChainTracer):
                 run = callback.latest_run
+                example_id = callback.example_id
                 execution_time = (
                     (run.end_time - run.start_time).total_seconds()
                     if run and run.end_time
                     else None
                 )
+                all_execution_time[str(example_id)] = execution_time
 
-    results = {}
+    results: dict = {}
     for example, output in zip(examples, batch_results):
         feedback = all_eval_results.get(str(example.id), [])
         results[str(example.id)] = {
-            "output": output,
             "input": example.inputs,
             "feedback": feedback,
-            "execution_time": execution_time,
+            "execution_time": all_execution_time.get(str(example.id)),
         }
+        if isinstance(output, EvalError):
+            results[str(example.id)]["error"] = output.error
+        else:
+            results[str(example.id)]["output"] = output
         if example.outputs:
             results[str(example.id)]["reference"] = example.outputs
     return TestResult(

@@ -550,7 +550,6 @@ nouns = [
     "sister",
     "size",
     "sky",
-    "slave",
     "sleep",
     "smash",
     "smell",
