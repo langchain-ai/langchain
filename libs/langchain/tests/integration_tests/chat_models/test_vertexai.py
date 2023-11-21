@@ -51,7 +51,6 @@ def test_candidates() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_vertexai_agenerate() -> None:
     model = ChatVertexAI(temperature=0)
     message = HumanMessage(content="Hello")

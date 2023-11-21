@@ -66,7 +66,6 @@ def test_jinachat_streaming() -> None:
     assert isinstance(response, BaseMessage)
 
 
-@pytest.mark.asyncio
 async def test_async_jinachat() -> None:
     """Test async generation."""
     chat = JinaChat(max_tokens=102)
@@ -82,7 +81,6 @@ async def test_async_jinachat() -> None:
             assert generation.text == generation.message.content
 
 
-@pytest.mark.asyncio
 async def test_async_jinachat_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

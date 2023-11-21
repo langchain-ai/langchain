@@ -460,7 +460,6 @@ def test_chain_on_kv_singleio_dataset(
     _check_all_feedback_passed(eval_project_name, client)
 
 
-@pytest.mark.asyncio
 async def test_runnable_on_kv_singleio_dataset(
     kv_singleio_dataset_name: str, eval_project_name: str, client: Client
 ) -> None:
@@ -480,7 +479,6 @@ async def test_runnable_on_kv_singleio_dataset(
     _check_all_feedback_passed(eval_project_name, client)
 
 
-@pytest.mark.asyncio
 async def test_arb_func_on_kv_singleio_dataset(
     kv_singleio_dataset_name: str, eval_project_name: str, client: Client
 ) -> None:
