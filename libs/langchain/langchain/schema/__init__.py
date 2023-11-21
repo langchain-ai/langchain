@@ -31,7 +31,8 @@ from langchain_core.outputs import (
     LLMResult,
     RunInfo,
 )
-from langchain_core.prompts import BasePromptTemplate, PromptValue, format_document
+from langchain_core.prompt_values import PromptValue
+from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore
 

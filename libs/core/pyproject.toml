@@ -51,7 +51,6 @@ select = [
 ]
 
 [tool.mypy]
-ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
 exclude = ["notebooks", "examples", "example_data", "langchain_core/pydantic"]
 

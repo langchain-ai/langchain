@@ -39,13 +39,12 @@ from langchain_core.output_parsers import (
     CommaSeparatedListOutputParser,
     StrOutputParser,
 )
+from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.prompts import (
     ChatPromptTemplate,
-    ChatPromptValue,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     PromptTemplate,
-    StringPromptValue,
     SystemMessagePromptTemplate,
 )
 from langchain_core.pydantic_v1 import BaseModel

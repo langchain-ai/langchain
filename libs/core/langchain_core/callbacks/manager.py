@@ -48,10 +48,8 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
-from langchain_core.tracers import run_collector
-from langchain_core.tracers.langchain import (
-    LangChainTracer,
-)
+from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
+from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.langchain_v1 import LangChainTracerV1
 from langchain_core.tracers.schemas import TracerSessionV1
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
@@ -69,7 +67,7 @@ tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # 
     "tracing_callback_v2", default=None
 )
 run_collector_var: ContextVar[
-    Optional[run_collector.RunCollectorCallbackHandler]
+    Optional[RunCollectorCallbackHandler]
 ] = ContextVar(  # noqa: E501
     "run_collector", default=None
 )
@@ -154,7 +152,7 @@ def tracing_v2_enabled(
 
 
 @contextmanager
-def collect_runs() -> Generator[run_collector.RunCollectorCallbackHandler, None, None]:
+def collect_runs() -> Generator[RunCollectorCallbackHandler, None, None]:
     """Collect all run traces in context.
 
     Returns:
@@ -165,7 +163,7 @@ def collect_runs() -> Generator[run_collector.RunCollectorCallbackHandler, None,
                 chain.invoke("foo")
                 run_id = runs_cb.traced_runs[0].id
     """
-    cb = run_collector.RunCollectorCallbackHandler()
+    cb = RunCollectorCallbackHandler()
     run_collector_var.set(cb)
     yield cb
     run_collector_var.set(None)
