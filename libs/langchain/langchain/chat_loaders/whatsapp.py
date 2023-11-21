@@ -4,8 +4,8 @@ import re
 import zipfile
 from typing import Iterator, List, Union
 
-from langchain_core.schema import AIMessage, HumanMessage
-from langchain_core.schema.chat import ChatSession
+from langchain_core.chat_sessions import ChatSession
+from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain.chat_loaders.base import BaseChatLoader
 

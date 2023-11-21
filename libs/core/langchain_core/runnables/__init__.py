@@ -25,7 +25,11 @@ from langchain_core.runnables.base import (
     RunnableSerializable,
 )
 from langchain_core.runnables.branch import RunnableBranch
-from langchain_core.runnables.config import RunnableConfig, patch_config
+from langchain_core.runnables.config import (
+    RunnableConfig,
+    get_config_list,
+    patch_config,
+)
 from langchain_core.runnables.fallbacks import RunnableWithFallbacks
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.router import RouterInput, RouterRunnable
@@ -33,6 +37,7 @@ from langchain_core.runnables.utils import (
     ConfigurableField,
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
+    add,
 )
 
 __all__ = [
@@ -54,4 +59,6 @@ __all__ = [
     "RunnablePassthrough",
     "RunnableSequence",
     "RunnableWithFallbacks",
+    "get_config_list",
+    "add",
 ]

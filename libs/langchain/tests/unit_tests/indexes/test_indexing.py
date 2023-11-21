@@ -14,8 +14,8 @@ from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
-from langchain_core.schema import Document
-from langchain_core.schema.vectorstore import VST, VectorStore
+from langchain_core.documents import Document
+from langchain_core.vectorstores import VST, VectorStore
 
 import langchain.vectorstores
 from langchain.document_loaders.base import BaseLoader

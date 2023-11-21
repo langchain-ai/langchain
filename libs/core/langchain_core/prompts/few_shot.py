@@ -4,20 +4,19 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from langchain_core.prompts.base import (
+from langchain_core.messages import BaseMessage, get_buffer_string
+from langchain_core.prompts.chat import (
+    BaseChatPromptTemplate,
+    BaseMessagePromptTemplate,
+)
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
     check_valid_template,
     get_template_variables,
 )
-from langchain_core.prompts.chat import (
-    BaseChatPromptTemplate,
-    BaseMessagePromptTemplate,
-)
-from langchain_core.prompts.example_selector.base import BaseExampleSelector
-from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain_core.schema.messages import BaseMessage, get_buffer_string
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
@@ -27,7 +26,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""
 
-    example_selector: Optional[BaseExampleSelector] = None
+    example_selector: Any = None
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
 
@@ -253,7 +252,7 @@ class FewShotChatMessagePromptTemplate(
                 vectorstore=vectorstore
             )
 
-            from langchain_core.schema import SystemMessage
+            from langchain_core import SystemMessage
             from langchain_core.prompts import HumanMessagePromptTemplate
             from langchain_core.prompts.few_shot import FewShotChatMessagePromptTemplate
 

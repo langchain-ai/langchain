@@ -1,6 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
 
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -8,8 +8,8 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.schema.prompt import PromptValue
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.prompts import PromptValue
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
-from langchain_core.schema import LLMResult
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI

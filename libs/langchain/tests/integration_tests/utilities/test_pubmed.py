@@ -2,7 +2,7 @@
 from typing import Any, List
 
 import pytest
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.agents.load_tools import load_tools
 from langchain.tools import PubmedQueryRun
