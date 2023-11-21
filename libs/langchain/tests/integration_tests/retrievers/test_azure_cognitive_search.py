@@ -1,5 +1,4 @@
 """Test Azure Cognitive Search wrapper."""
-import pytest
 from langchain_core.schema import Document
 
 from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
@@ -18,7 +17,6 @@ def test_azure_cognitive_search_get_relevant_documents() -> None:
     assert len(documents) <= 1
 
 
-@pytest.mark.asyncio
 async def test_azure_cognitive_search_aget_relevant_documents() -> None:
     """Test valid async call to Azure Cognitive Search."""
     retriever = AzureCognitiveSearchRetriever()

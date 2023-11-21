@@ -52,7 +52,6 @@ def test_anthropic_streaming_callback() -> None:
     assert callback_handler.llm_streams > 1
 
 
-@pytest.mark.asyncio
 async def test_anthropic_async_generate() -> None:
     """Test async generate."""
     llm = Anthropic()
@@ -60,7 +59,6 @@ async def test_anthropic_async_generate() -> None:
     assert isinstance(output, LLMResult)
 
 
-@pytest.mark.asyncio
 async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

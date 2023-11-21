@@ -1,6 +1,4 @@
 """Test MyScale functionality."""
-import pytest
-
 from langchain.docstore.document import Document
 from langchain.vectorstores import MyScale, MyScaleSettings
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
@@ -17,7 +15,6 @@ def test_myscale() -> None:
     docsearch.drop()
 
 
-@pytest.mark.asyncio
 async def test_myscale_async() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]

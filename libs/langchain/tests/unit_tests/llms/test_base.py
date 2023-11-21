@@ -6,7 +6,6 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-import pytest
 from langchain_core.schema import Generation, LLMResult
 
 from langchain.cache import InMemoryCache, SQLAlchemyCache
@@ -86,7 +85,6 @@ def test_batch() -> None:
     assert output == ["foo"] * 3
 
 
-@pytest.mark.asyncio
 async def test_abatch() -> None:
     llm = FakeLLM()
     output = await llm.abatch(["foo", "bar", "foo"])

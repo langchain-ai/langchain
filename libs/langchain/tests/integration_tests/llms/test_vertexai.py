@@ -49,7 +49,6 @@ def test_vertex_generate_code() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_vertex_agenerate() -> None:
     llm = VertexAI(temperature=0)
     output = await llm.agenerate(["Please say foo:"])
@@ -63,7 +62,6 @@ def test_vertex_stream() -> None:
     assert isinstance(outputs[0], str)
 
 
-@pytest.mark.asyncio
 async def test_vertex_consistency() -> None:
     llm = VertexAI(temperature=0)
     output = llm.generate(["Please say foo:"])
@@ -103,7 +101,6 @@ def test_model_garden_generate() -> None:
     assert len(output.generations) == 2
 
 
-@pytest.mark.asyncio
 async def test_model_garden_agenerate() -> None:
     endpoint_id = os.environ["ENDPOINT_ID"]
     project = os.environ["PROJECT"]

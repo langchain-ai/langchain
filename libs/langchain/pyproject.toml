@@ -423,6 +423,7 @@ markers = [
   "scheduled: mark tests to run in scheduled testing",
   "compile: mark placeholder test used to compile integration tests without running them"
 ]
+asyncio_mode = "auto"
 
 [tool.codespell]
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'
