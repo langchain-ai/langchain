@@ -49,7 +49,6 @@ def test_azure_openai_embedding_documents_chunk_size() -> None:
     assert all([len(out) == 1536 for out in output])
 
 
-@pytest.mark.asyncio
 async def test_azure_openai_embedding_documents_async_multiple() -> None:
     """Test openai embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
@@ -70,7 +69,6 @@ def test_azure_openai_embedding_query() -> None:
     assert len(output) == 1536
 
 
-@pytest.mark.asyncio
 async def test_azure_openai_embedding_async_query() -> None:
     """Test openai embeddings."""
     document = "foo bar"
