@@ -1,6 +1,13 @@
-from openai import OpenAI
+import os
 
-INDEX_NAME = "langchain-test"
+from openai import OpenAI
+from opensearchpy import OpenSearch
+
+OPENSEARCH_URL = os.getenv("OPENSEARCH_URL", "https://localhost:9200")
+OPENSEARCH_USERNAME = os.getenv("OPENSEARCH_USERNAME", "admin")
+OPENSEARCH_PASSWORD = os.getenv("OPENSEARCH_PASSWORD", "admin")
+OPENSEARCH_INDEX_NAME = os.getenv("OPENSEARCH_INDEX_NAME", "langchain-test")
+
 docs = [
     "[INFO] Initializing machine learning training job. Model: Convolutional Neural Network Dataset: MNIST Hyperparameters: \n   - Learning Rate: 0.001\n   - Batch Size: 64",
     "[INFO] Loading training data. Training data loaded successfully. Number of training samples: 60,000",
@@ -26,12 +33,10 @@ docs = [
 
 client_oai = OpenAI(api_key="<OPENAI_API_KEY")
 
-# Create index
-from opensearchpy import OpenSearch
 
 client = OpenSearch(
-    hosts=[{"host": "localhost", "port": 9200}],
-    http_auth=("admin", "admin"),
+    hosts=[OPENSEARCH_URL],
+    http_auth=(OPENSEARCH_USERNAME, OPENSEARCH_PASSWORD),
     use_ssl=True,
     verify_certs=False,
 )
@@ -52,7 +57,7 @@ index_settings = {
     },
 }
 
-response = client.indices.create(index=INDEX_NAME, body=index_settings)
+response = client.indices.create(index=OPENSEARCH_INDEX_NAME, body=index_settings)
 
 print(response)
 
@@ -68,18 +73,6 @@ for each in docs:
         "text": each,
     }
 
-    response = client.index(index=INDEX_NAME, body=document, refresh=True)
+    response = client.index(index=OPENSEARCH_INDEX_NAME, body=document, refresh=True)
 
     print(response)
-
-
-# ## Search
-
-# text = "Data scientist"
-# res = client_oai.embeddings.create(input=text, model="text-embedding-ada-002")
-# query = {"size":1,"query":{"knn":{"vector_field":{"vector":res.data[0].embedding,"k":2}}}}
-# # Perform the search
-# response = client.search(index=INDEX_NAME, body=query)
-
-# # Print the response
-# print(response)
