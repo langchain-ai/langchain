@@ -1,6 +1,6 @@
 from typing import Iterable, Optional
 
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 from requests.exceptions import HTTPError, ReadTimeout
 from urllib3.exceptions import ConnectionError
 

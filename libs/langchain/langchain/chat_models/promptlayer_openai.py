@@ -2,8 +2,8 @@
 import datetime
 from typing import Any, Dict, List, Optional
 
-from langchain_core.schema import ChatResult
-from langchain_core.schema.messages import BaseMessage
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import ChatResult
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

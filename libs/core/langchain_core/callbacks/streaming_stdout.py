@@ -2,9 +2,10 @@
 import sys
 from typing import Any, Dict, List
 
+from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.schema import AgentAction, AgentFinish, LLMResult
-from langchain_core.schema.messages import BaseMessage
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import LLMResult
 
 
 class StreamingStdOutCallbackHandler(BaseCallbackHandler):

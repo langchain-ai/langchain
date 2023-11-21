@@ -3,8 +3,9 @@
 from typing import Tuple
 
 import pytest
+from langchain_core.agents import AgentAction
+from langchain_core.exceptions import OutputParserException
 from langchain_core.prompts import PromptTemplate
-from langchain_core.schema import AgentAction, OutputParserException
 
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.output_parser import MRKLOutputParser

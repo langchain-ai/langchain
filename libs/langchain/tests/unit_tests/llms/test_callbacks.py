@@ -1,5 +1,5 @@
 """Test LLM callbacks."""
-from langchain_core.schema.messages import HumanMessage
+from langchain_core.messages import HumanMessage
 
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM

@@ -2,7 +2,7 @@ import json
 from typing import Any, AsyncIterator, Iterator, Tuple
 
 import pytest
-from langchain_core.schema.messages import AIMessageChunk
+from langchain_core.messages import AIMessageChunk
 
 from langchain.output_parsers.json import (
     SimpleJsonOutputParser,
