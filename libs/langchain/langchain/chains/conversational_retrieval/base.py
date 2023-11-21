@@ -157,18 +157,17 @@ class BaseConversationalRetrievalChain(Chain):
             if self.rephrase_question:
                 new_inputs["question"] = new_question
             new_inputs["chat_history"] = chat_history_str
-            answer = self.combine_docs_chain(inputs=new_inputs, callbacks=_run_manager.get_child())
-            
+            new_inputs["input_documents"] = docs
+            answer = self.combine_docs_chain(
+                inputs=new_inputs, callbacks=_run_manager.get_child()
+            )
             output[self.output_key] = answer["output_text"]
-            
             if "intermediate_steps" in answer:
                 output["intermediate_steps"] = answer["intermediate_steps"]
-
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
             output["generated_question"] = new_question
-        
         return output
 
     @abstractmethod
