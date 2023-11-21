@@ -5,8 +5,10 @@ from langchain_core.runnables.utils import (
     ConfigurableFieldSingleOption,
     ConfigurableFieldSpec,
     GetLambdaSource,
+    Input,
     IsFunctionArgDict,
     IsLocalDict,
+    Output,
     SupportsAdd,
     aadd,
     accepts_config,
@@ -18,8 +20,6 @@ from langchain_core.runnables.utils import (
     get_lambda_source,
     get_unique_config_specs,
     indent_lines_after_first,
-    Input,
-    Output,
 )
 
 __all__ = [
