@@ -10,9 +10,9 @@ Set the following environment variables.
 - `OPENSEARCH_URL` - URL of the hosted OpenSearch Instance
 - `OPENSEARCH_USERNAME` - User name for the OpenSearch instance
 - `OPENSEARCH_PASSWORD` - Password for the OpenSearch instance
-- `OPENSEARCH_INDEX_NAME` - Name of the indexghfmngh m 
+- `OPENSEARCH_INDEX_NAME` - Name of the index 
 
-Note: Consider using `OpenSearch >= 2.11.x`
+Note: To load dummy index named `langchain-test` with dummy documents, use `dummy_index_setup.py` script in the folder
 
 ## Usage
 
