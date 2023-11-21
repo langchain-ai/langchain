@@ -21,7 +21,7 @@ from langchain_core.messages import (
     messages_to_dict,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, Generation
-from langchain_core.prompts import ChatPromptValueConcrete, StringPromptValue
+from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
 
 

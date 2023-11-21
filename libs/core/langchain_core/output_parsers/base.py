@@ -17,11 +17,8 @@ from typing import (
 from typing_extensions import get_args
 
 from langchain_core.messages import AnyMessage, BaseMessage
-from langchain_core.outputs import (
-    ChatGeneration,
-    Generation,
-)
-from langchain_core.prompts.value import PromptValue
+from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.prompt_values import PromptValue
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 
 T = TypeVar("T")

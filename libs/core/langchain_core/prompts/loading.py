@@ -6,7 +6,7 @@ from typing import Callable, Dict, Union
 
 import yaml
 
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
