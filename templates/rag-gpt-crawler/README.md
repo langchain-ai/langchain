@@ -31,6 +31,8 @@ Then, run this as described in the [gpt-crawler](https://github.com/BuilderIO/gp
 npm start
 ```
 
+This will write a file (`output.json`) to the gpt-crawler directory, which is used to build the index.
+
 ## Usage
 
 To use this package, you should first have the LangChain CLI installed:
@@ -42,20 +44,20 @@ pip install -U langchain-cli
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package rag-chroma
+langchain app new my-app --package rag-gpt-crawler
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add rag-chroma
+langchain app add rag-gpt-crawler
 ```
 
 And add the following code to your `server.py` file:
 ```python
-from rag_chroma import chain as rag_chroma_chain
+from rag_chroma import chain as rag_gpt_crawler
 
-add_routes(app, rag_chroma_chain, path="/rag-chroma")
+add_routes(app, rag_gpt_crawler, path="/rag-gpt-crawler")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -79,12 +81,12 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/rag-chroma/playground](http://127.0.0.1:8000/rag-chroma/playground)  
+We can access the playground at [http://127.0.0.1:8000/rag-gpt-crawler/playground](http://127.0.0.1:8000/rag-gpt-crawler/playground)  
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/rag-chroma")
+runnable = RemoteRunnable("http://localhost:8000/rag-gpt-crawler")
 ```
