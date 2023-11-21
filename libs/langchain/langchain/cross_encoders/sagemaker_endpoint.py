@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.cross_encoder import CrossEncoder
-
+from botocore.response import StreamingBody
 
 class CrossEncoderContentHandler:
     """Content handler for CrossEncoder class."""
@@ -15,7 +15,7 @@ class CrossEncoderContentHandler:
         input_str = json.dumps({"pairs": pairs})
         return input_str.encode("utf-8")
 
-    def transform_output(self, output: bytes) -> List[float]:
+    def transform_output(self, output: StreamingBody) -> List[float]:
         response_json = json.loads(output.read().decode("utf-8"))
         scores = response_json["scores"]
         return scores

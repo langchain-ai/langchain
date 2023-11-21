@@ -1,4 +1,5 @@
 """Integration test for CrossEncoderReranker."""
+from typing import List
 from langchain.cross_encoders import FakeCrossEncoder
 from langchain.retrievers.document_compressors import CrossEncoderReranker
 from langchain.schema import Document
@@ -25,7 +26,7 @@ def test_rerank() -> None:
 
 
 def test_rerank_empty() -> None:
-    docs = []
+    docs: List<Document = []
     compressor = CrossEncoderReranker(model=FakeCrossEncoder())
     actual_docs = compressor.compress_documents(docs, "query")
     assert len(actual_docs) == 0
