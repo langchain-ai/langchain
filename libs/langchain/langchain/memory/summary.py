@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Type
 
+from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory

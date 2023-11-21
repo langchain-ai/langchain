@@ -3,13 +3,13 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional
 
+from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
     message_to_dict,
     messages_from_dict,
     messages_to_dict,
 )
-from langchain_core.chat_history import BaseChatMessageHistory
 
 if TYPE_CHECKING:
     from boto3.session import Session

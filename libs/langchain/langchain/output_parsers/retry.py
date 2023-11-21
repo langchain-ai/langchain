@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate, PromptValue
-from langchain_core.exceptions import OutputParserException
+from langchain_core.prompts.prompt import PromptTemplate
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}

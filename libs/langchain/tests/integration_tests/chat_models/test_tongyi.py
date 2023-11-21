@@ -1,6 +1,6 @@
 """Test Alibaba Tongyi Chat Model."""
 
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain.callbacks.manager import CallbackManager

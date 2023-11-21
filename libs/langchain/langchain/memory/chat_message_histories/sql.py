@@ -9,12 +9,12 @@ try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
+from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
     message_to_dict,
     messages_from_dict,
 )
-from langchain_core.chat_history import BaseChatMessageHistory
 from sqlalchemy.orm import sessionmaker
 
 logger = logging.getLogger(__name__)

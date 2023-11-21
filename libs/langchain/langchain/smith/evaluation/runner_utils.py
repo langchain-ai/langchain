@@ -23,10 +23,10 @@ from typing import (
 from langchain_core._api import warn_deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, messages_from_dict
+from langchain_core.outputs import ChatResult, LLMResult
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 from langchain_core.runnables import config as runnable_config
 from langchain_core.runnables import utils as runnable_utils
-from langchain_core.outputs import ChatResult, LLMResult
 from langsmith.client import Client
 from langsmith.evaluation import RunEvaluator
 from langsmith.run_helpers import as_runnable, is_traceable_function

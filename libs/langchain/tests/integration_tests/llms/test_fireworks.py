@@ -3,12 +3,12 @@ import sys
 from typing import Generator
 
 import pytest
+from langchain_core.outputs import LLMResult
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain_core.outputs import LLMResult
 
 from langchain.chains import LLMChain
 from langchain.llms.fireworks import Fireworks

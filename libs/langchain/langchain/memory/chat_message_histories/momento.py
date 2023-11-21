@@ -4,12 +4,12 @@ import json
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Optional
 
+from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
     message_to_dict,
     messages_from_dict,
 )
-from langchain_core.chat_history import BaseChatMessageHistory
 
 from langchain.utils import get_from_env
 

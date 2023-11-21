@@ -11,11 +11,11 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.pydantic_v1 import BaseModel, Extra
 from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
 )
+from langchain_core.pydantic_v1 import BaseModel, Extra
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -100,8 +100,7 @@ class ChatMLflowAIGateway(BaseChatModel):
             ) from e
 
         message_dicts = [
-            ChatMLflowAIGateway._convertmessage_to_dict(message)
-            for message in messages
+            ChatMLflowAIGateway._convertmessage_to_dict(message) for message in messages
         ]
         data: Dict[str, Any] = {
             "messages": message_dicts,

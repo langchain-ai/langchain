@@ -2,12 +2,12 @@ import copy
 import json
 from typing import Any, List, Type
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
 )
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.exceptions import OutputParserException
+from langchain_core.pydantic_v1 import BaseModel
 
 
 class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):

@@ -4,7 +4,6 @@ import threading
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -12,6 +11,7 @@ from langchain_core.messages import (
     HumanMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.pydantic_v1 import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel

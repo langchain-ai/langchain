@@ -3,12 +3,12 @@ from time import sleep
 from typing import Any, Callable, List, Union
 from uuid import uuid4
 
+from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
     message_to_dict,
     messages_from_dict,
 )
-from langchain_core.chat_history import BaseChatMessageHistory
 
 
 class RocksetChatMessageHistory(BaseChatMessageHistory):

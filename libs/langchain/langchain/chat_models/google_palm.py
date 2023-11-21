@@ -11,11 +11,11 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
 )
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
