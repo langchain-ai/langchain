@@ -5,8 +5,8 @@ import logging
 import sys
 from typing import TYPE_CHECKING, Dict, Optional, Set
 
+from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema.messages import BaseMessage
 
 from langchain.adapters.openai import convert_message_to_dict
 from langchain.chat_models.openai import (

@@ -51,11 +51,11 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
+from langchain_core.embeddings import Embeddings
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
-from langchain_core.schema import ChatGeneration, Generation
-from langchain_core.schema.cache import RETURN_VAL_TYPE, BaseCache
-from langchain_core.schema.embeddings import Embeddings
+from langchain_core.outputs import ChatGeneration, Generation
 
 from langchain.llms.base import LLM, get_prompts
 from langchain.utils import get_from_env
