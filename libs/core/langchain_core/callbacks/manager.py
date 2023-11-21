@@ -48,9 +48,9 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
-from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.langchain_v1 import LangChainTracerV1
+from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 from langchain_core.tracers.schemas import TracerSessionV1
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
@@ -66,9 +66,7 @@ tracing_callback_var: ContextVar[Optional[LangChainTracerV1]] = ContextVar(  # n
 tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
 )
-run_collector_var: ContextVar[
-    Optional[RunCollectorCallbackHandler]
-] = ContextVar(  # noqa: E501
+run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVar(  # noqa: E501
     "run_collector", default=None
 )
 
