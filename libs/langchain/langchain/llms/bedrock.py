@@ -3,11 +3,12 @@ import warnings
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.schema.output import GenerationChunk
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.output import GenerationChunk
 from langchain.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,

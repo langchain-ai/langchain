@@ -3,10 +3,11 @@ from __future__ import annotations
 import tempfile
 from typing import TYPE_CHECKING, List
 
+from langchain_core.pydantic_v1 import BaseModel, Field
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
-from langchain.pydantic_v1 import BaseModel, Field
 
 if TYPE_CHECKING:
     from O365.drive import File
