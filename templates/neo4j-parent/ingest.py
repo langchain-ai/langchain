@@ -11,7 +11,7 @@ txt_path = Path(__file__).parent / "dune.txt"
 graph = Neo4jGraph()
 
 # Load the text file
-loader = TextLoader(txt_path)
+loader = TextLoader(str(txt_path))
 documents = loader.load()
 
 # Define chunking strategy

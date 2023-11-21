@@ -51,9 +51,9 @@ from typing import (
 )
 
 import requests
+from langchain_core.schema import BaseDocumentTransformer
 
 from langchain.docstore.document import Document
-from langchain.schema import BaseDocumentTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -412,8 +412,7 @@ class MarkdownHeaderTextSplitter:
                 if stripped_line.startswith(sep) and (
                     # Header with no text OR header is followed by space
                     # Both are valid conditions that sep is being used a header
-                    len(stripped_line) == len(sep)
-                    or stripped_line[len(sep)] == " "
+                    len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
                 ):
                     # Ensure we are tracking the header as metadata
                     if name is not None:
@@ -648,7 +647,7 @@ class Tokenizer:
     """Overlap in tokens between chunks"""
     tokens_per_chunk: int
     """Maximum number of tokens per chunk"""
-    decode: Callable[[list[int]], str]
+    decode: Callable[[List[int]], str]
     """ Function to decode a list of token ids to a string"""
     encode: Callable[[str], List[int]]
     """ Function to encode a string to a list of token ids"""

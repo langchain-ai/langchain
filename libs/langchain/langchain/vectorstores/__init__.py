@@ -21,6 +21,8 @@ and retrieve the data that are 'most similar' to the embedded query.
 
 from typing import Any
 
+from langchain_core.schema.vectorstore import VectorStore
+
 
 def _import_alibaba_cloud_open_search() -> Any:
     from langchain.vectorstores.alibabacloud_opensearch import AlibabaCloudOpenSearch
@@ -100,6 +102,12 @@ def _import_cassandra() -> Any:
     from langchain.vectorstores.cassandra import Cassandra
 
     return Cassandra
+
+
+def _import_astradb() -> Any:
+    from langchain.vectorstores.astradb import AstraDB
+
+    return AstraDB
 
 
 def _import_chroma() -> Any:
@@ -348,6 +356,12 @@ def _import_tencentvectordb() -> Any:
     return TencentVectorDB
 
 
+def _import_tiledb() -> Any:
+    from langchain.vectorstores.tiledb import TileDB
+
+    return TileDB
+
+
 def _import_tigris() -> Any:
     from langchain.vectorstores.tigris import Tigris
 
@@ -435,6 +449,8 @@ def __getattr__(name: str) -> Any:
         return _import_baiducloud_vector_search()
     elif name == "Cassandra":
         return _import_cassandra()
+    elif name == "AstraDB":
+        return _import_astradb()
     elif name == "Chroma":
         return _import_chroma()
     elif name == "Clarifai":
@@ -515,6 +531,8 @@ def __getattr__(name: str) -> Any:
         return _import_tair()
     elif name == "TencentVectorDB":
         return _import_tencentvectordb()
+    elif name == "TileDB":
+        return _import_tiledb()
     elif name == "Tigris":
         return _import_tigris()
     elif name == "TimescaleVector":
@@ -551,6 +569,7 @@ __all__ = [
     "AzureSearch",
     "Bagel",
     "Cassandra",
+    "AstraDB",
     "Chroma",
     "Clarifai",
     "Clickhouse",
@@ -592,6 +611,7 @@ __all__ = [
     "StarRocks",
     "SupabaseVectorStore",
     "Tair",
+    "TileDB",
     "Tigris",
     "TimescaleVector",
     "Typesense",
@@ -605,4 +625,5 @@ __all__ = [
     "Zilliz",
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
+    "VectorStore",
 ]

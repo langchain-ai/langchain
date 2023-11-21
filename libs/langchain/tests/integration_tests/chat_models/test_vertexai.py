@@ -2,7 +2,7 @@
 In order to run this test, you need to install VertexAI SDK (that is is the private
 preview)  and be whitelisted to list the models themselves:
 In order to run this test, you need to install VertexAI SDK 
-pip install google-cloud-aiplatform>=1.25.0
+pip install google-cloud-aiplatform>=1.35.0
 
 Your end-user credentials would be used to make the calls (make sure you've run 
 `gcloud auth login` first).
@@ -11,11 +11,11 @@ from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from langchain_core.schema import LLMResult
+from langchain_core.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 from langchain.chat_models import ChatVertexAI
 from langchain.chat_models.vertexai import _parse_chat_history, _parse_examples
-from langchain.schema import LLMResult
-from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
 @pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
@@ -186,7 +186,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
             context=None,
             message_history=[],
             **prompt_params,
-            stop_sequences=expected_stop_sequence
+            stop_sequences=expected_stop_sequence,
         )
 
 

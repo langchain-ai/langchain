@@ -1,17 +1,12 @@
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence
+
+from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.utils import convert_to_secret_str
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, SecretStr, root_validator
 from langchain.utils import get_from_dict_or_env
-
-
-def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
 
 
 class AlephAlpha(LLM):
@@ -176,7 +171,7 @@ class AlephAlpha(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["aleph_alpha_api_key"] = _to_secret(
+        values["aleph_alpha_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "aleph_alpha_api_key", "ALEPH_ALPHA_API_KEY")
         )
         try:

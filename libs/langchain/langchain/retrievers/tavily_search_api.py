@@ -2,9 +2,10 @@ import os
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from langchain_core.schema import Document
+from langchain_core.schema.retriever import BaseRetriever
+
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.schema import Document
-from langchain.schema.retriever import BaseRetriever
 
 
 class SearchDepth(Enum):
@@ -49,7 +50,7 @@ class TavilySearchAPIRetriever(BaseRetriever):
             exclude_domains=self.exclude_domains,
             include_raw_content=self.include_raw_content,
             include_images=self.include_images,
-            **self.kwargs
+            **self.kwargs,
         )
         docs = [
             Document(

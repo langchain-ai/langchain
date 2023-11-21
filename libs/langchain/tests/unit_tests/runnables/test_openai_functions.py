@@ -1,14 +1,14 @@
 from typing import Any, List, Optional
 
+from langchain_core.schema import ChatResult
+from langchain_core.schema.messages import AIMessage, BaseMessage
+from langchain_core.schema.output import ChatGeneration
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
 from langchain.runnables.openai_functions import OpenAIFunctionsRouter
-from langchain.schema import ChatResult
-from langchain.schema.messages import AIMessage, BaseMessage
-from langchain.schema.output import ChatGeneration
 
 
 class FakeChatOpenAI(BaseChatModel):

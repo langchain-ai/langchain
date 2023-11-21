@@ -95,7 +95,8 @@ def test_update_with_delayed_score_with_auto_validator_throws() -> None:
     assert selection_metadata.selected.score == 3.0  # type: ignore
     with pytest.raises(RuntimeError):
         chain.update_with_delayed_score(
-            chain_response=response, score=100  # type: ignore
+            chain_response=response,
+            score=100,  # type: ignore
         )
 
 
@@ -121,7 +122,9 @@ def test_update_with_delayed_score_force() -> None:
     selection_metadata = response["selection_metadata"]  # type: ignore
     assert selection_metadata.selected.score == 3.0  # type: ignore
     chain.update_with_delayed_score(
-        chain_response=response, score=100, force_score=True  # type: ignore
+        chain_response=response,
+        score=100,
+        force_score=True,  # type: ignore
     )
     assert selection_metadata.selected.score == 100.0  # type: ignore
 

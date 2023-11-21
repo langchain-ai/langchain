@@ -4,6 +4,11 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
+from langchain_core.load.dump import dumpd
+from langchain_core.load.load import load
+from langchain_core.load.serializable import Serializable
+from langchain_core.schema import RUN_KEY, messages_from_dict
+from langchain_core.schema.messages import BaseMessage, get_buffer_string
 from langsmith import EvaluationResult, RunEvaluator
 from langsmith.schemas import DataType, Example, Run
 
@@ -13,11 +18,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
-from langchain.load.dump import dumpd
-from langchain.load.load import load
-from langchain.load.serializable import Serializable
-from langchain.schema import RUN_KEY, messages_from_dict
-from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 def _get_messages_from_run_dict(messages: List[dict]) -> List[BaseMessage]:
@@ -304,7 +304,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     async def _acall(
         self,
         inputs: Dict[str, str],
-        run_manager: AsyncCallbackManagerForChainRun | None = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Call the evaluation chain."""
         evaluate_strings_inputs = self._prepare_input(inputs)

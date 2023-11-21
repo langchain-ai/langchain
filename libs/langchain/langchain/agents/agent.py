@@ -19,6 +19,20 @@ from typing import (
 )
 
 import yaml
+from langchain_core.prompts.few_shot import FewShotPromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.runnables import Runnable
+from langchain_core.schema import (
+    AgentAction,
+    AgentFinish,
+    BaseOutputParser,
+    BasePromptTemplate,
+    OutputParserException,
+)
+from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.schema.messages import BaseMessage
+from langchain_core.utils.input import get_color_mapping
 
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
@@ -33,22 +47,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.prompts.few_shot import FewShotPromptTemplate
-from langchain.prompts.prompt import PromptTemplate
-from langchain.pydantic_v1 import BaseModel, root_validator
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    BaseOutputParser,
-    BasePromptTemplate,
-    OutputParserException,
-)
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage
-from langchain.schema.runnable import Runnable
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
-from langchain.utils.input import get_color_mapping
 
 logger = logging.getLogger(__name__)
 
@@ -319,12 +319,22 @@ class BaseMultiActionAgent(BaseModel):
         return {}
 
 
-class AgentOutputParser(BaseOutputParser):
+class AgentOutputParser(BaseOutputParser[Union[AgentAction, AgentFinish]]):
     """Base class for parsing agent output into agent action/finish."""
 
     @abstractmethod
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         """Parse text into agent action/finish."""
+
+
+class MultiActionAgentOutputParser(
+    BaseOutputParser[Union[List[AgentAction], AgentFinish]]
+):
+    """Base class for parsing agent output into agent actions/finish."""
+
+    @abstractmethod
+    def parse(self, text: str) -> Union[List[AgentAction], AgentFinish]:
+        """Parse text into agent actions/finish."""
 
 
 class RunnableAgent(BaseSingleActionAgent):
@@ -380,7 +390,86 @@ class RunnableAgent(BaseSingleActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> Union[
+        AgentAction,
+        AgentFinish,
+    ]:
+        """Given input, decided what to do.
+
+        Args:
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations
+            callbacks: Callbacks to run.
+            **kwargs: User inputs.
+
+        Returns:
+            Action specifying what tool to use.
+        """
+        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        output = await self.runnable.ainvoke(inputs, config={"callbacks": callbacks})
+        return output
+
+
+class RunnableMultiActionAgent(BaseMultiActionAgent):
+    """Agent powered by runnables."""
+
+    runnable: Runnable[dict, Union[List[AgentAction], AgentFinish]]
+    """Runnable to call to get agent actions."""
+    _input_keys: List[str] = []
+    """Input keys."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    @property
+    def return_values(self) -> List[str]:
+        """Return values of the agent."""
+        return []
+
+    @property
+    def input_keys(self) -> List[str]:
+        """Return the input keys.
+
+        Returns:
+            List of input keys.
+        """
+        return self._input_keys
+
+    def plan(
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
+    ) -> Union[
+        List[AgentAction],
+        AgentFinish,
+    ]:
+        """Given input, decided what to do.
+
+        Args:
+            intermediate_steps: Steps the LLM has taken to date,
+                along with the observations.
+            callbacks: Callbacks to run.
+            **kwargs: User inputs.
+
+        Returns:
+            Action specifying what tool to use.
+        """
+        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        output = self.runnable.invoke(inputs, config={"callbacks": callbacks})
+        return output
+
+    async def aplan(
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
+    ) -> Union[
+        List[AgentAction],
+        AgentFinish,
+    ]:
         """Given input, decided what to do.
 
         Args:
@@ -819,7 +908,17 @@ class AgentExecutor(Chain):
         """Convert runnable to agent if passed in."""
         agent = values["agent"]
         if isinstance(agent, Runnable):
-            values["agent"] = RunnableAgent(runnable=agent)
+            try:
+                output_type = agent.OutputType
+            except Exception as _:
+                multi_action = False
+            else:
+                multi_action = output_type == Union[List[AgentAction], AgentFinish]
+
+            if multi_action:
+                values["agent"] = RunnableMultiActionAgent(runnable=agent)
+            else:
+                values["agent"] = RunnableAgent(runnable=agent)
         return values
 
     def save(self, file_path: Union[Path, str]) -> None:

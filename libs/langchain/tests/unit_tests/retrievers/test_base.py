@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 
 import pytest
+from langchain_core.schema import BaseRetriever, Document
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -145,7 +145,10 @@ class FakeRetrieverV2(BaseRetriever):
     throw_error: bool = False
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun | None
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
     ) -> List[Document]:
         assert isinstance(self, FakeRetrieverV2)
         assert run_manager is not None
@@ -157,7 +160,10 @@ class FakeRetrieverV2(BaseRetriever):
         ]
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun | None
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
     ) -> List[Document]:
         assert isinstance(self, FakeRetrieverV2)
         assert run_manager is not None

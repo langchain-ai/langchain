@@ -5,10 +5,10 @@ from langchain.agents import AgentExecutor, OpenAIFunctionsAgent
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.retriever import create_retriever_tool
 from langchain.vectorstores import FAISS
 from langchain_experimental.tools import PythonAstREPLTool
-from pydantic import BaseModel, Field
 
 MAIN_DIR = Path(__file__).parents[1]
 
@@ -49,7 +49,7 @@ class PythonInputs(BaseModel):
     query: str = Field(description="code snippet to run")
 
 
-df = pd.read_csv("titanic.csv")
+df = pd.read_csv(MAIN_DIR / "titanic.csv")
 template = TEMPLATE.format(dhead=df.head().to_markdown())
 
 prompt = ChatPromptTemplate.from_messages(
@@ -72,4 +72,13 @@ agent = OpenAIFunctionsAgent(
 )
 agent_executor = AgentExecutor(
     agent=agent, tools=tools, max_iterations=5, early_stopping_method="generate"
-)
+) | (lambda x: x["output"])
+
+# Typing for playground inputs
+
+
+class AgentInputs(BaseModel):
+    input: str
+
+
+agent_executor = agent_executor.with_types(input_type=AgentInputs)

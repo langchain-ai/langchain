@@ -2,6 +2,7 @@ from pathlib import Path
 
 from langchain.llms import Replicate
 from langchain.prompts import ChatPromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.utilities import SQLDatabase
@@ -13,7 +14,6 @@ llm = Replicate(
     model=replicate_id,
     model_kwargs={"temperature": 0.01, "max_length": 500, "top_p": 1},
 )
-
 
 db_path = Path(__file__).parent / "nba_roster.db"
 rel = db_path.relative_to(Path.cwd())
@@ -66,8 +66,14 @@ prompt_response = ChatPromptTemplate.from_messages(
     ]
 )
 
+
+# Supply the input types to the prompt
+class InputType(BaseModel):
+    question: str
+
+
 chain = (
-    RunnablePassthrough.assign(query=sql_response)
+    RunnablePassthrough.assign(query=sql_response).with_types(input_type=InputType)
     | RunnablePassthrough.assign(
         schema=get_schema,
         response=lambda x: db.run(x["query"]),

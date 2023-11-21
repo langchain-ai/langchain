@@ -7,9 +7,9 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import aiohttp
 import numpy as np
 import requests
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.schema.embeddings import Embeddings
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 __all__ = ["GradientEmbeddings"]
