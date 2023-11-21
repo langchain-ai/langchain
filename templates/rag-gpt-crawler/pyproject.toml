@@ -1,21 +1,24 @@
 [tool.poetry]
-name = "stepback-qa-prompting"
-version = "0.0.1"
+name = "rag-gpt-crawler"
+version = "0.1.0"
 description = ""
-authors = []
+authors = [
+    "Lance Martin <lance@langchain.dev>",
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.325"
-duckduckgo-search = "^3.9.3"
 openai = "<2"
+tiktoken = ">=0.5.1"
+chromadb = ">=0.4.14"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"
 
 [tool.langserve]
-export_module = "stepback_qa_prompting.chain"
+export_module = "rag_gpt_crawler"
 export_attr = "chain"
 
 [build-system]
