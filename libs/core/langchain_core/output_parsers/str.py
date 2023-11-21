@@ -19,5 +19,3 @@ class StrOutputParser(BaseTransformOutputParser[str]):
         return text
 
 
-# TODO: Deprecate
-NoOpOutputParser = StrOutputParser
