@@ -111,7 +111,6 @@ def test_callback_manager_with_async() -> None:
     _test_callback_manager(manager, handler1, handler2, handler3, handler4)
 
 
-@pytest.mark.asyncio
 async def test_callback_manager_with_async_with_running_loop() -> None:
     """Test the CallbackManager."""
     handler1 = FakeCallbackHandler()
@@ -187,7 +186,6 @@ def test_ignore_retriever() -> None:
     assert handler2.errors == 1
 
 
-@pytest.mark.asyncio
 async def test_async_callback_manager() -> None:
     """Test the AsyncCallbackManager."""
     handler1 = FakeAsyncCallbackHandler()
@@ -196,7 +194,6 @@ async def test_async_callback_manager() -> None:
     await _test_callback_manager_async(manager, handler1, handler2)
 
 
-@pytest.mark.asyncio
 async def test_async_callback_manager_sync_handler() -> None:
     """Test the AsyncCallbackManager."""
     handler1 = FakeCallbackHandler()

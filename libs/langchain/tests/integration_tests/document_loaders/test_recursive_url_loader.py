@@ -1,9 +1,6 @@
-import pytest as pytest
-
 from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 
 
-@pytest.mark.asyncio
 def test_async_recursive_url_loader() -> None:
     url = "https://docs.python.org/3.9/"
     loader = RecursiveUrlLoader(
@@ -19,7 +16,6 @@ def test_async_recursive_url_loader() -> None:
     assert docs[0].page_content == "placeholder"
 
 
-@pytest.mark.asyncio
 def test_async_recursive_url_loader_deterministic() -> None:
     url = "https://docs.python.org/3.9/"
     loader = RecursiveUrlLoader(
@@ -43,7 +39,6 @@ def test_sync_recursive_url_loader() -> None:
     assert docs[0].page_content == "placeholder"
 
 
-@pytest.mark.asyncio
 def test_sync_async_equivalent() -> None:
     url = "https://docs.python.org/3.9/"
     loader = RecursiveUrlLoader(url, use_async=False, max_depth=2)

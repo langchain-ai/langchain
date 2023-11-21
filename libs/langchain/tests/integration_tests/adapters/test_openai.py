@@ -1,7 +1,5 @@
 from typing import Any
 
-import pytest
-
 from langchain.adapters import openai as lcopenai
 
 
@@ -83,7 +81,6 @@ async def _test_module(**kwargs: Any) -> None:
     await _test_astream(stream=True, **kwargs)
 
 
-@pytest.mark.asyncio
 async def test_normal_call() -> None:
     await _test_module(
         messages=[{"role": "user", "content": "hi"}],
@@ -92,7 +89,6 @@ async def test_normal_call() -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_function_calling() -> None:
     await _test_module(
         messages=[{"role": "user", "content": "whats the weather in boston"}],
@@ -102,7 +98,6 @@ async def test_function_calling() -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_answer_with_function_calling() -> None:
     await _test_module(
         messages=[
