@@ -1,10 +1,10 @@
 """Test functionality related to length based selector."""
 import pytest
 
-from langchain_core.prompts.example_selector.length_based import (
+from langchain_core.example_selectors import (
     LengthBasedExampleSelector,
 )
-from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 EXAMPLES = [
     {"question": "Question: who are you?\nAnswer: foo"},

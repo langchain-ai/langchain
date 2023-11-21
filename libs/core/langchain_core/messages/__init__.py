@@ -29,7 +29,7 @@ def get_buffer_string(
     Example:
         .. code-block:: python
 
-            from langchain_core.schema import AIMessage, HumanMessage
+            from langchain_core import AIMessage, HumanMessage
 
             messages = [
                 HumanMessage(content="Hi, how are you?"),

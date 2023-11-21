@@ -6,6 +6,7 @@ from langchain_core.example_selectors.length_based import (
 from langchain_core.example_selectors.semantic_similarity import (
     MaxMarginalRelevanceExampleSelector,
     SemanticSimilarityExampleSelector,
+    sorted_values,
 )
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     "LengthBasedExampleSelector",
     "MaxMarginalRelevanceExampleSelector",
     "SemanticSimilarityExampleSelector",
+    "sorted_values",
 ]

@@ -21,7 +21,7 @@ from langchain_core.outputs import (
     ChatGeneration,
     Generation,
 )
-from langchain_core.prompts import PromptValue
+from langchain_core.prompts.value import PromptValue
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 
 T = TypeVar("T")

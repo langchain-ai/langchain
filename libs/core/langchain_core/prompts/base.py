@@ -205,7 +205,7 @@ def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
     Example:
         .. code-block:: python
 
-            from langchain_core.schema import Document
+            from langchain_core import Document
             from langchain_core.prompts import PromptTemplate
 
             doc = Document(page_content="This is a joke", metadata={"page": "1"})

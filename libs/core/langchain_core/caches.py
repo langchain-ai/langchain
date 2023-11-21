@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Sequence
 
-from langchain_core.schema.output import Generation
+from langchain_core.output import Generation
 
 RETURN_VAL_TYPE = Sequence[Generation]
 

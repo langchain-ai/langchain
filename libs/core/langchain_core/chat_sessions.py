@@ -1,6 +1,6 @@
 from typing import Sequence, TypedDict
 
-from langchain_core.schema import BaseMessage
+from langchain_core.messages import BaseMessage
 
 
 class ChatSession(TypedDict, total=False):

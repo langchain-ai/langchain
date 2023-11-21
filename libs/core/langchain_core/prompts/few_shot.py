@@ -4,7 +4,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts.chat import (
     BaseChatPromptTemplate,
@@ -27,7 +26,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""
 
-    example_selector: Optional[BaseExampleSelector] = None
+    example_selector: Any = None
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
 
@@ -253,7 +252,7 @@ class FewShotChatMessagePromptTemplate(
                 vectorstore=vectorstore
             )
 
-            from langchain_core.schema import SystemMessage
+            from langchain_core import SystemMessage
             from langchain_core.prompts import HumanMessagePromptTemplate
             from langchain_core.prompts.few_shot import FewShotChatMessagePromptTemplate
 

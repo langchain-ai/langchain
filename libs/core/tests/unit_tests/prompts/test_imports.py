@@ -8,18 +8,19 @@ EXPECTED_ALL = [
     "ChatPromptTemplate",
     "FewShotPromptTemplate",
     "FewShotPromptWithTemplates",
+    "FewShotChatMessagePromptTemplate",
+    "format_document",
+    "ChatPromptValue",
+    "PromptValue",
+    "StringPromptValue",
     "HumanMessagePromptTemplate",
-    "LengthBasedExampleSelector",
-    "MaxMarginalRelevanceExampleSelector",
     "MessagesPlaceholder",
     "PipelinePromptTemplate",
     "Prompt",
     "PromptTemplate",
-    "SemanticSimilarityExampleSelector",
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
     "load_prompt",
-    "FewShotChatMessagePromptTemplate",
 ]
 
 

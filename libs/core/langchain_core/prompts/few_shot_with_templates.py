@@ -2,7 +2,6 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.str import DEFAULT_FORMATTER_MAPPING, StringPromptTemplate
 from langchain_core.pydantic_v1 import Extra, root_validator
@@ -15,7 +14,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""
 
-    example_selector: Optional[BaseExampleSelector] = None
+    example_selector: Any = None
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
 
