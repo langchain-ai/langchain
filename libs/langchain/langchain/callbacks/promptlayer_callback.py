@@ -114,7 +114,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
                 else [run_info.get("prompts", [])[i]]
             )
             model_response = (
-                [self._convertmessage_to_dict(generation.message)]
+                [self._convert_message_to_dict(generation.message)]
                 if is_chat_model and isinstance(generation, ChatGeneration)
                 else resp
             )
@@ -140,7 +140,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
             if self.pl_id_callback:
                 self.pl_id_callback(pl_request_id)
 
-    def _convertmessage_to_dict(self, message: BaseMessage) -> Dict[str, Any]:
+    def _convert_message_to_dict(self, message: BaseMessage) -> Dict[str, Any]:
         if isinstance(message, HumanMessage):
             message_dict = {"role": "user", "content": message.content}
         elif isinstance(message, AIMessage):
@@ -159,5 +159,5 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
         self, messages: List[BaseMessage]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params: Dict[str, Any] = {}
-        message_dicts = [self._convertmessage_to_dict(m) for m in messages]
+        message_dicts = [self._convert_message_to_dict(m) for m in messages]
         return message_dicts, params

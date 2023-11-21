@@ -38,7 +38,7 @@ def _convert_dict_to_message(message: Any) -> BaseMessage:
         raise TypeError(f"Got unknown role {message.role} {message}")
 
 
-def _convertmessage_to_dict(message: BaseMessage) -> Any:
+def _convert_message_to_dict(message: BaseMessage) -> Any:
     from gigachat.models import Messages, MessagesRole
 
     if isinstance(message, SystemMessage):
@@ -69,7 +69,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         from gigachat.models import Chat
 
         payload = Chat(
-            messages=[_convertmessage_to_dict(m) for m in messages],
+            messages=[_convert_message_to_dict(m) for m in messages],
             profanity_check=self.profanity,
         )
         if self.temperature is not None:

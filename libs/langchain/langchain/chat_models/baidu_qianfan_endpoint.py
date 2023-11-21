@@ -25,7 +25,7 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-def convertmessage_to_dict(message: BaseMessage) -> dict:
+def convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a message to a dictionary that can be passed to the API."""
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
@@ -195,7 +195,7 @@ class QianfanChatEndpoint(BaseChatModel):
         """
         messages_dict: Dict[str, Any] = {
             "messages": [
-                convertmessage_to_dict(m)
+                convert_message_to_dict(m)
                 for m in messages
                 if not isinstance(m, SystemMessage)
             ]

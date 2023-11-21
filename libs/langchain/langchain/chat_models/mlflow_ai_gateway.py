@@ -100,7 +100,8 @@ class ChatMLflowAIGateway(BaseChatModel):
             ) from e
 
         message_dicts = [
-            ChatMLflowAIGateway._convertmessage_to_dict(message) for message in messages
+            ChatMLflowAIGateway._convert_message_to_dict(message)
+            for message in messages
         ]
         data: Dict[str, Any] = {
             "messages": message_dicts,
@@ -161,7 +162,7 @@ class ChatMLflowAIGateway(BaseChatModel):
         )
 
     @staticmethod
-    def _convertmessage_to_dict(message: BaseMessage) -> dict:
+    def _convert_message_to_dict(message: BaseMessage) -> dict:
         if isinstance(message, ChatMessage):
             message_dict = {"role": message.role, "content": message.content}
         elif isinstance(message, HumanMessage):

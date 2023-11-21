@@ -20,7 +20,7 @@ from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, root_validator
 
-from langchain.adapters.openai import convert_dict_to_message, convertmessage_to_dict
+from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
@@ -246,7 +246,7 @@ class ChatKonko(BaseChatModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [convertmessage_to_dict(m) for m in messages]
+        message_dicts = [convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:

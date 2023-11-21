@@ -35,7 +35,7 @@ DEFAULT_API_BASE = "https://hunyuan.cloud.tencent.com"
 DEFAULT_PATH = "/hyllm/v1/chat/completions"
 
 
-def _convertmessage_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -290,7 +290,7 @@ class ChatHunyuan(BaseChatModel):
         payload = {
             "timestamp": timestamp,
             "expired": expired,
-            "messages": [_convertmessage_to_dict(m) for m in messages],
+            "messages": [_convert_message_to_dict(m) for m in messages],
             **parameters,
         }
 

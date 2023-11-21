@@ -20,7 +20,7 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-def _convertmessage_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -161,7 +161,7 @@ class ErnieBotChat(BaseChatModel):
         if not self.access_token:
             self._refresh_access_token_with_lock()
         payload = {
-            "messages": [_convertmessage_to_dict(m) for m in messages],
+            "messages": [_convert_message_to_dict(m) for m in messages],
             "top_p": self.top_p,
             "temperature": self.temperature,
             "penalty_score": self.penalty_score,

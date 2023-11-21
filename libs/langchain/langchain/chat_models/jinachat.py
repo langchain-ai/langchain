@@ -119,7 +119,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict["content"], role=role)
 
 
-def _convertmessage_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -340,7 +340,7 @@ class JinaChat(BaseChatModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [_convertmessage_to_dict(m) for m in messages]
+        message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:

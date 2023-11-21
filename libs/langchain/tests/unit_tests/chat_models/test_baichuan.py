@@ -13,36 +13,36 @@ from langchain_core.pydantic_v1 import SecretStr
 from langchain.chat_models.baichuan import (
     _convert_delta_to_message_chunk,
     _convert_dict_to_message,
-    _convertmessage_to_dict,
+    _convert_message_to_dict,
     _signature,
 )
 
 
-def test__convertmessage_to_dict_human() -> None:
+def test__convert_message_to_dict_human() -> None:
     message = HumanMessage(content="foo")
-    result = _convertmessage_to_dict(message)
+    result = _convert_message_to_dict(message)
     expected_output = {"role": "user", "content": "foo"}
     assert result == expected_output
 
 
-def test__convertmessage_to_dict_ai() -> None:
+def test__convert_message_to_dict_ai() -> None:
     message = AIMessage(content="foo")
-    result = _convertmessage_to_dict(message)
+    result = _convert_message_to_dict(message)
     expected_output = {"role": "assistant", "content": "foo"}
     assert result == expected_output
 
 
-def test__convertmessage_to_dict_system() -> None:
+def test__convert_message_to_dict_system() -> None:
     message = SystemMessage(content="foo")
     with pytest.raises(TypeError) as e:
-        _convertmessage_to_dict(message)
+        _convert_message_to_dict(message)
     assert "Got unknown type" in str(e)
 
 
-def test__convertmessage_to_dict_function() -> None:
+def test__convert_message_to_dict_function() -> None:
     message = FunctionMessage(name="foo", content="bar")
     with pytest.raises(TypeError) as e:
-        _convertmessage_to_dict(message)
+        _convert_message_to_dict(message)
     assert "Got unknown type" in str(e)
 
 

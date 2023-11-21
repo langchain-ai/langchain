@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Set
 from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import Field, root_validator
 
-from langchain.adapters.openai import convertmessage_to_dict
+from langchain.adapters.openai import convert_message_to_dict
 from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
@@ -141,7 +141,7 @@ class ChatEverlyAI(ChatOpenAI):
         tokens_per_message = 3
         tokens_per_name = 1
         num_tokens = 0
-        messages_dict = [convertmessage_to_dict(m) for m in messages]
+        messages_dict = [convert_message_to_dict(m) for m in messages]
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():

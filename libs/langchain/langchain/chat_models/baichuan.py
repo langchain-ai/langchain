@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_API_BASE = "https://api.baichuan-ai.com/v1"
 
 
-def _convertmessage_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -243,7 +243,7 @@ class ChatBaichuan(BaseChatModel):
 
         payload = {
             "model": model,
-            "messages": [_convertmessage_to_dict(m) for m in messages],
+            "messages": [_convert_message_to_dict(m) for m in messages],
             "parameters": parameters,
         }
 
