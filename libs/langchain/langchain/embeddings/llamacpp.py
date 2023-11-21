@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain.schema.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.schema.embeddings import Embeddings
 
 
 class LlamaCppEmbeddings(BaseModel, Embeddings):

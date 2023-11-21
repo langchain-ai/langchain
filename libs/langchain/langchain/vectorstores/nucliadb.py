@@ -1,9 +1,9 @@
 import os
 from typing import Any, Dict, Iterable, List, Optional, Type
 
-from langchain.schema.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VST, VectorStore
+from langchain_core.schema.document import Document
+from langchain_core.schema.embeddings import Embeddings
+from langchain_core.schema.vectorstore import VST, VectorStore
 
 FIELD_TYPES = {
     "f": "files",

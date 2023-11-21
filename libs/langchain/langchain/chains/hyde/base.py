@@ -7,14 +7,14 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 import numpy as np
+from langchain_core.pydantic_v1 import Extra
+from langchain_core.schema.embeddings import Embeddings
+from langchain_core.schema.language_model import BaseLanguageModel
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.chains.llm import LLMChain
-from langchain.pydantic_v1 import Extra
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class HypotheticalDocumentEmbedder(Chain, Embeddings):
