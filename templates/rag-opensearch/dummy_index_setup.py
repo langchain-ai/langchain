@@ -3,6 +3,7 @@ import os
 from openai import OpenAI
 from opensearchpy import OpenSearch
 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENSEARCH_URL = os.getenv("OPENSEARCH_URL", "https://localhost:9200")
 OPENSEARCH_USERNAME = os.getenv("OPENSEARCH_USERNAME", "admin")
 OPENSEARCH_PASSWORD = os.getenv("OPENSEARCH_PASSWORD", "admin")
@@ -31,7 +32,7 @@ docs = [
 ]
 
 
-client_oai = OpenAI(api_key="<OPENAI_API_KEY")
+client_oai = OpenAI(api_key=OPENAI_API_KEY)
 
 
 client = OpenSearch(
