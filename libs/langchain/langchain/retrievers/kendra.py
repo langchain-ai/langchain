@@ -12,13 +12,17 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator, validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    root_validator,
+    validator,
+)
 from langchain_core.schema import BaseRetriever
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator, validator
-from langchain.schema import BaseRetriever
 
 
 def clean_excerpt(excerpt: str) -> str:
