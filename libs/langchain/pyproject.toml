@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.339"
+version = "0.0.339rc0"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -423,6 +423,7 @@ markers = [
   "scheduled: mark tests to run in scheduled testing",
   "compile: mark placeholder test used to compile integration tests without running them"
 ]
+asyncio_mode = "auto"
 
 [tool.codespell]
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'

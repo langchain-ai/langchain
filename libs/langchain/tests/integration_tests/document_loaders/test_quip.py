@@ -2,7 +2,7 @@ from typing import Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.document_loaders.quip import QuipLoader
 

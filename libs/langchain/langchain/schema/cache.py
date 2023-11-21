@@ -1,3 +1,3 @@
-from langchain_core.schema.cache import BaseCache
+from langchain_core.caches import BaseCache
 
 __all__ = ["BaseCache"]

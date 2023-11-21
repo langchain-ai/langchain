@@ -5,7 +5,7 @@ from typing import Any, List, Optional
 from urllib.parse import urljoin
 
 import requests
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 from requests.auth import HTTPBasicAuth
 
 from langchain.document_loaders.base import BaseLoader

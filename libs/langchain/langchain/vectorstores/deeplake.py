@@ -14,8 +14,8 @@ try:
 except ImportError:
     _DEEPLAKE_INSTALLED = False
 
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.vectorstore import VectorStore
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.utils import maximal_marginal_relevance

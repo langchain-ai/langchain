@@ -1,4 +1,4 @@
-from langchain_core.prompts.example_selector.length_based import (
+from langchain_core.example_selectors.length_based import (
     LengthBasedExampleSelector,
 )
 

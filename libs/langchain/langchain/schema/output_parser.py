@@ -1,4 +1,4 @@
-from langchain_core.schema.output_parser import (
+from langchain_core.output_parsers import (
     BaseCumulativeTransformOutputParser,
     BaseGenerationOutputParser,
     BaseLLMOutputParser,
