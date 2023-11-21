@@ -1,5 +1,6 @@
+from langchain_core.messages import AIMessage, HumanMessage
+
 from langchain.chat_models.hunyuan import ChatHunyuan
-from langchain.schema.messages import AIMessage, HumanMessage
 
 
 def test_chat_hunyuan() -> None:

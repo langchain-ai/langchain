@@ -16,22 +16,7 @@ from typing import (
     Union,
 )
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import (
-    BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
-)
-from langchain.llms.base import create_base_retry_decorator
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-)
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -45,7 +30,23 @@ from langchain.schema.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain.schema.output import ChatGenerationChunk
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    ChatResult,
+)
+from langchain_core.pydantic_v1 import Field, root_validator
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import (
+    BaseChatModel,
+    _agenerate_from_stream,
+    _generate_from_stream,
+)
+from langchain.llms.base import create_base_retry_decorator
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)

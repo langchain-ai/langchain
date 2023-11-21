@@ -22,12 +22,12 @@ from typing import (
 
 import numpy as np
 import yaml
+from langchain_core._api import deprecated
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
-from langchain._api import deprecated
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
 from langchain.utilities.redis import (
     _array_to_buffer,
     _buffer_to_array,
@@ -60,9 +60,9 @@ def check_index_exists(client: RedisType, index_name: str) -> bool:
     try:
         client.ft(index_name).info()
     except:  # noqa: E722
-        logger.info("Index does not exist")
+        logger.debug("Index does not exist")
         return False
-    logger.info("Index already exists")
+    logger.debug("Index already exists")
     return True
 
 
@@ -155,9 +155,12 @@ class Redis(VectorStore):
 
         .. code-block:: python
 
-            rds = Redis.from_existing_index(
+            # must pass in schema and key_prefix from another index
+            existing_rds = Redis.from_existing_index(
                 embeddings, # an Embeddings object
                 index_name="my-index",
+                schema=rds.schema, # schema dumped from another index
+                key_prefix=rds.key_prefix, # key prefix from another index
                 redis_url="redis://localhost:6379",
             )
 
@@ -249,7 +252,7 @@ class Redis(VectorStore):
         key_prefix: Optional[str] = None,
         **kwargs: Any,
     ):
-        """Initialize with necessary components."""
+        """Initialize Redis vector store with necessary components."""
         self._check_deprecated_kwargs(kwargs)
         try:
             # TODO use importlib to check if redis is installed
@@ -401,6 +404,7 @@ class Redis(VectorStore):
                 index_schema = generated_schema
 
         # Create instance
+        # init the class -- if Redis is unavailable, will throw exception
         instance = cls(
             redis_url,
             index_name,
@@ -495,6 +499,7 @@ class Redis(VectorStore):
         embedding: Embeddings,
         index_name: str,
         schema: Union[Dict[str, str], str, os.PathLike],
+        key_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> Redis:
         """Connect to an existing Redis index.
@@ -504,11 +509,16 @@ class Redis(VectorStore):
 
                 from langchain.vectorstores import Redis
                 from langchain.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
-                redisearch = Redis.from_existing_index(
+
+                # must pass in schema and key_prefix from another index
+                existing_rds = Redis.from_existing_index(
                     embeddings,
                     index_name="my-index",
-                    redis_url="redis://username:password@localhost:6379"
+                    schema=rds.schema, # schema dumped from another index
+                    key_prefix=rds.key_prefix, # key prefix from another index
+                    redis_url="redis://username:password@localhost:6379",
                 )
 
         Args:
@@ -516,8 +526,9 @@ class Redis(VectorStore):
                 for embedding queries.
             index_name (str): Name of the index to connect to.
             schema (Union[Dict[str, str], str, os.PathLike]): Schema of the index
-                and the vector schema. Can be a dict, or path to yaml file
-
+                and the vector schema. Can be a dict, or path to yaml file.
+            key_prefix (Optional[str]): Prefix to use for all keys in Redis associated
+                with this index.
             **kwargs (Any): Additional keyword arguments to pass to the Redis client.
 
         Returns:
@@ -528,28 +539,31 @@ class Redis(VectorStore):
             ImportError: If the redis python package is not installed.
         """
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
-        try:
-            # We need to first remove redis_url from kwargs,
-            # otherwise passing it to Redis will result in an error.
-            if "redis_url" in kwargs:
-                kwargs.pop("redis_url")
-            client = get_client(redis_url=redis_url, **kwargs)
-            # check if redis has redisearch module installed
-            check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
-            # ensure that the index already exists
-            assert check_index_exists(
-                client, index_name
-            ), f"Index {index_name} does not exist"
-        except Exception as e:
-            raise ValueError(f"Redis failed to connect: {e}")
+        # We need to first remove redis_url from kwargs,
+        # otherwise passing it to Redis will result in an error.
+        if "redis_url" in kwargs:
+            kwargs.pop("redis_url")
 
-        return cls(
+        # Create instance
+        # init the class -- if Redis is unavailable, will throw exception
+        instance = cls(
             redis_url,
             index_name,
             embedding,
             index_schema=schema,
+            key_prefix=key_prefix,
             **kwargs,
         )
+
+        # Check for existence of the declared index
+        if not check_index_exists(instance.client, index_name):
+            # Will only raise if the running Redis server does not
+            # have a record of this particular index
+            raise ValueError(
+                f"Redis failed to connect: Index {index_name} does not exist."
+            )
+
+        return instance
 
     @property
     def schema(self) -> Dict[str, List[Any]]:
