@@ -122,7 +122,6 @@ def test_chat_openai_streaming_generation_info() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_async_chat_openai() -> None:
     """Test async generation."""
     chat = _get_llm(max_tokens=10, n=2)
@@ -139,7 +138,6 @@ async def test_async_chat_openai() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_async_chat_openai_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
@@ -173,7 +171,6 @@ def test_openai_streaming(llm: AzureChatOpenAI) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_astream(llm: AzureChatOpenAI) -> None:
     """Test streaming tokens from OpenAI."""
     async for token in llm.astream("I'm Pickle Rick"):
@@ -181,7 +178,6 @@ async def test_openai_astream(llm: AzureChatOpenAI) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_abatch(llm: AzureChatOpenAI) -> None:
     """Test streaming tokens from AzureChatOpenAI."""
 
@@ -191,7 +187,6 @@ async def test_openai_abatch(llm: AzureChatOpenAI) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_abatch_tags(llm: AzureChatOpenAI) -> None:
     """Test batch tokens from AzureChatOpenAI."""
 
@@ -212,7 +207,6 @@ def test_openai_batch(llm: AzureChatOpenAI) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_ainvoke(llm: AzureChatOpenAI) -> None:
     """Test invoke tokens from AzureChatOpenAI."""
 
