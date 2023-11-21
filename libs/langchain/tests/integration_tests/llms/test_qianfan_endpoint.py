@@ -1,7 +1,6 @@
 """Test Baidu Qianfan LLM Endpoint."""
 from typing import Generator
 
-import pytest
 from langchain_core.outputs import LLMResult
 
 from langchain.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
@@ -29,7 +28,6 @@ def test_generate_stream() -> None:
     assert isinstance(output, Generator)
 
 
-@pytest.mark.asyncio
 async def test_qianfan_aio() -> None:
     llm = QianfanLLMEndpoint(streaming=True)
 

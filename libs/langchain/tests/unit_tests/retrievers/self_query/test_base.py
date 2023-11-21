@@ -130,7 +130,6 @@ def test__get_relevant_documents(fake_self_query_retriever: SelfQueryRetriever) 
     assert relevant_documents[0].metadata["foo"] == "bar"
 
 
-@pytest.mark.asyncio
 async def test__aget_relevant_documents(
     fake_self_query_retriever: SelfQueryRetriever,
 ) -> None:

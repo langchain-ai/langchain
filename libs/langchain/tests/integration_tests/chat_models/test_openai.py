@@ -170,7 +170,6 @@ def test_chat_openai_invalid_streaming_params() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_async_chat_openai() -> None:
     """Test async generation."""
     chat = ChatOpenAI(max_tokens=10, n=2)
@@ -189,7 +188,6 @@ async def test_async_chat_openai() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_async_chat_openai_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
@@ -215,7 +213,6 @@ async def test_async_chat_openai_streaming() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_async_chat_openai_streaming_with_function() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
 
@@ -317,7 +314,6 @@ async def test_async_chat_openai_streaming_with_function() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_async_chat_openai_bind_functions() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
 
@@ -390,7 +386,6 @@ def test_openai_streaming() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_astream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = ChatOpenAI(max_tokens=10)
@@ -400,7 +395,6 @@ async def test_openai_astream() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_abatch() -> None:
     """Test streaming tokens from ChatOpenAI."""
     llm = ChatOpenAI(max_tokens=10)
@@ -411,7 +405,6 @@ async def test_openai_abatch() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_abatch_tags() -> None:
     """Test batch tokens from ChatOpenAI."""
     llm = ChatOpenAI(max_tokens=10)
@@ -434,7 +427,6 @@ def test_openai_batch() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_ainvoke() -> None:
     """Test invoke tokens from ChatOpenAI."""
     llm = ChatOpenAI(max_tokens=10)

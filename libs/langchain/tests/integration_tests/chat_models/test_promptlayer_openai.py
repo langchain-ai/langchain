@@ -83,7 +83,6 @@ def test_promptlayer_chat_openai_invalid_streaming_params() -> None:
         )
 
 
-@pytest.mark.asyncio
 async def test_async_promptlayer_chat_openai() -> None:
     """Test async generation."""
     chat = PromptLayerChatOpenAI(max_tokens=10, n=2)
@@ -99,7 +98,6 @@ async def test_async_promptlayer_chat_openai() -> None:
             assert generation.text == generation.message.content
 
 
-@pytest.mark.asyncio
 async def test_async_promptlayer_chat_openai_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

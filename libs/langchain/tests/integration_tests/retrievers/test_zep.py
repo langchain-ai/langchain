@@ -83,7 +83,6 @@ def test_zep_retriever_get_relevant_documents(
 
 
 @pytest.mark.requires("zep_python")
-@pytest.mark.asyncio
 async def test_zep_retriever_aget_relevant_documents(
     zep_retriever: ZepRetriever, search_results: List[MemorySearchResult]
 ) -> None:

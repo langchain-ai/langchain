@@ -191,7 +191,6 @@ def test_add_documents(
 
 
 @pytest.mark.requires("zep_python")
-@pytest.mark.asyncio
 async def test_asearch_similarity(
     zep_vectorstore: ZepVectorStore,
 ) -> None:
@@ -205,7 +204,6 @@ async def test_asearch_similarity(
 
 
 @pytest.mark.requires("zep_python")
-@pytest.mark.asyncio
 async def test_asearch_mmr(
     zep_vectorstore: ZepVectorStore,
 ) -> None:

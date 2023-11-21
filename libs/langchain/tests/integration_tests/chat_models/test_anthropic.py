@@ -66,7 +66,6 @@ def test_anthropic_streaming_callback() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

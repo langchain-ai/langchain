@@ -239,7 +239,6 @@ def test_run_chat_model_all_formats(inputs: Dict[str, Any]) -> None:
     _run_llm(llm, inputs, mock.MagicMock())
 
 
-@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     dataset = Dataset(
