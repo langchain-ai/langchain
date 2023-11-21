@@ -10,12 +10,12 @@ Your end-user credentials would be used to make the calls (make sure you've run
 import os
 
 import pytest
+from langchain_core.schema import LLMResult
 from pytest_mock import MockerFixture
 
 from langchain.chains.summarize import load_summarize_chain
 from langchain.docstore.document import Document
 from langchain.llms import VertexAI, VertexAIModelGarden
-from langchain.schema import LLMResult
 
 
 def test_vertex_initialization() -> None:
@@ -49,7 +49,6 @@ def test_vertex_generate_code() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_vertex_agenerate() -> None:
     llm = VertexAI(temperature=0)
     output = await llm.agenerate(["Please say foo:"])
@@ -63,7 +62,6 @@ def test_vertex_stream() -> None:
     assert isinstance(outputs[0], str)
 
 
-@pytest.mark.asyncio
 async def test_vertex_consistency() -> None:
     llm = VertexAI(temperature=0)
     output = llm.generate(["Please say foo:"])
@@ -103,7 +101,6 @@ def test_model_garden_generate() -> None:
     assert len(output.generations) == 2
 
 
-@pytest.mark.asyncio
 async def test_model_garden_agenerate() -> None:
     endpoint_id = os.environ["ENDPOINT_ID"]
     project = os.environ["PROJECT"]

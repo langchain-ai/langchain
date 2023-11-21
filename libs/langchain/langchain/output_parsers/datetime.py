@@ -2,7 +2,8 @@ import random
 from datetime import datetime, timedelta
 from typing import List
 
-from langchain.schema import BaseOutputParser, OutputParserException
+from langchain_core.schema import BaseOutputParser, OutputParserException
+
 from langchain.utils import comma_list
 
 

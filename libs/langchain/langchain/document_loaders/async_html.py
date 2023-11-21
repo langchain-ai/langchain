@@ -51,6 +51,7 @@ class AsyncHtmlLoader(BaseLoader):
         requests_per_second: int = 2,
         requests_kwargs: Optional[Dict[str, Any]] = None,
         raise_for_status: bool = False,
+        ignore_load_errors: bool = False,
     ):
         """Initialize with a webpage path."""
 
@@ -88,6 +89,17 @@ class AsyncHtmlLoader(BaseLoader):
         self.raise_for_status = raise_for_status
         self.autoset_encoding = autoset_encoding
         self.encoding = encoding
+        self.ignore_load_errors = ignore_load_errors
+
+    def _fetch_valid_connection_docs(self, url: str) -> Any:
+        if self.ignore_load_errors:
+            try:
+                return self.session.get(url, **self.requests_kwargs)
+            except Exception as e:
+                warnings.warn(str(e))
+                return None
+
+        return self.session.get(url, **self.requests_kwargs)
 
     @staticmethod
     def _check_parser(parser: str) -> None:
@@ -114,7 +126,10 @@ class AsyncHtmlLoader(BaseLoader):
 
         self._check_parser(parser)
 
-        html_doc = self.session.get(url, **self.requests_kwargs)
+        html_doc = self._fetch_valid_connection_docs(url)
+        if not getattr(html_doc, "ok", False):
+            return None
+
         if self.raise_for_status:
             html_doc.raise_for_status()
 
@@ -142,7 +157,10 @@ class AsyncHtmlLoader(BaseLoader):
                             text = ""
                         return text
                 except aiohttp.ClientConnectionError as e:
-                    if i == retries - 1:
+                    if i == retries - 1 and self.ignore_load_errors:
+                        logger.warning(f"Error fetching {url} after {retries} retries.")
+                        return ""
+                    elif i == retries - 1:
                         raise
                     else:
                         logger.warning(
@@ -196,6 +214,8 @@ class AsyncHtmlLoader(BaseLoader):
         docs = []
         for i, text in enumerate(cast(List[str], results)):
             soup = self._scrape(self.web_paths[i])
+            if not soup:
+                continue
             metadata = _build_metadata(soup, self.web_paths[i])
             docs.append(Document(page_content=text, metadata=metadata))
 
