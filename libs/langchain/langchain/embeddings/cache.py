@@ -14,8 +14,9 @@ import uuid
 from functools import partial
 from typing import Callable, List, Sequence, Union, cast
 
-from langchain.schema import BaseStore
-from langchain.schema.embeddings import Embeddings
+from langchain_core.schema import BaseStore
+from langchain_core.schema.embeddings import Embeddings
+
 from langchain.storage.encoder_backed import EncoderBackedStore
 
 NAMESPACE_UUID = uuid.UUID(int=1985)

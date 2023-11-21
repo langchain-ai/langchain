@@ -10,10 +10,10 @@ from datetime import timedelta
 from typing import Iterator
 
 import pytest
+from langchain_core.schema.messages import _message_to_dict
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import MomentoChatMessageHistory
-from langchain.schema.messages import _message_to_dict
 
 
 def random_string() -> str:

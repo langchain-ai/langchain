@@ -1,3 +1,3 @@
-from langchain.schema.callbacks.stdout import StdOutCallbackHandler
+from langchain_core.callbacks.stdout import StdOutCallbackHandler
 
 __all__ = ["StdOutCallbackHandler"]

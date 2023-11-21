@@ -3,8 +3,9 @@ import re
 from typing import Any, Callable, Generator, Iterable, List, Optional, Tuple
 from urllib.parse import urlparse
 
+from langchain_core.schema import Document
+
 from langchain.document_loaders.web_base import WebBaseLoader
-from langchain.schema import Document
 
 
 def _default_parsing_function(content: Any) -> str:
