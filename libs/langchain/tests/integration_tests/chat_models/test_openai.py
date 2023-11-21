@@ -2,6 +2,15 @@
 from typing import Any, List, Optional, Union
 
 import pytest
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.schema import (
+    ChatGeneration,
+    ChatResult,
+    LLMResult,
+)
+from langchain_core.schema.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.schema.output import ChatGenerationChunk, GenerationChunk
 
 from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.callbacks.manager import CallbackManager
@@ -10,22 +19,25 @@ from langchain.chains.openai_functions import (
 )
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-    LLMResult,
-)
-from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 @pytest.mark.scheduled
 def test_chat_openai() -> None:
     """Test ChatOpenAI wrapper."""
-    chat = ChatOpenAI(max_tokens=10)
+    chat = ChatOpenAI(
+        temperature=0.7,
+        base_url=None,
+        organization=None,
+        openai_proxy=None,
+        timeout=10.0,
+        max_retries=3,
+        http_client=None,
+        n=1,
+        max_tokens=10,
+        default_headers=None,
+        default_query=None,
+    )
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, BaseMessage)
@@ -58,6 +70,8 @@ def test_chat_openai_generate() -> None:
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 2
+    assert response.llm_output
+    assert "system_fingerprint" in response.llm_output
     for generations in response.generations:
         assert len(generations) == 2
         for generation in generations:
@@ -163,6 +177,8 @@ async def test_async_chat_openai() -> None:
     response = await chat.agenerate([[message], [message]])
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 2
+    assert response.llm_output
+    assert "system_fingerprint" in response.llm_output
     for generations in response.generations:
         assert len(generations) == 2
         for generation in generations:

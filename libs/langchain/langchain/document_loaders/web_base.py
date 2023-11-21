@@ -245,7 +245,7 @@ class WebBaseLoader(BaseLoader):
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load text from the url(s) in web_path."""
         for path in self.web_paths:
-            soup = self._scrape(path)
+            soup = self._scrape(path, bs_kwargs=self.bs_kwargs)
             text = soup.get_text(**self.bs_get_text_kwargs)
             metadata = _build_metadata(soup, path)
             yield Document(page_content=text, metadata=metadata)

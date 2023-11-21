@@ -1,6 +1,15 @@
 """Wrapper around YandexGPT chat models."""
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
+
+from langchain_core.schema import (
+    AIMessage,
+    BaseMessage,
+    ChatGeneration,
+    ChatResult,
+    HumanMessage,
+    SystemMessage,
+)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -9,14 +18,6 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.llms.yandex import _BaseYandexGPT
-from langchain.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatResult,
-    HumanMessage,
-    SystemMessage,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +35,13 @@ def _parse_chat_history(history: List[BaseMessage]) -> Tuple[List[Dict[str, str]
     chat_history = []
     instruction = ""
     for message in history:
+        content = cast(str, message.content)
         if isinstance(message, HumanMessage):
-            chat_history.append(_parse_message("user", message.content))
+            chat_history.append(_parse_message("user", content))
         if isinstance(message, AIMessage):
-            chat_history.append(_parse_message("assistant", message.content))
+            chat_history.append(_parse_message("assistant", content))
         if isinstance(message, SystemMessage):
-            instruction = message.content
+            instruction = content
     return chat_history, instruction
 
 

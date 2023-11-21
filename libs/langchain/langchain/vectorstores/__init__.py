@@ -21,7 +21,7 @@ and retrieve the data that are 'most similar' to the embedded query.
 
 from typing import Any
 
-from langchain.schema.vectorstore import VectorStore
+from langchain_core.schema.vectorstore import VectorStore
 
 
 def _import_alibaba_cloud_open_search() -> Any:
@@ -102,6 +102,12 @@ def _import_cassandra() -> Any:
     from langchain.vectorstores.cassandra import Cassandra
 
     return Cassandra
+
+
+def _import_astradb() -> Any:
+    from langchain.vectorstores.astradb import AstraDB
+
+    return AstraDB
 
 
 def _import_chroma() -> Any:
@@ -443,6 +449,8 @@ def __getattr__(name: str) -> Any:
         return _import_baiducloud_vector_search()
     elif name == "Cassandra":
         return _import_cassandra()
+    elif name == "AstraDB":
+        return _import_astradb()
     elif name == "Chroma":
         return _import_chroma()
     elif name == "Clarifai":
@@ -561,6 +569,7 @@ __all__ = [
     "AzureSearch",
     "Bagel",
     "Cassandra",
+    "AstraDB",
     "Chroma",
     "Clarifai",
     "Clickhouse",

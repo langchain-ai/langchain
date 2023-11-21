@@ -3,7 +3,18 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
+
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.schema import ChatGeneration, ChatResult
+from langchain_core.schema.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.schema.output import ChatGenerationChunk
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -11,16 +22,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel, _generate_from_stream
 from langchain.llms.vertexai import _VertexAICommon, is_codey_model
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-)
-from langchain.schema.output import ChatGenerationChunk
 from langchain.utilities.vertexai import raise_vertex_import_error
 
 if TYPE_CHECKING:
@@ -57,8 +58,9 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
 
     vertex_messages, context = [], None
     for i, message in enumerate(history):
+        content = cast(str, message.content)
         if i == 0 and isinstance(message, SystemMessage):
-            context = message.content
+            context = content
         elif isinstance(message, AIMessage):
             vertex_message = ChatMessage(content=message.content, author="bot")
             vertex_messages.append(vertex_message)

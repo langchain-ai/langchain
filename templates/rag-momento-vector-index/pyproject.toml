@@ -9,11 +9,11 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.313, <0.1"
 momento = "^1.12.0"
-openai = "^0.28.1"
+openai = "<2"
 tiktoken = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.4"
+langchain-cli = ">=0.0.15"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 

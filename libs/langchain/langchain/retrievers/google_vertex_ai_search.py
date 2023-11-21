@@ -3,9 +3,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.schema import BaseRetriever, Document
+
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain.schema import BaseRetriever, Document
 from langchain.utilities.vertexai import get_client_info
 from langchain.utils import get_from_dict_or_env
 
@@ -36,7 +37,7 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
     """ Defines the Vertex AI Search data type
     0 - Unstructured data 
     1 - Structured data
-    2 - Website data (with Advanced Website Indexing)
+    2 - Website data
     """
 
     @root_validator(pre=True)
@@ -154,12 +155,13 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
         return documents
 
     def _convert_website_search_response(
-        self, results: Sequence[SearchResult]
+        self, results: Sequence[SearchResult], chunk_type: str
     ) -> List[Document]:
         """Converts a sequence of search results to a list of LangChain documents."""
         from google.protobuf.json_format import MessageToDict
 
         documents: List[Document] = []
+        chunk_type = "extractive_answers"
 
         for result in results:
             document_dict = MessageToDict(
@@ -173,24 +175,26 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
             doc_metadata["id"] = document_dict["id"]
             doc_metadata["source"] = derived_struct_data.get("link", "")
 
-            chunk_type = "extractive_answers"
-
             if chunk_type not in derived_struct_data:
                 continue
+
+            text_field = "snippet" if chunk_type == "snippets" else "content"
 
             for chunk in derived_struct_data[chunk_type]:
                 documents.append(
                     Document(
-                        page_content=chunk.get("content", ""), metadata=doc_metadata
+                        page_content=chunk.get(text_field, ""), metadata=doc_metadata
                     )
                 )
 
         if not documents:
-            print(
-                f"No {chunk_type} could be found.\n"
-                "Make sure that your data store is using Advanced Website Indexing.\n"
-                "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"  # noqa: E501
-            )
+            print(f"No {chunk_type} could be found.")
+            if chunk_type == "extractive_answers":
+                print(
+                    "Make sure that your data store is using Advanced Website "
+                    "Indexing.\n"
+                    "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"  # noqa: E501
+                )
 
         return documents
 
@@ -206,7 +210,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
     filter: Optional[str] = None
     """Filter expression."""
     get_extractive_answers: bool = False
-    """If True return Extractive Answers, otherwise return Extractive Segments."""
+    """If True return Extractive Answers, otherwise return Extractive Segments or Snippets."""  # noqa: E501
     max_documents: int = Field(default=5, ge=1, le=100)
     """The maximum number of documents to return."""
     max_extractive_answer_count: int = Field(default=1, ge=1, le=5)
@@ -307,12 +311,15 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
             content_search_spec = SearchRequest.ContentSearchSpec(
                 extractive_content_spec=SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
                     max_extractive_answer_count=self.max_extractive_answer_count,
-                )
+                ),
+                snippet_spec=SearchRequest.ContentSearchSpec.SnippetSpec(
+                    return_snippet=True
+                ),
             )
         else:
             raise NotImplementedError(
                 "Only data store type 0 (Unstructured), 1 (Structured),"
-                "or 2 (Website with Advanced Indexing) are supported currently."
+                "or 2 (Website) are supported currently."
                 + f" Got {self.engine_data_type}"
             )
 
@@ -354,11 +361,16 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         elif self.engine_data_type == 1:
             documents = self._convert_structured_search_response(response.results)
         elif self.engine_data_type == 2:
-            documents = self._convert_website_search_response(response.results)
+            chunk_type = (
+                "extractive_answers" if self.get_extractive_answers else "snippets"
+            )
+            documents = self._convert_website_search_response(
+                response.results, chunk_type
+            )
         else:
             raise NotImplementedError(
                 "Only data store type 0 (Unstructured), 1 (Structured),"
-                "or 2 (Website with Advanced Indexing) are supported currently."
+                "or 2 (Website) are supported currently."
                 + f" Got {self.engine_data_type}"
             )
 
@@ -431,7 +443,9 @@ class GoogleVertexAIMultiTurnSearchRetriever(
         response = self._client.converse_conversation(request)
 
         if self.engine_data_type == 2:
-            return self._convert_website_search_response(response.search_results)
+            return self._convert_website_search_response(
+                response.search_results, "extractive_answers"
+            )
 
         return self._convert_unstructured_search_response(
             response.search_results, "extractive_answers"

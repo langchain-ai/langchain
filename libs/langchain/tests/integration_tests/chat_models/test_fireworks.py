@@ -1,11 +1,12 @@
 """Test ChatFireworks wrapper."""
 import sys
+from typing import cast
 
 import pytest
+from langchain_core.schema import ChatGeneration, ChatResult, LLMResult
+from langchain_core.schema.messages import BaseMessage, HumanMessage, SystemMessage
 
 from langchain.chat_models.fireworks import ChatFireworks
-from langchain.schema import ChatGeneration, ChatResult, LLMResult
-from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 
 if sys.version_info < (3, 9):
     pytest.skip("fireworks-ai requires Python > 3.8", allow_module_level=True)
@@ -152,7 +153,7 @@ def test_fireworks_streaming_stop_words(chat: ChatFireworks) -> None:
 
     last_token = ""
     for token in chat.stream("I'm Pickle Rick", stop=[","]):
-        last_token = token.content
+        last_token = cast(str, token.content)
         assert isinstance(token.content, str)
     assert last_token[-1] == ","
 
@@ -183,6 +184,6 @@ async def test_fireworks_astream(chat: ChatFireworks) -> None:
     async for token in chat.astream(
         "Who's the best quarterback in the NFL?", stop=[","]
     ):
-        last_token = token.content
+        last_token = cast(str, token.content)
         assert isinstance(token.content, str)
     assert last_token[-1] == ","

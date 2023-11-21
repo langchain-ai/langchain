@@ -1,11 +1,16 @@
 """Tool for the Arxiv API."""
 
-from typing import Optional
+from typing import Optional, Type
+
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
 from langchain.utilities.arxiv import ArxivAPIWrapper
+
+
+class ArxivInput(BaseModel):
+    query: str = Field(description="search query to look up")
 
 
 class ArxivQueryRun(BaseTool):
@@ -21,6 +26,7 @@ class ArxivQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: ArxivAPIWrapper = Field(default_factory=ArxivAPIWrapper)
+    args_schema: Type[BaseModel] = ArxivInput
 
     def _run(
         self,

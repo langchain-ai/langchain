@@ -2,6 +2,8 @@ from typing import Iterator, List
 from uuid import uuid4
 
 import pytest
+from langchain_core.prompts.chat import ChatPromptTemplate
+from langchain_core.schema.messages import BaseMessage, HumanMessage
 from langsmith import Client as Client
 from langsmith.schemas import DataType
 
@@ -9,8 +11,6 @@ from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.evaluation import EvaluatorType
 from langchain.llms.openai import OpenAI
-from langchain.prompts.chat import ChatPromptTemplate
-from langchain.schema.messages import BaseMessage, HumanMessage
 from langchain.smith import RunEvalConfig, run_on_dataset
 from langchain.smith.evaluation import InputFormatError
 from langchain.smith.evaluation.runner_utils import arun_on_dataset
@@ -490,7 +490,13 @@ async def test_arb_func_on_kv_singleio_dataset(
     )
 
     def my_func(x: dict) -> str:
-        return runnable.invoke(x).content
+        content = runnable.invoke(x).content
+        if isinstance(content, str):
+            return content
+        else:
+            raise ValueError(
+                f"Expected message with content type string, got {content}"
+            )
 
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     await arun_on_dataset(
