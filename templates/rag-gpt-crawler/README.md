@@ -31,7 +31,7 @@ Then, run this as described in the [gpt-crawler](https://github.com/BuilderIO/gp
 npm start
 ```
 
-This will write a file (`output.json`) to the gpt-crawler directory, which is used to build the index.
+And copy the `output.json` file into the folder containing this README.
 
 ## Usage
 

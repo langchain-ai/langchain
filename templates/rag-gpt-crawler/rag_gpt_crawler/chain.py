@@ -12,7 +12,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 
 # Load output from gpt crawler
-path_to_gptcrawler = "/Users/rlm/Desktop/Code/gpt-crawler/output.json"
+path_to_gptcrawler = Path(__file__).parent.parent / "output.json"
 data = json.loads(Path(path_to_gptcrawler).read_text())
 docs = [
     Document(
