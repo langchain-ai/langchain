@@ -1,5 +1,5 @@
 """Test Azure Cognitive Search wrapper."""
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
 

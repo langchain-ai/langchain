@@ -3,7 +3,7 @@
 
 from typing import Any, Optional
 
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain.agents.tools import Tool
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain

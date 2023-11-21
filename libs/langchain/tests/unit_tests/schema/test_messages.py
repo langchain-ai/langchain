@@ -1,5 +1,5 @@
 import pytest
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessageChunk,
     ChatMessageChunk,
     FunctionMessageChunk,

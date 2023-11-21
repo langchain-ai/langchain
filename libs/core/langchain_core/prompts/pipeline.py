@@ -1,8 +1,9 @@
 from typing import Any, Dict, List, Tuple
 
+from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import BaseChatPromptTemplate
+from langchain_core.prompts.value import PromptValue
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.schema import BasePromptTemplate, PromptValue
 
 
 def _get_inputs(inputs: dict, input_variables: List[str]) -> dict:

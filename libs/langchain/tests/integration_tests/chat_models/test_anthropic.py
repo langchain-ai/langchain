@@ -2,8 +2,8 @@
 from typing import List
 
 import pytest
-from langchain_core.schema import ChatGeneration, LLMResult
-from langchain_core.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.anthropic import (

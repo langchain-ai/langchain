@@ -1,4 +1,4 @@
-from langchain_core.prompts.example_selector.semantic_similarity import (
+from langchain_core.example_selectors.semantic_similarity import (
     MaxMarginalRelevanceExampleSelector,
     SemanticSimilarityExampleSelector,
     sorted_values,
