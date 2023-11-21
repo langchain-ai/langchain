@@ -36,6 +36,7 @@ jobs:
       ./.github/workflows/_lint.yml
     with:
       working-directory: libs/langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   test:
@@ -43,6 +44,7 @@ jobs:
       ./.github/workflows/_test.yml
     with:
       working-directory: libs/langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   compile-integration-tests:
@@ -50,6 +52,7 @@ jobs:
       ./.github/workflows/_compile_integration_test.yml
     with:
       working-directory: libs/langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   pydantic-compatibility:
@@ -57,6 +60,7 @@ jobs:
       ./.github/workflows/_pydantic_compatibility.yml
     with:
       working-directory: libs/langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   extended-tests:
@@ -88,6 +92,11 @@ jobs:
         run: |
           echo "Running extended tests, installing dependencies with poetry..."
           poetry install -E extended_testing
+
+      - name: Install langchain core editable
+        shell: bash
+        run: |
+          poetry run pip install -e ../core
 
       - name: Run extended tests
         run: make extended_tests
