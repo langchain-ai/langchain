@@ -6,8 +6,7 @@ from json import JSONDecodeError
 from typing import Any, Callable, List, Optional
 
 import jsonpatch
-
-from langchain.schema.output_parser import (
+from langchain_core.schema.output_parser import (
     BaseCumulativeTransformOutputParser,
     OutputParserException,
 )

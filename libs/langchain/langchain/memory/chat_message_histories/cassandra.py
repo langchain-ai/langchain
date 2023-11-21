@@ -8,10 +8,14 @@ from typing import List
 if typing.TYPE_CHECKING:
     from cassandra.cluster import Session
 
-from langchain.schema import (
+from langchain_core.schema import (
     BaseChatMessageHistory,
 )
-from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
+from langchain_core.schema.messages import (
+    BaseMessage,
+    _message_to_dict,
+    messages_from_dict,
+)
 
 DEFAULT_TABLE_NAME = "message_store"
 DEFAULT_TTL_SECONDS = None

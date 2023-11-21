@@ -1,12 +1,13 @@
 """Document transformers that use OpenAI Functions models"""
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.schema import BaseDocumentTransformer, Document
+from langchain_core.schema.language_model import BaseLanguageModel
+
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions import create_tagging_chain
-from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema import BaseDocumentTransformer, Document
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
@@ -17,7 +18,7 @@ class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
 
                 from langchain.chat_models import ChatOpenAI
                 from langchain.document_transformers import OpenAIMetadataTagger
-                from langchain.schema import Document
+                from langchain_core.schema import Document
 
                 schema = {
                     "properties": {
@@ -100,7 +101,7 @@ def create_metadata_tagger(
 
                 from langchain.chat_models import ChatOpenAI
                 from langchain.document_transformers import create_metadata_tagger
-                from langchain.schema import Document
+                from langchain_core.schema import Document
 
                 schema = {
                     "properties": {

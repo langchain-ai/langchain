@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
+from langchain_core.schema import LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI
-from langchain.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
     FakeCallbackHandler,
 )
@@ -100,7 +100,6 @@ def test_openai_streaming() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_astream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -110,7 +109,6 @@ async def test_openai_astream() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_abatch() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -120,7 +118,6 @@ async def test_openai_abatch() -> None:
         assert isinstance(token, str)
 
 
-@pytest.mark.asyncio
 async def test_openai_abatch_tags() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -143,7 +140,6 @@ def test_openai_batch() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_ainvoke() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -213,7 +209,6 @@ def test_openai_streaming_callback() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_async_generate() -> None:
     """Test async generation."""
     llm = OpenAI(max_tokens=10)
@@ -221,7 +216,6 @@ async def test_openai_async_generate() -> None:
     assert isinstance(output, LLMResult)
 
 
-@pytest.mark.asyncio
 async def test_openai_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
