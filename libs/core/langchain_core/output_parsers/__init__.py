@@ -9,7 +9,7 @@ from langchain_core.output_parsers.list import (
     MarkdownListOutputParser,
     NumberedListOutputParser,
 )
-from langchain_core.output_parsers.str import StrOutputParser
+from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.transform import (
     BaseCumulativeTransformOutputParser,
     BaseTransformOutputParser,

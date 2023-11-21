@@ -8,7 +8,6 @@ from typing import (
     Callable,
     Dict,
     List,
-    Literal,
     Sequence,
     Set,
     Tuple,
@@ -27,12 +26,11 @@ from langchain_core.messages import (
     ChatMessage,
     HumanMessage,
     SystemMessage,
-    get_buffer_string,
 )
+from langchain_core.prompt_values import ChatPromptValue, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate
-from langchain_core.prompts.value import PromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
 
 
@@ -275,33 +273,6 @@ class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
         """
         text = self.prompt.format(**kwargs)
         return SystemMessage(content=text, additional_kwargs=self.additional_kwargs)
-
-
-class ChatPromptValue(PromptValue):
-    """Chat prompt value.
-
-    A type of a prompt value that is built from messages.
-    """
-
-    messages: Sequence[BaseMessage]
-    """List of messages."""
-
-    def to_string(self) -> str:
-        """Return prompt as string."""
-        return get_buffer_string(self.messages)
-
-    def to_messages(self) -> List[BaseMessage]:
-        """Return prompt as a list of messages."""
-        return list(self.messages)
-
-
-class ChatPromptValueConcrete(ChatPromptValue):
-    """Chat prompt value which explicitly lists out the message types it accepts.
-    For use in external schemas."""
-
-    messages: Sequence[AnyMessage]
-
-    type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
 
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):

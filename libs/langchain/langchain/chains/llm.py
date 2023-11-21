@@ -12,8 +12,8 @@ from langchain_core.load.dump import dumpd
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import BaseLLMOutputParser, StrOutputParser
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
-from langchain_core.prompts import BasePromptTemplate, PromptValue
-from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompt_values import PromptValue
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.runnables import (
     Runnable,
