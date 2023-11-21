@@ -2,6 +2,7 @@
 
 from typing import Any
 
+import pytest
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.schema import (
     AIMessage,
@@ -17,6 +18,7 @@ from langchain.chains.openai_functions import (
     create_openai_fn_chain,
 )
 from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
+from langchain.schema.messages import BaseMessageChunk
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 _FUNCTIONS: Any = [
@@ -143,6 +145,25 @@ def test_multiple_history() -> None:
     assert isinstance(response.content, str)
 
 
+def test_chat_generate() -> None:
+    """Tests chat generate works."""
+    chat = QianfanChatEndpoint()
+    response = chat.generate(
+        [
+            [
+                HumanMessage(content="Hello."),
+                AIMessage(content="Hello!"),
+                HumanMessage(content="How are you doing?"),
+            ]
+        ]
+    )
+    assert isinstance(response, LLMResult)
+    for generations in response.generations:
+        for generation in generations:
+            assert isinstance(generation, ChatGeneration)
+            assert isinstance(generation.text, str)
+
+
 def test_stream() -> None:
     """Test that stream works."""
     chat = QianfanChatEndpoint(streaming=True)
@@ -159,6 +180,57 @@ def test_stream() -> None:
     )
     assert callback_handler.llm_streams > 0
     assert isinstance(response.content, str)
+
+    res = chat.stream(
+        [
+            HumanMessage(content="Hello."),
+            AIMessage(content="Hello!"),
+            HumanMessage(content="Who are you?"),
+        ]
+    )
+
+    assert len(list(res)) >= 1
+
+
+@pytest.mark.asyncio
+async def test_async_invoke() -> None:
+    chat = QianfanChatEndpoint()
+    res = await chat.ainvoke([HumanMessage(content="Hello")])
+    assert isinstance(res, BaseMessage)
+    assert res.content != ""
+
+
+@pytest.mark.asyncio
+async def test_async_generate() -> None:
+    """Tests chat agenerate works."""
+    chat = QianfanChatEndpoint()
+    response = await chat.agenerate(
+        [
+            [
+                HumanMessage(content="Hello."),
+                AIMessage(content="Hello!"),
+                HumanMessage(content="How are you doing?"),
+            ]
+        ]
+    )
+    assert isinstance(response, LLMResult)
+    for generations in response.generations:
+        for generation in generations:
+            assert isinstance(generation, ChatGeneration)
+            assert isinstance(generation.text, str)
+
+
+@pytest.mark.asyncio
+async def test_async_stream() -> None:
+    chat = QianfanChatEndpoint(streaming=True)
+    async for token in chat.astream(
+        [
+            HumanMessage(content="Hello."),
+            AIMessage(content="Hello!"),
+            HumanMessage(content="Who are you?"),
+        ]
+    ):
+        assert isinstance(token, BaseMessageChunk)
 
 
 def test_multiple_messages() -> None:

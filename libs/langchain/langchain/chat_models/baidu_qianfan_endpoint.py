@@ -3,9 +3,14 @@ from __future__ import annotations
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, cast
 
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.messages import (
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
+from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -14,13 +19,7 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGenerationChunk
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
+from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -98,14 +97,14 @@ class QianfanChatEndpoint(BaseChatModel):
     request_timeout: Optional[int] = 60
     """request timeout for chat http requests"""
 
-    top_p: Optional[float] = 0.8
-    temperature: Optional[float] = 0.95
-    penalty_score: Optional[float] = 1
+    top_p: Optional[float] = None
+    temperature: Optional[float] = None
+    penalty_score: Optional[float] = None
     """Model params, only supported in ERNIE-Bot and ERNIE-Bot-turbo.
     In the case of other model, passing these params will not affect the result.
     """
 
-    model: str = "ERNIE-Bot-turbo"
+    model: Optional[str] = None
     """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
@@ -173,7 +172,8 @@ class QianfanChatEndpoint(BaseChatModel):
             "penalty_score": self.penalty_score,
         }
 
-        return {**normal_params, **self.model_kwargs}
+        params = {**normal_params, **self.model_kwargs}
+        return {k: v for k, v in params.items() if v is not None}
 
     def _convert_prompt_msg_params(
         self,
@@ -232,7 +232,13 @@ class QianfanChatEndpoint(BaseChatModel):
         """
         if self.streaming:
             completion = ""
+            token_usage = {}
+            chat_generation_info = {}
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
+                chat_generation_info = (
+                    chunk.generation_info if chunk.generation_info 
+                    is not None else chat_generation_info
+                )
                 completion += chunk.text
             lc_msg = AIMessage(content=completion, additional_kwargs={})
             gen = ChatGeneration(
@@ -241,7 +247,7 @@ class QianfanChatEndpoint(BaseChatModel):
             )
             return ChatResult(
                 generations=[gen],
-                llm_output={"token_usage": {}, "model_name": self.model},
+                llm_output={"token_usage": chat_generation_info.get("usage", {}), "model_name": self.model},
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
         response_payload = self.client.do(**params)
@@ -267,7 +273,12 @@ class QianfanChatEndpoint(BaseChatModel):
         if self.streaming:
             completion = ""
             token_usage = {}
+            chat_generation_info = {}
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
+                chat_generation_info = (
+                    chunk.generation_info if chunk.generation_info 
+                    is not None else chat_generation_info
+                )
                 completion += chunk.text
 
             lc_msg = AIMessage(content=completion, additional_kwargs={})
@@ -277,7 +288,7 @@ class QianfanChatEndpoint(BaseChatModel):
             )
             return ChatResult(
                 generations=[gen],
-                llm_output={"token_usage": {}, "model_name": self.model},
+                llm_output={"token_usage": chat_generation_info.get("usage", {}), "model_name": self.model},
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
         response_payload = await self.client.ado(**params)
@@ -303,6 +314,7 @@ class QianfanChatEndpoint(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stream"] = True
         for res in self.client.do(**params):
             if res:
                 msg = _convert_dict_to_message(res)
@@ -311,8 +323,10 @@ class QianfanChatEndpoint(BaseChatModel):
                     message=AIMessageChunk(
                         content=msg.content,
                         role="assistant",
-                        additional_kwargs=msg.additional_kwargs,
+                        # additional_kwargs=msg.additional_kwargs, might cause stream chunk __add__ error
+                        # but which is also needed in function_call agent of OpenAI.
                     ),
+                    generation_info=msg.additional_kwargs,
                 )
                 yield chunk
                 if run_manager:
@@ -326,6 +340,7 @@ class QianfanChatEndpoint(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stream"] = True
         async for res in await self.client.ado(**params):
             if res:
                 msg = _convert_dict_to_message(res)
@@ -334,8 +349,8 @@ class QianfanChatEndpoint(BaseChatModel):
                     message=AIMessageChunk(
                         content=msg.content,
                         role="assistant",
-                        additional_kwargs=msg.additional_kwargs,
                     ),
+                    generation_info=msg.additional_kwargs,
                 )
                 yield chunk
                 if run_manager:
