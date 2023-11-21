@@ -4128,13 +4128,13 @@ tests = ["pandas (>=1.4)", "pytest", "pytest-asyncio", "pytest-mock"]
 
 [[package]]
 name = "langchain-core"
-version = "0.0.2"
+version = "0.0.3"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain_core-0.0.2-py3-none-any.whl", hash = "sha256:dd448c7887c24105761a0763bee5ec5b072de905b4fbd83d693e7a181fd63208"},
-    {file = "langchain_core-0.0.2.tar.gz", hash = "sha256:772600dfe3e707adb9055ed96797763b0de32b394eac8325bf609a7e5929dda2"},
+    {file = "langchain_core-0.0.3-py3-none-any.whl", hash = "sha256:7d24630714104aa2f77c199831fdf7a28e09d67cac992f0b8e1398f5a45f9142"},
+    {file = "langchain_core-0.0.3.tar.gz", hash = "sha256:0dd242eb452c321f1fa5cf2c221d38783b7ff8e8bf27caa1ff0b2ae3a7e3e885"},
 ]
 
 [package.dependencies]
@@ -11085,4 +11085,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "3660cb9106129dcf1a2fe157c1bdfe567923fc9ed408672bcbcb70f4345f1285"
+content-hash = "54acd6074885fa2e4069cdba7dfe5b497ca4820b506983a5792fb1e78b53f4a3"
