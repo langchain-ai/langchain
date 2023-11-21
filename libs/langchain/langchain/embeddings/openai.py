@@ -5,7 +5,6 @@ import os
 import warnings
 from importlib.metadata import version
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -21,6 +20,9 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.utils import get_pydantic_field_names
 from packaging.version import Version, parse
 from tenacity import (
     AsyncRetrying,
@@ -31,12 +33,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain.schema.embeddings import Embeddings
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
-
-if TYPE_CHECKING:
-    import httpx
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -179,8 +176,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model: str = "text-embedding-ada-002"
     # to support Azure OpenAI Service custom deployment names
     deployment: Optional[str] = model
@@ -207,10 +204,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
-    request_timeout: Optional[Union[float, Tuple[float, float], httpx.Timeout]] = Field(
+    request_timeout: Optional[Union[float, Tuple[float, float], Any]] = Field(
         default=None, alias="timeout"
     )
-    """Timeout in seconds for the OpenAPI request."""
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+        None."""
     headers: Any = None
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
@@ -233,7 +231,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[httpx.Client, None] = None
+    http_client: Union[Any, None] = None
+    """Optional httpx.Client."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -293,7 +292,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             # Azure OpenAI embedding models allow a maximum of 16 texts
             # at a time in each batch
             # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-            values["chunk_size"] = max(values["chunk_size"], 16)
+            values["chunk_size"] = min(values["chunk_size"], 16)
         else:
             default_api_version = ""
         values["openai_api_version"] = get_from_dict_or_env(
@@ -332,10 +331,16 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     "default_query": values["default_query"],
                     "http_client": values["http_client"],
                 }
-                values["client"] = openai.OpenAI(**client_params).embeddings
-                values["async_client"] = openai.AsyncOpenAI(**client_params).embeddings
-            else:
+                if not values.get("client"):
+                    values["client"] = openai.OpenAI(**client_params).embeddings
+                if not values.get("async_client"):
+                    values["async_client"] = openai.AsyncOpenAI(
+                        **client_params
+                    ).embeddings
+            elif not values.get("client"):
                 values["client"] = openai.Embedding
+            else:
+                pass
         return values
 
     @property

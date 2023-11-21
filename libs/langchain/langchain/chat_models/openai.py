@@ -20,6 +20,24 @@ from typing import (
     Union,
 )
 
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import (
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessageChunk,
+    FunctionMessageChunk,
+    HumanMessageChunk,
+    SystemMessageChunk,
+    ToolMessageChunk,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.runnables import Runnable
+from langchain_core.utils import (
+    get_pydantic_field_names,
+)
+
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -31,28 +49,10 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
-from langchain.pydantic_v1 import BaseModel, Field, root_validator
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.language_model import LanguageModelInput
-from langchain.schema.messages import (
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    ChatMessageChunk,
-    FunctionMessageChunk,
-    HumanMessageChunk,
-    SystemMessageChunk,
-)
-from langchain.schema.output import ChatGenerationChunk
-from langchain.schema.runnable import Runnable
-from langchain.utils import (
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
+from langchain.utils import get_from_dict_or_env
 from langchain.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
-    import httpx
     import tiktoken
 
 
@@ -115,15 +115,14 @@ def _convert_delta_to_message_chunk(
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
+    additional_kwargs: Dict = {}
     if _dict.get("function_call"):
-        additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        if (
-            "name" in additional_kwargs["function_call"]
-            and additional_kwargs["function_call"]["name"] is None
-        ):
-            additional_kwargs["function_call"]["name"] = ""
-    else:
-        additional_kwargs = {}
+        function_call = dict(_dict["function_call"])
+        if "name" in function_call and function_call["name"] is None:
+            function_call["name"] = ""
+        additional_kwargs["function_call"] = function_call
+    if _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = _dict["tool_calls"]
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
@@ -133,6 +132,8 @@ def _convert_delta_to_message_chunk(
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"])
+    elif role == "tool" or default_class == ToolMessageChunk:
+        return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
@@ -179,8 +180,8 @@ class ChatOpenAI(BaseChatModel):
         """Return whether this model can be serialized by Langchain."""
         return True
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -199,10 +200,11 @@ class ChatOpenAI(BaseChatModel):
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
-    request_timeout: Union[float, Tuple[float, float], httpx.Timeout, None] = Field(
+    request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+        None."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
     streaming: bool = False
@@ -225,7 +227,8 @@ class ChatOpenAI(BaseChatModel):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[httpx.Client, None] = None
+    http_client: Union[Any, None] = None
+    """Optional httpx.Client."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -304,12 +307,17 @@ class ChatOpenAI(BaseChatModel):
                 "default_query": values["default_query"],
                 "http_client": values["http_client"],
             }
-            values["client"] = openai.OpenAI(**client_params).chat.completions
-            values["async_client"] = openai.AsyncOpenAI(
-                **client_params
-            ).chat.completions
-        else:
+
+            if not values.get("client"):
+                values["client"] = openai.OpenAI(**client_params).chat.completions
+            if not values.get("async_client"):
+                values["async_client"] = openai.AsyncOpenAI(
+                    **client_params
+                ).chat.completions
+        elif not values.get("client"):
             values["client"] = openai.ChatCompletion
+        else:
+            pass
         return values
 
     @property
@@ -324,6 +332,8 @@ class ChatOpenAI(BaseChatModel):
         }
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
+        if self.request_timeout is not None and not is_openai_v1():
+            params["request_timeout"] = self.request_timeout
         return params
 
     def completion_with_retry(
@@ -630,7 +640,6 @@ class ChatOpenAI(BaseChatModel):
         from langchain.chains.openai_functions.base import convert_to_openai_function
 
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
-        function_call_ = None
         if function_call is not None:
             if len(formatted_functions) != 1:
                 raise ValueError(

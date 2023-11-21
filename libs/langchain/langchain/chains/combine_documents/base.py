@@ -3,14 +3,15 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Type
 
+from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core.runnables.config import RunnableConfig
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
 from langchain.docstore.document import Document
-from langchain.pydantic_v1 import BaseModel, Field, create_model
-from langchain.schema.runnable.config import RunnableConfig
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 

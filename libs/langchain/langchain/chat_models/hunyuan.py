@@ -8,30 +8,26 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 from urllib.parse import urlparse
 
 import requests
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    ChatMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import (
+    convert_to_secret_str,
+    get_pydantic_field_names,
+)
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel, _generate_from_stream
-from langchain.pydantic_v1 import Field, SecretStr, root_validator
-from langchain.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatMessage,
-    ChatResult,
-    HumanMessage,
-)
-from langchain.schema.messages import (
-    AIMessageChunk,
-    BaseMessageChunk,
-    ChatMessageChunk,
-    HumanMessageChunk,
-)
-from langchain.schema.output import ChatGenerationChunk
-from langchain.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +136,7 @@ class ChatHunyuan(BaseChatModel):
 
     hunyuan_api_base: str = Field(default=DEFAULT_API_BASE)
     """Hunyuan custom endpoints"""
-    hunyuan_app_id: Optional[str] = None
+    hunyuan_app_id: Optional[int] = None
     """Hunyuan App ID"""
     hunyuan_secret_id: Optional[str] = None
     """Hunyuan Secret ID"""

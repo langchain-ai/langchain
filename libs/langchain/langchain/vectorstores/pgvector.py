@@ -30,9 +30,10 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -146,6 +147,10 @@ class PGVector(VectorStore):
         self.EmbeddingStore = EmbeddingStore
         self.create_tables_if_not_exists()
         self.create_collection()
+
+    def __del__(self) -> None:
+        if self._conn:
+            self._conn.close()
 
     @property
     def embeddings(self) -> Embeddings:
@@ -762,6 +767,7 @@ class PGVector(VectorStore):
             k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
+            filter=filter,
             **kwargs,
         )
 

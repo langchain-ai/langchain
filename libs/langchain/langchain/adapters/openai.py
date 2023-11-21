@@ -13,10 +13,8 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Literal
-
-from langchain.schema.chat import ChatSession
-from langchain.schema.messages import (
+from langchain_core.chat_sessions import ChatSession
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -25,7 +23,9 @@ from langchain.schema.messages import (
     FunctionMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
 )
+from typing_extensions import Literal
 
 
 async def aenumerate(
@@ -54,15 +54,18 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Fix for azure
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
+        additional_kwargs: Dict = {}
         if _dict.get("function_call"):
-            additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        else:
-            additional_kwargs = {}
+            additional_kwargs["function_call"] = dict(_dict["function_call"])
+        if _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = _dict["tool_calls"]
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
     elif role == "function":
         return FunctionMessage(content=_dict["content"], name=_dict["name"])
+    elif role == "tool":
+        return ToolMessage(content=_dict["content"], tool_call_id=_dict["tool_call_id"])
     else:
         return ChatMessage(content=_dict["content"], role=role)
 
@@ -88,6 +91,11 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
             # If function call only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+            # If tool calls only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, FunctionMessage):
@@ -95,6 +103,12 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
             "role": "function",
             "content": message.content,
             "name": message.name,
+        }
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "tool_call_id": message.tool_call_id,
         }
     else:
         raise TypeError(f"Got unknown type {message}")

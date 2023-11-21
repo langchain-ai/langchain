@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
-from langchain.pydantic_v1 import BaseModel, Extra
-from langchain.schema.embeddings import Embeddings
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra
 
 
 class ModelScopeEmbeddings(BaseModel, Embeddings):

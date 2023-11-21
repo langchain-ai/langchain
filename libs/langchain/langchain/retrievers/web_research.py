@@ -2,6 +2,12 @@ import logging
 import re
 from typing import List, Optional
 
+from langchain_core.documents import Document
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import VectorStore
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -13,10 +19,6 @@ from langchain.document_transformers import Html2TextTransformer
 from langchain.llms import LlamaCpp
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.prompts import BasePromptTemplate, PromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema import BaseRetriever, Document
-from langchain.schema.vectorstore import VectorStore
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.utilities import GoogleSearchAPIWrapper
 
@@ -198,7 +200,7 @@ class WebResearchRetriever(BaseRetriever):
         logger.info(f"New URLs to load: {new_urls}")
         # Load, split, and add new urls to vectorstore
         if new_urls:
-            loader = AsyncHtmlLoader(new_urls)
+            loader = AsyncHtmlLoader(new_urls, ignore_load_errors=True)
             html2text = Html2TextTransformer()
             logger.info("Indexing new urls...")
             docs = loader.load()
