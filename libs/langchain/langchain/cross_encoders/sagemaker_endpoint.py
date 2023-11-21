@@ -12,7 +12,7 @@ class CrossEncoderContentHandler(ContentHandlerBase[List[List[str]], List[float]
     content_type = "application/json"
     accepts = "application/json"
 
-    def transform_input(self, pairs: List[List[str]]) -> bytes:
+    def transform_input(self, pairs: List[List[str]], model_kwargs: Dict) -> bytes:
         input_str = json.dumps({"pairs": pairs})
         return input_str.encode("utf-8")
 
