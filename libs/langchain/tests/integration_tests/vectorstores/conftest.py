@@ -2,11 +2,11 @@ import os
 from typing import Generator, List, Union
 
 import pytest
+from langchain_core.documents import Document
 from vcr.request import Request
 
 from langchain.document_loaders import TextLoader
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.schema import Document
 from langchain.text_splitter import CharacterTextSplitter
 
 # Those environment variables turn on Deep Lake pytest mode.

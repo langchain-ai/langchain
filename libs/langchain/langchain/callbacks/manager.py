@@ -8,9 +8,7 @@ from typing import (
     Optional,
 )
 
-from langchain.callbacks.openai_info import OpenAICallbackHandler
-from langchain.callbacks.tracers.wandb import WandbTracer
-from langchain.schema.callbacks.manager import (
+from langchain_core.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainGroup,
     AsyncCallbackManagerForChainRun,
@@ -39,6 +37,9 @@ from langchain.schema.callbacks.manager import (
     tracing_enabled,
     tracing_v2_enabled,
 )
+
+from langchain.callbacks.openai_info import OpenAICallbackHandler
+from langchain.callbacks.tracers.wandb import WandbTracer
 
 logger = logging.getLogger(__name__)
 

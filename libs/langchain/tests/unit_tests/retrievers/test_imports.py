@@ -10,6 +10,7 @@ EXPECTED_ALL = [
     "ChaindeskRetriever",
     "CohereRagRetriever",
     "ElasticSearchBM25Retriever",
+    "EmbedchainRetriever",
     "GoogleDocumentAIWarehouseRetriever",
     "GoogleCloudEnterpriseSearchRetriever",
     "GoogleVertexAIMultiTurnSearchRetriever",

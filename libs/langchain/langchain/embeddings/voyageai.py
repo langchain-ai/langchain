@@ -14,6 +14,9 @@ from typing import (
 )
 
 import requests
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
 from tenacity import (
     before_sleep_log,
     retry,
@@ -21,9 +24,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain.schema.embeddings import Embeddings
-from langchain.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

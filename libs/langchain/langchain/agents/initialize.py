@@ -1,11 +1,12 @@
 """Load agent."""
 from typing import Any, Optional, Sequence
 
+from langchain_core.language_models import BaseLanguageModel
+
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_types import AgentType
 from langchain.agents.loading import AGENT_TO_CLASS, load_agent
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 

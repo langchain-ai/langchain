@@ -2,8 +2,8 @@ from typing import Optional
 
 import numpy as np
 import pytest
+from langchain_core.documents import Document
 
-from langchain.schema import Document
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -13,7 +13,6 @@ from tests.integration_tests.vectorstores.qdrant.async_api.fixtures import (
 )
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
@@ -41,7 +40,6 @@ async def test_qdrant_similarity_search(
     assert output == [Document(page_content="foo")]
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
@@ -70,7 +68,6 @@ async def test_qdrant_similarity_search_by_vector(
     assert output == [Document(page_content="foo")]
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
@@ -102,7 +99,6 @@ async def test_qdrant_similarity_search_with_score_by_vector(
     assert score >= 0
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
@@ -135,7 +131,6 @@ async def test_qdrant_similarity_search_filters(
     ]
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_score_no_threshold(
@@ -164,7 +159,6 @@ async def test_qdrant_similarity_search_with_relevance_score_no_threshold(
         assert round(output[i][1], 2) <= 1
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_score_with_threshold(
@@ -194,7 +188,6 @@ async def test_qdrant_similarity_search_with_relevance_score_with_threshold(
     assert all([score >= score_threshold for _, score in output])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_similarity_search_with_relevance_score_with_threshold_and_filter(
@@ -230,7 +223,6 @@ async def test_similarity_search_with_relevance_score_with_threshold_and_filter(
     assert all([score >= score_threshold for _, score in output])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_filters_with_qdrant_filters(
@@ -278,7 +270,6 @@ async def test_qdrant_similarity_search_filters_with_qdrant_filters(
     ]
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
