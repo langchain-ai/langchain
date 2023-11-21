@@ -8,9 +8,10 @@ and ROCKSET_REGION environment variables set.
 import json
 import os
 
+from langchain_core.schema.messages import _message_to_dict
+
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import RocksetChatMessageHistory
-from langchain.schema.messages import _message_to_dict
 
 collection_name = "langchain_demo"
 session_id = "MySession"

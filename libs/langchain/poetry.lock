@@ -4239,6 +4239,23 @@ docs = ["mkdocs", "mkdocs-jupyter", "mkdocs-material", "mkdocstrings[python]"]
 tests = ["pandas (>=1.4)", "pytest", "pytest-asyncio", "pytest-mock"]
 
 [[package]]
+name = "langchain-core"
+version = "0.0.1"
+description = "Building applications with LLMs through composability"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = [
+    {file = "langchain_core-0.0.1-py3-none-any.whl", hash = "sha256:cad923dd3bc39cd9fe24b9d6a9799c97719aeaafc9b19509fe1347109fcb65b3"},
+    {file = "langchain_core-0.0.1.tar.gz", hash = "sha256:488b72223e14849bf9588ed677a999b282904d1d5e1f81d12767ee1024220724"},
+]
+
+[package.dependencies]
+jsonpatch = ">=1.33,<2.0"
+langsmith = ">=0.0.63,<0.1.0"
+pydantic = ">=1,<3"
+tenacity = ">=8.1.0,<9.0.0"
+
+[[package]]
 name = "langkit"
 version = "0.0.22"
 description = "A collection of text metric udfs for whylogs profiling and monitoring in WhyLabs"
@@ -11467,3 +11484,4 @@ content-hash = "ef4fb00c31e567dea3c4a1230dfea40edc9ffcf1c2b1d30d146904f696d07a22
 content-hash = "0de210131fb5fcade99199b0da7331f4b4de8d624ffa5cf50f0ab99b949d7841"
 content-hash = "964150ae1b32757b20d1eafa4cdf46f1dc0273fd8879f2ee3229642339df2cd5"
 content-hash = "db9fcf70a90810fa88259ed5b7c8fd878d18c2979282591c2a2fd83a6476ae8a"
+content-hash = "6781b828c8bc2b08ece3cbf82be799dc0e361b9f6f9c204ddefcfee70ab0db8b"
