@@ -7,7 +7,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain_core.schema.output import GenerationChunk
+from langchain_core.outputs import GenerationChunk
 
 
 class DeepSparse(LLM):

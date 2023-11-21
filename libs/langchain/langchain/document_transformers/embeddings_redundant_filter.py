@@ -2,9 +2,10 @@
 from typing import Any, Callable, List, Sequence
 
 import numpy as np
+from langchain_core.document_transformers import BaseDocumentTransformer
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.schema import BaseDocumentTransformer, Document
-from langchain_core.schema.embeddings import Embeddings
 
 from langchain.utils.math import cosine_similarity
 

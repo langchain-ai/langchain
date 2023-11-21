@@ -3,12 +3,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from langchain_core.schema import (
-    BaseChatMessageHistory,
-)
-from langchain_core.schema.messages import (
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import (
     BaseMessage,
-    _message_to_dict,
+    message_to_dict,
     messages_from_dict,
     messages_to_dict,
 )
@@ -132,7 +130,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             ) from e
 
         messages = messages_to_dict(self.messages)
-        _message = _message_to_dict(message)
+        _message = message_to_dict(message)
         messages.append(_message)
 
         try:

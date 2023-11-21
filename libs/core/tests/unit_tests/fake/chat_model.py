@@ -7,10 +7,9 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.chat_model import BaseChatModel, SimpleChatModel
-from langchain_core.schema import ChatResult
-from langchain_core.schema.messages import AIMessageChunk, BaseMessage
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
+from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
+from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 
 class FakeMessagesListChatModel(BaseChatModel):

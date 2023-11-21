@@ -1,7 +1,7 @@
 import time
 from typing import List
 
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.vectorstores.alibabacloud_opensearch import (
     AlibabaCloudOpenSearch,

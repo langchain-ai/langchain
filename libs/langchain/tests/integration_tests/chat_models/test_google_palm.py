@@ -4,12 +4,8 @@ Note: This test must be run with the GOOGLE_API_KEY environment variable set to 
       valid API key.
 """
 
-from langchain_core.schema import (
-    ChatGeneration,
-    ChatResult,
-    LLMResult,
-)
-from langchain_core.schema.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 
 from langchain.chat_models import ChatGooglePalm
 
