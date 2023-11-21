@@ -6,7 +6,7 @@ from typing import Any, Dict
 from uuid import UUID
 
 import pytest
-from langchain_core.schema.output import LLMResult
+from langchain_core.outputs import LLMResult
 from langsmith import Client
 
 from langchain.callbacks.tracers.langchain import LangChainTracer

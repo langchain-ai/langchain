@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.schema import BaseOutputParser
+from langchain_score.output_parsers import BaseOutputParser
 
 
 class CombiningOutputParser(BaseOutputParser):

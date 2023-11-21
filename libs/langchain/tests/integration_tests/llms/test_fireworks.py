@@ -8,7 +8,7 @@ from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain_core.schema import LLMResult
+from langchain_core.outputs import LLMResult
 
 from langchain.chains import LLMChain
 from langchain.llms.fireworks import Fireworks

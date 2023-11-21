@@ -10,7 +10,7 @@ Your end-user credentials would be used to make the calls (make sure you've run
 import os
 
 import pytest
-from langchain_core.schema import LLMResult
+from langchain_core.outputs import LLMResult
 from pytest_mock import MockerFixture
 
 from langchain.chains.summarize import load_summarize_chain

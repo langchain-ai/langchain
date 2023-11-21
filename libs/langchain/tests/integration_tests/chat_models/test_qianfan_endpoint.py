@@ -3,14 +3,8 @@
 from typing import Any
 
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    FunctionMessage,
-    HumanMessage,
-    LLMResult,
-)
+from langchain_core.messages import BaseMessage, HumanMessage, FunctionMessage, AIMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chains.openai_functions import (

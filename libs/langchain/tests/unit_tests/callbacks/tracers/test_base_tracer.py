@@ -7,8 +7,8 @@ from uuid import uuid4
 
 import pytest
 from freezegun import freeze_time
-from langchain_core.schema import LLMResult
-from langchain_core.schema.messages import HumanMessage
+from langchain_core.messages import HumanMessage
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.tracers.base import BaseTracer, TracerException

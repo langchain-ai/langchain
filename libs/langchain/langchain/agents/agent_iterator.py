@@ -18,8 +18,8 @@ from typing import (
     Union,
 )
 
+from langchain_core.agents import RUN_KEY, AgentAction, AgentFinish, RunInfo
 from langchain_core.load.dump import dumpd
-from langchain_core.schema import RUN_KEY, AgentAction, AgentFinish, RunInfo
 from langchain_core.utils.input import get_color_mapping
 
 from langchain.callbacks.manager import (

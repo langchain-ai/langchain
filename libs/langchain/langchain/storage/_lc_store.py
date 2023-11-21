@@ -4,7 +4,7 @@ from typing import Callable, Optional
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.load.serializable import Serializable
-from langchain_core.schema import BaseStore, Document
+from langchain_core.stores import BaseStore, Document
 
 from langchain.storage.encoder_backed import EncoderBackedStore
 

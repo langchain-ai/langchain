@@ -2,8 +2,8 @@
 from typing import Any
 
 import pytest
-from langchain_core.schema import ChatGeneration, LLMResult
-from langchain_core.schema.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models import BedrockChat

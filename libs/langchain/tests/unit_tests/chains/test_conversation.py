@@ -1,7 +1,7 @@
 """Test conversation chain and memory."""
 import pytest
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.schema import BaseMemory
+from langchain_core.memory import BaseMemory
 
 from langchain.chains.conversation.base import ConversationChain
 from langchain.memory.buffer import ConversationBufferMemory

@@ -1,5 +1,5 @@
 import pytest
-from langchain_core.schema import AgentAction, AgentFinish, OutputParserException
+from langchain_core.agents import AgentAction, AgentFinish, OutputParserException
 
 from langchain.agents.mrkl.output_parser import (
     MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE,

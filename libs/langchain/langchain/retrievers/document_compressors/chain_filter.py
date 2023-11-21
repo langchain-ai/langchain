@@ -1,9 +1,8 @@
 """Filter that uses an LLM to drop documents that aren't relevant to the query."""
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from langchain_core.prompts import PromptTemplate
-from langchain_core.schema import BasePromptTemplate, Document
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate, Document, PromptTemplate
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain

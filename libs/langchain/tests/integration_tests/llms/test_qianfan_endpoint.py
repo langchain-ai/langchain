@@ -2,7 +2,7 @@
 from typing import Generator
 
 import pytest
-from langchain_core.schema import LLMResult
+from langchain_core.outputs import LLMResult
 
 from langchain.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
 

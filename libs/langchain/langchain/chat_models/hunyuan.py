@@ -8,22 +8,21 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 from urllib.parse import urlparse
 
 import requests
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatMessage,
-    ChatResult,
-    HumanMessage,
-)
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessageChunk,
     BaseMessageChunk,
     ChatMessageChunk,
     HumanMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGenerationChunk
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.utils import (
     convert_to_secret_str,
     get_pydantic_field_names,
@@ -39,7 +38,7 @@ DEFAULT_API_BASE = "https://hunyuan.cloud.tencent.com"
 DEFAULT_PATH = "/hyllm/v1/chat/completions"
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def _convertmessage_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -294,7 +293,7 @@ class ChatHunyuan(BaseChatModel):
         payload = {
             "timestamp": timestamp,
             "expired": expired,
-            "messages": [_convert_message_to_dict(m) for m in messages],
+            "messages": [_convertmessage_to_dict(m) for m in messages],
             **parameters,
         }
 

@@ -1,7 +1,7 @@
 from typing import List, Sequence, Union
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
-from langchain_core.messages.base import BaseMessage, BaseMessageChunk
+from langchain_core.messages.base import BaseMessage, BaseMessageChunk, messages_to_dict
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
@@ -108,4 +108,6 @@ __all__ = [
     "ToolMessageChunk",
     "get_buffer_string",
     "messages_from_dict",
+    "messages_to_dict",
+    "message_to_dict",
 ]

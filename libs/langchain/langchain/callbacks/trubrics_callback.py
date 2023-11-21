@@ -2,8 +2,7 @@ import os
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from langchain_core.schema import LLMResult
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
@@ -11,11 +10,12 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.base import BaseCallbackHandler
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def _convertmessage_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -93,7 +93,7 @@ class TrubricsCallbackHandler(BaseCallbackHandler):
         messages: List[List[BaseMessage]],
         **kwargs: Any,
     ) -> None:
-        self.messages = [_convert_message_to_dict(message) for message in messages[0]]
+        self.messages = [_convertmessage_to_dict(message) for message in messages[0]]
         self.prompt = self.messages[-1]["content"]
 
     def on_llm_end(self, response: LLMResult, run_id: UUID, **kwargs: Any) -> None:

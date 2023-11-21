@@ -2,7 +2,7 @@ import re
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
 
-from langchain_core.schema import BaseOutputParser
+from langchain_score.output_parsers import BaseOutputParser
 
 from langchain.output_parsers.format_instructions import XML_FORMAT_INSTRUCTIONS
 

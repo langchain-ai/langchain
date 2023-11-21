@@ -110,7 +110,7 @@ class BaseMessageChunk(BaseMessage):
             )
 
 
-def _message_to_dict(message: BaseMessage) -> dict:
+def message_to_dict(message: BaseMessage) -> dict:
     return {"type": message.type, "data": message.dict()}
 
 
@@ -123,4 +123,4 @@ def messages_to_dict(messages: Sequence[BaseMessage]) -> List[dict]:
     Returns:
         List of messages as dicts.
     """
-    return [_message_to_dict(m) for m in messages]
+    return [message_to_dict(m) for m in messages]

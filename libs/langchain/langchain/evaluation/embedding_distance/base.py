@@ -3,9 +3,9 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import numpy as np
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import RUN_KEY
-from langchain_core.schema.embeddings import Embeddings
+from langchain.schema import RUN_KEY
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

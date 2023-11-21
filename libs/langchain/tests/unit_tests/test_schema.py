@@ -3,18 +3,8 @@ import unittest
 from typing import Union
 
 import pytest
-from langchain_core.prompts.base import StringPromptValue
-from langchain_core.prompts.chat import ChatPromptValueConcrete
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
-from langchain_core.schema import (
-    AgentAction,
-    AgentFinish,
-    ChatGeneration,
-    Document,
-    Generation,
-)
-from langchain_core.schema.agent import AgentActionMessageLog
-from langchain_core.schema.messages import (
+from langchain_core.agents import AgentActionMessageLog
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     ChatMessage,
@@ -29,7 +19,11 @@ from langchain_core.schema.messages import (
     messages_from_dict,
     messages_to_dict,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, Generation
+from langchain_core.prompts import StringPromptValue, ChatPromptValueConcrete
+from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.documents import Document
 
 
 class TestGetBufferString(unittest.TestCase):

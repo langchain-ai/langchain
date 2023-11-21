@@ -3,16 +3,13 @@ import json
 from typing import Any, Dict, List, Optional, Type, Union
 
 import jsonpatch
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.schema import (
-    ChatGeneration,
-    Generation,
-    OutputParserException,
-)
-from langchain_core.schema.output_parser import (
+from langchain_core.output_parsers import (
     BaseCumulativeTransformOutputParser,
     BaseGenerationOutputParser,
 )
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.exceptions import OutputParserException
 
 from langchain.output_parsers.json import parse_partial_json
 

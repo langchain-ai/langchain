@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 
 import pytest
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.vectorstores import Qdrant
 from langchain.vectorstores.qdrant import QdrantException

@@ -3,7 +3,8 @@ from typing import List, Tuple
 from unittest.mock import patch
 
 import pytest
-from langchain_core.schema import AgentAction, AgentFinish, LLMResult
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import (

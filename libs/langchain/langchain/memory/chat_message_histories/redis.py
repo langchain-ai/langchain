@@ -2,14 +2,12 @@ import json
 import logging
 from typing import List, Optional
 
-from langchain_core.schema import (
-    BaseChatMessageHistory,
-)
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     BaseMessage,
-    _message_to_dict,
+    message_to_dict,
     messages_from_dict,
 )
+from langchain_core.chat_history import BaseChatMessageHistory
 
 from langchain.utilities.redis import get_client
 
@@ -58,7 +56,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in Redis"""
-        self.redis_client.lpush(self.key, json.dumps(_message_to_dict(message)))
+        self.redis_client.lpush(self.key, json.dumps(message_to_dict(message)))
         if self.ttl:
             self.redis_client.expire(self.key, self.ttl)
 

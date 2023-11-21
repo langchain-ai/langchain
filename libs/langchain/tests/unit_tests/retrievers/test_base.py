@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 
 import pytest
-from langchain_core.schema import BaseRetriever, Document
+from langchain_core.retrievers import BaseRetriever, Document
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,

@@ -5,22 +5,21 @@ import time
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 
 import requests
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatMessage,
-    ChatResult,
-    HumanMessage,
-)
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessageChunk,
     BaseMessageChunk,
     ChatMessageChunk,
     HumanMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGenerationChunk
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.utils import (
     convert_to_secret_str,
     get_pydantic_field_names,
@@ -35,7 +34,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_API_BASE = "https://api.baichuan-ai.com/v1"
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def _convertmessage_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -247,7 +246,7 @@ class ChatBaichuan(BaseChatModel):
 
         payload = {
             "model": model,
-            "messages": [_convert_message_to_dict(m) for m in messages],
+            "messages": [_convertmessage_to_dict(m) for m in messages],
             "parameters": parameters,
         }
 

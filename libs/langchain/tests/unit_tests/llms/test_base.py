@@ -7,7 +7,7 @@ except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
 import pytest
-from langchain_core.schema import Generation, LLMResult
+from langchain_core.outputs import Generation, LLMResult
 
 from langchain.cache import InMemoryCache, SQLAlchemyCache
 from langchain.globals import get_llm_cache, set_llm_cache

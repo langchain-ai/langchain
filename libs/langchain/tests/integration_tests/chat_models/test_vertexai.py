@@ -11,8 +11,8 @@ from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from langchain_core.schema import LLMResult
-from langchain_core.schema.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import LLMResult
 
 from langchain.chat_models import ChatVertexAI
 from langchain.chat_models.vertexai import _parse_chat_history, _parse_examples

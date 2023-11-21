@@ -10,8 +10,7 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -25,10 +24,11 @@ from langchain_core.schema.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
 
-from langchain.adapters.openai import convert_message_to_dict
+from langchain.adapters.openai import convertmessage_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -183,7 +183,7 @@ class ChatFireworks(BaseChatModel):
     def _create_message_dicts(
         self, messages: List[BaseMessage]
     ) -> List[Dict[str, Any]]:
-        message_dicts = [convert_message_to_dict(m) for m in messages]
+        message_dicts = [convertmessage_to_dict(m) for m in messages]
         return message_dicts
 
     def _stream(

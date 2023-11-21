@@ -13,8 +13,8 @@ from typing import (
     overload,
 )
 
-from langchain_core.schema.chat import ChatSession
-from langchain_core.schema.messages import (
+from langchain_core.chat_sessions import ChatSession
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -70,7 +70,7 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict["content"], role=role)
 
 
-def convert_message_to_dict(message: BaseMessage) -> dict:
+def convertmessage_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
     Args:
@@ -190,7 +190,7 @@ class ChatCompletion:
         converted_messages = convert_openai_messages(messages)
         if not stream:
             result = model_config.invoke(converted_messages)
-            return {"choices": [{"message": convert_message_to_dict(result)}]}
+            return {"choices": [{"message": convertmessage_to_dict(result)}]}
         else:
             return (
                 _convert_message_chunk_to_delta(c, i)
@@ -233,7 +233,7 @@ class ChatCompletion:
         converted_messages = convert_openai_messages(messages)
         if not stream:
             result = await model_config.ainvoke(converted_messages)
-            return {"choices": [{"message": convert_message_to_dict(result)}]}
+            return {"choices": [{"message": convertmessage_to_dict(result)}]}
         else:
             return (
                 _convert_message_chunk_to_delta(c, i)
@@ -258,7 +258,7 @@ def convert_messages_for_finetuning(
         The list of lists of dictionaries.
     """
     return [
-        [convert_message_to_dict(s) for s in session["messages"]]
+        [convertmessage_to_dict(s) for s in session["messages"]]
         for session in sessions
         if _has_assistant_message(session)
     ]

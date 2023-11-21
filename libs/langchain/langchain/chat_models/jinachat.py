@@ -16,25 +16,24 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatMessage,
-    ChatResult,
-    FunctionMessage,
-    HumanMessage,
-    SystemMessage,
-)
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessageChunk,
     BaseMessageChunk,
     ChatMessageChunk,
     HumanMessageChunk,
     SystemMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGenerationChunk
+from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.utils import get_pydantic_field_names
 from tenacity import (
     before_sleep_log,
@@ -123,7 +122,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict["content"], role=role)
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def _convertmessage_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -344,7 +343,7 @@ class JinaChat(BaseChatModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        message_dicts = [_convertmessage_to_dict(m) for m in messages]
         return message_dicts, params
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:

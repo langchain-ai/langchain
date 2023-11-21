@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List
 
+from langchain_core.documents import Document, HumanMessage
 from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import BaseRetriever, Document, HumanMessage
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -12,7 +13,7 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.base import BaseChatModel
 
 if TYPE_CHECKING:
-    from langchain_core.schema.messages import BaseMessage
+    from langchain_core.messages import BaseMessage
 
 
 def _get_docs(response: Any) -> List[Document]:

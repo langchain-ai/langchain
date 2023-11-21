@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, Dict, List, Type
 
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.schema import BaseOutputParser, OutputParserException
+from langchain_score.output_parsers import BaseOutputParser, OutputParserException
 
 
 class EnumOutputParser(BaseOutputParser):

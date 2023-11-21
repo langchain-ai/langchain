@@ -3,9 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, cast
 
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -14,7 +12,8 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -26,7 +25,7 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-def convert_message_to_dict(message: BaseMessage) -> dict:
+def convertmessage_to_dict(message: BaseMessage) -> dict:
     """Convert a message to a dictionary that can be passed to the API."""
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
@@ -196,7 +195,7 @@ class QianfanChatEndpoint(BaseChatModel):
         """
         messages_dict: Dict[str, Any] = {
             "messages": [
-                convert_message_to_dict(m)
+                convertmessage_to_dict(m)
                 for m in messages
                 if not isinstance(m, SystemMessage)
             ]

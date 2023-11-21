@@ -8,14 +8,12 @@ from typing import List
 if typing.TYPE_CHECKING:
     from cassandra.cluster import Session
 
-from langchain_core.schema import (
-    BaseChatMessageHistory,
-)
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     BaseMessage,
-    _message_to_dict,
+    message_to_dict,
     messages_from_dict,
 )
+from langchain_core.chat_history import BaseChatMessageHistory
 
 DEFAULT_TABLE_NAME = "message_store"
 DEFAULT_TTL_SECONDS = None
@@ -66,7 +64,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
     def add_message(self, message: BaseMessage) -> None:
         """Write a message to the table"""
         self.blob_history.store(
-            self.session_id, json.dumps(_message_to_dict(message)), self.ttl_seconds
+            self.session_id, json.dumps(message_to_dict(message)), self.ttl_seconds
         )
 
     def clear(self) -> None:

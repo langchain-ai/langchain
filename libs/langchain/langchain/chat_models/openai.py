@@ -20,11 +20,8 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.runnables import Runnable
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.language_model import LanguageModelInput
-from langchain_core.schema.messages import (
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
@@ -34,12 +31,14 @@ from langchain_core.schema.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.runnables import Runnable
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
 
-from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
+from langchain.adapters.openai import convert_dict_to_message, convertmessage_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -433,7 +432,7 @@ class ChatOpenAI(BaseChatModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [convert_message_to_dict(m) for m in messages]
+        message_dicts = [convertmessage_to_dict(m) for m in messages]
         return message_dicts, params
 
     def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
@@ -605,7 +604,7 @@ class ChatOpenAI(BaseChatModel):
                 "information on how messages are converted to tokens."
             )
         num_tokens = 0
-        messages_dict = [convert_message_to_dict(m) for m in messages]
+        messages_dict = [convertmessage_to_dict(m) for m in messages]
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():

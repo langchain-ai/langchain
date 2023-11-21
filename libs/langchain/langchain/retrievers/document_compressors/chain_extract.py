@@ -4,9 +4,9 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Callable, Dict, Optional, Sequence
 
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
-from langchain_core.schema import BaseOutputParser, Document
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_score.output_parsers import BaseOutputParser, Document
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain

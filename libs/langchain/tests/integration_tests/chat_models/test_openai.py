@@ -2,15 +2,11 @@
 from typing import Any, List, Optional, Union
 
 import pytest
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.schema import (
-    ChatGeneration,
-    ChatResult,
-    LLMResult,
-)
-from langchain_core.schema.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_core.schema.output import ChatGenerationChunk, GenerationChunk
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.callbacks.manager import CallbackManager

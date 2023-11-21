@@ -1,14 +1,14 @@
 import json
 from typing import Any, Dict, List, Optional, cast
 
-from langchain_core.pydantic_v1 import SecretStr, validator
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.pydantic_v1 import SecretStr, validator
 from langchain_core.utils import convert_to_secret_str
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
@@ -23,7 +23,7 @@ class LlamaContentFormatter(ContentFormatterBase):
     SUPPORTED_ROLES: List[str] = ["user", "assistant", "system"]
 
     @staticmethod
-    def _convert_message_to_dict(message: BaseMessage) -> Dict:
+    def _convertmessage_to_dict(message: BaseMessage) -> Dict:
         """Converts message to a dict according to role"""
         content = cast(str, message.content)
         if isinstance(message, HumanMessage):
@@ -62,7 +62,7 @@ class LlamaContentFormatter(ContentFormatterBase):
         self, messages: List[BaseMessage], model_kwargs: Dict
     ) -> bytes:
         chat_messages = [
-            LlamaContentFormatter._convert_message_to_dict(message)
+            LlamaContentFormatter._convertmessage_to_dict(message)
             for message in messages
         ]
         prompt = json.dumps(

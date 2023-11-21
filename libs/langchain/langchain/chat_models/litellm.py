@@ -16,12 +16,7 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import (
-    ChatGeneration,
-    ChatResult,
-)
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -35,7 +30,12 @@ from langchain_core.schema.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGenerationChunk
+from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatResult,
+)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -137,7 +137,7 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def _convertmessage_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -333,7 +333,7 @@ class ChatLiteLLM(BaseChatModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        message_dicts = [_convertmessage_to_dict(m) for m in messages]
         return message_dicts, params
 
     def _stream(

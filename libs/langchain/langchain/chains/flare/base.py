@@ -5,9 +5,9 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate, BaseRetriever, Generation
 from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import BasePromptTemplate, BaseRetriever, Generation
-from langchain_core.schema.language_model import BaseLanguageModel
 
 from langchain.callbacks.manager import (
     CallbackManagerForChainRun,

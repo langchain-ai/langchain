@@ -1,18 +1,18 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional, cast
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr
-from langchain_core.schema import (
-    ChatGeneration,
-    ChatResult,
-)
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     FunctionMessage,
     HumanMessage,
     SystemMessage,
+)
+from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatResult,
 )
 
 from langchain.callbacks.manager import (
@@ -109,7 +109,7 @@ class ChatJavelinAIGateway(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         message_dicts = [
-            ChatJavelinAIGateway._convert_message_to_dict(message)
+            ChatJavelinAIGateway._convertmessage_to_dict(message)
             for message in messages
         ]
         data: Dict[str, Any] = {
@@ -129,7 +129,7 @@ class ChatJavelinAIGateway(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         message_dicts = [
-            ChatJavelinAIGateway._convert_message_to_dict(message)
+            ChatJavelinAIGateway._convertmessage_to_dict(message)
             for message in messages
         ]
         data: Dict[str, Any] = {
@@ -180,7 +180,7 @@ class ChatJavelinAIGateway(BaseChatModel):
         )
 
     @staticmethod
-    def _convert_message_to_dict(message: BaseMessage) -> dict:
+    def _convertmessage_to_dict(message: BaseMessage) -> dict:
         if isinstance(message, ChatMessage):
             message_dict = {"role": message.role, "content": message.content}
         elif isinstance(message, HumanMessage):

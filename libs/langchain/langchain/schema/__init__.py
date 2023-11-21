@@ -1,11 +1,12 @@
 """**Schemas** are the LangChain Base Classes and Interfaces."""
-from langchain_core.schema.agent import AgentAction, AgentFinish
-from langchain_core.schema.cache import BaseCache
-from langchain_core.schema.chat_history import BaseChatMessageHistory
-from langchain_core.schema.document import BaseDocumentTransformer, Document
-from langchain_core.schema.exceptions import LangChainException
-from langchain_core.schema.memory import BaseMemory
-from langchain_core.schema.messages import (
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.caches import BaseCache
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.document_transformers import BaseDocumentTransformer
+from langchain_core.documents import Document
+from langchain_core.exceptions import LangChainException, OutputParserException
+from langchain_core.memory import BaseMemory
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
@@ -13,28 +14,26 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
     _message_from_dict,
-    _message_to_dict,
     get_buffer_string,
     messages_from_dict,
     messages_to_dict,
 )
-from langchain_core.schema.output import (
+from langchain_core.messages.base import message_to_dict
+from langchain_core.output_parsers import (
+    BaseLLMOutputParser,
+    BaseOutputParser,
+    StrOutputParser,
+)
+from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
     Generation,
     LLMResult,
     RunInfo,
 )
-from langchain_core.schema.output_parser import (
-    BaseLLMOutputParser,
-    BaseOutputParser,
-    OutputParserException,
-    StrOutputParser,
-)
-from langchain_core.schema.prompt import PromptValue
-from langchain_core.schema.prompt_template import BasePromptTemplate, format_document
-from langchain_core.schema.retriever import BaseRetriever
-from langchain_core.schema.storage import BaseStore
+from langchain_core.prompts import BasePromptTemplate, PromptValue, format_document
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.stores import BaseStore
 
 RUN_KEY = "__run"
 Memory = BaseMemory
@@ -56,7 +55,7 @@ __all__ = [
     "SystemMessage",
     "messages_from_dict",
     "messages_to_dict",
-    "_message_to_dict",
+    "message_to_dict",
     "_message_from_dict",
     "get_buffer_string",
     "RunInfo",

@@ -13,9 +13,7 @@ from typing import (
     Type,
 )
 
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -29,7 +27,13 @@ from langchain_core.schema.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk, GenerationChunk
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    ChatResult,
+    GenerationChunk,
+)
+from langchain_core.pydantic_v1 import Field, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     RetryCallState,
@@ -68,7 +72,7 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict["content"], role=role)
 
 
-def convert_message_to_dict(message: BaseMessage) -> dict:
+def convertmessage_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -377,7 +381,7 @@ class ChatTongyi(BaseChatModel):
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
 
-        message_dicts = [convert_message_to_dict(m) for m in messages]
+        message_dicts = [convertmessage_to_dict(m) for m in messages]
         return message_dicts, params
 
     def _client_params(self) -> Dict[str, Any]:

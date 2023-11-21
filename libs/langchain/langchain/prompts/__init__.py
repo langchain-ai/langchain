@@ -27,6 +27,7 @@ from multiple components. Prompt classes and functions make constructing
                     ChatPromptValue
 
 """  # noqa: E501
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.base import StringPromptTemplate
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
@@ -45,7 +46,6 @@ from langchain_core.prompts.few_shot_with_templates import FewShotPromptWithTemp
 from langchain_core.prompts.loading import load_prompt
 from langchain_core.prompts.pipeline import PipelinePromptTemplate
 from langchain_core.prompts.prompt import Prompt, PromptTemplate
-from langchain_core.schema.prompt_template import BasePromptTemplate
 
 from langchain.prompts.example_selector import (
     LengthBasedExampleSelector,

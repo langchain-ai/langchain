@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import RUN_KEY
+from langchain.schema import RUN_KEY
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

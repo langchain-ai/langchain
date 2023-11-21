@@ -1,8 +1,7 @@
 import logging
 from typing import Any, AsyncIterator, Iterator, List, Optional
 
-from langchain_core.schema import ChatResult
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -10,7 +9,7 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -39,7 +38,7 @@ def _convert_dict_to_message(message: Any) -> BaseMessage:
         raise TypeError(f"Got unknown role {message.role} {message}")
 
 
-def _convert_message_to_dict(message: BaseMessage) -> Any:
+def _convertmessage_to_dict(message: BaseMessage) -> Any:
     from gigachat.models import Messages, MessagesRole
 
     if isinstance(message, SystemMessage):
@@ -70,7 +69,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         from gigachat.models import Chat
 
         payload = Chat(
-            messages=[_convert_message_to_dict(m) for m in messages],
+            messages=[_convertmessage_to_dict(m) for m in messages],
             profanity_check=self.profanity,
         )
         if self.temperature is not None:
