@@ -50,7 +50,7 @@ class MongoDBAtlasTranslator(Visitor):
 
     def visit_operation(self, operation: Operation) -> str:
         args = [arg.accept(self) for arg in operation.arguments]
-        return {self._format_func(operation.operator): args}
+        return str({self._format_func(operation.operator): args})
 
     def visit_comparison(self, comparison: Comparison) -> str:
         if comparison.comparator in MULTIPLE_ARITY_COMPARATORS and not isinstance(
@@ -62,7 +62,7 @@ class MongoDBAtlasTranslator(Visitor):
 
         attribute = comparison.attribute
 
-        return {attribute: {comparator: comparison.value}}
+        return str({attribute: {comparator: comparison.value}})
 
     def visit_structured_query(
         self, structured_query: StructuredQuery
