@@ -196,7 +196,9 @@ def _load_package_modules(
     return modules_by_namespace
 
 
-def _construct_doc(package_namespace: str, members_by_namespace: Dict[str, ModuleMembers]) -> str:
+def _construct_doc(
+    package_namespace: str, members_by_namespace: Dict[str, ModuleMembers]
+) -> str:
     """Construct the contents of the reference.rst file for the given package.
 
     Args:
@@ -309,7 +311,7 @@ def _package_dir(package_name: str = "langchain") -> Path:
 
 
 def _out_file_path(package_name: str = "langchain") -> Path:
-    """Return the path to the file containing the documentation. """
+    """Return the path to the file containing the documentation."""
     name_prefix = {
         "langchain": "",
         "experimental": "experimental_",
@@ -319,20 +321,20 @@ def _out_file_path(package_name: str = "langchain") -> Path:
 
 
 def _doc_first_line(package_name: str = "langchain") -> str:
-    """Return the path to the file containing the documentation. """
-    name_prefix = {
+    """Return the path to the file containing the documentation."""
+    prefix = {
         "langchain": "",
         "experimental": "experimental",
         "core": "core",
     }
-    return f".. {name_prefix[package_name]}_api_reference:\n\n"
+    return f".. {prefix[package_name]}_api_reference:\n\n"
 
 
 def main() -> None:
     """Generate the api_reference.rst file for each package."""
+    _build_rst_file(package_name="core")
     _build_rst_file(package_name="langchain")
-    # _build_rst_file(package_name="experimental")
-    # _build_rst_file(package_name="core")
+    _build_rst_file(package_name="experimental")
 
 
 if __name__ == "__main__":
