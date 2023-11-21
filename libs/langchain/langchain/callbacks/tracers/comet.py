@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 from types import SimpleNamespace
 from uuid import UUID
 
@@ -8,7 +8,6 @@ from langchain.callbacks.tracers.base import BaseTracer
 if TYPE_CHECKING:
     from langchain.callbacks.tracers.schemas import Run
     from comet_llm.chains.chain import Chain
-    from comet_llm.experiment_info import ExperimentInfo
     from comet_llm import Span
 
 
