@@ -1,5 +1,5 @@
 """Logic for converting internal query language to a valid MongoDB Atlas query."""
-from typing import Tuple, Union
+from typing import Dict, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -48,11 +48,11 @@ class MongoDBAtlasTranslator(Visitor):
         }
         return map_dict[func]
 
-    def visit_operation(self, operation: Operation) -> str:
+    def visit_operation(self, operation: Operation) -> Dict:
         args = [arg.accept(self) for arg in operation.arguments]
-        return str({self._format_func(operation.operator): args})
+        return {self._format_func(operation.operator): args}
 
-    def visit_comparison(self, comparison: Comparison) -> str:
+    def visit_comparison(self, comparison: Comparison) -> Dict:
         if comparison.comparator in MULTIPLE_ARITY_COMPARATORS and not isinstance(
             comparison.value, list
         ):
@@ -62,7 +62,7 @@ class MongoDBAtlasTranslator(Visitor):
 
         attribute = comparison.attribute
 
-        return str({attribute: {comparator: comparison.value}})
+        return {attribute: {comparator: comparison.value}}
 
     def visit_structured_query(
         self, structured_query: StructuredQuery
