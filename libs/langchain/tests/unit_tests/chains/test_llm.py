@@ -4,8 +4,8 @@ from typing import Dict, List, Union
 from unittest.mock import patch
 
 import pytest
-from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.schema import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import PromptTemplate
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.loading import load_chain

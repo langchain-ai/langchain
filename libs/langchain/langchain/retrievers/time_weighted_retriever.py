@@ -2,9 +2,10 @@ import datetime
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple
 
+from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import BaseRetriever, Document
-from langchain_core.schema.vectorstore import VectorStore
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 

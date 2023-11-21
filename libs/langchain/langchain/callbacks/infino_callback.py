@@ -1,8 +1,9 @@
 import time
 from typing import Any, Dict, List, Optional, cast
 
-from langchain_core.schema import AgentAction, AgentFinish, LLMResult
-from langchain_core.schema.messages import BaseMessage
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.base import BaseCallbackHandler
 

@@ -1,11 +1,8 @@
 """Test Anthropic API wrapper."""
 from typing import List
 
-from langchain_core.schema import (
-    ChatGeneration,
-    LLMResult,
-)
-from langchain_core.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain.callbacks.manager import (
     CallbackManager,

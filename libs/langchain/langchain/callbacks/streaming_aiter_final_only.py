@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_core.schema import LLMResult
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 

@@ -3,8 +3,8 @@ import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 import requests
+from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Field
-from langchain_core.schema.output import GenerationChunk
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

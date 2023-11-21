@@ -8,9 +8,9 @@ from typing import Any, Dict, List, Union, cast
 from uuid import UUID
 
 import requests
-from langchain_core.schema.agent import AgentAction, AgentFinish
-from langchain_core.schema.messages import BaseMessage
-from langchain_core.schema.output import LLMResult
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import LLMResult
 from packaging.version import parse
 
 from langchain.callbacks.base import BaseCallbackHandler

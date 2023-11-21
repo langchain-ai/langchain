@@ -8,8 +8,9 @@ import concurrent.futures
 from typing import Any, List, Optional
 
 import numpy as np
-from langchain_core.schema import BaseRetriever, Document
-from langchain_core.schema.embeddings import Embeddings
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 

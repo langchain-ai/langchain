@@ -4,7 +4,7 @@ import warnings
 from typing import Any, Dict, List
 
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema.vectorstore import VectorStore
+from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

@@ -19,15 +19,8 @@ from typing import (
 )
 
 from langchain_core._api import deprecated
-from langchain_core.load.serializable import Serializable
-from langchain_core.prompts.base import StringPromptTemplate
-from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import (
-    BasePromptTemplate,
-    PromptValue,
-)
-from langchain_core.schema.messages import (
+from langchain_core.load import Serializable
+from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
@@ -36,6 +29,11 @@ from langchain_core.schema.messages import (
     SystemMessage,
     get_buffer_string,
 )
+from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompts.string import StringPromptTemplate
+from langchain_core.prompts.value import PromptValue
+from langchain_core.pydantic_v1 import Field, root_validator
 
 
 class BaseMessagePromptTemplate(Serializable, ABC):

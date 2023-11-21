@@ -5,9 +5,7 @@ from functools import partial
 from typing import Any, AsyncIterator, Dict, List, Optional, cast
 
 import requests
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -15,7 +13,8 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

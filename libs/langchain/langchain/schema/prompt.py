@@ -1,3 +1,3 @@
-from langchain_core.schema.prompt import PromptValue
+from langchain_core.prompts import PromptValue
 
 __all__ = ["PromptValue"]
