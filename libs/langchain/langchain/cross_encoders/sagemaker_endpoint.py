@@ -1,7 +1,6 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from langchain.llms.sagemaker_endpoint import ContentHandlerBase
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.cross_encoder import CrossEncoder
 
