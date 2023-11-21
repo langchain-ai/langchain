@@ -5,8 +5,10 @@ from langchain_core.runnables.utils import (
     ConfigurableFieldSingleOption,
     ConfigurableFieldSpec,
     GetLambdaSource,
+    Input,
     IsFunctionArgDict,
     IsLocalDict,
+    Output,
     SupportsAdd,
     aadd,
     accepts_config,
@@ -40,4 +42,6 @@ __all__ = [
     "aadd",
     "gated_coro",
     "gather_with_concurrency",
+    "Input",
+    "Output",
 ]

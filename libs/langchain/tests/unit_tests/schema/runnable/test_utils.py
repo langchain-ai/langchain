@@ -20,6 +20,8 @@ EXPECTED_ALL = [
     "get_lambda_source",
     "get_unique_config_specs",
     "indent_lines_after_first",
+    "Input",
+    "Output",
 ]
 
 
