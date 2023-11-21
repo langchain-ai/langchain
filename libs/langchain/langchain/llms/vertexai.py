@@ -251,7 +251,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         model_name = values["model_name"]
         try:
             if not is_codey_model(model_name):
-                from vertexai.preview.language_models import TextGenerationModel
+                from vertexai.language_models import TextGenerationModel
 
                 if tuned_model_name:
                     values["client"] = TextGenerationModel.get_tuned_model(
@@ -260,7 +260,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 else:
                     values["client"] = TextGenerationModel.from_pretrained(model_name)
             else:
-                from vertexai.preview.language_models import CodeGenerationModel
+                from vertexai.language_models import CodeGenerationModel
 
                 if tuned_model_name:
                     values["client"] = CodeGenerationModel.get_tuned_model(

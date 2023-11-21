@@ -133,11 +133,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         cls._try_init_vertexai(values)
         try:
             if is_codey_model(values["model_name"]):
-                from vertexai.preview.language_models import CodeChatModel
+                from vertexai.language_models import CodeChatModel
 
                 values["client"] = CodeChatModel.from_pretrained(values["model_name"])
             else:
-                from vertexai.preview.language_models import ChatModel
+                from vertexai.language_models import ChatModel
 
                 values["client"] = ChatModel.from_pretrained(values["model_name"])
         except ImportError:
