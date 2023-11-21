@@ -31,7 +31,7 @@ def test_comet_tracer__trace_chain_with_single_span__happyflow():
         chain_api=chain_api_module_mock
     )
 
-
+    # Create tracer
     with mock.patch.object(comet, "import_comet_llm_api", return_value=comet_ml_api_mock):
         tracer = comet.CometTracer()
 

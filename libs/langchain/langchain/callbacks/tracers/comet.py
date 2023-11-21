@@ -2,10 +2,8 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from types import SimpleNamespace
 from uuid import UUID
 
-import functools
 from langchain.callbacks.tracers.base import BaseTracer
 
-from concurrent import futures
 
 if TYPE_CHECKING:
     from langchain.callbacks.tracers.schemas import Run
@@ -22,14 +20,11 @@ def _get_run_type(run: "Run") -> str:
     else:
         return str(run.run_type)
 
-# @functools.lru_cache(maxsize=1)
-# def _get_thread_executor():
-#     return futures.ThreadPoolExecutor()
-
 
 def import_comet_llm_api() -> SimpleNamespace:
     """Import comet_llm api and raise an error if it is not installed."""
     try:
+        import comet_llm
         from comet_llm.chains import chain  # noqa: F401
         from comet_llm.chains import span  # noqa: F401
         from comet_llm.chains import api as chain_api  # noqa: F401
@@ -37,15 +32,16 @@ def import_comet_llm_api() -> SimpleNamespace:
 
     except ImportError:
         raise ImportError(
-            "To use the comet_ml callback manager you need to have the "
-            "`comet_ml` python package installed. Please install it with"
-            " `pip install comet_ml`"
+            "To use the CometTracer you need to have the "
+            "`comet_llm>=2.0.0` python package installed. Please install it with"
+            " `pip install -U comet_llm`"
         )
     return SimpleNamespace(
         chain=chain,
         span=span,
         chain_api=chain_api,
         experiment_info=experiment_info,
+        comet_llm=comet_llm
     )
 
 
@@ -55,8 +51,6 @@ class CometTracer(BaseTracer):
         self._span_map: Dict[UUID, "Span"] = {}
         self._chains_map: Dict[UUID, "Chain"] = {}
         self._initialize_comet_modules()
-        #self._executor = _get_thread_executor()
-        #self._futures = set()
 
     def _initialize_comet_modules(self) -> None:
         comet_llm_api = import_comet_llm_api()
@@ -64,11 +58,11 @@ class CometTracer(BaseTracer):
         self._span = comet_llm_api.span
         self._chain_api = comet_llm_api.chain_api
         self._experiment_info = comet_llm_api.experiment_info
+        self._comet_llm = comet_llm_api.comet_llm
 
     def _persist_run(self, run: "Run") -> None:
         chain_ = self._chains_map[run.id]
         chain_.set_outputs(outputs=run.outputs)
-        #self._executor.submit(chain_api.log_chain, chain_)
         self._chain_api.log_chain(chain_)
 
     def _process_start_trace(self, run: "Run") -> None:
@@ -99,6 +93,9 @@ class CometTracer(BaseTracer):
             span = self._span_map[run.id]
             span.set_outputs(outputs=run.outputs)
             span.__api__end__()
+    
+    def flush(self) -> None:
+        self._comet_llm.flush()
 
     def _on_llm_start(self, run: "Run") -> None:
         """Process the LLM Run upon start."""
