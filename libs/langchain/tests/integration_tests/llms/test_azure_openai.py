@@ -3,12 +3,12 @@ import os
 from typing import Any, Generator
 
 import pytest
+from langchain_core.schema import (
+    LLMResult,
+)
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.llms import AzureOpenAI
-from langchain.schema import (
-    LLMResult,
-)
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "")
