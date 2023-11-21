@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import SecretStr, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -9,14 +9,14 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class _BaseYandexGPT(Serializable):
-    iam_token: str = ""
+    iam_token: Optional[SecretStr] = None
     """Yandex Cloud IAM token for service account
     with the `ai.languageModels.user` role"""
-    api_key: str = ""
+    api_key: Optional[SecretStr] = None
     """Yandex Cloud Api Key for service account
     with the `ai.languageModels.user` role"""
     model_name: str = "general"
@@ -42,11 +42,11 @@ class _BaseYandexGPT(Serializable):
         """Validate that iam token exists in environment."""
 
         iam_token = get_from_dict_or_env(values, "iam_token", "YC_IAM_TOKEN", "")
-        values["iam_token"] = iam_token
         api_key = get_from_dict_or_env(values, "api_key", "YC_API_KEY", "")
-        values["api_key"] = api_key
         if api_key == "" and iam_token == "":
             raise ValueError("Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided.")
+        values["iam_token"] = convert_to_secret_str(iam_token)
+        values["api_key"] = convert_to_secret_str(api_key)
         return values
 
 
