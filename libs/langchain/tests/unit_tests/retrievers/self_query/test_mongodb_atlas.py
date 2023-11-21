@@ -18,11 +18,13 @@ def test_visit_comparison_lt() -> None:
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
+
 def test_visit_comparison_eq() -> None:
     comp = Comparison(comparator=Comparator.EQ, attribute="qty", value=10)
     expected = {"qty": {"$eq": 10}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
+
 
 def test_visit_comparison_ne() -> None:
     comp = Comparison(comparator=Comparator.NE, attribute="name", value="foo")
@@ -30,11 +32,13 @@ def test_visit_comparison_ne() -> None:
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
+
 def test_visit_comparison_in() -> None:
     comp = Comparison(comparator=Comparator.IN, attribute="name", value="foo")
     expected = {"name": {"$in": ["foo"]}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
+
 
 def test_visit_comparison_nin() -> None:
     comp = Comparison(comparator=Comparator.NIN, attribute="name", value="foo")
@@ -73,6 +77,7 @@ def test_visit_structured_query_no_filter() -> None:
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
+
 def test_visit_structured_query_one_attr() -> None:
     query = "What is the capital of France?"
     comp = Comparison(comparator=Comparator.IN, attribute="qty", value=[5, 15, 20])
@@ -86,6 +91,7 @@ def test_visit_structured_query_one_attr() -> None:
     )
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
+
 
 def test_visit_structured_query_deep_nesting() -> None:
     query = "What is the capital of France?"
