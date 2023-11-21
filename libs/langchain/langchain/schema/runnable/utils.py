@@ -18,6 +18,8 @@ from langchain_core.runnables.utils import (
     get_lambda_source,
     get_unique_config_specs,
     indent_lines_after_first,
+    Input,
+    Output,
 )
 
 __all__ = [
@@ -40,4 +42,6 @@ __all__ = [
     "aadd",
     "gated_coro",
     "gather_with_concurrency",
+    "Input",
+    "Output",
 ]
