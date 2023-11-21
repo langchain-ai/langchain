@@ -5,7 +5,7 @@ from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.cross_encoder import CrossEncoder
 
 
-class CrossEncoderContentHandler():
+class CrossEncoderContentHandler:
     """Content handler for CrossEncoder class."""
 
     content_type = "application/json"
