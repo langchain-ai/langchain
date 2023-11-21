@@ -1,4 +1,4 @@
-from langchain.schema import BaseOutputParser
+from langchain_core.schema import BaseOutputParser
 
 
 class BooleanOutputParser(BaseOutputParser[bool]):

@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import (
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.schema import (
     BaseOutputParser,
     BasePromptTemplate,
     OutputParserException,
     PromptValue,
 )
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.schema.language_model import BaseLanguageModel
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}

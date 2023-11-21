@@ -3,15 +3,17 @@ import warnings
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.schema.output import GenerationChunk
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.output import GenerationChunk
 from langchain.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,
 )
+from langchain.utils import get_from_dict_or_env
 
 HUMAN_PROMPT = "\n\nHuman:"
 ASSISTANT_PROMPT = "\n\nAssistant:"
@@ -71,6 +73,7 @@ class LLMInputOutputAdapter:
         "anthropic": "completion",
         "amazon": "outputText",
         "cohere": "text",
+        "meta": "generation",
     }
 
     @classmethod
@@ -80,7 +83,7 @@ class LLMInputOutputAdapter:
         input_body = {**model_kwargs}
         if provider == "anthropic":
             input_body["prompt"] = _human_assistant_format(prompt)
-        elif provider == "ai21" or provider == "cohere":
+        elif provider in ("ai21", "cohere", "meta"):
             input_body["prompt"] = prompt
         elif provider == "amazon":
             input_body = dict()
@@ -106,6 +109,8 @@ class LLMInputOutputAdapter:
             return response_body.get("completions")[0].get("data").get("text")
         elif provider == "cohere":
             return response_body.get("generations")[0].get("text")
+        elif provider == "meta":
+            return response_body.get("generation")
         else:
             return response_body.get("results")[0].get("outputText")
 
@@ -194,6 +199,13 @@ class BedrockBase(BaseModel, ABC):
             else:
                 # use default credentials
                 session = boto3.Session()
+
+            values["region_name"] = get_from_dict_or_env(
+                values,
+                "region_name",
+                "AWS_DEFAULT_REGION",
+                default=None,
+            )
 
             client_params = {}
             if values["region_name"]:
@@ -339,6 +351,20 @@ class Bedrock(LLM, BedrockBase):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "amazon_bedrock"
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        if self.region_name:
+            attributes["region_name"] = self.region_name
+
+        return attributes
 
     class Config:
         """Configuration for this pydantic object."""

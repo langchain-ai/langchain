@@ -6,10 +6,14 @@ from typing import (
     List,
 )
 
-from langchain.schema import (
+from langchain_core.schema import (
     BaseChatMessageHistory,
 )
-from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
+from langchain_core.schema.messages import (
+    BaseMessage,
+    _message_to_dict,
+    messages_from_dict,
+)
 
 logger = logging.getLogger(__name__)
 
