@@ -6,6 +6,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
+    ChatResult,
     GenerationChunk,
     LLMResult,
 )

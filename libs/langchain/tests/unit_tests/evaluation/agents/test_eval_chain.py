@@ -3,7 +3,8 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
-from langchain_core.agents import AgentAction, BaseMessage, OutputParserException
+from langchain_core.agents import AgentAction, BaseMessage
+from langchain_core.exceptions import OutputParserException
 from langchain_core.pydantic_v1 import Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun

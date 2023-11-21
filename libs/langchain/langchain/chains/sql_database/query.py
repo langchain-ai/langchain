@@ -1,7 +1,7 @@
 from typing import List, Optional, TypedDict, Union
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import NoOpOutputParser
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnableParallel
 
@@ -79,6 +79,6 @@ def create_sql_query_chain(
         RunnableParallel(inputs)
         | prompt_to_use
         | llm.bind(stop=["\nSQLResult:"])
-        | NoOpOutputParser()
+        | StrOutputParser()
         | _strip
     )

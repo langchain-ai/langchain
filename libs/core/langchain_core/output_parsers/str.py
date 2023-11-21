@@ -17,5 +17,3 @@ class StrOutputParser(BaseTransformOutputParser[str]):
     def parse(self, text: str) -> str:
         """Returns the input text with no changes."""
         return text
-
-

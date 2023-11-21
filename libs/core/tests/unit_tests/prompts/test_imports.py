@@ -6,6 +6,7 @@ EXPECTED_ALL = [
     "BasePromptTemplate",
     "ChatMessagePromptTemplate",
     "ChatPromptTemplate",
+    "ChatPromptValueConcrete",
     "FewShotPromptTemplate",
     "FewShotPromptWithTemplates",
     "FewShotChatMessagePromptTemplate",

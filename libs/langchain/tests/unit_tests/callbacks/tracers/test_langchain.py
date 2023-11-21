@@ -7,10 +7,9 @@ from uuid import UUID
 
 import pytest
 from langchain_core.outputs import LLMResult
+from langchain_core.tracers.langchain import LangChainTracer
+from langchain_core.tracers.schemas import Run
 from langsmith import Client
-
-from langchain.callbacks.tracers.langchain import LangChainTracer
-from langchain.callbacks.tracers.schemas import Run
 
 
 def test_example_id_assignment_threadsafe() -> None:

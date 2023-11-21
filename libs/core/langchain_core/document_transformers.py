@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Sequence
 
-from langchain_core.document import Document
+from langchain_core.documents import Document
 
 
 class BaseDocumentTransformer(ABC):

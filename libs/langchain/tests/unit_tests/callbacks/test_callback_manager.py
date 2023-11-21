@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.outputs import LLMResult
+from langchain_core.tracers.langchain import LangChainTracer, wait_for_all_tracers
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import (
@@ -15,7 +16,6 @@ from langchain.callbacks.manager import (
     tracing_v2_enabled,
 )
 from langchain.callbacks.stdout import StdOutCallbackHandler
-from langchain.callbacks.tracers.langchain import LangChainTracer, wait_for_all_tracers
 from langchain.llms.openai import BaseOpenAI
 from tests.unit_tests.callbacks.fake_callback_handler import (
     BaseFakeCallbackHandler,

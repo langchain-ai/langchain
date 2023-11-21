@@ -1,7 +1,8 @@
 from abc import ABC
 from typing import Any, Dict, Optional, Tuple
 
-from langchain_core.chat_history import BaseChatMessageHistory, BaseMemory
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.memory import BaseMemory
 from langchain_core.pydantic_v1 import Field
 
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory

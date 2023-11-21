@@ -34,9 +34,10 @@ from langchain_core.prompts.chat import (
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     ChatPromptValue,
+    ChatPromptValueConcrete,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
-    SystemMessagePromptTemplate, ChatPromptValueConcrete,
+    SystemMessagePromptTemplate,
 )
 from langchain_core.prompts.few_shot import (
     FewShotChatMessagePromptTemplate,
