@@ -4,14 +4,15 @@ import re
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
+from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.schema import RUN_KEY, BaseOutputParser, BasePromptTemplate
+from langchain_core.schema.language_model import BaseLanguageModel
+
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
-from langchain.pydantic_v1 import Extra, Field
-from langchain.schema import RUN_KEY, BaseOutputParser, BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class Criteria(str, Enum):

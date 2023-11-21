@@ -1,13 +1,14 @@
 import json
 from typing import List, Sequence, Tuple
 
-from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
-from langchain.schema.agent import AgentAction
-from langchain.schema.messages import (
+from langchain_core.schema.agent import AgentAction
+from langchain_core.schema.messages import (
     AIMessage,
     BaseMessage,
     ToolMessage,
 )
+
+from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
 
 
 def _create_tool_message(
