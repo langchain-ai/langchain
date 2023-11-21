@@ -75,9 +75,9 @@ class EdenAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        values["edenai_api_key"] = convert_to_secret_str(get_from_dict_or_env(
-            values, "edenai_api_key", "EDENAI_API_KEY"
-        ))
+        values["edenai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "edenai_api_key", "EDENAI_API_KEY")
+        )
         return values
 
     @root_validator(pre=True)

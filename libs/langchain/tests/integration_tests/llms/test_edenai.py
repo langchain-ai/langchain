@@ -10,6 +10,7 @@ You'll then need to set EDENAI_API_KEY environment variable to your api key.
 """
 from langchain.llms import EdenAI
 from langchain.pydantic_v1 import SecretStr
+from pytest import CaptureFixture
 
 
 def test_edenai_call() -> None:
