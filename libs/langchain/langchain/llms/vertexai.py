@@ -13,17 +13,18 @@ from typing import (
     Union,
 )
 
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.schema import (
+    Generation,
+    LLMResult,
+)
+from langchain_core.schema.output import GenerationChunk
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
-from langchain.pydantic_v1 import BaseModel, Field, root_validator
-from langchain.schema import (
-    Generation,
-    LLMResult,
-)
-from langchain.schema.output import GenerationChunk
 from langchain.utilities.vertexai import (
     get_client_info,
     init_vertexai,
@@ -288,7 +289,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
             The integer number of tokens in the text.
         """
         try:
-            result = self.client.count_tokens(text)
+            result = self.client.count_tokens([text])
         except AttributeError:
             raise NotImplementedError(
                 "Your google-cloud-aiplatform version didn't implement count_tokens."

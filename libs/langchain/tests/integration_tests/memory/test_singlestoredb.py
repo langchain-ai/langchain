@@ -1,7 +1,8 @@
 import json
 
+from langchain_core.schema.messages import _message_to_dict
+
 from langchain.memory import ConversationBufferMemory, SingleStoreDBChatMessageHistory
-from langchain.schema.messages import _message_to_dict
 
 # Replace these with your mongodb connection string
 TEST_SINGLESTOREDB_URL = "root:pass@localhost:3306/db"

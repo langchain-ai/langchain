@@ -402,6 +402,10 @@ class SQLDatabase:
                     # but `duckdb_engine` seemed to struggle with all of them:
                     # https://github.com/Mause/duckdb_engine/issues/796
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
+                elif self.dialect == "oracle":
+                    connection.exec_driver_sql(
+                        f"ALTER SESSION SET CURRENT_SCHEMA = {self._schema}"
+                    )
                 else:  # postgresql and other compatible dialects
                     connection.exec_driver_sql("SET search_path TO %s", (self._schema,))
             cursor = connection.execute(text(command))

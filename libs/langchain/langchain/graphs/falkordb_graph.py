@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain.graphs.graph_document import GraphDocument
 from langchain.graphs.graph_store import GraphStore
@@ -48,7 +48,13 @@ class FalkorDBGraph(GraphStore):
     """
 
     def __init__(
-        self, database: str, host: str = "localhost", port: int = 6379
+        self,
+        database: str,
+        host: str = "localhost",
+        port: int = 6379,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        ssl: bool = False,
     ) -> None:
         """Create a new FalkorDB graph wrapper instance."""
         try:
@@ -60,7 +66,9 @@ class FalkorDBGraph(GraphStore):
                 "Please install it with `pip install redis`."
             )
 
-        self._driver = redis.Redis(host=host, port=port)
+        self._driver = redis.Redis(
+            host=host, port=port, username=username, password=password, ssl=ssl
+        )
         self._graph = Graph(self._driver, database)
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}

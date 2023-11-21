@@ -1,12 +1,12 @@
 """Test for Serializable base class"""
 
 import pytest
+from langchain_core.load.dump import dumpd, dumps
+from langchain_core.load.load import load, loads
+from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
-from langchain.load.dump import dumpd, dumps
-from langchain.load.load import load, loads
-from langchain.prompts.prompt import PromptTemplate
 
 
 class NotSerializable:

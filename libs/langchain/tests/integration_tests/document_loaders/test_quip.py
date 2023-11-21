@@ -2,9 +2,9 @@ from typing import Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
+from langchain_core.schema import Document
 
 from langchain.document_loaders.quip import QuipLoader
-from langchain.schema import Document
 
 try:
     from quip_api.quip import QuipClient  # noqa: F401
