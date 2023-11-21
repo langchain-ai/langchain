@@ -45,6 +45,7 @@ from langchain.schema import (
     BasePromptTemplate,
     OutputParserException,
 )
+from langchain.schema.agent import AgentStep
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
 from langchain.schema.runnable import Runnable
@@ -729,6 +730,9 @@ class ExceptionTool(BaseTool):
         return query
 
 
+NextStepOutput = List[Union[AgentFinish, AgentAction, AgentStep]]
+
+
 class AgentExecutor(Chain):
     """Agent that is using tools."""
 
@@ -844,7 +848,7 @@ class AgentExecutor(Chain):
         callbacks: Callbacks = None,
         *,
         include_run_info: bool = False,
-        async_: bool = False,
+        async_: bool = False,  # arg kept for backwards compat, but ignored
     ) -> AgentExecutorIterator:
         """Enables iteration over steps taken to reach final output."""
         return AgentExecutorIterator(
@@ -917,6 +921,17 @@ class AgentExecutor(Chain):
             final_output["intermediate_steps"] = intermediate_steps
         return final_output
 
+    def _consume_next_step(
+        self, values: NextStepOutput
+    ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
+        if isinstance(values[-1], AgentFinish):
+            assert len(values) == 1
+            return values[-1]
+        else:
+            return [
+                (a.action, a.observation) for a in values if isinstance(a, AgentStep)
+            ]
+
     def _take_next_step(
         self,
         name_to_tool_map: Dict[str, BaseTool],
@@ -925,6 +940,27 @@ class AgentExecutor(Chain):
         intermediate_steps: List[Tuple[AgentAction, str]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
+        return self._consume_next_step(
+            [
+                a
+                for a in self._iter_next_step(
+                    name_to_tool_map,
+                    color_mapping,
+                    inputs,
+                    intermediate_steps,
+                    run_manager,
+                )
+            ]
+        )
+
+    def _iter_next_step(
+        self,
+        name_to_tool_map: Dict[str, BaseTool],
+        color_mapping: Dict[str, str],
+        inputs: Dict[str, str],
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Iterator[Union[AgentFinish, AgentAction, AgentStep]]:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
@@ -974,16 +1010,21 @@ class AgentExecutor(Chain):
                 callbacks=run_manager.get_child() if run_manager else None,
                 **tool_run_kwargs,
             )
-            return [(output, observation)]
+            yield AgentStep(action=output, observation=observation)
+            return
+
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
-            return output
+            yield output
+            return
+
         actions: List[AgentAction]
         if isinstance(output, AgentAction):
             actions = [output]
         else:
             actions = output
-        result = []
+        for agent_action in actions:
+            yield agent_action
         for agent_action in actions:
             if run_manager:
                 run_manager.on_agent_action(agent_action, color="green")
@@ -1015,8 +1056,7 @@ class AgentExecutor(Chain):
                     callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
-            result.append((agent_action, observation))
-        return result
+            yield AgentStep(action=agent_action, observation=observation)
 
     async def _atake_next_step(
         self,
@@ -1026,6 +1066,27 @@ class AgentExecutor(Chain):
         intermediate_steps: List[Tuple[AgentAction, str]],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
+        return self._consume_next_step(
+            [
+                a
+                async for a in self._aiter_next_step(
+                    name_to_tool_map,
+                    color_mapping,
+                    inputs,
+                    intermediate_steps,
+                    run_manager,
+                )
+            ]
+        )
+
+    async def _aiter_next_step(
+        self,
+        name_to_tool_map: Dict[str, BaseTool],
+        color_mapping: Dict[str, str],
+        inputs: Dict[str, str],
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> AsyncIterator[Union[AgentFinish, AgentAction, AgentStep]]:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
@@ -1073,19 +1134,25 @@ class AgentExecutor(Chain):
                 callbacks=run_manager.get_child() if run_manager else None,
                 **tool_run_kwargs,
             )
-            return [(output, observation)]
+            yield AgentStep(action=output, observation=observation)
+            return
+
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
-            return output
+            yield output
+            return
+
         actions: List[AgentAction]
         if isinstance(output, AgentAction):
             actions = [output]
         else:
             actions = output
+        for agent_action in actions:
+            yield agent_action
 
         async def _aperform_agent_action(
             agent_action: AgentAction,
-        ) -> Tuple[AgentAction, str]:
+        ) -> AgentStep:
             if run_manager:
                 await run_manager.on_agent_action(
                     agent_action, verbose=self.verbose, color="green"
@@ -1118,14 +1185,16 @@ class AgentExecutor(Chain):
                     callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
-            return agent_action, observation
+            return AgentStep(action=agent_action, observation=observation)
 
         # Use asyncio.gather to run multiple tool.arun() calls concurrently
         result = await asyncio.gather(
             *[_aperform_agent_action(agent_action) for agent_action in actions]
         )
 
-        return list(result)
+        # TODO This could yield each result as it becomes available
+        for chunk in result:
+            yield chunk
 
     def _call(
         self,
@@ -1269,10 +1338,10 @@ class AgentExecutor(Chain):
 
     def stream(
         self,
-        input: Dict[str, Any],
+        input: Union[Dict[str, Any], Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Iterator[AgentStreamOutput]:
+    ) -> Iterator[AddableDict]:
         """Enables streaming over steps taken to reach final output."""
         config = config or {}
         iterator = AgentExecutorIterator(
@@ -1282,23 +1351,18 @@ class AgentExecutor(Chain):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            yield_actions=True,
             **kwargs,
         )
         for step in iterator:
-            if "intermediate_step" in step:
-                yield AgentStreamOutput(
-                    actions=[a for a, o in step["intermediate_step"]],
-                    observations=[o for a, o in step["intermediate_step"]],
-                )
-            else:
-                yield AgentStreamOutput(step)
+            yield step
 
     async def astream(
         self,
-        input: Dict[str, Any],
+        input: Union[Dict[str, Any], Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[AgentStreamOutput]:
+    ) -> AsyncIterator[AddableDict]:
         """Enables streaming over steps taken to reach final output."""
         config = config or {}
         iterator = AgentExecutorIterator(
@@ -1308,32 +1372,8 @@ class AgentExecutor(Chain):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            yield_actions=True,
             **kwargs,
         )
         async for step in iterator:
-            if "intermediate_step" in step:
-                yield AgentStreamOutput(
-                    actions=[a for a, o in step["intermediate_step"]],
-                    observations=[o for a, o in step["intermediate_step"]],
-                )
-            else:
-                yield AgentStreamOutput(step)
-
-
-class AgentStreamOutput(AddableDict):
-    """dict subclass for agent stream output.
-
-    Implements addition to allow for easy concatenation of stream outputs.
-
-    Additionally, adds a `intermediate_steps` key that contains the
-    combination of `actions` and `observations` from the stream output.
-    """
-
-    def __missing__(self, key: str) -> Any:
-        if key == "intermediate_steps":
-            return [
-                (a, o)
-                for a, o in zip(self.get("actions", []), self.get("observations", []))
-            ]
-        else:
-            raise KeyError(key)
+            yield step
