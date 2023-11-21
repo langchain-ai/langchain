@@ -146,6 +146,7 @@ class Dstack(_BaseDstack, LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Dstack
             llm = Dstack(run_name="mistral-7b-gptq")
     """
@@ -168,6 +169,7 @@ class Dstack(_BaseDstack, LLM):
 
         Example:
             .. code-block:: python
+
                 llm = Dstack(run_name="mistral-7b-gptq")
                 response = llm("Write a poem.")
         """

@@ -27,6 +27,7 @@ class ChatDstack(_BaseDstack, BaseChatModel):
 
     Example:
         .. code-block:: python
+
             from langchain.chat_models import ChatDstack
             llm = ChatDstack(run_name="mistral-7b-gptq")
     """
