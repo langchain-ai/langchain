@@ -10,7 +10,7 @@ from langchain_core.prompts.chat import (
     BaseMessagePromptTemplate,
 )
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.prompts.str import (
+from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
     check_valid_template,

@@ -41,7 +41,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     @property
     def OutputType(self) -> Any:
         from langchain_core.prompts.chat import ChatPromptValueConcrete
-        from langchain_core.prompts.str import StringPromptValue
+        from langchain_core.prompts.string import StringPromptValue
 
         return Union[StringPromptValue, ChatPromptValueConcrete]
 

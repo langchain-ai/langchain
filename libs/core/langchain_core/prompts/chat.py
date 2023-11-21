@@ -31,7 +31,7 @@ from langchain_core.messages import (
 )
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.prompts.str import StringPromptTemplate
+from langchain_core.prompts.string import StringPromptTemplate
 from langchain_core.prompts.value import PromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
 

@@ -75,7 +75,7 @@ class BaseLanguageModel(
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
         from langchain_core.prompts.chat import ChatPromptValueConcrete
-        from langchain_core.prompts.str import StringPromptValue
+        from langchain_core.prompts.string import StringPromptValue
 
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes
