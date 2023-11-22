@@ -16,7 +16,7 @@ gigachain-cli = ">=0.0.15"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
-[tool.langserve]
+[tool.gigaserve]
 export_module = "rag_google_cloud_vertexai_search"
 export_attr = "chain"
 

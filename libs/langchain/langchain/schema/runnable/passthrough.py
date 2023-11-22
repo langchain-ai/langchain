@@ -14,7 +14,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Sequence,
     Type,
     Union,
     cast,
@@ -334,7 +333,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         return super().get_output_schema(config)
 
     @property
-    def config_specs(self) -> Sequence[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.mapper.config_specs
 
     def invoke(

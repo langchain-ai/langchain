@@ -175,8 +175,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model: str = "text-embedding-ada-002"
     # to support Azure OpenAI Service custom deployment names
     deployment: Optional[str] = model
@@ -291,7 +291,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             # Azure OpenAI embedding models allow a maximum of 16 texts
             # at a time in each batch
             # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-            values["chunk_size"] = max(values["chunk_size"], 16)
+            values["chunk_size"] = min(values["chunk_size"], 16)
         else:
             default_api_version = ""
         values["openai_api_version"] = get_from_dict_or_env(
@@ -330,10 +330,16 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     "default_query": values["default_query"],
                     "http_client": values["http_client"],
                 }
-                values["client"] = openai.OpenAI(**client_params).embeddings
-                values["async_client"] = openai.AsyncOpenAI(**client_params).embeddings
-            else:
+                if not values.get("client"):
+                    values["client"] = openai.OpenAI(**client_params).embeddings
+                if not values.get("async_client"):
+                    values["async_client"] = openai.AsyncOpenAI(
+                        **client_params
+                    ).embeddings
+            elif not values.get("client"):
                 values["client"] = openai.Embedding
+            else:
+                pass
         return values
 
     @property

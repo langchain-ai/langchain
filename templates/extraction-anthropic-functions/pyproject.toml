@@ -12,7 +12,7 @@ python = ">=3.8.1,<4.0"
 gigachain = ">=0.0.325"
 anthropic = ">=0.5.0"
 langchainhub = ">=0.1.13"
-langchain-experimental = "^0.0.36"
+gigachain-experimental = "^0.0.37"
 
 [tool.poetry.group.dev.dependencies]
 gigachain-cli = ">=0.0.15"
