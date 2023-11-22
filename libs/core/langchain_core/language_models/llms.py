@@ -37,10 +37,10 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain_core.callbacks.base import BaseCallbackManager
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
+    BaseCallbackManager,
     CallbackManager,
     CallbackManagerForLLMRun,
     Callbacks,
