@@ -25,9 +25,10 @@ from docugami_kg_rag.helpers.documents import (
     build_summary_mappings,
     get_parent_id_mappings,
 )
+from docugami_kg_rag.helpers.reports import build_report_details
 from docugami_kg_rag.helpers.retrieval import (
-    chunks_to_retriever_tool_description,
-    docset_name_to_retriever_tool_function_name,
+    chunks_to_direct_retriever_tool_description,
+    docset_name_to_direct_retriever_tool_function_name,
 )
 
 
@@ -48,20 +49,22 @@ def update_local_index(docset_id: str, name: str, chunks: List[Document]):
     parents_by_id = InMemoryStore()
     parents_by_id.mset(parents.items())  # type: ignore
 
-    summaries = build_summary_mappings(parents)
-    summaries_by_id = InMemoryStore()
-    summaries_by_id.mset(summaries.items())  # type: ignore
+    doc_summaries = build_summary_mappings(parents)
+    doc_summaries_by_id = InMemoryStore()
+    doc_summaries_by_id.mset(doc_summaries.items())  # type: ignore
 
-    tool_function_name = docset_name_to_retriever_tool_function_name(name)
-    tool_description = chunks_to_retriever_tool_description(name, chunks)
+    direct_tool_function_name = docset_name_to_direct_retriever_tool_function_name(name)
+    direct_tool_description = chunks_to_direct_retriever_tool_description(name, chunks)
+    report_details = build_report_details(docset_id)
 
-    docset_state = LocalIndexState(
+    doc_index_state = LocalIndexState(
         parents_by_id=parents_by_id,
-        summaries_by_id=summaries_by_id,
-        retrieval_tool_function_name=tool_function_name,
-        retrieval_tool_description=tool_description,
+        doc_summaries_by_id=doc_summaries_by_id,
+        retrieval_tool_function_name=direct_tool_function_name,
+        retrieval_tool_description=direct_tool_description,
+        reports=report_details,
     )
-    state[docset_id] = docset_state
+    state[docset_id] = doc_index_state
 
     # Serialize state to disk (Deserialized in chain)
     store_local_path = Path(INDEXING_LOCAL_STATE_PATH)

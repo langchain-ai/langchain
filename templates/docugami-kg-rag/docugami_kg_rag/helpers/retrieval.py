@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import pinecone
 from langchain.agents.agent_toolkits import create_retriever_tool
@@ -22,25 +22,25 @@ from docugami_kg_rag.helpers.fused_summary_retriever import (
 )
 from docugami_kg_rag.helpers.prompts import (
     ASSISTANT_SYSTEM_MESSAGE,
-    CREATE_TOOL_DESCRIPTION_PROMPT,
+    CREATE_DIRECT_RETRIEVAL_TOOL_DESCRIPTION_PROMPT,
 )
 
 
-def docset_name_to_retriever_tool_function_name(name: str) -> str:
+def docset_name_to_direct_retriever_tool_function_name(name: str) -> str:
     """
-    Converts a docset name to a retriever tool function name.
+    Converts a docset name to a direct retriever tool function name.
 
-    Retriever tool function names follow these conventions:
+    Direct retriever tool function names follow these conventions:
     1. Retrieval tool function names always start with "search_".
     2. The rest of the name should be a lowercased string, with underscores for whitespace.
     3. Exclude any characters other than a-z (lowercase) from the function name, replacing them with underscores.
     4. The final function name should not have more than one underscore together.
 
-    >>> docset_name_to_retriever_tool_function_name('Earnings Calls')
+    >>> docset_name_to_direct_retriever_tool_function_name('Earnings Calls')
     'search_earnings_calls'
-    >>> docset_name_to_retriever_tool_function_name('COVID-19   Statistics')
+    >>> docset_name_to_direct_retriever_tool_function_name('COVID-19   Statistics')
     'search_covid_19_statistics'
-    >>> docset_name_to_retriever_tool_function_name('2023 Market Report!!!')
+    >>> docset_name_to_direct_retriever_tool_function_name('2023 Market Report!!!')
     'search_2023_market_report'
     """
     # Replace non-letter characters with underscores and remove extra whitespaces
@@ -53,7 +53,10 @@ def docset_name_to_retriever_tool_function_name(name: str) -> str:
     return f"search_{name}"
 
 
-def chunks_to_retriever_tool_description(name: str, chunks: List[Document]):
+def chunks_to_direct_retriever_tool_description(name: str, chunks: List[Document]):
+    """
+    Converts a set of chunks to a direct retriever tool description.
+    """
     texts = [c.page_content for c in chunks[:100]]
     doc_fragment = "\n".join(texts)[:SMALL_FRAGMENT_MAX_TEXT_LENGTH]
 
@@ -61,17 +64,18 @@ def chunks_to_retriever_tool_description(name: str, chunks: List[Document]):
         ChatPromptTemplate.from_messages(
             [
                 ("system", ASSISTANT_SYSTEM_MESSAGE),
-                ("human", CREATE_TOOL_DESCRIPTION_PROMPT),
+                ("human", CREATE_DIRECT_RETRIEVAL_TOOL_DESCRIPTION_PROMPT),
             ]
         )
         | LLM
         | StrOutputParser()
     )
-    return chain.invoke({"docset_name": name, "doc_fragment": doc_fragment})
+    summary = chain.invoke({"docset_name": name, "doc_fragment": doc_fragment})
+    return f"Searches for and returns chunks from {name} documents. {summary}."
 
 
 def get_retrieval_tool_for_docset(
-    docset_id: str, local_state: Dict[str, LocalIndexState]
+    docset_id: str, docset_state: LocalIndexState
 ) -> Optional[BaseTool]:
     # Chunks are in the vector store, and full documents are in the store inside the local state
 
@@ -84,13 +88,13 @@ def get_retrieval_tool_for_docset(
     )
     retriever = FusedSummaryRetriever(
         vectorstore=chunk_vectorstore,
-        summarystore=local_state[docset_id].summaries_by_id,
+        summarystore=docset_state.doc_summaries_by_id,
         search_kwargs={"k": RETRIEVER_K},
         search_type=SearchType.mmr,
     )
 
     return create_retriever_tool(
-        retriever,
-        local_state[docset_id].retrieval_tool_function_name,
-        local_state[docset_id].retrieval_tool_description,
+        retriever=retriever,
+        name=docset_state.retrieval_tool_function_name,
+        description=docset_state.retrieval_tool_description,
     )

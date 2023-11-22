@@ -54,6 +54,6 @@ def main(
 if __name__ == "__main__":
     if sys.gettrace():
         # This code will only run if a debugger is attached
-        main(docset_id="s79br3gqd0g6", force=True)
+        main(docset_id="s79br3gqd0g6", force=False)
     else:
         app()

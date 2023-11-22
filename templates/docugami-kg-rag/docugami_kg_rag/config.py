@@ -1,15 +1,23 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import List
 
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.cache import SQLiteCache
+from langchain.chat_models import ChatOpenAI  # , ChatCohere
+from langchain.embeddings import OpenAIEmbeddings  # , CohereEmbeddings
+from langchain.globals import set_llm_cache
 from langchain.storage.in_memory import InMemoryStore
 
 LLM = ChatOpenAI(temperature=0, model="gpt-4-1106-preview")
 # LLM = ChatOpenAI(temperature=0, model="gpt-4")
+# LLM = ChatCohere(model="command")
 
 EMBEDDINGS = OpenAIEmbeddings(model="text-embedding-ada-002")
-EMBEDDINGS_DIMENSIONS = 1536  # known size of text-embedding-ada-002
+EMBEDDINGS_DIMENSIONS = 1536  # known size of text-embedding-ada-002 embeddings
+
+# EMBEDDINGS = CohereEmbeddings(model="embed-english-v3.0")
+# EMBEDDINGS_DIMENSIONS = 1024  # known size of embed-english-v3.0 embeddings
 
 DOCUGAMI_API_KEY = os.environ.get("DOCUGAMI_API_KEY")
 if not DOCUGAMI_API_KEY:
@@ -30,6 +38,32 @@ if not PINECONE_ENVIRONMENT:
 INDEXING_LOCAL_STATE_PATH = os.environ.get(
     "INDEXING_LOCAL_STATE_PATH", "temp/indexing_local_state.pkl"
 )
+INDEXING_LOCAL_REPORT_DBS_ROOT = os.environ.get(
+    "INDEXING_LOCAL_REPORT_DBS_ROOT", "temp/report_dbs"
+)
+LOCAL_LLM_CACHE_DB_FILE = os.environ.get("LOCAL_LLM_CACHE", "temp/.langchain.db")
+os.makedirs(Path(LOCAL_LLM_CACHE_DB_FILE).parent, exist_ok=True)
+set_llm_cache(SQLiteCache(database_path=LOCAL_LLM_CACHE_DB_FILE))
+
+
+@dataclass
+class ReportDetails:
+    id: str
+    """ID of report."""
+
+    name: str
+    """Name of report."""
+
+    local_xlsx_path: Path
+    """Local path to XLSX of the report."""
+
+    retrieval_tool_function_name: str
+    """Function name for retrieval tool e.g. sql_query_earnings_calls."""
+
+    retrieval_tool_description: str
+    """
+    Description of retrieval tool e.g. Runs a SQL query over the REPORT_NAME report, 
+    represented as the following SQL Table... etc."""
 
 
 @dataclass
@@ -37,7 +71,7 @@ class LocalIndexState:
     parents_by_id: InMemoryStore
     """Mapping of ID to parent chunks."""
 
-    summaries_by_id: InMemoryStore
+    doc_summaries_by_id: InMemoryStore
     """Mapping of ID to document summaries."""
 
     retrieval_tool_function_name: str
@@ -45,6 +79,9 @@ class LocalIndexState:
 
     retrieval_tool_description: str
     """Description of retrieval tool e.g. Searches for and returns chunks from earnings call documents."""
+
+    reports: List[ReportDetails] = field(default_factory=list)
+    """Details about any reports for this docset."""
 
 
 # Lengths for the loader are in terms of characters, 1 token ~= 4 chars in English
@@ -58,6 +95,8 @@ RETRIEVER_K = 10
 
 SMALL_FRAGMENT_MAX_TEXT_LENGTH = 2048 * 2
 LARGE_FRAGMENT_MAX_TEXT_LENGTH = 2048 * 10
+
+BATCH_SIZE = 5
 
 # LangSmith options (set for tracing)
 LANGCHAIN_TRACING_V2 = True

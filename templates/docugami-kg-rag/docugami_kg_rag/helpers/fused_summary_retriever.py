@@ -38,7 +38,7 @@ DOCUMENT_SUMMARY_TEMPLATE: str = """
 
 class FusedSummaryRetriever(BaseRetriever):
     """
-    Retrieve a fused document that consist of pre-calculated summaries.
+    Retrieve a fused document that consists of pre-calculated summaries.
     """
 
     vectorstore: VectorStore
