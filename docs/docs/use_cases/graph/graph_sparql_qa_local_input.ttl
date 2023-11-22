@@ -40,7 +40,7 @@
     rdfs:label "birth place"@en ;
     rdfs:range :Place .
 
-:age
+:dp1
     a rdf:Property, owl:DatatypeProperty ;
     rdfs:comment "age"@en ;
     rdfs:domain :Animal ;
@@ -56,4 +56,4 @@
 
 :TomCruise a :Actor ;
     :name "Tom Cruise" ;
-    :age "40"^^xsd:integer .
+    :dp1 "40"^^xsd:integer .

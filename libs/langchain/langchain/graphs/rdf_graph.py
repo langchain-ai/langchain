@@ -19,18 +19,20 @@ prefixes = {
 # NOTE: here, being a class is defined as having instances.
 #   this may lead to false negatives, but avoids mistaking instances for classes
 cls_query_rdf = prefixes["rdfs"] + (
-    """SELECT DISTINCT ?cls ?com\n"""
+    """SELECT DISTINCT ?cls ?lbl ?com\n"""
     """WHERE { \n"""
     """    ?instance a ?cls .\n"""
+    """    OPTIONAL { ?cls rdfs:label ?lbl } . \n"""
     """    OPTIONAL { ?cls rdfs:comment ?com } . \n"""
     """    FILTER NOT EXISTS { ?cls a rdf:Property } \n"""
     """}"""
 )
 
 cls_query_rdfs = prefixes["rdfs"] + (
-    """SELECT DISTINCT ?cls ?com\n"""
+    """SELECT DISTINCT ?cls ?lbl ?com\n"""
     """WHERE { \n"""
     """    ?cls a rdfs:Class . \n"""
+    """    OPTIONAL { ?cls rdfs:label ?lbl } . \n"""
     """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
     """    FILTER NOT EXISTS { ?cls a rdf:Property } \n"""
     """}"""
@@ -40,10 +42,11 @@ cls_query_owl = (
     prefixes["rdfs"]
     + prefixes["owl"]
     + (
-        """SELECT DISTINCT ?cls ?com\n"""
+        """SELECT DISTINCT ?cls ?lbl ?com\n"""
         """WHERE { \n"""
         """    ?cls a owl:Class . \n"""
         """    FILTER (isIRI(?cls)) . \n"""
+        """    OPTIONAL { ?cls rdfs:label ?lbl } . \n"""
         """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
         """    FILTER NOT EXISTS { ?cls a rdf:Property } \n"""
         """}"""
@@ -51,9 +54,10 @@ cls_query_owl = (
 )
 
 rel_query_rdf = prefixes["rdfs"] + (
-    """SELECT DISTINCT ?rel ?com\n"""
+    """SELECT DISTINCT ?rel ?lbl ?com\n"""
     """WHERE { \n"""
     """    ?subj ?rel ?obj . \n"""
+    """    OPTIONAL { ?rel rdfs:label ?lbl } . \n"""
     """    OPTIONAL { ?rel rdfs:comment ?com } \n"""
     """}"""
 )
@@ -62,9 +66,10 @@ rel_query_rdfs = (
     prefixes["rdf"]
     + prefixes["rdfs"]
     + (
-        """SELECT DISTINCT ?rel ?com\n"""
+        """SELECT DISTINCT ?rel ?lbl ?com\n"""
         """WHERE { \n"""
         """    ?rel a rdf:Property . \n"""
+        """    OPTIONAL { ?rel rdfs:label ?lbl } . \n"""
         """    OPTIONAL { ?rel rdfs:comment ?com } \n"""
         """}"""
     )
@@ -74,9 +79,10 @@ op_query_owl = (
     prefixes["rdfs"]
     + prefixes["owl"]
     + (
-        """SELECT DISTINCT ?op ?com\n"""
+        """SELECT DISTINCT ?op ?lbl ?com\n"""
         """WHERE { \n"""
         """    ?op a owl:ObjectProperty . \n"""
+        """    OPTIONAL { ?op rdfs:label ?lbl } . \n"""
         """    OPTIONAL { ?op rdfs:comment ?com } \n"""
         """}"""
     )
@@ -86,9 +92,10 @@ dp_query_owl = (
     prefixes["rdfs"]
     + prefixes["owl"]
     + (
-        """SELECT DISTINCT ?dp ?com\n"""
+        """SELECT DISTINCT ?dp ?lbl ?com\n"""
         """WHERE { \n"""
         """    ?dp a owl:DatatypeProperty . \n"""
+        """    OPTIONAL { ?dp rdfs:label ?lbl } . \n"""
         """    OPTIONAL { ?dp rdfs:comment ?com } \n"""
         """}"""
     )
@@ -256,6 +263,8 @@ class RdfGraph:
             + "> ("
             + self._get_local_name(res[var])
             + ", "
+            + str(res["lbl"])
+            + ", "
             + str(res["com"])
             + ")"
         )
@@ -271,7 +280,7 @@ class RdfGraph:
         ) -> str:
             return (
                 f"In the following, each IRI is followed by the local name and "
-                f"optionally its description in parentheses. \n"
+                f"optionally its label and its description in parentheses. \n"
                 f"The RDF graph supports the following node types:\n"
                 f'{", ".join([self._res_to_str(r, "cls") for r in classes])}\n'
                 f"The RDF graph supports the following relationships:\n"
@@ -292,7 +301,7 @@ class RdfGraph:
             dps = self.query(dp_query_owl)
             self.schema = (
                 f"In the following, each IRI is followed by the local name and "
-                f"optionally its description in parentheses. \n"
+                f"optionally its label and its description in parentheses. \n"
                 f"The OWL graph supports the following node types:\n"
                 f'{", ".join([self._res_to_str(r, "cls") for r in clss])}\n'
                 f"The OWL graph supports the following object properties, "
