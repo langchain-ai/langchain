@@ -458,7 +458,7 @@ class BaseOpenAI(BaseLLM):
                 if not isinstance(response, dict):
                     # V1 client returns the response in an PyDantic object instead of
                     # dict. For the transition period, we deep convert it to dict.
-                    response = response.dict()
+                    response = response.model_dump()
 
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
