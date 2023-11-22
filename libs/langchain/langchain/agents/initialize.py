@@ -1,7 +1,7 @@
 """Load agent."""
 from typing import Any, Optional, Sequence
 
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_types import AgentType

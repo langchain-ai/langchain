@@ -3,12 +3,12 @@ import sys
 from typing import Generator
 
 import pytest
+from langchain_core.outputs import LLMResult
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain_core.schema import LLMResult
 
 from langchain.chains import LLMChain
 from langchain.llms.fireworks import Fireworks
@@ -61,7 +61,6 @@ def test_fireworks_invoke(llm: Fireworks) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_fireworks_ainvoke(llm: Fireworks) -> None:
     """Tests completion with invoke"""
     output = await llm.ainvoke("How is the weather in New York today?", stop=[","])
@@ -89,7 +88,6 @@ def test_fireworks_batch(llm: Fireworks) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_fireworks_abatch(llm: Fireworks) -> None:
     """Tests completion with invoke"""
     output = await llm.abatch(
@@ -142,7 +140,6 @@ def test_fireworks_streaming_stop_words(llm: Fireworks) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_fireworks_streaming_async(llm: Fireworks) -> None:
     """Test stream completion."""
 
@@ -156,7 +153,6 @@ async def test_fireworks_streaming_async(llm: Fireworks) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_fireworks_async_agenerate(llm: Fireworks) -> None:
     """Test async."""
     output = await llm.agenerate(["What is the best city to live in California?"])
@@ -164,7 +160,6 @@ async def test_fireworks_async_agenerate(llm: Fireworks) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_fireworks_multiple_prompts_async_agenerate(llm: Fireworks) -> None:
     output = await llm.agenerate(
         ["How is the weather in New York today?", "I'm pickle rick"]

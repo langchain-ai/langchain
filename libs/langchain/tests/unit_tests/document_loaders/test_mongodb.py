@@ -30,7 +30,6 @@ def expected_documents() -> List[Document]:
 
 
 @pytest.mark.requires("motor")
-@pytest.mark.asyncio
 async def test_load_mocked(expected_documents: List[Document]) -> None:
     mock_async_load = AsyncMock()
     mock_async_load.return_value = expected_documents

@@ -12,6 +12,9 @@ from langchain_core.runnables.base import (
     coerce_to_runnable,
 )
 
+# Backwards compatibility.
+RunnableMap = RunnableParallel
+
 __all__ = [
     "Runnable",
     "RunnableSerializable",
@@ -23,5 +26,6 @@ __all__ = [
     "RunnableEach",
     "RunnableBindingBase",
     "RunnableBinding",
+    "RunnableMap",
     "coerce_to_runnable",
 ]

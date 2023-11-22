@@ -6,8 +6,8 @@ import zipfile
 from pathlib import Path
 from typing import Iterator, List, Union
 
-from langchain_core.schema import AIMessage, BaseMessage, HumanMessage
-from langchain_core.schema.chat import ChatSession
+from langchain_core.chat_sessions import ChatSession
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from langchain.chat_loaders.base import BaseChatLoader
 
