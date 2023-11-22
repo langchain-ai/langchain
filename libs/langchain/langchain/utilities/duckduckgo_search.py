@@ -104,7 +104,13 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             ]
         elif self.source == "news":
             results = [
-                {"snippet": r["body"], "title": r["title"], "link": r["url"]}
+                {
+                    "snippet": r["body"],
+                    "title": r["title"],
+                    "link": r["url"],
+                    "date": r["date"],
+                    "source": r["source"],
+                }
                 for r in self._ddgs_news(query)
             ]
         else:
