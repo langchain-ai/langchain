@@ -8,7 +8,7 @@ import typing
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 if typing.TYPE_CHECKING:
-    from cassandra.cluster import Session
+    pass
 
 from langchain.prompts.database.convertor_prompt_template import ConvertorPromptTemplate
 from langchain.pydantic_v1 import root_validator
@@ -16,12 +16,18 @@ from langchain.pydantic_v1 import root_validator
 RowToValueType = Union[str, Callable[[Any], Any]]
 FieldMapperType = Dict[
     str,
-    Union[
-        Tuple[str, RowToValueType],
-        Tuple[str, RowToValueType, bool],
-        Tuple[str, RowToValueType, bool, Any],
-    ],
+    Tuple[Any, ...],
 ]
+# more specifically, as a guide to usage:
+# FieldMapperType = Dict[
+#     str,
+#     Union[
+#         Tuple[str, RowToValueType],
+#         Tuple[str, RowToValueType, bool],
+#         Tuple[str, RowToValueType, bool, Any],
+#     ],
+# ]
+
 
 DEFAULT_ADMIT_NULLS = True
 
@@ -47,13 +53,12 @@ class CassandraReaderPromptTemplate(ConvertorPromptTemplate):
         )
         for k, v in convertor_info.items():
             values[k] = v
-        # values["input_variables"] = values.get("input_variables", [])
         return values
 
     @staticmethod
     def _prepare_reader_info(
-        session: Session,
-        keyspace: str,
+        session: Optional[Any],  # Session
+        keyspace: Optional[str],
         field_mapper: FieldMapperType,
         admit_nulls: bool,
     ) -> Dict[str, Any]:

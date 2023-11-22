@@ -9,27 +9,24 @@ from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
 )
+
 from langchain.pydantic_v1 import Extra, Field, root_validator
 
 ConvertorType = Callable[[Dict[str, Any]], Dict[str, Any]]
 
 
 class ConvertorPromptTemplate(StringPromptTemplate):
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Is this class serializable?"""
         return False
 
-    # generalization to accommodate abitrary-type input variables
+    # generalization to accommodate arbitrary-type input variables
     partial_variables: Mapping[str, Union[Any, Callable[[], Any]]] = Field(
         default_factory=dict
     )
 
     template: str
-    """
-    TODO: instead of adding `template` and `input_variables`,
-    probably can inherit form PromptTemplate (which however
-    adds a few methods: check if these withstand the convertor stuff).
-    """
 
     validate_template: bool = True
 
@@ -79,8 +76,7 @@ class ConvertorPromptTemplate(StringPromptTemplate):
     # generalization to accommodate abitrary-type input variables
     def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
         partial_kwargs = {
-            k: v() if callable(v) else v
-            for k, v in self.partial_variables.items()
+            k: v() if callable(v) else v for k, v in self.partial_variables.items()
         }
         return {**partial_kwargs, **kwargs}
 

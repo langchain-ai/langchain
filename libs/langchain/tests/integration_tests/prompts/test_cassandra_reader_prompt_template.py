@@ -1,8 +1,8 @@
 """Test Cassandra prompt template."""
-from typing import Callable, Iterable, Tuple
-import pytest
+from typing import Iterable, Tuple
 
 import cassio
+import pytest
 from cassandra.cluster import Cluster, Session
 
 from langchain.prompts.database import CassandraReaderPromptTemplate
@@ -46,7 +46,9 @@ def extractor_tables() -> Iterable[Tuple[Session, str, str, str]]:
 
 
 @pytest.mark.usefixtures("extractor_tables")
-def test_cassandra_reader_prompt_template(extractor_tables: Tuple[Session, str, str, str]) -> None:
+def test_cassandra_reader_prompt_template(
+    extractor_tables: Tuple[Session, str, str, str]
+) -> None:
     session, keyspace, p_table, c_table = extractor_tables
     #
     prompt_template_string = (
@@ -80,7 +82,9 @@ def test_cassandra_reader_prompt_template(extractor_tables: Tuple[Session, str, 
 
 
 @pytest.mark.usefixtures("extractor_tables")
-def test_cassandra_reader_prompt_template_admitnulls(extractor_tables: Tuple[Session, str, str, str]) -> None:
+def test_cassandra_reader_prompt_template_admitnulls(
+    extractor_tables: Tuple[Session, str, str, str]
+) -> None:
     session, keyspace, p_table, c_table = extractor_tables
     #
     prompt_template_string = "r_age_t={r_age_t} r_age_t_d={r_age_t_d} r_age={r_age}"
@@ -115,16 +119,18 @@ def test_cassandra_reader_prompt_template_admitnulls(extractor_tables: Tuple[Ses
 
 
 @pytest.mark.usefixtures("extractor_tables")
-def test_cassandra_reader_prompt_template_cassioinit(extractor_tables: Tuple[Session, str, str, str]) -> None:
+def test_cassandra_reader_prompt_template_cassioinit(
+    extractor_tables: Tuple[Session, str, str, str]
+) -> None:
     session, keyspace, p_table, _ = extractor_tables
-    cassio.init(session=session,keyspace=keyspace)
+    cassio.init(session=session, keyspace=keyspace)
     #
-    prompt_template_string = ("r_age={r_age}")
+    prompt_template_string = "r_age={r_age}"
     f_mapper = {"r_age": (p_table, "age")}
     prompt_template = CassandraReaderPromptTemplate(
         template=prompt_template_string,
         field_mapper=f_mapper,
     )
     result = prompt_template.format(city="milan", name="alba")
-    expected = ("r_age=11")
+    expected = "r_age=11"
     assert result == expected
