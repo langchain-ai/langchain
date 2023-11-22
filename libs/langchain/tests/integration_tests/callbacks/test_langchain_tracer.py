@@ -2,8 +2,8 @@
 import asyncio
 import os
 
-import pytest
 from aiohttp import ClientSession
+from langchain_core.prompts import PromptTemplate
 
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import tracing_enabled
@@ -17,7 +17,6 @@ from langchain.chains.constitutional_ai.base import ConstitutionalChain
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
-from langchain.prompts import PromptTemplate
 
 questions = [
     (
@@ -66,7 +65,6 @@ def test_tracing_session_env_var() -> None:
         del os.environ["LANGCHAIN_SESSION"]
 
 
-@pytest.mark.asyncio
 async def test_tracing_concurrent() -> None:
     os.environ["LANGCHAIN_TRACING"] = "true"
     aiosession = ClientSession()
@@ -80,7 +78,6 @@ async def test_tracing_concurrent() -> None:
     await aiosession.close()
 
 
-@pytest.mark.asyncio
 async def test_tracing_concurrent_bw_compat_environ() -> None:
     os.environ["LANGCHAIN_HANDLER"] = "langchain"
     if "LANGCHAIN_TRACING" in os.environ:
@@ -113,7 +110,6 @@ def test_tracing_context_manager() -> None:
     agent.run(questions[0])  # this should not be traced
 
 
-@pytest.mark.asyncio
 async def test_tracing_context_manager_async() -> None:
     llm = OpenAI(temperature=0)
     async_tools = load_tools(["llm-math", "serpapi"], llm=llm)
@@ -133,7 +129,6 @@ async def test_tracing_context_manager_async() -> None:
     await task
 
 
-@pytest.mark.asyncio
 async def test_tracing_v2_environment_variable() -> None:
     os.environ["LANGCHAIN_TRACING_V2"] = "true"
 
@@ -196,7 +191,6 @@ def test_tracing_v2_agent_with_metadata() -> None:
     chat_agent.run(questions[0], tags=["a-tag"], metadata={"a": "b", "c": "d"})
 
 
-@pytest.mark.asyncio
 async def test_tracing_v2_async_agent_with_metadata() -> None:
     os.environ["LANGCHAIN_TRACING_V2"] = "true"
     llm = OpenAI(temperature=0, metadata={"f": "g", "h": "i"})
@@ -256,7 +250,6 @@ def test_trace_as_group_with_env_set() -> None:
         group_manager.on_chain_end({"output": final_res})
 
 
-@pytest.mark.asyncio
 async def test_trace_as_group_async() -> None:
     llm = OpenAI(temperature=0.9)
     prompt = PromptTemplate(

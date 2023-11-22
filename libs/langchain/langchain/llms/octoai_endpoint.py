@@ -1,9 +1,10 @@
 from typing import Any, Dict, List, Mapping, Optional
 
+from langchain_core.pydantic_v1 import Extra, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 
@@ -123,7 +124,7 @@ class OctoAIEndpoint(LLM):
 
             octoai_client = client.Client(token=self.octoai_api_token)
 
-            if "model" in _model_kwargs and "llama-2" in _model_kwargs["model"]:
+            if "model" in _model_kwargs:
                 parameter_payload = _model_kwargs
                 parameter_payload["messages"].append(
                     {"role": "user", "content": prompt}

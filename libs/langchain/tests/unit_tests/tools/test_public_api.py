@@ -14,6 +14,7 @@ _EXPECTED = [
     "AzureCogsImageAnalysisTool",
     "AzureCogsSpeech2TextTool",
     "AzureCogsText2SpeechTool",
+    "AzureCogsTextAnalyticsHealthTool",
     "BaseGraphQLTool",
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",

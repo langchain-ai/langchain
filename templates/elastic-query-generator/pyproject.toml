@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "elastic-query-generator"
 version = "0.0.1"
-description = ""
+description = "Interact with Elasticsearch analytics databases using natural language"
 authors = []
 readme = "README.md"
 
@@ -17,6 +17,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "elastic_query_generator"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "query"
+author = "LangChain"
+integrations = ["Elasticsearch", "OpenAI"]
+tags = ["query-generation"]
 
 [build-system]
 requires = [

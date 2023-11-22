@@ -3,9 +3,9 @@ from datetime import datetime
 from tempfile import TemporaryDirectory
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain.retrievers.tfidf import TFIDFRetriever
-from langchain.schema import Document
 
 
 @pytest.mark.requires("sklearn")

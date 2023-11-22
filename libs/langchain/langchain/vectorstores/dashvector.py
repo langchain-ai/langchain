@@ -11,10 +11,10 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_env
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -29,15 +29,15 @@ class DashVector(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain.vectorstores import dashvector
+            from langchain.vectorstores import DashVector
             from langchain.embeddings.openai import OpenAIEmbeddings
             import dashvector
 
-            client = dashvector.Client.init(api_key="***")
-            client.create("langchain")
+            client = dashvector.Client(api_key="***")
+            client.create("langchain", dimension=1024)
             collection = client.get("langchain")
             embeddings = OpenAIEmbeddings()
-            vectorstore = Dashvector(collection, embeddings.embed_query, "text")
+            vectorstore = DashVector(collection, embeddings.embed_query, "text")
     """
 
     def __init__(
