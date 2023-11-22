@@ -1,5 +1,4 @@
 import importlib
-from typing import Any, cast
 
 from langchain_core.load import Serializable
 
@@ -46,11 +45,13 @@ def test_core_exported_from_langchain() -> None:
         for name in dir(module):
             if name.startswith("_"):
                 continue
-            obj: Any = getattr(module, name)
-            if not isinstance(obj, type) or not issubclass(obj, Serializable):
+            obj = getattr(module, name)
+            if not isinstance(obj, type):
+                continue
+            if not issubclass(obj, Serializable):
                 continue
             obj_name = f"langchain_core.{module_name}.{name}"
-            lc_id = cast(obj, Any).lc_id()
+            lc_id = obj.lc_id()  # type: ignore
             if not lc_id[0] == "langchain":
                 wrong_module.append(f"{obj_name} -> {lc_id}")
                 continue
@@ -77,8 +78,8 @@ def test_core_exported_from_langchain() -> None:
     does_not_exist_message = (
         "\n".join(f"- {m}" for m in does_not_exist) or "None! Passed"
     )
-    assert False, f"""LC ID must be from langchain.x:
+    assert False, f"""LC ID must be from langchain.x ({len(wrong_modules)}):
 {wrong_modules}
 
-The following LC IDs do not exist:
+The following LC IDs do not exist ({len(does_not_exist)}):
 {does_not_exist_message}"""
