@@ -25,11 +25,11 @@ from docugami_kg_rag.helpers.documents import (
     build_summary_mappings,
     get_parent_id_mappings,
 )
+from docugami_kg_rag.helpers.reports import build_report_details
 from docugami_kg_rag.helpers.retrieval import (
     chunks_to_direct_retriever_tool_description,
     docset_name_to_direct_retriever_tool_function_name,
 )
-from docugami_kg_rag.helpers.reports import build_report_details
 
 
 def read_all_local_index_state() -> Dict[str, LocalIndexState]:
@@ -73,14 +73,18 @@ def update_local_index(docset_id: str, name: str, chunks: List[Document]):
         pickle.dump(state, file)
 
 
-def populate_pinecode_index(index_name: str, chunks: List[Document], force: bool = False):
+def populate_pinecode_index(
+    index_name: str, chunks: List[Document], force: bool = False
+):
     # Populate pinecone with the given chunks
 
     if index_name in pinecone.list_indexes():
         if force:
             pinecone.delete_index(name=index_name)
         else:
-            print(f"Reusing existing index {index_name} (use --force option to recreate)")
+            print(
+                f"Reusing existing index {index_name} (use --force option to recreate)"
+            )
             return
 
     # Create index if it does not exist

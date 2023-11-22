@@ -5,10 +5,10 @@ from langchain.schema import Document, StrOutputParser
 from tqdm import tqdm
 
 from docugami_kg_rag.config import (
+    BATCH_SIZE,
     INCLUDE_XML_TAGS,
     LARGE_FRAGMENT_MAX_TEXT_LENGTH,
     LLM,
-    BATCH_SIZE,
 )
 from docugami_kg_rag.helpers.prompts import (
     ASSISTANT_SYSTEM_MESSAGE,
@@ -40,7 +40,11 @@ def build_summary_mappings(docs_by_id: Dict[str, Document]) -> Dict[str, str]:
     # build summaries for all the given documents
 
     summaries: Dict[str, str] = {}
-    format = "text" if not INCLUDE_XML_TAGS else "semantic XML without any namespaces or attributes"
+    format = (
+        "text"
+        if not INCLUDE_XML_TAGS
+        else "semantic XML without any namespaces or attributes"
+    )
 
     # Splitting the documents into batches
     doc_items = list(docs_by_id.items())

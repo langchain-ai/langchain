@@ -74,14 +74,18 @@ def chunks_to_direct_retriever_tool_description(name: str, chunks: List[Document
     return f"Searches for and returns chunks from {name} documents. {summary}."
 
 
-def get_retrieval_tool_for_docset(docset_id: str, docset_state: LocalIndexState) -> Optional[BaseTool]:
+def get_retrieval_tool_for_docset(
+    docset_id: str, docset_state: LocalIndexState
+) -> Optional[BaseTool]:
     # Chunks are in the vector store, and full documents are in the store inside the local state
 
     docset_pinecone_index_name = f"{PINECONE_INDEX}-{docset_id}"
     if docset_pinecone_index_name not in pinecone.list_indexes():
         return None
 
-    chunk_vectorstore = Pinecone.from_existing_index(docset_pinecone_index_name, EMBEDDINGS)
+    chunk_vectorstore = Pinecone.from_existing_index(
+        docset_pinecone_index_name, EMBEDDINGS
+    )
     retriever = FusedSummaryRetriever(
         vectorstore=chunk_vectorstore,
         summarystore=docset_state.doc_summaries_by_id,

@@ -17,8 +17,8 @@ from langchain.tools.render import format_tool_to_openai_function
 from docugami_kg_rag.config import LLM
 from docugami_kg_rag.helpers.indexing import read_all_local_index_state
 from docugami_kg_rag.helpers.prompts import ASSISTANT_SYSTEM_MESSAGE
-from docugami_kg_rag.helpers.retrieval import get_retrieval_tool_for_docset
 from docugami_kg_rag.helpers.reports import get_retrieval_tool_for_report
+from docugami_kg_rag.helpers.retrieval import get_retrieval_tool_for_docset
 
 local_state = read_all_local_index_state()
 
@@ -65,10 +65,16 @@ agent = (
         {
             "input": lambda x: x["input"],  # type: ignore
             "chat_history": lambda x: _format_chat_history(x["chat_history"]),  # type: ignore
-            "agent_scratchpad": lambda x: format_to_openai_functions(x["intermediate_steps"]),  # type: ignore
+            "agent_scratchpad": lambda x: format_to_openai_functions(
+                x["intermediate_steps"]
+            ),  # type: ignore
             "functions": lambda x: [
                 format_tool_to_openai_function(tool)
-                for tool in (docset_retrieval_tools + report_retrieval_tools if x["use_reports"] else docset_retrieval_tools)  # type: ignore
+                for tool in (
+                    docset_retrieval_tools + report_retrieval_tools
+                    if x["use_reports"]
+                    else docset_retrieval_tools
+                )  # type: ignore
             ],
         }
     )
