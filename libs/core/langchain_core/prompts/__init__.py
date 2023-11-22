@@ -23,9 +23,6 @@ from multiple components. Prompt classes and functions make constructing
                                                                       AIMessagePromptTemplate
                                                                       SystemMessagePromptTemplate
 
-    PromptValue --> StringPromptValue
-                    ChatPromptValue
-
 """  # noqa: E501
 from langchain_core.prompts.base import BasePromptTemplate, format_document
 from langchain_core.prompts.chat import (
@@ -33,8 +30,6 @@ from langchain_core.prompts.chat import (
     BaseChatPromptTemplate,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
-    ChatPromptValue,
-    ChatPromptValueConcrete,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
@@ -46,8 +41,14 @@ from langchain_core.prompts.few_shot import (
 from langchain_core.prompts.few_shot_with_templates import FewShotPromptWithTemplates
 from langchain_core.prompts.loading import load_prompt
 from langchain_core.prompts.pipeline import PipelinePromptTemplate
-from langchain_core.prompts.prompt import Prompt, PromptTemplate
-from langchain_core.prompts.string import StringPromptTemplate, StringPromptValue
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompts.string import (
+    StringPromptTemplate,
+    check_valid_template,
+    get_template_variables,
+    jinja2_formatter,
+    validate_jinja2,
+)
 
 __all__ = [
     "AIMessagePromptTemplate",
@@ -55,22 +56,19 @@ __all__ = [
     "BasePromptTemplate",
     "ChatMessagePromptTemplate",
     "ChatPromptTemplate",
-    "ChatPromptValue",
-    "ChatPromptValueConcrete",
     "FewShotPromptTemplate",
     "FewShotPromptWithTemplates",
     "FewShotChatMessagePromptTemplate",
     "HumanMessagePromptTemplate",
     "MessagesPlaceholder",
     "PipelinePromptTemplate",
-    "Prompt",
     "PromptTemplate",
-    "PromptValue",
-    "StringPromptValue",
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
     "load_prompt",
     "format_document",
+    "check_valid_template",
+    "get_template_variables",
+    "jinja2_formatter",
+    "validate_jinja2",
 ]
-
-from langchain_core.prompts.value import PromptValue

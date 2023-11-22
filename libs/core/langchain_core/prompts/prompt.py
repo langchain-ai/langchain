@@ -244,7 +244,3 @@ class PromptTemplate(StringPromptTemplate):
             partial_variables=_partial_variables,
             **kwargs,
         )
-
-
-# For backwards compatibility.
-Prompt = PromptTemplate
