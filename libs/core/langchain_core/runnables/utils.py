@@ -302,12 +302,12 @@ class ConfigurableFieldSpec(NamedTuple):
     """A field that can be configured by the user. It is a specification of a field."""
 
     id: str
-    name: Optional[str]
-    description: Optional[str]
-
-    default: Any
     annotation: Any
-    is_shared: bool
+
+    name: Optional[str] = None
+    description: Optional[str] = None
+    default: Any = None
+    is_shared: bool = False
 
 
 def get_unique_config_specs(
