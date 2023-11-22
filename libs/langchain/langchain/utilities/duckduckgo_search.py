@@ -53,6 +53,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             )
             if ddgs_gen:
                 return [r for r in ddgs_gen]
+        return []
 
     def _ddgs_news(self, query: str) -> List[Dict[str, str]]:
         """Run query through DuckDuckGo news search and return results."""
@@ -68,6 +69,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             )
             if ddgs_gen:
                 return [r for r in ddgs_gen]
+        return []
 
     def run(self, query: str) -> str:
         """Run query through DuckDuckGo and return concatenated results."""
@@ -96,12 +98,12 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 link - The link to the result.
         """
         if self.source == "text":
-            return [
+            results = [
                 {"snippet": r["body"], "title": r["title"], "link": r["href"]}
                 for r in self._ddgs_text(query)
             ]
         elif self.source == "news":
-            return [
+            results = [
                 {"snippet": r["body"], "title": r["title"], "link": r["url"]}
                 for r in self._ddgs_news(query)
             ]
@@ -109,4 +111,6 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             results = []
 
         if results is None:
-            return [{"Result": "No good DuckDuckGo Search Result was found"}]
+            results = [{"Result": "No good DuckDuckGo Search Result was found"}]
+
+        return results
