@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
 from langchain.tools.nasa.prompt import (
@@ -10,6 +8,7 @@ from langchain.tools.nasa.prompt import (
 )
 from langchain.tools.nasa.tool import NasaAction
 from langchain.utilities.nasa import NasaAPIWrapper
+from typing import Dict, List
 
 
 class NasaToolkit(BaseToolkit):
