@@ -29,7 +29,6 @@ def test_openai_embedding_documents_multiple() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_embedding_documents_async_multiple() -> None:
     """Test openai embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
@@ -52,7 +51,6 @@ def test_openai_embedding_query() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_embedding_async_query() -> None:
     """Test openai embeddings."""
     document = "foo bar"

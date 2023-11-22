@@ -2,7 +2,7 @@ import json
 import os
 from unittest import mock
 
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 from requests import Response
 
 from langchain.retrievers.you import YouRetriever

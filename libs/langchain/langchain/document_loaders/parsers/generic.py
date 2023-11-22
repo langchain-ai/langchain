@@ -4,7 +4,7 @@ This module contains some logic to help assemble more sophisticated parsers.
 """
 from typing import Iterator, Mapping, Optional
 
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders.schema import Blob

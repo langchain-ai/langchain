@@ -1,7 +1,7 @@
 """Test Google PaLM Chat API wrapper."""
 
 import pytest
-from langchain_core.schema.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from langchain.chat_models.google_palm import (
     ChatGooglePalm,

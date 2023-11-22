@@ -1,3 +1,3 @@
-from langchain_core.schema.storage import BaseStore
+from langchain_core.stores import BaseStore
 
 __all__ = ["BaseStore"]

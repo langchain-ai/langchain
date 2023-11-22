@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
-from langchain_core.schema.language_model import BaseLanguageModel
 
 from langchain.chains import ConversationChain
 from langchain.chains.base import Chain

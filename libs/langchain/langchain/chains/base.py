@@ -10,6 +10,8 @@ from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 from langchain_core.load.dump import dumpd
+from langchain_core.memory import BaseMemory
+from langchain_core.outputs import RunInfo
 from langchain_core.pydantic_v1 import (
     BaseModel,
     Field,
@@ -18,7 +20,6 @@ from langchain_core.pydantic_v1 import (
     validator,
 )
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
-from langchain_core.schema import RUN_KEY, BaseMemory, RunInfo
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -28,6 +29,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain.schema import RUN_KEY
 
 logger = logging.getLogger(__name__)
 

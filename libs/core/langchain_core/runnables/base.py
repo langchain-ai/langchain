@@ -36,11 +36,11 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
-    from langchain_core.callbacks.tracers.log_stream import RunLog, RunLogPatch
-    from langchain_core.callbacks.tracers.root_listeners import Listener
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
+    from langchain_core.tracers.log_stream import RunLog, RunLogPatch
+    from langchain_core.tracers.root_listeners import Listener
 
 from langchain_core.load.dump import dumpd
 from langchain_core.load.serializable import Serializable
@@ -198,7 +198,7 @@ class Runnable(Generic[Input, Output], ABC):
 
        ... code-block:: python
 
-            from langchain_core.callbacks.tracers import ConsoleCallbackHandler
+            from langchain_core.tracers import ConsoleCallbackHandler
 
             chain.invoke(
                 ...,
@@ -559,7 +559,7 @@ class Runnable(Generic[Input, Output], ABC):
         """
 
         from langchain_core.callbacks.base import BaseCallbackManager
-        from langchain_core.callbacks.tracers.log_stream import (
+        from langchain_core.tracers.log_stream import (
             LogStreamCallbackHandler,
             RunLog,
             RunLogPatch,
@@ -725,7 +725,7 @@ class Runnable(Generic[Input, Output], ABC):
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
         """
-        from langchain_core.callbacks.tracers.root_listeners import RootListenersTracer
+        from langchain_core.tracers.root_listeners import RootListenersTracer
 
         return RunnableBinding(
             bound=self,
@@ -2945,7 +2945,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
         """
-        from langchain_core.callbacks.tracers.root_listeners import RootListenersTracer
+        from langchain_core.tracers.root_listeners import RootListenersTracer
 
         return self.__class__(
             bound=self.bound,

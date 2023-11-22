@@ -1,4 +1,4 @@
-from langchain_core.llm import (
+from langchain_core.language_models.llms import (
     LLM,
     BaseLLM,
     create_base_retry_decorator,
