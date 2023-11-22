@@ -44,7 +44,7 @@ class NasaAPIWrapper(BaseModel):
         elif mode == "get_video_captions_location":
             output = self.get_video_captions_location(query)
         else:
-            output = {"ModeError": f"Got unexpected mode {mode}."}
+            output = f"ModeError: Got unexpected mode {mode}."
 
         try:
             return json.dumps(output)
