@@ -1,5 +1,5 @@
 """Integration test for embedding-based redundant doc filtering."""
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.document_transformers.embeddings_redundant_filter import (
     EmbeddingsClusteringFilter,

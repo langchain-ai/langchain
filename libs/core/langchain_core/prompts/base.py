@@ -1,173 +1,230 @@
-"""BasePrompt schema definition."""
 from __future__ import annotations
 
-import warnings
-from abc import ABC
-from string import Formatter
-from typing import Any, Callable, Dict, List, Literal, Set
+import json
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Mapping, Optional, Type, Union
 
-from langchain_core.schema.messages import BaseMessage, HumanMessage
-from langchain_core.schema.prompt import PromptValue
-from langchain_core.schema.prompt_template import BasePromptTemplate
-from langchain_core.utils.formatting import formatter
+import yaml
+
+from langchain_core.documents import Document
+from langchain_core.output_parsers.base import BaseOutputParser
+from langchain_core.prompt_values import PromptValue
+from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
 
 
-def jinja2_formatter(template: str, **kwargs: Any) -> str:
-    """Format a template using jinja2.
+class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
+    """Base class for all prompt templates, returning a prompt."""
 
-    *Security warning*: As of LangChain 0.0.329, this method uses Jinja2's
-        SandboxedEnvironment by default. However, this sand-boxing should
-        be treated as a best-effort approach rather than a guarantee of security.
-        Do not accept jinja2 templates from untrusted sources as they may lead
-        to arbitrary Python code execution.
+    input_variables: List[str]
+    """A list of the names of the variables the prompt template expects."""
+    input_types: Dict[str, Any] = Field(default_factory=dict)
+    """A dictionary of the types of the variables the prompt template expects.
+    If not provided, all variables are assumed to be strings."""
+    output_parser: Optional[BaseOutputParser] = None
+    """How to parse the output of calling an LLM on this formatted prompt."""
+    partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
+        default_factory=dict
+    )
 
-        https://jinja.palletsprojects.com/en/3.1.x/sandbox/
-    """
-    try:
-        from jinja2.sandbox import SandboxedEnvironment
-    except ImportError:
-        raise ImportError(
-            "jinja2 not installed, which is needed to use the jinja2_formatter. "
-            "Please install it with `pip install jinja2`."
-            "Please be cautious when using jinja2 templates. "
-            "Do not expand jinja2 templates using unverified or user-controlled "
-            "inputs as that can result in arbitrary Python code execution."
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
+        return True
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    @property
+    def OutputType(self) -> Any:
+        from langchain_core.prompt_values import (
+            ChatPromptValueConcrete,
+            StringPromptValue,
         )
 
-    # This uses a sandboxed environment to prevent arbitrary code execution.
-    # Jinja2 uses an opt-out rather than opt-in approach for sand-boxing.
-    # Please treat this sand-boxing as a best-effort approach rather than
-    # a guarantee of security.
-    # We recommend to never use jinja2 templates with untrusted inputs.
-    # https://jinja.palletsprojects.com/en/3.1.x/sandbox/
-    # approach not a guarantee of security.
-    return SandboxedEnvironment().from_string(template).render(**kwargs)
+        return Union[StringPromptValue, ChatPromptValueConcrete]
 
-
-def validate_jinja2(template: str, input_variables: List[str]) -> None:
-    """
-    Validate that the input variables are valid for the template.
-    Issues a warning if missing or extra variables are found.
-
-    Args:
-        template: The template string.
-        input_variables: The input variables.
-    """
-    input_variables_set = set(input_variables)
-    valid_variables = _get_jinja2_variables_from_template(template)
-    missing_variables = valid_variables - input_variables_set
-    extra_variables = input_variables_set - valid_variables
-
-    warning_message = ""
-    if missing_variables:
-        warning_message += f"Missing variables: {missing_variables} "
-
-    if extra_variables:
-        warning_message += f"Extra variables: {extra_variables}"
-
-    if warning_message:
-        warnings.warn(warning_message.strip())
-
-
-def _get_jinja2_variables_from_template(template: str) -> Set[str]:
-    try:
-        from jinja2 import Environment, meta
-    except ImportError:
-        raise ImportError(
-            "jinja2 not installed, which is needed to use the jinja2_formatter. "
-            "Please install it with `pip install jinja2`."
-        )
-    env = Environment()
-    ast = env.parse(template)
-    variables = meta.find_undeclared_variables(ast)
-    return variables
-
-
-DEFAULT_FORMATTER_MAPPING: Dict[str, Callable] = {
-    "f-string": formatter.format,
-    "jinja2": jinja2_formatter,
-}
-
-DEFAULT_VALIDATOR_MAPPING: Dict[str, Callable] = {
-    "f-string": formatter.validate_input_variables,
-    "jinja2": validate_jinja2,
-}
-
-
-def check_valid_template(
-    template: str, template_format: str, input_variables: List[str]
-) -> None:
-    """Check that template string is valid.
-
-    Args:
-        template: The template string.
-        template_format: The template format. Should be one of "f-string" or "jinja2".
-        input_variables: The input variables.
-
-    Raises:
-        ValueError: If the template format is not supported.
-    """
-    if template_format not in DEFAULT_FORMATTER_MAPPING:
-        valid_formats = list(DEFAULT_FORMATTER_MAPPING)
-        raise ValueError(
-            f"Invalid template format. Got `{template_format}`;"
-            f" should be one of {valid_formats}"
-        )
-    try:
-        validator_func = DEFAULT_VALIDATOR_MAPPING[template_format]
-        validator_func(template, input_variables)
-    except KeyError as e:
-        raise ValueError(
-            "Invalid prompt schema; check for mismatched or missing input parameters. "
-            + str(e)
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "PromptInput",
+            **{k: (self.input_types.get(k, str), None) for k in self.input_variables},
         )
 
+    def invoke(
+        self, input: Dict, config: Optional[RunnableConfig] = None
+    ) -> PromptValue:
+        return self._call_with_config(
+            lambda inner_input: self.format_prompt(
+                **{key: inner_input[key] for key in self.input_variables}
+            ),
+            input,
+            config,
+            run_type="prompt",
+        )
 
-def get_template_variables(template: str, template_format: str) -> List[str]:
-    """Get the variables from the template.
-
-    Args:
-        template: The template string.
-        template_format: The template format. Should be one of "f-string" or "jinja2".
-
-    Returns:
-        The variables from the template.
-
-    Raises:
-        ValueError: If the template format is not supported.
-    """
-    if template_format == "jinja2":
-        # Get the variables for the template
-        input_variables = _get_jinja2_variables_from_template(template)
-    elif template_format == "f-string":
-        input_variables = {
-            v for _, v, _, _ in Formatter().parse(template) if v is not None
-        }
-    else:
-        raise ValueError(f"Unsupported template format: {template_format}")
-
-    return sorted(input_variables)
-
-
-class StringPromptValue(PromptValue):
-    """String prompt value."""
-
-    text: str
-    """Prompt text."""
-    type: Literal["StringPromptValue"] = "StringPromptValue"
-
-    def to_string(self) -> str:
-        """Return prompt as string."""
-        return self.text
-
-    def to_messages(self) -> List[BaseMessage]:
-        """Return prompt as messages."""
-        return [HumanMessage(content=self.text)]
-
-
-class StringPromptTemplate(BasePromptTemplate, ABC):
-    """String prompt that exposes the format method, returning a prompt."""
-
+    @abstractmethod
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
-        return StringPromptValue(text=self.format(**kwargs))
+
+    @root_validator()
+    def validate_variable_names(cls, values: Dict) -> Dict:
+        """Validate variable names do not include restricted names."""
+        if "stop" in values["input_variables"]:
+            raise ValueError(
+                "Cannot have an input variable named 'stop', as it is used internally,"
+                " please rename."
+            )
+        if "stop" in values["partial_variables"]:
+            raise ValueError(
+                "Cannot have an partial variable named 'stop', as it is used "
+                "internally, please rename."
+            )
+
+        overall = set(values["input_variables"]).intersection(
+            values["partial_variables"]
+        )
+        if overall:
+            raise ValueError(
+                f"Found overlapping input and partial variables: {overall}"
+            )
+        return values
+
+    def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
+        """Return a partial of the prompt template."""
+        prompt_dict = self.__dict__.copy()
+        prompt_dict["input_variables"] = list(
+            set(self.input_variables).difference(kwargs)
+        )
+        prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
+        return type(self)(**prompt_dict)
+
+    def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
+        # Get partial params:
+        partial_kwargs = {
+            k: v if isinstance(v, str) else v()
+            for k, v in self.partial_variables.items()
+        }
+        return {**partial_kwargs, **kwargs}
+
+    @abstractmethod
+    def format(self, **kwargs: Any) -> str:
+        """Format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+
+        Example:
+
+        .. code-block:: python
+
+            prompt.format(variable1="foo")
+        """
+
+    @property
+    def _prompt_type(self) -> str:
+        """Return the prompt type key."""
+        raise NotImplementedError
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of prompt."""
+        prompt_dict = super().dict(**kwargs)
+        try:
+            prompt_dict["_type"] = self._prompt_type
+        except NotImplementedError:
+            pass
+        return prompt_dict
+
+    def save(self, file_path: Union[Path, str]) -> None:
+        """Save the prompt.
+
+        Args:
+            file_path: Path to directory to save prompt to.
+
+        Example:
+        .. code-block:: python
+
+            prompt.save(file_path="path/prompt.yaml")
+        """
+        if self.partial_variables:
+            raise ValueError("Cannot save prompt with partial variables.")
+
+        # Fetch dictionary to save
+        prompt_dict = self.dict()
+        if "_type" not in prompt_dict:
+            raise NotImplementedError(f"Prompt {self} does not support saving.")
+
+        # Convert file to Path object.
+        if isinstance(file_path, str):
+            save_path = Path(file_path)
+        else:
+            save_path = file_path
+
+        directory_path = save_path.parent
+        directory_path.mkdir(parents=True, exist_ok=True)
+
+        if save_path.suffix == ".json":
+            with open(file_path, "w") as f:
+                json.dump(prompt_dict, f, indent=4)
+        elif save_path.suffix == ".yaml":
+            with open(file_path, "w") as f:
+                yaml.dump(prompt_dict, f, default_flow_style=False)
+        else:
+            raise ValueError(f"{save_path} must be json or yaml")
+
+
+def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
+    """Format a document into a string based on a prompt template.
+
+    First, this pulls information from the document from two sources:
+
+    1. `page_content`:
+        This takes the information from the `document.page_content`
+        and assigns it to a variable named `page_content`.
+    2. metadata:
+        This takes information from `document.metadata` and assigns
+        it to variables of the same name.
+
+    Those variables are then passed into the `prompt` to produce a formatted string.
+
+    Args:
+        doc: Document, the page_content and metadata will be used to create
+            the final string.
+        prompt: BasePromptTemplate, will be used to format the page_content
+            and metadata into the final string.
+
+    Returns:
+        string of the document formatted.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core import Document
+            from langchain_core.prompts import PromptTemplate
+
+            doc = Document(page_content="This is a joke", metadata={"page": "1"})
+            prompt = PromptTemplate.from_template("Page {page}: {page_content}")
+            format_document(doc, prompt)
+            >>> "Page 1: This is a joke"
+    """
+    base_info = {"page_content": doc.page_content, **doc.metadata}
+    missing_metadata = set(prompt.input_variables).difference(base_info)
+    if len(missing_metadata) > 0:
+        required_metadata = [
+            iv for iv in prompt.input_variables if iv != "page_content"
+        ]
+        raise ValueError(
+            f"Document prompt requires documents to have metadata variables: "
+            f"{required_metadata}. Received document with missing metadata: "
+            f"{list(missing_metadata)}."
+        )
+    document_info = {k: base_info[k] for k in prompt.input_variables}
+    return prompt.format(**document_info)

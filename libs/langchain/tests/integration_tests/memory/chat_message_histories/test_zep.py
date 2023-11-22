@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 import pytest
-from langchain_core.schema.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pytest_mock import MockerFixture
 
 from langchain.memory.chat_message_histories import ZepChatMessageHistory
