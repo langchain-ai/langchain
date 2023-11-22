@@ -27,7 +27,7 @@ class ChatPromptAdapter:
     ) -> str:
         if provider == "anthropic":
             prompt = convert_messages_to_prompt_anthropic(messages=messages)
-        if provider == "meta":
+        elif provider == "meta":
             prompt = convert_messages_to_prompt_llama(messages=messages)
         else:
             raise NotImplementedError(
