@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "csv-agent"
 version = "0.0.1"
-description = ""
+description = "Analyze csv data with Pandas and OpenAI"
 authors = []
 readme = "README.md"
 
