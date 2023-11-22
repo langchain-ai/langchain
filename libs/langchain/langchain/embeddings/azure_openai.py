@@ -83,6 +83,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
             "AZURE_OPENAI_AD_TOKEN"
         )
+        # Azure OpenAI embedding models allow a maximum of 16 texts
+        # at a time in each batch
+        # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
+        values["chunk_size"] = min(values["chunk_size"], 16)
         try:
             import openai
 
