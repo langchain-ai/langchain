@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "sql-pgvector"
 version = "0.0.1"
-description = ""
+description = "Use pgvector for combining postgreSQL with semantic search / RAG"
 authors = []
 readme = "README.md"
 
@@ -20,6 +20,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "sql_pgvector"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "sql"
+author = "LangChain"
+integrations = ["OpenAI"]
+tags = ["sql"]
 
 [build-system]
 requires = ["poetry-core"]
