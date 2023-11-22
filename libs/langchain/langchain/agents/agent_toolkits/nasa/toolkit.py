@@ -3,13 +3,14 @@ from typing import Dict, List
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
 from langchain.tools.nasa.prompt import (
-    NASA_SEARCH_PROMPT,
-    NASA_ASSET_PROMPT,
-    NASA_METADATA_PROMPT,
+    NASA_MANIFEST_PROMPT,
     NASA_CAPTIONS_PROMPT,
+    NASA_METADATA_PROMPT,
+    NASA_SEARCH_PROMPT,
 )
 from langchain.tools.nasa.tool import NasaAction
 from langchain.utilities.nasa import NasaAPIWrapper
+
 
 class NasaToolkit(BaseToolkit):
     """Nasa Toolkit."""
@@ -27,7 +28,7 @@ class NasaToolkit(BaseToolkit):
             {
                 "mode": "get_media_metadata_manifest",
                 "name": "Get NASA Image and Video Library media metadata manifest",
-                "description": NASA_ASSET_PROMPT,
+                "description": NASA_MANIFEST_PROMPT,
             },
             {
                 "mode": "get_media_metadata_location",
@@ -38,7 +39,7 @@ class NasaToolkit(BaseToolkit):
                 "mode": "get_video_captions_location",
                 "name": "Get NASA Image and Video Library video captions location",
                 "description": NASA_CAPTIONS_PROMPT,
-            }
+            },
         ]
         tools = [
             NasaAction(

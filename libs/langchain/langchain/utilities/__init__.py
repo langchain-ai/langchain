@@ -211,6 +211,7 @@ def _import_zapier() -> Any:
 
     return ZapierNLAWrapper
 
+
 def _import_nasa() -> Any:
     from langchain.utilities.nasa import NasaAPIWrapper
 

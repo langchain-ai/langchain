@@ -323,10 +323,12 @@ def _import_metaphor_search() -> Any:
 
     return MetaphorSearchResults
 
+
 def _import_nasa_tool() -> Any:
     from langchain.tools.nasa.tool import NasaAction
 
     return NasaAction
+
 
 def _import_office365_create_draft_message() -> Any:
     from langchain.tools.office365.create_draft_message import O365CreateDraftMessage
