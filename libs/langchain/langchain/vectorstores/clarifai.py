@@ -9,8 +9,8 @@ from typing import Any, Iterable, List, Optional, Tuple
 
 import requests
 from google.protobuf.struct_pb2 import Struct
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.vectorstore import VectorStore
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
 from langchain.docstore.document import Document
 
