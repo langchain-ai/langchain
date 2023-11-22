@@ -150,10 +150,10 @@ async def test_model_garden_agenerate(
     assert len(output.generations) == 2
 
 
-def test_vertex_call_trigger_count_tokens() -> None:
-    llm = VertexAI()
-    output = llm.get_num_tokens("Hi")
-    assert output == 2
+def test_vertex_call_count_tokens() -> None:
+    llm = VertexAI(preview=True)
+    output = llm.get_num_tokens("How are you?")
+    assert output == 4
 
 
 @pytest.mark.requires("google.cloud.aiplatform")
@@ -170,7 +170,7 @@ def test_get_num_tokens_be_called_when_using_mapreduce_chain(
             _count_tokens_response={"total_tokens": 2, "total_billable_characters": 2},
         ),
     )
-    llm = VertexAI()
+    llm = VertexAI(preview=True)
     chain = load_summarize_chain(
         llm,
         chain_type="map_reduce",
