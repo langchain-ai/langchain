@@ -19,10 +19,17 @@ class JinaEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
-        # Set Auth
-        jina_api_key = get_from_dict_or_env(
-            values, "jina_api_key", "JINA_API_KEY"
-        )
+        try:
+            jina_api_key = get_from_dict_or_env(
+                values, "jina_api_key", "JINA_API_KEY"
+            )
+        except ValueError as original_exc:
+            try:
+                jina_api_key = get_from_dict_or_env(
+                    values, "jina_auth_token", "JINA_AUTH_TOKEN"
+                )
+            except ValueError:
+                raise original_exc
         session = requests.Session()
         session.headers.update({"Authorization": f"Bearer {jina_api_key}", "Accept-Encoding": "identity", "Content-type": "application/json"})
         values["session"] = session
