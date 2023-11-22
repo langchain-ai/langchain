@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "stepback-qa-prompting"
 version = "0.0.1"
-description = ""
+description = "Use "Step-Back" prompting to improve retrieval"
 authors = []
 readme = "README.md"
 

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "vertexai-chuck-norris"
 version = "0.0.1"
-description = ""
+description = "This template makes jokes about Chuck Norris using Vertex AI PaLM2"
 authors = []
 readme = "README.md"
 

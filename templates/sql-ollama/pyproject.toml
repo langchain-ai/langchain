@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "sql-ollama"
 version = "0.1.0"
-description = ""
+description = "Private QA with a SQL database using natural language and a local LLM"
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]

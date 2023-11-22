@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "solo-performance-prompting-agent"
 version = "0.0.1"
-description = ""
+description = "Agent that transforms a single LLM into a cognitive synergist that has multiple points of view"
 authors = []
 readme = "README.md"
 

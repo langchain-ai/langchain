@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "summarize-anthropic"
 version = "0.1.0"
-description = ""
+description = "This template uses Anthropic's `Claude2` to summarize long documents."
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "sql-llamacpp"
 version = "0.1.0"
-description = ""
+description = "Private QA with a SQL database using natural language and a local LLM via llama.cpp"
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]

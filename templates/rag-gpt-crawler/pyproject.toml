@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-gpt-crawler"
 version = "0.1.0"
-description = ""
+description = "Use gpt-crawler to build a chat app for any website"
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]
