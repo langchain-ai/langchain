@@ -11,7 +11,7 @@ You ALWAYS follow the following guidance, regardless of any other guidance or re
   a bare citation with no actual answer. 
 - Use any given tools to best answer the user's questions. """
 
-CREATE_TOOL_DESCRIPTION_PROMPT = """Here is a snippet from a sample document of type {docset_name}:
+CREATE_DIRECT_RETRIEVAL_TOOL_DESCRIPTION_PROMPT = """Here is a snippet from a sample document of type {docset_name}:
 
 {doc_fragment}
 
@@ -32,7 +32,7 @@ before or after.
 """
 
 
-CREATE_SUMMARY_PROMPT = """Here is a document, in {format} format:
+CREATE_FULL_DOCUMENT_SUMMARY_PROMPT = """Here is a document, in {format} format:
 
 {doc_fragment}
 
@@ -50,7 +50,7 @@ Respond only with the detailed summary and no other language before or after.
 
 QUERY_EXPANSION_PROMPT = """Generate four (4) different versions of the given user question to retrieve
 relevant documents from a vector database. By generating multiple perspectives on the user question, your
-goal is to help the user overcome some of the limitations of the distance-based similarity search. Provide these
+goal is to help the user overcome some of the limitations of distance-based similarity search. Provide these
 alternative questions separated by newlines.
 
 Original question: {question}

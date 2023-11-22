@@ -38,7 +38,7 @@ DOCUMENT_SUMMARY_TEMPLATE: str = """
 
 class FusedSummaryRetriever(BaseRetriever):
     """
-    Retrieve a fused document that consist of pre-calculated summaries.
+    Retrieve a fused document that consists of pre-calculated summaries.
     """
 
     vectorstore: VectorStore
@@ -60,9 +60,7 @@ class FusedSummaryRetriever(BaseRetriever):
     search_type: SearchType = SearchType.similarity
     """Type of search to perform (similarity / mmr)"""
 
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    def _get_relevant_documents(self, query: str, *, run_manager: CallbackManagerForRetrieverRun) -> List[Document]:
         """Get documents relevant to a query.
         Args:
             query: String to find relevant documents for
@@ -71,9 +69,7 @@ class FusedSummaryRetriever(BaseRetriever):
             List of relevant documents
         """
         if self.search_type == SearchType.mmr:
-            sub_docs = self.vectorstore.max_marginal_relevance_search(
-                query, **self.search_kwargs
-            )
+            sub_docs = self.vectorstore.max_marginal_relevance_search(query, **self.search_kwargs)
         else:
             sub_docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
 
@@ -107,9 +103,7 @@ class FusedSummaryRetriever(BaseRetriever):
 
         fused_docs: List[Document] = []
         for element in sorted(fused_doc_elements.values(), key=lambda x: x.rank):
-            fragments_str = "\n\n".join(
-                [d.page_content.strip() for d in element.fragments]
-            )
+            fragments_str = "\n\n".join([d.page_content.strip() for d in element.fragments])
             fused_docs.append(
                 Document(
                     page_content=DOCUMENT_SUMMARY_TEMPLATE.format(
