@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import threading
 import weakref
-from concurrent.futures import Future, ThreadPoolExecutor, wait
+from concurrent.futures import Future, ThreadPoolExecutor, wait, as_completed
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 from uuid import UUID
 
@@ -22,12 +22,33 @@ logger = logging.getLogger(__name__)
 _TRACERS: weakref.WeakSet[EvaluatorCallbackHandler] = weakref.WeakSet()
 
 
-def wait_for_all_evaluators() -> None:
-    """Wait for all tracers to finish."""
+def wait_for_all_evaluators(verbose: bool = True) -> None:
+    """Wait for all tracers to finish using concurrent futures."""
     global _TRACERS
-    for tracer in list(_TRACERS):
-        if tracer is not None:
-            tracer.wait_for_futures()
+    tracers = list(_TRACERS)
+    futures = []
+
+    with ThreadPoolExecutor() as executor:
+        for tracer in tracers:
+            if tracer is not None:
+                # Submit each wait_for_futures call to the executor
+                futures.append(executor.submit(tracer.wait_for_futures))
+
+        if verbose:
+            try:
+                from tqdm.auto import tqdm
+
+                # Iterate over futures as they complete
+                for future in tqdm(
+                    as_completed(futures),
+                    total=len(futures),
+                    desc="Waiting for evaluators to finish",
+                ):
+                    future.result()  # You can handle results or exceptions here
+            except ImportError:
+                # If tqdm is not installed, just wait without progress bar
+                for future in as_completed(futures):
+                    future.result()
 
 
 class EvaluatorCallbackHandler(BaseTracer):

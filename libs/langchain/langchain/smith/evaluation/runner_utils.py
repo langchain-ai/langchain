@@ -996,7 +996,7 @@ def _collect_test_results(
     configs: List[RunnableConfig],
     project_name: str,
 ) -> TestResult:
-    wait_for_all_evaluators()
+    wait_for_all_evaluators(verbose=True)
     all_eval_results = {}
     all_execution_time = {}
     for c in configs:
