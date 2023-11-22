@@ -98,7 +98,7 @@ pip install gigachain
 Основной особенностью библиотеки является наличие модуля [`gigachat`](#описание-объекта-gigachain), который позволяет обращаться к нейросетевой модели GigaChat.
 
 > [!NOTE]
-# > О том как получить авторизационные данные для доступа к GigaChat читайте в [официальной документации](https://developers.sber.ru/docs/ru/gigachat/api/integration).
+> О том как получить авторизационные данные для доступа к GigaChat читайте в [официальной документации](https://developers.sber.ru/docs/ru/gigachat/api/integration).
 > Инструкцию о получении ключей доступа к GigaChat вы можете посмотреть [здесь](docs/extras/integrations/chat/README.md).
 
 Вот простой пример работы с чатом с помощью модуля:
@@ -109,7 +109,7 @@ from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
 
 # Авторизация в сервисе GigaChat
-chat = GigaChat(credentials=..., verify_ssl_certs=False)
+chat = GigaChat(credentials=<авторизационные_данные>, verify_ssl_certs=False)
 
 messages = [
     SystemMessage(
