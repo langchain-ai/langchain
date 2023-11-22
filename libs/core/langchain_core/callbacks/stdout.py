@@ -1,10 +1,12 @@
 """Callback Handler that prints to std out."""
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.outputs import LLMResult
 from langchain_core.utils import print_text
+
+if TYPE_CHECKING:
+    from langchain_core.agents import AgentAction, AgentFinish
+    from langchain_core.outputs import LLMResult
 
 
 class StdOutCallbackHandler(BaseCallbackHandler):

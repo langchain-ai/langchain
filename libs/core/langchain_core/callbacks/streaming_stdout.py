@@ -1,11 +1,13 @@
 """Callback Handler streams to stdout on new llm token."""
 import sys
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 
-from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.messages import BaseMessage
-from langchain_core.outputs import LLMResult
+
+if TYPE_CHECKING:
+    from langchain_core.agents import AgentAction, AgentFinish
+    from langchain_core.messages import BaseMessage
+    from langchain_core.outputs import LLMResult
 
 
 class StreamingStdOutCallbackHandler(BaseCallbackHandler):
