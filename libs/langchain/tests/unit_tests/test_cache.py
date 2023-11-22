@@ -4,11 +4,8 @@ from typing import Dict, Generator, List, Union
 import pytest
 from _pytest.fixtures import FixtureRequest
 from langchain_core.load import dumps
-from langchain_core.schema import (
-    ChatGeneration,
-    Generation,
-)
-from langchain_core.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration, Generation
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 

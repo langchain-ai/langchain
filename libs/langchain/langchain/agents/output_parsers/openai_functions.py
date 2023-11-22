@@ -3,17 +3,13 @@ import json
 from json import JSONDecodeError
 from typing import List, Union
 
-from langchain_core.schema import (
-    AgentAction,
-    AgentFinish,
-    OutputParserException,
-)
-from langchain_core.schema.agent import AgentActionMessageLog
-from langchain_core.schema.messages import (
+from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
+from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
 )
-from langchain_core.schema.output import ChatGeneration, Generation
+from langchain_core.outputs import ChatGeneration, Generation
 
 from langchain.agents.agent import AgentOutputParser
 

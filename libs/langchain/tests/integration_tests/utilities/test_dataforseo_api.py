@@ -1,6 +1,4 @@
 """Integration test for Dataforseo API Wrapper."""
-import pytest
-
 from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 
 
@@ -44,14 +42,12 @@ def test_events_call() -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_async_call() -> None:
     search = DataForSeoAPIWrapper()
     output = await search.arun("pi value")
     assert "3.14159" in output
 
 
-@pytest.mark.asyncio
 async def test_async_results() -> None:
     search = DataForSeoAPIWrapper(json_result_types=["answer_box"])
     output = await search.aresults("New York timezone")

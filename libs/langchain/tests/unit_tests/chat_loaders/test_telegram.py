@@ -5,7 +5,7 @@ import zipfile
 from typing import Sequence
 
 import pytest
-from langchain_core.schema import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from langchain.chat_loaders import telegram, utils
 

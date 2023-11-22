@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
-from langchain_core.schema.embeddings import Embeddings
+from langchain_core.embeddings import Embeddings
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever

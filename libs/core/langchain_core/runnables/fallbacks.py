@@ -66,7 +66,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             # response.
 
             from langchain_core.prompts import PromptTemplate
-            from langchain_core.schema.output_parser import StrOutputParser
+            from langchain_core.output_parser import StrOutputParser
             from langchain_core.runnables import RunnableLambda
 
             def when_all_is_lost(inputs):
