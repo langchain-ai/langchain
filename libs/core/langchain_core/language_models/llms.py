@@ -382,6 +382,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
             try:
                 generation: Optional[GenerationChunk] = None
@@ -433,6 +434,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
             try:
                 generation: Optional[GenerationChunk] = None
