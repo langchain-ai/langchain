@@ -1,12 +1,12 @@
 # flake8: noqa
 NASA_SEARCH_PROMPT = """
-    This tool is a wrapper around NASAS's search API, useful when you need to seacrh through NASA's Image and Video Library. 
-    The input to this tool is a query specified by the user, and will be passed into NASAS's `search` function.
+    This tool is a wrapper around NASA's search API, useful when you need to search through NASA's Image and Video Library. 
+    The input to this tool is a query specified by the user, and will be passed into NASA's `search` function.
     
     At least one parameter must be provided.
 
-    There are optional paramaters that can be passed by the user based on their query
-    specifications.  Each item in this list contains pound sign (#) separated values, the first value is the parameter name, 
+    There are optional parameters that can be passed by the user based on their query
+    specifications. Each item in this list contains pound sign (#) separated values, the first value is the parameter name, 
     the second value is the datatype and the third value is the description: {{
 
         - q#string#Free text search terms to compare to all indexed metadata.
@@ -41,40 +41,42 @@ NASA_SEARCH_PROMPT = """
     Example Input: {{"year_start":  "2002", "year_end":  "2010", "location": "Kennedy Center}}
     """
 
-NASA_ASSET_PROMPT = """
-    This tool is a wrapper around NASA's media asset manifest API, useful when you need to retrieve a media 
-    assets manifest. The input is the NASA ID of the media asset.
 
-    For example, if you want to retrieve the manifest of a media asset, you would pass in the following dictionary:
-    {{
-        "nasa_id": "12345"
-    }}
-    This will return asset manifest results in the form of Collection+JSON file.
+NASA_MANIFEST_PROMPT = """
+    This tool is a wrapper around NASA's media asset manifest API, useful when you need to retrieve a media 
+    asset's manifest. The input to this tool should include a string representing a NASA ID for a media asset that the user is trying to get the media asset manifest data for. The NASA ID will be passed as a string into NASA's `get_media_metadata_manifest` function.
+
+    The following list are some examples of NASA IDs for a media asset that you can use to better extract the NASA ID from the input string to the tool.
+    - GSFC_20171102_Archive_e000579
+    - Launch-Sound_Delta-PAM-Random-Commentary
+    - iss066m260341519_Expedition_66_Education_Inflight_with_Random_Lake_School_District_220203
+    - 6973610
+    - GRC-2020-CM-0167.4
+    - Expedition_55_Inflight_Japan_VIP_Event_May_31_2018_659970
+    - NASA 60th_SEAL_SLIVER_150DPI
 """
 
 NASA_METADATA_PROMPT = """
-    This tool is a wrapper around NASA's media asset metadata location API. Useful when you need to 
-    access the media assets metadata. It provides the location to access this metadata. The input 
-    is the NASA ID of the media asset. 
+    This tool is a wrapper around NASA's media asset metadata location API, useful when you need to retrieve the media asset's metadata. The input to this tool should include a string representing a NASA ID for a media asset that the user is trying to get the media asset metadata location for. The NASA ID will be passed as a string into NASA's `get_media_metadata_manifest` function.
 
-    For example, if you want to retrieve the location of the media assets metadata, create a similair 
-    request as the following:
-    {{
-        "nasa_id": "9876"
-    }}
-    This will return a JSON file at the location specified by the reponse to access the media assets metadata. 
+    The following list are some examples of NASA IDs for a media asset that you can use to better extract the NASA ID from the input string to the tool.
+    - GSFC_20171102_Archive_e000579
+    - Launch-Sound_Delta-PAM-Random-Commentary
+    - iss066m260341519_Expedition_66_Education_Inflight_with_Random_Lake_School_District_220203
+    - 6973610
+    - GRC-2020-CM-0167.4
+    - Expedition_55_Inflight_Japan_VIP_Event_May_31_2018_659970
+    - NASA 60th_SEAL_SLIVER_150DPI
 """
 
 NASA_CAPTIONS_PROMPT = """
     This tool is a wrapper around NASA's video assests caption location API, useful when you need 
-    to retrieve the location of the captions of a specific video. The input is the NASA ID of the 
-    video asset.
+    to retrieve the location of the captions of a specific video. The input to this tool should include a string representing a NASA ID for a video media asset that the user is trying to get the get the location of the captions for. The NASA ID will be passed as a string into NASA's `get_media_metadata_manifest` function.
 
-    For example, if you want to retrieve the captions of a video, create a similar request as the 
-    following: 
-    {{
-        "nasa_id": "5678"
-    }} 
-    This will return a SRT or VTT file at the location specified by the response to access the videos captions. 
+    The following list are some examples of NASA IDs for a video asset that you can use to better extract the NASA ID from the input string to the tool.
+    - 2017-08-09 - Video File RS-25 Engine Test
+    - 20180415-TESS_Social_Briefing
+    - 201_TakingWildOutOfWildfire
+    - 2022-H1_V_EuropaClipper-4
+    - 2022_0429_Recientemente
 """
-

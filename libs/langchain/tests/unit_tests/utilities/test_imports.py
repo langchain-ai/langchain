@@ -19,6 +19,7 @@ EXPECTED_ALL = [
     "LambdaWrapper",
     "MaxComputeAPIWrapper",
     "MetaphorSearchAPIWrapper",
+    "NasaAPIWrapper",
     "OpenWeatherMapAPIWrapper",
     "Portkey",
     "PowerBIDataset",
