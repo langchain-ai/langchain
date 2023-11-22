@@ -29,4 +29,3 @@ def test_get_video_captions_location() -> None:
     nasa = NasaAPIWrapper()
     output = nasa.run("get_video_captions_location", '172_ISS-Slosh.sr')
     assert output is not None
-    
