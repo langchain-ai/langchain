@@ -1,4 +1,4 @@
-from langchain_core.prompts import __all__
+from langchain.prompts import __all__
 
 EXPECTED_ALL = [
     "AIMessagePromptTemplate",
@@ -8,19 +8,19 @@ EXPECTED_ALL = [
     "ChatPromptTemplate",
     "FewShotPromptTemplate",
     "FewShotPromptWithTemplates",
-    "FewShotChatMessagePromptTemplate",
-    "format_document",
     "HumanMessagePromptTemplate",
+    "LengthBasedExampleSelector",
+    "MaxMarginalRelevanceExampleSelector",
     "MessagesPlaceholder",
+    "NGramOverlapExampleSelector",
     "PipelinePromptTemplate",
+    "Prompt",
     "PromptTemplate",
+    "SemanticSimilarityExampleSelector",
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
     "load_prompt",
-    "check_valid_template",
-    "get_template_variables",
-    "jinja2_formatter",
-    "validate_jinja2",
+    "FewShotChatMessagePromptTemplate",
 ]
 
 
