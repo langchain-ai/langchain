@@ -201,6 +201,7 @@ types-toml = "^0.10.8.1"
 types-redis = "^4.3.21.6"
 types-pytz = "^2023.3.0.0"
 types-chardet = "^5.0.4.6"
+types-tqdm = "^4.66.0.4"
 mypy-protobuf = "^3.0.0"
 
 [tool.poetry.group.typing.dependencies]
