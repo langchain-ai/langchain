@@ -1031,7 +1031,11 @@ def test_configurable_fields_prefix_keys() -> None:
                 "helpful": "How can I help you?",
             },
             default=["hello", "bye"],
-        )
+        ),
+        sleep=ConfigurableField(
+            id="chat_sleep",
+            is_shared=True,
+        ),
     )
     fake_llm = (
         FakeListLLM(responses=["a"])
@@ -1090,6 +1094,11 @@ def test_configurable_fields_prefix_keys() -> None:
                 "title": "Configurable",
                 "type": "object",
                 "properties": {
+                    # not prefixed because marked as shared
+                    "chat_sleep": {
+                        "title": "Chat Sleep",
+                        "type": "number",
+                    },
                     "llm": {
                         "title": "LLM",
                         "default": "default",

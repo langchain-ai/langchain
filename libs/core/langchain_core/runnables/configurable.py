@@ -220,6 +220,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                     annotation=spec.annotation
                     or self.default.__fields__[field_name].annotation,
                     default=getattr(self.default, field_name),
+                    is_shared=spec.is_shared,
                 )
                 if isinstance(spec, ConfigurableField)
                 else make_options_spec(
@@ -324,6 +325,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                     description=self.which.description,
                     annotation=which_enum,
                     default=self.default_key,
+                    is_shared=self.which.is_shared,
                 ),
             ]
             # config specs of the default option
@@ -375,12 +377,17 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 def prefix_config_spec(
     spec: ConfigurableFieldSpec, prefix: str
 ) -> ConfigurableFieldSpec:
-    return ConfigurableFieldSpec(
-        id=f"{prefix}/{spec.id}",
-        name=spec.name,
-        description=spec.description,
-        annotation=spec.annotation,
-        default=spec.default,
+    return (
+        ConfigurableFieldSpec(
+            id=f"{prefix}/{spec.id}",
+            name=spec.name,
+            description=spec.description,
+            annotation=spec.annotation,
+            default=spec.default,
+            is_shared=spec.is_shared,
+        )
+        if not spec.is_shared
+        else spec
     )
 
 
@@ -406,6 +413,7 @@ def make_options_spec(
             description=spec.description or description,
             annotation=enum,
             default=spec.default,
+            is_shared=spec.is_shared,
         )
     else:
         return ConfigurableFieldSpec(
@@ -414,4 +422,5 @@ def make_options_spec(
             description=spec.description or description,
             annotation=Sequence[enum],  # type: ignore[valid-type]
             default=spec.default,
+            is_shared=spec.is_shared,
         )

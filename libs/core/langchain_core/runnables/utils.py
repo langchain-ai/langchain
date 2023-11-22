@@ -257,6 +257,7 @@ class ConfigurableField(NamedTuple):
     name: Optional[str] = None
     description: Optional[str] = None
     annotation: Optional[Any] = None
+    is_shared: bool = False
 
     def __hash__(self) -> int:
         return hash((self.id, self.annotation))
@@ -271,6 +272,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
 
     name: Optional[str] = None
     description: Optional[str] = None
+    is_shared: bool = False
 
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), self.default))
@@ -285,6 +287,7 @@ class ConfigurableFieldMultiOption(NamedTuple):
 
     name: Optional[str] = None
     description: Optional[str] = None
+    is_shared: bool = False
 
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), tuple(self.default)))
@@ -304,6 +307,7 @@ class ConfigurableFieldSpec(NamedTuple):
 
     default: Any
     annotation: Any
+    is_shared: bool
 
 
 def get_unique_config_specs(
