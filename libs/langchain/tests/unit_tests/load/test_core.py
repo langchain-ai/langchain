@@ -74,12 +74,12 @@ def test_core_exported_from_langchain() -> None:
     if len(wrong_module) == 0 and len(does_not_exist) == 0:
         return
 
-    wrong_modules = "\n".join(f"- {m}" for m in wrong_module) or "None! Passed"
+    wrong_module_message = "\n".join(f"- {m}" for m in wrong_module) or "None! Passed"
     does_not_exist_message = (
         "\n".join(f"- {m}" for m in does_not_exist) or "None! Passed"
     )
-    assert False, f"""LC ID must be from langchain.x ({len(wrong_modules)}):
-{wrong_modules}
+    assert False, f"""LC ID must be from langchain.x ({len(wrong_module)}):
+{wrong_module_message}
 
 The following LC IDs do not exist ({len(does_not_exist)}):
 {does_not_exist_message}"""
