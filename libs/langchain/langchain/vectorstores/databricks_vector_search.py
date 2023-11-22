@@ -3,9 +3,9 @@ import logging
 import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VST, VectorStore
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VST, VectorStore
 
 if TYPE_CHECKING:
     from databricks.vector_search.client import VectorSearchIndex
@@ -21,7 +21,7 @@ class DatabricksVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain.schema.vectorstore import DatabricksVectorSearch
+            from langchain.vectorstores import DatabricksVectorSearch
             from databricks.vector_search.client import VectorSearchClient
 
             vs_client = VectorSearchClient()
@@ -54,7 +54,7 @@ class DatabricksVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain.schema.vectorstore import DatabricksVectorSearch
+            from langchain.vectorstores import DatabricksVectorSearch
             from databricks.vector_search.client import VectorSearchClient
             from langchain.embeddings.openai import OpenAIEmbeddings
 
@@ -75,7 +75,7 @@ class DatabricksVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain.schema.vectorstore import DatabricksVectorSearch
+            from langchain.vectorstores import DatabricksVectorSearch
             from databricks.vector_search.client import VectorSearchClient
             from langchain.embeddings.openai import OpenAIEmbeddings
 
