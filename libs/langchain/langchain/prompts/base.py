@@ -1,3 +1,4 @@
+from langchain_core.prompt_values import StringPromptValue
 from langchain_core.prompts import (
     BasePromptTemplate,
     StringPromptTemplate,
@@ -6,6 +7,7 @@ from langchain_core.prompts import (
     jinja2_formatter,
     validate_jinja2,
 )
+from langchain_core.prompts.string import _get_jinja2_variables_from_template
 
 __all__ = [
     "jinja2_formatter",
@@ -14,4 +16,6 @@ __all__ = [
     "get_template_variables",
     "StringPromptTemplate",
     "BasePromptTemplate",
+    "StringPromptValue",
+    "_get_jinja2_variables_from_template",
 ]
