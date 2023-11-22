@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import inspect
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Dict,
@@ -39,9 +42,11 @@ from langchain_core.outputs import (
     LLMResult,
     RunInfo,
 )
-from langchain_core.prompts import ChatPromptValue, PromptValue, StringPromptValue
+from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.runnables import RunnableConfig
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
 
 
 def _get_verbosity() -> bool:

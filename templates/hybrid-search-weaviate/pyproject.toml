@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "hybrid-search-weaviate"
 version = "0.1.0"
-description = ""
+description = "Improve accuracy and relevance with Weaviate hybrid search"
 authors = ["Erika Cardenas <erika@weaviate.io>"]
 readme = "README.md"
 
@@ -23,6 +23,12 @@ version = "^1.0.0"
 [tool.langserve]
 export_module = "hybrid_search_weaviate"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "search"
+author = "Weaviate"
+integrations = ["Weaviate", "OpenAI"]
+tags = ["hybrid-search", "vectordb"]
 
 [build-system]
 requires = [

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-gpt-crawler"
 version = "0.1.0"
-description = ""
+description = "Use gpt-crawler to build a chat app for any website"
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]
@@ -20,6 +20,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "rag_gpt_crawler"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Google"
+integrations = ["OpenAI", "Chromadb"]
+tags = ["vectordbs"]
 
 [build-system]
 requires = [

@@ -4,13 +4,12 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 from uuid import UUID
 
 from tenacity import RetryCallState
 
-from langchain_core.callbacks import BaseCallbackHandler
-from langchain_core.documents import Document
+from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
 from langchain_core.outputs import (
@@ -20,6 +19,9 @@ from langchain_core.outputs import (
     LLMResult,
 )
 from langchain_core.tracers.schemas import Run
+
+if TYPE_CHECKING:
+    from langchain_core.documents import Document
 
 logger = logging.getLogger(__name__)
 
