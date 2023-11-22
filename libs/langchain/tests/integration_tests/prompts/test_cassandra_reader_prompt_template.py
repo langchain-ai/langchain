@@ -2,6 +2,7 @@
 from typing import Callable, Iterable, Tuple
 import pytest
 
+import cassio
 from cassandra.cluster import Cluster, Session
 
 from langchain.prompts.database import CassandraReaderPromptTemplate
@@ -77,6 +78,7 @@ def test_cassandra_reader_prompt_template(extractor_tables: Tuple[Session, str, 
     )
     assert result == expected
 
+
 @pytest.mark.usefixtures("extractor_tables")
 def test_cassandra_reader_prompt_template_admitnulls(extractor_tables: Tuple[Session, str, str, str]) -> None:
     session, keyspace, p_table, c_table = extractor_tables
@@ -110,3 +112,19 @@ def test_cassandra_reader_prompt_template_admitnulls(extractor_tables: Tuple[Ses
     )
     result2 = prompt_template2.format(city="milanx", name="albax")
     assert result2 == "r_age_t=None r_age_t_d=999 r_age=None"
+
+
+@pytest.mark.usefixtures("extractor_tables")
+def test_cassandra_reader_prompt_template_cassioinit(extractor_tables: Tuple[Session, str, str, str]) -> None:
+    session, keyspace, p_table, _ = extractor_tables
+    cassio.init(session=session,keyspace=keyspace)
+    #
+    prompt_template_string = ("r_age={r_age}")
+    f_mapper = {"r_age": (p_table, "age")}
+    prompt_template = CassandraReaderPromptTemplate(
+        template=prompt_template_string,
+        field_mapper=f_mapper,
+    )
+    result = prompt_template.format(city="milan", name="alba")
+    expected = ("r_age=11")
+    assert result == expected
