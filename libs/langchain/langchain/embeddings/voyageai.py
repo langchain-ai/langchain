@@ -179,7 +179,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         return self._get_embeddings([text], input_type="query")[0]
 
     def embed_general_texts(
-        self, texts: List[str], input_type: Optional[str] = None
+        self, texts: List[str], *, input_type: Optional[str] = None
     ) -> List[List[float]]:
         """Call out to Voyage Embedding endpoint for embedding general text.
 
