@@ -48,6 +48,11 @@ class StringPromptValue(PromptValue):
         """Return prompt as messages."""
         return [HumanMessage(content=self.text)]
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        # For backwards compatibility.
+        return ["langchain", "prompts", "base"]
+
 
 class ChatPromptValue(PromptValue):
     """Chat prompt value.
@@ -65,6 +70,11 @@ class ChatPromptValue(PromptValue):
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as a list of messages."""
         return list(self.messages)
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        # For backwards compatibility.
+        return ["langchain", "prompts", "chat"]
 
 
 class ChatPromptValueConcrete(ChatPromptValue):
