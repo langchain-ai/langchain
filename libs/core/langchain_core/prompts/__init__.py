@@ -41,7 +41,7 @@ from langchain_core.prompts.few_shot import (
 from langchain_core.prompts.few_shot_with_templates import FewShotPromptWithTemplates
 from langchain_core.prompts.loading import load_prompt
 from langchain_core.prompts.pipeline import PipelinePromptTemplate
-from langchain_core.prompts.prompt import Prompt, PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
     StringPromptTemplate,
     check_valid_template,
@@ -62,7 +62,6 @@ __all__ = [
     "HumanMessagePromptTemplate",
     "MessagesPlaceholder",
     "PipelinePromptTemplate",
-    "Prompt",
     "PromptTemplate",
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
