@@ -10,6 +10,7 @@ def test_media_search() -> None:
     assert output is not None
     assert "collection" in output
 
+
 def test_get_media_metadata_manifest() -> None:
     """Test for retrieving media metadata manifest from NASA Image and Video Library"""
     nasa = NasaAPIWrapper()
