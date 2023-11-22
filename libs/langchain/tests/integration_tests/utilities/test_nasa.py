@@ -13,19 +13,19 @@ def test_media_search() -> None:
 def test_get_media_metadata_manifest() -> None:
     """Test for retrieving media metadata manifest from NASA Image and Video Library"""
     nasa = NasaAPIWrapper()
-    output = nasa.run("get_media_metadata_manifest", '2022_0707_Recientemente')
+    output = nasa.run("get_media_metadata_manifest", "2022_0707_Recientemente")
     assert output is not None
 
 
 def test_get_media_metadata_location() -> None:
     """Test for retrieving media metadata location from NASA Image and Video Library"""
     nasa = NasaAPIWrapper()
-    output = nasa.run("get_media_metadata_location", 'as11-40-5874')
+    output = nasa.run("get_media_metadata_location", "as11-40-5874")
     assert output is not None
 
 
 def test_get_video_captions_location() -> None:
     """Test for retrieving video captions location from NASA Image and Video Library"""
     nasa = NasaAPIWrapper()
-    output = nasa.run("get_video_captions_location", '172_ISS-Slosh.sr')
+    output = nasa.run("get_video_captions_location", "172_ISS-Slosh.sr")
     assert output is not None
