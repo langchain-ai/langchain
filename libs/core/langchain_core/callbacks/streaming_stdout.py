@@ -1,4 +1,6 @@
 """Callback Handler streams to stdout on new llm token."""
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING, Any, Dict, List
 

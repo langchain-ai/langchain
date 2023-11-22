@@ -1,4 +1,6 @@
 """Callback Handler that prints to std out."""
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.callbacks.base import BaseCallbackHandler
