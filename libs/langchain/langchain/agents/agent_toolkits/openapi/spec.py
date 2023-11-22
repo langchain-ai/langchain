@@ -1,4 +1,4 @@
-"""Quick and dirty representation for OpenAPI specs."""
+"""Reduced representation for OpenAPI specs."""
 
 from dataclasses import dataclass
 from typing import List, Tuple
@@ -10,7 +10,7 @@ from langchain.utils.json_schema import dereference_refs
 class ReducedOpenAPISpec:
     """A reduced OpenAPI spec.
 
-    This is a quick and dirty representation for OpenAPI specs.
+    This is a reduced representation for OpenAPI specs.
 
     Attributes:
         servers: The servers in the spec.
