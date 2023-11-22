@@ -12,7 +12,7 @@ from langchain.tools.cube.tool import (
     LoadCubeTool,
     MetaInformationCubeTool,
 )
-from langchain.utilities.cube import Cube, Query
+from langchain.utilities.cube import CubeAPIWrapper, Query
 
 CUBE_API_URL = "http://cube-api:4000"
 CUBE_API_TOKEN = "TOKEN"
@@ -174,7 +174,7 @@ def test_load_cube_tool(mocked_responses: responses.RequestsMock) -> None:
     mocked_mata(mocked_responses)
     mocked_load(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
     )
@@ -201,7 +201,7 @@ def test_meta_information_cube_tool(mocked_responses: responses.RequestsMock) ->
     """Test the meta information cube tool."""
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
     )
@@ -227,7 +227,7 @@ def test_list_cube_tool(mocked_responses: responses.RequestsMock) -> None:
     """Test the list cube tool."""
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
     )

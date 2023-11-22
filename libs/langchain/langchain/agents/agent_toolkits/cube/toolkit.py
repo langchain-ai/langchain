@@ -10,7 +10,7 @@ from langchain.tools.cube.tool import (
     LoadCubeTool,
     MetaInformationCubeTool,
 )
-from langchain.utilities.cube import Cube
+from langchain.utilities.cube import CubeAPIWrapper
 
 
 class CubeToolkit(BaseToolkit):
@@ -27,7 +27,7 @@ class CubeToolkit(BaseToolkit):
          for more information.
     """
 
-    cube: Cube = Field(exclude=True)
+    cube: CubeAPIWrapper = Field(exclude=True)
     llm: BaseLanguageModel = Field(exclude=True)
     examples: Optional[str] = None
 

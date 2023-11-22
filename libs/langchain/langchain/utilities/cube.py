@@ -105,8 +105,8 @@ class Query(BaseModel):
     )
 
 
-class Cube:
-    """Cube Client.
+class CubeAPIWrapper:
+    """Wrapper around Cube API.
 
     *Security Note*: This Cube Client interacts with an external service.
 

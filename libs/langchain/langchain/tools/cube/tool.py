@@ -9,7 +9,7 @@ from langchain.output_parsers import PydanticOutputParser
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import OutputParserException
 from langchain.tools.base import BaseTool
-from langchain.utilities.cube import Cube, Query
+from langchain.utilities.cube import CubeAPIWrapper, Query
 
 LOAD_CUBE_INPUT_FORMAT_INSTRUCTIONS = """The input should be formatted as a JSON instance that conforms to the JSON schema below.
 As an example, for the schema {{"properties": {{"foo": {{"title": "Foo", "description": "a list of strings", "type": "array", "items": {{"type": "string"}}}}}}, "required": ["foo"]}}
@@ -23,7 +23,7 @@ Here is the input schema:
 class BaseCubeTool(BaseModel):
     """Base tool for interacting with a Cube Semantic Layer."""
 
-    cube: Cube = Field(exclude=True)
+    cube: CubeAPIWrapper = Field(exclude=True)
 
     class Config(BaseTool.Config):
         pass

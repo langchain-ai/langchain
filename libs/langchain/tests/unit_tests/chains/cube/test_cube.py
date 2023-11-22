@@ -9,7 +9,7 @@ import responses
 from langchain.chains import create_cube_query_chain
 from langchain.pydantic_v1 import SecretStr
 from langchain.utilities.cube import (
-    Cube,
+    CubeAPIWrapper,
     Filter,
     Granularity,
     Operator,
@@ -180,7 +180,7 @@ def test_create_cube_query_chain(mocked_responses: responses.RequestsMock) -> No
 
     llm = FakeLLM(queries=QUERIES)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
     )

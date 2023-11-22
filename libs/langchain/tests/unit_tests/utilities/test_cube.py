@@ -6,7 +6,7 @@ import pytest
 import responses
 
 from langchain.pydantic_v1 import SecretStr
-from langchain.utilities.cube import Cube
+from langchain.utilities.cube import CubeAPIWrapper
 
 CUBE_API_URL = "http://cube-api:4000"
 CUBE_API_TOKEN = "TOKEN"
@@ -86,7 +86,7 @@ def mocked_mata(mocked_responses: responses.RequestsMock) -> None:
 def test_meta_information(mocked_responses: responses.RequestsMock) -> None:
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
     )
@@ -97,7 +97,7 @@ def test_meta_information(mocked_responses: responses.RequestsMock) -> None:
 def test_model_meta_information(mocked_responses: responses.RequestsMock) -> None:
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
     )
@@ -134,7 +134,7 @@ def test_model_meta_information(mocked_responses: responses.RequestsMock) -> Non
 def test_get_model_meta_information(mocked_responses: responses.RequestsMock) -> None:
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
     )
@@ -158,7 +158,7 @@ def test_get_model_meta_information(mocked_responses: responses.RequestsMock) ->
 def test_get_usable_model_names(mocked_responses: responses.RequestsMock) -> None:
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
     )
@@ -171,7 +171,7 @@ def test_get_usable_model_names_with_ignore_models(
 ) -> None:
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
         ignore_models=["Users"],
@@ -185,7 +185,7 @@ def test_get_usable_model_names_with_include_models(
 ) -> None:
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
         include_models=["Users"],
@@ -197,7 +197,7 @@ def test_get_usable_model_names_with_include_models(
 def test_get_usable_models(mocked_responses: responses.RequestsMock) -> None:
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
     )
@@ -216,7 +216,7 @@ def test_get_usable_models_with_ignore_models(
 ) -> None:
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
         ignore_models=["Users"],
@@ -235,7 +235,7 @@ def test_get_usable_models_with_include_models(
 ) -> None:
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
         include_models=["Users"],
@@ -268,7 +268,7 @@ def test_get_model_meta_information_with_custom_model_info(
 | Address | User Address~~ | users.address | string |
 """
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
         custom_model_info={

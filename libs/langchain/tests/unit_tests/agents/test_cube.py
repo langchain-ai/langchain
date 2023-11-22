@@ -9,7 +9,7 @@ import responses
 from langchain.agents import create_cube_agent
 from langchain.agents.agent_toolkits import CubeToolkit
 from langchain.pydantic_v1 import SecretStr
-from langchain.utilities.cube import Cube, Query
+from langchain.utilities.cube import CubeAPIWrapper, Query
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 CUBE_API_URL = "http://cube-api:4000"
@@ -219,7 +219,7 @@ def test_create_cube_agent(mocked_responses: responses.RequestsMock) -> None:
 
     mocked_mata(mocked_responses)
 
-    cube = Cube(
+    cube = CubeAPIWrapper(
         cube_api_url=CUBE_API_URL,
         cube_api_token=SecretStr(CUBE_API_TOKEN),
     )

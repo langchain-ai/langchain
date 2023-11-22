@@ -6,7 +6,7 @@ from langchain.output_parsers import PydanticOutputParser
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 from langchain.schema.runnable import Runnable, RunnableParallel
-from langchain.utilities.cube import Cube, Query
+from langchain.utilities.cube import CubeAPIWrapper, Query
 
 
 def _strip(text: str) -> str:
@@ -28,7 +28,7 @@ class CubeQueryInputWithModels(TypedDict):
 
 def create_cube_query_chain(
     llm: BaseLanguageModel,
-    cube: Cube,
+    cube: CubeAPIWrapper,
     *,
     prompt: Optional[BasePromptTemplate] = None,
     k: int = 5,
