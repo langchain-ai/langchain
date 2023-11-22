@@ -69,7 +69,7 @@ class BaseMessageChunk(BaseMessage):
     """A Message chunk, which can be concatenated with other Message chunks."""
 
     def _merge_kwargs_dict(
-            self, left: Dict[str, Any], right: Dict[str, Any]
+        self, left: Dict[str, Any], right: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Merge additional_kwargs from another BaseMessageChunk into this one."""
         merged = left.copy()
