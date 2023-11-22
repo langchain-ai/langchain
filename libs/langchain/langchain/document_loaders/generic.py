@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterator, List, Literal, Optional, Sequence, Union
 
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.document_loaders.base import BaseBlobParser, BaseLoader
 from langchain.document_loaders.blob_loaders import BlobLoader, FileSystemBlobLoader

@@ -1,3 +1,3 @@
-from langchain_core.prompts.example_selector.base import BaseExampleSelector
+from langchain_core.example_selectors.base import BaseExampleSelector
 
 __all__ = ["BaseExampleSelector"]

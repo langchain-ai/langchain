@@ -21,12 +21,17 @@ from typing import (
 )
 
 from langchain_core._api import warn_deprecated
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage, messages_from_dict
+from langchain_core.outputs import ChatResult, LLMResult
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 from langchain_core.runnables import config as runnable_config
 from langchain_core.runnables import utils as runnable_utils
-from langchain_core.schema import ChatResult, LLMResult
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.messages import BaseMessage, messages_from_dict
+from langchain_core.tracers.evaluation import (
+    EvaluatorCallbackHandler,
+    wait_for_all_evaluators,
+)
+from langchain_core.tracers.langchain import LangChainTracer
 from langsmith.client import Client
 from langsmith.evaluation import RunEvaluator
 from langsmith.run_helpers import as_runnable, is_traceable_function
@@ -35,11 +40,6 @@ from langsmith.utils import LangSmithError
 from requests import HTTPError
 
 from langchain.callbacks.manager import Callbacks
-from langchain.callbacks.tracers.evaluation import (
-    EvaluatorCallbackHandler,
-    wait_for_all_evaluators,
-)
-from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
 from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.schema import (

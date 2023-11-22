@@ -1,7 +1,7 @@
 """VectorStore agent."""
 from typing import Any, Dict, Optional
 
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.vectorstore.prompt import PREFIX, ROUTER_PREFIX

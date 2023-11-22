@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, TypedDict
 
 import aiohttp
 import requests
+from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.schema import Generation, LLMResult
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

@@ -3,11 +3,10 @@ import uuid
 from typing import List, cast
 
 import pytest
+from langchain_core.embeddings import Embeddings
 from langchain_core.load.dump import dumps
-from langchain_core.schema import Generation, LLMResult
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.messages import AIMessage, BaseMessage, HumanMessage
-from langchain_core.schema.output import ChatGeneration
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
 from langchain.cache import RedisCache, RedisSemanticCache
 from langchain.globals import get_llm_cache, set_llm_cache
