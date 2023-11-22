@@ -6,14 +6,10 @@ EXPECTED_ALL = [
     "BasePromptTemplate",
     "ChatMessagePromptTemplate",
     "ChatPromptTemplate",
-    "ChatPromptValueConcrete",
     "FewShotPromptTemplate",
     "FewShotPromptWithTemplates",
     "FewShotChatMessagePromptTemplate",
     "format_document",
-    "ChatPromptValue",
-    "PromptValue",
-    "StringPromptValue",
     "HumanMessagePromptTemplate",
     "MessagesPlaceholder",
     "PipelinePromptTemplate",
@@ -22,6 +18,10 @@ EXPECTED_ALL = [
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
     "load_prompt",
+    "check_valid_template",
+    "get_template_variables",
+    "jinja2_formatter",
+    "validate_jinja2",
 ]
 
 
