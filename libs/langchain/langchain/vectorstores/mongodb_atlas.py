@@ -102,13 +102,18 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         """
         try:
-            from pymongo import MongoClient
+            from importlib.metadata import version
+
+            from pymongo import DriverInfo, MongoClient
         except ImportError:
             raise ImportError(
                 "Could not import pymongo, please install it with "
                 "`pip install pymongo`."
             )
-        client: MongoClient = MongoClient(connection_string)
+        client: MongoClient = MongoClient(
+            connection_string,
+            driver=DriverInfo(name="Langchain", version=version("langchain")),
+        )
         db_name, collection_name = namespace.split(".")
         collection = client[db_name][collection_name]
         return cls(collection, embedding, **kwargs)

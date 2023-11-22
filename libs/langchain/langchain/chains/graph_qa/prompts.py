@@ -320,7 +320,7 @@ NEPTUNE_OPENCYPHER_EXTRA_INSTRUCTIONS = """
 Сгенерируйте запрос в формате openCypher и следуйте этим правилам:
 Не используйте предикатные функции `NONE`, `ALL` или `ANY`, вместо этого используйте генерацию списков.
 Не используйте функцию `REDUCE`. Вместо этого используйте комбинацию генерации списков и оператора `UNWIND`, чтобы достичь аналогичных результатов.
-Не используйте оператор `FOREACH`. Вместо этого используйте комбинацию операторов `WITH` и `UNWIND`, чтобы достичь аналогичных результатов.
+Не используйте оператор `FOREACH`. Вместо этого используйте комбинацию операторов `WITH` и `UNWIND`, чтобы достичь аналогичных результатов.{extra_instructions}
 \n"""
 
 NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
@@ -328,18 +328,18 @@ NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
 )
 
 NEPTUNE_OPENCYPHER_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["schema", "question"],
+    input_variables=["schema", "question", "extra_instructions"],
     template=NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE,
 )
 
 NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE = """
-Write an openCypher query to answer the following question. Do not explain the answer. Only return the query. 
+Write an openCypher query to answer the following question. Do not explain the answer. Only return the query.{extra_instructions}
 Question:  "{question}". 
 Here is the property graph schema: 
 {schema}
 \n"""
 
 NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT = PromptTemplate(
-    input_variables=["schema", "question"],
+    input_variables=["schema", "question", "extra_instructions"],
     template=NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE,
 )

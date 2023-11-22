@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-cli"
-version = "0.0.16"
+version = "0.0.18"
 description = "CLI for interacting with GigaChain"
 authors = ["Erick Friis <erick@langchain.dev>", "Konstantin Krestnikov <k.krestnikov@gmail.com>"]
 readme = "README.md"
@@ -28,7 +28,7 @@ pytest = "^7.4.2"
 pytest-watch = "^4.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.3"
+ruff = "^0.1.5"
 
 [tool.poetry.group.test.dependencies]
 
