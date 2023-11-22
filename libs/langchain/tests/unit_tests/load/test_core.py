@@ -8,7 +8,6 @@ core_modules = [
     "callbacks",
     "chat_history",
     "chat_sessions",
-    "document_transformers",
     "documents",
     "embeddings",
     "env",
