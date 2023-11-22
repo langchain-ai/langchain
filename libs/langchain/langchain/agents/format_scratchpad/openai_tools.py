@@ -1,8 +1,8 @@
 import json
 from typing import List, Sequence, Tuple
 
-from langchain_core.schema.agent import AgentAction
-from langchain_core.schema.messages import (
+from langchain_core.agents import AgentAction
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ToolMessage,

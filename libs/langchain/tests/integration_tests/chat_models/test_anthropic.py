@@ -2,8 +2,8 @@
 from typing import List
 
 import pytest
-from langchain_core.schema import ChatGeneration, LLMResult
-from langchain_core.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.anthropic import (
@@ -66,7 +66,6 @@ def test_anthropic_streaming_callback() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

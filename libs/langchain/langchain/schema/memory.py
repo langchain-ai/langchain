@@ -1,3 +1,3 @@
-from langchain_core.schema.memory import BaseMemory
+from langchain_core.memory import BaseMemory
 
 __all__ = ["BaseMemory"]

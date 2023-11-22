@@ -3,8 +3,8 @@ import warnings
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
+from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.schema.output import GenerationChunk
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

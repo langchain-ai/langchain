@@ -12,8 +12,8 @@ from typing import (
     Type,
 )
 
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.vectorstore import VectorStore, VectorStoreRetriever
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 from sqlalchemy.pool import QueuePool
 
 from langchain.docstore.document import Document

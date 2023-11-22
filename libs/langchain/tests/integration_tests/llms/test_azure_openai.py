@@ -3,9 +3,7 @@ import os
 from typing import Any, Generator
 
 import pytest
-from langchain_core.schema import (
-    LLMResult,
-)
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.llms import AzureOpenAI
@@ -57,7 +55,6 @@ def test_openai_streaming(llm: AzureOpenAI) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_astream(llm: AzureOpenAI) -> None:
     """Test streaming tokens from AzureOpenAI."""
     async for token in llm.astream("I'm Pickle Rick"):
@@ -65,7 +62,6 @@ async def test_openai_astream(llm: AzureOpenAI) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_abatch(llm: AzureOpenAI) -> None:
     """Test streaming tokens from AzureOpenAI."""
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -73,7 +69,6 @@ async def test_openai_abatch(llm: AzureOpenAI) -> None:
         assert isinstance(token, str)
 
 
-@pytest.mark.asyncio
 async def test_openai_abatch_tags(llm: AzureOpenAI) -> None:
     """Test streaming tokens from AzureOpenAI."""
     result = await llm.abatch(
@@ -92,7 +87,6 @@ def test_openai_batch(llm: AzureOpenAI) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_ainvoke(llm: AzureOpenAI) -> None:
     """Test streaming tokens from AzureOpenAI."""
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
@@ -157,7 +151,6 @@ def test_openai_streaming_callback() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_async_generate() -> None:
     """Test async generation."""
     llm = _get_llm(max_tokens=10)
@@ -165,7 +158,6 @@ async def test_openai_async_generate() -> None:
     assert isinstance(output, LLMResult)
 
 
-@pytest.mark.asyncio
 async def test_openai_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

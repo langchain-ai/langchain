@@ -1,6 +1,4 @@
 """Test ClickHouse functionality."""
-import pytest
-
 from langchain.docstore.document import Document
 from langchain.vectorstores import Clickhouse, ClickhouseSettings
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
@@ -17,7 +15,6 @@ def test_clickhouse() -> None:
     docsearch.drop()
 
 
-@pytest.mark.asyncio
 async def test_clickhouse_async() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]

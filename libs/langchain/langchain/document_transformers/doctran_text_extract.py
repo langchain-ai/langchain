@@ -1,6 +1,7 @@
 from typing import Any, List, Optional, Sequence
 
-from langchain_core.schema import BaseDocumentTransformer, Document
+from langchain_core.document_transformers import BaseDocumentTransformer
+from langchain_core.documents import Document
 
 from langchain.utils import get_from_env
 

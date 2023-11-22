@@ -43,6 +43,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "async-timeout",
         "dataclasses-json",
         "jsonpatch",
+        "langchain-core",
         "langsmith",
         "numpy",
         "pydantic",
@@ -91,7 +92,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
 def test_imports() -> None:
     """Test that you can import all top level things okay."""
-    from langchain_core.schema import BasePromptTemplate  # noqa: F401
+    from langchain_core.prompts import BasePromptTemplate  # noqa: F401
 
     from langchain.agents import OpenAIFunctionsAgent  # noqa: F401
     from langchain.callbacks import OpenAICallbackHandler  # noqa: F401

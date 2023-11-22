@@ -3,7 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Union
 
-from langchain_core.schema import AgentAction, AgentFinish, OutputParserException
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.output_parsers.json import parse_json_markdown

@@ -1,6 +1,6 @@
 from typing import Any, Callable, Iterator, List, Optional, Tuple
 
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.document_loaders.base import BaseLoader
 
