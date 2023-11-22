@@ -51,6 +51,7 @@ from langchain_core.prompts import (
 )
 
 from langchain.prompts.example_selector import NGramOverlapExampleSelector
+from langchain.prompts.prompt import Prompt
 
 __all__ = [
     "AIMessagePromptTemplate",
@@ -72,4 +73,5 @@ __all__ = [
     "SystemMessagePromptTemplate",
     "load_prompt",
     "FewShotChatMessagePromptTemplate",
+    "Prompt",
 ]
