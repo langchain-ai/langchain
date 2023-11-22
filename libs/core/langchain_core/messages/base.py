@@ -69,12 +69,14 @@ class BaseMessageChunk(BaseMessage):
     """A Message chunk, which can be concatenated with other Message chunks."""
 
     def _merge_kwargs_dict(
-        self, left: Dict[str, Any], right: Dict[str, Any]
+            self, left: Dict[str, Any], right: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Merge additional_kwargs from another BaseMessageChunk into this one."""
         merged = left.copy()
         for k, v in right.items():
             if k not in merged:
+                merged[k] = v
+            elif merged[k] is None and v:
                 merged[k] = v
             elif type(merged[k]) != type(v):
                 raise ValueError(
