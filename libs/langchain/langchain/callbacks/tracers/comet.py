@@ -1,5 +1,5 @@
-from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Dict
+from types import ModuleType, SimpleNamespace
+from typing import TYPE_CHECKING, Any, Callable, Dict
 
 from langchain.callbacks.tracers.base import BaseTracer
 
@@ -24,8 +24,10 @@ def _get_run_type(run: "Run") -> str:
 def import_comet_llm_api() -> SimpleNamespace:
     """Import comet_llm api and raise an error if it is not installed."""
     try:
-        import comet_llm  # noqa: F401
-        from comet_llm import experiment_info  # noqa: F401
+        from comet_llm import (
+            experiment_info,  # noqa: F401
+            flush,  # noqa: F401
+        )
         from comet_llm.chains import api as chain_api  # noqa: F401
         from comet_llm.chains import (
             chain,  # noqa: F401
@@ -43,7 +45,7 @@ def import_comet_llm_api() -> SimpleNamespace:
         span=span,
         chain_api=chain_api,
         experiment_info=experiment_info,
-        comet_llm=comet_llm,
+        flush=flush,
     )
 
 
@@ -56,11 +58,11 @@ class CometTracer(BaseTracer):
 
     def _initialize_comet_modules(self) -> None:
         comet_llm_api = import_comet_llm_api()
-        self._chain = comet_llm_api.chain
-        self._span = comet_llm_api.span
-        self._chain_api = comet_llm_api.chain_api
-        self._experiment_info = comet_llm_api.experiment_info
-        self._comet_llm = comet_llm_api.comet_llm
+        self._chain: ModuleType = comet_llm_api.chain
+        self._span: ModuleType = comet_llm_api.span
+        self._chain_api: ModuleType = comet_llm_api.chain_api
+        self._experiment_info: ModuleType = comet_llm_api.experiment_info
+        self._flush: Callable[[], None] = comet_llm_api.flush
 
     def _persist_run(self, run: "Run") -> None:
         chain_ = self._chains_map[run.id]
@@ -97,7 +99,7 @@ class CometTracer(BaseTracer):
             span.__api__end__()
 
     def flush(self) -> None:
-        self._comet_llm.flush()
+        self._flush()
 
     def _on_llm_start(self, run: "Run") -> None:
         """Process the LLM Run upon start."""

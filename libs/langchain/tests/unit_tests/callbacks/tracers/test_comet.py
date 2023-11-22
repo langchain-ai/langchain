@@ -29,7 +29,7 @@ def test_comet_tracer__trace_chain_with_single_span__happyflow() -> None:
         span=span_module_mock,
         experiment_info=experiment_info_module_mock,
         chain_api=chain_api_module_mock,
-        comet_llm="not-used-in-this-test",
+        flush="not-used-in-this-test",
     )
 
     # Create tracer
