@@ -10,7 +10,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 gigachain = ">=0.0.325"
-openai = ">=0.5.0"
+openai = "<2"
 tavily-python = "^0.1.9"
 
 [tool.poetry.group.dev.dependencies]

@@ -85,6 +85,9 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     variable_name: str
     """Name of variable to use as messages."""
 
+    def __init__(self, variable_name: str, **kwargs: Any):
+        return super().__init__(variable_name=variable_name, **kwargs)
+
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
 

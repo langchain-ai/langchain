@@ -10,7 +10,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 gigachain = ">=0.0.325"
-openai = "^0.28.1"
+openai = "<2"
 tiktoken = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
@@ -21,7 +21,7 @@ extras = [
 ]
 version = "^1.0.0"
 
-[tool.langserve]
+[tool.gigaserve]
 export_module = "rag_vectara_multiquery"
 export_attr = "chain"
 
