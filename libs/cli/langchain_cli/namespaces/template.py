@@ -129,3 +129,15 @@ def serve(
         port=port if port is not None else 8000,
         host=host_str,
     )
+
+
+@package_cli.command()
+def list(contains: Annotated[Optional[str], typer.Argument()] = None) -> None:
+    """
+    List all or search for available templates.
+    """
+    from langchain_cli.utils.github import list_packages
+
+    packages = list_packages(contains=contains)
+    for package in packages:
+        typer.echo(package)

@@ -10,7 +10,7 @@ packages = [{include = "self_query_qdrant"}]
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
 gigachain = ">=0.0.325"
-openai = "^0.28.1"
+openai = "<2"
 qdrant-client = ">=1.6"
 lark = "^1.1.8"
 tiktoken = "^0.5.1"
