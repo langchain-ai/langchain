@@ -1,5 +1,5 @@
 """
-A "convertor"-based prompt template
+A "converter"-based prompt template
 """
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from langchain_core.prompts.string import (
 
 from langchain.pydantic_v1 import Extra, Field, root_validator
 
-ConvertorType = Callable[[Dict[str, Any]], Dict[str, Any]]
+ConverterType = Callable[[Dict[str, Any]], Dict[str, Any]]
 
 
-class ConvertorPromptTemplate(StringPromptTemplate):
+class ConverterPromptTemplate(StringPromptTemplate):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Is this class serializable?"""
@@ -32,11 +32,11 @@ class ConvertorPromptTemplate(StringPromptTemplate):
 
     input_variables: List[str]
 
-    convertor: ConvertorType
+    converter: ConverterType
 
-    convertor_input_variables: List[str]
+    converter_input_variables: List[str]
 
-    convertor_output_variables: List[str]
+    converter_output_variables: List[str]
 
     template_format: str = "f-string"
 
@@ -45,26 +45,26 @@ class ConvertorPromptTemplate(StringPromptTemplate):
         arbitrary_types_allowed = True
 
     @root_validator(pre=False)
-    def check_convertor_and_template(cls, values: Dict) -> Dict:
+    def check_converter_and_template(cls, values: Dict) -> Dict:
         # this is to ensure partialing knows what to do for e.g. ChatPromptTemplate
         values["input_variables"] = list(
-            set(values["input_variables"]) | set(values["convertor_input_variables"])
+            set(values["input_variables"]) | set(values["converter_input_variables"])
         )
         return values
 
     def format(self, **kwargs: Any) -> str:
         kwargs = self._merge_partial_and_user_variables(**kwargs)
 
-        convertor_kwargs = {
-            k: v for k, v in kwargs.items() if k in self.convertor_input_variables
+        converter_kwargs = {
+            k: v for k, v in kwargs.items() if k in self.converter_input_variables
         }
         prompt_kwargs = {
-            k: v for k, v in kwargs.items() if k not in self.convertor_input_variables
+            k: v for k, v in kwargs.items() if k not in self.converter_input_variables
         }
 
-        _converted = self.convertor(convertor_kwargs)
+        _converted = self.converter(converter_kwargs)
         # restrict to those which are featured in the prompt
-        converted_kwargs = {k: _converted[k] for k in self.convertor_output_variables}
+        converted_kwargs = {k: _converted[k] for k in self.converter_output_variables}
 
         full_kwargs = {**prompt_kwargs, **converted_kwargs}
 
@@ -82,4 +82,4 @@ class ConvertorPromptTemplate(StringPromptTemplate):
 
     @property
     def _prompt_type(self) -> str:
-        return "convertor-prompt-template"
+        return "converter-prompt-template"

@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
     from feast.feature_store import FeatureStore
     from feast.feature_view import FeatureView
 
-from langchain.prompts.database.convertor_prompt_template import ConvertorPromptTemplate
+from langchain.prompts.database.converter_prompt_template import ConverterPromptTemplate
 from langchain.pydantic_v1 import root_validator
 
 FeatureRetrievalPrescriptionType = Union[
@@ -63,7 +63,7 @@ def _ensure_full_extraction_tuple(
         )
 
 
-class FeastReaderPromptTemplate(ConvertorPromptTemplate):
+class FeastReaderPromptTemplate(ConverterPromptTemplate):
     feature_store: Any  # FeatureStore
 
     field_mapper: FieldMapperType
@@ -71,13 +71,13 @@ class FeastReaderPromptTemplate(ConvertorPromptTemplate):
     admit_nulls: bool = DEFAULT_ADMIT_NULLS
 
     @root_validator(pre=True)
-    def check_and_provide_convertor(cls, values: Dict) -> Dict:
-        convertor_info = cls._prepare_reader_info(
+    def check_and_provide_converter(cls, values: Dict) -> Dict:
+        converter_info = cls._prepare_reader_info(
             feature_store=values["feature_store"],
             field_mapper=values["field_mapper"],
             admit_nulls=values.get("admit_nulls", DEFAULT_ADMIT_NULLS),
         )
-        for k, v in convertor_info.items():
+        for k, v in converter_info.items():
             values[k] = v
         return values
 
@@ -118,7 +118,7 @@ class FeastReaderPromptTemplate(ConvertorPromptTemplate):
             }
         )
 
-        def _convertor(args_dict: Dict[str, Any]) -> Dict[str, Any]:
+        def _converter(args_dict: Dict[str, Any]) -> Dict[str, Any]:
             feature_vector = feature_store.get_online_features(
                 features=[
                     f"{fview}:{fname}"
@@ -145,9 +145,9 @@ class FeastReaderPromptTemplate(ConvertorPromptTemplate):
             return retrieved_variables
 
         return {
-            "convertor": _convertor,
-            "convertor_output_variables": list(norm_field_mapper.keys()),
-            "convertor_input_variables": join_keys,
+            "converter": _converter,
+            "converter_output_variables": list(norm_field_mapper.keys()),
+            "converter_input_variables": join_keys,
         }
 
     @property

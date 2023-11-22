@@ -3,13 +3,13 @@ from typing import Any, Dict
 
 from langchain_core.prompt_values import StringPromptValue
 
-from langchain.prompts.database.convertor_prompt_template import ConvertorPromptTemplate
+from langchain.prompts.database.converter_prompt_template import ConverterPromptTemplate
 
 
 def test_values() -> None:
     """Basic functionality test."""
 
-    def convertor(in1: int, in2: str) -> Dict[str, Any]:
+    def converter(in1: int, in2: str) -> Dict[str, Any]:
         return {
             "out1": in1 * 2,
             "out2": in2 + in2,
@@ -17,12 +17,12 @@ def test_values() -> None:
 
     prompt_fstring = "out1={out1} out2={out2} another={another}"
 
-    c_p_template = ConvertorPromptTemplate(
+    c_p_template = ConverterPromptTemplate(
         template=prompt_fstring,
         input_variables=["another"],
-        convertor=lambda args_dict: convertor(**args_dict),
-        convertor_input_variables=["in1", "in2"],
-        convertor_output_variables=["out1", "out2"],
+        converter=lambda args_dict: converter(**args_dict),
+        converter_input_variables=["in1", "in2"],
+        converter_output_variables=["out1", "out2"],
     )
 
     result = c_p_template.format(in1=5, in2="x", another="a")
@@ -32,17 +32,17 @@ def test_values() -> None:
 def test_validate_template() -> None:
     """Test for suppressing template validation."""
 
-    def convertor(a: str) -> Dict[str, Any]:
+    def converter(a: str) -> Dict[str, Any]:
         return {"b": a}
 
     prompt_fstring = "b={b} another={another}"
 
-    _ = ConvertorPromptTemplate(
+    _ = ConverterPromptTemplate(
         template=prompt_fstring,
         input_variables=["another", "extraneous"],
-        convertor=lambda args_dict: convertor(**args_dict),
-        convertor_input_variables=["a"],
-        convertor_output_variables=["b"],
+        converter=lambda args_dict: converter(**args_dict),
+        converter_input_variables=["a"],
+        converter_output_variables=["b"],
         validate_template=False,
     )
 
@@ -50,7 +50,7 @@ def test_validate_template() -> None:
 def test_partialing() -> None:
     """Partialing in various combinations."""
 
-    def convertor(in1: int, in2: str) -> Dict[str, Any]:
+    def converter(in1: int, in2: str) -> Dict[str, Any]:
         return {
             "out1": in1 * 2,
             "out2": in2 + in2,
@@ -58,12 +58,12 @@ def test_partialing() -> None:
 
     prompt_fstring = "out1={out1} out2={out2} another={another}"
 
-    c_p_template = ConvertorPromptTemplate(
+    c_p_template = ConverterPromptTemplate(
         template=prompt_fstring,
         input_variables=["another"],
-        convertor=lambda args_dict: convertor(**args_dict),
-        convertor_input_variables=["in1", "in2"],
-        convertor_output_variables=["out1", "out2"],
+        converter=lambda args_dict: converter(**args_dict),
+        converter_input_variables=["in1", "in2"],
+        converter_output_variables=["out1", "out2"],
     )
 
     c_p_partial1 = c_p_template.partial(in1=5)
@@ -79,7 +79,7 @@ def test_partialing() -> None:
     assert result3 == "out1=10 out2=xx another=a"
 
 
-def test_convertor_prompt_template_as_runnable() -> None:
+def test_converter_prompt_template_as_runnable() -> None:
     """Runnable interface test"""
 
     def mock_db_reader(user_id: str) -> Dict[str, Any]:
@@ -90,12 +90,12 @@ def test_convertor_prompt_template_as_runnable() -> None:
 
     prompt_fstring = "ADJ={adj} USER_NAME={user_name} SHORT_NAME={short_name}"
 
-    c_p_template = ConvertorPromptTemplate(
+    c_p_template = ConverterPromptTemplate(
         template=prompt_fstring,
         input_variables=["adj"],
-        convertor=lambda args_dict: mock_db_reader(**args_dict),
-        convertor_input_variables=["user_id"],
-        convertor_output_variables=["user_name", "short_name"],
+        converter=lambda args_dict: mock_db_reader(**args_dict),
+        converter_input_variables=["user_id"],
+        converter_output_variables=["user_name", "short_name"],
     )
 
     invoke_result = c_p_template.invoke({"user_id": "john_doe", "adj": "sassy"})

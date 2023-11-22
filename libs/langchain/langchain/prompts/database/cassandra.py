@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 if typing.TYPE_CHECKING:
     pass
 
-from langchain.prompts.database.convertor_prompt_template import ConvertorPromptTemplate
+from langchain.prompts.database.converter_prompt_template import ConverterPromptTemplate
 from langchain.pydantic_v1 import root_validator
 
 RowToValueType = Union[str, Callable[[Any], Any]]
@@ -32,7 +32,7 @@ FieldMapperType = Dict[
 DEFAULT_ADMIT_NULLS = True
 
 
-class CassandraReaderPromptTemplate(ConvertorPromptTemplate):
+class CassandraReaderPromptTemplate(ConverterPromptTemplate):
     session: Optional[Any] = None  # Session
 
     keyspace: Optional[str] = None
@@ -44,14 +44,14 @@ class CassandraReaderPromptTemplate(ConvertorPromptTemplate):
     admit_nulls: bool = DEFAULT_ADMIT_NULLS
 
     @root_validator(pre=True)
-    def check_and_provide_convertor(cls, values: Dict) -> Dict:
-        convertor_info = cls._prepare_reader_info(
+    def check_and_provide_converter(cls, values: Dict) -> Dict:
+        converter_info = cls._prepare_reader_info(
             session=values.get("session"),
             keyspace=values.get("keyspace"),
             field_mapper=values["field_mapper"],
             admit_nulls=values.get("admit_nulls", DEFAULT_ADMIT_NULLS),
         )
-        for k, v in convertor_info.items():
+        for k, v in converter_info.items():
             values[k] = v
         return values
 
@@ -70,7 +70,7 @@ class CassandraReaderPromptTemplate(ConvertorPromptTemplate):
                 "Please install it with `pip install cassio`."
             )
         #
-        _convertor = MultiTableCassandraReader(
+        _converter = MultiTableCassandraReader(
             session=session,
             keyspace=keyspace,
             field_mapper=field_mapper,
@@ -78,9 +78,9 @@ class CassandraReaderPromptTemplate(ConvertorPromptTemplate):
         )
 
         return {
-            "convertor": _convertor.dictionary_based_call,
-            "convertor_output_variables": _convertor.output_parameters,
-            "convertor_input_variables": _convertor.input_parameters,
+            "converter": _converter.dictionary_based_call,
+            "converter_output_variables": _converter.output_parameters,
+            "converter_input_variables": _converter.input_parameters,
         }
 
     @property
