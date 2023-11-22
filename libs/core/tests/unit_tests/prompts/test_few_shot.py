@@ -416,3 +416,8 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
         AIMessage(content="5", additional_kwargs={}, example=False),
         HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
     ]
+
+
+def test_lc_namespace() -> None:
+    for cls_ in (FewShotPromptTemplate, FewShotChatMessagePromptTemplate):
+        assert cls_.get_lc_namespace() == ["langchain", "prompts", "few_shot"]

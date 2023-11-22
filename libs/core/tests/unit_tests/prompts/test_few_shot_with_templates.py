@@ -74,3 +74,12 @@ def test_prompttemplate_validation() -> None:
         example_prompt=EXAMPLE_PROMPT,
         example_separator="\n",
     ).input_variables == ["content", "new_content"]
+
+
+def test_lc_namespace() -> None:
+    for cls_ in (FewShotPromptWithTemplates,):
+        assert cls_.get_lc_namespace() == [
+            "langchain",
+            "prompts",
+            "few_shot_with_templates",
+        ]

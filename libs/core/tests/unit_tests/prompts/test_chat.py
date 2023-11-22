@@ -19,6 +19,7 @@ from langchain_core.prompts.chat import (
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
+    MessagesPlaceholder,
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
@@ -360,3 +361,15 @@ def test_chat_message_partial() -> None:
     ]
     assert res == expected
     assert template2.format(input="hello") == get_buffer_string(expected)
+
+
+def test_lc_namespace() -> None:
+    for cls_ in (
+        MessagesPlaceholder,
+        ChatMessagePromptTemplate,
+        HumanMessagePromptTemplate,
+        AIMessagePromptTemplate,
+        SystemMessagePromptTemplate,
+        ChatPromptTemplate,
+    ):
+        assert cls_.get_lc_namespace() == ["langchain", "prompts", "chat"]

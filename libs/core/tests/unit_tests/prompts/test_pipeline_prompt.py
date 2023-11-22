@@ -43,3 +43,8 @@ def test_partial_with_chat_prompts() -> None:
     assert pipeline_prompt.input_variables == ["bar"]
     output = pipeline_prompt.format_prompt(bar="okay")
     assert output.to_messages()[0].content == "jim okay"
+
+
+def test_lc_namespace() -> None:
+    for cls_ in (PipelinePromptTemplate,):
+        assert cls_.get_lc_namespace() == ["langchain", "prompts", "pipeline"]

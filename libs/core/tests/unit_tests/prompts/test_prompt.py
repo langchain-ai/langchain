@@ -297,3 +297,8 @@ def test_prompt_jinja2_wrong_input_variables() -> None:
     assert PromptTemplate(
         input_variables=input_variables, template=template, template_format="jinja2"
     ).input_variables == ["foo"]
+
+
+def test_lc_namespace() -> None:
+    for cls_ in (PromptTemplate,):
+        assert cls_.get_lc_namespace() == ["langchain", "prompts", "prompt"]
