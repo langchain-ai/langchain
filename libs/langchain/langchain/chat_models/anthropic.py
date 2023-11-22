@@ -1,4 +1,15 @@
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
+
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.prompt_values import PromptValue
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -10,16 +21,6 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.anthropic import _AnthropicCommon
-from langchain.schema.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
-)
-from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain.schema.prompt import PromptValue
 
 
 def _convert_one_message_to_text(
@@ -27,14 +28,15 @@ def _convert_one_message_to_text(
     human_prompt: str,
     ai_prompt: str,
 ) -> str:
+    content = cast(str, message.content)
     if isinstance(message, ChatMessage):
-        message_text = f"\n\n{message.role.capitalize()}: {message.content}"
+        message_text = f"\n\n{message.role.capitalize()}: {content}"
     elif isinstance(message, HumanMessage):
-        message_text = f"{human_prompt} {message.content}"
+        message_text = f"{human_prompt} {content}"
     elif isinstance(message, AIMessage):
-        message_text = f"{ai_prompt} {message.content}"
+        message_text = f"{ai_prompt} {content}"
     elif isinstance(message, SystemMessage):
-        message_text = message.content
+        message_text = content
     else:
         raise ValueError(f"Got unknown type {message}")
     return message_text

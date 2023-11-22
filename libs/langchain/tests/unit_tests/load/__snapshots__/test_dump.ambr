@@ -5,6 +5,9 @@
     "lc": 1,
     "type": "constructor",
     "id": [
+      "tests",
+      "unit_tests",
+      "load",
       "test_dump",
       "Person"
     ],
@@ -27,6 +30,9 @@
     "lc": 1,
     "type": "constructor",
     "id": [
+      "tests",
+      "unit_tests",
+      "load",
       "test_dump",
       "SpecialPerson"
     ],
@@ -88,7 +94,7 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain",
+          "langchain_core",
           "prompts",
           "prompt",
           "PromptTemplate"
@@ -143,7 +149,7 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain",
+          "langchain_core",
           "prompts",
           "chat",
           "ChatPromptTemplate"
@@ -157,7 +163,7 @@
               "lc": 1,
               "type": "constructor",
               "id": [
-                "langchain",
+                "langchain_core",
                 "prompts",
                 "chat",
                 "HumanMessagePromptTemplate"
@@ -167,7 +173,7 @@
                   "lc": 1,
                   "type": "constructor",
                   "id": [
-                    "langchain",
+                    "langchain_core",
                     "prompts",
                     "prompt",
                     "PromptTemplate"
@@ -220,17 +226,6 @@
             "id": [
               "OPENAI_API_KEY"
             ]
-          },
-          "client": {
-            "lc": 1,
-            "type": "not_implemented",
-            "id": [
-              "openai",
-              "api_resources",
-              "completion",
-              "Completion"
-            ],
-            "repr": "<class 'openai.api_resources.completion.Completion'>"
           }
         }
       },
@@ -238,7 +233,7 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain",
+          "langchain_core",
           "prompts",
           "prompt",
           "PromptTemplate"

@@ -7,8 +7,8 @@ import sys
 from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env
 
 
@@ -197,18 +197,19 @@ class SerpAPIWrapper(BaseModel):
                     and not value.startswith("http")
                 ):
                     snippets.append(f"{title} {key}: {value}.")
-        if "organic_results" in res.keys():
-            first_organic_result = res["organic_results"][0]
-            if "snippet" in first_organic_result.keys():
-                snippets.append(first_organic_result["snippet"])
-            elif "snippet_highlighted_words" in first_organic_result.keys():
-                snippets.append(first_organic_result["snippet_highlighted_words"])
-            elif "rich_snippet" in first_organic_result.keys():
-                snippets.append(first_organic_result["rich_snippet"])
-            elif "rich_snippet_table" in first_organic_result.keys():
-                snippets.append(first_organic_result["rich_snippet_table"])
-            elif "link" in first_organic_result.keys():
-                snippets.append(first_organic_result["link"])
+
+        for organic_result in res.get("organic_results", []):
+            if "snippet" in organic_result.keys():
+                snippets.append(organic_result["snippet"])
+            elif "snippet_highlighted_words" in organic_result.keys():
+                snippets.append(organic_result["snippet_highlighted_words"])
+            elif "rich_snippet" in organic_result.keys():
+                snippets.append(organic_result["rich_snippet"])
+            elif "rich_snippet_table" in organic_result.keys():
+                snippets.append(organic_result["rich_snippet_table"])
+            elif "link" in organic_result.keys():
+                snippets.append(organic_result["link"])
+
         if "buying_guide" in res.keys():
             snippets.append(res["buying_guide"])
         if "local_results" in res.keys() and "places" in res["local_results"].keys():

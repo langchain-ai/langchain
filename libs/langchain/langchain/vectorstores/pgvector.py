@@ -30,9 +30,10 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -147,6 +148,10 @@ class PGVector(VectorStore):
         self.create_tables_if_not_exists()
         self.create_collection()
 
+    def __del__(self) -> None:
+        if self._conn:
+            self._conn.close()
+
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
@@ -159,7 +164,17 @@ class PGVector(VectorStore):
     def create_vector_extension(self) -> None:
         try:
             with Session(self._conn) as session:
-                statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
+                # The advisor lock fixes issue arising from concurrent
+                # creation of the vector extension.
+                # https://github.com/langchain-ai/langchain/issues/12933
+                # For more information see:
+                # https://www.postgresql.org/docs/16/explicit-locking.html#ADVISORY-LOCKS
+                statement = sqlalchemy.text(
+                    "BEGIN;"
+                    "SELECT pg_advisory_xact_lock(1573678846307946496);"
+                    "CREATE EXTENSION IF NOT EXISTS vector;"
+                    "COMMIT;"
+                )
                 session.execute(statement)
                 session.commit()
         except Exception as e:
@@ -752,6 +767,7 @@ class PGVector(VectorStore):
             k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
+            filter=filter,
             **kwargs,
         )
 

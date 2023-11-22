@@ -85,11 +85,11 @@ model.convert_prompt(prompt_value)
 This produces the following formatted string:
 
 ```
-'\n\nHuman: <admin>You are a helpful chatbot</admin>\n\nHuman: Tell me a joke about bears\n\nAssistant:'
+'\n\nYou are a helpful chatbot\n\nHuman: Tell me a joke about bears\n\nAssistant:'
 ```
 
-We can see that under the hood LangChain is representing `SystemMessage`s with `Human: <admin>...</admin>`,
-and is appending an assistant message to the end IF the last message is NOT already an assistant message.
+We can see that under the hood LangChain is not appending any prefix/suffix to `SystemMessage`'s. This is because Anthropic has no concept of `SystemMessage`.
+Anthropic requires all prompts to end with assistant messages. This means if the last message is not an assistant message, the suffix `Assistant:` will automatically be inserted.
 
 If you decide instead to use a normal PromptTemplate (one that just works on a single string) let's take a look at
 what happens:
