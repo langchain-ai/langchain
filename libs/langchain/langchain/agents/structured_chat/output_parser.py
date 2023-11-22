@@ -5,9 +5,10 @@ import logging
 import re
 from typing import Optional, Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import AgentAction, AgentFinish, OutputParserException
-from langchain_core.schema.language_model import BaseLanguageModel
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS

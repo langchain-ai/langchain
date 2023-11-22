@@ -13,6 +13,7 @@ from typing import (
     Union,
 )
 
+from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load import load
 from langchain_core.pydantic_v1 import BaseModel, create_model
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
@@ -21,12 +22,11 @@ from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     get_unique_config_specs,
 )
-from langchain_core.schema.chat_history import BaseChatMessageHistory
 
 if TYPE_CHECKING:
-    from langchain_core.callbacks.tracers.schemas import Run
+    from langchain_core.messages import BaseMessage
     from langchain_core.runnables.config import RunnableConfig
-    from langchain_core.schema.messages import BaseMessage
+    from langchain_core.tracers.schemas import Run
 
 MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
 GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
@@ -178,7 +178,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     ) -> Type[BaseModel]:
         super_schema = super().get_input_schema(config)
         if super_schema.__custom_root_type__ is not None:
-            from langchain_core.schema.messages import BaseMessage
+            from langchain_core.messages import BaseMessage
 
             fields: Dict = {}
             if self.input_messages_key and self.history_messages_key:
@@ -202,10 +202,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     def _get_input_messages(
         self, input_val: Union[str, BaseMessage, Sequence[BaseMessage]]
     ) -> List[BaseMessage]:
-        from langchain_core.schema.messages import BaseMessage
+        from langchain_core.messages import BaseMessage
 
         if isinstance(input_val, str):
-            from langchain_core.schema.messages import HumanMessage
+            from langchain_core.messages import HumanMessage
 
             return [HumanMessage(content=input_val)]
         elif isinstance(input_val, BaseMessage):
@@ -221,13 +221,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     def _get_output_messages(
         self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> List[BaseMessage]:
-        from langchain_core.schema.messages import BaseMessage
+        from langchain_core.messages import BaseMessage
 
         if isinstance(output_val, dict):
             output_val = output_val[self.output_messages_key or "output"]
 
         if isinstance(output_val, str):
-            from langchain_core.schema.messages import AIMessage
+            from langchain_core.messages import AIMessage
 
             return [AIMessage(content=output_val)]
         elif isinstance(output_val, BaseMessage):

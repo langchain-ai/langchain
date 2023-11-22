@@ -16,9 +16,12 @@ from .deprecation import (
     surface_langchain_deprecation_warnings,
     warn_deprecated,
 )
+from .path import as_import_path, get_relative_path
 
 __all__ = [
+    "as_import_path",
     "deprecated",
+    "get_relative_path",
     "LangChainDeprecationWarning",
     "suppress_langchain_deprecation_warning",
     "surface_langchain_deprecation_warnings",

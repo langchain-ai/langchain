@@ -2,8 +2,8 @@
 
 from typing import Union
 
+from langchain_core.agents import AgentAction
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.schema import AgentAction
 
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
 from langchain.agents.tools import Tool

@@ -4,8 +4,8 @@ import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
 
+from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import Extra
-from langchain_core.schema import Generation, LLMResult
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM

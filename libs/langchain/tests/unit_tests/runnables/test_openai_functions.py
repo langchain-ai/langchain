@@ -1,8 +1,7 @@
 from typing import Any, List, Optional
 
-from langchain_core.schema import ChatResult
-from langchain_core.schema.messages import AIMessage, BaseMessage
-from langchain_core.schema.output import ChatGeneration
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 

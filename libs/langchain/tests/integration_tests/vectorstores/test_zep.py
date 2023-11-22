@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from uuid import uuid4
 
 import pytest
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 from pytest_mock import MockerFixture
 
 from langchain.vectorstores import ZepVectorStore
@@ -191,7 +191,6 @@ def test_add_documents(
 
 
 @pytest.mark.requires("zep_python")
-@pytest.mark.asyncio
 async def test_asearch_similarity(
     zep_vectorstore: ZepVectorStore,
 ) -> None:
@@ -205,7 +204,6 @@ async def test_asearch_similarity(
 
 
 @pytest.mark.requires("zep_python")
-@pytest.mark.asyncio
 async def test_asearch_mmr(
     zep_vectorstore: ZepVectorStore,
 ) -> None:

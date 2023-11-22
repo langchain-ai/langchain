@@ -1,4 +1,4 @@
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.docstore.arbitrary_fn import DocstoreFn
 

@@ -1,6 +1,7 @@
 """Test base chat model."""
 import pytest
 
+from langchain.chat_models.base import __all__
 from langchain.schema.callbacks.manager import collect_runs
 from langchain.schema.messages import HumanMessage, SystemMessage
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
@@ -70,3 +71,16 @@ async def test_async_batch_size(messages: list, messages_2: list) -> None:
             pass
         assert len(cb.traced_runs) == 1
         assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
+
+
+EXPECTED_ALL = [
+    "BaseChatModel",
+    "SimpleChatModel",
+    "_agenerate_from_stream",
+    "_generate_from_stream",
+    "_get_verbosity",
+]
+
+
+def test_all_imports() -> None:
+    assert set(__all__) == set(EXPECTED_ALL)

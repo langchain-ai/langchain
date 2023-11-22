@@ -1,14 +1,11 @@
 """Integration tests for the langchain tracer module."""
 import asyncio
 
-import pytest
-
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import get_openai_callback
 from langchain.llms import OpenAI
 
 
-@pytest.mark.asyncio
 async def test_openai_callback() -> None:
     llm = OpenAI(temperature=0)
     with get_openai_callback() as cb:

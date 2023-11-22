@@ -115,7 +115,6 @@ def test_openai_retries(mock_completion: dict) -> None:
     _openai_v1_installed(), reason="Retries only handled by LangChain for openai<1"
 )
 @pytest.mark.requires("openai")
-@pytest.mark.asyncio
 async def test_openai_async_retries(mock_completion: dict) -> None:
     llm = OpenAI()
     mock_client = MagicMock()
