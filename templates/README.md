@@ -11,7 +11,7 @@ They are all in a standard format which make it easy to deploy them with [LangSe
 To use, first install the LangChain CLI.
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 Next, create a new LangChain project:

@@ -14,6 +14,8 @@ from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
+from langchain_core.documents import Document
+from langchain_core.vectorstores import VST, VectorStore
 
 import langchain.vectorstores
 from langchain.document_loaders.base import BaseLoader
@@ -21,8 +23,6 @@ from langchain.embeddings.base import Embeddings
 from langchain.indexes import aindex, index
 from langchain.indexes._api import _abatch
 from langchain.indexes._sql_record_manager import SQLRecordManager
-from langchain.schema import Document
-from langchain.schema.vectorstore import VST, VectorStore
 
 
 class ToyLoader(BaseLoader):
@@ -208,7 +208,6 @@ def test_indexing_same_content(
         }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_same_content(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -321,7 +320,6 @@ def test_index_simple_delete_full(
         }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aindex_simple_delete_full(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -442,7 +440,6 @@ def test_incremental_fails_with_bad_source_ids(
         )
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aincremental_fails_with_bad_source_ids(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -566,7 +563,6 @@ def test_no_delete(
         }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_ano_delete(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -753,7 +749,6 @@ def test_incremental_delete(
     }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aincremental_delete(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -873,7 +868,6 @@ def test_indexing_with_no_docs(
     }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_with_no_docs(
     arecord_manager: SQLRecordManager, vector_store: VectorStore
@@ -915,7 +909,6 @@ def test_deduplication(
     }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_adeduplication(
     arecord_manager: SQLRecordManager, vector_store: VectorStore
@@ -978,7 +971,6 @@ def test_cleanup_with_different_batchsize(
     }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_async_cleanup_with_different_batchsize(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -1061,7 +1053,6 @@ async def _to_async_iter(it: Iterable[Any]) -> AsyncIterator[Any]:
         yield i
 
 
-@pytest.mark.asyncio
 async def test_abatch() -> None:
     """Test the abatch function."""
     batches = _abatch(5, _to_async_iter(range(12)))
@@ -1125,6 +1116,7 @@ def test_compatible_vectorstore_documentation() -> None:
     # These are mentioned in the indexing.ipynb documentation
     documented = {
         "AnalyticDB",
+        "AstraDB",
         "AzureCosmosDBVectorSearch",
         "AwaDB",
         "Bagel",
@@ -1145,6 +1137,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "ScaNN",
         "SemaDB",
         "SupabaseVectorStore",
+        "TileDB",
         "TimescaleVector",
         "Vald",
         "Vearch",

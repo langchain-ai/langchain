@@ -9,10 +9,9 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-from langserve.packages import get_langserve_export
 from typing_extensions import Annotated
 
-from langchain_cli.utils.packages import get_package_root
+from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 package_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -67,6 +66,11 @@ def new(
     package_dir = destination_dir / module_name
     shutil.move(destination_dir / "package_template", package_dir)
 
+    # update init
+    init = package_dir / "__init__.py"
+    init_contents = init.read_text()
+    init.write_text(init_contents.replace("__module_name__", module_name))
+
     # replace readme
     readme = destination_dir / "README.md"
     readme_contents = readme.read_text()
@@ -90,6 +94,13 @@ def serve(
     host: Annotated[
         Optional[str], typer.Option(help="The host to run the server on")
     ] = None,
+    configurable: Annotated[
+        bool,
+        typer.Option(
+            "--configurable/--no-configurable",
+            help="Whether to include a configurable route",
+        ),
+    ] = True,
 ) -> None:
     """
     Starts a demo app for this template.
@@ -101,17 +112,32 @@ def serve(
     # get langserve export - throws KeyError if invalid
     get_langserve_export(pyproject)
 
-    port_str = str(port) if port is not None else "8000"
     host_str = host if host is not None else "127.0.0.1"
 
-    command = [
-        "uvicorn",
-        "--factory",
-        "langchain_cli.dev_scripts:create_demo_server",
-        "--reload",
-        "--port",
-        port_str,
-        "--host",
-        host_str,
-    ]
-    subprocess.run(command)
+    script = (
+        "langchain_cli.dev_scripts:create_demo_server"
+        if not configurable
+        else "langchain_cli.dev_scripts:create_demo_server_configurable"
+    )
+
+    import uvicorn
+
+    uvicorn.run(
+        script,
+        factory=True,
+        reload=True,
+        port=port if port is not None else 8000,
+        host=host_str,
+    )
+
+
+@package_cli.command()
+def list(contains: Annotated[Optional[str], typer.Argument()] = None) -> None:
+    """
+    List all or search for available templates.
+    """
+    from langchain_cli.utils.github import list_packages
+
+    packages = list_packages(contains=contains)
+    for package in packages:
+        typer.echo(package)

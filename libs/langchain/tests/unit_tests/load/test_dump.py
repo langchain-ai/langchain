@@ -3,15 +3,15 @@
 from typing import Any, Dict
 
 import pytest
+from langchain_core.load.dump import dumps
+from langchain_core.load.serializable import Serializable
+from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.tracers.langchain import LangChainTracer
 
-from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.openai import OpenAI
-from langchain.load.dump import dumps
-from langchain.load.serializable import Serializable
-from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.prompts.prompt import PromptTemplate
 
 
 class Person(Serializable):
@@ -57,7 +57,7 @@ def test_person(snapshot: Any) -> None:
     assert dumps(p, pretty=True) == snapshot
     sp = SpecialPerson(another_secret="Wooo", secret="Hmm")
     assert dumps(sp, pretty=True) == snapshot
-    assert Person.lc_id() == ["test_dump", "Person"]
+    assert Person.lc_id() == ["tests", "unit_tests", "load", "test_dump", "Person"]
 
 
 @pytest.mark.requires("openai")

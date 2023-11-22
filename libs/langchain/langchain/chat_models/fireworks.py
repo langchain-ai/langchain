@@ -10,15 +10,7 @@ from typing import (
     Union,
 )
 
-from langchain.adapters.openai import convert_message_to_dict
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
-from langchain.llms.base import create_base_retry_decorator
-from langchain.pydantic_v1 import Field, SecretStr, root_validator
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -32,8 +24,17 @@ from langchain.schema.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain.utils import convert_to_secret_str
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
+
+from langchain.adapters.openai import convert_message_to_dict
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
+from langchain.llms.base import create_base_retry_decorator
 from langchain.utils.env import get_from_dict_or_env
 
 
@@ -210,9 +211,10 @@ class ChatFireworks(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content, chunk=chunk)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     async def _astream(
         self,
@@ -239,9 +241,10 @@ class ChatFireworks(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield chunk
             if run_manager:
-                await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
+                await run_manager.on_llm_new_token(token=chunk.text, chunk=chunk)
 
 
 def conditional_decorator(
