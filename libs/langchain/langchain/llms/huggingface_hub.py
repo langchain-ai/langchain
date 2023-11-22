@@ -1,9 +1,10 @@
 from typing import Any, Dict, List, Mapping, Optional
 
+from langchain_core.pydantic_v1 import Extra, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_REPO_ID = "gpt2"

@@ -133,7 +133,6 @@ def test_create_action_payload_with_params() -> None:
     assert payload["test"] == "test"
 
 
-@pytest.mark.asyncio
 async def test_apreview(mocker) -> None:  # type: ignore[no-untyped-def]
     """Test that the action payload with params is being created correctly."""
     tool = ZapierNLARunAction(
@@ -162,7 +161,6 @@ async def test_apreview(mocker) -> None:  # type: ignore[no-untyped-def]
     )
 
 
-@pytest.mark.asyncio
 async def test_arun(mocker) -> None:  # type: ignore[no-untyped-def]
     """Test that the action payload with params is being created correctly."""
     tool = ZapierNLARunAction(
@@ -187,7 +185,6 @@ async def test_arun(mocker) -> None:  # type: ignore[no-untyped-def]
     )
 
 
-@pytest.mark.asyncio
 async def test_alist(mocker) -> None:  # type: ignore[no-untyped-def]
     """Test that the action payload with params is being created correctly."""
     tool = ZapierNLARunAction(
