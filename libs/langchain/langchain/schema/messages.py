@@ -1,4 +1,4 @@
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -13,11 +13,16 @@ from langchain_core.schema.messages import (
     SystemMessageChunk,
     ToolMessage,
     ToolMessageChunk,
+    _message_from_dict,
     get_buffer_string,
     merge_content,
+    message_to_dict,
     messages_from_dict,
     messages_to_dict,
 )
+
+# Backwards compatibility.
+_message_to_dict = message_to_dict
 
 __all__ = [
     "get_buffer_string",
@@ -38,4 +43,7 @@ __all__ = [
     "ChatMessageChunk",
     "messages_to_dict",
     "messages_from_dict",
+    "_message_to_dict",
+    "_message_from_dict",
+    "message_to_dict",
 ]

@@ -6,6 +6,8 @@ EXPECTED_ALL = [
     "suppress_langchain_deprecation_warning",
     "surface_langchain_deprecation_warnings",
     "warn_deprecated",
+    "as_import_path",
+    "get_relative_path",
 ]
 
 

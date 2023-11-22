@@ -1,5 +1,5 @@
 import pytest
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.retrievers.bm25 import BM25Retriever
 

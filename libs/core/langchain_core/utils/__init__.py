@@ -11,6 +11,7 @@ from langchain_core.utils.input import (
     get_colored_text,
     print_text,
 )
+from langchain_core.utils.loading import try_load_from_hub
 from langchain_core.utils.utils import (
     check_package_version,
     convert_to_secret_str,
@@ -35,4 +36,5 @@ __all__ = [
     "print_text",
     "raise_for_status_with_text",
     "xor_args",
+    "try_load_from_hub",
 ]

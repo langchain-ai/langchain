@@ -20,11 +20,8 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.runnables import Runnable
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.language_model import LanguageModelInput
-from langchain_core.schema.messages import (
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
@@ -34,7 +31,9 @@ from langchain_core.schema.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.runnables import Runnable
 from langchain_core.utils import (
     get_pydantic_field_names,
 )

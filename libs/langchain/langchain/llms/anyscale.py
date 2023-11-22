@@ -12,9 +12,8 @@ from typing import (
     cast,
 )
 
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.schema import Generation, LLMResult
-from langchain_core.schema.output import GenerationChunk
 from langchain_core.utils import convert_to_secret_str
 
 from langchain.callbacks.manager import (

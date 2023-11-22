@@ -1,4 +1,4 @@
-from langchain_core.schema.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain.chat_models.baichuan import ChatBaichuan
 
