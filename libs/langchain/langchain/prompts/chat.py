@@ -5,8 +5,6 @@ from langchain_core.prompts.chat import (
     BaseStringMessagePromptTemplate,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
-    ChatPromptValue,
-    ChatPromptValueConcrete,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
@@ -20,8 +18,6 @@ __all__ = [
     "HumanMessagePromptTemplate",
     "AIMessagePromptTemplate",
     "SystemMessagePromptTemplate",
-    "ChatPromptValue",
-    "ChatPromptValueConcrete",
     "BaseChatPromptTemplate",
     "ChatPromptTemplate",
 ]

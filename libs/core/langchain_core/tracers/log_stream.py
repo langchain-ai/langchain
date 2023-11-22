@@ -15,7 +15,7 @@ from typing import (
 )
 from uuid import UUID
 
-import jsonpatch
+import jsonpatch  # type: ignore[import]
 from anyio import create_memory_object_stream
 
 from langchain_core.load import load

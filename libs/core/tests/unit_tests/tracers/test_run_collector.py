@@ -2,12 +2,12 @@
 
 import uuid
 
-from langchain.callbacks import collect_runs
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain_core.tracers.context import collect_runs
+from tests.unit_tests.fake.llm import FakeListLLM
 
 
 def test_collect_runs() -> None:
-    llm = FakeLLM(queries={"hi": "hello"}, sequential_responses=True)
+    llm = FakeListLLM(responses=["hello"])
     with collect_runs() as cb:
         llm.predict("hi")
         assert cb.traced_runs
