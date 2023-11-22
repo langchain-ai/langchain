@@ -191,6 +191,11 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
         else:
             raise ValueError(f"{save_path} must be json or yaml")
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        # For backwards compatibility.
+        return ["langchain"] + cls.__module__.split(".")[1:]
+
 
 def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
     """Format a document into a string based on a prompt template.

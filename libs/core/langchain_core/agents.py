@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence, Union
+from typing import Any, List, Literal, Sequence, Union
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import BaseMessage
@@ -34,6 +34,11 @@ class AgentAction(Serializable):
         """Return whether or not the class is serializable."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        # For backwards compatibility.
+        return ["langchain", "schema", "agent"]
+
 
 class AgentActionMessageLog(AgentAction):
     message_log: Sequence[BaseMessage]
@@ -48,6 +53,11 @@ class AgentActionMessageLog(AgentAction):
     # And this is the correct thing to do in this case.
     # The type literal is used for serialization purposes.
     type: Literal["AgentActionMessageLog"] = "AgentActionMessageLog"  # type: ignore
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        # For backwards compatibility.
+        return ["langchain", "schema", "agent"]
 
 
 class AgentFinish(Serializable):
@@ -72,3 +82,8 @@ class AgentFinish(Serializable):
     def is_lc_serializable(cls) -> bool:
         """Return whether or not the class is serializable."""
         return True
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        # For backwards compatibility.
+        return ["langchain", "schema", "agent"]

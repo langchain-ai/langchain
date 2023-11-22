@@ -52,7 +52,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
+        # For backwards compatibility, replace langchain_core with langchain, schema.
+        return ["langchain", "schema", "runnable"]
 
     @property
     def InputType(self) -> Type[Input]:

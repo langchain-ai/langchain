@@ -23,6 +23,16 @@ from langchain_core.tools import (
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 
+def test_lc_namespace() -> None:
+    assert BaseTool.get_lc_namespace() == ["langchain", "tools", "base"]
+    assert Tool.get_lc_namespace() == ["langchain", "tools", "base"]
+    assert StructuredTool.get_lc_namespace() == [
+        "langchain",
+        "tools",
+        "base",
+    ]
+
+
 def test_unnamed_decorator() -> None:
     """Test functionality with unnamed decorator."""
 

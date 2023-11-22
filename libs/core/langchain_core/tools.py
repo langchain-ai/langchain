@@ -448,6 +448,11 @@ class ChildTool(BaseTool):
         """Make tool callable."""
         return self.run(tool_input, callbacks=callbacks)
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        # For backwards compatibility.
+        return ["langchain", "tools", "base"]
+
 
 class Tool(BaseTool):
     """Tool that takes in function or coroutine directly."""

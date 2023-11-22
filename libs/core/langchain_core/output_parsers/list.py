@@ -18,6 +18,11 @@ class ListOutputParser(BaseOutputParser[List[str]]):
     def parse(self, text: str) -> List[str]:
         """Parse the output of an LLM call."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        # For backwards compatibility.
+        return ["langchain", "output_parsers", "list"]
+
 
 class CommaSeparatedListOutputParser(ListOutputParser):
     """Parse the output of an LLM call to a comma-separated list."""

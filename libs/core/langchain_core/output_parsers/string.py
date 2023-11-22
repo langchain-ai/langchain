@@ -1,3 +1,5 @@
+from typing import List
+
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 
 
@@ -17,3 +19,8 @@ class StrOutputParser(BaseTransformOutputParser[str]):
     def parse(self, text: str) -> str:
         """Returns the input text with no changes."""
         return text
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        # For backwards compatibility.
+        return ["langchain", "schema", "output_parser"]

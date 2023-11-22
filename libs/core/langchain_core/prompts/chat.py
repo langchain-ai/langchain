@@ -75,6 +75,11 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        # For backwards compatibility.
+        return ["langchain"] + cls.__module__.split(".")[1:]
+
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
     """Prompt template that assumes variable is already list of messages."""

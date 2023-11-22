@@ -37,6 +37,11 @@ class BaseMessage(Serializable):
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        # For backwards compatibility.
+        return ["langchain", "schema", "messages"]
+
 
 def merge_content(
     first_content: Union[str, List[Union[str, Dict]]],
