@@ -262,5 +262,9 @@ class AzureChatOpenAI(ChatOpenAI):
                 chat_result.llm_output, dict
             ):
                 chat_result.llm_output["model_name"] = model
+        
+        chat_result.llm_output["prompt_filter_results"] = response.get("prompt_filter_results", {})
+        for chat_gen, response_choice in zip(chat_result.generations, response["choices"]):
+            chat_gen.generation_info["content_filter_results"] = response_choice.get("content_filter_results", {})
 
         return chat_result
