@@ -128,7 +128,7 @@ def _load_refine_chain(
 
 def _load_conditional_chain(
     llm: BaseLanguageModel,
-    max_length: int = 10000,
+    max_length: int = 3000,
     verbose: Optional[bool] = None,
     map_reduce_kwargs: Any = None,
     stuff_kwargs: Any = None,
