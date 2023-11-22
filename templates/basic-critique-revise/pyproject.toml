@@ -23,7 +23,7 @@ export_attr = "chain"
 use-case = "research"
 author = "LangChain"
 integrations = ["OpenAI", "Function Calling", "Pydantic"]
-tags = ["research", "openai-functions"]
+tags = ["research", "function-calling"]
 
 [build-system]
 requires = ["poetry-core"]

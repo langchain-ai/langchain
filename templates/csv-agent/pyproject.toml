@@ -24,6 +24,12 @@ langchain-cli = ">=0.0.15"
 export_module = "csv_agent"
 export_attr = "agent_executor"
 
+[tool.templates-hub]
+use-case = "question-answering"
+author = "LangChain"
+integrations = ["OpenAI", "Pandas"]
+tags = ["data", "agents"]
+
 [build-system]
 requires = [
     "poetry-core",
