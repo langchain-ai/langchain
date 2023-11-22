@@ -21,6 +21,12 @@ sse-starlette = "^1.6.5"
 export_module = "sql_pgvector"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "sql"
+author = "LangChain"
+integrations = ["OpenAI"]
+tags = ["sql"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

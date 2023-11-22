@@ -20,6 +20,12 @@ langchain-cli = ">=0.0.15"
 export_module = "summarize_anthropic"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "summarization"
+author = "LangChain"
+integrations = ["Anthropic"]
+tags = ["summarization"]
+
 [build-system]
 requires = [
     "poetry-core",

@@ -19,6 +19,12 @@ sse-starlette = "^1.6.5"
 export_module = "vertexai_chuck_norris.chain"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "chatbot"
+author = "LangChain"
+integrations = ["Google"]
+tags = ["conversation"]
+
 [build-system]
 requires = [
     "poetry-core",

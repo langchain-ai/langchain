@@ -21,6 +21,12 @@ langchain-cli = ">=0.0.15"
 export_module = "xml_agent"
 export_attr = "agent_executor"
 
+[tool.templates-hub]
+use-case = "agent"
+author = "LangChain"
+integrations = ["Anthropic"]
+tags = ["agents"]
+
 [build-system]
 requires = [
     "poetry-core",

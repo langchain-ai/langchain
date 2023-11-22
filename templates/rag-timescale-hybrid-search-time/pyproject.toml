@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-timescale-hybrid-search-time"
 version = "0.0.1"
-description = ""
+description = "RAG using timescale-vector DB with the self-query retriver for metadata filtering on time"
 authors = []
 readme = "README.md"
 

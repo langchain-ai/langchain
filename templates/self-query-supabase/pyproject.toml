@@ -27,6 +27,12 @@ version = "^1.0.0"
 export_module = "self_query_supabase.chain"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "rag"
+author = "Supabase"
+integrations = ["OpenAI", "Supabase"]
+tags = ["vectordbs"]
+
 [build-system]
 requires = [
     "poetry-core",

@@ -18,6 +18,12 @@ langchain-cli = ">=0.0.15"
 export_module = "sql_ollama"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "sql"
+author = "LangChain"
+integrations = ["Ollama"]
+tags = ["sql"]
+
 [build-system]
 requires = [
     "poetry-core",

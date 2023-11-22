@@ -21,6 +21,12 @@ langchain-cli = ">=0.0.15"
 export_module = "rag_gpt_crawler"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "rag"
+author = "Google"
+integrations = ["OpenAI", "Chromadb"]
+tags = ["vectordbs"]
+
 [build-system]
 requires = [
     "poetry-core",

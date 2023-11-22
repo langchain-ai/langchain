@@ -19,6 +19,12 @@ langchain-cli = ">=0.0.15"
 export_module = "sql_llama2"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "sql"
+author = "LangChain"
+integrations = ["Replicate"]
+tags = ["sql"]
+
 [build-system]
 requires = [
     "poetry-core",
