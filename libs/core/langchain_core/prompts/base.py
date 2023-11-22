@@ -8,8 +8,8 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Type, Union
 import yaml
 
 from langchain_core.documents import Document
-from langchain_core.output_parsers import BaseOutputParser
-from langchain_core.prompts.value import PromptValue
+from langchain_core.output_parsers.base import BaseOutputParser
+from langchain_core.prompt_values import PromptValue
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 
@@ -40,8 +40,10 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
 
     @property
     def OutputType(self) -> Any:
-        from langchain_core.prompts.chat import ChatPromptValueConcrete
-        from langchain_core.prompts.string import StringPromptValue
+        from langchain_core.prompt_values import (
+            ChatPromptValueConcrete,
+            StringPromptValue,
+        )
 
         return Union[StringPromptValue, ChatPromptValueConcrete]
 

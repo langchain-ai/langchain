@@ -31,12 +31,16 @@ from langchain_core.outputs import (
     LLMResult,
     RunInfo,
 )
-from langchain_core.prompts import BasePromptTemplate, PromptValue, format_document
+from langchain_core.prompt_values import PromptValue
+from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore
 
 RUN_KEY = "__run"
+
+# Backwards compatibility.
 Memory = BaseMemory
+_message_to_dict = message_to_dict
 
 __all__ = [
     "BaseCache",
@@ -56,6 +60,7 @@ __all__ = [
     "messages_from_dict",
     "messages_to_dict",
     "message_to_dict",
+    "_message_to_dict",
     "_message_from_dict",
     "get_buffer_string",
     "RunInfo",

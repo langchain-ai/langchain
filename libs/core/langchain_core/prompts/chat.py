@@ -8,7 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
-    Literal,
+    Optional,
     Sequence,
     Set,
     Tuple,
@@ -27,12 +27,11 @@ from langchain_core.messages import (
     ChatMessage,
     HumanMessage,
     SystemMessage,
-    get_buffer_string,
 )
+from langchain_core.prompt_values import ChatPromptValue, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate
-from langchain_core.prompts.value import PromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
 
 
@@ -138,6 +137,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         cls: Type[MessagePromptTemplateT],
         template: str,
         template_format: str = "f-string",
+        partial_variables: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> MessagePromptTemplateT:
         """Create a class from a string template.
@@ -145,12 +145,21 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         Args:
             template: a template.
             template_format: format of the template.
+            partial_variables: A dictionary of variables that can be used to partially
+                               fill in the template. For example, if the template is
+                              `"{variable1} {variable2}"`, and `partial_variables` is
+                              `{"variable1": "foo"}`, then the final prompt will be
+                              `"foo {variable2}"`.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
             A new instance of this class.
         """
-        prompt = PromptTemplate.from_template(template, template_format=template_format)
+        prompt = PromptTemplate.from_template(
+            template,
+            template_format=template_format,
+            partial_variables=partial_variables,
+        )
         return cls(prompt=prompt, **kwargs)
 
     @classmethod
@@ -275,33 +284,6 @@ class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
         """
         text = self.prompt.format(**kwargs)
         return SystemMessage(content=text, additional_kwargs=self.additional_kwargs)
-
-
-class ChatPromptValue(PromptValue):
-    """Chat prompt value.
-
-    A type of a prompt value that is built from messages.
-    """
-
-    messages: Sequence[BaseMessage]
-    """List of messages."""
-
-    def to_string(self) -> str:
-        """Return prompt as string."""
-        return get_buffer_string(self.messages)
-
-    def to_messages(self) -> List[BaseMessage]:
-        """Return prompt as a list of messages."""
-        return list(self.messages)
-
-
-class ChatPromptValueConcrete(ChatPromptValue):
-    """Chat prompt value which explicitly lists out the message types it accepts.
-    For use in external schemas."""
-
-    messages: Sequence[AnyMessage]
-
-    type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
 
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
