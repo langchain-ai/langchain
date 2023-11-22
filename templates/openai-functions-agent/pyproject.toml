@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "openai-functions-agent"
 version = "0.1.0"
-description = ""
+description = "Agent using OpenAI function calling to execute functions, including search"
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]
@@ -19,6 +19,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "openai_functions_agent"
 export_attr = "agent_executor"
+
+[tool.templates-hub]
+use-case = "research"
+author = "LangChain"
+integrations = ["OpenAI", "Tavily"]
+tags = ["search", "agents", "function-calling"]
 
 [build-system]
 requires = [

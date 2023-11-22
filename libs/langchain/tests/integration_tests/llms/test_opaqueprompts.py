@@ -1,6 +1,6 @@
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableParallel
-from langchain_core.schema.output_parser import StrOutputParser
 
 import langchain.utilities.opaqueprompts as op
 from langchain.chains.llm import LLMChain

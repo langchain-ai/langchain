@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.document_loaders import DataFrameLoader
 

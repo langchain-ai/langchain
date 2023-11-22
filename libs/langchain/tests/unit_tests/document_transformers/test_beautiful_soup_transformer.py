@@ -1,6 +1,6 @@
 """Unit tests for beautiful soup document transformer."""
 import pytest
-from langchain_core.schema.document import Document
+from langchain_core.documents import Document
 
 from langchain.document_transformers import BeautifulSoupTransformer
 

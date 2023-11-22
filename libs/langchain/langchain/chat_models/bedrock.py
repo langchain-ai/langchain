@@ -1,8 +1,8 @@
 from typing import Any, Dict, Iterator, List, Optional
 
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Extra
-from langchain_core.schema.messages import AIMessage, AIMessageChunk, BaseMessage
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
@@ -28,7 +28,7 @@ class ChatPromptAdapter:
     ) -> str:
         if provider == "anthropic":
             prompt = convert_messages_to_prompt_anthropic(messages=messages)
-        if provider == "meta":
+        elif provider == "meta":
             prompt = convert_messages_to_prompt_llama(messages=messages)
         else:
             raise NotImplementedError(

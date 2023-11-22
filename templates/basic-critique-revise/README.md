@@ -1,10 +1,10 @@
 # basic-critique-revise
 
-TODO: What does this package do
+Iteratively generate schema candidates and revise them based on errors.
 
 ## Environment Setup
 
-TODO: What environment variables need to be set (if any)
+This template uses OpenAI function calling, so you will need to set the `OPENAI_API_KEY` environment variable in order to use this template.
 
 ## Usage
 

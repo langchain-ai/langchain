@@ -1,6 +1,5 @@
 import pytest
-from langchain_core.pydantic_v1 import SecretStr
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     ChatMessage,
@@ -9,6 +8,7 @@ from langchain_core.schema.messages import (
     HumanMessageChunk,
     SystemMessage,
 )
+from langchain_core.pydantic_v1 import SecretStr
 
 from langchain.chat_models.baichuan import (
     _convert_delta_to_message_chunk,
