@@ -13,14 +13,14 @@ from typing import (
     cast,
 )
 
+from langchain_core.output_parsers import (
+    BaseGenerationOutputParser,
+    BaseLLMOutputParser,
+    BaseOutputParser,
+)
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
-from langchain_core.schema import BaseLLMOutputParser
-from langchain_core.schema.output_parser import (
-    BaseGenerationOutputParser,
-    BaseOutputParser,
-)
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain

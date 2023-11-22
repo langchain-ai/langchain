@@ -15,7 +15,7 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
         .. code-block:: python
 
             from langchain.document_loaders import ApifyDatasetLoader
-            from langchain_core.schema import Document
+            from langchain_core.documents import Document
 
             loader = ApifyDatasetLoader(
                 dataset_id="YOUR-DATASET-ID",

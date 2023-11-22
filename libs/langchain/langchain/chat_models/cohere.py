@@ -1,6 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -8,7 +8,7 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -103,7 +103,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         .. code-block:: python
 
             from langchain.chat_models import ChatCohere
-            from langchain_core.schema import HumanMessage
+            from langchain_core.messages import HumanMessage
 
             chat = ChatCohere(model="foo")
             result = chat([HumanMessage(content="Hello")])

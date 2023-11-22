@@ -1,13 +1,13 @@
 """SQL agent."""
 from typing import Any, Dict, List, Optional, Sequence
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.messages import AIMessage, SystemMessage
 
 from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.agent_toolkits.sql.prompt import (

@@ -2,8 +2,7 @@ import os
 import time
 from typing import Optional
 
-from cassandra.cluster import Cluster
-from langchain_core.schema.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories.cassandra import (
@@ -16,6 +15,8 @@ def _chat_message_history(
     drop: bool = True,
     ttl_seconds: Optional[int] = None,
 ) -> CassandraChatMessageHistory:
+    from cassandra.cluster import Cluster
+
     keyspace = "cmh_test_keyspace"
     table_name = "cmh_test_table"
     # get db connection

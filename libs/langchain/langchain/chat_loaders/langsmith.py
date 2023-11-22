@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Union, cast
 
+from langchain_core.chat_sessions import ChatSession
 from langchain_core.load import load
-from langchain_core.schema.chat import ChatSession
 
 from langchain.chat_loaders.base import BaseChatLoader
 

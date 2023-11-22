@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pytest
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -12,7 +12,6 @@ from tests.integration_tests.vectorstores.qdrant.async_api.fixtures import (
 )
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "test_content"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "test_metadata"])
