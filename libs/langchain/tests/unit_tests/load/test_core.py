@@ -1,4 +1,5 @@
 import importlib
+import inspect
 
 from langchain_core.load import Serializable
 
@@ -32,6 +33,10 @@ core_modules = [
     "vectorstores",
 ]
 
+ignore_objects = set([
+    "langchain_core.vectorstores.VectorStoreRetriever" # this is a base class
+])
+
 
 def test_core_exported_from_langchain() -> None:
     # iterate through core modules and get exported names that inherit from serializable
@@ -44,12 +49,18 @@ def test_core_exported_from_langchain() -> None:
         for name in dir(module):
             if name.startswith("_"):
                 continue
+            obj_name = f"langchain_core.{module_name}.{name}"
             obj = getattr(module, name)
             if not isinstance(obj, type):
                 continue
             if not issubclass(obj, Serializable):
                 continue
-            obj_name = f"langchain_core.{module_name}.{name}"
+            if inspect.isabstract(obj):
+                continue
+            if obj is Serializable:
+                continue
+            if obj_name in ignore_objects:
+                continue
             lc_id = obj.lc_id()  # type: ignore
             if not lc_id[0] == "langchain":
                 wrong_module.append(f"{obj_name} -> {lc_id}")
