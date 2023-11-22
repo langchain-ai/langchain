@@ -17,7 +17,7 @@ from typing_extensions import TypeAlias
 
 from langchain_core.messages import AnyMessage, BaseMessage, get_buffer_string
 from langchain_core.outputs import LLMResult
-from langchain_core.prompts import PromptValue
+from langchain_core.prompt_values import PromptValue
 from langchain_core.runnables import RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 @lru_cache(maxsize=None)  # Cache the tokenizer
 def get_tokenizer() -> Any:
     try:
-        from transformers import GPT2TokenizerFast
+        from transformers import GPT2TokenizerFast  # type: ignore[import]
     except ImportError:
         raise ImportError(
             "Could not import transformers python package. "
@@ -74,8 +74,10 @@ class BaseLanguageModel(
     @property
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
-        from langchain_core.prompts.chat import ChatPromptValueConcrete
-        from langchain_core.prompts.string import StringPromptValue
+        from langchain_core.prompt_values import (
+            ChatPromptValueConcrete,
+            StringPromptValue,
+        )
 
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes

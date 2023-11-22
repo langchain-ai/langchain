@@ -9,7 +9,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.prompts import PromptValue
+from langchain_core.prompt_values import PromptValue
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
