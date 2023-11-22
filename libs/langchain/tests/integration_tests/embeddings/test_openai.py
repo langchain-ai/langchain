@@ -1,6 +1,5 @@
 """Test openai embeddings."""
 import numpy as np
-import openai
 import pytest
 
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -66,6 +65,8 @@ async def test_openai_embedding_async_query() -> None:
 @pytest.mark.scheduled
 def test_openai_embedding_with_empty_string() -> None:
     """Test openai embeddings with empty string."""
+    import openai
+
     document = ["", "abc"]
     embedding = OpenAIEmbeddings()
     output = embedding.embed_documents(document)

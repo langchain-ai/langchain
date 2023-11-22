@@ -8,9 +8,9 @@ authors = [
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<3.13"
 gigachain = ">=0.0.325"
-openai = "^0.28.1"
+openai = "<2"
 elasticsearch = "^8.10.0"
 sentence-transformers = "^2.2.2"
 jq = "^1.6.0"

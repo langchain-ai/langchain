@@ -14,8 +14,8 @@ _prompt = ChatPromptTemplate.from_messages(
 _model = ChatOpenAI().configurable_alternatives(
     ConfigurableField(id="llm_provider"),
     default_key="openai",
-    anthropic=ChatAnthropic(),
-    cohere=ChatCohere(),
+    anthropic=ChatAnthropic,
+    cohere=ChatCohere,
 )
 
 # if you update this, you MUST also update ../pyproject.toml

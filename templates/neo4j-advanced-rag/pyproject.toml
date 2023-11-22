@@ -11,7 +11,7 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 gigachain = ">=0.0.325"
 tiktoken = "^0.5.1"
-openai = "^0.28.1"
+openai = "<2"
 neo4j = "^5.14.0"
 
 [tool.gigaserve]

@@ -1,8 +1,6 @@
 # rag-aws-kendra
 
-This template is an application that utilizes Amazon Kendra, a machine learning powered search service, and Anthropic Claude for text generation. T
-
-he application retrieves documents using a Retrieval chain to answer questions from your documents. 
+This template is an application that utilizes Amazon Kendra, a machine learning powered search service, and Anthropic Claude for text generation. The application retrieves documents using a Retrieval chain to answer questions from your documents. 
 
 It uses the `boto3` library to connect with the Bedrock service. 
 
