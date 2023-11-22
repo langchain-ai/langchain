@@ -299,6 +299,8 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     default_key: str = "default"
 
+    prefix_keys: bool
+
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         with _enums_for_spec_lock:
@@ -313,21 +315,36 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                     ),
                 )
                 _enums_for_spec[self.which] = cast(Type[StrEnum], which_enum)
-        return [
-            ConfigurableFieldSpec(
-                id=self.which.id,
-                name=self.which.name,
-                description=self.which.description,
-                annotation=which_enum,
-                default=self.default_key,
-            ),
-            *self.default.config_specs,
-        ] + [
-            s
-            for alt in self.alternatives.values()
-            if isinstance(alt, RunnableSerializable)
-            for s in alt.config_specs
-        ]
+        return get_unique_config_specs(
+            # which alternative
+            [
+                ConfigurableFieldSpec(
+                    id=self.which.id,
+                    name=self.which.name,
+                    description=self.which.description,
+                    annotation=which_enum,
+                    default=self.default_key,
+                ),
+            ]
+            # config specs of the default option
+            + (
+                [
+                    prefix_config_spec(s, f"{self.which.id}=={self.default_key}")
+                    for s in self.default.config_specs
+                ]
+                if self.prefix_keys
+                else self.default.config_specs
+            )
+            # config specs of the alternatives
+            + [
+                prefix_config_spec(s, f"{self.which.id}=={alt_key}")
+                if self.prefix_keys
+                else s
+                for alt_key, alt in self.alternatives.items()
+                if isinstance(alt, RunnableSerializable)
+                for s in alt.config_specs
+            ]
+        )
 
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
@@ -353,6 +370,18 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                 return alt()
         else:
             raise ValueError(f"Unknown alternative: {which}")
+
+
+def prefix_config_spec(
+    spec: ConfigurableFieldSpec, prefix: str
+) -> ConfigurableFieldSpec:
+    return ConfigurableFieldSpec(
+        id=f"{prefix}/{spec.id}",
+        name=spec.name,
+        description=spec.description,
+        annotation=spec.annotation,
+        default=spec.default,
+    )
 
 
 def make_options_spec(
