@@ -995,8 +995,9 @@ def _collect_test_results(
     batch_results: List[Union[dict, str, LLMResult, ChatResult]],
     configs: List[RunnableConfig],
     project_name: str,
+    verbose: bool = False,
 ) -> TestResult:
-    wait_for_all_evaluators()
+    wait_for_all_evaluators(verbose=verbose)
     all_eval_results = {}
     all_execution_time = {}
     for c in configs:
@@ -1101,7 +1102,7 @@ async def arun_on_dataset(
             configs,
         ),
     )
-    results = _collect_test_results(examples, batch_results, configs, project_name)
+    results = _collect_test_results(examples, batch_results, configs, project_name, verbose=verbose)
     if verbose:
         try:
             agg_feedback = results.get_aggregate_feedback()
@@ -1173,7 +1174,7 @@ def run_on_dataset(
                 )
             )
 
-    results = _collect_test_results(examples, batch_results, configs, project_name)
+    results = _collect_test_results(examples, batch_results, configs, project_name, verbose=verbose)
     if verbose:
         try:
             agg_feedback = results.get_aggregate_feedback()

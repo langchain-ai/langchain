@@ -22,12 +22,12 @@ logger = logging.getLogger(__name__)
 _TRACERS: weakref.WeakSet[EvaluatorCallbackHandler] = weakref.WeakSet()
 
 
-def wait_for_all_evaluators() -> None:
+def wait_for_all_evaluators(verbose: bool = False) -> None:
     """Wait for all tracers to finish."""
     global _TRACERS
     for tracer in list(_TRACERS):
         if tracer is not None:
-            tracer.wait_for_futures()
+            tracer.wait_for_futures(verbose=verbose)
 
 
 class EvaluatorCallbackHandler(BaseTracer):
@@ -218,6 +218,19 @@ class EvaluatorCallbackHandler(BaseTracer):
                     self.executor.submit(self._evaluate_in_project, run_, evaluator)
                 )
 
-    def wait_for_futures(self) -> None:
+    def wait_for_futures(self, verbose: bool = False) -> None:
         """Wait for all futures to complete."""
-        wait(self.futures)
+        if verbose:
+            logger.info(
+                f"Waiting for {len(self.futures)} evaluators to finish."
+            )
+            try:
+                from tqdm.auto import tqdm
+                wait(tqdm(self.futures))
+            except ImportError:
+                wait(self.futures)
+        else:
+            wait(self.futures)
+
+               
+        
