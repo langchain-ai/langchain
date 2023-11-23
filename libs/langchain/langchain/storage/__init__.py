@@ -11,6 +11,7 @@ from langchain.storage.encoder_backed import EncoderBackedStore
 from langchain.storage.file_system import LocalFileStore
 from langchain.storage.in_memory import InMemoryStore
 from langchain.storage.redis import RedisStore
+from langchain.storage.sql_docstore import SQLStore
 from langchain.storage.upstash_redis import UpstashRedisStore
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "create_lc_store",
     "create_kv_docstore",
     "UpstashRedisStore",
+    "SQLStore",
 ]

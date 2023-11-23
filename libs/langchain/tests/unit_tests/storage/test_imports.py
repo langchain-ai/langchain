@@ -8,6 +8,7 @@ EXPECTED_ALL = [
     "create_lc_store",
     "create_kv_docstore",
     "UpstashRedisStore",
+    "SQLStore",
 ]
 
 
