@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 EXAMPLES = [
     """Question: Какой диапазон высот для территории, на которую распространяется восточный сектор Колорадского орогенеза?

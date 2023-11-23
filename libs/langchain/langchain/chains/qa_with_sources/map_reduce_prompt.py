@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 question_prompt_template = """Используй следующий фрагмент длинного документа, чтобы увидеть, содержит ли текст информацию, относящуюся к ответу на вопрос.
 Верни любой релевантный текст дословно.

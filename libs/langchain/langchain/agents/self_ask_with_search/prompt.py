@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 _DEFAULT_TEMPLATE = """Вопрос: Кто прожил дольше, Мухаммед Али или Алан Тьюринг?
 Нужны ли здесь дополнительные вопросы: Да.

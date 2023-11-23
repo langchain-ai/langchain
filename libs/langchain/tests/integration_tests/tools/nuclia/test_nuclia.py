@@ -88,7 +88,6 @@ def test_nuclia_tool() -> None:
                 assert json.loads(data)["uuid"] == "fake_uuid"
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("nucliadb_protos")
 async def test_async_call() -> None:
     with mock.patch(

@@ -6,7 +6,7 @@ from langchain.memory.prompt import (
     KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
     SUMMARY_PROMPT,
 )
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 DEFAULT_TEMPLATE = """Ниже приводится дружеский разговор между человеком и AI. AI разговорчив и предоставляет множество конкретных деталей из своего контекста. Если AI не знает ответа на вопрос, он честно говорит, что не знает.
 

@@ -1,11 +1,11 @@
 from typing import Iterable, Optional
 
+from langchain_core.documents import Document
 from requests.exceptions import HTTPError, ReadTimeout
 from urllib3.exceptions import ConnectionError
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.document_loaders.web_base import WebBaseLoader
-from langchain.schema import Document
 from langchain.tools.base import BaseTool
 
 

@@ -17,11 +17,11 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.embeddings import Embeddings
+from langchain_core.utils.iter import batch_iterate
+from langchain_core.vectorstores import VectorStore
 
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
-from langchain.utils.iter import batch_iterate
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 ADBVST = TypeVar("ADBVST", bound="AstraDB")

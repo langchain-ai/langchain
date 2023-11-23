@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 _DEFAULT_ENTITY_EXTRACTION_TEMPLATE = """Извлеките все сущности из следующего текста. В качестве руководства, собственное имя обычно пишется с заглавной буквы. Вы должны обязательно извлечь все имена и места.
 

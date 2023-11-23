@@ -6,6 +6,9 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
+from langchain_core.utils.input import get_colored_text
 from requests import Response
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
@@ -14,12 +17,8 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
 from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import APIOperation
 from langchain.utilities.openapi import OpenAPISpec
-from langchain.utils.input import get_colored_text
 
 if TYPE_CHECKING:
     from openapi_pydantic import Parameter
@@ -174,7 +173,7 @@ def openapi_spec_to_openai_fn(
         path_params = fn_args.pop("path_params", {})
         url = _format_url(url, path_params)
         if "data" in fn_args and isinstance(fn_args["data"], dict):
-            fn_args["data"] = json.dumps(fn_args["data"], ensure_ascii=False)
+            fn_args["data"] = json.dumps(fn_args["data"])
         _kwargs = {**fn_args, **kwargs}
         if headers is not None:
             if "headers" in _kwargs:
@@ -219,9 +218,7 @@ class SimpleRequestChain(Chain):
         name = inputs[self.input_key].pop("name")
         args = inputs[self.input_key].pop("arguments")
         _pretty_name = get_colored_text(name, "green")
-        _pretty_args = get_colored_text(
-            json.dumps(args, indent=2, ensure_ascii=False), "green"
-        )
+        _pretty_args = get_colored_text(json.dumps(args, indent=2), "green")
         _text = f"Calling endpoint {_pretty_name} with arguments:\n" + _pretty_args
         _run_manager.on_text(_text)
         api_response: Response = self.request_method(name, args)

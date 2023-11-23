@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 _DEFAULT_ENTITY_EXTRACTION_TEMPLATE = """Ты - AI-ассистент, который анализирует запись разговора между AI и человеком. Извлеки все имена собственные из последней строки разговора. Как правило, имена собственные пишутся с заглавной буквы. Ты обязательно должен извлечь все имена и места.
 

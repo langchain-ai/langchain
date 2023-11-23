@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-weaviate"
 version = "0.1.0"
-description = ""
+description = "RAG using Weaviate retriever"
 authors = [
     "Erika Cardenas <erika@weaviate.io>",
 ]

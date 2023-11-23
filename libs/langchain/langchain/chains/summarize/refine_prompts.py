@@ -1,4 +1,4 @@
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 REFINE_PROMPT_TMPL = (
     "Твоя задача - создать окончательное резюме\n"

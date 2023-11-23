@@ -23,7 +23,10 @@ def _get_tool_classes(skip_tools_without_default_names: bool) -> List[Type[BaseT
                 continue
             if skip_tools_without_default_names and tool_class.__fields__[
                 "name"
-            ].default in [None, ""]:
+            ].default in [  # type: ignore
+                None,
+                "",
+            ]:
                 continue
             results.append(tool_class)
     return results

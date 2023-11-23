@@ -1,11 +1,11 @@
 # flake8: noqa
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.prompts.chat import (
+from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 question_prompt_template = """Используй следующий фрагмент длинного документа, чтобы увидеть, содержит ли текст информацию, относящуюся к ответу на вопрос. 
 Верни любой релевантный текст дословно.

@@ -1,6 +1,6 @@
 # flake8: noqa
 from langchain.output_parsers.regex import RegexParser
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 template = """Ты учитель, который составляет вопросы для викторины. 
 Исходя из следующего документа, пожалуйста, сформулируй вопрос и ответ, основанные на этом документе.
