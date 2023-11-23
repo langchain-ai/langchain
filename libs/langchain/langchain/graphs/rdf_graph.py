@@ -18,88 +18,93 @@ prefixes = {
 
 # NOTE: here, being a class is defined as having instances.
 #   this may lead to false negatives, but avoids mistaking instances for classes
-cls_query_rdf = prefixes["rdfs"] + (
-    """SELECT DISTINCT ?cls ?lbl ?com\n"""
-    """WHERE { \n"""
-    """    ?instance a ?cls .\n"""
-    """    OPTIONAL { ?cls rdfs:label ?lbl } . \n"""
-    """    OPTIONAL { ?cls rdfs:comment ?com } . \n"""
-    """    FILTER NOT EXISTS { ?cls a rdf:Property } \n"""
-    """}"""
-)
+cls_query_rdf = """\
+SELECT DISTINCT ?cls ?lbl ?com
+WHERE {{
+    ?instance a ?cls .
+    OPTIONAL {{ ?cls rdfs:label ?lbl }} .
+    OPTIONAL {{ ?cls rdfs:comment ?com }} .
+    FILTER NOT EXISTS {{ ?cls a rdf:Property }} .
+    FILTER ( !bound(?lbl) || LANG(?lbl) = "{language}" ) .
+    FILTER ( !bound(?com) || LANG(?com) = "{language}" ) .
+}}
+"""
+cls_query_rdf = prefixes["rdfs"] + cls_query_rdf
 
-cls_query_rdfs = prefixes["rdfs"] + (
-    """SELECT DISTINCT ?cls ?lbl ?com\n"""
-    """WHERE { \n"""
-    """    ?cls a rdfs:Class . \n"""
-    """    OPTIONAL { ?cls rdfs:label ?lbl } . \n"""
-    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
-    """    FILTER NOT EXISTS { ?cls a rdf:Property } \n"""
-    """}"""
-)
+cls_query_rdfs = """\
+SELECT DISTINCT ?cls ?lbl ?com
+WHERE {{
+    ?cls a rdfs:Class .
+    OPTIONAL {{ ?cls rdfs:label ?lbl }} .
+    OPTIONAL {{ ?cls rdfs:comment ?com }} .
+    FILTER NOT EXISTS {{ ?cls a rdf:Property }} .
+    FILTER ( !bound(?lbl) || LANG(?lbl) = "{language}" ) .
+    FILTER ( !bound(?com) || LANG(?com) = "{language}" ) .
+}}
+"""
+cls_query_rdfs = prefixes["rdfs"] + cls_query_rdfs
 
-cls_query_owl = (
-    prefixes["rdfs"]
-    + prefixes["owl"]
-    + (
-        """SELECT DISTINCT ?cls ?lbl ?com\n"""
-        """WHERE { \n"""
-        """    ?cls a owl:Class . \n"""
-        """    FILTER (isIRI(?cls)) . \n"""
-        """    OPTIONAL { ?cls rdfs:label ?lbl } . \n"""
-        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
-        """    FILTER NOT EXISTS { ?cls a rdf:Property } \n"""
-        """}"""
-    )
-)
+cls_query_owl = """\
+SELECT DISTINCT ?cls ?lbl ?com
+WHERE {{
+    ?cls a owl:Class .
+    FILTER (isIRI(?cls)) .
+    OPTIONAL {{ ?cls rdfs:label ?lbl }} .
+    OPTIONAL {{ ?cls rdfs:comment ?com }} .
+    FILTER NOT EXISTS {{ ?cls a rdf:Property }} .
+    FILTER ( !bound(?lbl) || LANG(?lbl) = "{language}" ) .
+    FILTER ( !bound(?com) || LANG(?com) = "{language}" ) .
+}}
+"""
+cls_query_owl = prefixes["rdfs"] + prefixes["owl"] + cls_query_owl
 
-rel_query_rdf = prefixes["rdfs"] + (
-    """SELECT DISTINCT ?rel ?lbl ?com\n"""
-    """WHERE { \n"""
-    """    ?subj ?rel ?obj . \n"""
-    """    OPTIONAL { ?rel rdfs:label ?lbl } . \n"""
-    """    OPTIONAL { ?rel rdfs:comment ?com } \n"""
-    """}"""
-)
+rel_query_rdf = """\
+SELECT DISTINCT ?rel ?lbl ?com
+WHERE {{
+    ?subj ?rel ?obj .
+    OPTIONAL {{ ?rel rdfs:label ?lbl }} .
+    OPTIONAL {{ ?rel rdfs:comment ?com }} .
+    FILTER ( !bound(?lbl) || LANG(?lbl) = "{language}" ) .
+    FILTER ( !bound(?com) || LANG(?com) = "{language}" ) .
+}}
+"""
+rel_query_rdf = prefixes["rdfs"] + rel_query_rdf
 
-rel_query_rdfs = (
-    prefixes["rdf"]
-    + prefixes["rdfs"]
-    + (
-        """SELECT DISTINCT ?rel ?lbl ?com\n"""
-        """WHERE { \n"""
-        """    ?rel a rdf:Property . \n"""
-        """    OPTIONAL { ?rel rdfs:label ?lbl } . \n"""
-        """    OPTIONAL { ?rel rdfs:comment ?com } \n"""
-        """}"""
-    )
-)
+rel_query_rdfs = """\
+SELECT DISTINCT ?rel ?lbl ?com
+WHERE {{
+    ?rel a rdf:Property .
+    OPTIONAL { ?rel rdfs:label ?lbl } .
+    OPTIONAL { ?rel rdfs:comment ?com } .
+    FILTER ( !bound(?lbl) || LANG(?lbl) = "{language}" ) .
+    FILTER ( !bound(?com) || LANG(?com) = "{language}" ) .
+}}
+"""
+rel_query_rdfs = prefixes["rdf"] + prefixes["rdfs"] + rel_query_rdfs
 
-op_query_owl = (
-    prefixes["rdfs"]
-    + prefixes["owl"]
-    + (
-        """SELECT DISTINCT ?op ?lbl ?com\n"""
-        """WHERE { \n"""
-        """    ?op a owl:ObjectProperty . \n"""
-        """    OPTIONAL { ?op rdfs:label ?lbl } . \n"""
-        """    OPTIONAL { ?op rdfs:comment ?com } \n"""
-        """}"""
-    )
-)
+op_query_owl = """\
+SELECT DISTINCT ?op ?lbl ?com
+WHERE {{
+    ?op a owl:ObjectProperty .
+    OPTIONAL {{ ?op rdfs:label ?lbl }} .
+    OPTIONAL {{ ?op rdfs:comment ?com }} .
+    FILTER ( !bound(?lbl) || LANG(?lbl) = "{language}" ) .
+    FILTER ( !bound(?com) || LANG(?com) = "{language}" ) .
+}}
+"""
+op_query_owl = prefixes["rdfs"] + prefixes["owl"] + op_query_owl
 
-dp_query_owl = (
-    prefixes["rdfs"]
-    + prefixes["owl"]
-    + (
-        """SELECT DISTINCT ?dp ?lbl ?com\n"""
-        """WHERE { \n"""
-        """    ?dp a owl:DatatypeProperty . \n"""
-        """    OPTIONAL { ?dp rdfs:label ?lbl } . \n"""
-        """    OPTIONAL { ?dp rdfs:comment ?com } \n"""
-        """}"""
-    )
-)
+dp_query_owl = """\
+SELECT DISTINCT ?dp ?lbl ?com
+WHERE {{
+    ?dp a owl:DatatypeProperty .
+    OPTIONAL {{ ?dp rdfs:label ?lbl }} .
+    OPTIONAL {{ ?dp rdfs:comment ?com }} .
+    FILTER ( !bound(?lbl) || LANG(?lbl) = "{language}" ) .
+    FILTER ( !bound(?com) || LANG(?com) = "{language}" ) .
+}}
+"""
+dp_query_owl = prefixes["rdfs"] + prefixes["owl"] + dp_query_owl
 
 
 class RdfGraph:
@@ -131,6 +136,7 @@ class RdfGraph:
         update_endpoint: Optional[str] = None,
         standard: Optional[str] = "rdf",
         local_copy: Optional[str] = None,
+        language: str = "",
     ) -> None:
         """
         Set up the RDFlib graph
@@ -148,6 +154,7 @@ class RdfGraph:
         self.update_endpoint = update_endpoint
         self.standard = standard
         self.local_copy = local_copy
+        self.language = language
 
         try:
             import rdflib
@@ -288,17 +295,17 @@ class RdfGraph:
             )
 
         if self.standard == "rdf":
-            clss = self.query(cls_query_rdf)
-            rels = self.query(rel_query_rdf)
+            clss = self.query(cls_query_rdf.format(language=self.language))
+            rels = self.query(rel_query_rdf.format(language=self.language))
             self.schema = _rdf_s_schema(clss, rels)
         elif self.standard == "rdfs":
-            clss = self.query(cls_query_rdfs)
-            rels = self.query(rel_query_rdfs)
+            clss = self.query(cls_query_rdfs.format(language=self.language))
+            rels = self.query(rel_query_rdfs.format(language=self.language))
             self.schema = _rdf_s_schema(clss, rels)
         elif self.standard == "owl":
-            clss = self.query(cls_query_owl)
-            ops = self.query(op_query_owl)
-            dps = self.query(dp_query_owl)
+            clss = self.query(cls_query_owl.format(language=self.language))
+            ops = self.query(op_query_owl.format(language=self.language))
+            dps = self.query(dp_query_owl.format(language=self.language))
             self.schema = (
                 f"In the following, each IRI is followed by the local name and "
                 f"optionally its label and its description in parentheses. \n"
