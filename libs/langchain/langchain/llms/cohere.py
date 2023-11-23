@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
+from langchain_core.load.serializable import Serializable
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -17,8 +19,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -80,6 +80,9 @@ class BaseCohere(Serializable):
     streaming: bool = Field(default=False)
     """Whether to stream the results."""
 
+    user_agent: str = "langchain"
+    """Identifier for the application making the request."""
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -94,8 +97,11 @@ class BaseCohere(Serializable):
             cohere_api_key = get_from_dict_or_env(
                 values, "cohere_api_key", "COHERE_API_KEY"
             )
-            values["client"] = cohere.Client(cohere_api_key)
-            values["async_client"] = cohere.AsyncClient(cohere_api_key)
+            client_name = values["user_agent"]
+            values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
+            values["async_client"] = cohere.AsyncClient(
+                cohere_api_key, client_name=client_name
+            )
         return values
 
 

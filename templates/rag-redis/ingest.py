@@ -15,9 +15,7 @@ def ingest_documents():
     # Load list of pdfs
     company_name = "Nike"
     data_path = "data/"
-    doc = [
-        os.path.join(data_path, file) for file in os.listdir(data_path)
-    ][0]
+    doc = [os.path.join(data_path, file) for file in os.listdir(data_path)][0]
 
     print("Parsing 10k filing doc for NIKE", doc)
 
@@ -29,9 +27,7 @@ def ingest_documents():
 
     print("Done preprocessing. Created", len(chunks), "chunks of the original pdf")
     # Create vectorstore
-    embedder = HuggingFaceEmbeddings(
-        model_name=EMBED_MODEL
-    )
+    embedder = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
 
     _ = Redis.from_texts(
         # appending this little bit can sometimes help with semantic retrieval
@@ -41,7 +37,7 @@ def ingest_documents():
         embedding=embedder,
         index_name=INDEX_NAME,
         index_schema=INDEX_SCHEMA,
-        redis_url=REDIS_URL
+        redis_url=REDIS_URL,
     )
 
 

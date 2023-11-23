@@ -15,10 +15,10 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
+from langchain_core.documents import Document
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document
 
 if TYPE_CHECKING:
     import fitz.fitz
@@ -106,7 +106,7 @@ class PyPDFParser(BaseBlobParser):
         if not self.extract_images or "/XObject" not in page["/Resources"].keys():
             return ""
 
-        xObject = page["/Resources"]["/XObject"].get_object()
+        xObject = page["/Resources"]["/XObject"].get_object()  # type: ignore
         images = []
         for obj in xObject:
             if xObject[obj]["/Subtype"] == "/Image":
@@ -128,18 +128,36 @@ class PyPDFParser(BaseBlobParser):
 class PDFMinerParser(BaseBlobParser):
     """Parse `PDF` using `PDFMiner`."""
 
-    def __init__(self, extract_images: bool = False):
+    def __init__(self, extract_images: bool = False, *, concatenate_pages: bool = True):
+        """Initialize a parser based on PDFMiner.
+
+        Args:
+            extract_images: Whether to extract images from PDF.
+            concatenate_pages: If True, concatenate all PDF pages into one a single
+                               document. Otherwise, return one document per page.
+        """
         self.extract_images = extract_images
+        self.concatenate_pages = concatenate_pages
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
+
         if not self.extract_images:
             from pdfminer.high_level import extract_text
 
             with blob.as_bytes_io() as pdf_file_obj:
-                text = extract_text(pdf_file_obj)
-                metadata = {"source": blob.source}
-                yield Document(page_content=text, metadata=metadata)
+                if self.concatenate_pages:
+                    text = extract_text(pdf_file_obj)
+                    metadata = {"source": blob.source}
+                    yield Document(page_content=text, metadata=metadata)
+                else:
+                    from pdfminer.pdfpage import PDFPage
+
+                    pages = PDFPage.get_pages(pdf_file_obj)
+                    for i, _ in enumerate(pages):
+                        text = extract_text(pdf_file_obj, page_numbers=[i])
+                        metadata = {"source": blob.source, "page": str(i)}
+                        yield Document(page_content=text, metadata=metadata)
         else:
             import io
 
@@ -387,6 +405,46 @@ class AmazonTextractPDFParser(BaseBlobParser):
     """Send `PDF` files to `Amazon Textract` and parse them.
 
     For parsing multi-page PDFs, they have to reside on S3.
+
+    The AmazonTextractPDFLoader calls the
+    [Amazon Textract Service](https://aws.amazon.com/textract/)
+    to convert PDFs into a Document structure.
+    Single and multi-page documents are supported with up to 3000 pages
+    and 512 MB of size.
+
+    For the call to be successful an AWS account is required,
+    similar to the
+    [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
+    requirements.
+
+    Besides the AWS configuration, it is very similar to the other PDF
+    loaders, while also supporting JPEG, PNG and TIFF and non-native
+    PDF formats.
+
+    ```python
+    from langchain.document_loaders import AmazonTextractPDFLoader
+    loader=AmazonTextractPDFLoader("example_data/alejandro_rosalez_sample-small.jpeg")
+    documents = loader.load()
+    ```
+
+    One feature is the linearization of the output.
+    When using the features LAYOUT, FORMS or TABLES together with Textract
+
+    ```python
+    from langchain.document_loaders import AmazonTextractPDFLoader
+    # you can mix and match each of the features
+    loader=AmazonTextractPDFLoader(
+        "example_data/alejandro_rosalez_sample-small.jpeg",
+        textract_features=["TABLES", "LAYOUT"])
+    documents = loader.load()
+    ```
+
+    it will generate output that formats the text in reading order and
+    try to output the information in a tabular structure or
+    output the key/value pairs with a colon (key: value).
+    This helps most LLMs to achieve better accuracy when
+    processing these texts.
+
     """
 
     def __init__(
@@ -405,8 +463,11 @@ class AmazonTextractPDFParser(BaseBlobParser):
 
         try:
             import textractcaller as tc
+            import textractor.entities.document as textractor
 
             self.tc = tc
+            self.textractor = textractor
+
             if textract_features is not None:
                 self.textract_features = [
                     tc.Textract_Features(f) for f in textract_features
@@ -415,8 +476,10 @@ class AmazonTextractPDFParser(BaseBlobParser):
                 self.textract_features = []
         except ImportError:
             raise ImportError(
-                "Could not import amazon-textract-caller python package. "
-                "Please install it with `pip install amazon-textract-caller`."
+                "Could not import amazon-textract-caller or "
+                "amazon-textract-textractor python package. Please install it "
+                "with `pip install amazon-textract-caller` & "
+                "`pip install amazon-textract-textractor`."
             )
 
         if not client:
@@ -435,7 +498,8 @@ class AmazonTextractPDFParser(BaseBlobParser):
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Iterates over the Blob pages and returns an Iterator with a Document
         for each page, like the other parsers If multi-page document, blob.path
-        has to be set to the S3 URI and for single page docs the blob.data is taken
+        has to be set to the S3 URI and for single page docs
+        the blob.data is taken
         """
 
         url_parse_result = urlparse(str(blob.path)) if blob.path else None
@@ -458,23 +522,19 @@ class AmazonTextractPDFParser(BaseBlobParser):
                 boto3_textract_client=self.boto3_textract_client,
             )
 
-        current_text = ""
-        current_page = 1
-        for block in textract_response_json["Blocks"]:
-            if "Page" in block and not (int(block["Page"]) == current_page):
-                yield Document(
-                    page_content=current_text,
-                    metadata={"source": blob.source, "page": current_page},
-                )
-                current_text = ""
-                current_page = int(block["Page"])
-            if "Text" in block:
-                current_text += block["Text"] + " "
+        document = self.textractor.Document.open(textract_response_json)
 
-        yield Document(
-            page_content=current_text,
-            metadata={"source": blob.source, "page": current_page},
+        linearizer_config = self.textractor.TextLinearizationConfig(
+            hide_figure_layout=True,
+            title_prefix="# ",
+            section_header_prefix="## ",
+            list_element_prefix="*",
         )
+        for idx, page in enumerate(document.pages):
+            yield Document(
+                page_content=page.get_text(config=linearizer_config),
+                metadata={"source": blob.source, "page": idx + 1},
+            )
 
 
 class DocumentIntelligenceParser(BaseBlobParser):

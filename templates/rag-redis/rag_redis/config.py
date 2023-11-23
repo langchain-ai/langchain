@@ -12,11 +12,11 @@ def get_boolean_env_var(var_name, default_value=False):
     Returns:
     bool: The value of the environment variable, interpreted as a boolean.
     """
-    true_values = {'true', '1', 't', 'y', 'yes'}
-    false_values = {'false', '0', 'f', 'n', 'no'}
+    true_values = {"true", "1", "t", "y", "yes"}
+    false_values = {"false", "0", "f", "n", "no"}
 
     # Retrieve the environment variable's value
-    value = os.getenv(var_name, '').lower()
+    value = os.getenv(var_name, "").lower()
 
     # Decide the boolean value based on the content of the string
     if value in true_values:
@@ -37,16 +37,17 @@ DEBUG = get_boolean_env_var("DEBUG", False)
 # Set DEBUG env var to "true" if you wish to enable LC debugging module
 if DEBUG:
     import langchain
-    langchain.debug=True
+
+    langchain.debug = True
 
 
 # Embedding model
-EMBED_MODEL = os.getenv("EMBED_MODEL",
-                        "sentence-transformers/all-MiniLM-L6-v2")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
 # Redis Connection Information
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+
 
 def format_redis_conn_from_env():
     redis_url = os.getenv("REDIS_URL", None)
@@ -64,6 +65,7 @@ def format_redis_conn_from_env():
 
         return start + f"{REDIS_HOST}:{REDIS_PORT}"
 
+
 REDIS_URL = format_redis_conn_from_env()
 
 # Vector Index Configuration
@@ -72,5 +74,5 @@ INDEX_NAME = os.getenv("INDEX_NAME", "rag-redis")
 
 current_file_path = os.path.abspath(__file__)
 parent_dir = os.path.dirname(current_file_path)
-schema_path = os.path.join(parent_dir, 'schema.yml')
+schema_path = os.path.join(parent_dir, "schema.yml")
 INDEX_SCHEMA = schema_path

@@ -4,30 +4,30 @@ import hmac
 import json
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Type, Union
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 from urllib.parse import urlparse
 
 import requests
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    ChatMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import (
+    convert_to_secret_str,
+    get_pydantic_field_names,
+)
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel, _generate_from_stream
-from langchain.pydantic_v1 import Field, SecretStr, root_validator
-from langchain.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatMessage,
-    ChatResult,
-    HumanMessage,
-)
-from langchain.schema.messages import (
-    AIMessageChunk,
-    BaseMessageChunk,
-    ChatMessageChunk,
-    HumanMessageChunk,
-)
-from langchain.schema.output import ChatGenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -116,13 +116,6 @@ def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
     return ChatResult(generations=generations, llm_output=llm_output)
 
 
-def _to_secret(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
-
-
 class ChatHunyuan(BaseChatModel):
     """Tencent Hunyuan chat models API by Tencent.
 
@@ -143,7 +136,7 @@ class ChatHunyuan(BaseChatModel):
 
     hunyuan_api_base: str = Field(default=DEFAULT_API_BASE)
     """Hunyuan custom endpoints"""
-    hunyuan_app_id: Optional[str] = None
+    hunyuan_app_id: Optional[int] = None
     """Hunyuan App ID"""
     hunyuan_secret_id: Optional[str] = None
     """Hunyuan Secret ID"""
@@ -213,7 +206,7 @@ class ChatHunyuan(BaseChatModel):
             "hunyuan_secret_id",
             "HUNYUAN_SECRET_ID",
         )
-        values["hunyuan_secret_key"] = _to_secret(
+        values["hunyuan_secret_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
                 "hunyuan_secret_key",

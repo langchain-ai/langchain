@@ -15,10 +15,10 @@ from typing import (
 from uuid import uuid4
 
 import numpy as np
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -461,11 +461,18 @@ class Weaviate(VectorStore):
         index_name = index_name or f"LangChain_{uuid4().hex}"
         schema = _default_schema(index_name)
         # check whether the index already exists
-        if not client.schema.contains(schema):
+        if not client.schema.exists(index_name):
             client.schema.create_class(schema)
 
         embeddings = embedding.embed_documents(texts) if embedding else None
         attributes = list(metadatas[0].keys()) if metadatas else None
+
+        # If the UUID of one of the objects already exists
+        # then the existing object will be replaced by the new object.
+        if "uuids" in kwargs:
+            uuids = kwargs.pop("uuids")
+        else:
+            uuids = [get_valid_uuid(uuid4()) for _ in range(len(texts))]
 
         with client.batch as batch:
             for i, text in enumerate(texts):
@@ -476,12 +483,7 @@ class Weaviate(VectorStore):
                     for key in metadatas[i].keys():
                         data_properties[key] = metadatas[i][key]
 
-                # If the UUID of one of the objects already exists
-                # then the existing objectwill be replaced by the new object.
-                if "uuids" in kwargs:
-                    _id = kwargs["uuids"][i]
-                else:
-                    _id = get_valid_uuid(uuid4())
+                _id = uuids[i]
 
                 # if an embedding strategy is not provided, we let
                 # weaviate create the embedding. Note that this will only

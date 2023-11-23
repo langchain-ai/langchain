@@ -9,7 +9,7 @@ TEST_FILE ?= tests/unit_tests/
 test:
 	poetry run pytest $(TEST_FILE)
 
-tests: 
+tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
@@ -33,11 +33,11 @@ lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/experimenta
 
 lint lint_diff:
 	poetry run mypy $(PYTHON_FILES)
-	poetry run black $(PYTHON_FILES) --check
+	poetry run ruff format $(PYTHON_FILES) --diff
 	poetry run ruff .
 
 format format_diff:
-	poetry run black $(PYTHON_FILES)
+	poetry run ruff format $(PYTHON_FILES)
 	poetry run ruff --select I --fix $(PYTHON_FILES)
 
 spell_check:

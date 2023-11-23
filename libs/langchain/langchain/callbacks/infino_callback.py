@@ -1,9 +1,11 @@
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
+
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
-from langchain.schema.messages import BaseMessage
 
 
 def import_infino() -> Any:
@@ -232,7 +234,9 @@ class InfinoCallbackHandler(BaseCallbackHandler):
                     self.chat_openai_model_name = model_name
                     prompt_tokens = 0
                     for message_list in messages:
-                        message_string = " ".join(msg.content for msg in message_list)
+                        message_string = " ".join(
+                            cast(str, msg.content) for msg in message_list
+                        )
                         num_tokens = get_num_tokens(
                             message_string,
                             openai_model_name=self.chat_openai_model_name,
@@ -249,7 +253,9 @@ class InfinoCallbackHandler(BaseCallbackHandler):
             )
 
         # Send the prompt to infino
-        prompt = " ".join(msg.content for sublist in messages for msg in sublist)
+        prompt = " ".join(
+            cast(str, msg.content) for sublist in messages for msg in sublist
+        )
         self._send_to_infino("prompt", prompt, is_ts=False)
 
         # Set the error flag to indicate no error (this will get overridden

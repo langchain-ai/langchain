@@ -15,12 +15,13 @@ from typing import (
     overload,
 )
 
+from langchain_core.pydantic_v1 import PrivateAttr
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import PrivateAttr
 
 if TYPE_CHECKING:
     import openllm
@@ -248,7 +249,7 @@ class OpenLLM(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-        run_manager: CallbackManagerForLLMRun | None = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         try:

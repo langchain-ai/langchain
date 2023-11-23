@@ -1,4 +1,3 @@
-
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.prompts import ChatPromptTemplate
@@ -26,10 +25,7 @@ embedder = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
 # Connect to pre-loaded vectorstore
 # run the ingest.py script to populate this
 vectorstore = Redis.from_existing_index(
-    embedding=embedder,
-    index_name=INDEX_NAME,
-    schema=INDEX_SCHEMA,
-    redis_url=REDIS_URL
+    embedding=embedder, index_name=INDEX_NAME, schema=INDEX_SCHEMA, redis_url=REDIS_URL
 )
 # TODO allow user to change parameters
 retriever = vectorstore.as_retriever(search_type="mmr")
@@ -60,8 +56,7 @@ prompt = ChatPromptTemplate.from_template(template)
 # RAG Chain
 model = ChatOpenAI(model_name="gpt-3.5-turbo-16k")
 chain = (
-    RunnableParallel({"context": retriever,
-                      "question": RunnablePassthrough()})
+    RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
     | prompt
     | model
     | StrOutputParser()

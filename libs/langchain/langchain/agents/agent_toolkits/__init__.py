@@ -16,7 +16,8 @@ See [Security](https://python.langchain.com/docs/security) for more information.
 from pathlib import Path
 from typing import Any
 
-from langchain._api.path import as_import_path
+from langchain_core._api.path import as_import_path
+
 from langchain.agents.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
 from langchain.agents.agent_toolkits.amadeus.toolkit import AmadeusToolkit
 from langchain.agents.agent_toolkits.azure_cognitive_services import (
@@ -78,7 +79,7 @@ def __getattr__(name: str) -> Any:
             "for more information.\n"
             f"Please update your import statement from: `{old_path}` to `{new_path}`."
         )
-    raise ImportError(f"{name} does not exist")
+    raise AttributeError(f"{name} does not exist")
 
 
 __all__ = [

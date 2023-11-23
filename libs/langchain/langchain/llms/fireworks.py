@@ -2,13 +2,15 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional, Union
 
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema.output import Generation, GenerationChunk, LLMResult
 from langchain.utils.env import get_from_dict_or_env
 
 
@@ -36,7 +38,7 @@ class Fireworks(BaseLLM):
             "top_p": 1,
         }.copy()
     )
-    fireworks_api_key: Optional[str] = None
+    fireworks_api_key: Optional[SecretStr] = None
     max_retries: int = 20
     batch_size: int = 20
     use_retry: bool = True
@@ -59,10 +61,10 @@ class Fireworks(BaseLLM):
                 "Could not import fireworks-ai python package. "
                 "Please install it with `pip install fireworks-ai`."
             ) from e
-        fireworks_api_key = get_from_dict_or_env(
-            values, "fireworks_api_key", "FIREWORKS_API_KEY"
+        fireworks_api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "fireworks_api_key", "FIREWORKS_API_KEY")
         )
-        fireworks.client.api_key = fireworks_api_key
+        fireworks.client.api_key = fireworks_api_key.get_secret_value()
         return values
 
     @property

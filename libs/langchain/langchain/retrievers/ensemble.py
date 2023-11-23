@@ -4,12 +4,14 @@ multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
 from typing import Any, Dict, List
 
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.retrievers import BaseRetriever
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import BaseRetriever, Document
 
 
 class EnsembleRetriever(BaseRetriever):

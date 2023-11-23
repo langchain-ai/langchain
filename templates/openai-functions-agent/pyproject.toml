@@ -1,20 +1,33 @@
 [tool.poetry]
 name = "openai-functions-agent"
 version = "0.1.0"
-description = ""
-authors = ["Lance Martin <lance@langchain.dev>"]
+description = "Agent using OpenAI function calling to execute functions, including search"
+authors = [
+    "Lance Martin <lance@langchain.dev>",
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.322"
-openai = ">=0.5.0"
+langchain = ">=0.0.325"
+openai = "<2"
 tavily-python = "^0.1.9"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
 
 [tool.langserve]
 export_module = "openai_functions_agent"
 export_attr = "agent_executor"
 
+[tool.templates-hub]
+use-case = "research"
+author = "LangChain"
+integrations = ["OpenAI", "Tavily"]
+tags = ["search", "agents", "function-calling"]
+
 [build-system]
-requires = ["poetry-core"]
+requires = [
+    "poetry-core",
+]
 build-backend = "poetry.core.masonry.api"

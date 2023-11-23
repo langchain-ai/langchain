@@ -17,16 +17,16 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import BaseRetriever
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_env
 
 logger = logging.getLogger()
@@ -116,12 +116,15 @@ def _get_search_client(
                 - set(fields_types.items())
             }
             if len(missing_fields) > 0:
-                fmt_err = lambda x: (  # noqa: E731
-                    f"{x} current type: '{fields_types.get(x, 'MISSING')}'. It has to "
-                    f"be '{mandatory_fields.get(x)}' or you can point to a different "
-                    f"'{mandatory_fields.get(x)}' field name by using the env variable "
-                    f"'AZURESEARCH_FIELDS_{x.upper()}'"
-                )
+                # Helper for formatting field information for each missing field.
+                def fmt_err(x: str) -> str:
+                    return (
+                        f"{x} current type: '{fields_types.get(x, 'MISSING')}'. "
+                        f"It has to be '{mandatory_fields.get(x)}' or you can point "
+                        f"to a different '{mandatory_fields.get(x)}' field name by "
+                        f"using the env variable 'AZURESEARCH_FIELDS_{x.upper()}'"
+                    )
+
                 error = "\n".join([fmt_err(x) for x in missing_fields])
                 raise ValueError(
                     f"You need to specify at least the following fields "

@@ -1,25 +1,39 @@
 [tool.poetry]
-name = "rag_supabase"
+name = "rag-supabase"
 version = "0.1.0"
-description = ""
-authors = ["Greg Richardson <greg@supabase.io>"]
+description = "RAG using Supabase retriver"
+authors = [
+    "Greg Richardson <greg@supabase.io>",
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.313"
-openai = "^0.28.1"
+langchain = ">=0.0.325"
+openai = "<2"
 tiktoken = "^0.5.1"
 supabase = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
-python-dotenv = { extras = ["cli"], version = "^1.0.0" }
+langchain-cli = ">=0.0.15"
+[tool.poetry.group.dev.dependencies.python-dotenv]
+extras = [
+    "cli",
+]
+version = "^1.0.0"
 
 [tool.langserve]
 export_module = "rag_supabase.chain"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "rag"
+author = "Supabase"
+integrations = ["OpenAI", "Supabase"]
+tags = ["vectordbs"]
 
 [build-system]
-requires = ["poetry-core"]
+requires = [
+    "poetry-core",
+]
 build-backend = "poetry.core.masonry.api"

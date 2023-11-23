@@ -13,8 +13,10 @@ from langchain.utilities import SQLDatabase
 
 # File name and URL
 file_name = "mistral-7b-instruct-v0.1.Q4_K_M.gguf"
-url = ("https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/"
-       "mistral-7b-instruct-v0.1.Q4_K_M.gguf")
+url = (
+    "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/"
+    "mistral-7b-instruct-v0.1.Q4_K_M.gguf"
+)
 # Check if file is present in the current directory
 if not os.path.exists(file_name):
     print(f"'{file_name}' not found. Downloading...")
@@ -114,12 +116,17 @@ prompt_response = ChatPromptTemplate.from_messages(
         ("human", template),
     ]
 )
-# Supply the input types to the prompt 
+
+
+# Supply the input types to the prompt
 class InputType(BaseModel):
     question: str
 
+
 chain = (
-    RunnablePassthrough.assign(query=sql_response_memory).with_types(input_type=InputType)
+    RunnablePassthrough.assign(query=sql_response_memory).with_types(
+        input_type=InputType
+    )
     | RunnablePassthrough.assign(
         schema=get_schema,
         response=lambda x: db.run(x["query"]),

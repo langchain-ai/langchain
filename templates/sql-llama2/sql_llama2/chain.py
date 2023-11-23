@@ -20,12 +20,14 @@ rel = db_path.relative_to(Path.cwd())
 db_string = f"sqlite:///{rel}"
 db = SQLDatabase.from_uri(db_string, sample_rows_in_table_info=0)
 
+
 def get_schema(_):
     return db.get_table_info()
 
 
 def run_query(query):
     return db.run(query)
+
 
 template_query = """Based on the table schema below, write a SQL query that would answer the user's question:
 {schema}
@@ -64,9 +66,11 @@ prompt_response = ChatPromptTemplate.from_messages(
     ]
 )
 
-# Supply the input types to the prompt 
+
+# Supply the input types to the prompt
 class InputType(BaseModel):
     question: str
+
 
 chain = (
     RunnablePassthrough.assign(query=sql_response).with_types(input_type=InputType)

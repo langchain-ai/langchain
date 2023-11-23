@@ -1,14 +1,11 @@
 from typing import List, Tuple
 
 from langchain.agents import AgentExecutor
-from langchain.agents.agent_toolkits.conversational_retrieval.tool import (
-    create_retriever_tool,
-)
 from langchain.agents.format_scratchpad import format_xml
 from langchain.chat_models import ChatAnthropic
-from langchain.pydantic_v1 import BaseModel
-from langchain.retrievers.you import YouRetriever
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import AIMessage, HumanMessage
+from langchain.tools import DuckDuckGoSearchRun
 from langchain.tools.render import render_text_description
 
 from xml_agent.prompts import conversational_prompt, parse_output
@@ -24,13 +21,7 @@ def _format_chat_history(chat_history: List[Tuple[str, str]]):
 
 model = ChatAnthropic(model="claude-2")
 
-# Fake Tool
-retriever = YouRetriever(k=5)
-retriever_tool = create_retriever_tool(
-    retriever, "search", "Use this to search for current events."
-)
-
-tools = [retriever_tool]
+tools = [DuckDuckGoSearchRun()]
 
 prompt = conversational_prompt.partial(
     tools=render_text_description(tools),
@@ -52,7 +43,7 @@ agent = (
 
 class AgentInput(BaseModel):
     question: str
-    chat_history: List[Tuple[str, str]]
+    chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat"}})
 
 
 agent_executor = AgentExecutor(

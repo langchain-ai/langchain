@@ -1,21 +1,29 @@
 from __future__ import annotations
 
 import logging
+import os
 import warnings
+from importlib.metadata import version
 from typing import (
     Any,
     Callable,
     Dict,
     List,
     Literal,
+    Mapping,
     Optional,
     Sequence,
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import numpy as np
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.utils import get_pydantic_field_names
+from packaging.version import Version, parse
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -25,9 +33,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain.schema.embeddings import Embeddings
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +103,8 @@ def _check_response(response: dict, skip_empty: bool = False) -> dict:
 
 def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
+    if _is_openai_v1():
+        return embeddings.client.create(**kwargs)
     retry_decorator = _create_retry_decorator(embeddings)
 
     @retry_decorator
@@ -110,12 +118,20 @@ def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
 async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
 
+    if _is_openai_v1():
+        return await embeddings.async_client.create(**kwargs)
+
     @_async_retry_decorator(embeddings)
     async def _async_embed_with_retry(**kwargs: Any) -> Any:
         response = await embeddings.client.acreate(**kwargs)
         return _check_response(response, skip_empty=embeddings.skip_empty)
 
     return await _async_embed_with_retry(**kwargs)
+
+
+def _is_openai_v1() -> bool:
+    _version = parse(version("openai"))
+    return _version >= Version("1.0.0")
 
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
@@ -141,6 +157,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             import os
+
             os.environ["OPENAI_API_TYPE"] = "azure"
             os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
             os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
@@ -159,28 +176,39 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client: Any = None  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model: str = "text-embedding-ada-002"
-    deployment: str = model  # to support Azure OpenAI Service custom deployment names
-    openai_api_version: Optional[str] = None
+    # to support Azure OpenAI Service custom deployment names
+    deployment: Optional[str] = model
+    # TODO: Move to AzureOpenAIEmbeddings.
+    openai_api_version: Optional[str] = Field(default=None, alias="api_version")
+    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     # to support Azure OpenAI Service custom endpoints
-    openai_api_base: Optional[str] = None
+    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    """Base URL path for API requests, leave blank if not using a proxy or service 
+        emulator."""
     # to support Azure OpenAI Service custom endpoints
     openai_api_type: Optional[str] = None
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
-    openai_api_key: Optional[str] = None
-    openai_organization: Optional[str] = None
+    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
+    openai_organization: Optional[str] = Field(default=None, alias="organization")
+    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     allowed_special: Union[Literal["all"], Set[str]] = set()
     disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
     chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
-    max_retries: int = 6
+    max_retries: int = 2
     """Maximum number of retries to make when generating."""
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
-    """Timeout in seconds for the OpenAPI request."""
+    request_timeout: Optional[Union[float, Tuple[float, float], Any]] = Field(
+        default=None, alias="timeout"
+    )
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+        None."""
     headers: Any = None
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
@@ -199,11 +227,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     skip_empty: bool = False
     """Whether to skip empty strings when embedding or raise an error.
     Defaults to not skipping."""
+    default_headers: Union[Mapping[str, str], None] = None
+    default_query: Union[Mapping[str, object], None] = None
+    # Configure a custom httpx client. See the
+    # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
+    http_client: Union[Any, None] = None
+    """Optional httpx.Client."""
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -231,17 +266,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(pre=True)
+    @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        values["openai_api_base"] = get_from_dict_or_env(
-            values,
-            "openai_api_base",
-            "OPENAI_API_BASE",
-            default="",
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+            "OPENAI_API_BASE"
         )
         values["openai_api_type"] = get_from_dict_or_env(
             values,
@@ -256,67 +288,93 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             default="",
         )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
-            default_api_version = "2022-12-01"
+            default_api_version = "2023-05-15"
             # Azure OpenAI embedding models allow a maximum of 16 texts
             # at a time in each batch
             # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-            default_chunk_size = 16
+            values["chunk_size"] = min(values["chunk_size"], 16)
         else:
             default_api_version = ""
-            default_chunk_size = 1000
         values["openai_api_version"] = get_from_dict_or_env(
             values,
             "openai_api_version",
             "OPENAI_API_VERSION",
             default=default_api_version,
         )
-        values["openai_organization"] = get_from_dict_or_env(
-            values,
-            "openai_organization",
-            "OPENAI_ORGANIZATION",
-            default="",
+        # Check OPENAI_ORGANIZATION for backwards compatibility.
+        values["openai_organization"] = (
+            values["openai_organization"]
+            or os.getenv("OPENAI_ORG_ID")
+            or os.getenv("OPENAI_ORGANIZATION")
         )
-        if "chunk_size" not in values:
-            values["chunk_size"] = default_chunk_size
         try:
             import openai
-
-            values["client"] = openai.Embedding
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
+        else:
+            if _is_openai_v1():
+                if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
+                    warnings.warn(
+                        "If you have openai>=1.0.0 installed and are using Azure, "
+                        "please use the `AzureOpenAIEmbeddings` class."
+                    )
+                client_params = {
+                    "api_key": values["openai_api_key"],
+                    "organization": values["openai_organization"],
+                    "base_url": values["openai_api_base"],
+                    "timeout": values["request_timeout"],
+                    "max_retries": values["max_retries"],
+                    "default_headers": values["default_headers"],
+                    "default_query": values["default_query"],
+                    "http_client": values["http_client"],
+                }
+                if not values.get("client"):
+                    values["client"] = openai.OpenAI(**client_params).embeddings
+                if not values.get("async_client"):
+                    values["async_client"] = openai.AsyncOpenAI(
+                        **client_params
+                    ).embeddings
+            elif not values.get("client"):
+                values["client"] = openai.Embedding
+            else:
+                pass
         return values
 
     @property
-    def _invocation_params(self) -> Dict:
-        openai_args = {
-            "model": self.model,
-            "request_timeout": self.request_timeout,
-            "headers": self.headers,
-            "api_key": self.openai_api_key,
-            "organization": self.openai_organization,
-            "api_base": self.openai_api_base,
-            "api_type": self.openai_api_type,
-            "api_version": self.openai_api_version,
-            **self.model_kwargs,
-        }
-        if self.openai_api_type in ("azure", "azure_ad", "azuread"):
-            openai_args["engine"] = self.deployment
-        if self.openai_proxy:
-            try:
-                import openai
-            except ImportError:
-                raise ImportError(
-                    "Could not import openai python package. "
-                    "Please install it with `pip install openai`."
-                )
+    def _invocation_params(self) -> Dict[str, Any]:
+        if _is_openai_v1():
+            openai_args: Dict = {"model": self.model, **self.model_kwargs}
+        else:
+            openai_args = {
+                "model": self.model,
+                "request_timeout": self.request_timeout,
+                "headers": self.headers,
+                "api_key": self.openai_api_key,
+                "organization": self.openai_organization,
+                "api_base": self.openai_api_base,
+                "api_type": self.openai_api_type,
+                "api_version": self.openai_api_version,
+                **self.model_kwargs,
+            }
+            if self.openai_api_type in ("azure", "azure_ad", "azuread"):
+                openai_args["engine"] = self.deployment
+            # TODO: Look into proxy with openai v1.
+            if self.openai_proxy:
+                try:
+                    import openai
+                except ImportError:
+                    raise ImportError(
+                        "Could not import openai python package. "
+                        "Please install it with `pip install openai`."
+                    )
 
-            openai.proxy = {
-                "http": self.openai_proxy,
-                "https": self.openai_proxy,
-            }  # type: ignore[assignment]  # noqa: E501
+                openai.proxy = {
+                    "http": self.openai_proxy,
+                    "https": self.openai_proxy,
+                }  # type: ignore[assignment]  # noqa: E501
         return openai_args
 
     # please refer to
@@ -376,6 +434,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
             )
+            if not isinstance(response, dict):
+                response = response.dict()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
@@ -389,13 +449,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
-                average = embed_with_retry(
+                average_embedded = embed_with_retry(
                     self,
                     input="",
                     **self._invocation_params,
-                )[
-                    "data"
-                ][0]["embedding"]
+                )
+                if not isinstance(average_embedded, dict):
+                    average_embedded = average_embedded.dict()
+                average = average_embedded["data"][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
@@ -448,6 +509,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
             )
+
+            if not isinstance(response, dict):
+                response = response.dict()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
@@ -459,13 +523,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
-                average = (
-                    await async_embed_with_retry(
-                        self,
-                        input="",
-                        **self._invocation_params,
-                    )
-                )["data"][0]["embedding"]
+                average_embedded = embed_with_retry(
+                    self,
+                    input="",
+                    **self._invocation_params,
+                )
+                if not isinstance(average_embedded, dict):
+                    average_embedded = average_embedded.dict()
+                average = average_embedded["data"][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
@@ -487,7 +552,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        return self._get_len_safe_embeddings(texts, engine=self.deployment)
+        engine = cast(str, self.deployment)
+        return self._get_len_safe_embeddings(texts, engine=engine)
 
     async def aembed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
@@ -504,7 +570,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        return await self._aget_len_safe_embeddings(texts, engine=self.deployment)
+        engine = cast(str, self.deployment)
+        return await self._aget_len_safe_embeddings(texts, engine=engine)
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.

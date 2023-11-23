@@ -1,19 +1,19 @@
 [tool.poetry]
-name = "rag_aws_kendra"
+name = "rag-aws-kendra"
 version = "0.0.1"
-description = ""
+description = "RAG using AWS-Kendra and anthropic"
 authors = []
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.313, <0.1"
+langchain = ">=0.0.325"
 tiktoken = ">=0.5.1"
-boto3 = ">=1.28.57" 
+boto3 = ">=1.28.57"
 awscli = ">=1.29.57"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.4"
+langchain-cli = ">=0.0.15"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
@@ -21,6 +21,14 @@ sse-starlette = "^1.6.5"
 export_module = "rag_aws_kendra.chain"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["AWS"]
+tags = ["vectordbs"]
+
 [build-system]
-requires = ["poetry-core"]
+requires = [
+    "poetry-core",
+]
 build-backend = "poetry.core.masonry.api"

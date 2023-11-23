@@ -13,6 +13,8 @@ on:
       - '.github/workflows/langchain_experimental_ci.yml'
       - 'libs/*'
       - 'libs/experimental/**'
+      - 'libs/langchain/**'
+      - 'libs/core/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
 # If another push to the same PR or branch happens while this workflow is still running,
@@ -35,6 +37,8 @@ jobs:
       ./.github/workflows/_lint.yml
     with:
       working-directory: libs/experimental
+      langchain-location: ../langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   test:
@@ -42,6 +46,8 @@ jobs:
       ./.github/workflows/_test.yml
     with:
       working-directory: libs/experimental
+      langchain-location: ../langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   compile-integration-tests:
@@ -87,6 +93,7 @@ jobs:
 
           echo "Editably installing langchain outside of poetry, to avoid messing up lockfile..."
           poetry run pip install -e ../langchain
+          poetry run pip install -e ../core
 
       - name: Run tests
         run: make test

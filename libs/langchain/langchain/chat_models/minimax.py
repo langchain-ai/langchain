@@ -1,6 +1,13 @@
 """Wrapper around Minimax chat models."""
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
+
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+)
+from langchain_core.outputs import ChatResult
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -9,12 +16,6 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.minimax import MinimaxCommon
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatResult,
-    HumanMessage,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +28,11 @@ def _parse_chat_history(history: List[BaseMessage]) -> List:
     """Parse a sequence of messages into history."""
     chat_history = []
     for message in history:
+        content = cast(str, message.content)
         if isinstance(message, HumanMessage):
-            chat_history.append(_parse_message("USER", message.content))
+            chat_history.append(_parse_message("USER", content))
         if isinstance(message, AIMessage):
-            chat_history.append(_parse_message("BOT", message.content))
+            chat_history.append(_parse_message("BOT", content))
     return chat_history
 
 

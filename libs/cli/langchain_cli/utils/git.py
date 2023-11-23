@@ -132,7 +132,7 @@ def parse_dependencies(
     ):
         raise ValueError(
             "Number of defined repos/branches/api_paths did not match the "
-            "number of dependencies."
+            "number of templates."
         )
     inner_deps = _list_arg_to_length(dependencies, num_deps)
     inner_api_paths = _list_arg_to_length(api_path, num_deps)
@@ -147,9 +147,10 @@ def parse_dependencies(
     ]
 
 
-def _get_repo_path(gitstring: str, repo_dir: Path) -> Path:
+def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     # only based on git for now
-    hashed = hashlib.sha256(gitstring.encode("utf-8")).hexdigest()[:8]
+    ref_str = ref if ref is not None else ""
+    hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode("utf-8")).hexdigest()[:8]
 
     removed_protocol = gitstring.split("://")[-1]
     removed_basename = re.split(r"[/:]", removed_protocol, 1)[-1]
@@ -162,12 +163,21 @@ def _get_repo_path(gitstring: str, repo_dir: Path) -> Path:
 
 def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     # see if path already saved
-    repo_path = _get_repo_path(gitstring, repo_dir)
+    repo_path = _get_repo_path(gitstring, ref, repo_dir)
     if repo_path.exists():
-        shutil.rmtree(repo_path)
+        # try pulling
+        try:
+            repo = Repo(repo_path)
+            if repo.active_branch.name != ref:
+                raise ValueError()
+            repo.remotes.origin.pull()
+        except Exception:
+            # if it fails, delete and clone again
+            shutil.rmtree(repo_path)
+            Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
+    else:
+        Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
 
-    # now we have fresh dir
-    Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
     return repo_path
 
 
