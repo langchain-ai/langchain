@@ -1,6 +1,8 @@
 from mongoengine.connection import connect, get_db
-from typing import Iterable
+from pymongo import MongoClient
+from typing import Iterable, List, Optional
 import pprint
+import ast
 
 def _format_index(index: dict) -> str:
     """Format an index for display."""
@@ -14,23 +16,55 @@ def _format_index(index: dict) -> str:
 
 class MongoDBDatabase:
     """MongoEngine wrapper around a database."""
-    def __init__(self, db_name: str, host: str = 'localhost', port: int = 27017):
-        self._db_name = db_name
-        self._host = host
-        self._port = port
+
+    def __init__(
+            self,
+            client: MongoClient,
+            ignore_collections: Optional[List[str]] = None,
+            include_collections: Optional[List[str]] = None,
+            sample_documents_in_collection_info: int = 3
+    ):
 
         # Connect to MongoDB using mongoengine
-        connect(db=db_name, host=host, port=port)
+        self._client = client
 
-        self._collections = self._get_available_collections()
+        if not isinstance(sample_documents_in_collection_info, int):
+            raise TypeError("sample_documents_in_collection_info must be an integer")
         
+        self._all_collections = set(get_db().list_collection_names())
+
+        self._include_collections = set(include_collections) if include_collections else set()
+        if self._include_collections:
+            missing_collections = self._include_collections - self._all_collections
+            if missing_collections:
+                raise ValueError(
+                    f"collections {missing_collections} not found in database"
+                )
+        self._ignore_collections = set(ignore_collections) if ignore_collections else set()
+        if self._ignore_collections:
+            missing_collections = self._ignore_collections - self._all_collections
+            if missing_collections:
+                raise ValueError(
+                    f"collections {missing_collections} not found in database"
+                )
+
+        if not isinstance(sample_documents_in_collection_info, int):
+            raise TypeError("sample_documents_in_collection_info must be an integer")
+        self._sample_rows_in_table_info = sample_documents_in_collection_info
+
+    @classmethod
+    def from_uri(cls, database_uri: str, **kwargs):
+        """Construct a MongoEngine engine from URI."""
+        connection = connect(host=database_uri, **kwargs)
+        return cls(connection, **kwargs)
+
     @property
     def get_usable_collection_names(self) -> Iterable[str]:
         """Get names of collections available. """
         
-        from mongoengine.connection import _get_db
-        db = _get_db()
-        return db.list_collection_names()
+        if self._include_collections:
+            return sorted(self._include_collections)
+        return sorted(self._all_collections - self._ignore_collections)
     
     @property
     def document_info(self, collection_name: str):
@@ -56,4 +90,17 @@ class MongoDBDatabase:
         indexes_formatted = "\n".join(map(_format_index, indexes_cleaned))
         return f"Collection Indexes:\n{indexes_formatted}"
 
+    def _get_sample_documents(self, collection_name: str) -> str:
+        db = get_db()
+        documents = db[collection_name].find().limit(
+            self._sample_documents_in_collection_info
+        )
+        documents_formatted = pprint.pformat(list(documents))
+        return f"Sample Documents:\n{documents_formatted}"
+    
+    def _execute(self, command: str) -> str:
+        """Execute a command and return the result."""
+        db = get_db()
+        result = db.command(ast.literal_eval(command))
+        return f"Result:\n{result}"
 
