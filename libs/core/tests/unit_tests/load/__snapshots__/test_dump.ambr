@@ -1,0 +1,59 @@
+# serializer version: 1
+# name: test_person
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "tests",
+      "unit_tests",
+      "load",
+      "test_dump",
+      "Person"
+    ],
+    "kwargs": {
+      "secret": {
+        "lc": 1,
+        "type": "secret",
+        "id": [
+          "SECRET"
+        ]
+      },
+      "you_can_see_me": "hello"
+    }
+  }
+  '''
+# ---
+# name: test_person.1
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "tests",
+      "unit_tests",
+      "load",
+      "test_dump",
+      "SpecialPerson"
+    ],
+    "kwargs": {
+      "another_secret": {
+        "lc": 1,
+        "type": "secret",
+        "id": [
+          "ANOTHER_SECRET"
+        ]
+      },
+      "secret": {
+        "lc": 1,
+        "type": "secret",
+        "id": [
+          "SECRET"
+        ]
+      },
+      "another_visible": "bye",
+      "you_can_see_me": "hello"
+    }
+  }
+  '''
+# ---

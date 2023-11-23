@@ -1,0 +1,1378 @@
+# serializer version: 1
+# name: test_serialize_ai_message
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "ai",
+      "AIMessage"
+    ],
+    "kwargs": {
+      "content": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_ai_message_chunk
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "ai",
+      "AIMessageChunk"
+    ],
+    "kwargs": {
+      "content": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_ai_message_prompt_template
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "prompts",
+      "chat",
+      "AIMessagePromptTemplate"
+    ],
+    "kwargs": {
+      "prompt": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "prompts",
+          "prompt",
+          "PromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [],
+          "template": "",
+          "template_format": "f-string",
+          "partial_variables": {}
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_base_message
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "base",
+      "BaseMessage"
+    ],
+    "kwargs": {
+      "content": "",
+      "type": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_base_message_chunk
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "base",
+      "BaseMessageChunk"
+    ],
+    "kwargs": {
+      "content": "",
+      "type": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_chat_generation
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "outputs",
+      "chat_generation",
+      "ChatGeneration"
+    ],
+    "kwargs": {
+      "message": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "messages",
+          "ai",
+          "AIMessage"
+        ],
+        "kwargs": {
+          "content": ""
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_chat_generation_chunk
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "outputs",
+      "chat_generation",
+      "ChatGenerationChunk"
+    ],
+    "kwargs": {
+      "message": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "messages",
+          "base",
+          "BaseMessageChunk"
+        ],
+        "kwargs": {
+          "content": "",
+          "additional_kwargs": {},
+          "type": "ai",
+          "example": false
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_chat_message
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "chat",
+      "ChatMessage"
+    ],
+    "kwargs": {
+      "content": "",
+      "role": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_chat_message_chunk
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "chat",
+      "ChatMessageChunk"
+    ],
+    "kwargs": {
+      "content": "",
+      "role": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_chat_message_prompt_template
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "prompts",
+      "chat",
+      "ChatMessagePromptTemplate"
+    ],
+    "kwargs": {
+      "prompt": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "prompts",
+          "prompt",
+          "PromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [],
+          "template": "",
+          "template_format": "f-string",
+          "partial_variables": {}
+        }
+      },
+      "role": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_chat_prompt_template
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "prompts",
+      "chat",
+      "ChatPromptTemplate"
+    ],
+    "kwargs": {
+      "input_variables": [],
+      "messages": [
+        {
+          "lc": 1,
+          "type": "constructor",
+          "id": [
+            "langchain_core",
+            "prompts",
+            "chat",
+            "HumanMessagePromptTemplate"
+          ],
+          "kwargs": {
+            "prompt": {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "prompts",
+                "prompt",
+                "PromptTemplate"
+              ],
+              "kwargs": {
+                "input_variables": [],
+                "template": "",
+                "template_format": "f-string",
+                "partial_variables": {},
+                "role": ""
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+  '''
+# ---
+# name: test_serialize_comma_separated_list_output_parser
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "output_parsers",
+      "list",
+      "CommaSeparatedListOutputParser"
+    ],
+    "kwargs": {}
+  }
+  '''
+# ---
+# name: test_serialize_document
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "documents",
+      "base",
+      "Document"
+    ],
+    "kwargs": {
+      "page_content": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_few_shot_chat_message_prompt_template
+  '''
+  {
+    "lc": 1,
+    "type": "not_implemented",
+    "id": [
+      "langchain_core",
+      "prompts",
+      "few_shot",
+      "FewShotChatMessagePromptTemplate"
+    ],
+    "repr": "FewShotChatMessagePromptTemplate(examples=[], example_prompt=HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], template='')))"
+  }
+  '''
+# ---
+# name: test_serialize_few_shot_prompt_template
+  '''
+  {
+    "lc": 1,
+    "type": "not_implemented",
+    "id": [
+      "langchain_core",
+      "prompts",
+      "few_shot",
+      "FewShotPromptTemplate"
+    ],
+    "repr": "FewShotPromptTemplate(input_variables=[], examples=[], example_prompt=PromptTemplate(input_variables=[], template=''), suffix='')"
+  }
+  '''
+# ---
+# name: test_serialize_few_shot_prompt_with_templates
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "prompts",
+      "few_shot_with_templates",
+      "FewShotPromptWithTemplates"
+    ],
+    "kwargs": {
+      "example_prompt": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "prompts",
+          "prompt",
+          "PromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [],
+          "template": "",
+          "template_format": "f-string",
+          "partial_variables": {}
+        }
+      },
+      "suffix": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "prompts",
+          "prompt",
+          "PromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [],
+          "template": "",
+          "template_format": "f-string",
+          "partial_variables": {}
+        }
+      },
+      "examples": [],
+      "input_variables": []
+    }
+  }
+  '''
+# ---
+# name: test_serialize_function_message
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "function",
+      "FunctionMessage"
+    ],
+    "kwargs": {
+      "content": "",
+      "name": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_function_message_chunk
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "function",
+      "FunctionMessageChunk"
+    ],
+    "kwargs": {
+      "content": "",
+      "name": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_generation
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "outputs",
+      "generation",
+      "Generation"
+    ],
+    "kwargs": {
+      "text": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_generation_chunk
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "outputs",
+      "generation",
+      "GenerationChunk"
+    ],
+    "kwargs": {
+      "text": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_human_message
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "human",
+      "HumanMessage"
+    ],
+    "kwargs": {
+      "content": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_human_message_chunk
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "human",
+      "HumanMessageChunk"
+    ],
+    "kwargs": {
+      "content": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_human_message_prompt_template
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "prompts",
+      "chat",
+      "HumanMessagePromptTemplate"
+    ],
+    "kwargs": {
+      "prompt": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "prompts",
+          "prompt",
+          "PromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [],
+          "template": "",
+          "template_format": "f-string",
+          "partial_variables": {}
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_markdown_list_output_parser
+  '''
+  {
+    "lc": 1,
+    "type": "not_implemented",
+    "id": [
+      "langchain_core",
+      "output_parsers",
+      "list",
+      "MarkdownListOutputParser"
+    ],
+    "repr": "MarkdownListOutputParser()"
+  }
+  '''
+# ---
+# name: test_serialize_messages_placeholder
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "prompts",
+      "chat",
+      "MessagesPlaceholder"
+    ],
+    "kwargs": {
+      "variable_name": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_numbered_list_output_parser
+  '''
+  {
+    "lc": 1,
+    "type": "not_implemented",
+    "id": [
+      "langchain_core",
+      "output_parsers",
+      "list",
+      "NumberedListOutputParser"
+    ],
+    "repr": "NumberedListOutputParser()"
+  }
+  '''
+# ---
+# name: test_serialize_pipeline_prompt_template
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "prompts",
+      "pipeline",
+      "PipelinePromptTemplate"
+    ],
+    "kwargs": {
+      "pipeline_prompts": [],
+      "final_prompt": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "prompts",
+          "prompt",
+          "PromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [],
+          "template": "",
+          "template_format": "f-string",
+          "partial_variables": {}
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_prompt_template
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "prompts",
+      "prompt",
+      "PromptTemplate"
+    ],
+    "kwargs": {
+      "input_variables": [],
+      "template": "",
+      "template_format": "f-string",
+      "partial_variables": {}
+    }
+  }
+  '''
+# ---
+# name: test_serialize_router_runnable
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RouterRunnable"
+    ],
+    "kwargs": {
+      "runnables": {
+        "": {
+          "lc": 1,
+          "type": "constructor",
+          "id": [
+            "langchain_core",
+            "runnables",
+            "RunnablePassthrough"
+          ],
+          "kwargs": {
+            "func": null,
+            "afunc": null,
+            "input_type": null
+          }
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_assign
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableAssign"
+    ],
+    "kwargs": {
+      "mapper": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnableParallel"
+        ],
+        "kwargs": {
+          "steps": {}
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_binding
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableBinding"
+    ],
+    "kwargs": {
+      "bound": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnablePassthrough"
+        ],
+        "kwargs": {
+          "func": null,
+          "afunc": null,
+          "input_type": null
+        }
+      },
+      "kwargs": {},
+      "config": {},
+      "config_factories": [],
+      "custom_input_type": null,
+      "custom_output_type": null
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_binding_base
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableBindingBase"
+    ],
+    "kwargs": {
+      "bound": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnablePassthrough"
+        ],
+        "kwargs": {
+          "func": null,
+          "afunc": null,
+          "input_type": null
+        }
+      },
+      "kwargs": {},
+      "config": {},
+      "config_factories": [],
+      "custom_input_type": null,
+      "custom_output_type": null
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_branch
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableBranch"
+    ],
+    "kwargs": {
+      "branches": [
+        [
+          {
+            "lc": 1,
+            "type": "constructor",
+            "id": [
+              "langchain_core",
+              "runnables",
+              "RunnablePassthrough"
+            ],
+            "kwargs": {
+              "func": null,
+              "afunc": null,
+              "input_type": null
+            }
+          },
+          {
+            "lc": 1,
+            "type": "constructor",
+            "id": [
+              "langchain_core",
+              "runnables",
+              "RunnablePassthrough"
+            ],
+            "kwargs": {
+              "func": null,
+              "afunc": null,
+              "input_type": null
+            }
+          }
+        ]
+      ],
+      "default": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnablePassthrough"
+        ],
+        "kwargs": {
+          "func": null,
+          "afunc": null,
+          "input_type": null
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_configurable_alternatives
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableConfigurableAlternatives"
+    ],
+    "kwargs": {
+      "default": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnablePassthrough"
+        ],
+        "kwargs": {
+          "func": null,
+          "afunc": null,
+          "input_type": null
+        }
+      },
+      "which": [
+        "",
+        null,
+        null,
+        null
+      ],
+      "alternatives": {}
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_configurable_fields
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableConfigurableFields"
+    ],
+    "kwargs": {
+      "default": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnablePassthrough"
+        ],
+        "kwargs": {
+          "func": null,
+          "afunc": null,
+          "input_type": null
+        }
+      },
+      "fields": {}
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_each
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableEach"
+    ],
+    "kwargs": {
+      "bound": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnablePassthrough"
+        ],
+        "kwargs": {
+          "func": null,
+          "afunc": null,
+          "input_type": null
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_each_base
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableEachBase"
+    ],
+    "kwargs": {
+      "bound": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnablePassthrough"
+        ],
+        "kwargs": {
+          "func": null,
+          "afunc": null,
+          "input_type": null
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_map
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableParallel"
+    ],
+    "kwargs": {
+      "steps": {}
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_parallel
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableParallel"
+    ],
+    "kwargs": {
+      "steps": {}
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_passthrough
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnablePassthrough"
+    ],
+    "kwargs": {
+      "func": null,
+      "afunc": null,
+      "input_type": null
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_retry
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableRetry"
+    ],
+    "kwargs": {
+      "bound": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnablePassthrough"
+        ],
+        "kwargs": {
+          "func": null,
+          "afunc": null,
+          "input_type": null
+        }
+      },
+      "kwargs": {},
+      "config": {},
+      "config_factories": [],
+      "custom_input_type": null,
+      "custom_output_type": null
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_sequence
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableSequence"
+    ],
+    "kwargs": {
+      "first": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnablePassthrough"
+        ],
+        "kwargs": {
+          "func": null,
+          "afunc": null,
+          "input_type": null
+        }
+      },
+      "last": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnablePassthrough"
+        ],
+        "kwargs": {
+          "func": null,
+          "afunc": null,
+          "input_type": null
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_with_fallbacks
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableWithFallbacks"
+    ],
+    "kwargs": {
+      "runnable": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnablePassthrough"
+        ],
+        "kwargs": {
+          "func": null,
+          "afunc": null,
+          "input_type": null
+        }
+      },
+      "fallbacks": [
+        {
+          "lc": 1,
+          "type": "constructor",
+          "id": [
+            "langchain_core",
+            "runnables",
+            "RunnablePassthrough"
+          ],
+          "kwargs": {
+            "func": null,
+            "afunc": null,
+            "input_type": null
+          }
+        }
+      ]
+    }
+  }
+  '''
+# ---
+# name: test_serialize_runnable_with_message_history
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "runnables",
+      "RunnableWithMessageHistory"
+    ],
+    "kwargs": {
+      "bound": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "runnables",
+          "RunnableBinding"
+        ],
+        "kwargs": {
+          "bound": {
+            "lc": 1,
+            "type": "constructor",
+            "id": [
+              "langchain_core",
+              "runnables",
+              "RunnableSequence"
+            ],
+            "kwargs": {
+              "first": {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "runnables",
+                  "RunnableBinding"
+                ],
+                "kwargs": {
+                  "bound": {
+                    "lc": 1,
+                    "type": "not_implemented",
+                    "id": [
+                      "langchain_core",
+                      "runnables",
+                      "base",
+                      "RunnableLambda"
+                    ],
+                    "repr": "RunnableLambda(...)"
+                  },
+                  "kwargs": {},
+                  "config": {
+                    "run_name": "load_history"
+                  },
+                  "config_factories": [],
+                  "custom_input_type": null,
+                  "custom_output_type": null
+                }
+              },
+              "last": {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "runnables",
+                  "RunnableBinding"
+                ],
+                "kwargs": {
+                  "bound": {
+                    "lc": 1,
+                    "type": "constructor",
+                    "id": [
+                      "langchain_core",
+                      "runnables",
+                      "RunnablePassthrough"
+                    ],
+                    "kwargs": {
+                      "func": null,
+                      "afunc": null,
+                      "input_type": null
+                    }
+                  },
+                  "kwargs": {},
+                  "config": {},
+                  "config_factories": [
+                    {
+                      "lc": 1,
+                      "type": "not_implemented",
+                      "id": [
+                        "langchain_core",
+                        "runnables",
+                        "base",
+                        "<lambda>"
+                      ],
+                      "repr": "<function Runnable.with_listeners.<locals>.<lambda> at 0x104923f60>"
+                    }
+                  ],
+                  "custom_input_type": null,
+                  "custom_output_type": null
+                }
+              }
+            }
+          },
+          "kwargs": {},
+          "config": {
+            "run_name": "RunnableWithMessageHistory"
+          },
+          "config_factories": [],
+          "custom_input_type": null,
+          "custom_output_type": null
+        }
+      },
+      "kwargs": {},
+      "config": {},
+      "config_factories": [],
+      "custom_input_type": null,
+      "custom_output_type": null,
+      "get_session_history": {
+        "lc": 1,
+        "type": "not_implemented",
+        "id": [
+          "tests",
+          "unit_tests",
+          "test_serialization",
+          "get_chat_history"
+        ],
+        "repr": "<function test_serialize_runnable_with_message_history.<locals>.get_chat_history at 0x104923ec0>"
+      },
+      "input_messages_key": null,
+      "output_messages_key": null,
+      "history_messages_key": null
+    }
+  }
+  '''
+# ---
+# name: test_serialize_serializable
+  '''
+  {
+    "lc": 1,
+    "type": "not_implemented",
+    "id": [
+      "langchain_core",
+      "load",
+      "serializable",
+      "Serializable"
+    ],
+    "repr": "Serializable()"
+  }
+  '''
+# ---
+# name: test_serialize_str_output_parser
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "output_parsers",
+      "string",
+      "StrOutputParser"
+    ],
+    "kwargs": {}
+  }
+  '''
+# ---
+# name: test_serialize_system_message
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "system",
+      "SystemMessage"
+    ],
+    "kwargs": {
+      "content": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_system_message_chunk
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "system",
+      "SystemMessageChunk"
+    ],
+    "kwargs": {
+      "content": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_system_message_prompt_template
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "prompts",
+      "chat",
+      "SystemMessagePromptTemplate"
+    ],
+    "kwargs": {
+      "prompt": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain_core",
+          "prompts",
+          "prompt",
+          "PromptTemplate"
+        ],
+        "kwargs": {
+          "input_variables": [],
+          "template": "",
+          "template_format": "f-string",
+          "partial_variables": {}
+        }
+      }
+    }
+  }
+  '''
+# ---
+# name: test_serialize_tool_message
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "tool",
+      "ToolMessage"
+    ],
+    "kwargs": {
+      "content": "",
+      "tool_call_id": ""
+    }
+  }
+  '''
+# ---
+# name: test_serialize_tool_message_chunk
+  '''
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "tool",
+      "ToolMessageChunk"
+    ],
+    "kwargs": {
+      "content": "",
+      "tool_call_id": ""
+    }
+  }
+  '''
+# ---
