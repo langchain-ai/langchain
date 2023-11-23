@@ -1,7 +1,7 @@
-from mongoengine.connection import connect, get_db
+from mongoengine import Document, connect, get_db
 from pymongo import MongoClient
 from typing import Iterable, List, Optional
-import pprint
+from pprint import pprint
 import ast
 
 def _format_index(index: dict) -> str:
@@ -12,7 +12,6 @@ def _format_index(index: dict) -> str:
         f'Name: {index["name"]}, Unique: {index["unique"]},'
         f' Keys: {{ {index_keys_formatted} }}'
     )
-
 
 class MongoDBDatabase:
     """MongoEngine wrapper around a database."""
@@ -66,11 +65,43 @@ class MongoDBDatabase:
             return sorted(self._include_collections)
         return sorted(self._all_collections - self._ignore_collections)
     
+    
+    def get_usable_document_names(self, collection_name: str) -> Iterable[str]:
+        """Get names of documents available in a given collection."""
+        if collection_name not in self._ignore_collections:
+            # Check if the collection is included or not, if included fetch document names
+            if collection_name in self._include_collections:
+                documents = Document._get_collection(name=collection_name).find()
+                return sorted(doc["_id"] for doc in documents)
+            else:
+                # Fetch all documents in the collection
+                documents = Document._get_collection(name=collection_name).find()
+                return sorted(doc["_id"] for doc in documents)
+        return []
+    
+    
+    def get_usable_document_names(self, collection_name: str) -> Iterable[str]:
+        """Get names of documents available in a given collection."""
+        if collection_name not in self._ignore_collections:
+            # Check if the collection is included or not, if included fetch document names
+            if collection_name in self._include_collections:
+                documents = Document._get_collection(name=collection_name).find()
+                return sorted(doc["_id"] for doc in documents)
+            else:
+                # Fetch all documents in the collection
+                documents = Document._get_collection(name=collection_name).find()
+                return sorted(doc["_id"] for doc in documents)
+        return []
+    
     @property
     def document_info(self, collection_name: str):
         """Information about all documents in the database."""
-        collection = eval(collection_name)
-        pprint(collection._fields)
+        return self.get_document_info()
+        
+    def collection_info(self) -> str:
+        """Information about all collections in the database."""
+        return self.get_collection_info()
+        
         
     def get_collection_info(self, collection_name: str) -> str:
         """Information about a specific collection"""
@@ -80,6 +111,43 @@ class MongoDBDatabase:
         formatted_info = pprint.pformat(fields_info)
 
         return f"Collection Information for '{collection_name}':\n{formatted_info}"
+    
+    
+    def get_document_info(self, collection_names: Optional[List[str]] = None) -> str:
+        """Get information about specified collections."""
+        all_collection_names = self.get_usable_collection_names()
+        if collection_names is not None:
+            missing_collections = set(collection_names).difference(all_collection_names)
+            if missing_collections:
+                raise ValueError(f"collection_names {missing_collections} not found in database")
+            all_collection_names = collection_names
+
+        collections = []
+        for collection_name in all_collection_names:
+            if collection_name in self._custom_document_info:
+                collections.append(self._custom_document_info[collection_name])
+                continue
+
+            # Fetch the documents in the collection
+            documents = Document._get_collection(name=collection_name).find()
+
+            # Add document information
+            document_info = f"Collection Name: {collection_name}\n"
+
+            # Sample rows or documents info (if required)
+            if self._sample_documents_in_info:
+                document_info += "\nSample Documents:\n"
+                # Fetch a specified number of sample documents (you can adjust this number)
+                sample_documents = [doc for _, doc in zip(range(self._sample_documents_count), documents)]
+                for sample_doc in sample_documents:
+                    document_info += f"{sample_doc}\n"
+                document_info += "\n"
+
+            collections.append(document_info)
+
+        collections.sort()
+        final_str = "\n\n".join(collections)
+        return final_str
     
     def _get_collection_indexes(self, collection_name: str) -> str:
         """Get indexes of a collection."""
@@ -102,5 +170,6 @@ class MongoDBDatabase:
         """Execute a command and return the result."""
         db = get_db()
         result = db.command(ast.literal_eval(command))
-        return f"Result:\n{result}"
+        return result
+
 
