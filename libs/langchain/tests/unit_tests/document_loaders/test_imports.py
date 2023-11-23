@@ -78,6 +78,7 @@ EXPECTED_ALL = [
     "IuguLoader",
     "JSONLoader",
     "JoplinLoader",
+    "KaggleDatasetLoader",
     "LarkSuiteDocLoader",
     "LakeFSLoader",
     "MHTMLLoader",
