@@ -513,7 +513,7 @@ def _import_yandex_gpt() -> Any:
 def __getattr__(name: str) -> Any:
     if name == "AI21":
         return _import_ai21()
-    elif name == "AIPlay":
+    elif name == "AIPlayLLM":
         return _import_aiplay()
     elif name == "AlephAlpha":
         return _import_aleph_alpha()
