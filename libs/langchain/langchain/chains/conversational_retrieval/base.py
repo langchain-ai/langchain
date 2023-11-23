@@ -7,6 +7,15 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables.config import RunnableConfig
+from langchain_core.vectorstores import VectorStore
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -18,12 +27,6 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain.schema import BasePromptTemplate, BaseRetriever, Document
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage
-from langchain.schema.runnable.config import RunnableConfig
-from langchain.schema.vectorstore import VectorStore
 
 # Depending on the memory type and configuration, the chat history format may differ.
 # This needs to be consolidated.
@@ -247,7 +250,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             from langchain.chains import (
                 StuffDocumentsChain, LLMChain, ConversationalRetrievalChain
             )
-            from langchain.prompts import PromptTemplate
+            from langchain_core.prompts import PromptTemplate
             from langchain.llms import OpenAI
 
             combine_docs_chain = StuffDocumentsChain(...)
