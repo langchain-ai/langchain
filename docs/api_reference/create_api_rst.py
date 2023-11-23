@@ -296,7 +296,7 @@ def _document_langchain_experimental() -> None:
 def _document_langchain_core() -> None:
     """Document the langchain_core package."""
     # Generate core_api_reference.rst
-    core_members = _load_package_modules(EXP_DIR)
+    core_members = _load_package_modules(CORE_DIR)
     core_doc = ".. _core_api_reference:\n\n" + _construct_doc(
         "langchain_core", core_members
     )

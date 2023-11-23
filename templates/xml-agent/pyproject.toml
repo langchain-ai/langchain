@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "xml-agent"
 version = "0.1.0"
-description = ""
+description = "Agent that uses XML syntax to communicate its decisions of what actions to take"
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]
@@ -20,6 +20,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "xml_agent"
 export_attr = "agent_executor"
+
+[tool.templates-hub]
+use-case = "agent"
+author = "LangChain"
+integrations = ["Anthropic"]
+tags = ["agents"]
 
 [build-system]
 requires = [

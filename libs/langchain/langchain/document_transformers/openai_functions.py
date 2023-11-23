@@ -1,8 +1,7 @@
 """Document transformers that use OpenAI Functions models"""
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
-from langchain_core.document_transformers import BaseDocumentTransformer
-from langchain_core.documents import Document
+from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
