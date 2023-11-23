@@ -71,10 +71,22 @@ class BaseMessageChunk(BaseMessage):
     def _merge_kwargs_dict(
         self, left: Dict[str, Any], right: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Merge additional_kwargs from another BaseMessageChunk into this one."""
+        """Merge additional_kwargs from another BaseMessageChunk into this one,
+        handling specific scenarios where a key exists in both dictionaries
+        but has a value of None in 'left'. In such cases, the method uses the
+        value from 'right' for that key in the merged dictionary.
+        Example:
+        If left = {"function_call": {"arguments": None}} and
+        right = {"function_call": {"arguments": "{\n"}}
+        then, after merging, for the key "function_call",
+        the value from 'right' is used,
+        resulting in merged = {"function_call": {"arguments": "{\n"}}.
+        """
         merged = left.copy()
         for k, v in right.items():
             if k not in merged:
+                merged[k] = v
+            elif merged[k] is None:
                 merged[k] = v
             elif type(merged[k]) != type(v):
                 raise ValueError(
