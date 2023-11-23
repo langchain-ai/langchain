@@ -13,12 +13,8 @@ from typing import (
     Union,
 )
 
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.schema import (
-    Generation,
-    LLMResult,
-)
-from langchain_core.schema.output import GenerationChunk
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

@@ -3,8 +3,8 @@ import sys
 from typing import cast
 
 import pytest
-from langchain_core.schema import ChatGeneration, ChatResult, LLMResult
-from langchain_core.schema.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 
 from langchain.chat_models.fireworks import ChatFireworks
 
@@ -90,7 +90,6 @@ def test_fireworks_invoke(chat: ChatFireworks) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_fireworks_ainvoke(chat: ChatFireworks) -> None:
     """Tests chat completion with invoke"""
     result = await chat.ainvoke("How is the weather in New York today?", stop=[","])
@@ -119,7 +118,6 @@ def test_fireworks_batch(chat: ChatFireworks) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_fireworks_abatch(chat: ChatFireworks) -> None:
     """Test batch tokens from ChatFireworks."""
     result = await chat.abatch(
@@ -159,7 +157,6 @@ def test_fireworks_streaming_stop_words(chat: ChatFireworks) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_chat_fireworks_agenerate() -> None:
     """Test ChatFireworks wrapper with generate."""
     chat = ChatFireworks(model_kwargs={"n": 2})
@@ -176,7 +173,6 @@ async def test_chat_fireworks_agenerate() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_fireworks_astream(chat: ChatFireworks) -> None:
     """Test streaming tokens from Fireworks."""
 

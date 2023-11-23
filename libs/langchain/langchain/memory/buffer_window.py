@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union
 
-from langchain_core.schema.messages import BaseMessage, get_buffer_string
+from langchain_core.messages import BaseMessage, get_buffer_string
 
 from langchain.memory.chat_memory import BaseChatMemory
 

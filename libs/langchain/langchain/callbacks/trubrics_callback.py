@@ -2,8 +2,7 @@ import os
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from langchain_core.schema import LLMResult
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
@@ -11,6 +10,7 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.base import BaseCallbackHandler
 
