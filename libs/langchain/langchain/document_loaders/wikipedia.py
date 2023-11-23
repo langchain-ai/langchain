@@ -8,7 +8,7 @@ from langchain.utilities.wikipedia import WikipediaAPIWrapper
 class WikipediaLoader(BaseLoader):
     """Load from `Wikipedia`.
 
-    The hard limit on the number of downloaded Documents is 300 for now.
+    The hard limit on the length of the query is 300 for now.
 
     Each wiki page represents one Document.
     """
@@ -17,7 +17,7 @@ class WikipediaLoader(BaseLoader):
         self,
         query: str,
         lang: str = "en",
-        load_max_docs: Optional[int] = 100,
+        load_max_docs: Optional[int] = 25,
         load_all_available_meta: Optional[bool] = False,
         doc_content_chars_max: Optional[int] = 4000,
     ):
