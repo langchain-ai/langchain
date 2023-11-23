@@ -22,10 +22,10 @@ from langchain.docstore.document import Document
 from langchain.utils import get_from_env
 from langchain.vectorstores.utils import DistanceStrategy
 
-DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE_SIMILARITY
+DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
 DISTANCE_MAPPING = {
     DistanceStrategy.EUCLIDEAN_DISTANCE: "euclidean",
-    DistanceStrategy.COSINE_SIMILARITY: "cosine",
+    DistanceStrategy.COSINE: "cosine",
 }
 
 
@@ -144,7 +144,7 @@ class Neo4jVector(VectorStore):
         # Allow only cosine and euclidean distance strategies
         if distance_strategy not in [
             DistanceStrategy.EUCLIDEAN_DISTANCE,
-            DistanceStrategy.COSINE_SIMILARITY,
+            DistanceStrategy.COSINE,
         ]:
             raise ValueError(
                 "distance_strategy must be either 'EUCLIDEAN_DISTANCE' or 'COSINE'"
@@ -915,6 +915,9 @@ class Neo4jVector(VectorStore):
                 break
         return store
 
+    def _identity_fn(self, score: float) -> float:
+        return score
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
         The 'correct' relevance function
@@ -929,10 +932,15 @@ class Neo4jVector(VectorStore):
 
         # Default strategy is to rely on distance strategy provided
         # in vectorstore constructor
-        if self._distance_strategy == DistanceStrategy.COSINE_SIMILARITY:
-            return self._cosine_similarity_relevance_score_fn
-        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-            return self._euclidean_relevance_score_fn
+
+        # The scores returned by database are already normalized
+        # https://neo4j.com/docs/cypher-manual/current/indexes-for-vector-search/#indexes-vector-similarity-euclidean
+        # https://neo4j.com/docs/cypher-manual/current/indexes-for-vector-search/#indexes-vector-similarity-cosine
+        if (
+            self._distance_strategy == DistanceStrategy.COSINE
+            or self._distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE
+        ):
+            return self._identity_fn
         else:
             raise ValueError(
                 "No supported normalization function"

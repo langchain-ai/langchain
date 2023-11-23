@@ -25,7 +25,7 @@ class SemaDB(VectorStore):
                 'mycollection',
                 768,
                 embeddings,
-                DistanceStrategy.COSINE_DISTANCE
+                DistanceStrategy.COSINE
             )
 
     """
@@ -67,10 +67,8 @@ class SemaDB(VectorStore):
             return "dot"
         elif self.distance_strategy == DistanceStrategy.JACCARD:
             raise ValueError("Max inner product is not supported by SemaDB")
-        elif self.distance_strategy == DistanceStrategy.COSINE_DISTANCE:
+        elif self.distance_strategy == DistanceStrategy.COSINE:
             return "cosine"
-        elif self.distance_strategy == DistanceStrategy.COSINE_SIMILARITY:
-            raise ValueError("Cosine similarity is not directly supported by SemaDB.")
         else:
             raise ValueError(f"Unknown distance strategy {self.distance_strategy}")
 
@@ -113,7 +111,7 @@ class SemaDB(VectorStore):
                 f"Embedding size mismatch {len(embeddings[0])} != {self.vector_size}"
             )
         # Normalise if needed
-        if self.distance_strategy == DistanceStrategy.COSINE_DISTANCE:
+        if self.distance_strategy == DistanceStrategy.COSINE:
             embed_matrix = np.array(embeddings)
             embed_matrix = embed_matrix / np.linalg.norm(
                 embed_matrix, axis=1, keepdims=True
@@ -190,7 +188,7 @@ class SemaDB(VectorStore):
     def _search_points(self, embedding: List[float], k: int = 4) -> List[dict]:
         """Search points."""
         # Normalise if needed
-        if self.distance_strategy == DistanceStrategy.COSINE_DISTANCE:
+        if self.distance_strategy == DistanceStrategy.COSINE:
             vec = np.array(embedding)
             vec = vec / np.linalg.norm(vec)
             embedding = vec.tolist()
