@@ -6,10 +6,9 @@ from langchain.utils import get_from_dict_or_env
 
 try:    ## if running as part of package
     from .base import LLM   
-except: ## if running in isolation
+except: ## if running as standalone file (remember to uncomment chat variants)
     from langchain.llms.base import LLM  
-## if running in single-file with uncommented chat models
-from langchain.chat_models.base import SimpleChatModel  
+    from langchain.chat_models.base import SimpleChatModel  
 
 from typing import Callable, Any, Dict, List, Optional, Tuple
 import requests
