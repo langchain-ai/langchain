@@ -131,8 +131,9 @@ class AstraDB(VectorStore):
                 available in Astra DB. If left out, it will use Astra DB API's
                 defaults (i.e. "cosine" - but, for performance reasons,
                 "dot_product" is suggested if embeddings are normalized to one).
-            pre_delete_collection (Optional[bool]): whether to delete the collection before creating it. 
-                If False and the collection already exists, the collection will be used as is. 
+            pre_delete_collection (Optional[bool]): whether to delete the collection 
+                before creating it. If False and the collection already exists, 
+                the collection will be used as is. 
 
         Advanced arguments (coming with sensible defaults):
             batch_size (Optional[int]): Size of batches for bulk insertions.
