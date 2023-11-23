@@ -100,6 +100,7 @@ class AstraDB(VectorStore):
         bulk_insert_batch_concurrency: Optional[int] = None,
         bulk_insert_overwrite_concurrency: Optional[int] = None,
         bulk_delete_concurrency: Optional[int] = None,
+        pre_delete_collection: bool = False,
     ) -> None:
         try:
             from astrapy.db import (
@@ -130,6 +131,8 @@ class AstraDB(VectorStore):
                 available in Astra DB. If left out, it will use Astra DB API's
                 defaults (i.e. "cosine" - but, for performance reasons,
                 "dot_product" is suggested if embeddings are normalized to one).
+            pre_delete_collection (Optional[bool]): whether to delete the collection before creating it. 
+                If False and the collection already exists, the collection will be used as is. 
 
         Advanced arguments (coming with sensible defaults):
             batch_size (Optional[int]): Size of batches for bulk insertions.
@@ -192,7 +195,10 @@ class AstraDB(VectorStore):
                 api_endpoint=self.api_endpoint,
                 namespace=self.namespace,
             )
-        self._provision_collection()
+        if not pre_delete_collection:
+            self._provision_collection()
+        else:
+            self.clear()
 
         self.collection = LibAstraDBCollection(
             collection_name=self.collection_name,

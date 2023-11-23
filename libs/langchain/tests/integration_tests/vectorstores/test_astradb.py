@@ -148,6 +148,41 @@ class TestAstraDB:
         )
         v_store_2.delete_collection()
 
+    def test_astradb_vectorstore_pre_delete_collection(self) -> None:
+        """Create and delete."""
+        emb = SomeEmbeddings(dimension=2)
+        # creation by passing the connection secrets
+
+        v_store = AstraDB(
+            embedding=emb,
+            collection_name="lc_test_pre_del",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+        )
+        try:
+            v_store.add_texts(
+                texts=["aa"],
+                metadatas=[
+                    {"k": "a", "ord": 0},
+                ],
+                ids=["a"],
+            )
+            res1 = v_store.similarity_search("aa", k=5)
+            assert len(res1) == 1
+            v_store = AstraDB(
+                embedding=emb,
+                pre_delete_collection=True,
+                collection_name="lc_test_pre_del",
+                token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+                api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+                namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+            )
+            res1 = v_store.similarity_search("aa", k=5)
+            assert len(res1) == 0
+        finally:
+            v_store.delete_collection()
+
     def test_astradb_vectorstore_from_x(self) -> None:
         """from_texts and from_documents methods."""
         emb = SomeEmbeddings(dimension=2)
