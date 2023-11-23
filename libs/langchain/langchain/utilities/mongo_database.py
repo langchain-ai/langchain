@@ -159,4 +159,6 @@ class MongoDBDatabase:
         return f"Result:\n{result}"
 
 
-
+    def run(self, command: str) -> str:
+        """Run a command and return a string representing the results."""
+        return f"Result:\n{self._execute(command)}"
