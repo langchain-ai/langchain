@@ -206,6 +206,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
             try:
                 generation: Optional[ChatGenerationChunk] = None
@@ -259,6 +260,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
             try:
                 generation: Optional[ChatGenerationChunk] = None
@@ -334,6 +336,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             invocation_params=params,
             options=options,
             name=run_name,
+            batch_size=len(messages),
         )
         results = []
         for i, m in enumerate(messages):
@@ -396,6 +399,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             invocation_params=params,
             options=options,
             name=run_name,
+            batch_size=len(messages),
         )
 
         results = await asyncio.gather(
