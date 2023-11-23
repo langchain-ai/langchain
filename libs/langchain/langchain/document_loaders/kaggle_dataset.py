@@ -1,4 +1,4 @@
-from typing import Iterator, List
+from typing import Any, Iterator, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -52,7 +52,7 @@ class KaggleDatasetLoader(BaseLoader):
         df.apply(lambda row: docs.append(self._sample2document(row)), axis=1)
         return docs
 
-    def _sample2document(self, sample) -> Document:
+    def _sample2document(self, sample: Any) -> Document:
         """Convert a pandas dataframe sample into a Document
 
         The `content_field` goes into the document content,

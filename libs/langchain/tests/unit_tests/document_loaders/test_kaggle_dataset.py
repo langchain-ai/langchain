@@ -10,7 +10,7 @@ TEST_DATASET_PATH = "./kaggle_dataset.csv"
 
 
 @fixture(autouse=True)
-def setup_and_tear_down():
+def setup_and_tear_down() -> None:
     if os.path.isfile(TEST_DATASET_PATH):
         return True
     data = {"col1": [1, 2], "col2": [3, 4], "col3": ["5", "6"]}
