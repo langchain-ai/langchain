@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.335"
+version = "0.0.339rc1"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,11 +12,16 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
+langchain-core = "^0.0.4"
 pydantic = ">=1,<3"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
 numpy = "^1"
+aiohttp = "^3.8.3"
+tenacity = "^8.1.0"
+anyio = "<4.0"
+jsonpatch = "^1.33"
 azure-core = {version = "^1.26.4", optional=true}
 tqdm = {version = ">=4.48.0", optional = true}
 openapi-pydantic = {version = "^0.3.2", optional = true}
@@ -44,15 +49,13 @@ wolframalpha = {version = "5.0.0", optional = true}
 qdrant-client = {version = "^1.3.1", optional = true, python = ">=3.8.1,<3.12"}
 dataclasses-json = ">= 0.5.7, < 0.7"
 tensorflow-text = {version = "^2.11.0", optional = true, python = "^3.10, <3.12"}
-tenacity = "^8.1.0"
 cohere = {version = "^4", optional = true}
-openai = {version = "^0", optional = true}
+openai = {version = "<2", optional = true}
 nlpcloud = {version = "^1", optional = true}
 nomic = {version = "^1.0.43", optional = true}
 huggingface_hub = {version = "^0", optional = true}
 google-search-results = {version = "^2", optional = true}
 sentence-transformers = {version = "^2", optional = true}
-aiohttp = "^3.8.3"
 arxiv = {version = "^1.4", optional = true}
 pypdf = {version = "^3.4.0", optional = true}
 networkx = {version=">=2.6.3, <4", optional = true}
@@ -95,7 +98,7 @@ azure-ai-formrecognizer = {version = "^3.2.1", optional = true}
 azure-ai-vision = {version = "^0.11.1b1", optional = true}
 azure-cognitiveservices-speech = {version = "^1.28.0", optional = true}
 py-trello = {version = "^0.19.0", optional = true}
-momento = {version = "^1.10.1", optional = true}
+momento = {version = "^1.13.0", optional = true}
 bibtexparser = {version = "^1.4.0", optional = true}
 singlestoredb = {version = "^0.7.1", optional = true}
 pyspark = {version = "^3.4.0", optional = true}
@@ -130,16 +133,16 @@ assemblyai = {version = "^0.17.0", optional = true}
 dashvector = {version = "^1.0.1", optional = true}
 sqlite-vss = {version = "^0.1.2", optional = true}
 motor = {version = "^3.3.1", optional = true}
-anyio = "<4.0"
-jsonpatch = "^1.33"
 timescale-vector = {version = "^0.0.1", optional = true}
 typer = {version= "^0.9.0", optional = true}
 anthropic = {version = "^0.3.11", optional = true}
 aiosqlite = {version = "^0.19.0", optional = true}
 rspace_client = {version = "^2.5.0", optional = true}
 upstash-redis = {version = "^0.15.0", optional = true}
+azure-ai-textanalytics = {version = "^5.3.0", optional = true}
 google-cloud-documentai = {version = "^2.20.1", optional = true}
 fireworks-ai = {version = "^0.6.0", optional = true, python = ">=3.9,<4.0"}
+javelin-sdk = {version = "^0.1.8", optional = true}
 
 
 [tool.poetry.group.test.dependencies]
@@ -186,14 +189,14 @@ optional = true
 # https://github.com/langchain-ai/langchain/blob/master/.github/CONTRIBUTING.md#working-with-optional-dependencies
 pytest-vcr = "^1.0.2"
 wrapt = "^1.15.0"
-openai = "^0.27.4"
+openai = "^1"
 python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
 tiktoken = "^0.3.2"
 anthropic = "^0.3.11"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.3"
+ruff = "^0.1.5"
 types-toml = "^0.10.8.1"
 types-redis = "^4.3.21.6"
 types-pytz = "^2023.3.0.0"
@@ -232,6 +235,7 @@ azure = [
     "azure-ai-vision",
     "azure-cognitiveservices-speech",
     "azure-search-documents",
+    "azure-ai-textanalytics",
 ]
 all = [
     "clarifai",
@@ -296,6 +300,7 @@ all = [
     "azure-ai-formrecognizer",
     "azure-ai-vision",
     "azure-cognitiveservices-speech",
+    "azure-ai-textanalytics",
     "momento",
     "singlestoredb",
     "tigrisdb",
@@ -373,6 +378,7 @@ extended_testing = [
  "upstash-redis",
  "rspace_client",
  "fireworks-ai",
+ "javelin-sdk",
 ]
 
 [tool.ruff]
@@ -417,6 +423,7 @@ markers = [
   "scheduled: mark tests to run in scheduled testing",
   "compile: mark placeholder test used to compile integration tests without running them"
 ]
+asyncio_mode = "auto"
 
 [tool.codespell]
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'

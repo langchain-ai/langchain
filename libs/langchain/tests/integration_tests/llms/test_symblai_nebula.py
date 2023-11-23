@@ -1,7 +1,8 @@
 """Test Nebula API wrapper."""
+from langchain_core.prompts.prompt import PromptTemplate
+
 from langchain.chains.llm import LLMChain
 from langchain.llms.symblai_nebula import Nebula
-from langchain.prompts.prompt import PromptTemplate
 
 
 def test_symblai_nebula_call() -> None:
