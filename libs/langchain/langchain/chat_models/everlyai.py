@@ -13,7 +13,7 @@ from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 
 if TYPE_CHECKING:
     import tiktoken
@@ -81,14 +81,8 @@ class ChatEverlyAI(ChatOpenAI):
         )
         values["openai_api_base"] = DEFAULT_API_BASE
 
-        try:
-            import openai
+        openai = import_openai()
 
-        except ImportError as e:
-            raise ValueError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`.",
-            ) from e
         try:
             values["client"] = openai.ChatCompletion
         except AttributeError as exc:

@@ -25,7 +25,7 @@ from langchain.llms.openai import (
     acompletion_with_retry,
     completion_with_retry,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 
 
 def update_token_usage(
@@ -93,23 +93,15 @@ class Anyscale(BaseOpenAI):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
+        openai = import_openai()
+        ## Always create ChatComplete client, replacing the legacy Complete client
+        values["client"] = openai.ChatCompletion
         values["anyscale_api_base"] = get_from_dict_or_env(
             values, "anyscale_api_base", "ANYSCALE_API_BASE"
         )
         values["anyscale_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "anyscale_api_key", "ANYSCALE_API_KEY")
         )
-
-        try:
-            import openai
-
-            ## Always create ChatComplete client, replacing the legacy Complete client
-            values["client"] = openai.ChatCompletion
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
         if values["streaming"] and values["n"] > 1:
             raise ValueError("Cannot stream results when n > 1.")
         if values["streaming"] and values["best_of"] > 1:

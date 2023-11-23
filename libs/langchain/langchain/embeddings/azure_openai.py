@@ -8,7 +8,7 @@ from typing import Dict, Optional, Union
 from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 from langchain.utils.openai import is_openai_v1
 
 
@@ -88,14 +88,8 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         # at a time in each batch
         # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
         values["chunk_size"] = min(values["chunk_size"], 16)
-        try:
-            import openai
+        openai = import_openai()
 
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
         if is_openai_v1():
             # For backwards compatibility. Before openai v1, no distinction was made
             # between azure_endpoint and base_url (openai_api_base).

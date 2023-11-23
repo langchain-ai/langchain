@@ -49,7 +49,7 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 from langchain.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
@@ -287,14 +287,7 @@ class ChatOpenAI(BaseChatModel):
             "OPENAI_PROXY",
             default="",
         )
-        try:
-            import openai
-
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+        openai = import_openai()
 
         if is_openai_v1():
             client_params = {

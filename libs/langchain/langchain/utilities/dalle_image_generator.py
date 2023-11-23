@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 
 
 class DallEAPIWrapper(BaseModel):
@@ -39,16 +39,10 @@ class DallEAPIWrapper(BaseModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        try:
-            import openai
+        openai = import_openai()
 
-            openai.api_key = openai_api_key
-            values["client"] = openai.Image
-        except ImportError as e:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
-            ) from e
+        openai.api_key = openai_api_key
+        values["client"] = openai.Image
         return values
 
     def run(self, query: str) -> str:

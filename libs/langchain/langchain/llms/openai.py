@@ -31,7 +31,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 from langchain.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
@@ -291,13 +291,7 @@ class BaseOpenAI(BaseLLM):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        try:
-            import openai
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+        openai = import_openai()
 
         if is_openai_v1():
             client_params = {
@@ -835,13 +829,9 @@ class AzureOpenAI(BaseOpenAI):
         values["openai_api_type"] = get_from_dict_or_env(
             values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
-        try:
-            import openai
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+
+        openai = import_openai()
+
         if is_openai_v1():
             # For backwards compatibility. Before openai v1, no distinction was made
             # between azure_endpoint and base_url (openai_api_base).
@@ -1013,21 +1003,16 @@ class OpenAIChat(BaseLLM):
         openai_organization = get_from_dict_or_env(
             values, "openai_organization", "OPENAI_ORGANIZATION", default=""
         )
-        try:
-            import openai
+        openai = import_openai()
 
-            openai.api_key = openai_api_key
-            if openai_api_base:
-                openai.api_base = openai_api_base
-            if openai_organization:
-                openai.organization = openai_organization
-            if openai_proxy:
-                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+        openai.api_key = openai_api_key
+        if openai_api_base:
+            openai.api_base = openai_api_base
+        if openai_organization:
+            openai.organization = openai_organization
+        if openai_proxy:
+            openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
+
         try:
             values["client"] = openai.ChatCompletion
         except AttributeError:

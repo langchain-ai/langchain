@@ -6,7 +6,7 @@ from langchain_core.utils import convert_to_secret_str
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 
 logger = logging.getLogger(__name__)
 
@@ -95,17 +95,11 @@ class GooseAI(LLM):
             get_from_dict_or_env(values, "gooseai_api_key", "GOOSEAI_API_KEY")
         )
         values["gooseai_api_key"] = gooseai_api_key
-        try:
-            import openai
+        openai = import_openai()
 
-            openai.api_key = gooseai_api_key.get_secret_value()
-            openai.api_base = "https://api.goose.ai/v1"
-            values["client"] = openai.Completion
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+        openai.api_key = gooseai_api_key.get_secret_value()
+        openai.api_base = "https://api.goose.ai/v1"
+        values["client"] = openai.Completion
         return values
 
     @property

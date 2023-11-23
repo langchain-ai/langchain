@@ -227,15 +227,9 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_ORGANIZATION",
             default="",
         )
-        try:
-            import openai
+        openai = import_openai()
 
-            values["client"] = openai.Embedding
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+        values["client"] = openai.Embedding
         return values
 
     @property

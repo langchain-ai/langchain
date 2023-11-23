@@ -49,7 +49,7 @@ from langchain.chat_models.base import (
     _agenerate_from_stream,
     _generate_from_stream,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 
 logger = logging.getLogger(__name__)
 
@@ -221,14 +221,9 @@ class JinaChat(BaseChatModel):
         values["jinachat_api_key"] = get_from_dict_or_env(
             values, "jinachat_api_key", "JINACHAT_API_KEY"
         )
-        try:
-            import openai
 
-        except ImportError:
-            raise ValueError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+        openai = import_openai()
+
         try:
             values["client"] = openai.ChatCompletion
         except AttributeError:

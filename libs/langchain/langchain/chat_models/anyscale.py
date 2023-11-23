@@ -16,7 +16,7 @@ from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 from langchain.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
@@ -126,14 +126,7 @@ class ChatAnyscale(ChatOpenAI):
             "ANYSCALE_PROXY",
             default="",
         )
-        try:
-            import openai
-
-        except ImportError as e:
-            raise ValueError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`.",
-            ) from e
+        openai = import_openai()
         try:
             if is_openai_v1():
                 client_params = {

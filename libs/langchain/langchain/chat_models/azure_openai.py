@@ -10,7 +10,7 @@ from langchain_core.outputs import ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 from langchain.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
@@ -135,15 +135,8 @@ class AzureChatOpenAI(ChatOpenAI):
         values["openai_proxy"] = get_from_dict_or_env(
             values, "openai_proxy", "OPENAI_PROXY", default=""
         )
+        openai = import_openai()
 
-        try:
-            import openai
-
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
         if is_openai_v1():
             # For backwards compatibility. Before openai v1, no distinction was made
             # between azure_endpoint and base_url (openai_api_base).

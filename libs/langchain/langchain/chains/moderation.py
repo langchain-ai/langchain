@@ -5,7 +5,7 @@ from langchain_core.pydantic_v1 import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 
 
 class OpenAIModerationChain(Chain):
@@ -46,18 +46,13 @@ class OpenAIModerationChain(Chain):
             "OPENAI_ORGANIZATION",
             default="",
         )
-        try:
-            import openai
 
-            openai.api_key = openai_api_key
-            if openai_organization:
-                openai.organization = openai_organization
-            values["client"] = openai.Moderation
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+        openai = import_openai()
+
+        openai.api_key = openai_api_key
+        if openai_organization:
+            openai.organization = openai_organization
+        values["client"] = openai.Moderation
         return values
 
     @property

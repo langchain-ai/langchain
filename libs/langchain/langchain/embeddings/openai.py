@@ -33,7 +33,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 
 logger = logging.getLogger(__name__)
 
@@ -307,40 +307,33 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        try:
-            import openai
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+
+        openai = import_openai()
+
+        if _is_openai_v1():
+            if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
+                warnings.warn(
+                    "If you have openai>=1.0.0 installed and are using Azure, "
+                    "please use the `AzureOpenAIEmbeddings` class."
+                )
+            client_params = {
+                "api_key": values["openai_api_key"],
+                "organization": values["openai_organization"],
+                "base_url": values["openai_api_base"],
+                "timeout": values["request_timeout"],
+                "max_retries": values["max_retries"],
+                "default_headers": values["default_headers"],
+                "default_query": values["default_query"],
+                "http_client": values["http_client"],
+            }
+            if not values.get("client"):
+                values["client"] = openai.OpenAI(**client_params).embeddings
+            if not values.get("async_client"):
+                values["async_client"] = openai.AsyncOpenAI(**client_params).embeddings
+        elif not values.get("client"):
+            values["client"] = openai.Embedding
         else:
-            if _is_openai_v1():
-                if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
-                    warnings.warn(
-                        "If you have openai>=1.0.0 installed and are using Azure, "
-                        "please use the `AzureOpenAIEmbeddings` class."
-                    )
-                client_params = {
-                    "api_key": values["openai_api_key"],
-                    "organization": values["openai_organization"],
-                    "base_url": values["openai_api_base"],
-                    "timeout": values["request_timeout"],
-                    "max_retries": values["max_retries"],
-                    "default_headers": values["default_headers"],
-                    "default_query": values["default_query"],
-                    "http_client": values["http_client"],
-                }
-                if not values.get("client"):
-                    values["client"] = openai.OpenAI(**client_params).embeddings
-                if not values.get("async_client"):
-                    values["async_client"] = openai.AsyncOpenAI(
-                        **client_params
-                    ).embeddings
-            elif not values.get("client"):
-                values["client"] = openai.Embedding
-            else:
-                pass
+            pass
         return values
 
     @property
@@ -363,13 +356,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 openai_args["engine"] = self.deployment
             # TODO: Look into proxy with openai v1.
             if self.openai_proxy:
-                try:
-                    import openai
-                except ImportError:
-                    raise ImportError(
-                        "Could not import openai python package. "
-                        "Please install it with `pip install openai`."
-                    )
+                openai = import_openai()
 
                 openai.proxy = {
                     "http": self.openai_proxy,

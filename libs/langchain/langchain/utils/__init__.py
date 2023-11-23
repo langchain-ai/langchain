@@ -23,6 +23,7 @@ from langchain_core.utils.utils import (
 
 from langchain.utils.env import get_from_dict_or_env, get_from_env
 from langchain.utils.math import cosine_similarity, cosine_similarity_top_k
+from langchain.utils.pkg_import import import_openai
 from langchain.utils.strings import comma_list, stringify_dict, stringify_value
 
 __all__ = [
@@ -46,4 +47,5 @@ __all__ = [
     "stringify_dict",
     "stringify_value",
     "xor_args",
+    "import_openai",
 ]
