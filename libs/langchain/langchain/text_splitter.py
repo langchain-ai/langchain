@@ -903,7 +903,7 @@ class RecursiveCharacterTextSplitter(CharacterTextSplitter):
         self,
         separators: Optional[List[str]] = None,
         keep_separator: bool = True,
-        is_separator_regex: bool = True,
+        is_separator_regex: bool = False,
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter.
@@ -913,13 +913,16 @@ class RecursiveCharacterTextSplitter(CharacterTextSplitter):
             keep_separator: Whether to keep the separator in the chunks
             is_separator_regex: Whether the separator is a regex
         """
+        if not separators:
+            separators = ["\s+"]
+            is_separator_regex = True
+
         super().__init__(
             separator="",
             is_separator_regex=is_separator_regex,
             keep_separator=keep_separator,
             **kwargs,
         )
-        separators = separators or ["\s+"]
 
         # If the separator is a regex, we don't need to escape it.
         if not self._is_separator_regex:
