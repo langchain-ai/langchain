@@ -239,24 +239,27 @@ This is a weird to write, but gotta test the splittingggg some how.
 
 Bye!\n\n-H."""
     chunk_size = 10
-    splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=1)
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=1, force_chunk_size=True
+    )
     output = splitter.split_text(text)
     expected_output = [
-        "Hi.\n\nI'm H",
+        "Hi.\n\nI'm",
         "Harrison.",
-        ".\n\nHow? Ar",
-        "re? You?\nO",
+        "How?",
+        "Are? You?",
         "Okay then",
         "f f f f.",
         "This is a",
         "a weird to",
-        "o write, b",
+        "write,",
         "but gotta",
         "test the",
-        "splitting",
-        "gggg some",
-        "how.\n\nBye",
-        "e!\n\n-H.",
+        "splittingg",
+        "gg",
+        "some how.",
+        "Bye!",
+        "-H.",
     ]
     assert output == expected_output
     assert all(len(chunk) <= chunk_size for chunk in output)

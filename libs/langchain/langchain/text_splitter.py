@@ -344,12 +344,17 @@ class CharacterTextSplitter(TextSplitter):
     """Splitting text that looks at characters."""
 
     def __init__(
-        self, separator: str = "\n\n", is_separator_regex: bool = False, **kwargs: Any
+        self,
+        separator: str = "\n\n",
+        is_separator_regex: bool = False,
+        force_chunk_size: bool = False,
+        **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
         self._separator = separator
         self._is_separator_regex = is_separator_regex
+        self._force_chunk_size = force_chunk_size
 
         # If the separator is a regex, we don't need to escape it.
         if not self._is_separator_regex:
@@ -361,7 +366,28 @@ class CharacterTextSplitter(TextSplitter):
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         splits = _split_text_with_regex(text, self._separator)
-        return self._merge_splits(splits)
+        merged_split: List[str] = self._merge_splits(splits)
+        final_split = self._split_to_chunk_size(merged_split)
+        return final_split
+
+    def _split_to_chunk_size(self, merged_split: List[str]) -> List[str]:
+        """Split merged splits into chunks of size self._chunk_size."""
+        if self._force_chunk_size:
+            final_split = []
+            for split in merged_split:
+                if len(split) > self._chunk_size:
+                    final_split.extend(
+                        [
+                            split[i : i + self._chunk_size]
+                            for i in range(0, len(split), self._chunk_size)
+                        ]
+                    )
+                else:
+                    final_split.append(split)
+
+            return final_split
+        else:
+            return merged_split
 
 
 class LineType(TypedDict):
@@ -877,7 +903,7 @@ class RecursiveCharacterTextSplitter(CharacterTextSplitter):
         self,
         separators: Optional[List[str]] = None,
         keep_separator: bool = True,
-        is_separator_regex: bool = False,
+        is_separator_regex: bool = True,
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter.
@@ -893,7 +919,7 @@ class RecursiveCharacterTextSplitter(CharacterTextSplitter):
             keep_separator=keep_separator,
             **kwargs,
         )
-        separators = separators or ["\n\n", "\n", " ", ""]
+        separators = separators or ["\s+"]
 
         # If the separator is a regex, we don't need to escape it.
         if not self._is_separator_regex:
