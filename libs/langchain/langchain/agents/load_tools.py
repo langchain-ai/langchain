@@ -414,7 +414,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
     "google_cloud_texttospeech": (_get_google_cloud_texttospeech, []),
-    "twitter_search": (_get_twitter_search, ["twitter_access_token"])
+    "reddit_search": (_get_reddit_search, ["reddit_client_id", "reddit_client_secret", "reddit_user_agent"])
 }
 
 
