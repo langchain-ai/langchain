@@ -1,31 +1,31 @@
 from typing import Any, Dict, List, Optional
 import requests
-
+import praw
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 class RedditSearchAPIWrapper(BaseModel):
 
-    client_id: str
-    client_secret: str
-    user_agent: str
+    reddit_client_id: str
+    reddit_client_secret: str
+    reddit_user_agent: str
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         reddit_client_id = get_from_dict_or_env(
             values, "reddit_client_id", "REDDIT_CLIENT_ID"
         )
-        values["client_id"] = reddit_client_id
+        values["reddit_client_id"] = reddit_client_id
 
         reddit_client_secret = get_from_dict_or_env(
             values, "reddit_client_secret", "REDDIT_CLIENT_SECRET"
         )
-        values["client_secret"] = reddit_client_secret
+        values["reddit_client_secret"] = reddit_client_secret
 
         reddit_user_agent = get_from_dict_or_env(
             values, "reddit_user_agent", "REDDIT_USER_AGENT"
         )
-        values["user_agent"] = reddit_user_agent
+        values["reddit_user_agent"] = reddit_user_agent
 
         try:
             import praw
@@ -41,8 +41,14 @@ class RedditSearchAPIWrapper(BaseModel):
         time_filter: str,
         subreddit: str,
         limit: int) -> str:
-        results: List[Dict] = self.results(query=query, sort=sort, time_filter=time_filter, subreddit=subreddit)
-        output: List[str] = [f"{r['author']} posted: {r['text']}" for r in results]
+        results: List[Dict] = self.results(query=query, sort=sort, time_filter=time_filter, subreddit=subreddit, limit=limit)
+        output: List[str] = []
+        for r in results:
+            p = f"{r['post_author']} posted '{r['post_title']}' in {r['post_subreddit']}:\n" \
+                f"{r['post_text']}\n" \
+                f"({r['post_url']})\n" \
+                f"Score: {r['post_score']}\n"
+            output.append(p)
         return '\n'.join(output)
 
     def results(
@@ -54,43 +60,23 @@ class RedditSearchAPIWrapper(BaseModel):
         limit: int
     ) -> List[Dict]:
         reddit = praw.Reddit(
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            user_agent=self.user_agent,
+            client_id=self.reddit_client_id,
+            client_secret=self.reddit_client_secret,
+            user_agent=self.reddit_user_agent,
         )
         subredditObject = reddit.subreddit(subreddit) 
-        results = subredditObject.search(query=query, sort=sort, time_filter=time_filter, limit=limit) 
-        results = []
-        attributes = ['title', 'score', 'id', 'url', 'author']
-        for submission in subredditObject:
-            results.append({
-                'title': submission.title, 
-                'author': submission.author, 
-                'text': submission.selftext,
-                'url': submission.url,
+        search_results = subredditObject.search(query=query, sort=sort, time_filter=time_filter, limit=limit) 
+        search_results = [r for r in search_results]
+        results_object = []
+        for submission in search_results:
+            results_object.append({
+                'post_subreddit': submission.subreddit_name_prefixed,
+                'post_category': submission.category,
+                'post_title': submission.title,
+                'post_text': submission.selftext,
+                'post_score': submission.score,
+                'post_id': submission.id,
+                'post_url': submission.url,
+                'post_author': submission.author,
             })
-            # results.append({att: submission[att] for att in attributes})
-        return results
-
-        # # TODO: clean up parameters.
-        # url: str = f'https://api.twitter.com/1.1/search/tweets.json?q={query}&count=1'
-        # # url: str = 'https://api.twitter.com/2/tweets?ids=1261326399320715264,1278347468690915330'
-        # print(self.twitter_access_token)
-        # response = requests.get(url, 
-        #     headers={
-        #         'Authorization': f'Bearer {self.twitter_access_token}'
-        #     })
-        # results = response.json()
-        # print('status code', response.status_code)
-        # print('status text', response.text)
-        # statuses = results['data']
-        # search_results: List[str] = []
-        # print()
-        # for status in statuses:
-        #     search_results.append({
-        #         'username': status['author_id'],
-        #         'created_at': status['created_at'],
-        #         'text': status['text']
-        #         # 'username': status['user']['name'],
-        #     })
-        # return '\n'.join(search_results)
+        return results_object
