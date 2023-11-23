@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-experimental"
-version = "0.0.41"
+version = "0.0.42"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -34,6 +34,7 @@ setuptools = "^67.6.1"
 # dependencies used for running tests (e.g., pytest, freezegun, response).
 # Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
+pytest-asyncio = "^0.20.3"
 
 
 [tool.poetry.group.test_integration]
@@ -91,3 +92,4 @@ markers = [
   "asyncio: mark tests as requiring asyncio",
   "compile: mark placeholder test used to compile integration tests without running them",
 ]
+asyncio_mode = "auto"

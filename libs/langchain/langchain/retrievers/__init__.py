@@ -28,6 +28,7 @@ from langchain.retrievers.cohere_rag_retriever import CohereRagRetriever
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.docarray import DocArrayRetriever
 from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
+from langchain.retrievers.embedchain import EmbedchainRetriever
 from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.retrievers.google_cloud_documentai_warehouse import (
     GoogleDocumentAIWarehouseRetriever,
@@ -78,6 +79,7 @@ __all__ = [
     "ChaindeskRetriever",
     "CohereRagRetriever",
     "ElasticSearchBM25Retriever",
+    "EmbedchainRetriever",
     "GoogleDocumentAIWarehouseRetriever",
     "GoogleCloudEnterpriseSearchRetriever",
     "GoogleVertexAIMultiTurnSearchRetriever",
