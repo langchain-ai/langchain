@@ -1,9 +1,9 @@
 from typing import Generator, cast
 
 import pytest
+
 from langchain.schema import Document
 from langchain.storage._lc_store import create_kv_docstore, create_lc_store
-
 from langchain.storage.sql_docstore import SQLStore
 
 

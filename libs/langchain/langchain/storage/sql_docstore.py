@@ -12,7 +12,6 @@ from typing import (
     Union,
 )
 
-from langchain.schema import BaseStore
 from sqlalchemy import (
     Column,
     Engine,
@@ -33,6 +32,8 @@ from sqlalchemy.orm import (
     mapped_column,
     sessionmaker,
 )
+
+from langchain.schema import BaseStore
 
 Base = declarative_base()
 
