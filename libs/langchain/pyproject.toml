@@ -212,6 +212,7 @@ optional = true
 jupyter = "^1.0.0"
 playwright = "^1.28.0"
 setuptools = "^67.6.1"
+hypothesis = "^6.90.0"
 
 [tool.poetry.extras]
 llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
@@ -409,7 +410,7 @@ build-backend = "poetry.core.masonry.api"
 #
 # https://github.com/tophat/syrupy
 # --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = "--strict-markers --strict-config --durations=5 -vv"
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
