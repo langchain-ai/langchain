@@ -184,10 +184,38 @@ class VectorStore(ABC):
         return 1.0 - distance / math.sqrt(2)
 
     @staticmethod
-    def _cosine_relevance_score_fn(distance: float) -> float:
-        """Normalize the distance to a score on a scale [0, 1]."""
+    def _cosine_similarity_relevance_score_fn(distance: float) -> float:
+        """
+        Converts a cosine similarity score to a normalized similarity score.
+        Parameters:
+        - distance (float): The cosine similarity score in the range [-1, 1],
+        where -1 represents most dissimilar and 1 represents most similar.
+        Returns:
+        float: The normalized similarity score in the range [0, 1],
+        where 0 represents most dissimilar and 1 represents most similar.
+        """
 
-        return 1.0 - distance
+        # Since the cosine similarity ranges from -1 to 1 for unit vectors,
+        # we add 1 to make the minimum 0
+        # and then divide by 2 to make the maximum 1.
+        return (1.0 + distance) / 2
+
+    @staticmethod
+    def _cosine_distance_relevance_score_fn(distance: float) -> float:
+        """
+        Converts a cosine distance score to a normalized similarity score.
+        Parameters:
+        - distance (float): The cosine distance score in the range [0, 2],
+        where 0 represents most similar and 2 represents most dissimilar.
+        Returns:
+        float: The normalized similarity score in the range [0, 1],
+        where 0 represents most dissimilar and 1 represents most similar.
+        """
+        # Since the cosine distance ranges from 0 to 2 for unit vectors,
+        # we divide by 2 to make the maximum 1
+        # we subtract it with 1 to convert it into range [0,1]
+        # where 0 represents most dissimilar and 1 represents most similar.
+        return 1 - (distance / 2)
 
     @staticmethod
     def _max_inner_product_relevance_score_fn(distance: float) -> float:
