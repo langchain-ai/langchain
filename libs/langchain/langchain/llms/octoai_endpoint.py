@@ -132,6 +132,11 @@ class OctoAIEndpoint(LLM):
                 # Send the request using the OctoAI client
                 output = octoai_client.infer(self.endpoint_url, parameter_payload)
                 text = output.get("choices")[0].get("message").get("content")
+                if (
+                    "return_usage" in _model_kwargs
+                    and str.lower(_model_kwargs["return_usage"]) == "true"
+                ):
+                    text += str(output.get("usage"))
             else:
                 # Prepare the payload JSON
                 parameter_payload = {"inputs": prompt, "parameters": _model_kwargs}
