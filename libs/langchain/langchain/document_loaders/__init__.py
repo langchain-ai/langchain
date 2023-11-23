@@ -198,6 +198,8 @@ from langchain.document_loaders.youtube import (
     YoutubeLoader,
 )
 
+from .kaggle_dataset import KaggleDatasetLoader
+
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
 
@@ -282,6 +284,7 @@ __all__ = [
     "IuguLoader",
     "JSONLoader",
     "JoplinLoader",
+    "KaggleDatasetLoader",
     "LarkSuiteDocLoader",
     "LakeFSLoader",
     "MHTMLLoader",
