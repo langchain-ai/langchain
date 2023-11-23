@@ -2,9 +2,14 @@ from langchain.pydantic_v1 import BaseModel, Field, root_validator, validator
 from langchain.schema.output import GenerationChunk, ChatGenerationChunk
 from langchain.schema.messages import BaseMessage, BaseMessageChunk, ChatMessageChunk
 from langchain.callbacks.manager import CallbackManager, AsyncCallbackManager
-from langchain.chat_models.base import SimpleChatModel
-from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
+
+try:    ## if running as part of package
+    from .base import LLM   
+except: ## if running in isolation
+    from langchain.llms.base import LLM  
+## if running in single-file with uncommented chat models
+from langchain.chat_models.base import SimpleChatModel  
 
 from typing import Callable, Any, Dict, List, Optional, Tuple
 import requests
@@ -46,7 +51,6 @@ AI_PLAY_URLS = {
 }
 
 # Get a key from https://catalog.stg.ngc.nvidia.com/orgs/nvidia/models/llama2-70b/api or similar
-
 
 class AIPlayClient(BaseModel):
 

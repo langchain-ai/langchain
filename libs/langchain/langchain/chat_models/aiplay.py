@@ -1,9 +1,13 @@
-"""Chat Model Components Derived from LLM/NV_AIPlay"""
+"""Chat Model Components Derived from LLM/aiplay"""
 
 from langchain.chat_models.base import SimpleChatModel
-from langchain.llms.nv_aiplay import AIPlayBaseModel, NeVAClient
+from langchain.llms.aiplay import AIPlayBaseModel, NeVAClient
 from langchain.pydantic_v1 import Field
 from typing import Any
+
+## This file cannot be run in isolation as a single-file standalone.
+## Please start with llms.aiplay and uncomment chat variants as seen below.
+from .base import SimpleChatModel  
 
 ################################################################################
 

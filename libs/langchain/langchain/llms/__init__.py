@@ -29,7 +29,7 @@ def _import_ai21() -> Any:
 
 
 def _import_aiplay() -> Any:
-    from langchain.llms.nv_aiplay import AIPlayLLM
+    from langchain.llms.aiplay import AIPlayLLM
 
     return AIPlayLLM
 

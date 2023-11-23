@@ -9,7 +9,7 @@ import pytest
 #     create_openai_fn_chain,
 # )
 # from langchain.chat_models.openai import ChatOpenAI
-from langchain.chat_models.nv_aiplay import LlamaChat as ChatOpenAI  ## Commandeering ChatOpenAI tests to see what we're missing
+from langchain.chat_models.aiplay import LlamaChat as ChatOpenAI  ## Commandeering ChatOpenAI tests to see what we're missing
 # from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 # from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field
