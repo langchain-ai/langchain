@@ -44,7 +44,7 @@
 
 **Этот репозитарий содержит `gigachain` ([ссылка](libs/langchain)), `gigachain-experimental` ([ссылка](libs/experimental)), и `gigachain-cli` ([ссылка](libs/cli)) пакеты Python и [GigaChain Templates](templates).**
 
-![GigaChain Stack](docs/static/img/langchain_stack.png)
+# ![GigaChain Stack](docs/static/img/langchain_stack.png)
 
 > [!WARNING]
 > GigaChain находится в состоянии альфа-версии: мы заняты переводом библиотеки и ее адаптацией для работы с GigaChat. Будьте осторожны при использовании GigaChain в своих проектах, так как далеко не все компоненты оригинальной библиотеки проверены на совместимость с GigaChat.
