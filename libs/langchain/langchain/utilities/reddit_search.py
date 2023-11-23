@@ -42,15 +42,20 @@ class RedditSearchAPIWrapper(BaseModel):
         subreddit: str,
         limit: int) -> str:
         results: List[Dict] = self.results(query=query, sort=sort, time_filter=time_filter, subreddit=subreddit, limit=limit)
-        output: List[str] = []
-        for r in results:
-            p = f"{r['post_author']} posted '{r['post_title']}' in {r['post_subreddit']}:\n" \
-                f"{r['post_text']}\n" \
-                f"({r['post_url']})\n" \
-                f"Score: {r['post_score']}\n"
-            output.append(p)
-        return '\n'.join(output)
-
+        if len(results) > 0:
+            output: List[str] = [f'Searching r/{subreddit} found {len(results)} posts:']
+            for r in results:
+                category = 'N/A' if r['post_category'] is None else r['post_category']
+                p = f"Post Title: '{r['post_title']}'\nUser: {r['post_author']}\nSubreddit: {r['post_subreddit']}:\n \
+                    Text body: {r['post_text']}\n \
+                    Post URL: {r['post_url']}\n \
+                    Post Category: {category}.\n \
+                    Score: {r['post_score']}\n"
+                output.append(p)
+            return '\n'.join(output)
+        else:
+            return f'Searching r/{subreddit} did not find any posts:'
+        
     def results(
         self,
         query: str,
