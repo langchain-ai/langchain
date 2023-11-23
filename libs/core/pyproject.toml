@@ -1,12 +1,14 @@
 [tool.poetry]
-name = "langchain-core"
+name = "gigachain-core"
 version = "0.0.3"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
-
+packages = [
+    {include = "langchain_core"}
+]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
