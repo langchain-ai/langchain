@@ -22,7 +22,7 @@ class ConvoOutputParser(AgentOutputParser):
             return AgentFinish(
                 {"output": text.split(f"{self.ai_prefix}:")[-1].strip()}, text
             )
-        regex = r"Action: (.*?)[\n]*Action Input: (.*)"
+        regex = r"Action: (.*?)[\n]*Action Input: ([\s\S]*)"
         match = re.search(regex, text)
         if not match:
             raise OutputParserException(f"Could not parse LLM output: `{text}`")
