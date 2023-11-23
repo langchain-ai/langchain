@@ -1,1 +1,1 @@
-# langchain-core
+# gigachain-core
