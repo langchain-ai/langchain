@@ -123,7 +123,7 @@ class OctoAIEndpoint(LLM):
 
             octoai_client = client.Client(token=self.octoai_api_token)
 
-            if "model" in _model_kwargs and "llama-2" in _model_kwargs["model"]:
+            if "model" in _model_kwargs:
                 parameter_payload = _model_kwargs
                 parameter_payload["messages"].append(
                     {"role": "user", "content": prompt}

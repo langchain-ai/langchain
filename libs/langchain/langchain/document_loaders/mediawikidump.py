@@ -55,7 +55,7 @@ class MWDumpLoader(BaseLoader):
         self.file_path = file_path if isinstance(file_path, str) else str(file_path)
         self.encoding = encoding
         # Namespaces range from -2 to 15, inclusive.
-        self.namespaces = namespaces or list(range(-2, 16))
+        self.namespaces = namespaces
         self.skip_redirects = skip_redirects
         self.stop_on_error = stop_on_error
 
@@ -76,7 +76,7 @@ class MWDumpLoader(BaseLoader):
         for page in dump.pages:
             if self.skip_redirects and page.redirect:
                 continue
-            if page.namespace not in self.namespaces:
+            if self.namespaces and page.namespace not in self.namespaces:
                 continue
             try:
                 for revision in page:
