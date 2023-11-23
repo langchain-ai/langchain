@@ -1,6 +1,16 @@
 import re
 from typing import Any, List, Optional, Sequence, Tuple
 
+from langchain_core.agents import AgentAction
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
+from langchain_core.pydantic_v1 import Field
+
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.structured_chat.output_parser import (
     StructuredChatOutputParserWithRetries,
@@ -8,14 +18,6 @@ from langchain.agents.structured_chat.output_parser import (
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate,
-)
-from langchain.pydantic_v1 import Field
-from langchain.schema import AgentAction, BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
@@ -81,7 +83,7 @@ class StructuredChatAgent(Agent):
     ) -> BasePromptTemplate:
         tool_strings = []
         for tool in tools:
-            args_schema = re.sub("}", "}}}}", re.sub("{", "{{{{", str(tool.args)))
+            args_schema = re.sub("}", "}}", re.sub("{", "{{", str(tool.args)))
             tool_strings.append(f"{tool.name}: {tool.description}, args: {args_schema}")
         formatted_tools = "\n".join(tool_strings)
         tool_names = ", ".join([tool.name for tool in tools])
