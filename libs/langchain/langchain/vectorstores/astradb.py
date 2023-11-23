@@ -77,6 +77,44 @@ class AstraDB(VectorStore):
 
                 vectorstore.add_texts(["Giraffes", "All good here"])
                 results = vectorstore.similarity_search("Everything's ok", k=1)
+
+    Constructor args (only keyword-arguments accepted):
+        embedding (Embeddings): embedding function to use.
+        collection_name (str): name of the Astra DB collection to create/use.
+        token (Optional[str]): API token for Astra DB usage.
+        api_endpoint (Optional[str]): full URL to the API endpoint,
+            such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
+        astra_db_client (Optional[Any]): *alternative to token+api_endpoint*,
+            you can pass an already-created 'astrapy.db.AstraDB' instance.
+        namespace (Optional[str]): namespace (aka keyspace) where the
+            collection is created. Defaults to the database's "default namespace".
+        metric (Optional[str]): similarity function to use out of those
+            available in Astra DB. If left out, it will use Astra DB API's
+            defaults (i.e. "cosine" - but, for performance reasons,
+            "dot_product" is suggested if embeddings are normalized to one).
+
+    Advanced arguments (coming with sensible defaults):
+        batch_size (Optional[int]): Size of batches for bulk insertions.
+        bulk_insert_batch_concurrency (Optional[int]): Number of threads
+            to insert batches concurrently.
+        bulk_insert_overwrite_concurrency (Optional[int]): Number of
+            threads in a batch to insert pre-existing entries.
+        bulk_delete_concurrency (Optional[int]): Number of threads
+            (for deleting multiple rows concurrently).
+
+    A note on concurrency: as a rule of thumb, on a typical client machine
+    it is suggested to keep the quantity
+        bulk_insert_batch_concurrency * bulk_insert_overwrite_concurrency
+    much below 1000 to avoid exhausting the client multithreading/networking
+    resources. The hardcoded defaults are somewhat conservative to meet
+    most machines' specs, but a sensible choice to test may be:
+        bulk_insert_batch_concurrency = 80
+        bulk_insert_overwrite_concurrency = 10
+    A bit of experimentation is required to nail the best results here,
+    depending on both the machine/network specs and the expected workload
+    (specifically, how often a write is an update of an existing id).
+    Remember you can pass concurrency settings to individual calls to
+    add_texts and add_documents as well.
     """
 
     @staticmethod
@@ -101,6 +139,9 @@ class AstraDB(VectorStore):
         bulk_insert_overwrite_concurrency: Optional[int] = None,
         bulk_delete_concurrency: Optional[int] = None,
     ) -> None:
+        """
+        Create an AstraDB vector store object. See class docstring for help.
+        """
         try:
             from astrapy.db import (
                 AstraDB as LibAstraDB,
@@ -113,48 +154,6 @@ class AstraDB(VectorStore):
                 "Could not import a recent astrapy python package. "
                 "Please install it with `pip install --upgrade astrapy`."
             )
-        """
-        Create an AstraDB vector store object.
-
-        Args (only keyword-arguments accepted):
-            embedding (Embeddings): embedding function to use.
-            collection_name (str): name of the Astra DB collection to create/use.
-            token (Optional[str]): API token for Astra DB usage.
-            api_endpoint (Optional[str]): full URL to the API endpoint,
-                such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
-            astra_db_client (Optional[Any]): *alternative to token+api_endpoint*,
-                you can pass an already-created 'astrapy.db.AstraDB' instance.
-            namespace (Optional[str]): namespace (aka keyspace) where the
-                collection is created. Defaults to the database's "default namespace".
-            metric (Optional[str]): similarity function to use out of those
-                available in Astra DB. If left out, it will use Astra DB API's
-                defaults (i.e. "cosine" - but, for performance reasons,
-                "dot_product" is suggested if embeddings are normalized to one).
-
-        Advanced arguments (coming with sensible defaults):
-            batch_size (Optional[int]): Size of batches for bulk insertions.
-            bulk_insert_batch_concurrency (Optional[int]): Number of threads
-                to insert batches concurrently.
-            bulk_insert_overwrite_concurrency (Optional[int]): Number of
-                threads in a batch to insert pre-existing entries.
-            bulk_delete_concurrency (Optional[int]): Number of threads
-                (for deleting multiple rows concurrently).
-
-        A note on concurrency: as a rule of thumb, on a typical client machine
-        it is suggested to keep the quantity
-            bulk_insert_batch_concurrency * bulk_insert_overwrite_concurrency
-        much below 1000 to avoid exhausting the client multithreading/networking
-        resources. The hardcoded defaults are somewhat conservative to meet
-        most machines' specs, but a sensible choice to test may be:
-            bulk_insert_batch_concurrency = 80
-            bulk_insert_overwrite_concurrency = 10
-        A bit of experimentation is required to nail the best results here,
-        depending on both the machine/network specs and the expected workload
-        (specifically, how often a write is an update of an existing id).
-        Remember you can pass concurrency settings to individual calls to
-        add_texts and add_documents as well.
-        """
-
         # Conflicting-arg checks:
         if astra_db_client is not None:
             if token is not None or api_endpoint is not None:
