@@ -51,7 +51,7 @@ from typing import (
 )
 
 import requests
-from langchain_core.document_transformers import BaseDocumentTransformer
+from langchain_core.documents import BaseDocumentTransformer
 
 from langchain.docstore.document import Document
 
