@@ -172,4 +172,6 @@ class MongoDBDatabase:
         result = db.command(ast.literal_eval(command))
         return result
 
-
+    def run(self, command: str) -> str:
+        """Run a command and return a string representing the results."""
+        return f"Result:\n{self._execute(command)}"
