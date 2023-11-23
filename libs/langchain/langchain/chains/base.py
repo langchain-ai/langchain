@@ -9,6 +9,17 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
+from langchain_core.load.dump import dumpd
+from langchain_core.memory import BaseMemory
+from langchain_core.outputs import RunInfo
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    create_model,
+    root_validator,
+    validator,
+)
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -18,17 +29,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain.chains.encoder import AliasJSONEncoder
-from langchain.load.dump import dumpd
-from langchain.pydantic_v1 import (
-    BaseModel,
-    Field,
-    create_model,
-    root_validator,
-    validator,
-)
-from langchain.schema import RUN_KEY, BaseDocumentTransformer, BaseMemory, RunInfo
-from langchain.schema.runnable import RunnableConfig, RunnableSerializable
+from langchain.schema import RUN_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -653,21 +654,9 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
-                json.dump(
-                    chain_dict, f, indent=4, ensure_ascii=False, cls=AliasJSONEncoder
-                )
+                json.dump(chain_dict, f, indent=4, ensure_ascii=False)
         elif save_path.suffix == ".yaml":
             with open(file_path, "w") as f:
-                from langchain.document_transformers.serializers import (
-                    serialize_transformer,
-                )
-
-                yaml.add_multi_representer(
-                    BaseDocumentTransformer,  # type: ignore
-                    lambda dumper, data: dumper.represent_mapping(
-                        "tag:yaml.org,2002:map", serialize_transformer(data)
-                    ),
-                )
                 yaml.dump(chain_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")

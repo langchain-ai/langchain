@@ -1,16 +1,18 @@
 import re
 from typing import Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
+
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE = (
     "Invalid Format: Missing 'Action:' after 'Thought:"
 )
 MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE = (
-    "Invalid Format: Missing 'Action:' after 'Action:'"
+    "Invalid Format: Missing 'Action Input:' after 'Action:'"
 )
 FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE = (
     "Parsing LLM output produced both a final answer and a parse-able action:"
@@ -24,7 +26,6 @@ class MRKLOutputParser(AgentOutputParser):
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        text = re.sub(r"Observation:.*", "", text, 0, re.MULTILINE | re.DOTALL)
         includes_answer = FINAL_ANSWER_ACTION in text
         regex = (
             r"Action\s*\d*\s*:[\s]*(.*?)[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"

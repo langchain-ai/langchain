@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 template = """Ты учитель, проверяющий тест.
 Тебе дан вопрос, ответ ученика и правильный ответ, и тебе нужно оценить ответ ученика как ПРАВИЛЬНЫЙ или НЕПРАВИЛЬНЫЙ.

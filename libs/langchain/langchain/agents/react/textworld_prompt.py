@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 EXAMPLES = [
     """Настройка: Ты сейчас играешь в быстрый раунд TextWorld! Вот твоя задача на

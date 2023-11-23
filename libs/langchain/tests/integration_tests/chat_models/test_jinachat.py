@@ -2,16 +2,11 @@
 
 
 import pytest
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.jinachat import JinaChat
-from langchain.schema import (
-    BaseMessage,
-    ChatGeneration,
-    HumanMessage,
-    LLMResult,
-    SystemMessage,
-)
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -66,7 +61,6 @@ def test_jinachat_streaming() -> None:
     assert isinstance(response, BaseMessage)
 
 
-@pytest.mark.asyncio
 async def test_async_jinachat() -> None:
     """Test async generation."""
     chat = JinaChat(max_tokens=102)
@@ -82,7 +76,6 @@ async def test_async_jinachat() -> None:
             assert generation.text == generation.message.content
 
 
-@pytest.mark.asyncio
 async def test_async_jinachat_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

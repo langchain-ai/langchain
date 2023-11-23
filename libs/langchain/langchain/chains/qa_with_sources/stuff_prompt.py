@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 template = """Учитывая следующие выдержки из длинного документа и вопрос, создай окончательный ответ с ссылками ("SOURCES"). 
 Если ты не знаешь ответа, просто скажи, что не знаешь. Не пытайся выдумывать ответ.

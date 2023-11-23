@@ -1,7 +1,7 @@
 # flake8: noqa
 # Credit to https://github.com/openai/evals/tree/main
 
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 template = """Ты оцениваешь представленный ответ на заданную задачу или ввод на основе набора критериев. Вот данные:
 [НАЧАЛО ДАННЫХ]

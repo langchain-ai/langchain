@@ -3,13 +3,14 @@
 from typing import Tuple
 
 import pytest
+from langchain_core.agents import AgentAction
+from langchain_core.exceptions import OutputParserException
+from langchain_core.prompts import PromptTemplate
 
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.output_parser import MRKLOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
-from langchain.prompts import PromptTemplate
-from langchain.schema import AgentAction, OutputParserException
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -130,19 +131,18 @@ def test_bad_action_line() -> None:
     assert e_info.value.observation is not None
 
 
-# TODO: Как добавят стоп слова в гигачате можно разкомментировать
-# def test_valid_action_and_answer_raises_exception() -> None:
-#     """Test handling when both an action and answer are found."""
-#     llm_output = (
-#         "Thought: I need to search for NBA\n"
-#         "Action: Search\n"
-#         "Action Input: NBA\n"
-#         "Observation: founded in 1994\n"
-#         "Thought: I can now answer the question\n"
-#         "Final Answer: 1994"
-#     )
-#     with pytest.raises(OutputParserException):
-#         get_action_and_input(llm_output)
+def test_valid_action_and_answer_raises_exception() -> None:
+    """Test handling when both an action and answer are found."""
+    llm_output = (
+        "Thought: I need to search for NBA\n"
+        "Action: Search\n"
+        "Action Input: NBA\n"
+        "Observation: founded in 1994\n"
+        "Thought: I can now answer the question\n"
+        "Final Answer: 1994"
+    )
+    with pytest.raises(OutputParserException):
+        get_action_and_input(llm_output)
 
 
 def test_from_chains() -> None:
@@ -152,7 +152,7 @@ def test_from_chains() -> None:
         Tool(name="bar", func=lambda x: "bar", description="foobar2"),
     ]
     agent = ZeroShotAgent.from_llm_and_tools(FakeLLM(), chain_configs)
-    expected_tools_prompt = "1: foo\n foobar1\n2: bar\n foobar2"
+    expected_tools_prompt = "foo: foobar1\nbar: foobar2"
     expected_tool_names = "foo, bar"
     expected_template = "\n\n".join(
         [

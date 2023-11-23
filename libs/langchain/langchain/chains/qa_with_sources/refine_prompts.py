@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 DEFAULT_REFINE_PROMPT_TMPL = (
     "Исходный вопрос звучит так: {question}\n"

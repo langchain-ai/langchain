@@ -1,8 +1,11 @@
 """Attempt to implement MRKL systems as described in arxiv.org/pdf/2205.00445.pdf."""
 from __future__ import annotations
 
-import re
-from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, List, NamedTuple, Optional, Sequence
+
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
+from langchain_core.pydantic_v1 import Field
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -12,10 +15,6 @@ from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import Field
-from langchain.schema import AgentAction, BaseMessage
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
@@ -55,7 +54,7 @@ class ZeroShotAgent(Agent):
     @property
     def llm_prefix(self) -> str:
         """Prefix to append the llm call with."""
-        return ""
+        return "Thought:"
 
     @classmethod
     def create_prompt(
@@ -78,30 +77,13 @@ class ZeroShotAgent(Agent):
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
         """
-        tool_strings = "\n".join(
-            [
-                f"{index + 1}: {tool.name}\n {tool.description}"
-                for index, tool in enumerate(tools)
-            ]
-        )
+        tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)
-
-    def _construct_scratchpad(
-        self, intermediate_steps: List[Tuple[AgentAction, str]]
-    ) -> Union[str, List[BaseMessage]]:
-        """Construct the scratchpad that lets the agent continue its thought process."""
-        thoughts = ""
-        for action, observation in intermediate_steps:
-            thoughts += re.sub(
-                r"Observation:\s.+", "", action.log, 0, re.MULTILINE | re.DOTALL
-            )
-            thoughts += f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}"
-        return thoughts
 
     @classmethod
     def from_llm_and_tools(

@@ -19,6 +19,26 @@ from typing import (
 )
 
 import yaml
+from langchain_core.agents import (
+    AgentAction,
+    AgentFinish,
+)
+from langchain_core.exceptions import (
+    OutputParserException,
+)
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage
+from langchain_core.output_parsers import (
+    BaseOutputParser,
+)
+from langchain_core.prompts import (
+    BasePromptTemplate,
+)
+from langchain_core.prompts.few_shot import FewShotPromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.runnables import Runnable
+from langchain_core.utils.input import get_color_mapping
 
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
@@ -33,22 +53,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.prompts.few_shot import FewShotPromptTemplate
-from langchain.prompts.prompt import PromptTemplate
-from langchain.pydantic_v1 import BaseModel, root_validator
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    BaseOutputParser,
-    BasePromptTemplate,
-    OutputParserException,
-)
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage
-from langchain.schema.runnable import Runnable
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
-from langchain.utils.input import get_color_mapping
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +189,7 @@ class BaseSingleActionAgent(BaseModel):
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
-                json.dump(agent_dict, f, indent=4)
+                json.dump(agent_dict, f, indent=4, ensure_ascii=False)
         elif save_path.suffix == ".yaml":
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
@@ -308,7 +314,7 @@ class BaseMultiActionAgent(BaseModel):
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
-                json.dump(agent_dict, f, indent=4)
+                json.dump(agent_dict, f, indent=4, ensure_ascii=False)
         elif save_path.suffix == ".yaml":
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
@@ -390,7 +396,10 @@ class RunnableAgent(BaseSingleActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish,]:
+    ) -> Union[
+        AgentAction,
+        AgentFinish,
+    ]:
         """Given input, decided what to do.
 
         Args:
@@ -439,7 +448,10 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[List[AgentAction], AgentFinish,]:
+    ) -> Union[
+        List[AgentAction],
+        AgentFinish,
+    ]:
         """Given input, decided what to do.
 
         Args:
@@ -460,7 +472,10 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[List[AgentAction], AgentFinish,]:
+    ) -> Union[
+        List[AgentAction],
+        AgentFinish,
+    ]:
         """Given input, decided what to do.
 
         Args:

@@ -1,11 +1,11 @@
 # flake8: noqa
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.prompts.chat import (
+from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 templ1 = """Ты умный помощник, созданный для помощи учителям старших классов в создании вопросов для проверки понимания прочитанного.
 Получив текст, ты должен придумать пару вопрос-ответ, которую можно использовать для проверки способностей ученика к пониманию прочитанного.
