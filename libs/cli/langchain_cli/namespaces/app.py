@@ -110,6 +110,10 @@ def new(
     readme_contents = readme.read_text()
     readme.write_text(readme_contents.replace("__app_name__", app_name))
 
+    pyproject = destination_dir / "pyproject.toml"
+    pyproject_contents = pyproject.read_text()
+    pyproject.write_text(pyproject_contents.replace("__app_name__", app_name))
+
     # add packages if specified
     if has_packages:
         add(package, project_dir=destination_dir, pip=pip_bool)

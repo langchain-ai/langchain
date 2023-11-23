@@ -4,8 +4,8 @@ import os
 from functools import partial
 from typing import Any, Dict, List, Optional
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.embeddings import Embeddings
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
 
 class BedrockEmbeddings(BaseModel, Embeddings):
@@ -112,20 +112,36 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         """Call out to Bedrock embedding endpoint."""
         # replace newlines, which can negatively affect performance.
         text = text.replace(os.linesep, " ")
-        _model_kwargs = self.model_kwargs or {}
 
-        input_body = {**_model_kwargs, "inputText": text}
+        # format input body for provider
+        provider = self.model_id.split(".")[0]
+        _model_kwargs = self.model_kwargs or {}
+        input_body = {**_model_kwargs}
+        if provider == "cohere":
+            if "input_type" not in input_body.keys():
+                input_body["input_type"] = "search_document"
+            input_body["texts"] = [text]
+        else:
+            # includes common provider == "amazon"
+            input_body["inputText"] = text
         body = json.dumps(input_body)
 
         try:
+            # invoke bedrock API
             response = self.client.invoke_model(
                 body=body,
                 modelId=self.model_id,
                 accept="application/json",
                 contentType="application/json",
             )
+
+            # format output based on provider
             response_body = json.loads(response.get("body").read())
-            return response_body.get("embedding")
+            if provider == "cohere":
+                return response_body.get("embeddings")[0]
+            else:
+                # includes common provider == "amazon"
+                return response_body.get("embedding")
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 

@@ -2,9 +2,9 @@
 from typing import Any, List
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain.agents.load_tools import load_tools
-from langchain.schema import Document
 from langchain.tools import ArxivQueryRun
 from langchain.tools.base import BaseTool
 from langchain.utilities import ArxivAPIWrapper

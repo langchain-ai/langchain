@@ -157,7 +157,6 @@ class TestElasticsearch:
         output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
 
-    @pytest.mark.asyncio
     async def test_similarity_search_without_metadat_async(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
