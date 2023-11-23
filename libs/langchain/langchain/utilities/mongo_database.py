@@ -1,8 +1,7 @@
 from mongoengine import Document, connect, get_db
 from pymongo import MongoClient
 from typing import Iterable, List, Optional
-from pprint import pprint, List, Optional
-import pprint
+from pprint import pprint
 import ast
 
 def _format_index(index: dict) -> str:
@@ -13,7 +12,6 @@ def _format_index(index: dict) -> str:
         f'Name: {index["name"]}, Unique: {index["unique"]},'
         f' Keys: {{ {index_keys_formatted} }}'
     )
-
 
 class MongoDBDatabase:
     """MongoEngine wrapper around a database."""
@@ -67,6 +65,7 @@ class MongoDBDatabase:
             return sorted(self._include_collections)
         return sorted(self._all_collections - self._ignore_collections)
     
+    
     def get_usable_document_names(self, collection_name: str) -> Iterable[str]:
         """Get names of documents available in a given collection."""
         if collection_name not in self._ignore_collections:
@@ -98,6 +97,7 @@ class MongoDBDatabase:
         formatted_info = pprint.pformat(fields_info)
 
         return f"Collection Information for '{collection_name}':\n{formatted_info}"
+    
     
     def get_document_info(self, collection_names: Optional[List[str]] = None) -> str:
         """Get information about specified collections."""
@@ -156,8 +156,7 @@ class MongoDBDatabase:
         """Execute a command and return the result."""
         db = get_db()
         result = db.command(ast.literal_eval(command))
-        return f"Result:\n{result}"
-
+        return result
 
     def run(self, command: str) -> str:
         """Run a command and return a string representing the results."""
