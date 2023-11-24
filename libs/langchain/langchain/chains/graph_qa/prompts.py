@@ -197,6 +197,201 @@ SPARQL_QA_PROMPT = PromptTemplate(
     input_variables=["context", "prompt"], template=SPARQL_QA_TEMPLATE
 )
 
+DQL_GENERATION_TEMPLATE= """Task: Generate an DGraph Query Language (DQL) query from a User Input.
+
+You are an DGraph Query Language (DQL) expert responsible for translating a `User Input` into an DGraph Query Language (DQL) query.
+
+You are given an `DGraph Schema`. It is a JSON Object containing an dictionary/json with schema type name as key,
+and it's properties as values. For example:
+  {
+  "Actor":[
+        {
+          "predicate":"age",
+          "type":"int"
+        },
+        {
+          "predicate":"name",
+          "type":"string",
+          "index":true,
+          "tokenizer":[
+              "term"
+          ]
+        }
+    ],
+    "Movie":[
+      {
+          "predicate":"cast",
+          "type":"uid",
+          "reverse":true,
+          "list":true
+      },
+      {
+          "predicate":"name",
+          "type":"string",
+          "index":true,
+          "tokenizer":[
+            "term"
+          ]
+      },
+      {
+          "predicate":"year",
+          "type":"string",
+          "index":true,
+          "tokenizer":[
+            "exact"
+          ]
+      }
+    ]
+  }
+  
+You may also be given a set of `DQL Query Examples` to help you create the `DQL Query`. If provided, the `DQL Query Examples` should be used as a reference, similar to how `DGraph Schema` should be used.
+
+Things you should do:
+- Think step by step.
+- Rely on `DGraph Schema` and `DQL Query Examples` (if provided) to generate the query.
+- Return the `DQL Query`.
+- Use only the provided relationship types and properties in the `DGraph Schema` and any `DQL Query Examples` queries.
+- Only answer to requests related to generating an DQL Query.
+- If a request is unrelated to generating DQL Query, say that you cannot help the user.
+
+Things you should not do:
+- Do not use any properties/relationships that can't be inferred from the `DGraph Schema` or the `DQL Query Examples`. 
+- Do not include any text except the generated DQL Query.
+- Do not provide explanations or apologies in your responses.
+- Do not generate a DQL Query that removes or deletes any data.
+
+Under no circumstance should you generate an DQL Query that deletes any data whatsoever.
+
+DGraph Schema:
+{dgraph_schema}
+
+DQL Query Examples (Optional):
+{dql_examples}
+
+User Input:
+{user_input}
+
+DQL Query: 
+"""
+
+DQL_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["dgraph_schema", "dql_examples", "user_input"],
+    template=DQL_GENERATION_TEMPLATE,
+)
+
+
+DQL_FIX_TEMPLATE = """Task: Address the DGraph Query Language (DQL) error message of an DGraph Query Language query.
+
+You are an DGraph Query Language (DQL) expert responsible for correcting the provided `DQL Query` based on the provided `DQL Error`. 
+
+The `DQL Error` explains why the `DQL Query` could not be executed in the database.
+The `DQL Error` may also contain the position of the error relative to the total number of lines of the `DQL Query`.
+For example, 'error X at position 2:5' denotes that the error X occurs on line 2, column 5 of the `DQL Query`.  
+
+You are given an `DGraph Schema`. It is a JSON Object containing an dictionary/json with schema type name as key,
+and it's properties as values. For example:
+  {
+  "Actor":[
+        {
+          "predicate":"age",
+          "type":"int"
+        },
+        {
+          "predicate":"name",
+          "type":"string",
+          "index":true,
+          "tokenizer":[
+              "term"
+          ]
+        }
+    ],
+    "Movie":[
+      {
+          "predicate":"cast",
+          "type":"uid",
+          "reverse":true,
+          "list":true
+      },
+      {
+          "predicate":"name",
+          "type":"string",
+          "index":true,
+          "tokenizer":[
+            "term"
+          ]
+      },
+      {
+          "predicate":"year",
+          "type":"string",
+          "index":true,
+          "tokenizer":[
+            "exact"
+          ]
+      }
+    ]
+  }
+
+You will output the `Corrected DQL Query`. Do not include any text except the Corrected DQL Query.
+
+Remember to think step by step.
+
+DGraph Schema:
+{dgraph_schema}
+
+DQL Query:
+{dql_query}
+
+DQL Error:
+{dql_error}
+
+Corrected DQL Query:
+"""
+
+DGRAPH_FIX_PROMPT = PromptTemplate(
+    input_variables=[
+        "dgraph_schema",
+        "dql_query",
+        "dql_error",
+    ],
+    template=DQL_FIX_TEMPLATE,
+)
+
+
+DQL_QA_TEMPLATE = """Task: Generate a natural language `Summary` from the results of an DGraph Query Language query.
+
+You are an DGraph Query Language (DQL) expert responsible for creating a well-written `Summary` from the `User Input` and associated `DQL Result`.
+
+A user has executed an DGraph Query Language query, which has returned the DQL Result in JSON format.
+You are responsible for creating an `Summary` based on the DQL Result.
+
+You are given the following information:
+- `DGraph Schema`: Is a dictionary/json with schema type name as key, and it's properties as values.
+- `User Input`: the original question/request of the user, which has been translated into an DQL Query.
+- `DQL Query`: the DQL equivalent of the `User Input`, translated by another AI Model. Should you deem it to be incorrect, suggest a different DQL Query.
+- `DQL Result`: the JSON output returned by executing the `DQL Query` within the DGraph Database.
+
+Remember to think step by step.
+
+Your `Summary` should sound like it is a response to the `User Input`.
+Your `Summary` should not include any mention of the `DQL Query` or the `DQL Result`.
+
+DGraph Schema:
+{dgraph_schema}
+
+User Input:
+{user_input}
+
+DQL Query:
+{dql_query}
+
+DQL Result:
+{dql_result}
+"""
+
+DGRAPH_QA_PROMPT = PromptTemplate(
+    input_variables=["dgraph_schema", "user_input", "dql_query", "dql_result"],
+    template=DQL_QA_TEMPLATE,
+)
 
 AQL_GENERATION_TEMPLATE = """Task: Generate an ArangoDB Query Language (AQL) query from a User Input.
 
