@@ -386,7 +386,7 @@ class AIPlayBaseModel(BaseModel):
         run_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> Iterator[Union[GenerationChunk, ChatGenerationChunk]]:
-        '''Allows streaming to model just fine!'''
+        '''Allows streaming to model!'''
         inputs = self.custom_preprocess(messages)
         labels = kwargs.get('labels', self.labels)
         for response in self.custom_stream(inputs, labels=labels, stop=stop, **kwargs):
@@ -405,7 +405,6 @@ class AIPlayBaseModel(BaseModel):
         run_manager: Optional[AsyncCallbackManager] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Union[GenerationChunk, ChatGenerationChunk]]:
-        """TODO: Implement this properly. This is a lie, and merely recycles _stream..."""
         inputs = self.custom_preprocess(messages)
         labels = kwargs.get('labels', self.labels)
         async for response in await self.custom_astream(inputs, labels=labels, stop=stop, **kwargs):
