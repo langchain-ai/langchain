@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Callable, Dict, List, Optional
+from tqdm import tqdm
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
@@ -79,7 +80,7 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [self.embed_query(text) for text in texts]
+        return [self.embed_query(text) for text in tqdm(texts, desc="GooglePalmEmbeddings")]
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
