@@ -1,5 +1,5 @@
 ---
-name: libs/anthropic CI
+name: libs/anthropic Integration tests
 
 on:
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
