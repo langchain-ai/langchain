@@ -1,7 +1,5 @@
 """Test Vertex AI API wrapper.
-In order to run this test, you need to install VertexAI SDK (that is is the private
-preview)  and be whitelisted to list the models themselves:
-In order to run this test, you need to install VertexAI SDK 
+In order to run this test, you need to install VertexAI SDK:
 pip install google-cloud-aiplatform>=1.35.0
 
 Your end-user credentials would be used to make the calls (make sure you've run 
@@ -151,7 +149,7 @@ async def test_model_garden_agenerate(
 
 
 def test_vertex_call_count_tokens() -> None:
-    llm = VertexAI(preview=True)
+    llm = VertexAI()
     output = llm.get_num_tokens("How are you?")
     assert output == 4
 
@@ -170,7 +168,7 @@ def test_get_num_tokens_be_called_when_using_mapreduce_chain(
             _count_tokens_response={"total_tokens": 2, "total_billable_characters": 2},
         ),
     )
-    llm = VertexAI(preview=True)
+    llm = VertexAI()
     chain = load_summarize_chain(
         llm,
         chain_type="map_reduce",

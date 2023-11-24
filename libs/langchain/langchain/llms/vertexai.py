@@ -179,8 +179,6 @@ class _VertexAICommon(_VertexAIBase):
     """How many completions to generate for each prompt."""
     streaming: bool = False
     """Whether to stream the results or not."""
-    preview: bool = False
-    "Whether to use preview models or not. Some methods are available only in preview."
 
     @property
     def _llm_type(self) -> str:
@@ -251,28 +249,33 @@ class VertexAI(_VertexAICommon, BaseLLM):
         cls._try_init_vertexai(values)
         tuned_model_name = values.get("tuned_model_name")
         model_name = values["model_name"]
-        preview = values["preview"]
         try:
-            if preview:
-                from vertexai.preview.language_models import (
-                    CodeGenerationModel,
-                    TextGenerationModel,
-                )
-            else:
-                from vertexai.language_models import (
-                    CodeGenerationModel,
-                    TextGenerationModel,
-                )
+            from vertexai.language_models import (
+                CodeGenerationModel,
+                TextGenerationModel,
+            )
+            from vertexai.preview.language_models import (
+                CodeGenerationModel as PreviewCodeGenerationModel,
+            )
+            from vertexai.preview.language_models import (
+                TextGenerationModel as PreviewTextGenerationModel,
+            )
 
             if is_codey_model(model_name):
                 model_cls = CodeGenerationModel
+                preview_model_cls = PreviewCodeGenerationModel
             else:
                 model_cls = TextGenerationModel
+                preview_model_cls = PreviewTextGenerationModel
 
             if tuned_model_name:
                 values["client"] = model_cls.get_tuned_model(tuned_model_name)
+                values["client_preview"] = preview_model_cls.get_tuned_model(
+                    tuned_model_name
+                )
             else:
                 values["client"] = model_cls.from_pretrained(model_name)
+                values["client_preview"] = preview_model_cls.from_pretrained(model_name)
 
         except ImportError:
             raise_vertex_import_error()
@@ -292,10 +295,8 @@ class VertexAI(_VertexAICommon, BaseLLM):
         Returns:
             The integer number of tokens in the text.
         """
-        if not self.preview:
-            raise ValueError("Get_num_tokens is available only for preview models!")
         try:
-            result = self.client.count_tokens([text])
+            result = self.client_preview.count_tokens([text])
         except AttributeError:
             raise_vertex_import_error()
 

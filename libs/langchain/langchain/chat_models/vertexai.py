@@ -131,12 +131,8 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         cls._try_init_vertexai(values)
-        preview = values["preview"]
         try:
-            if preview:
-                from vertexai.preview.language_models import ChatModel, CodeChatModel
-            else:
-                from vertexai.language_models import ChatModel, CodeChatModel
+            from vertexai.language_models import ChatModel, CodeChatModel
         except ImportError:
             raise_vertex_import_error()
         if is_codey_model(values["model_name"]):

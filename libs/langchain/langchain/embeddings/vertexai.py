@@ -16,12 +16,8 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""
         cls._try_init_vertexai(values)
-        preview = values["preview"]
         try:
-            if preview:
-                from vertexai.preview.language_models import TextEmbeddingModel
-            else:
-                from vertexai.language_models import TextEmbeddingModel
+            from vertexai.language_models import TextEmbeddingModel
         except ImportError:
             raise_vertex_import_error()
         values["client"] = TextEmbeddingModel.from_pretrained(values["model_name"])
