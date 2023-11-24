@@ -3,6 +3,7 @@ from langchain.schema.messages import __all__
 EXPECTED_ALL = [
     "AIMessage",
     "AIMessageChunk",
+    "AnyMessage",
     "BaseMessage",
     "BaseMessageChunk",
     "ChatMessage",
