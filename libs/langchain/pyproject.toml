@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.339rc1"
+version = "0.0.339rc2"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,7 +12,7 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.0.4"
+langchain-core = "^0.0.5"
 pydantic = ">=1,<3"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
