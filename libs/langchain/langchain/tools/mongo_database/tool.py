@@ -97,13 +97,13 @@ class QueryMongoDBCheckerTool(BaseMongoDBTool, BaseTool):
             values["llm_chain"] = LLMChain(
                 llm=values.get("llm"),
                 prompt=PromptTemplate(
-                    template=QUERY_CHECKER, input_variables=["client", "query"]
+                    template=QUERY_CHECKER, input_variables=["query"]
                 ),
             )
 
-        if values["llm_chain"].prompt.input_variables != ["client", "query"]:
+        if values["llm_chain"].prompt.input_variables != ["query"]:
             raise ValueError(
-                "LLM chain for QueryCheckerTool must have input variables ['query', 'client']"
+                "LLM chain for QueryCheckerTool must have input variables ['query']"
             )
         
         return values
@@ -116,7 +116,6 @@ class QueryMongoDBCheckerTool(BaseMongoDBTool, BaseTool):
         """Use the LLM to check the query."""
         return self.llm_chain.predict(
             query=query,
-            client=self.db.client,
             callbacks=run_manager.get_child() if run_manager else None,
         )
 
@@ -127,6 +126,5 @@ class QueryMongoDBCheckerTool(BaseMongoDBTool, BaseTool):
     ) -> str:
         return await self.llm_chain.apredict(
             query=query,
-            client=self.db.client,
             callbacks=run_manager.get_child() if run_manager else None,
         )
