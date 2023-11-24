@@ -26,7 +26,6 @@ from langchain.agents.format_scratchpad.openai_functions import (
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
-from langchain.chat_models.openai import ChatOpenAI
 from langchain.tools import BaseTool
 
 # For backwards compatibility
