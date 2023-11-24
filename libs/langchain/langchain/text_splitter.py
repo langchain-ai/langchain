@@ -85,10 +85,9 @@ def _split_text_with_regex(
         if keep_separator:
             # The parentheses in the pattern keep the delimiters in the result.
             _splits = re.split(f"({separator})", text)
-            splits = [_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)]
-            if len(_splits) % 2 == 0:
+            splits = [_splits[i] + _splits[i + 1] for i in range(0, len(_splits)-1, 2)]
+            if len(_splits) % 2 == 1:
                 splits += _splits[-1:]
-            splits = [_splits[0]] + splits
         else:
             splits = re.split(separator, text)
     else:
