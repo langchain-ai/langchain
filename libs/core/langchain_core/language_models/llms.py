@@ -382,6 +382,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
             try:
                 generation: Optional[GenerationChunk] = None
@@ -433,6 +434,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
             try:
                 generation: Optional[GenerationChunk] = None
@@ -645,6 +647,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     invocation_params=params,
                     options=options,
                     name=run_name,
+                    batch_size=len(prompts),
                 )[0]
                 for callback_manager, prompt, run_name in zip(
                     callback_managers, prompts, run_name_list
@@ -662,6 +665,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     invocation_params=params,
                     options=options,
                     name=run_name_list[idx],
+                    batch_size=len(missing_prompts),
                 )[0]
                 for idx in missing_prompt_idxs
             ]
@@ -810,6 +814,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         invocation_params=params,
                         options=options,
                         name=run_name,
+                        batch_size=len(prompts),
                     )
                     for callback_manager, prompt, run_name in zip(
                         callback_managers, prompts, run_name_list
@@ -830,6 +835,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         invocation_params=params,
                         options=options,
                         name=run_name_list[idx],
+                        batch_size=len(missing_prompts),
                     )
                     for idx in missing_prompt_idxs
                 ]

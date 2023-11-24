@@ -979,6 +979,7 @@ def _prepare_run_on_dataset(
                     evaluators=run_evaluators or [],
                     client=client,
                     example_id=example.id,
+                    max_concurrency=0,
                 ),
                 progress_bar,
             ],
@@ -1088,7 +1089,6 @@ async def arun_on_dataset(
         concurrency_level,
         project_metadata=project_metadata,
     )
-
     batch_results = await runnable_utils.gather_with_concurrency(
         configs[0].get("max_concurrency"),
         *map(
