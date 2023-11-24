@@ -2,10 +2,12 @@ import json
 import logging
 from typing import List
 
-from langchain.schema import (
-    BaseChatMessageHistory,
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import (
+    BaseMessage,
+    message_to_dict,
+    messages_from_dict,
 )
-from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +65,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
             sql.Identifier(self.table_name)
         )
         self.cursor.execute(
-            query, (self.session_id, json.dumps(_message_to_dict(message)))
+            query, (self.session_id, json.dumps(message_to_dict(message)))
         )
         self.connection.commit()
 
