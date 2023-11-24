@@ -43,9 +43,42 @@ class DGraph:
       try:
         query = """schema {}"""
         res =  txn.query(query)
-        return json.loads(res.json)
+        rawSchema = json.loads(res.json)
+        reformattedSchema = self._reformat_schema(rawSchema)
+        return reformattedSchema
       finally:
         txn.discard()
+      
+    """
+    Reformats a schema from the DGraph schema response to be of the form:
+    {
+      "type1": [
+        {
+          "predicate": "predicate1",
+          "type": "uid",
+          "list"?: true
+          "upsert"?: true
+          ...
+        },
+        {
+          "predicate": "predicate2",
+          "type": "string"
+        }
+      ],
+      ...
+    }
+    returns a Dict containing the reformatted schema
+    """
+    def _reformat_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+      predicateDict = {} #Key is predicate name, value predicate info dict
+      for predicate in schema["schema"]:
+        predicateDict[predicate["predicate"]] = predicate
+      reformattedSchema = {}
+      for type in schema["types"]:
+        reformattedSchema[type["name"]] = []
+        for predicate in type["fields"]:
+          reformattedSchema[type["name"]].append(predicateDict[predicate['name']])
+      return reformattedSchema
       
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
       """Query DGraph database"""
@@ -74,4 +107,3 @@ class DGraph:
 dgraphClient = DGraph("localhost:9080")
 
 schema = dgraphClient.get_schema()
-print(schema)
