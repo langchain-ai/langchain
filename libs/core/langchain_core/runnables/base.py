@@ -31,17 +31,6 @@ from typing import (
 
 from typing_extensions import Literal, get_args
 
-if TYPE_CHECKING:
-    from langchain_core.callbacks.manager import (
-        AsyncCallbackManagerForChainRun,
-        CallbackManagerForChainRun,
-    )
-    from langchain_core.runnables.fallbacks import (
-        RunnableWithFallbacks as RunnableWithFallbacksT,
-    )
-    from langchain_core.tracers.log_stream import RunLog, RunLogPatch
-    from langchain_core.tracers.root_listeners import Listener
-
 from langchain_core.load.dump import dumpd
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
@@ -74,6 +63,18 @@ from langchain_core.runnables.utils import (
 )
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
+
+if TYPE_CHECKING:
+    from langchain_core.callbacks.manager import (
+        AsyncCallbackManagerForChainRun,
+        CallbackManagerForChainRun,
+    )
+    from langchain_core.runnables.fallbacks import (
+        RunnableWithFallbacks as RunnableWithFallbacksT,
+    )
+    from langchain_core.tracers.log_stream import RunLog, RunLogPatch
+    from langchain_core.tracers.root_listeners import Listener
+
 
 Other = TypeVar("Other")
 

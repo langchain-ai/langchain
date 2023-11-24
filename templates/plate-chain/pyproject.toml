@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "plate-chain"
 version = "0.0.1"
-description = ""
+description = "Parse data from laboratory plates into standardized formats"
 authors = []
 readme = "README.md"
 
@@ -19,6 +19,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "plate_chain"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "extraction"
+author = "Sphinx Bio"
+integrations = ["OpenAI"]
+tags = ["bio", "data"]
 
 [build-system]
 requires = [

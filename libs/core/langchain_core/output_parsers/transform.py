@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Iterator,
@@ -16,7 +17,9 @@ from langchain_core.outputs import (
     Generation,
     GenerationChunk,
 )
-from langchain_core.runnables import RunnableConfig
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
 
 
 class BaseTransformOutputParser(BaseOutputParser[T]):
