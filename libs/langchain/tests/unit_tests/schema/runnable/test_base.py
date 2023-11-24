@@ -16,6 +16,7 @@ EXPECTED_ALL = [
     "Input",
     "Output",
     "Other",
+    "AnyMessage",
 ]
 
 
