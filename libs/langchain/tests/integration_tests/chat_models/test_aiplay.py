@@ -22,7 +22,7 @@ from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 ######################################################################
-## NOTE: Commandeering Chataiplay tests to see what we're missing. 
+## NOTE: Commandeering ChatOpenAI tests to see what we're missing. 
 ## Some tests are commented out to represent features we'd like 
 ## to support later or are otherwise waiting to have dialog on.
 ## Interested parties can try to add support or discard tests as time permits. 

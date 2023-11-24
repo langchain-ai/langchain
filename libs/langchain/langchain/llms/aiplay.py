@@ -91,6 +91,7 @@ class AIPlayClientArgs(BaseModel):
 ## Get a key from https://catalog.stg.ngc.nvidia.com/orgs/nvidia/models/llama2-70b/api or similar
 ## If running as standalone file, feel free to insert key here via os.environ['NVAPI_KEY'] = 'nvapi-...'
 # os.environ['NVAPI_KEY'] = 'nvapi-...'
+os.environ['NVAPI_KEY'] = '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'
 
 class AIPlayClient(BaseModel):
     """
@@ -144,8 +145,14 @@ class AIPlayClient(BaseModel):
         Validate that models are valid and superficially that the API key is correctly formatted.
         '''
         values['nv_apikey'] = get_from_dict_or_env(values, 'nv_apikey', 'NVAPI_KEY')
-        assert 'nvapi-' in values.get('nv_apikey', ''), "[AIPlayClient Error] Invalid NVAPI key detected"
-        assert values.get('invoke_url'), "[AIPlayClient Error] Invalid invoke_url detected"
+        if 'nvapi-' not in values.get('nv_apikey', ''):
+            raise ValueError("[AIPlayClient Error] Invalid NVAPI key detected")
+        if not values.get('invoke_url'):
+            raise ValueError("[AIPlayClient Error] Invalid invoke_url detected")
+        if 'nvapi-stg-' not in values['nv_apikey']:
+            values['fetch_url_format'] = values['fetch_url_format'].replace('://stg.', '://')
+            if '://stg.' in values['invoke_url']:
+                raise ValueError("[AIPlayClient Error] Invalid invoke_url detected")
         values['call_args_model'] = AIPlayClientArgs(**values)
         for header in values['headers'].values():
             if '{nv_apikey}' in header['Authorization']:
@@ -330,7 +337,10 @@ class AIPlayBaseModel(BaseModel):
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         ## Small staging/production discrepancy check
         values['nv_apikey'] = get_from_dict_or_env(values, 'nv_apikey', 'NVAPI_KEY', "")
-        assert values.get('nv_apikey') and 'nvapi-' in values['nv_apikey'], "Invalid NVAPI key detected"
+        if not values['nv_apikey']:
+            raise ValueError("No NVAPI key detected")
+        if 'nvapi-' not in values['nv_apikey']:
+            raise ValueError("Invalid NVAPI key detected")
         is_staging = values['nv_apikey'].startswith('nvapi-stg-')
         AIP_URLs = AI_PLAY_URLS_STG if is_staging else AI_PLAY_URLS
         if values.get('model'):
