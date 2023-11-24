@@ -132,13 +132,6 @@ class AIPlayClient(BaseModel):
         },
     )
 
-
-    stream_headers : dict  = {
-        "Authorization": "Bearer {nv_apikey}",
-        "Accept": "text/event-stream",
-        "content-type": "application/json"
-    }
-
     @property
     def lc_secrets(self) -> Dict[str, str]:
         """Keeps secrets out of the serialization results"""
