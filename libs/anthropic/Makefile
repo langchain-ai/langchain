@@ -1,4 +1,4 @@
-.PHONY: all format lint test tests test_watch integration_tests docker_tests help extended_tests
+.PHONY: all format lint test tests integration_tests docker_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -11,9 +11,6 @@ test:
 
 tests:
 	poetry run pytest $(TEST_FILE)
-
-test_watch:
-	poetry run ptw --snapshot-update --now . -- -x tests/unit_tests
 
 
 ######################
@@ -53,4 +50,3 @@ help:
 	@echo 'test                         - run unit tests'
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
-	@echo 'test_watch                   - run unit tests in watch mode'
