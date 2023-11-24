@@ -650,14 +650,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Name of prompt type."""
         return "chat"
 
-    def save(self, file_path: Union[Path, str]) -> None:
-        """Save prompt to file.
-
-        Args:
-            file_path: path to file.
-        """
-        raise NotImplementedError()
-
 
 def _create_template_from_message_type(
     message_type: str, template: str
