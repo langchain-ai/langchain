@@ -1,4 +1,7 @@
 from langchain_core.runnables.base import (
+    Input,
+    Other,
+    Output,
     Runnable,
     RunnableBinding,
     RunnableBindingBase,
@@ -28,4 +31,6 @@ __all__ = [
     "RunnableBinding",
     "RunnableMap",
     "coerce_to_runnable",
+    "Input",
+    "Output",
 ]
