@@ -1,4 +1,6 @@
 """Filter that uses an LLM to rerank documents listwise and select top-k."""
+import logging
+
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from langchain.callbacks.manager import Callbacks
@@ -8,6 +10,8 @@ from langchain.retrievers.document_compressors.base import BaseDocumentCompresso
 from langchain.schema import BasePromptTemplate, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
+
+logger = logging.getLogger(__name__)
 
 
 def _get_default_chain_prompt() -> PromptTemplate:
@@ -61,6 +65,9 @@ class ListRerank(BaseDocumentCompressor):
     get_input: Callable[[str, Document], dict] = default_get_input
     """Callable for constructing the chain input from the query and a sequence of Documents."""
 
+    fallback: bool = False
+    """Whether to fallback to the original document scores if the LLM fails."""
+
     def compress_documents(
         self,
         documents: Sequence[Document],
@@ -69,11 +76,21 @@ class ListRerank(BaseDocumentCompressor):
     ) -> Sequence[Document]:
         """Filter down documents based on their relevance to the query."""
         _input = self.get_input(query, documents)
-        results = self.llm_chain.predict_and_parse(**_input, callbacks=callbacks)
+        try:
+            results = self.llm_chain.predict_and_parse(**_input, callbacks=callbacks)
+            top_documents = results["reranked_documents"][: self.top_n]
+        except Exception as e:
+            return self._handle_exception(documents, e)
+
         final_results = []
-        for r in results["reranked_documents"][: self.top_n]:
-            doc = documents[r["document_id"]]
-            doc.metadata["relevance_score"] = r["score"]
+        for r in top_documents:
+            try:
+                doc = documents[r["document_id"]]
+                score = float(r["score"])
+            except Exception as e:
+                return self._handle_exception(documents, e)
+
+            doc.metadata["relevance_score"] = score
             final_results.append(doc)
         return final_results
 
@@ -97,3 +114,15 @@ class ListRerank(BaseDocumentCompressor):
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         llm_chain = LLMChain(llm=llm, prompt=_prompt)
         return cls(llm_chain=llm_chain, **kwargs)
+
+    def _handle_exception(
+        self, documents: Sequence[Document], exception: Exception
+    ) -> Sequence[Document]:
+        """Return the top documents by original ranking or raise an exception."""
+        if self.fallback:
+            logger.warning(
+                "Failed to generate or parse LLM response. Falling back to original scores."
+            )
+            return documents[: self.top_n]
+        else:
+            raise exception
