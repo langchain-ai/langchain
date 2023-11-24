@@ -1,6 +1,7 @@
 import pathlib
 
-from langchain.chat_loaders import utils, imessage
+from langchain.chat_loaders import imessage, utils
+
 
 def test_imessage_chat_loader() -> None:
     chat_path = pathlib.Path(__file__).parent / "data" / "imessage_chat.db"
@@ -14,15 +15,14 @@ def test_imessage_chat_loader() -> None:
     assert chat_sessions[0]["messages"], "Chat messages should not be empty"
 
     # message content in text field
-    assert (
-        "Yeh" in chat_sessions[0]["messages"][0].content
-    ), "Chat content mismatch"
+    assert "Yeh" in chat_sessions[0]["messages"][0].content, "Chat content mismatch"
 
     # short message content in attributedBody field
-    assert ("John is the almighty" in chat_sessions[0]["messages"][16].content
+    assert (
+        "John is the almighty" in chat_sessions[0]["messages"][16].content
     ), "Chat content mismatch"
 
     # long message content in attributedBody field
-    long_msg = "aaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbb"
-    assert (long_msg in chat_sessions[0]["messages"][18].content
-    ), "Chat content mismatch"
+    long_msg = "aaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbba"
+    "aaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbb"
+    assert long_msg in chat_sessions[0]["messages"][18].content, "Chat content mismatch"
