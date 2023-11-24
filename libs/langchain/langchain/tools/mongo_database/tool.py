@@ -46,7 +46,7 @@ class QueryMongoDBTool(BaseMongoDBTool, BaseTool):
 
 class InfoMongoDBTool(BaseMongoDBTool, BaseTool):
     """Tool for getting metadata about a MongoDB database."""
-    
+
     name: str = "mongo_db_schema"
     description: str = """
     Input to this tool is a comma-separated list of collections, output is the schema and sample documents for those collections.    
@@ -61,7 +61,7 @@ class InfoMongoDBTool(BaseMongoDBTool, BaseTool):
     ) -> str:
         """Get information about specified collections."""
         return self.db.get_document_info(collection_names=collection_names)
-    
+
 
 class ListMongoDBTool(BaseMongoDBTool, BaseTool):
     """Tool for listing collections in a MongoDB database."""
@@ -105,9 +105,9 @@ class QueryMongoDBCheckerTool(BaseMongoDBTool, BaseTool):
             raise ValueError(
                 "LLM chain for QueryCheckerTool must have input variables ['query', 'client']"
             )
-        
+
         return values
-    
+
     def _run(
         self,
         query: str,
