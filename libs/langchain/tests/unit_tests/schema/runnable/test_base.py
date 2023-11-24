@@ -13,6 +13,9 @@ EXPECTED_ALL = [
     "RunnableSequence",
     "RunnableSerializable",
     "coerce_to_runnable",
+    "Input",
+    "Output",
+    "Other",
 ]
 
 
