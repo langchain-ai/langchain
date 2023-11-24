@@ -152,16 +152,17 @@ class MlflowLogger:
             else:
                 self.mlf_expid = self.mlflow.create_experiment(experiment_name)
 
-        self.start_run(kwargs["run_name"], kwargs["run_tags"])
+        self.start_run(kwargs["run_name"], kwargs["run_tags"], kwargs["run_nested"])
 
-    def start_run(self, name: str, tags: Dict[str, str]) -> None:
+    def start_run(self, name: str, tags: Dict[str, str], nested: bool = False) -> None:
         """To start a new run, auto generates the random suffix for name"""
         if name.endswith("-%"):
             rname = "".join(random.choices(string.ascii_uppercase + string.digits, k=7))
             name = name.replace("%", rname)
-        self.run = self.mlflow.MlflowClient().create_run(
-            self.mlf_expid, run_name=name, tags=tags
-        )
+        with self.mlflow.start_run(
+                experiment_id=self.mlf_expid, run_name=name, tags=tags, nested=nested
+        ) as run:
+            self.run = run
 
     def finish_run(self) -> None:
         """To finish the run."""
@@ -246,6 +247,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         experiment: Optional[str] = "langchain",
         tags: Optional[Dict] = None,
         tracking_uri: Optional[str] = None,
+        nested: Optional[bool] = False,
     ) -> None:
         """Initialize callback handler."""
         import_pandas()
@@ -258,6 +260,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.experiment = experiment
         self.tags = tags or {}
         self.tracking_uri = tracking_uri
+        self.nested = nested
 
         self.temp_dir = tempfile.TemporaryDirectory()
 
@@ -266,6 +269,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             experiment_name=self.experiment,
             run_name=self.name,
             run_tags=self.tags,
+            run_nested=self.nested,
         )
 
         self.action_records: list = []
