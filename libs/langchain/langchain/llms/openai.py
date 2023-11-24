@@ -525,6 +525,7 @@ class BaseOpenAI(BaseLLM):
         return self.create_llm_result(
             choices,
             prompts,
+            params,
             token_usage,
             system_fingerprint=system_fingerprint,
         )
