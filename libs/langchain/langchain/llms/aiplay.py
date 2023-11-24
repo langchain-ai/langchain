@@ -30,19 +30,8 @@ from functools import partial
 import logging
 logger = logging.getLogger(__name__)
 
-## TODO: Pull these in from ngc if possible
-## Staging Options
-AI_PLAY_URLS_STG = {
-    'llama-13B-code'    : "https://stg.api.nvcf.nvidia.com/v2/nvcf/pexec/functions/eb1100de-60bf-4e9a-8617-b7d4652e0c37",
-    'llama-34B-code'    : "https://stg.api.nvcf.nvidia.com/v2/nvcf/pexec/functions/1b739bf1-f3b0-4f04-9ace-3a1cbcefca49",
-    'llama-2-13B-chat'  : "https://stg.api.nvcf.nvidia.com/v2/nvcf/pexec/functions/4e38f372-2533-4e76-b3d2-8bfe7b9ca783",
-    'llama-2-70B-chat'  : "https://stg.api.nvcf.nvidia.com/v2/nvcf/pexec/functions/ee2643e0-bda6-4ddc-9841-378a11f1dd04",
-    'mistral-7B-inst'   : "https://stg.api.nvcf.nvidia.com/v2/nvcf/pexec/functions/33809adf-b2d7-497b-aa21-83e3f334a953",
-    # 'neva-22b'          : "https://stg.api.nvcf.nvidia.com/v2/nvcf/pexec/functions/7c94dd3e-72d7-48de-b0fe-aaceb5aa0c23",
-    # 'fuyu-8b'           : "https://stg.api.nvcf.nvidia.com/v2/nvcf/pexec/functions/8f0f7c3e-7e31-40f1-abe6-d3d7c526fb7b"
-}
-
-## Production Options
+## Production Options  
+## TODO: Incorporate support for list retrieval from source of truth
 AI_PLAY_URLS = {
     'llama-13B-code'    : "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/f6a96af4-8bf9-4294-96d6-d71aa787612e",
     'llama-34B-code'    : "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/df2bee43-fb69-42b9-9ee5-f4eabbeaf3a8",
@@ -51,8 +40,13 @@ AI_PLAY_URLS = {
     'mistral-7B-inst'   : "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/35ec3354-2681-4d0e-a8dd-80325dcf7c63",
     'nemotron-2-8B-QA'  : "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/0c60f14d-46cb-465e-b994-227e1c3d5047",
     'nemotron-SteerLM'  : "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/1423ff2f-d1c7-4061-82a7-9e8c67afd43a",
+    ## Support in the works
     # 'neva-22b'          : "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/8bf70738-59b9-4e5f-bc87-7ab4203be7a0",
     # 'fuyu-8b'           : "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/9f757064-657f-4c85-abd7-37a7a9b6ee11",
+}
+
+AI_PLAY_URLS_STG = {
+    ## Feel free to add these on your own i.e. in standalone version
 }
 
 class AIPlayClientArgs(BaseModel):
@@ -150,8 +144,8 @@ class AIPlayClient(BaseModel):
         if not values.get('invoke_url'):
             raise ValueError("[AIPlayClient Error] Invalid invoke_url detected")
         if 'nvapi-stg-' not in values['nv_apikey']:
-            values['fetch_url_format'] = values['fetch_url_format'].replace('://stg.', '://')
-            if '://stg.' in values['invoke_url']:
+            values['fetch_url_format'] = values['fetch_url_format'].replace('stg.api', 'api')
+            if 'stg.api' in values['invoke_url']:
                 raise ValueError("[AIPlayClient Error] Invalid invoke_url detected")
         values['call_args_model'] = AIPlayClientArgs(**values)
         for header in values['headers'].values():
