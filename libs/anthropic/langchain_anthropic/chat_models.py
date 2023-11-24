@@ -6,8 +6,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
+    agenerate_from_stream,
+    generate_from_stream,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -171,7 +171,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
         prompt = self._convert_messages_to_prompt(
             messages,
         )
@@ -198,7 +198,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return await _agenerate_from_stream(stream_iter)
+            return await agenerate_from_stream(stream_iter)
         prompt = self._convert_messages_to_prompt(
             messages,
         )

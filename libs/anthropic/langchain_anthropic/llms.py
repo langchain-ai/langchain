@@ -22,11 +22,11 @@ from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
+    build_extra_kwargs,
     check_package_version,
     convert_to_secret_str,
     get_pydantic_field_names,
 )
-from langchain_core.utils.utils import build_extra_kwargs
 
 
 class _AnthropicCommon(BaseLanguageModel):
