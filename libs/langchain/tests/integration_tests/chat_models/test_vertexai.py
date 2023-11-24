@@ -7,15 +7,22 @@ pip install google-cloud-aiplatform>=1.35.0
 Your end-user credentials would be used to make the calls (make sure you've run 
 `gcloud auth login` first).
 """
-from typing import Optional
+from typing import Any, Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from langchain_core.schema import LLMResult
-from langchain_core.schema.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.schema import ChatGeneration, LLMResult
+from langchain_core.schema.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
 
 from langchain.chat_models import ChatVertexAI
 from langchain.chat_models.vertexai import _parse_chat_history, _parse_examples
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 @pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
@@ -61,6 +68,79 @@ async def test_vertexai_agenerate() -> None:
 
     sync_response = model.generate([[message]])
     assert response.generations[0][0] == sync_response.generations[0][0]
+
+
+@pytest.mark.scheduled
+@pytest.mark.asyncio
+async def test_vertexai_streaming() -> None:
+    """Test that streaming correctly invokes on_llm_new_token callback."""
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+
+    model = ChatVertexAI(
+        temperature=0, streaming=True, callback_manager=callback_manager
+    )
+
+    message = HumanMessage(content="Hello")
+    response = model([message])
+    assert callback_handler.llm_streams > 0
+    assert isinstance(response, BaseMessage)
+
+
+@pytest.mark.scheduled
+def test_chat_vertexai_streaming_generation_info() -> None:
+    """Test that generation info is preserved when streaming."""
+
+    class _FakeCallback(FakeCallbackHandler):
+        saved_things: dict = {}
+
+        def on_llm_end(
+            self,
+            *args: Any,
+            **kwargs: Any,
+        ) -> Any:
+            # Save the generation
+            self.saved_things["generation"] = args[0]
+
+    callback = _FakeCallback()
+    callback_manager = CallbackManager([callback])
+    model = ChatVertexAI(
+        max_output_tokens=2,
+        temperature=0,
+        streaming=True,
+        callback_manager=callback_manager,
+    )
+
+    list(model.stream("hi"))
+    generation = callback.saved_things["generation"]
+    # `Hello` is two tokens, assert that that is what is returned
+    assert generation.generations[0][0].text == " Hello."
+
+
+@pytest.mark.scheduled
+@pytest.mark.asyncio
+async def test_async_vertexai_streaming() -> None:
+    """Test that streaming correctly invokes on_llm_new_token callback."""
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+    chat = ChatVertexAI(
+        max_output_tokens=2,
+        temperature=0,
+        streaming=True,
+        callback_manager=callback_manager,
+    )
+
+    message = HumanMessage(content="Hello")
+    response = await chat.agenerate([[message], [message]])
+    assert callback_handler.llm_streams > 0
+    assert isinstance(response, LLMResult)
+    assert len(response.generations) == 2
+    for generations in response.generations:
+        assert len(generations) == 1
+        for generation in generations:
+            assert isinstance(generation, ChatGeneration)
+            assert isinstance(generation.text, str)
+            assert generation.text == generation.message.content
 
 
 @pytest.mark.scheduled
