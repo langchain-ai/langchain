@@ -1,0 +1,58 @@
+---
+name: libs/anthropic CI
+
+on:
+  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
+
+# If another push to the same PR or branch happens while this workflow is still running,
+# cancel the earlier run in favor of the next run.
+#
+# There's no point in testing an outdated version of the code. GitHub only allows
+# a limited number of job runners to be active at the same time, so it's better to cancel
+# pointless jobs early so that more useful jobs can run sooner.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VERSION: "1.6.1"
+  WORKDIR: "libs/anthropic"
+
+jobs:
+  test-with-latest-langchain-core:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    name: test with unpublished langchain-core - Python ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ env.WORKDIR }}
+          cache-key: unpublished-langchain
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          echo "Running tests with unpublished langchain-anthropic, installing dependencies with poetry..."
+          poetry install
+
+          echo "Editably installing langchain-core outside of poetry, to avoid messing up lockfile..."
+          poetry run pip install -e ../core
+
+      - name: Run tests
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: poetry run pytest tests/integration_tests
