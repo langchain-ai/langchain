@@ -131,9 +131,7 @@ class AstraDB(VectorStore):
                 available in Astra DB. If left out, it will use Astra DB API's
                 defaults (i.e. "cosine" - but, for performance reasons,
                 "dot_product" is suggested if embeddings are normalized to one).
-            pre_delete_collection (Optional[bool]): whether to delete the collection 
-                before creating it. If False and the collection already exists, 
-                the collection will be used as is. 
+            
 
         Advanced arguments (coming with sensible defaults):
             batch_size (Optional[int]): Size of batches for bulk insertions.
@@ -143,6 +141,9 @@ class AstraDB(VectorStore):
                 threads in a batch to insert pre-existing entries.
             bulk_delete_concurrency (Optional[int]): Number of threads
                 (for deleting multiple rows concurrently).
+            pre_delete_collection (Optional[bool]): whether to delete the collection
+                before creating it. If False and the collection already exists,
+                the collection will be used as is.
 
         A note on concurrency: as a rule of thumb, on a typical client machine
         it is suggested to keep the quantity
