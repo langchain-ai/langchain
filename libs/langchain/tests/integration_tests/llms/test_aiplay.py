@@ -5,7 +5,7 @@ from typing import Generator
 import pytest
 
 from langchain.chains import LLMChain
-from langchain.llms.aiplay import LlamaLLM
+from langchain.llms.aiplay import LlamaLLM, NemotronQA, SteerLM
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -172,3 +172,32 @@ async def test_aiplay_multiple_prompts_async_agenerate(llm: LlamaLLM) -> None:
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations, list)
     assert len(output.generations) == 2
+
+
+NemotronQA
+
+@pytest.mark.scheduled
+def test_aiplay_steerlm(
+    llm: LlamaLLM
+) -> None:
+    """Test completion with multiple prompts."""
+    llm2 = SteerLM()
+    output = llm2.generate(["How is the weather in New York today?", "I'm pickle rick"])
+    assert isinstance(output, LLMResult)
+    assert isinstance(output.generations, list)
+    assert len(output.generations) == 2
+
+
+@pytest.mark.scheduled
+def test_aiplay_nemotron_qa(
+    llm: LlamaLLM
+) -> None:
+    """Test completion with multiple prompts."""
+    llm2 = NemotronQA()
+    output = llm2.generate(["""
+    ///ROLE USER: How is the weather in New York today?
+    ///ROLE CONTEXT: There is extreme heat in New York today, and some extreme cold in the south. The east is underwater. There is panic everywhere.
+    """])
+    assert isinstance(output, LLMResult)
+    assert isinstance(output.generations, list)
+    assert len(output.generations) == 1
