@@ -162,7 +162,8 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
                 **hybrid_search_kwargs
             )
         else:
-            query_obj = query_obj.with_hybrid(query, alpha=self.alpha, **hybrid_search_kwargs)
+            query_obj = query_obj.with_hybrid(query, alpha=self.alpha,
+                                              **hybrid_search_kwargs)
 
         result = (
             query_obj
