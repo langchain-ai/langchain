@@ -64,16 +64,37 @@ def construct_schema(
         ],
     }
 
-    return (
-        f"Node properties are the following: \n {filtered_schema['node_props']}\n"
-        f"Relationships properties are the following: \n {filtered_schema['rel_props']}"
-        "\nRelationships are: \n"
-        + str(
-            [
-                f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
-                for el in filtered_schema["relationships"]
-            ]
+    # Format node properties
+    formatted_node_props = []
+    for label, properties in filtered_schema["node_props"].items():
+        props_str = ", ".join(
+            [f"{prop['property']}: {prop['type']}" for prop in properties]
         )
+        formatted_node_props.append(f"{label} {{{props_str}}}")
+
+    # Format relationship properties
+    formatted_rel_props = []
+    for rel_type, properties in filtered_schema["rel_props"].items():
+        props_str = ", ".join(
+            [f"{prop['property']}: {prop['type']}" for prop in properties]
+        )
+        formatted_rel_props.append(f"{rel_type} {{{props_str}}}")
+
+    # Format relationships
+    formatted_rels = [
+        f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
+        for el in filtered_schema["relationships"]
+    ]
+
+    return "\n".join(
+        [
+            "Node properties are the following:",
+            ",".join(formatted_node_props),
+            "Relationship properties are the following:",
+            ",".join(formatted_rel_props),
+            "The relationships are the following:",
+            ",".join(formatted_rels),
+        ]
     )
 
 
