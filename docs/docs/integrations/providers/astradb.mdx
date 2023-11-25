@@ -30,6 +30,20 @@ vector_store = AstraDB(
 Learn more in the [example notebook](/docs/integrations/vectorstores/astradb).
 
 
+### Memory
+
+```python
+from langchain.memory import AstraDBChatMessageHistory
+message_history = AstraDBChatMessageHistory(
+    session_id="test-session"
+    api_endpoint="...",
+    token="...",
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/memory/astradb_chat_message_history).
+
+
 ## Apache Cassandra and Astra DB through CQL
 
 > [Cassandra](https://cassandra.apache.org/) is a NoSQL, row-oriented, highly scalable and highly available database.

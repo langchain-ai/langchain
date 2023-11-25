@@ -1,8 +1,8 @@
 """Astra DB - based chat message history, based on astrapy."""
 from __future__ import annotations
 
-import time
 import json
+import time
 import typing
 from typing import List, Optional
 

@@ -1,8 +1,7 @@
 import os
-import time
-import pytest
-from typing import Iterable, Optional
+from typing import Iterable
 
+import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain.memory import ConversationBufferMemory
@@ -77,7 +76,9 @@ def test_memory_with_message_store(history1: AstraDBChatMessageHistory) -> None:
 
 @pytest.mark.requires("astrapy")
 @pytest.mark.skipif(not _has_env_vars(), reason="Missing Astra DB env. vars")
-def test_memory_separate_session_ids(history1: AstraDBChatMessageHistory, history2: AstraDBChatMessageHistory) -> None:
+def test_memory_separate_session_ids(
+    history1: AstraDBChatMessageHistory, history2: AstraDBChatMessageHistory
+) -> None:
     """Test that separate session IDs do not share entries."""
     memory1 = ConversationBufferMemory(
         memory_key="mk1",
