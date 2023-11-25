@@ -1,8 +1,9 @@
 from typing import Any, Dict, List, Mapping, Optional
 
+from langchain_core.pydantic_v1 import Extra, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Extra, root_validator
 
 
 class ManifestWrapper(LLM):

@@ -2,10 +2,10 @@ import json
 import os
 from unittest import mock
 
+from langchain_core.documents import Document
 from requests import Response
 
 from langchain.retrievers.you import YouRetriever
-from langchain.schema import Document
 
 
 class TestYouRetriever:
