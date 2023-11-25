@@ -47,8 +47,7 @@ def test_graph_cypher_qa_chain_prompt_selection_1() -> None:
     qa_prompt_template = "QA Prompt"
     cypher_prompt_template = "Cypher Prompt"
     qa_prompt = PromptTemplate(template=qa_prompt_template, input_variables=[])
-    cypher_prompt = PromptTemplate(
-        template=cypher_prompt_template, input_variables=[])
+    cypher_prompt = PromptTemplate(template=cypher_prompt_template, input_variables=[])
     chain = GraphCypherQAChain.from_llm(
         llm=FakeLLM(),
         graph=FakeGraphStore(),
@@ -96,8 +95,7 @@ def test_graph_cypher_qa_chain_prompt_selection_4() -> None:
     memory = ConversationBufferMemory(memory_key="chat_history")
     readonlymemory = ReadOnlySharedMemory(memory=memory)
     qa_prompt = PromptTemplate(template=qa_prompt_template, input_variables=[])
-    cypher_prompt = PromptTemplate(
-        template=cypher_prompt_template, input_variables=[])
+    cypher_prompt = PromptTemplate(template=cypher_prompt_template, input_variables=[])
     chain = GraphCypherQAChain.from_llm(
         llm=FakeLLM(),
         graph=FakeGraphStore(),
@@ -117,8 +115,7 @@ def test_graph_cypher_qa_chain_prompt_selection_5() -> None:
     memory = ConversationBufferMemory(memory_key="chat_history")
     readonlymemory = ReadOnlySharedMemory(memory=memory)
     qa_prompt = PromptTemplate(template=qa_prompt_template, input_variables=[])
-    cypher_prompt = PromptTemplate(
-        template=cypher_prompt_template, input_variables=[])
+    cypher_prompt = PromptTemplate(template=cypher_prompt_template, input_variables=[])
     try:
         GraphCypherQAChain.from_llm(
             llm=FakeLLM(),
