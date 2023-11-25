@@ -715,7 +715,8 @@ class OpenSearchVectorSearch(VectorStore):
             Document(
                 page_content=results[i]["_source"][text_field],
                 metadata=results[i]["_source"]
-                    if metadata_field == "*" or metadata_field not in results[i]["_source"]
+                    if metadata_field == "*" 
+                    or metadata_field not in results[i]["_source"]
                     else results[i]["_source"][metadata_field],
             )
             for i in mmr_selected
