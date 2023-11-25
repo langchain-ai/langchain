@@ -41,9 +41,29 @@ def test_incorrect_field() -> None:
 
 def test_initialization() -> None:
     """Test anthropic initialization."""
-    # Verify that chat anthropic can be initialized using a secret key provided
-    # as a parameter rather than an environment variable.
-    ChatAnthropic(model="test", anthropic_api_key="test")
+    # No params.
+    ChatAnthropic()
+
+    # All params.
+    ChatAnthropic(
+        model="test",
+        max_tokens_to_sample=1000,
+        temperature=0.2,
+        top_k=2,
+        top_p=0.9,
+        default_request_timeout=123,
+        anthropic_api_url="foobar.com",
+        anthropic_api_key="test",
+        model_kwargs={"fake_param": 2},
+    )
+
+    # Alias params
+    ChatAnthropic(
+        model_name="test",
+        timeout=123,
+        base_url="foobar.com",
+        api_key="test",
+    )
 
 
 def test_get_num_tokens() -> None:
