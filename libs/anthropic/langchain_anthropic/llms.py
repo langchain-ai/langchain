@@ -1,3 +1,4 @@
+"""Anthropic LLMs."""
 import os
 import re
 import warnings
@@ -47,20 +48,22 @@ class _AnthropicCommon(BaseLanguageModel):
     top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
 
-    streaming: bool = False
-    """Whether to stream the results."""
-
-    default_request_timeout: Optional[float] = None
+    default_request_timeout: Optional[float] = Field(default=None, alias="timeout")
     """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
 
-    anthropic_api_url: Optional[str] = None
+    anthropic_api_url: Optional[str] = Field(default=None, alias="base_url")
+    """Base API url."""
 
-    anthropic_api_key: Optional[SecretStr] = None
+    anthropic_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    """Automatically inferred from env var `ANTHROPIC_API_KEY` if not provided."""
 
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Additional keyword arguments to pass in when invoking model."""
+
+    streaming: bool = False
     HUMAN_PROMPT: Optional[str] = None
     AI_PROMPT: Optional[str] = None
     count_tokens: Optional[Callable[[str], int]] = None
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict) -> Dict:
@@ -94,24 +97,35 @@ class _AnthropicCommon(BaseLanguageModel):
             import anthropic
 
             check_package_version("anthropic", gte_version="0.3")
+
+            base_url = values["anthropic_api_url"]
+            api_key = cast(SecretStr, values["anthropic_api_key"]).get_secret_value()
+            timeout = values["default_request_timeout"]
             values["client"] = anthropic.Anthropic(
-                base_url=values["anthropic_api_url"],
-                api_key=cast(SecretStr, values["anthropic_api_key"]).get_secret_value(),
-                timeout=values["default_request_timeout"],
+                base_url=base_url,
+                api_key=api_key,
+                timeout=timeout,
             )
             values["async_client"] = anthropic.AsyncAnthropic(
-                base_url=values["anthropic_api_url"],
-                api_key=cast(SecretStr, values["anthropic_api_key"]).get_secret_value(),
-                timeout=values["default_request_timeout"],
+                base_url=base_url,
+                api_key=api_key,
+                timeout=timeout,
             )
-            values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
-            values["AI_PROMPT"] = anthropic.AI_PROMPT
-            values["count_tokens"] = values["client"].count_tokens
+            values["HUMAN_PROMPT"] = (
+                values["HUMAN_PROMPT"]
+                if values["HUMAN_PROMPT"] is not None
+                else anthropic.HUMAN_PROMPT
+            )
+            values["AI_PROMPT"] = (
+                values["AI_PROMPT"]
+                if values["AI_PROMPT"] is not None
+                else anthropic.AI_PROMPT
+            )
 
         except ImportError:
             raise ImportError(
                 "Could not import anthropic python package. "
-                "Please it install it with `pip install anthropic`."
+                "Please it install it with `pip install -U anthropic`."
             )
         return values
 
@@ -133,7 +147,7 @@ class _AnthropicCommon(BaseLanguageModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{}, **self._default_params}
+        return self._default_params
 
     def _get_anthropic_stop(self, stop: Optional[List[str]] = None) -> List[str]:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
@@ -158,20 +172,23 @@ class Anthropic(LLM, _AnthropicCommon):
     Example:
         .. code-block:: python
 
-            import anthropic
-            from langchain.llms import Anthropic
+            from langchain_anthropic import Anthropic
 
-            model = Anthropic(model="<model_name>", anthropic_api_key="my-api-key")
+            model = Anthropic(
+                model="claude-2",
+                anthropic_api_key="<my-api-key>",
+                max_tokens_to_sample=1024,
+            )
 
             # Simplest invocation, automatically wrapped with HUMAN_PROMPT
             # and AI_PROMPT.
-            response = model("What are the biggest risks facing humanity?")
+            response = model.invoke("What are the biggest risks facing humanity?")
 
             # Or if you want to use the chat mode, build a few-shot-prompt, or
             # put words in the Assistant's mouth, use HUMAN_PROMPT and AI_PROMPT:
             raw_prompt = "What are the biggest risks facing humanity?"
             prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}"
-            response = model(prompt)
+            response = model.invoke(prompt)
     """
 
     class Config:
@@ -185,7 +202,7 @@ class Anthropic(LLM, _AnthropicCommon):
         """Raise warning that this class is deprecated."""
         warnings.warn(
             "This Anthropic LLM is deprecated. "
-            "Please use `from langchain.chat_models import ChatAnthropic` instead"
+            "Please use `from langchain_anthropic import ChatAnthropic` instead"
         )
         return values
 
@@ -351,6 +368,7 @@ class Anthropic(LLM, _AnthropicCommon):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
-        if not self.count_tokens:
-            raise NameError("Please ensure the anthropic package is loaded")
-        return self.count_tokens(text)
+        if self.count_tokens is not None:
+            return self.count_tokens(text)
+        else:
+            return self.client.count_tokens(text)
