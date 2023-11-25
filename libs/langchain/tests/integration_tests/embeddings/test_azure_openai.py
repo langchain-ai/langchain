@@ -80,14 +80,16 @@ async def test_azure_openai_embedding_async_query() -> None:
 @pytest.mark.skip(reason="Unblock scheduled testing. TODO: fix.")
 def test_azure_openai_embedding_with_empty_string() -> None:
     """Test openai embeddings with empty string."""
-    import openai
+    from openai import OpenAI
+    
+    client = OpenAI()
 
     document = ["", "abc"]
     embedding = _get_embeddings()
     output = embedding.embed_documents(document)
     assert len(output) == 2
     assert len(output[0]) == 1536
-    expected_output = openai.Embedding.create(input="", model="text-embedding-ada-002")[
+    expected_output = client.embeddings.create(input="", model="text-embedding-ada-002")[
         "data"
     ][0]["embedding"]
     assert np.allclose(output[0], expected_output)

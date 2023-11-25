@@ -4,9 +4,12 @@ from langchain.adapters import openai as lcopenai
 
 
 def _test_no_stream(**kwargs: Any) -> None:
-    import openai
+    from openai import OpenAI, AsyncOpenAI
+    
+    client = OpenAI()
+    aclient = AsyncOpenAI()
 
-    result = openai.ChatCompletion.create(**kwargs)
+    result = client.chat.completions.create(**kwargs)
     lc_result = lcopenai.ChatCompletion.create(**kwargs)
     if isinstance(lc_result, dict):
         if isinstance(result, dict):
@@ -17,10 +20,13 @@ def _test_no_stream(**kwargs: Any) -> None:
 
 
 def _test_stream(**kwargs: Any) -> None:
-    import openai
+    from openai import OpenAI, AsyncOpenAI
+    
+    client = OpenAI()
+    aclient = AsyncOpenAI()
 
     result = []
-    for c in openai.ChatCompletion.create(**kwargs):
+    for c in client.chat.completions.create(**kwargs):
         result.append(c["choices"][0]["delta"].to_dict_recursive())
 
     lc_result = []
@@ -30,9 +36,12 @@ def _test_stream(**kwargs: Any) -> None:
 
 
 async def _test_async(**kwargs: Any) -> None:
-    import openai
+    from openai import OpenAI, AsyncOpenAI
+    
+    client = OpenAI()
+    aclient = AsyncOpenAI()
 
-    result = await openai.ChatCompletion.acreate(**kwargs)
+    result = await aclient.chat.completions.create(**kwargs)
     lc_result = await lcopenai.ChatCompletion.acreate(**kwargs)
     if isinstance(lc_result, dict):
         if isinstance(result, dict):
@@ -43,10 +52,13 @@ async def _test_async(**kwargs: Any) -> None:
 
 
 async def _test_astream(**kwargs: Any) -> None:
-    import openai
+    from openai import OpenAI, AsyncOpenAI
+    
+    client = OpenAI()
+    aclient = AsyncOpenAI()
 
     result = []
-    async for c in await openai.ChatCompletion.acreate(**kwargs):
+    async for c in await aclient.chat.completions.create(**kwargs):
         result.append(c["choices"][0]["delta"].to_dict_recursive())
 
     lc_result = []

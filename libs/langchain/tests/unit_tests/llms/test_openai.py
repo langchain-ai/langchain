@@ -90,7 +90,7 @@ def test_openai_retries(mock_completion: dict) -> None:
         nonlocal completed, raised
         if not raised:
             raised = True
-            raise openai.error.APIError
+            raise openai.APIError
         completed = True
         return mock_completion
 
@@ -126,7 +126,7 @@ async def test_openai_async_retries(mock_completion: dict) -> None:
         nonlocal completed, raised
         if not raised:
             raised = True
-            raise openai.error.APIError
+            raise openai.APIError
         await asyncio.sleep(0)
         completed = True
         return mock_completion
