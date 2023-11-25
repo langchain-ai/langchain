@@ -1,8 +1,13 @@
-import ast
-from pprint import pprint
-from typing import Iterable, List, Optional
+"""MongoEngine wrapper around a database."""
+from __future__ import annotations
 
-from mongoengine import Document, connect, get_db
+import ast
+from pprint import pformat
+from typing import Any, Iterable, List, Optional
+
+from mongoengine.connection import connect, get_db
+from mongoengine.document import Document
+from mongoengine.errors import MongoEngineException
 from pymongo import MongoClient
 
 
@@ -55,10 +60,10 @@ class MongoDBDatabase:
 
         if not isinstance(sample_documents_in_collection_info, int):
             raise TypeError("sample_documents_in_collection_info must be an integer")
-        self._sample_rows_in_table_info = sample_documents_in_collection_info
+        self._sample_documents_in_collection_info = sample_documents_in_collection_info
 
     @classmethod
-    def from_uri(cls, database_uri: str, **kwargs):
+    def from_uri(cls, database_uri: str, **kwargs: Any) -> MongoDBDatabase:
         """Construct a MongoEngine engine from URI."""
         connection = connect(host=database_uri, **kwargs)
         return cls(connection, **kwargs)
@@ -86,24 +91,11 @@ class MongoDBDatabase:
         return []
 
     @property
-    def document_info(self, collection_name: str):
-        """Information about all documents in the database."""
-        return self.get_document_info()
-
     def collection_info(self) -> str:
         """Information about all collections in the database."""
         return self.get_collection_info()
 
-    def get_collection_info(self, collection_name: str) -> str:
-        """Information about a specific collection"""
-        collection = eval(collection_name)
-        fields_info = collection._fields
-
-        formatted_info = pprint.pformat(fields_info)
-
-        return f"Collection Information for '{collection_name}':\n{formatted_info}"
-
-    def get_document_info(self, collection_names: Optional[List[str]] = None) -> str:
+    def get_collection_info(self, collection_names: Optional[List[str]] = None) -> str:
         """Get information about specified collections."""
         all_collection_names = self.get_usable_collection_names()
         if collection_names is not None:
@@ -143,6 +135,17 @@ class MongoDBDatabase:
         final_str = "\n\n".join(collections)
         return final_str
 
+    def get_collection_info_no_throw(
+        self, collection_names: Optional[List[str]] = None
+    ) -> str:
+        """Get information about specified collections.
+
+        If the collection does not exist, an error message is returned."""
+        try:
+            return self.get_collection_info(collection_names)
+        except ValueError as e:
+            return f"Error: {e}"
+
     def _get_collection_indexes(self, collection_name: str) -> str:
         """Get indexes of a collection."""
         db = get_db()
@@ -159,10 +162,10 @@ class MongoDBDatabase:
         documents = (
             db[collection_name].find().limit(self._sample_documents_in_collection_info)
         )
-        documents_formatted = pprint.pformat(list(documents))
+        documents_formatted = pformat(list(documents))
         return f"Sample Documents:\n{documents_formatted}"
 
-    def _execute(self, command: str) -> str:
+    def _execute(self, command: str) -> dict[str, Any]:
         """Execute a command and return the result."""
         db = get_db()
         result = db.command(ast.literal_eval(command))
@@ -171,3 +174,12 @@ class MongoDBDatabase:
     def run(self, command: str) -> str:
         """Run a command and return a string representing the results."""
         return f"Result:\n{self._execute(command)}"
+
+    def run_no_throw(self, command: str) -> str:
+        """Run a command and return a string representing the results.
+
+        If the statement throws an error, the error message is returned."""
+        try:
+            return self.run(command)
+        except MongoEngineException as e:
+            return f"Error: {e}"

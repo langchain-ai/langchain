@@ -1,1 +1,1 @@
-"""Tools for interacting with a MongoDB."""
+"""Tools for interacting with a MongoDB database."""

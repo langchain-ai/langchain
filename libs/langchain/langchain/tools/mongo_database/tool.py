@@ -41,7 +41,7 @@ class QueryMongoDBTool(BaseMongoDBTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Execute the query, return the results or an error message."""
-        return self.db.run(query)
+        return self.db.run_no_throw(query)
 
 
 class InfoMongoDBTool(BaseMongoDBTool, BaseTool):
@@ -49,7 +49,8 @@ class InfoMongoDBTool(BaseMongoDBTool, BaseTool):
 
     name: str = "mongo_db_schema"
     description: str = """
-    Input to this tool is a comma-separated list of collections, output is the schema and sample documents for those collections.    
+    Input to this tool is a comma-separated list of collections, output is the schema 
+    and sample documents for those collections.    
 
     Example Input: "collection1, collection2, collection3"
     """
@@ -60,7 +61,7 @@ class InfoMongoDBTool(BaseMongoDBTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get information about specified collections."""
-        return self.db.get_document_info(collection_names=collection_names)
+        return self.db.get_collection_info_no_throw(collection_names.split(", "))
 
 
 class ListMongoDBTool(BaseMongoDBTool, BaseTool):
@@ -76,7 +77,7 @@ class ListMongoDBTool(BaseMongoDBTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get a list of collections in the database."""
-        return self.db.collection_info()
+        return ", ".join(self.db.get_usable_collection_names())
 
 
 class QueryMongoDBCheckerTool(BaseMongoDBTool, BaseTool):
@@ -116,7 +117,7 @@ class QueryMongoDBCheckerTool(BaseMongoDBTool, BaseTool):
         """Use the LLM to check the query."""
         return self.llm_chain.predict(
             query=query,
-            client=self.db.client,
+            client=self.db._client,
             callbacks=run_manager.get_child() if run_manager else None,
         )
 
@@ -127,6 +128,6 @@ class QueryMongoDBCheckerTool(BaseMongoDBTool, BaseTool):
     ) -> str:
         return await self.llm_chain.apredict(
             query=query,
-            client=self.db.client,
+            client=self.db._client,
             callbacks=run_manager.get_child() if run_manager else None,
         )
