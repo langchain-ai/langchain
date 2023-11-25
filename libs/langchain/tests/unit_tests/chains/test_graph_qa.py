@@ -47,7 +47,8 @@ def test_graph_cypher_qa_chain_prompt_selection_1() -> None:
     qa_prompt_template = "QA Prompt"
     cypher_prompt_template = "Cypher Prompt"
     qa_prompt = PromptTemplate(template=qa_prompt_template, input_variables=[])
-    cypher_prompt = PromptTemplate(template=cypher_prompt_template, input_variables=[])
+    cypher_prompt = PromptTemplate(
+        template=cypher_prompt_template, input_variables=[])
     chain = GraphCypherQAChain.from_llm(
         llm=FakeLLM(),
         graph=FakeGraphStore(),
@@ -95,7 +96,8 @@ def test_graph_cypher_qa_chain_prompt_selection_4() -> None:
     memory = ConversationBufferMemory(memory_key="chat_history")
     readonlymemory = ReadOnlySharedMemory(memory=memory)
     qa_prompt = PromptTemplate(template=qa_prompt_template, input_variables=[])
-    cypher_prompt = PromptTemplate(template=cypher_prompt_template, input_variables=[])
+    cypher_prompt = PromptTemplate(
+        template=cypher_prompt_template, input_variables=[])
     chain = GraphCypherQAChain.from_llm(
         llm=FakeLLM(),
         graph=FakeGraphStore(),
@@ -115,7 +117,8 @@ def test_graph_cypher_qa_chain_prompt_selection_5() -> None:
     memory = ConversationBufferMemory(memory_key="chat_history")
     readonlymemory = ReadOnlySharedMemory(memory=memory)
     qa_prompt = PromptTemplate(template=qa_prompt_template, input_variables=[])
-    cypher_prompt = PromptTemplate(template=cypher_prompt_template, input_variables=[])
+    cypher_prompt = PromptTemplate(
+        template=cypher_prompt_template, input_variables=[])
     try:
         GraphCypherQAChain.from_llm(
             llm=FakeLLM(),
@@ -152,16 +155,18 @@ def test_graph_cypher_qa_chain() -> None:
     readonlymemory = ReadOnlySharedMemory(memory=memory)
     prompt1 = (
         "You are a nice chatbot having a conversation with a human.\n\n    "
-        "Schema:\n    Node properties are the following: \n {}\nRelationships "
-        "properties are the following: \n {}\nRelationships are: \n[]\n\n    "
+        "Schema:\n    Node properties are the following:\n\nRelationship "
+        "properties are the following:\n\nThe relationships are the "
+        "following:\n\n\n    "
         "Previous conversation:\n    \n\n    New human question: "
         "Test question\n    Response:"
     )
 
     prompt2 = (
         "You are a nice chatbot having a conversation with a human.\n\n    "
-        "Schema:\n    Node properties are the following: \n {}\nRelationships "
-        "properties are the following: \n {}\nRelationships are: \n[]\n\n    "
+        "Schema:\n    Node properties are the following:\n\nRelationship "
+        "properties are the following:\n\nThe relationships are the "
+        "following:\n\n\n    "
         "Previous conversation:\n    Human: Test question\nAI: foo\n\n    "
         "New human question: Test new question\n    Response:"
     )
