@@ -46,12 +46,17 @@ def construct_schema(
     def filter_func(x: str) -> bool:
         return x in include_types if include_types else x not in exclude_types
 
-    node_props: Dict[str, Any] = structured_schema.get("node_props", {})
-    rel_props: Dict[str, Any] = structured_schema.get("rel_props", {})
-
     filtered_schema = {
-        "node_props": {k: v for k, v in node_props.items() if filter_func(k)},
-        "rel_props": {k: v for k, v in rel_props.items() if filter_func(k)},
+        "node_props": {
+            k: v
+            for k, v in structured_schema.get("node_props", {}).items()
+            if filter_func(k)
+        },
+        "rel_props": {
+            k: v
+            for k, v in structured_schema.get("rel_props", {}).items()
+            if filter_func(k)
+        },
         "relationships": [
             r
             for r in structured_schema.get("relationships", [])
