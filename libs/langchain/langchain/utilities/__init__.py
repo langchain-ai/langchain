@@ -301,7 +301,7 @@ __all__ = [
     "BraveSearchWrapper",
     "DuckDuckGoSearchAPIWrapper",
     "GoldenQueryAPIWrapper",
-    "GoogleJobsAPIWeapper",
+    "GoogleJobsAPIWrapper",
     "GooglePlacesAPIWrapper",
     "GoogleScholarAPIWrapper",
     "GoogleSearchAPIWrapper",

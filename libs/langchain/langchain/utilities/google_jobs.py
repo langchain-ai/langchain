@@ -4,16 +4,6 @@ from typing import Any, Dict, Optional, cast
 from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain.utils import get_from_dict_or_env, convert_to_secret_str
 
-import json
-
-# import logging
-
-# logging.basicConfig(filename='example.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# logger = logging.getLogger(__name__)
-
-# logger.debug("Debug message")
-
 
 class GoogleJobsAPIWrapper(BaseModel):
     """Wrapper for SerpApi's Google Scholar API
@@ -60,6 +50,8 @@ class GoogleJobsAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run query through Google Trends with Serpapi"""
+
+        # set up query
         serpapi_api_key = cast(SecretStr, self.serp_api_key)
         params = {
             "engine": "google_jobs",
@@ -71,13 +63,7 @@ class GoogleJobsAPIWrapper(BaseModel):
         client = self.serp_search_engine(params)
         total_results = client.get_dict()['jobs_results']
         
-        with open('/Users/zushenglu/Desktop/Fall_23/CSCD01/langchin_project/langchain/libs/langchain/debug.json', 'w') as file:
-            json.dump(total_results, file, indent=4)
-
-        # job = total_results[0]
-        param = ["title", "company_name", "location", "description"]
-
-        # extract job info:
+        # extract 1 job info:
         res_str = ""
         for i in range(1):
             job = total_results[i]
@@ -87,7 +73,5 @@ class GoogleJobsAPIWrapper(BaseModel):
                     f"Location: {job['location']}\n"+\
                     f"Description: {job['description']}" + \
                     "\n_______________________________________________\n"
-            
-
  
         return res_str + "\n"
