@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -37,7 +37,7 @@ def extract_cypher(text: str) -> str:
 
 
 def construct_schema(
-    structured_schema: Dict[str, Any],
+    structured_schema: Dict[str, Union[Any, Dict[str, Any]]],
     include_types: List[str],
     exclude_types: List[str],
 ) -> str:
