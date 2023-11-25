@@ -713,13 +713,12 @@ class OpenSearchVectorSearch(VectorStore):
 
         return [
             Document(
-                page_content=results[i]["_source"][text_field],
-                metadata=results[i]["_source"]
-                    if metadata_field == "*" 
-                    or metadata_field not in results[i]["_source"]
-                    else results[i]["_source"][metadata_field],
+                page_content=result["_source"][text_field],
+                metadata=result["_source"] 
+                if metadata_field in {"*", ""} 
+                else result["_source"].get(metadata_field),
             )
-            for i in mmr_selected
+            for result in (results[i] for i in mmr_selected)
         ]
 
     @classmethod
