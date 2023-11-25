@@ -17,10 +17,10 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.schema import BaseRetriever
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.vectorstore import VectorStore
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,

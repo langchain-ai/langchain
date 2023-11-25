@@ -6,7 +6,7 @@ from time import sleep
 from typing import Any
 
 import pytest
-from langchain_core.schema.embeddings import Embeddings
+from langchain_core.embeddings import Embeddings
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch

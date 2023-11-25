@@ -4,7 +4,7 @@ import warnings
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from langchain_core.schema import BaseCache
+    from langchain_core.caches import BaseCache
 
 
 # DO NOT USE THESE VALUES DIRECTLY!
@@ -19,7 +19,7 @@ _llm_cache: Optional["BaseCache"] = None
 def set_verbose(value: bool) -> None:
     """Set a new value for the `verbose` global setting."""
     try:
-        import langchain
+        import langchain  # type: ignore[import]
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.
@@ -27,7 +27,7 @@ def set_verbose(value: bool) -> None:
             warnings.filterwarnings(
                 "ignore",
                 message=(
-                    "Importing verbose from langchain_core root module is no longer supported"
+                    "Importing verbose from langchain root module is no longer supported"
                 ),
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's
@@ -47,7 +47,7 @@ def set_verbose(value: bool) -> None:
 def get_verbose() -> bool:
     """Get the value of the `verbose` global setting."""
     try:
-        import langchain
+        import langchain  # type: ignore[import]
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.
@@ -55,7 +55,7 @@ def get_verbose() -> bool:
             warnings.filterwarnings(
                 "ignore",
                 message=(
-                    "Importing verbose from langchain_core root module is no longer supported"
+                    ".*Importing verbose from langchain root module is no longer supported"
                 ),
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's
@@ -80,14 +80,14 @@ def get_verbose() -> bool:
 def set_debug(value: bool) -> None:
     """Set a new value for the `debug` global setting."""
     try:
-        import langchain
+        import langchain  # type: ignore[import]
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
-                message="Importing debug from langchain_core root module is no longer supported",
+                message="Importing debug from langchain root module is no longer supported",
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's
             #       module-level `__getattr__()` implementation:
@@ -106,14 +106,14 @@ def set_debug(value: bool) -> None:
 def get_debug() -> bool:
     """Get the value of the `debug` global setting."""
     try:
-        import langchain
+        import langchain  # type: ignore[import]
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
-                message="Importing debug from langchain_core root module is no longer supported",
+                message="Importing debug from langchain root module is no longer supported",
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's
             #       module-level `__getattr__()` implementation:
@@ -137,7 +137,7 @@ def get_debug() -> bool:
 def set_llm_cache(value: Optional["BaseCache"]) -> None:
     """Set a new LLM cache, overwriting the previous value, if any."""
     try:
-        import langchain
+        import langchain  # type: ignore[import]
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.
@@ -145,7 +145,7 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
             warnings.filterwarnings(
                 "ignore",
                 message=(
-                    "Importing llm_cache from langchain_core root module is no longer supported"
+                    "Importing llm_cache from langchain root module is no longer supported"
                 ),
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's
@@ -165,7 +165,7 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
 def get_llm_cache() -> "BaseCache":
     """Get the value of the `llm_cache` global setting."""
     try:
-        import langchain
+        import langchain  # type: ignore[import]
 
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get warnings.
@@ -173,7 +173,7 @@ def get_llm_cache() -> "BaseCache":
             warnings.filterwarnings(
                 "ignore",
                 message=(
-                    "Importing llm_cache from langchain_core root module is no longer supported"
+                    "Importing llm_cache from langchain root module is no longer supported"
                 ),
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's

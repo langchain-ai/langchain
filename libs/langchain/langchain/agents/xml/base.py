@@ -1,7 +1,7 @@
 from typing import Any, List, Tuple, Union
 
+from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.prompts.chat import AIMessagePromptTemplate, ChatPromptTemplate
-from langchain_core.schema import AgentAction, AgentFinish
 
 from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.output_parsers.xml import XMLAgentOutputParser

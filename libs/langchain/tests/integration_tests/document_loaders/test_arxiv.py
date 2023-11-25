@@ -1,7 +1,7 @@
 from typing import List
 
 import pytest
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.document_loaders.arxiv import ArxivLoader
 

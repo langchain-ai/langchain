@@ -6,7 +6,7 @@ https://cloud.google.com/document-ai/docs/setup
 """
 import os
 
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers import DocAIParser
