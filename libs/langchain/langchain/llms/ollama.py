@@ -94,6 +94,9 @@ class _OllamaCommon(BaseLanguageModel):
     template: Optional[str] = None
     """full prompt or prompt template (overrides what is defined in the Modelfile)"""
 
+    format: Optional[str] = None
+    """set format to 'json' to enable JSON output"""
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -116,6 +119,7 @@ class _OllamaCommon(BaseLanguageModel):
             },
             "system": self.system,
             "template": self.template,
+            "format": self.format,
         }
 
     @property
@@ -140,6 +144,9 @@ class _OllamaCommon(BaseLanguageModel):
 
         if "model" in kwargs:
             params["model"] = kwargs["model"]
+
+        if "format" in kwargs:
+            params["format"] = kwargs["format"]
 
         if "options" in kwargs:
             params["options"] = kwargs["options"]
