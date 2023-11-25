@@ -63,6 +63,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         .. code-block:: python
 
             from langchain_core.runnables import RunnablePassthrough, RunnableParallel
+            from langchain_core.runnables import RunnableLambda
 
             runnable = RunnableParallel(
                 origin=RunnablePassthrough(),
@@ -72,7 +73,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             runnable.invoke(1) # {'origin': 1, 'modified': 2}
 
 
-             def fake_llm(prompt: str) -> str: # Fake LLM for the example
+            def fake_llm(prompt: str) -> str: # Fake LLM for the example
                 return "completion"
 
             chain = RunnableLambda(fake_llm) | {
@@ -89,7 +90,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
             from langchain_core.runnables import RunnablePassthrough, RunnableParallel
 
-             def fake_llm(prompt: str) -> str: # Fake LLM for the example
+            def fake_llm(prompt: str) -> str: # Fake LLM for the example
                 return "completion"
 
             runnable = {
