@@ -1370,7 +1370,7 @@ class AstraDBCache(BaseCache):
         self.astra_db.truncate_collection(self.collection_name)
 
 
-ASTRA_DB_SEMANTIC_CACHE_DEFAULT_SIMILARITY_THRESHOLD = 0.85
+ASTRA_DB_SEMANTIC_CACHE_DEFAULT_THRESHOLD = 0.85
 ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_semantic_cache"
 ASTRA_DB_SEMANTIC_CACHE_EMBEDDING_CACHE_SIZE = 16
 
@@ -1398,7 +1398,7 @@ class AstraDBSemanticCache(BaseCache):
         namespace: Optional[str] = None,
         embedding: Embeddings,
         metric: Optional[str] = None,
-        similarity_threshold: float = ASTRA_DB_SEMANTIC_CACHE_DEFAULT_SIMILARITY_THRESHOLD,
+        similarity_threshold: float = ASTRA_DB_SEMANTIC_CACHE_DEFAULT_THRESHOLD,
     ):
         """
         Initialize the cache with all relevant parameters.

@@ -11,8 +11,7 @@ Required to run this test:
         export ASTRA_DB_KEYSPACE="my_keyspace"
 """
 import os
-import time
-from typing import Any, Iterator, Tuple
+from typing import Iterator
 
 import pytest
 from langchain_core.outputs import Generation, LLMResult
