@@ -14,8 +14,7 @@ class CypherQueryCorrector:
 
     property_pattern = re.compile(r"\{.+?\}")
     node_pattern = re.compile(r"\(.+?\)")
-    path_pattern = re.compile(
-        r"(\([^\,\(\)]*?(\{.+\})?[^\,\(\)]*?\))(<?-)(\[.*?\])?(->?)(\([^\,\(\)]*?(\{.+\})?[^\,\(\)]*?\))")
+    path_pattern = re.compile(r"\(.*\).*-.*-.*\(.*\)")
     node_relation_node_pattern = re.compile(
         r"(\()+(?P<left_node>[^()]*?)\)(?P<relation>.*?)\((?P<right_node>[^()]*?)(\))+"
     )
@@ -63,17 +62,7 @@ class CypherQueryCorrector:
         Args:
             query: cypher query
         """
-        paths = []
-        idx = 0
-        while matched := self.path_pattern.findall(query[idx:]):
-            matched = matched[0]
-            matched = [
-                m for i, m in enumerate(matched) if i not in [1, len(matched) - 1]
-            ]
-            path = "".join(matched)
-            idx = query.find(path) + len(path) - len(matched[-1])
-            paths.append(path)
-        return paths
+        return re.findall(self.path_pattern, query)
 
     def judge_direction(self, relation: str) -> str:
         """
@@ -171,8 +160,7 @@ class CypherQueryCorrector:
             original_path = path
             start_idx = 0
             while start_idx < len(path):
-                match_res = re.match(
-                    self.node_relation_node_pattern, path[start_idx:])
+                match_res = re.match(self.node_relation_node_pattern, path[start_idx:])
                 if match_res is None:
                     break
                 start_idx += match_res.start()
@@ -190,15 +178,14 @@ class CypherQueryCorrector:
                     + len(match_dict["relation"])
                     + len(match_dict["right_node"])
                 )
-                original_partial_path = original_path[start_idx: end_idx + 1]
+                original_partial_path = original_path[start_idx : end_idx + 1]
                 relation_direction, relation_types = self.detect_relation_types(
                     match_dict["relation"]
                 )
 
                 if relation_types != [] and "".join(relation_types).find("*") != -1:
                     start_idx += (
-                        len(match_dict["left_node"]) +
-                        len(match_dict["relation"]) + 2
+                        len(match_dict["left_node"]) + len(match_dict["relation"]) + 2
                     )
                     continue
 
@@ -211,8 +198,7 @@ class CypherQueryCorrector:
                             right_node_labels, relation_types, left_node_labels
                         )
                         if is_legal:
-                            corrected_relation = "<" + \
-                                match_dict["relation"][:-1]
+                            corrected_relation = "<" + match_dict["relation"][:-1]
                             corrected_partial_path = original_partial_path.replace(
                                 match_dict["relation"], corrected_relation
                             )
@@ -250,8 +236,7 @@ class CypherQueryCorrector:
                         return ""
 
                 start_idx += (
-                    len(match_dict["left_node"]) +
-                    len(match_dict["relation"]) + 2
+                    len(match_dict["left_node"]) + len(match_dict["relation"]) + 2
                 )
         return query
 
