@@ -6,9 +6,10 @@ import time
 import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
-from langchain.schema.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
@@ -137,7 +138,7 @@ class MatchingEngine(VectorStore):
             json_: dict = {"id": id, "embedding": embedding}
             if metadatas is not None:
                 json_["metadata"] = metadatas[idx]
-            jsons.append(json)
+            jsons.append(json_)
             self._upload_to_gcs(text, f"documents/{id}")
 
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")

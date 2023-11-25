@@ -20,6 +20,24 @@ from typing import (
     Union,
 )
 
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import (
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessageChunk,
+    FunctionMessageChunk,
+    HumanMessageChunk,
+    SystemMessageChunk,
+    ToolMessageChunk,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.runnables import Runnable
+from langchain_core.utils import (
+    get_pydantic_field_names,
+)
+
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -31,25 +49,7 @@ from langchain.chat_models.base import (
     _generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
-from langchain.pydantic_v1 import BaseModel, Field, root_validator
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.language_model import LanguageModelInput
-from langchain.schema.messages import (
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    ChatMessageChunk,
-    FunctionMessageChunk,
-    HumanMessageChunk,
-    SystemMessageChunk,
-    ToolMessageChunk,
-)
-from langchain.schema.output import ChatGenerationChunk
-from langchain.schema.runnable import Runnable
-from langchain.utils import (
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
+from langchain.utils import get_from_dict_or_env
 from langchain.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
@@ -180,8 +180,8 @@ class ChatOpenAI(BaseChatModel):
         """Return whether this model can be serialized by Langchain."""
         return True
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -307,12 +307,17 @@ class ChatOpenAI(BaseChatModel):
                 "default_query": values["default_query"],
                 "http_client": values["http_client"],
             }
-            values["client"] = openai.OpenAI(**client_params).chat.completions
-            values["async_client"] = openai.AsyncOpenAI(
-                **client_params
-            ).chat.completions
-        else:
+
+            if not values.get("client"):
+                values["client"] = openai.OpenAI(**client_params).chat.completions
+            if not values.get("async_client"):
+                values["async_client"] = openai.AsyncOpenAI(
+                    **client_params
+                ).chat.completions
+        elif not values.get("client"):
             values["client"] = openai.ChatCompletion
+        else:
+            pass
         return values
 
     @property

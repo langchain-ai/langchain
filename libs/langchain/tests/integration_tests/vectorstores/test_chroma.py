@@ -23,7 +23,6 @@ def test_chroma() -> None:
     assert output == [Document(page_content="foo")]
 
 
-@pytest.mark.asyncio
 async def test_chroma_async() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]

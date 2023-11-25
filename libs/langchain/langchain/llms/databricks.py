@@ -3,10 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional
 
 import requests
-
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
-from langchain.pydantic_v1 import (
+from langchain_core.pydantic_v1 import (
     BaseModel,
     Extra,
     Field,
@@ -14,6 +11,9 @@ from langchain.pydantic_v1 import (
     root_validator,
     validator,
 )
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.llms.base import LLM
 
 __all__ = ["Databricks"]
 

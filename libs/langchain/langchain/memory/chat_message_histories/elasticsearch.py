@@ -3,8 +3,12 @@ import logging
 from time import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from langchain.schema import BaseChatMessageHistory
-from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import (
+    BaseMessage,
+    message_to_dict,
+    messages_from_dict,
+)
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -168,7 +172,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
                 document={
                     "session_id": self.session_id,
                     "created_at": round(time() * 1000),
-                    "history": json.dumps(_message_to_dict(message)),
+                    "history": json.dumps(message_to_dict(message)),
                 },
                 refresh=True,
             )

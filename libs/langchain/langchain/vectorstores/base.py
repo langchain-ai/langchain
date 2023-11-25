@@ -1,3 +1,3 @@
-from langchain.schema.vectorstore import VectorStore, VectorStoreRetriever
+from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
 __all__ = ["VectorStore", "VectorStoreRetriever"]
