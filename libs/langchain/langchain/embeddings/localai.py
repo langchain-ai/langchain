@@ -44,7 +44,7 @@ def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], An
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
+            retry_if_exception_type(openai.Timeout)
             | retry_if_exception_type(openai.error.APIError)
             | retry_if_exception_type(openai.error.APIConnectionError)
             | retry_if_exception_type(openai.error.RateLimitError)
@@ -66,7 +66,7 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
+            retry_if_exception_type(openai.Timeout)
             | retry_if_exception_type(openai.error.APIError)
             | retry_if_exception_type(openai.error.APIConnectionError)
             | retry_if_exception_type(openai.error.RateLimitError)
@@ -253,10 +253,14 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         if self.openai_proxy:
             import openai
 
-            openai.proxy = {
-                "http": self.openai_proxy,
-                "https": self.openai_proxy,
-            }  # type: ignore[assignment]  # noqa: E501
+            # TODO: The 'openai.proxy' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(proxy={
+            #                 "http": self.openai_proxy,
+            #                 "https": self.openai_proxy,
+            #             })'
+            # openai.proxy = {
+            #                 "http": self.openai_proxy,
+            #                 "https": self.openai_proxy,
+            #             }  # type: ignore[assignment]  # noqa: E501
         return openai_args
 
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:

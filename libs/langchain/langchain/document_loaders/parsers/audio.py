@@ -23,7 +23,9 @@ class OpenAIWhisperParser(BaseBlobParser):
         import io
 
         try:
-            import openai
+            from openai import OpenAI
+            
+            client = OpenAI(api_key=self.api_key)
         except ImportError:
             raise ImportError(
                 "openai package not found, please install it with "
@@ -38,7 +40,7 @@ class OpenAIWhisperParser(BaseBlobParser):
 
         # Set the API key if provided
         if self.api_key:
-            openai.api_key = self.api_key
+            
 
         # Audio file from disk
         audio = AudioSegment.from_file(blob.path)
@@ -63,7 +65,7 @@ class OpenAIWhisperParser(BaseBlobParser):
             attempts = 0
             while attempts < 3:
                 try:
-                    transcript = openai.Audio.transcribe("whisper-1", file_obj)
+                    transcript = client.audio.transcribe("whisper-1", file_obj)
                     break
                 except Exception as e:
                     attempts += 1
