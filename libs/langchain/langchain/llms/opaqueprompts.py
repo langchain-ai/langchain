@@ -1,10 +1,11 @@
 import logging
 from typing import Any, Dict, List, Optional
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.pydantic_v1 import Extra, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)

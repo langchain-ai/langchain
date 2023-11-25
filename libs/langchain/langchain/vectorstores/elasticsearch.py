@@ -15,10 +15,10 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -727,6 +727,8 @@ class ElasticsearchStore(VectorStore):
         fields: Optional[List[str]] = None,
         filter: Optional[List[dict]] = None,
         custom_query: Optional[Callable[[Dict, Union[str, None]], Dict]] = None,
+        doc_builder: Optional[Callable[[Dict], Document]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return Elasticsearch documents most similar to query, along with scores.
 
@@ -781,6 +783,14 @@ class ElasticsearchStore(VectorStore):
             source=fields,
         )
 
+        def default_doc_builder(hit: Dict) -> Document:
+            return Document(
+                page_content=hit["_source"].get(self.query_field, ""),
+                metadata=hit["_source"]["metadata"],
+            )
+
+        doc_builder = doc_builder or default_doc_builder
+
         docs_and_scores = []
         for hit in response["hits"]["hits"]:
             for field in fields:
@@ -792,10 +802,7 @@ class ElasticsearchStore(VectorStore):
 
             docs_and_scores.append(
                 (
-                    Document(
-                        page_content=hit["_source"].get(self.query_field, ""),
-                        metadata=hit["_source"]["metadata"],
-                    ),
+                    doc_builder(hit),
                     hit["_score"],
                 )
             )

@@ -1,12 +1,12 @@
 """Test functionality related to ngram overlap based selector."""
 
 import pytest
+from langchain_core.prompts import PromptTemplate
 
 from langchain.prompts.example_selector.ngram_overlap import (
     NGramOverlapExampleSelector,
     ngram_overlap_score,
 )
-from langchain.prompts.prompt import PromptTemplate
 
 EXAMPLES = [
     {"input": "See Spot run.", "output": "foo1"},

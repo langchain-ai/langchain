@@ -2,8 +2,9 @@
 from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional
 
+from langchain_core.documents import Document
+
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 

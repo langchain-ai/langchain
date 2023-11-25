@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain.document_loaders import PolarsDataFrameLoader
-from langchain.schema import Document
 
 if TYPE_CHECKING:
     import polars as pl
