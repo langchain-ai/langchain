@@ -317,7 +317,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             docs = loader.load()
             for doc in docs:
                 doc.metadata["source"] = f"https://drive.google.com/file/d/{id}/view"
-                doc.metadata["title"] = f"{file.get('name')}"
+                if "title" not in doc.metadata:
+                    doc.metadata["title"] = f"{file.get('name')}"
             return docs
 
         else:
