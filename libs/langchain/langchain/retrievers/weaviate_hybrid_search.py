@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.embeddings import Embeddings
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
@@ -31,6 +32,8 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
     """The attributes to return in the results."""
     create_schema_if_missing: bool = True
     """Whether to create the schema if it doesn't exist."""
+    embeddings: Optional[Embeddings] = None
+    """Local embeddings model to use."""
 
     @root_validator(pre=True)
     def validate_client(
@@ -89,7 +92,11 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
                 else:
                     _id = get_valid_uuid(uuid4())
 
-                batch.add_data_object(data_properties, self.index_name, _id)
+                if self.embeddings:
+                    vector = self.embeddings.embed_query(doc.page_content)
+                    batch.add_data_object(data_properties, self.index_name, _id, vector)
+                else:
+                    batch.add_data_object(data_properties, self.index_name, _id)
                 ids.append(_id)
         return ids
 
@@ -147,8 +154,18 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         if hybrid_search_kwargs is None:
             hybrid_search_kwargs = {}
 
+        if self.embeddings:
+            query_obj = query_obj.with_hybrid(
+                query=query,
+                vector=self.embeddings.embed_query(query),
+                alpha=self.alpha,
+                **hybrid_search_kwargs
+            )
+        else:
+            query_obj = query_obj.with_hybrid(query, alpha=self.alpha, **hybrid_search_kwargs)
+
         result = (
-            query_obj.with_hybrid(query, alpha=self.alpha, **hybrid_search_kwargs)
+            query_obj
             .with_limit(self.k)
             .do()
         )
