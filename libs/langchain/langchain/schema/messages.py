@@ -1,6 +1,7 @@
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    AnyMessage,
     BaseMessage,
     BaseMessageChunk,
     ChatMessage,
@@ -46,4 +47,5 @@ __all__ = [
     "_message_to_dict",
     "_message_from_dict",
     "message_to_dict",
+    "AnyMessage",
 ]
