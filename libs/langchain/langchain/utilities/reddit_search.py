@@ -1,14 +1,13 @@
 from typing import Any, Dict, List, Optional
-import requests
 import praw
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 class RedditSearchAPIWrapper(BaseModel):
 
-    reddit_client_id: str
-    reddit_client_secret: str
-    reddit_user_agent: str
+    reddit_client_id: Optional[str]
+    reddit_client_secret: Optional[str]
+    reddit_user_agent: Optional[str]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
