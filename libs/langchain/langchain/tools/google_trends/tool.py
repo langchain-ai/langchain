@@ -17,7 +17,7 @@ class GoogleTrendsQueryRun(BaseTool):
         "google search trends from Google Trends"
         "Input should be a search query."
     )
-    api_wrapper: GoogleTrendsAPIWrapper 
+    api_wrapper: GoogleTrendsAPIWrapper
 
     def _run(
         self,

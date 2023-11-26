@@ -2,7 +2,8 @@
 from typing import Any, Dict, Optional, cast
 
 from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain.utils import get_from_dict_or_env, convert_to_secret_str
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
+
 
 class GoogleFinanceAPIWrapper(BaseModel):
     """Wrapper for SerpApi's Google Finance API
@@ -18,6 +19,7 @@ class GoogleFinanceAPIWrapper(BaseModel):
         google_Finance = GoogleFinanceAPIWrapper()
         google_Finance.run('langchain')
     """
+
     serp_search_engine: Any
     serp_api_key: Optional[SecretStr] = None
 
@@ -65,7 +67,7 @@ class GoogleFinanceAPIWrapper(BaseModel):
 
         markets = total_results["markets"]
         res = "\nQuery: " + query + "\n"
-        
+
         if "futures_chain" in total_results:
             futures_chain = total_results["futures_chain"][0]
             stock = futures_chain["stock"]
@@ -73,21 +75,23 @@ class GoogleFinanceAPIWrapper(BaseModel):
             temp = futures_chain["price_movement"]
             percentage = temp["percentage"]
             movement = temp["movement"]
-            res += f"stock: {stock}\n" +\
-                    f"price: {price}\n" +\
-                    f"percentage: {percentage}\n" +\
-                    f"movement: {movement}\n"
-                    
+            res += (
+                f"stock: {stock}\n"
+                + f"price: {price}\n"
+                + f"percentage: {percentage}\n"
+                + f"movement: {movement}\n"
+            )
+
         else:
             res += "No summary information\n"
-        
+
         for key in markets:
-            if (key == "us") or (key=="asia") or (key=="europe"):
+            if (key == "us") or (key == "asia") or (key == "europe"):
                 res += key
                 res += ": price = "
                 res += str(markets[key][0]["price"])
                 res += ", movement = "
                 res += markets[key][0]["price_movement"]["movement"]
                 res += "\n"
-            
+
         return res

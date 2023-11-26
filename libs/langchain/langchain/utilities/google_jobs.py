@@ -2,7 +2,7 @@
 from typing import Any, Dict, Optional, cast
 
 from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain.utils import get_from_dict_or_env, convert_to_secret_str
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class GoogleJobsAPIWrapper(BaseModel):
@@ -19,6 +19,7 @@ class GoogleJobsAPIWrapper(BaseModel):
         google_Jobs = GoogleJobsAPIWrapper()
         google_Jobs.run('langchain')
     """
+
     serp_search_engine: Any
     serp_api_key: Optional[SecretStr] = None
 
@@ -61,17 +62,19 @@ class GoogleJobsAPIWrapper(BaseModel):
 
         total_results = []
         client = self.serp_search_engine(params)
-        total_results = client.get_dict()['jobs_results']
-        
+        total_results = client.get_dict()["jobs_results"]
+
         # extract 1 job info:
         res_str = ""
         for i in range(1):
             job = total_results[i]
-            res_str += "\n_______________________________________________"+\
-                    f"\nJob Title: {job['title']}\n"+\
-                    f"Company Name: {job['company_name']}\n"+\
-                    f"Location: {job['location']}\n"+\
-                    f"Description: {job['description']}" + \
-                    "\n_______________________________________________\n"
- 
+            res_str += (
+                "\n_______________________________________________"
+                + f"\nJob Title: {job['title']}\n"
+                + f"Company Name: {job['company_name']}\n"
+                + f"Location: {job['location']}\n"
+                + f"Description: {job['description']}"
+                + "\n_______________________________________________\n"
+            )
+
         return res_str + "\n"

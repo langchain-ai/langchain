@@ -24,6 +24,7 @@ class GoogleTrendsAPIWrapper(BaseModel):
         google_trends = GoogleTrendsAPIWrapper()
         google_trends.run('langchain')
     """
+
     serp_search_engine: Any
     serp_api_key: Optional[SecretStr] = None
 
@@ -64,20 +65,24 @@ class GoogleTrendsAPIWrapper(BaseModel):
 
         total_results = []
         client = self.serp_search_engine(params)
-        total_results = client.get_dict()['interest_over_time']['timeline_data']
+        total_results = client.get_dict()["interest_over_time"]["timeline_data"]
 
         if not total_results:
             return "No good Trend Result was found"
 
-        start_date = total_results[0]['date'].split()
-        end_date = total_results[-1]['date'].split()
-        values = [results.get('values')[0].get('extracted_value') 
-                    for results in total_results]
+        start_date = total_results[0]["date"].split()
+        end_date = total_results[-1]["date"].split()
+        values = [
+            results.get("values")[0].get("extracted_value") for results in total_results
+        ]
         min_value = min(values)
         max_value = max(values)
         avg_value = sum(values) / len(values)
-        percentage_change = (values[-1] - values[0]) / ((values[0] if values[0]
-                != 0 else 1)) * ((100 if values[0] != 0 else 1))
+        percentage_change = (
+            (values[-1] - values[0])
+            / (values[0] if values[0] != 0 else 1)
+            * (100 if values[0] != 0 else 1)
+        )
 
         params = {
             "engine": "google_trends",
@@ -86,23 +91,24 @@ class GoogleTrendsAPIWrapper(BaseModel):
             "q": query,
         }
         client = self.serp_search_engine(params)
-        total_results = client.get_dict()['related_queries']
+        total_results = client.get_dict()["related_queries"]
         rising = []
         top = []
 
-        rising = [results.get('query') for results in total_results['rising']]
-        top = [results.get('query') for results in total_results['top']]
+        rising = [results.get("query") for results in total_results["rising"]]
+        top = [results.get("query") for results in total_results["top"]]
 
-        doc = [f"Query: {query}\n"
-                f"Date From: {start_date[0]} {start_date[1]}, {start_date[-1]}\n"
-                f"Date To: {end_date[0]} {end_date[3]} {end_date[-1]}\n"
-                f"Min Value: {min_value}\n"
-                f"Max Value: {max_value}\n"
-                f"Average Value: {avg_value}\n"
-                f"Precent Change: {str(percentage_change) + '%'}\n"
-                f"Trend values: {', '.join([str(x) for x in values])}\n"
-                f"Rising Related Queries: {', '.join(rising)}\n"
-                f"Top Related Queries: {', '.join(top)}"]
-
+        doc = [
+            f"Query: {query}\n"
+            f"Date From: {start_date[0]} {start_date[1]}, {start_date[-1]}\n"
+            f"Date To: {end_date[0]} {end_date[3]} {end_date[-1]}\n"
+            f"Min Value: {min_value}\n"
+            f"Max Value: {max_value}\n"
+            f"Average Value: {avg_value}\n"
+            f"Precent Change: {str(percentage_change) + '%'}\n"
+            f"Trend values: {', '.join([str(x) for x in values])}\n"
+            f"Rising Related Queries: {', '.join(rising)}\n"
+            f"Top Related Queries: {', '.join(top)}"
+        ]
 
         return "\n\n".join(doc)

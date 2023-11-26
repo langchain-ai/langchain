@@ -76,12 +76,15 @@ class GoogleLensAPIWrapper(BaseModel):
             subject = responseValue["knowledge_graph"][0]
             xs += f"Subject:{subject['title']}({subject['subtitle']})\n"
             xs += f"Link to subject:{subject['link']}\n\n"
-        xs += f"Related Images:\n\n"
-        for image in responseValue['visual_matches']:
+        xs += "Related Images:\n\n"
+        for image in responseValue["visual_matches"]:
             xs += f"Title: {image['title']}\n"
             xs += f"Source({image['source']}): {image['link']}\n"
             xs += f"Image: {image['thumbnail']}\n\n"
-        xs += f"Reverse Image Search Link: {responseValue['reverse_image_search']['link']}\n"
+        xs += (
+            "Reverse Image Search"
+            + f"Link: {responseValue['reverse_image_search']['link']}\n"
+        )
         print(xs)
 
         docs = [xs]

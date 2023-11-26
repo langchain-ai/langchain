@@ -244,11 +244,14 @@ def _get_golden_query(**kwargs: Any) -> BaseTool:
 def _get_pubmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
 
+
 def _get_google_jobs(**kwargs: Any) -> BaseTool:
     return GoogleJobsQueryRun(api_wrapper=GoogleJobsAPIWrapper(**kwargs))
 
+
 def _get_google_lens(**kwargs: Any) -> BaseTool:
     return GoogleLensQueryRun(api_wrapper=GoogleLensAPIWrapper(**kwargs))
+
 
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
@@ -257,11 +260,14 @@ def _get_google_serper(**kwargs: Any) -> BaseTool:
 def _get_google_scholar(**kwargs: Any) -> BaseTool:
     return GoogleScholarQueryRun(api_wrapper=GoogleScholarAPIWrapper(**kwargs))
 
+
 def _get_google_finance(**kwargs: Any) -> BaseTool:
     return GoogleFinanceQueryRun(api_wrapper=GoogleFinanceAPIWrapper(**kwargs))
 
+
 def _get_google_trends(**kwargs: Any) -> BaseTool:
     return GoogleTrendsQueryRun(api_wrapper=GoogleTrendsAPIWrapper(**kwargs))
+
 
 def _get_google_serper_results_json(**kwargs: Any) -> BaseTool:
     return GoogleSerperResults(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
