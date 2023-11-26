@@ -77,7 +77,7 @@ class ListMongoDBTool(BaseMongoDBTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get a list of collections in the database."""
-        return ", ".join(self.db.get_usable_collection_names())
+        return ", ".join(self.db.get_usable_collection_names)
 
 
 class QueryMongoDBCheckerTool(BaseMongoDBTool, BaseTool):

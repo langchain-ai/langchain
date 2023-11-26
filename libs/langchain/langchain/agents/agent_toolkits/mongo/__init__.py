@@ -1,1 +1,1 @@
-"""MONGO agent."""
+"""MongoDB agent."""

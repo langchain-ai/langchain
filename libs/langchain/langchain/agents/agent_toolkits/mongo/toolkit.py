@@ -5,8 +5,6 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.utilities.mongo_database import MongoDBDatabase
-
 from langchain.tools import BaseTool
 from langchain.tools.mongo_database.tool import (
     InfoMongoDBTool,
@@ -14,24 +12,24 @@ from langchain.tools.mongo_database.tool import (
     QueryMongoDBCheckerTool,
     QueryMongoDBTool,
 )
+from langchain.utilities.mongo_database import MongoDBDatabase
 
-"""from langchain.utilities.mongo_database import MongoDatabase"""
 
 class MongoDatabaseToolkit(BaseToolkit):
+    llm: BaseLanguageModel = Field(exclude=True)
+    db: MongoDBDatabase = Field(exclude=True)
 
-  llm: BaseLanguageModel = Field(exclude=True)
-  db: MongoDBDatabase = Field(exclude=True)
-  class Config:
+    class Config:
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
 
-  def get_tools(self) -> List[BaseTool]:
+    def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
         list_mongo_database_tool = ListMongoDBTool(db=self.db)
         info_mongo_database_tool_description = (
-            "Input to this tool is a comma-separated list of collections, output is the "
-            "schema and sample documents for those collections. "
+            "Input to this tool is a comma-separated list of collections, output is "
+            "the schema and sample documents for those collections. "
             "Be sure that the collections actually exist by calling "
             f"{list_mongo_database_tool.name} first! "
             "Example Input: collection1, collection2, collection3"

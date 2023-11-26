@@ -1,4 +1,4 @@
-"""Mongo agent."""
+"""MongoDB agent."""
 from typing import Any, Dict, List, Optional, Sequence
 
 from langchain_core.language_models import BaseLanguageModel
@@ -24,6 +24,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.tools import BaseTool
 
+
 def create_mongo_agent(
     llm: BaseLanguageModel,
     toolkit: MongoDatabaseToolkit,
@@ -42,9 +43,9 @@ def create_mongo_agent(
     extra_tools: Sequence[BaseTool] = (),
     **kwargs: Any,
 ) -> AgentExecutor:
-    """Construct an SQL agent from an LLM and tools."""
+    """Construct a MongoDB agent from an LLM and tools."""
     tools = toolkit.get_tools() + list(extra_tools)
-    prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
+    prefix = prefix.format(top_k=top_k)
     agent: BaseSingleActionAgent
 
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
