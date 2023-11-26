@@ -69,9 +69,9 @@ class OutlineAPIWrapper(BaseModel):
         )
         return doc
 
-    def _outline_api_query(self, query: str) -> Optional[str]:
+    def _outline_api_query(self, query: str) -> List:
         raw_result = requests.post(
-            self.outline_instance_url + self.outline_search_endpoint,
+            f"{self.outline_instance_url}{self.outline_search_endpoint}",
             data={"query": query, "limit": self.top_k_results},
             headers={"Authorization": f"Bearer {self.outline_api_key}"},
         )
