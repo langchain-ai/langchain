@@ -148,7 +148,7 @@ class OpenLLM(LLM):
             super().__init__(
                 **{
                     "server_url": server_url,
-                    "server_type": server_type,
+                    "server_type": 'http',
                     "llm_kwargs": llm_kwargs,
                 }
             )
@@ -223,8 +223,8 @@ class OpenLLM(LLM):
         """Get the identifying parameters."""
         if self._client is not None:
             self.llm_kwargs.update(self._client._config)
-            model_name = self._client._metadata["model_name"]
-            model_id = self._client._metadata["model_id"]
+            model_name = self._client['model_name']
+            model_id = self._client["model_id"]
         else:
             if self._llm is None:
                 raise ValueError("LLM must be initialized.")
@@ -238,7 +238,7 @@ class OpenLLM(LLM):
                 pass
         return IdentifyingParams(
             server_url=self.server_url,
-            server_type=self.server_type,
+            server_type='http',
             embedded=self.embedded,
             llm_kwargs=self.llm_kwargs,
             model_name=model_name,
