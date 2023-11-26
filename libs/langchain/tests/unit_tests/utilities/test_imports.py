@@ -14,6 +14,7 @@ EXPECTED_ALL = [
     "GoogleScholarAPIWrapper",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
+    "GoogleTrendsAPIWrapper",
     "GraphQLAPIWrapper",
     "JiraAPIWrapper",
     "LambdaWrapper",

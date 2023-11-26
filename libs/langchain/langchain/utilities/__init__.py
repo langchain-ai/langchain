@@ -83,6 +83,11 @@ def _import_google_scholar() -> Any:
 
     return GoogleScholarAPIWrapper
 
+def _import_google_trends() -> Any:
+    from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
+
+    return GoogleTrendsAPIWrapper
+
 
 def _import_google_search() -> Any:
     from langchain.utilities.google_search import GoogleSearchAPIWrapper
@@ -241,6 +246,8 @@ def __getattr__(name: str) -> Any:
         return _import_google_jobs()
     elif name == "GoogleScholarAPIWrapper":
         return _import_google_scholar()
+    elif name == "GoogleTrendsAPIWrapper":
+        return _import_google_trends()
     elif name == "GooglePlacesAPIWrapper":
         return _import_google_places_api()
     elif name == "GoogleSearchAPIWrapper":
@@ -304,6 +311,7 @@ __all__ = [
     "GoogleJobsAPIWrapper",
     "GooglePlacesAPIWrapper",
     "GoogleScholarAPIWrapper",
+    "GoogleTrendsAPIWrapper",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
     "GraphQLAPIWrapper",
