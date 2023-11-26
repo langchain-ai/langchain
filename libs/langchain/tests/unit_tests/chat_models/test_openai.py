@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pytest import CaptureFixture, MonkeyPatch
 
-from langchain.pydantic_v1 import SecretStr
 from langchain.adapters.openai import convert_dict_to_message
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.pydantic_v1 import SecretStr
 from langchain.schema.messages import (
     AIMessage,
     FunctionMessage,
@@ -126,6 +126,8 @@ async def test_openai_apredict(mock_completion: dict) -> None:
 
 
 """Test Openai chat model"""
+
+
 @pytest.mark.requires("openai")
 def test_api_key_is_secret_string() -> None:
     llm = ChatOpenAI(
