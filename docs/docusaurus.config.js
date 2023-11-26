@@ -98,6 +98,9 @@ const config = {
             });
             return sidebarItems;
           },
+          editUrl: ({ docPath }) => {
+            return `https://holocron.so/github/pr/langchain-ai/langchain/master/editor/docs/docs/${docPath}`
+          },
         },
         pages: {
           remarkPlugins: [require("@docusaurus/remark-plugin-npm2yarn")],
