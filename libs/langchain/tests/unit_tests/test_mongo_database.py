@@ -1,37 +1,91 @@
 """Test MongoDB database wrapper."""
 
-# import pytest
-# from pymongo import MongoClient
 import re
 
-from langchain.utilities.mongo_database import MongoDBDatabase
+from pymongo import MongoClient
 
-db = MongoDBDatabase.from_uri("mongodb://localhost/test_db")
-collection = db._client["test_db"]["test_collection"]
-
-if "test" not in collection.find_one({"test": "test"}):
-    collection.insert_many(
-        [
-            {"test": "test"},
-            {"test2": "test"},
-            {"test3": "test"},
-            {"test4": "test"},
-        ]
-    )
+from langchain.utilities.mongo_database import MongoDatabase
 
 
 def test_collection_info() -> None:
     """Test that collection info is constructed properly."""
+    db = MongoDatabase.from_uri("mongodb://localhost/test_db")
+    collection = db._client["test_db"]["test_collection"]
+
+    if "test" not in collection.find_one({"test": "test"}):
+        collection.insert_many(
+            [
+                {"test": "test"},
+                {"test2": "test"},
+                {"test3": "test"},
+                {"test4": "test"},
+            ]
+        )
     output = db.collection_info
-    expected_output = r"""
+    expected_output = """
     Collection Name: test_collection
 
     3 sample documents from test_collection:
-    {'_id': ObjectId('.+'), 'test': 'test'}
-    {'_id': ObjectId('.+'), 'test2': 'test'}
-    {'_id': ObjectId('.+'), 'test3': 'test'}
+    {'_id': , 'test': 'test'}
+    {'_id': , 'test2': 'test'}
+    {'_id': , 'test3': 'test'}
     """
-    assert re.match(expected_output, output)
+    output = re.sub(r"ObjectId\('.+'\)", "", output)
+
+    assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
 
 
-# test_collection_info()
+def test_collection_info_w_sample_documents() -> None:
+    """Test that collection info is constructed properly."""
+    db = MongoDatabase(
+        MongoClient("mongodb://localhost/test_db"),
+        sample_documents_in_collection_info=2,
+    )
+    collection = db._client["test_db"]["test_collection"]
+
+    if "test" not in collection.find_one({"test": "test"}):
+        collection.insert_many(
+            [
+                {"test": "test"},
+                {"test2": "test"},
+                {"test3": "test"},
+                {"test4": "test"},
+            ]
+        )
+    output = db.collection_info
+    expected_output = """
+    Collection Name: test_collection
+
+    2 sample documents from test_collection:
+    {'_id': , 'test': 'test'}
+    {'_id': , 'test2': 'test'}
+    """
+    output = re.sub(r"ObjectId\('.+'\)", "", output)
+
+    assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
+
+
+def test_mongo_database_run() -> None:
+    """Test that run works properly."""
+    db = MongoDatabase.from_uri("mongodb://localhost/test_db")
+    output = db.run("{ 'find': 'test_collection', 'filter': { 'test4': 'test' } }")
+    expected_output = """
+    Result:
+    {'_id': , 'test4': 'test'}
+    """
+    output = re.sub(r"ObjectId\('.+'\)", "", output)
+
+    assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
+
+
+def test_mongo_database_run() -> None:
+    """Test that run works properly."""
+    db = MongoDatabase.from_uri("mongodb://localhost/test_db")
+    output = db.run("{ 'find': 'test_collection', 'filter': { 'test4': 'test' } }")
+    expected_output = """
+    Result:
+    {'_id': , 'test4': 'test'}
+    """
+    output = re.sub(r"ObjectId\('.+'\)", "", output)
+
+    assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))

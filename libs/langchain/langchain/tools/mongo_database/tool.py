@@ -11,7 +11,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.utilities.mongo_database import MongoDBDatabase
+from langchain.utilities.mongo_database import MongoDatabase
 from langchain.tools.base import BaseTool
 from langchain.tools.mongo_database.prompt import QUERY_CHECKER
 
@@ -19,7 +19,7 @@ from langchain.tools.mongo_database.prompt import QUERY_CHECKER
 class BaseMongoDBTool(BaseModel):
     """Base tool for interacting with a MongoDB database."""
 
-    db: MongoDBDatabase = Field(exclude=True)
+    db: MongoDatabase = Field(exclude=True)
 
     class Config(BaseTool.Config):
         pass

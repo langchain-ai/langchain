@@ -12,12 +12,12 @@ from langchain.tools.mongo_database.tool import (
     QueryMongoDBCheckerTool,
     QueryMongoDBTool,
 )
-from langchain.utilities.mongo_database import MongoDBDatabase
+from langchain.utilities.mongo_database import MongoDatabase
 
 
 class MongoDatabaseToolkit(BaseToolkit):
     llm: BaseLanguageModel = Field(exclude=True)
-    db: MongoDBDatabase = Field(exclude=True)
+    db: MongoDatabase = Field(exclude=True)
 
     class Config:
         """Configuration for this pydantic object."""

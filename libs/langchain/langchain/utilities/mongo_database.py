@@ -21,7 +21,7 @@ def _format_index(index: dict) -> str:
     return f'Name: {index["name"]},{unique}' f' Keys: {{ {index_keys_formatted} }}'
 
 
-class MongoDBDatabase:
+class MongoDatabase:
     """MongoEngine wrapper around a database."""
 
     def __init__(
@@ -30,6 +30,7 @@ class MongoDBDatabase:
         ignore_collections: Optional[List[str]] = None,
         include_collections: Optional[List[str]] = None,
         sample_documents_in_collection_info: int = 3,
+        indexes_in_collection_info: bool = False,
     ):
         # Connect to MongoDB using mongoengine
         self._client = client
@@ -63,8 +64,10 @@ class MongoDBDatabase:
             raise TypeError("sample_documents_in_collection_info must be an integer")
         self._sample_documents_in_collection_info = sample_documents_in_collection_info
 
+        self._indexes_in_collection_info = indexes_in_collection_info
+
     @classmethod
-    def from_uri(cls, database_uri: str, **kwargs: Any) -> MongoDBDatabase:
+    def from_uri(cls, database_uri: str, **kwargs: Any) -> MongoDatabase:
         """Construct a MongoEngine engine from URI."""
         connection = MongoClient(host=database_uri, **kwargs)
         return cls(connection, **kwargs)
@@ -117,6 +120,10 @@ class MongoDBDatabase:
             # Add document information
             document_info = f"Collection Name: {collection_name}\n"
 
+            # Add indexes information
+            if self._indexes_in_collection_info:
+                document_info += f"\n{self._get_collection_indexes(collection_name)}\n"
+
             # Sample rows or documents info (if required)
             if self._sample_documents_in_collection_info:
                 document_info += f"\n{self._get_sample_documents(collection_name)}\n"
@@ -164,6 +171,9 @@ class MongoDBDatabase:
         """Execute a command and return the result."""
         db = self._client.get_default_database()
         result = db.command(ast.literal_eval(command))
+        if "cursor" in result:
+            result = "\n".join(map(pformat, list(result["cursor"]["firstBatch"])))
+            return result
         return pformat(result)
 
     def run(self, command: str) -> str:
@@ -178,4 +188,3 @@ class MongoDBDatabase:
             return self.run(command)
         except PyMongoError as e:
             return f"Error: {e}"
-
