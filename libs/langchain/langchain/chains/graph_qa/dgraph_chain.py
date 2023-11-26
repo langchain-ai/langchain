@@ -10,10 +10,9 @@ from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import (
     DGRAPH_FIX_PROMPT,
     DGRAPH_QA_PROMPT,
-    DQL_QA_TEMPLATE,
-    DQL_FIX_TEMPLATE,
     DQL_GENERATION_PROMPT,
-    DQL_QUERY_EXAMPLE
+    DQL_QUERY_EXAMPLE,
+    DQL_QUERYSYNTAX_INJECT_STRING
 )
 from langchain.chains.llm import LLMChain
 from langchain.graphs.arangodb_graph import ArangoGraph
@@ -30,6 +29,7 @@ class DGraphQAChain(Chain):
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
     max_generation_attempts: int = 10
+    use_generic_query_examples: bool = False
 
     @property
     def input_keys(self) -> List[str]:
@@ -49,10 +49,10 @@ class DGraphQAChain(Chain):
     
     def _get_dql_examples(self) -> str:
       """Get DQL Examples."""
-      if self.dql_examples and len(self.dql_examples) > 0:
-        return self.dql_examples
-
-      return DQL_QUERY_EXAMPLE
+      if self.use_generic_query_examples:
+        return DQL_QUERY_EXAMPLE
+      
+      return self.dql_examples
     
     @classmethod
     def from_llm(
@@ -82,11 +82,12 @@ class DGraphQAChain(Chain):
       _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
       callbacks = _run_manager.get_child()
       user_input = inputs[self.input_key]
-
+      print(self.graph.get_schema())
       dql_generation_output = self.dql_gen_chain.run(
         {
           "dgraph_schema": self.graph.get_schema(),
           "dql_examples": self._get_dql_examples(),
+          "dql_syntax_notes": DQL_QUERYSYNTAX_INJECT_STRING,
           "user_input": user_input,
         },
         callbacks=callbacks,
