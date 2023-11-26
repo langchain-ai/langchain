@@ -40,6 +40,8 @@ _EXPECTED = [
     "tool",
     "create_xorbits_agent",
     "SlackGetChannelIdNameDict"
+    "SlackSendMessage",
+    "SlackGetMessage",
 ]
 
 

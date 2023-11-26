@@ -111,6 +111,7 @@ _EXPECTED = [
     "SlackGetChannelIdNameDict",
     "SlackSendMessage",
     "login",
+    "SlackGetMessage",
 ]
 
 
