@@ -2922,7 +2922,7 @@
     },
     {
       "source": "/docs/guides/adapters/openai",
-      "destination": "/docs/integrations/memory/openai"
+      "destination": "/docs/integrations/adapters/openai"
     },
     {
       "source": "/docs/modules/memory/integrations/cassandra_chat_message_history",
