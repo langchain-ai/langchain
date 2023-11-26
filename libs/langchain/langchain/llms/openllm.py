@@ -158,7 +158,7 @@ class OpenLLM(LLM):
         else:
             if model_name is None:  # suports not passing model_name
                 assert model_id is not None, "Must provide 'model_id' or 'server_url'"
-                llm = openllm.LLM[t.Any, t.Any](model_id, embedded=embedded)
+                llm = openllm.LLM[Any, Any](model_id, embedded=embedded)
             else:
                 assert (
                     model_name is not None
