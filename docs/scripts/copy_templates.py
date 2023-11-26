@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 import shutil
 
+
 TEMPLATES_DIR = Path(os.path.abspath(__file__)).parents[2] / "templates"
 DOCS_TEMPLATES_DIR = Path(os.path.abspath(__file__)).parents[1] / "docs" / "templates"
 
