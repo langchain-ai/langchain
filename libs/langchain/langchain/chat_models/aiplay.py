@@ -12,13 +12,13 @@ class AIPlayChat(AIPlayBaseModel, SimpleChatModel):
     pass
 
 class LlamaChat(AIPlayChat):
-    model_name = Field(default='llama-2-13B-chat')
+    model_name : str = Field(default='llama2_13b', alias='model')
 
 class MistralChat(AIPlayChat):
-    model_name = Field(default="mistral-7B-inst")
+    model_name : str = Field(default="mistral", alias='model')
 
 class SteerLMChat(AIPlayChat):
-    model_name = Field(default="nemotron-SteerLM")
+    model_name : str = Field(default="gpt_steerlm_8b", alias='model')
     labels = Field(default={
         "creativity": 5,
         "helpfulness": 5,
@@ -27,4 +27,4 @@ class SteerLMChat(AIPlayChat):
     })
 
 class NemotronQAChat(AIPlayChat):
-    model_name = Field(default="nemotron-2-8B-QA")    
+    model_name : str = Field(default="gpt_qa_8b", alias='model')    

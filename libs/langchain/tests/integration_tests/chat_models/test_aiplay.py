@@ -8,7 +8,7 @@ from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.callbacks.manager import CallbackManager
 
 # from langchain.chat_models.aiplay import LlamaChat
-from langchain.chat_models.aiplay import LlamaChat  
+from langchain.chat_models.aiplay import AIPlayChat, LlamaChat  
 # from langchain.output_parsers.aiplay_functions import JsonOutputFunctionsParser
 # from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field
@@ -39,7 +39,7 @@ def test_chat_aiplay() -> None:
         # max_retries=3,
         # http_client=None,
         # n=1,
-        # max_tokens=10,
+        # max_tokens=60,
         # default_headers=None,
         # default_query=None,
     )
@@ -55,16 +55,16 @@ def test_chat_aiplay_model() -> None:
     # assert chat.model_name == "foo"
     # chat = LlamaChat(model_name="bar")
     # assert chat.model_name == "bar"
-    chat = LlamaChat(model_name="mistral-7B-inst")
-    assert chat.model_name == "mistral-7B-inst"
+    chat = AIPlayChat(model_name="mistral")
+    assert chat.model_name == "mistral"
 
-    chat = LlamaChat(model="mistral-7B-inst")
-    assert chat.model_name == "mistral-7B-inst"
+    chat = LlamaChat(model="mistral")
+    assert chat.model_name == "mistral"
 
 
 def test_chat_aiplay_system_message() -> None:
     """Test LlamaChat wrapper with system message."""
-    chat = LlamaChat(max_tokens=10)
+    chat = LlamaChat(max_tokens=36)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat([system_message, human_message])
@@ -76,7 +76,7 @@ def test_chat_aiplay_system_message() -> None:
 # @pytest.mark.scheduled
 # def test_chat_aiplay_generate() -> None:
 #     """Test LlamaChat wrapper with generate."""
-#     chat = LlamaChat(max_tokens=10, n=2)
+#     chat = LlamaChat(max_tokens=60, n=2)
 #     message = HumanMessage(content="Hello")
 #     response = chat.generate([[message], [message]])
 #     assert isinstance(response, LLMResult)
@@ -94,7 +94,7 @@ def test_chat_aiplay_system_message() -> None:
 # @pytest.mark.scheduled
 # def test_chat_aiplay_multiple_completions() -> None:
 #     """Test LlamaChat wrapper with multiple completions."""
-#     chat = LlamaChat(max_tokens=10, n=5)
+#     chat = LlamaChat(max_tokens=60, n=5)
 #     message = HumanMessage(content="Hello")
 #     response = chat._generate([message])
 #     assert isinstance(response, ChatResult)
@@ -111,10 +111,10 @@ def test_chat_aiplay_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = LlamaChat(
-        max_tokens=10,
+    chat = AIPlayChat(
+        max_tokens=36,
         streaming=True,
-        temperature=0,
+        temperature=0.1,
         callbacks=callback_manager,
         verbose=True,
     )
@@ -158,7 +158,7 @@ def test_chat_aiplay_streaming() -> None:
 
 # def test_chat_aiplay_llm_output_contains_model_name() -> None:
 #     """Test llm_output contains model_name."""
-#     chat = LlamaChat(max_tokens=10)
+#     chat = LlamaChat(max_tokens=60)
 #     message = HumanMessage(content="Hello")
 #     llm_result = chat.generate([[message]])
 #     assert llm_result.llm_output is not None
@@ -167,7 +167,7 @@ def test_chat_aiplay_streaming() -> None:
 
 # def test_chat_aiplay_streaming_llm_output_contains_model_name() -> None:
 #     """Test llm_output contains model_name."""
-#     chat = LlamaChat(max_tokens=10, streaming=True)
+#     chat = LlamaChat(max_tokens=60, streaming=True)
 #     message = HumanMessage(content="Hello")
 #     llm_result = chat.generate([[message]])
 #     assert llm_result.llm_output is not None
@@ -179,7 +179,7 @@ def test_chat_aiplay_streaming() -> None:
 #     """Test that streaming correctly invokes on_llm_new_token callback."""
 #     with pytest.raises(ValueError):
 #         LlamaChat(
-#             max_tokens=10,
+#             max_tokens=60,
 #             streaming=True,
 #             temperature=0,
 #             n=5,
@@ -193,7 +193,7 @@ def test_chat_aiplay_streaming() -> None:
 # @pytest.mark.asyncio
 # async def test_async_chat_aiplay() -> None:
 #     """Test async generation."""
-#     chat = LlamaChat(max_tokens=10, n=2)
+#     chat = LlamaChat(max_tokens=60, n=2)
 #     message = HumanMessage(content="Hello")
 #     response = await chat.agenerate([[message], [message]])
 #     assert isinstance(response, LLMResult)
@@ -217,7 +217,7 @@ def test_chat_aiplay_streaming() -> None:
 #     callback_handler = FakeCallbackHandler()
 #     callback_manager = CallbackManager([callback_handler])
 #     chat = LlamaChat(
-#         max_tokens=10,
+#         max_tokens=60,
 #         streaming=True,
 #         temperature=0,
 #         callback_manager=callback_manager,
@@ -289,7 +289,7 @@ def test_chat_aiplay_streaming() -> None:
 #     callback_manager = CallbackManager([callback_handler])
 
 #     chat = LlamaChat(
-#         # max_tokens=10,
+#         # max_tokens=60,
 #         n=1,
 #         callback_manager=callback_manager,
 #         streaming=True,
@@ -385,7 +385,7 @@ def test_chat_aiplay_streaming() -> None:
 # def test_chat_aiplay_extra_kwargs() -> None:
 #     """Test extra kwargs to chat aiplay."""
 #     # Check that foo is saved in extra_kwargs.
-#     llm = LlamaChat(foo=3, max_tokens=10)
+#     llm = LlamaChat(foo=3, max_tokens=60)
 #     assert llm.max_tokens == 10
 #     assert llm.model_kwargs == {"foo": 3}
 
@@ -410,7 +410,7 @@ def test_chat_aiplay_streaming() -> None:
 @pytest.mark.scheduled
 def test_aiplay_streaming() -> None:
     """Test streaming tokens from aiplay."""
-    llm = LlamaChat(max_tokens=10)
+    llm = LlamaChat(max_tokens=36)
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -420,7 +420,7 @@ def test_aiplay_streaming() -> None:
 @pytest.mark.asyncio
 async def test_aiplay_astream() -> None:
     """Test streaming tokens from aiplay."""
-    llm = LlamaChat(max_tokens=10)
+    llm = LlamaChat(max_tokens=35)
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -430,7 +430,7 @@ async def test_aiplay_astream() -> None:
 @pytest.mark.asyncio
 async def test_aiplay_abatch() -> None:
     """Test streaming tokens from LlamaChat."""
-    llm = LlamaChat(max_tokens=10)
+    llm = LlamaChat(max_tokens=36)
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -441,7 +441,7 @@ async def test_aiplay_abatch() -> None:
 @pytest.mark.asyncio
 async def test_aiplay_abatch_tags() -> None:
     """Test batch tokens from LlamaChat."""
-    llm = LlamaChat(max_tokens=10)
+    llm = LlamaChat(max_tokens=55)
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -453,7 +453,7 @@ async def test_aiplay_abatch_tags() -> None:
 @pytest.mark.scheduled
 def test_aiplay_batch() -> None:
     """Test batch tokens from LlamaChat."""
-    llm = LlamaChat(max_tokens=10)
+    llm = LlamaChat(max_tokens=60)
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -464,7 +464,7 @@ def test_aiplay_batch() -> None:
 @pytest.mark.asyncio
 async def test_aiplay_ainvoke() -> None:
     """Test invoke tokens from LlamaChat."""
-    llm = LlamaChat(max_tokens=10)
+    llm = LlamaChat(max_tokens=60)
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -473,7 +473,7 @@ async def test_aiplay_ainvoke() -> None:
 @pytest.mark.scheduled
 def test_aiplay_invoke() -> None:
     """Test invoke tokens from LlamaChat."""
-    llm = LlamaChat(max_tokens=10)
+    llm = LlamaChat(max_tokens=60)
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
