@@ -3,7 +3,7 @@
 from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool, Field
+from langchain.tools.base import BaseTool
 from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
 
 
@@ -17,9 +17,7 @@ class GoogleTrendsQueryRun(BaseTool):
         "google search trends from Google Trends"
         "Input should be a search query."
     )
-    api_wrapper: GoogleTrendsAPIWrapper = Field(
-        default_factory=GoogleTrendsAPIWrapper
-    )
+    api_wrapper: GoogleTrendsAPIWrapper 
 
     def _run(
         self,

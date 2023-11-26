@@ -94,8 +94,8 @@ class GoogleTrendsAPIWrapper(BaseModel):
         top = [results.get('query') for results in total_results['top']]
 
         doc = [f"Query: {query}\n"
-                f"Date From: {start_date[0]} {start_date[1]}, {start_date[4]}\n"
-                f"Date To: {end_date[0]} {end_date[3]} {end_date[4]}\n"
+                f"Date From: {start_date[0]} {start_date[1]}, {start_date[-1]}\n"
+                f"Date To: {end_date[0]} {end_date[3]} {end_date[-1]}\n"
                 f"Min Value: {min_value}\n"
                 f"Max Value: {max_value}\n"
                 f"Average Value: {avg_value}\n"
