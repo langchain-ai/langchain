@@ -234,7 +234,7 @@ class OpenLLM(LLM):
         else:
             if self._llm is None:
                 raise ValueError("LLM must be initialized.")
-            model_name = self.model_name
+            model_name = self.model_name or ''
             model_id = self.model_id
             try:
                 self.llm_kwargs.update(
@@ -274,18 +274,11 @@ class OpenLLM(LLM):
 
         copied = copy.deepcopy(self.llm_kwargs)
         copied.update(kwargs)
-        config = openllm.AutoConfig.for_model(
-            self._identifying_params["model_name"], **copied
-        )
         if self._client:
-            res = self._client.generate(
-                prompt, llm_config=config.model_dump(flatten=True), stop=stop
-            )
+            res = self._client.generate(prompt, llm_config=copied, stop=stop)
         else:
             assert self._llm is not None
-            res = asyncio.run(
-                self._llm.generate(prompt, stop=stop, **config.model_dump(flatten=True))
-            )
+            res = asyncio.run(self._llm.generate(prompt, stop=stop, **copied))
         if hasattr(res, "outputs"):
             return res.outputs[0].text
         else:
@@ -311,18 +304,11 @@ class OpenLLM(LLM):
 
         copied = copy.deepcopy(self.llm_kwargs)
         copied.update(kwargs)
-        config = openllm.AutoConfig.for_model(
-            self._identifying_params["model_name"], **copied
-        )
         if self._async_client:
-            res = await self._async_client.generate(
-                prompt, llm_config=config.model_dump(flatten=True), stop=stop
-            )
+            res = await self._async_client.generate(prompt, llm_config=copied, stop=stop)
         else:
             assert self._llm is not None
-            res = await self._llm.generate(
-                prompt, stop=stop, **config.model_dump(flatten=True)
-            )
+            res = await self._llm.generate(prompt, stop=stop, **copied)
 
         if hasattr(res, "outputs"):
             return res.outputs[0].text
