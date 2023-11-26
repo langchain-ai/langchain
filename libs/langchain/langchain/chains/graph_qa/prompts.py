@@ -202,65 +202,31 @@ DQL_GENERATION_TEMPLATE= """Task: Generate an DGraph Query Language (DQL) query 
 You are an DGraph Query Language (DQL) expert responsible for translating a `User Input` into an DGraph Query Language (DQL) query.
 
 You are given an `DGraph Schema`. It is a JSON Object containing an dictionary/json with schema type name as key,
-and it's properties as values. For example:
-  {
-  "Actor":[
-        {
-          "predicate":"age",
-          "type":"int"
-        },
-        {
-          "predicate":"name",
-          "type":"string",
-          "index":true,
-          "tokenizer":[
-              "term"
-          ]
-        }
-    ],
-    "Movie":[
-      {
-          "predicate":"cast",
-          "type":"uid",
-          "reverse":true,
-          "list":true
-      },
-      {
-          "predicate":"name",
-          "type":"string",
-          "index":true,
-          "tokenizer":[
-            "term"
-          ]
-      },
-      {
-          "predicate":"year",
-          "type":"string",
-          "index":true,
-          "tokenizer":[
-            "exact"
-          ]
-      }
-    ]
-  }
-  
+and it's properties as values.
+
+
 You may also be given a set of `DQL Query Examples` to help you create the `DQL Query`. If provided, the `DQL Query Examples` should be used as a reference, similar to how `DGraph Schema` should be used.
 
 Things you should do:
 - Think step by step.
 - Rely on `DGraph Schema` and `DQL Query Examples` (if provided) to generate the query.
-- Return the `DQL Query`.
+- IMPORTANT: Return the `DQL Query` wrapped in 3 backticks (```).
 - Use only the provided relationship types and properties in the `DGraph Schema` and any `DQL Query Examples` queries.
 - Only answer to requests related to generating an DQL Query.
 - If a request is unrelated to generating DQL Query, say that you cannot help the user.
 
+
 Things you should not do:
-- Do not use any properties/relationships that can't be inferred from the `DGraph Schema` or the `DQL Query Examples`. 
+- Do not use any properties/relationships that can't be inferred from the `DGraph Schema` or the `DQL Query Examples`.
 - Do not include any text except the generated DQL Query.
 - Do not provide explanations or apologies in your responses.
 - Do not generate a DQL Query that removes or deletes any data.
+- IMPORTANT: Don't use the var keyword unless you absolutely have to.
+- IMPORTANT: Don't use the same variable name for two sections of the query.
 
-Under no circumstance should you generate an DQL Query that deletes any data whatsoever.
+  uses actor_name as name twice. This is not allowed.
+- Under no circumstance should you generate an DQL Query that deletes any data whatsoever.
+
 
 DGraph Schema:
 {dgraph_schema}
@@ -289,48 +255,7 @@ The `DQL Error` may also contain the position of the error relative to the total
 For example, 'error X at position 2:5' denotes that the error X occurs on line 2, column 5 of the `DQL Query`.  
 
 You are given an `DGraph Schema`. It is a JSON Object containing an dictionary/json with schema type name as key,
-and it's properties as values. For example:
-  {
-  "Actor":[
-        {
-          "predicate":"age",
-          "type":"int"
-        },
-        {
-          "predicate":"name",
-          "type":"string",
-          "index":true,
-          "tokenizer":[
-              "term"
-          ]
-        }
-    ],
-    "Movie":[
-      {
-          "predicate":"cast",
-          "type":"uid",
-          "reverse":true,
-          "list":true
-      },
-      {
-          "predicate":"name",
-          "type":"string",
-          "index":true,
-          "tokenizer":[
-            "term"
-          ]
-      },
-      {
-          "predicate":"year",
-          "type":"string",
-          "index":true,
-          "tokenizer":[
-            "exact"
-          ]
-      }
-    ]
-  }
-
+and it's properties as values.
 You will output the `Corrected DQL Query`. Do not include any text except the Corrected DQL Query.
 
 Remember to think step by step.
@@ -344,6 +269,9 @@ DQL Query:
 DQL Error:
 {dql_error}
 
+DQL Query Examples:
+{dql_examples}
+
 Corrected DQL Query:
 """
 
@@ -352,6 +280,7 @@ DGRAPH_FIX_PROMPT = PromptTemplate(
         "dgraph_schema",
         "dql_query",
         "dql_error",
+        "dql_examples"
     ],
     template=DQL_FIX_TEMPLATE,
 )
@@ -538,3 +467,148 @@ NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT = PromptTemplate(
     input_variables=["schema", "question"],
     template=NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE,
 )
+
+
+DQL_QUERY_EXAMPLE = """
+  {
+  "Actor":[
+        {
+          "predicate":"age",
+          "type":"int"
+        },
+        {
+          "predicate":"name",
+          "type":"string",
+          "index":true,
+          "tokenizer":[
+              "term"
+          ]
+        }
+    ],
+    "Movie":[
+      {
+          "predicate":"cast",
+          "type":"uid",
+          "reverse":true,
+          "list":true
+      },
+      {
+          "predicate":"name",
+          "type":"string",
+          "index":true,
+          "tokenizer":[
+            "term"
+          ]
+      },
+      {
+          "predicate":"year",
+          "type":"string",
+          "index":true,
+          "tokenizer":[
+            "exact"
+          ]
+      }
+    ]
+  }
+  
+Here are some DQL Examples that you can use as a reference:
+Here are some DQL Query examples:
+
+Question: Find all the actors, and give me their names and ages.
+DQL Query: 
+{
+  find_type(func: type(Actor)){
+		uid
+    name
+  }
+}
+
+Question: Find all the movies, and their casts as well
+DQL Query: 
+{
+  find_type(func: type(Movie)){
+    uid
+    name
+    cast{
+      uid
+      name
+    }
+  }
+}
+
+Question: Find all movies that were released after 2016
+DQL Query: 
+{
+  find_movies(func: type(Movie)) @filter(gt(year, "2016")){
+    expand(_all_)
+  }
+}
+
+Question: Find all the actors that acted in Spiderman, and/or Superman
+{
+  var(func: eq(name, "Spiderman")){
+    Spiderman as cast{
+      uid
+      name
+    }
+  }
+  
+  var(func: eq(name, "Superman")){
+		Superman as cast{
+			uid
+      name
+    }
+  }
+  
+  actors(func: uid(movie_special, movie_baby)){
+  	uid
+    name
+  }
+}
+
+Question: Find all the actors that acted in Spiderman
+{
+  var(func: eq(name, "Spiderman")){
+    Spiderman as cast{
+      uid
+      name
+    }
+  }
+  
+  actors(func: uid(Spiderman)){
+  	uid
+    name
+  }
+}
+
+OR
+
+{
+  spiderman_actors(func: eq(name, "Spiderman")){
+    cast{
+      uid
+      name
+    }
+  }
+}
+
+Question: Find all movies that John Doe, and Jane Doe acted in together:
+DQL Query:
+{
+  var(func: eq(name, "John Doe")){
+		movies_john as ~cast{
+			uid
+  	}
+	}
+
+  var(func: eq(name, "Jane Doe")){
+    movies_jane as ~cast{
+			uid
+  	}
+	}
+  
+  movies_together(func: uid(movies_john)) @filter(uid(movies_jane)){
+		name
+  }
+}
+"""
