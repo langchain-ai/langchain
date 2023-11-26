@@ -134,7 +134,7 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
 
     @abstractmethod
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, score_threshold: float = 1
     ) -> List[Document]:
         """Get documents relevant to a query.
         Args:
@@ -145,7 +145,7 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
         """
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun, score_threshold: float = 1
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
         Args:
@@ -155,7 +155,7 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
             List of relevant documents
         """
         return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._get_relevant_documents, run_manager=run_manager), query
+            None, partial(self._get_relevant_documents, run_manager=run_manager, score_threshold=score_threshold), query
         )
 
     def get_relevant_documents(
@@ -202,7 +202,9 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
             _kwargs = kwargs if self._expects_other_args else {}
             if self._new_arg_supported:
                 result = self._get_relevant_documents(
-                    query, run_manager=run_manager, **_kwargs
+                    query, run_manager=run_manager,
+                    score_threshold=self.search_kwargs.get('score_threshold', 1),
+                    **_kwargs
                 )
             else:
                 result = self._get_relevant_documents(query, **_kwargs)
@@ -260,7 +262,9 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
             _kwargs = kwargs if self._expects_other_args else {}
             if self._new_arg_supported:
                 result = await self._aget_relevant_documents(
-                    query, run_manager=run_manager, **_kwargs
+                    query, run_manager=run_manager,
+                    score_threshold=self.search_kwargs.get('score_threshold', 1),
+                    **_kwargs
                 )
             else:
                 result = await self._aget_relevant_documents(query, **_kwargs)

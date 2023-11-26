@@ -650,7 +650,7 @@ class VectorStoreRetriever(BaseRetriever):
         return values
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, score_threshold: float = 1
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
@@ -660,7 +660,7 @@ class VectorStoreRetriever(BaseRetriever):
                     query, **self.search_kwargs
                 )
             )
-            docs = [doc for doc, _ in docs_and_similarities]
+            docs = [doc for doc, score in docs_and_similarities if (1 - score) <= score_threshold]
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
                 query, **self.search_kwargs
@@ -670,7 +670,7 @@ class VectorStoreRetriever(BaseRetriever):
         return docs
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun, score_threshold: float = 1
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = await self.vectorstore.asimilarity_search(
@@ -682,7 +682,7 @@ class VectorStoreRetriever(BaseRetriever):
                     query, **self.search_kwargs
                 )
             )
-            docs = [doc for doc, _ in docs_and_similarities]
+            docs = [doc for doc, score in docs_and_similarities if (1 - score) <= score_threshold]
         elif self.search_type == "mmr":
             docs = await self.vectorstore.amax_marginal_relevance_search(
                 query, **self.search_kwargs
