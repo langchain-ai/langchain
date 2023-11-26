@@ -14,10 +14,11 @@ from typing import (
     Union,
 )
 
-from langchain._api import deprecated
+from langchain_core._api import deprecated
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:

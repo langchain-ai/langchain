@@ -8,12 +8,20 @@ from tenacity import wait_none
 
 from langchain.llms import base
 from langchain.llms.openai import OpenAI
+from langchain.utils.openai import is_openai_v1
 from tests.unit_tests.callbacks.fake_callback_handler import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
 
 os.environ["OPENAI_API_KEY"] = "foo"
+
+
+def _openai_v1_installed() -> bool:
+    try:
+        return is_openai_v1()
+    except Exception as _:
+        return False
 
 
 @pytest.mark.requires("openai")
@@ -67,6 +75,9 @@ def _patched_retry(*args: Any, **kwargs: Any) -> Any:
     return r
 
 
+@pytest.mark.skipif(
+    _openai_v1_installed(), reason="Retries only handled by LangChain for openai<1"
+)
 @pytest.mark.requires("openai")
 def test_openai_retries(mock_completion: dict) -> None:
     llm = OpenAI()
@@ -100,8 +111,10 @@ def test_openai_retries(mock_completion: dict) -> None:
     assert callback_handler.retries == 1
 
 
+@pytest.mark.skipif(
+    _openai_v1_installed(), reason="Retries only handled by LangChain for openai<1"
+)
 @pytest.mark.requires("openai")
-@pytest.mark.asyncio
 async def test_openai_async_retries(mock_completion: dict) -> None:
     llm = OpenAI()
     mock_client = MagicMock()

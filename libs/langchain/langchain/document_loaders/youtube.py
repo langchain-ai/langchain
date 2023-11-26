@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
 
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1.dataclasses import dataclass
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.pydantic_v1 import root_validator
-from langchain.pydantic_v1.dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +147,7 @@ class YoutubeLoader(BaseLoader):
         video_id: str,
         add_video_info: bool = False,
         language: Union[str, Sequence[str]] = "en",
-        translation: str = "en",
+        translation: Optional[str] = None,
         continue_on_failure: bool = False,
     ):
         """Initialize with YouTube video ID."""
@@ -206,8 +207,10 @@ class YoutubeLoader(BaseLoader):
         try:
             transcript = transcript_list.find_transcript(self.language)
         except NoTranscriptFound:
-            en_transcript = transcript_list.find_transcript(["en"])
-            transcript = en_transcript.translate(self.translation)
+            transcript = transcript_list.find_transcript(["en"])
+
+        if self.translation is not None:
+            transcript = transcript.translate(self.translation)
 
         transcript_pieces = transcript.fetch()
 
