@@ -245,10 +245,8 @@ def _get_pubmed(**kwargs: Any) -> BaseTool:
 def _get_google_jobs(**kwargs: Any) -> BaseTool:
     return GoogleJobsQueryRun(api_wrapper=GoogleJobsAPIWrapper(**kwargs))
 
-
 def _get_google_lens(**kwargs: Any) -> BaseTool:
     return GoogleLensQueryRun(api_wrapper=GoogleLensAPIWrapper(**kwargs))
-
 
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
