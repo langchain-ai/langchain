@@ -76,16 +76,3 @@ def test_mongo_database_run() -> None:
     output = re.sub(r"ObjectId\('.+'\)", "", output)
 
     assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
-
-
-def test_mongo_database_run() -> None:
-    """Test that run works properly."""
-    db = MongoDatabase.from_uri("mongodb://localhost/test_db")
-    output = db.run("{ 'find': 'test_collection', 'filter': { 'test4': 'test' } }")
-    expected_output = """
-    Result:
-    {'_id': , 'test4': 'test'}
-    """
-    output = re.sub(r"ObjectId\('.+'\)", "", output)
-
-    assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))

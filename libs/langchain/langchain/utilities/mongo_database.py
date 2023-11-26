@@ -167,14 +167,19 @@ class MongoDatabase:
         """Execute a command and return the result."""
         db = self._client.get_default_database()
         result = db.command(ast.literal_eval(command))
-        if "cursor" in result:
-            result = "\n".join(map(pformat, list(result["cursor"]["firstBatch"])))
-            return result
-        return pformat(result)
+        return result
 
     def run(self, command: str) -> str:
         """Run a command and return a string representing the results."""
-        return f"Result:\n{self._execute(command)}"
+        result = self._execute(command)
+        result_formatted = ""
+        if "cursor" in result:
+            result_formatted = "\n".join(
+                map(pformat, list(result["cursor"]["firstBatch"]))
+            )
+        else:
+            result_formatted = pformat(result)
+        return f"Result:\n{result_formatted}"
 
     def run_no_throw(self, command: str) -> str:
         """Run a command and return a string representing the results.

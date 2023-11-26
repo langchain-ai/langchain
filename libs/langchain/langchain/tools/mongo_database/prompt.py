@@ -2,6 +2,7 @@
 QUERY_CHECKER = """
 {query}
 Double check the {client} query above for common mistakes, including:
+- Not a PyMongo db.command() command document (dict) argument
 - Improper use of $nin operator with null values
 - Using $merge instead of $concat for combining arrays
 - Incorrect use of $not or $ne for exclusive ranges
