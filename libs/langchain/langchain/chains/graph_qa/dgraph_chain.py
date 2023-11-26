@@ -30,6 +30,8 @@ class DGraphQAChain(Chain):
     output_key: str = "result"  #: :meta private:
     max_generation_attempts: int = 10
     use_generic_query_examples: bool = False
+    # Flag to enable experimental DQL Syntax Injection
+    experimental_dql_syntax_injection: bool = False 
 
     @property
     def input_keys(self) -> List[str]:
@@ -53,6 +55,13 @@ class DGraphQAChain(Chain):
         return DQL_QUERY_EXAMPLE
       
       return self.dql_examples
+    
+    def _get_dql_syntax_notes(self) -> str:
+      """Get DQL Syntax Notes."""
+      if self.experimental_dql_syntax_injection:
+        return DQL_QUERYSYNTAX_INJECT_STRING
+      
+      return ""
     
     @classmethod
     def from_llm(
@@ -87,7 +96,7 @@ class DGraphQAChain(Chain):
         {
           "dgraph_schema": self.graph.get_schema(),
           "dql_examples": self._get_dql_examples(),
-          "dql_syntax_notes": DQL_QUERYSYNTAX_INJECT_STRING,
+          "dql_syntax_notes": self._get_dql_syntax_notes(),
           "user_input": user_input,
         },
         callbacks=callbacks,
