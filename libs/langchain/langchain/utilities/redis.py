@@ -28,7 +28,7 @@ class TokenEscaper:
 
     # Characters that RediSearch requires us to escape during queries.
     # Source: https://redis.io/docs/stack/search/reference/escaping/#the-rules-of-text-field-tokenization
-    DEFAULT_ESCAPED_CHARS = r"[,.<>{}\[\]\\\"\':;!@#$%^&*()\-+=~\/]"
+    DEFAULT_ESCAPED_CHARS = r"[,.<>{}\[\]\\\"\':;!@#$%^&*()\-+=~\/ ]"
 
     def __init__(self, escape_chars_re: Optional[Pattern] = None):
         if escape_chars_re:
@@ -37,6 +37,12 @@ class TokenEscaper:
             self.escaped_chars_re = re.compile(self.DEFAULT_ESCAPED_CHARS)
 
     def escape(self, value: str) -> str:
+        if not isinstance(value, str):
+            raise TypeError(
+                "Value must be a string object for token escaping."
+                f"Got type {type(value)}"
+            )
+
         def escape_symbol(match: re.Match) -> str:
             value = match.group(0)
             return f"\\{value}"

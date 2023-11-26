@@ -12,10 +12,14 @@ from langchain.tools.azure_cognitive_services.speech2text import (
 from langchain.tools.azure_cognitive_services.text2speech import (
     AzureCogsText2SpeechTool,
 )
+from langchain.tools.azure_cognitive_services.text_analytics_health import (
+    AzureCogsTextAnalyticsHealthTool,
+)
 
 __all__ = [
     "AzureCogsImageAnalysisTool",
     "AzureCogsFormRecognizerTool",
     "AzureCogsSpeech2TextTool",
     "AzureCogsText2SpeechTool",
+    "AzureCogsTextAnalyticsHealthTool",
 ]

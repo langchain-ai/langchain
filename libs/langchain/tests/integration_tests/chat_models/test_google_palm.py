@@ -4,15 +4,10 @@ Note: This test must be run with the GOOGLE_API_KEY environment variable set to 
       valid API key.
 """
 
-import pytest
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 
 from langchain.chat_models import ChatGooglePalm
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-    LLMResult,
-)
-from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 
 
 def test_chat_google_palm() -> None:
@@ -63,7 +58,6 @@ def test_chat_google_palm_multiple_completions() -> None:
         assert isinstance(generation.message.content, str)
 
 
-@pytest.mark.asyncio
 async def test_async_chat_google_palm() -> None:
     """Test async generation."""
     chat = ChatGooglePalm(n=2, temperature=1.0)
