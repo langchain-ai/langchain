@@ -1,8 +1,8 @@
 import glob
 import os
+from pathlib import Path
 import re
 import shutil
-from pathlib import Path
 
 TEMPLATES_DIR = Path(os.path.abspath(__file__)).parents[2] / "templates"
 DOCS_TEMPLATES_DIR = Path(os.path.abspath(__file__)).parents[1] / "docs" / "templates"
