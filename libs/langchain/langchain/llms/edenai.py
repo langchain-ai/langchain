@@ -1,6 +1,6 @@
 """Wrapper around EdenAI's Generation API."""
 import logging
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, cast
 
 from aiohttp import ClientSession
 
@@ -142,7 +142,9 @@ class EdenAI(LLM):
 
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": (
+                f"Bearer {cast(SecretStr, self.edenai_api_key).get_secret_value()}"
+            ),
             "User-Agent": self.get_user_agent(),
         }
         payload: Dict[str, Any] = {
@@ -218,7 +220,9 @@ class EdenAI(LLM):
 
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": (
+                f"Bearer {cast(SecretStr, self.edenai_api_key).get_secret_value()}"
+            ),
             "User-Agent": self.get_user_agent(),
         }
         payload: Dict[str, Any] = {
