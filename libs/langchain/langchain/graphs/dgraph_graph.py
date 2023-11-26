@@ -103,7 +103,3 @@ class DGraph:
       if not self.validate_login_params(username, password, namespace):
         raise ValueError("Missing login parameters.")
       self.client.login_into_namespace(username, password, namespace)
-  
-dgraphClient = DGraph("localhost:9080")
-
-schema = dgraphClient.get_schema()
