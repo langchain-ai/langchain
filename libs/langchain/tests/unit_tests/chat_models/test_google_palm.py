@@ -1,19 +1,16 @@
 """Test Google PaLM Chat API wrapper."""
 
-from ast import Str
-from pyexpat import model
+
 import pytest
 from pytest import CaptureFixture, MonkeyPatch
-import os
-
 
 from langchain.chat_models.google_palm import (
     ChatGooglePalm,
     ChatGooglePalmError,
     _messages_to_prompt_dict,
 )
-from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 from langchain.pydantic_v1 import SecretStr
+from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
 def test_messages_to_prompt_dict_with_valid_messages() -> None:
@@ -115,16 +112,19 @@ def test_chat_google_raises_with_invalid_top_k() -> None:
         ChatGooglePalm(google_api_key="fake", top_k=-5)
     assert "must be positive" in str(e)
 
+
 def test_api_key_is_secret_string() -> None:
+    pytest.importorskip("google.generativeai")
     chat_model = ChatGooglePalm(google_api_key="secret-api-key", model_name="test")
     assert isinstance(chat_model.google_api_key, SecretStr)
 
+
 def test_api_key_masked_when_printed(capsys: CaptureFixture) -> None:
+    pytest.importorskip("google.generativeai")
     chat_model = ChatGooglePalm(google_api_key="secret-api-key", model_name="test")
     print(chat_model.google_api_key, end="")
     captured = capsys.readouterr()
     assert captured.out == "**********"
-
 
 
 def test_api_key_masked_when_passed_from_env(
@@ -132,17 +132,18 @@ def test_api_key_masked_when_passed_from_env(
 ) -> None:
     """Test initialization with an API key provided via an env variable"""
     monkeypatch.setenv("GOOGLE_API_KEY", "secret-api-key")
+    pytest.importorskip("google.generativeai")
     chat_model = ChatGooglePalm()
     print(chat_model.google_api_key, end="")
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
 
-
 def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
+    pytest.importorskip("google.generativeai")
     chat_model = ChatGooglePalm(google_api_key="secret-api-key", model_name="test")
     print(chat_model.google_api_key, end="")
     captured = capsys.readouterr()

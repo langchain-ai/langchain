@@ -17,7 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import BaseModel, root_validator, SecretStr
+from langchain.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -29,9 +29,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.utils import get_from_dict_or_env, convert_to_secret_str
-
-
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 if TYPE_CHECKING:
     import google.generativeai as genai
@@ -261,21 +259,20 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
-        google_api_key = convert_to_secret_str(get_from_dict_or_env(
-            values, "google_api_key", "GOOGLE_API_KEY")
+        google_api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "google_api_key", "GOOGLE_API_KEY")
         )
 
-
-        
         try:
             import google.generativeai as genai
-            genai.configure(api_key = (google_api_key.get_secret_value()))
+
+            genai.configure(api_key=(google_api_key.get_secret_value()))
         except ImportError:
             raise ChatGooglePalmError(
                 "Could not import google.generativeai python package. "
                 "Please install it with `pip install google-generativeai`"
             )
-        
+
         # Set google_api_key to the class attribute
         values["google_api_key"] = google_api_key
 
