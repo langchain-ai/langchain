@@ -156,7 +156,7 @@ class OpenLLM(LLM):
             self._client = openllm.HTTPClient(server_url)
             self._async_client = openllm.AsyncHTTPClient(server_url)
         else:
-            if model_name is None:  # suports not passing model_name
+            if model_name is None:  # supports not passing model_name
                 assert model_id is not None, "Must provide 'model_id' or 'server_url'"
                 llm = openllm.LLM[Any, Any](model_id, embedded=embedded)
             else:
@@ -165,12 +165,6 @@ class OpenLLM(LLM):
                 ), "Must provide 'model_name' or 'server_url'"
                 config = openllm.AutoConfig.for_model(model_name, **llm_kwargs)
                 model_id = model_id or config["default_id"]
-                # since the LLM are relatively huge, we don't actually want to convert the
-                # Runner with embedded when running the server. Instead, we will only set
-                # the init_local here so that LangChain users can still use the LLM
-                # in-process. Wrt to BentoML users, setting embedded=False is the expected
-                # behaviour to invoke the runners remotely.
-                # We need to also enable ensure_available to download and setup the model.
                 llm = openllm.LLM[Any, Any](
                     model_id, llm_config=config, embedded=embedded
                 )
@@ -234,7 +228,7 @@ class OpenLLM(LLM):
         else:
             if self._llm is None:
                 raise ValueError("LLM must be initialized.")
-            model_name = self.model_name or ''
+            model_name = self.model_name or ""
             model_id = self.model_id
             try:
                 self.llm_kwargs.update(
@@ -264,14 +258,6 @@ class OpenLLM(LLM):
     ) -> str:
         import asyncio
 
-        try:
-            import openllm
-        except ImportError as e:
-            raise ImportError(
-                "Could not import openllm. Make sure to install it with "
-                "'pip install openllm'."
-            ) from e
-
         copied = copy.deepcopy(self.llm_kwargs)
         copied.update(kwargs)
         if self._client:
@@ -294,18 +280,12 @@ class OpenLLM(LLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        try:
-            import openllm
-        except ImportError as e:
-            raise ImportError(
-                "Could not import openllm. Make sure to install it with "
-                "'pip install openllm'."
-            ) from e
-
         copied = copy.deepcopy(self.llm_kwargs)
         copied.update(kwargs)
         if self._async_client:
-            res = await self._async_client.generate(prompt, llm_config=copied, stop=stop)
+            res = await self._async_client.generate(
+                prompt, llm_config=copied, stop=stop
+            )
         else:
             assert self._llm is not None
             res = await self._llm.generate(prompt, stop=stop, **copied)
