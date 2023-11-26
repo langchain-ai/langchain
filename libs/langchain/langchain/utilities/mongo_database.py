@@ -113,10 +113,6 @@ class MongoDatabase:
 
         collections = []
         for collection_name in all_collection_names:
-            db = self._client.get_default_database()
-            # Fetch the documents in the collection
-            documents = db[collection_name].find()
-
             # Add document information
             document_info = f"Collection Name: {collection_name}\n"
 
