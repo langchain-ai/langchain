@@ -4,21 +4,17 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pytest import CaptureFixture, MonkeyPatch
-
-from langchain.adapters.openai import convert_dict_to_message
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.pydantic_v1 import SecretStr
-
 from langchain_core.messages import (
     AIMessage,
     FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
+from pytest import CaptureFixture, MonkeyPatch
 
 from langchain.adapters.openai import convert_dict_to_message
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.pydantic_v1 import SecretStr
 
 
 @pytest.mark.requires("openai")
