@@ -37,6 +37,7 @@ from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechToo
 from langchain.tools.google_lens.tool import GoogleLensQueryRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.google_scholar.tool import GoogleScholarQueryRun
+from langchain.tools.google_finance.tool import GoogleFinanceQueryRun
 from langchain.tools.google_trends.tool import GoogleTrendsQueryRun
 from langchain.tools.metaphor_search.tool import MetaphorSearchResults
 from langchain.tools.google_jobs.tool import GoogleJobsQueryRun
@@ -72,6 +73,7 @@ from langchain.utilities.google_jobs import GoogleJobsAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
+from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
 from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
 from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
@@ -255,10 +257,11 @@ def _get_google_serper(**kwargs: Any) -> BaseTool:
 def _get_google_scholar(**kwargs: Any) -> BaseTool:
     return GoogleScholarQueryRun(api_wrapper=GoogleScholarAPIWrapper(**kwargs))
 
+def _get_google_finance(**kwargs: Any) -> BaseTool:
+    return GoogleFinanceQueryRun(api_wrapper=GoogleFinanceAPIWrapper(**kwargs))
 
 def _get_google_trends(**kwargs: Any) -> BaseTool:
     return GoogleTrendsQueryRun(api_wrapper=GoogleTrendsAPIWrapper(**kwargs))
-
 
 def _get_google_serper_results_json(**kwargs: Any) -> BaseTool:
     return GoogleSerperResults(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
@@ -388,6 +391,10 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "google-scholar": (
         _get_google_scholar,
         ["top_k_results", "hl", "lr", "serp_api_key"],
+    ),
+    "google-finance": (
+        _get_google_finance,
+        ["serp_api_key"],
     ),
     "google-trends": (
         _get_google_trends,
