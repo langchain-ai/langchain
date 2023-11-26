@@ -13,10 +13,12 @@ def _format_index(index: dict) -> str:
     """Format an index for display."""
     index_keys = index["key"]
     index_keys_formatted = ", ".join(f"{k[0]}: {k[1]}" for k in index_keys)
-    return (
-        f'Name: {index["name"]}, Unique: {index["unique"]},'
-        f' Keys: {{ {index_keys_formatted} }}'
-    )
+    unique = ""
+    if index_keys[0][0] == "_id" and not index["unique"]:
+        unique = ""
+    else:
+        unique = f' Unique: {index["unique"]},'
+    return f'Name: {index["name"]},{unique}' f' Keys: {{ {index_keys_formatted} }}'
 
 
 class MongoDBDatabase:
@@ -75,12 +77,12 @@ class MongoDBDatabase:
             return sorted(self._include_collections)
         return sorted(self._all_collections - self._ignore_collections)
 
-    def get_usable_document_names(self, collection_name: str) -> Iterable[str]:
+    def get_document_ids(self, collection_name: str) -> Iterable[str]:
         """Get names of documents available in a given collection."""
         if collection_name not in self._ignore_collections:
             db = self._client.get_default_database()
             # Check if the collection is included or not,
-            # if included fetch document names
+            # if included fetch document ids
             if collection_name in self._include_collections:
                 documents = db[collection_name].find()
                 return sorted(doc["_id"] for doc in documents)
@@ -141,7 +143,7 @@ class MongoDBDatabase:
         db = self._client.get_default_database()
         indexes = db[collection_name].index_information()
         indexes_cleaned = [
-            {"name": k, "key": v["key"], "unique": "unique" in v}
+            {"name": k, "key": v["key"], "unique": "unique" in v and v["unique"]}
             for k, v in indexes.items()
         ]
         indexes_formatted = "\n".join(map(_format_index, indexes_cleaned))
