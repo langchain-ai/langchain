@@ -11,9 +11,10 @@ from typing import (
 )
 from uuid import uuid4
 
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 from langchain.utils import get_from_env
 from langchain.vectorstores.utils import DistanceStrategy
 
@@ -308,7 +309,7 @@ class MomentoVectorIndex(VectorStore):
         for hit in response.hits:
             text = cast(str, hit.metadata.pop(self.text_field))
             doc = Document(page_content=text, metadata=hit.metadata)
-            pair = (doc, hit.distance)
+            pair = (doc, hit.score)
             results.append(pair)
 
         return results

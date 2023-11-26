@@ -2,9 +2,8 @@ import uuid
 from typing import Any, Callable, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.prompts.base import StringPromptValue
-from langchain.prompts.chat import ChatPromptValue
 from langchain.schema import AIMessage, HumanMessage
+from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 
 from langchain_experimental.comprehend_moderation.pii import ComprehendPII
 from langchain_experimental.comprehend_moderation.prompt_safety import (

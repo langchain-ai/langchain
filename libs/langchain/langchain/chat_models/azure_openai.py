@@ -6,6 +6,9 @@ import os
 import warnings
 from typing import Any, Dict, Optional, Union
 
+from langchain_core.outputs import ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain.schema import ChatResult
@@ -89,6 +92,9 @@ class AzureChatOpenAI(ChatOpenAI):
     openai_api_type: str = ""
     """Legacy, for openai<1.0.0 support."""
     validate_base_url: bool = True
+    """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
+        infer if it is a base_url or azure_endpoint and update accordingly.
+    """
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

@@ -3,6 +3,7 @@ import logging
 from typing import Any, Dict, List, Literal, Optional, cast
 
 from aiohttp import ClientSession
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

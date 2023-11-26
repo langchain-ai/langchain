@@ -9,12 +9,16 @@ from pytest import CaptureFixture, MonkeyPatch
 from langchain.adapters.openai import convert_dict_to_message
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.pydantic_v1 import SecretStr
-from langchain.schema.messages import (
+
+from langchain_core.messages import (
     AIMessage,
     FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
+
+from langchain.adapters.openai import convert_dict_to_message
+from langchain.chat_models.openai import ChatOpenAI
 
 
 @pytest.mark.requires("openai")

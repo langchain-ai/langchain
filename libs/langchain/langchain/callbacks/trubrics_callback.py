@@ -2,9 +2,7 @@ import os
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import LLMResult
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
@@ -12,6 +10,9 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.outputs import LLMResult
+
+from langchain.callbacks.base import BaseCallbackHandler
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:

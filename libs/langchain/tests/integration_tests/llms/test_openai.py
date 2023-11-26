@@ -4,6 +4,7 @@ from typing import Generator
 
 import pytest
 from pytest import CaptureFixture, MonkeyPatch
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
@@ -136,7 +137,6 @@ def test_openai_streaming() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_astream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -146,7 +146,6 @@ async def test_openai_astream() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_abatch() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -156,7 +155,6 @@ async def test_openai_abatch() -> None:
         assert isinstance(token, str)
 
 
-@pytest.mark.asyncio
 async def test_openai_abatch_tags() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -179,7 +177,6 @@ def test_openai_batch() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_ainvoke() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -249,7 +246,6 @@ def test_openai_streaming_callback() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_async_generate() -> None:
     """Test async generation."""
     llm = OpenAI(max_tokens=10)
@@ -257,7 +253,6 @@ async def test_openai_async_generate() -> None:
     assert isinstance(output, LLMResult)
 
 
-@pytest.mark.asyncio
 async def test_openai_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

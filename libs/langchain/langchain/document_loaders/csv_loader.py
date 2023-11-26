@@ -102,7 +102,7 @@ class CSVLoader(BaseLoader):
                     f"Source column '{self.source_column}' not found in CSV file."
                 )
             content = "\n".join(
-                f"{k.strip()}: {v.strip()}"
+                f"{k.strip()}: {v.strip() if v is not None else v}"
                 for k, v in row.items()
                 if k not in self.metadata_columns
             )
