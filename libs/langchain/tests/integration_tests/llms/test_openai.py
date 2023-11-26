@@ -3,15 +3,14 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
-from pytest import CaptureFixture, MonkeyPatch
 from langchain_core.outputs import LLMResult
+from pytest import CaptureFixture, MonkeyPatch
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI
 from langchain.pydantic_v1 import SecretStr
-from langchain.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
     FakeCallbackHandler,
 )
