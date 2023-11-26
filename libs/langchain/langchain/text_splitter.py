@@ -60,7 +60,9 @@ logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
 
 
-def _make_spacy_pipeline_for_splitting(pipeline: str) -> Any:  # avoid importing spacy
+def _make_spacy_pipeline_for_splitting(
+    pipeline: str, max_length: int
+) -> Any:  # avoid importing spacy
     try:
         import spacy
     except ImportError:
@@ -74,6 +76,7 @@ def _make_spacy_pipeline_for_splitting(pipeline: str) -> Any:  # avoid importing
         sentencizer.add_pipe("sentencizer")
     else:
         sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])
+        sentencizer.max_length = max_length
     return sentencizer
 
 
@@ -1375,16 +1378,22 @@ class SpacyTextSplitter(TextSplitter):
     """Splitting text using Spacy package.
 
 
-    Per default, Spacy's `en_core_web_sm` model is used. For a faster, but
+    Per default, Spacy's `en_core_web_sm` model is used and
+    its default max_length is 1000000 (it is the length of maximum character
+    this model takes which can be increased for large files). For a faster, but
     potentially less accurate splitting, you can use `pipeline='sentencizer'`.
     """
 
     def __init__(
-        self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
+        self,
+        separator: str = "\n\n",
+        pipeline: str = "en_core_web_sm",
+        max_length: int = 1000000,
+        **kwargs: Any,
     ) -> None:
         """Initialize the spacy text splitter."""
         super().__init__(**kwargs)
-        self._tokenizer = _make_spacy_pipeline_for_splitting(pipeline)
+        self._tokenizer = _make_spacy_pipeline_for_splitting(pipeline, max_length)
         self._separator = separator
 
     def split_text(self, text: str) -> List[str]:
