@@ -34,6 +34,7 @@ from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
+from langchain.tools.google_lens.tool import GoogleLensQueryRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.google_scholar.tool import GoogleScholarQueryRun
 from langchain.tools.google_trends.tool import GoogleTrendsQueryRun
@@ -66,6 +67,7 @@ from langchain.utilities.golden_query import GoldenQueryAPIWrapper
 from langchain.utilities.pubmed import PubMedAPIWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
+from langchain.utilities.google_lens import GoogleLensAPIWrapper
 from langchain.utilities.google_jobs import GoogleJobsAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
@@ -244,6 +246,10 @@ def _get_google_jobs(**kwargs: Any) -> BaseTool:
     return GoogleJobsQueryRun(api_wrapper=GoogleJobsAPIWrapper(**kwargs))
 
 
+def _get_google_lens(**kwargs: Any) -> BaseTool:
+    return GoogleLensQueryRun(api_wrapper=GoogleLensAPIWrapper(**kwargs))
+
+
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
 
@@ -379,6 +385,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "metaphor-search": (_get_metaphor_search, ["metaphor_api_key"]),
     "ddg-search": (_get_ddg_search, []),
+    "google-lens": (_get_google_lens, ["serp_api_key"]),
     "google-serper": (_get_google_serper, ["serper_api_key", "aiosession"]),
     "google-scholar": (
         _get_google_scholar,
@@ -540,7 +547,6 @@ def load_tools(
                 "tool name `requests` is deprecated - "
                 "please use `requests_all` or specify the requests method"
             )
-
         if name == "requests_all":
             # expand requests into various methods
             requests_method_tools = [
