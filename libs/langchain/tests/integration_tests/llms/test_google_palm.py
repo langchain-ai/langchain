@@ -5,10 +5,13 @@ Note: This test must be run with the GOOGLE_API_KEY environment variable set to 
 """
 
 from pathlib import Path
+
 from pytest import CaptureFixture, MonkeyPatch
+
 from langchain.llms.google_palm import GooglePalm
 from langchain.llms.loading import load_llm
 from langchain.pydantic_v1 import SecretStr
+
 
 def test_api_key_is_secret_string() -> None:
     llm = GooglePalm(google_api_key="secret_api_key")
@@ -35,6 +38,11 @@ def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> N
     llm = GooglePalm(google_api_key="secret-api-key")
     print(llm.google_api_key, end="")
     captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+    assert str(llm.google_api_key) == "**********"
+    assert "secret-api-key" not in repr(llm.google_api_key)
+    assert "secret-api-key" not in repr(llm)
 
 
 def test_google_palm_call() -> None:
