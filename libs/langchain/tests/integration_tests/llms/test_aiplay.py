@@ -174,7 +174,7 @@ async def test_aiplay_multiple_prompts_async_agenerate(llm: LlamaLLM) -> None:
     assert len(output.generations) == 2
 
 
-NemotronQA
+
 
 @pytest.mark.scheduled
 def test_aiplay_steerlm(

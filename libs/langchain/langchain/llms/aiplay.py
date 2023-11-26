@@ -32,12 +32,9 @@ class ClientModel(BaseModel):
     '''
     Custom BaseModel subclass with some desirable properties for subclassing
     '''
-    arg_keys   : Sequence[str] = []
-    state_vars : Sequence[str] = []
-
     def subscope(self, *args, **kwargs):
         '''Create a new ClientModel with the same values but new arguments'''
-        named_args = {k:v for k,v in zip(self.arg_keys, args)}
+        named_args = {k:v for k,v in zip(getattr(self, 'arg_keys', []), args)}
         named_args = {**named_args, **kwargs}
         out = self.copy(update=named_args)
         for k,v in self.__dict__.items():
@@ -52,7 +49,7 @@ class ClientModel(BaseModel):
     def transfer_state(self, other):
         '''Transfer state from one ClientModel to another'''
         for k,v in self.__dict__.items():
-            if k in self.state_vars:
+            if k in getattr(self, 'state_vars', []):
                 setattr(other, k, v)
             elif hasattr(v, 'transfer_state'):
                 other_sub = getattr(other, k, None)
@@ -98,9 +95,9 @@ class NVCRModel(ClientModel):
     )
 
     ## Status Tracking Variables. Updated Progressively
-    last_inputs   : Optional[dict] = None
-    last_response : Optional[Any]  = None
-    last_msg      : Optional[dict] = {}
+    last_inputs   : dict = None
+    last_response : Any  = None
+    last_msg      : dict = {}
     state_vars: Sequence[str] = ['last_inputs', 'last_response', 'last_msg']        
 
     @root_validator()
@@ -332,7 +329,7 @@ class AIPlayClient(ClientModel):
     max_tokens:  int   = Field(1024, le=1024, ge=32)
     streaming:   bool  = Field(False)
 
-    inputs: Any = Field([])
+    inputs: Union[Sequence[str], str] = Field([])
     stop:   Union[Sequence[str], str] = Field([])
 
     gen_keys:    Sequence[str] = Field(['temperature', 'top_p', 'max_tokens', 'streaming'])
@@ -344,13 +341,10 @@ class AIPlayClient(ClientModel):
 
     @root_validator()
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        get_str_list = lambda v: [v] if (isinstance(v, str) or not hasattr(v, '__iter__')) else v
-        values['stop'] = get_str_list(values.get('stop', []))
         if values.get('client') is None:
             values['client'] = NVCRModel(**values)
         else: 
             values['client'] = values['client'].subscope(**values)
-        values['inputs'] = get_str_list(values.get('inputs'))
         return values
 
     @property
@@ -391,13 +385,16 @@ class AIPlayClient(ClientModel):
     def get_payload(self, *args, **kwargs) -> dict:
         '''Generates payload for the AIPlayClient API to send to service.'''
         k_map = lambda k: k if k != 'streaming' else 'stream' 
-        return {
+        out = {
             **self.preprocess(),
-            **{ k_map(k) : self.get(k) for k in self.gen_keys }
+            **{k_map(k) : self.get(k) for k in self.gen_keys}
         }
+        return out
 
     def preprocess(self) -> dict:
         '''Prepares a message or list of messages for the payload'''
+        get_str_list = lambda v: [v] if (isinstance(v, str) or not hasattr(v, '__iter__')) else v
+        self.inputs = get_str_list(self.inputs)
         messages = [self.prep_msg(m) for m in self.inputs]
         labels = self.labels
         if labels:
