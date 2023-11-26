@@ -3,7 +3,7 @@
 from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool, Field
+from langchain.tools.base import BaseTool
 from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
 
 
@@ -17,9 +17,7 @@ class GoogleFinanceQueryRun(BaseTool):
         "google search Finance from Google Finance"
         "Input should be a search query."
     )
-    api_wrapper: GoogleFinanceAPIWrapper = Field(
-        default_factory=GoogleFinanceAPIWrapper
-    )
+    api_wrapper: GoogleFinanceAPIWrapper
 
     def _run(
         self,

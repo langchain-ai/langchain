@@ -3,7 +3,7 @@
 from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool, Field
+from langchain.tools.base import BaseTool
 from langchain.utilities.google_lens import GoogleLensAPIWrapper
 
 
@@ -17,7 +17,7 @@ class GoogleLensQueryRun(BaseTool):
         "to an image from Google Lens"
         "Input should be a url to an image."
     )
-    api_wrapper: GoogleLensAPIWrapper = Field(default_factory=GoogleLensAPIWrapper)
+    api_wrapper: GoogleLensAPIWrapper
 
     def _run(
         self,

@@ -3,7 +3,7 @@
 from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool, Field
+from langchain.tools.base import BaseTool
 from langchain.utilities.google_jobs import GoogleJobsAPIWrapper
 
 
@@ -17,9 +17,7 @@ class GoogleJobsQueryRun(BaseTool):
         "google search Jobs from Google Jobs"
         "Input should be a search query."
     )
-    api_wrapper: GoogleJobsAPIWrapper = Field(
-        default_factory=GoogleJobsAPIWrapper
-    )
+    api_wrapper: GoogleJobsAPIWrapper
 
     def _run(
         self,
