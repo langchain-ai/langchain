@@ -4,9 +4,10 @@ import time
 from itertools import repeat
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 
 
 class XataVectorStore(VectorStore):

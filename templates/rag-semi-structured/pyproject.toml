@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-semi-structured"
 version = "0.1.0"
-description = ""
+description = "RAG on semi-structured "
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]
@@ -23,6 +23,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "rag_semi_structured"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["OpenAI", "Chroma", "Unstructured"]
+tags = ["vectordbs"]
 
 [build-system]
 requires = [

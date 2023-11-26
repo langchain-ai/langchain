@@ -2,7 +2,8 @@ import re
 from pathlib import Path
 from typing import Iterator, List, Optional, Sequence, Tuple, Union
 
-from langchain.schema import BaseStore
+from langchain_core.stores import BaseStore
+
 from langchain.storage.exceptions import InvalidKeyException
 
 

@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 
 API_PLANNER_PROMPT = """You are a planner that plans a sequence of API calls to assist with user queries against an API.
