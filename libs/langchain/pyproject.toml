@@ -379,6 +379,7 @@ extended_testing = [
  "rspace_client",
  "fireworks-ai",
  "javelin-sdk",
+ "pymongo",
 ]
 
 [tool.ruff]

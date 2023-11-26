@@ -85,11 +85,11 @@ class MongoDBDatabase:
             # if included fetch document ids
             if collection_name in self._include_collections:
                 documents = db[collection_name].find()
-                return sorted(doc["_id"] for doc in documents)
+                return pformat(sorted(doc["_id"] for doc in documents))
             else:
                 # Fetch all documents in the collection
                 documents = db[collection_name].find()
-                return sorted(doc["_id"] for doc in documents)
+                return pformat(sorted(doc["_id"] for doc in documents))
         return []
 
     @property
@@ -178,3 +178,4 @@ class MongoDBDatabase:
             return self.run(command)
         except PyMongoError as e:
             return f"Error: {e}"
+
