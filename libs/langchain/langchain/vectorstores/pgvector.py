@@ -55,6 +55,12 @@ Base = declarative_base()  # type: Any
 
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
+_FILTER_KEYWORDS = {
+    "EQ": lambda data, cond: data == str(cond),
+    "NEQ": lambda data, cond: data != str(cond),
+    "IN": lambda data, cond: data.in_(list(map(str, cond))),
+    "NIN": lambda data, cond: data.not_in(list(map(str, cond)))
+}
 
 class BaseModel(Base):
     """Base model for the SQL stores."""
@@ -430,14 +436,15 @@ class PGVector(VectorStore):
             if filter is not None:
                 filter_clauses = []
                 for key, value in filter.items():
-                    IN = "in"
-                    if isinstance(value, dict) and IN in map(str.lower, value):
-                        value_case_insensitive = {
-                            k.lower(): v for k, v in value.items()
-                        }
-                        filter_by_metadata = self.EmbeddingStore.cmetadata[
-                            key
-                        ].astext.in_(value_case_insensitive[IN])
+                    if isinstance(value, dict) and len(value) == 1:
+                        keyword, condition = next(iter(value.items()))
+                        keyword = keyword.upper()
+                        
+                        if keyword in _FILTER_KEYWORDS:
+                            filter_by_metadata = _FILTER_KEYWORDS[keyword](
+                                self.EmbeddingStore.cmetadata[key].astext,
+                                condition
+                            )
                         filter_clauses.append(filter_by_metadata)
                     else:
                         filter_by_metadata = self.EmbeddingStore.cmetadata[
@@ -445,7 +452,7 @@ class PGVector(VectorStore):
                         ].astext == str(value)
                         filter_clauses.append(filter_by_metadata)
 
-                filter_by = sqlalchemy.and_(filter_by, *filter_clauses)
+                    filter_by = sqlalchemy.and_(filter_by, *filter_clauses)
 
             _type = self.EmbeddingStore
 
