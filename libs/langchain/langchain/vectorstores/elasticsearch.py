@@ -798,6 +798,8 @@ class ElasticsearchStore(VectorStore):
                     "metadata",
                     self.query_field,
                 ]:
+                    if "metadata" not in hit["_source"]:
+                        hit["_source"]["metadata"] = {}
                     hit["_source"]["metadata"][field] = hit["_source"][field]
 
             docs_and_scores.append(
