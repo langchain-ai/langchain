@@ -102,7 +102,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
 
-    show_progress_bar: bool = False
+    show_progress: bool = False
     """Whether to show a tqdm progress bar. Must have `tqdm` installed."""
 
     @property
@@ -176,7 +176,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             )
 
     def _embed(self, input: List[str]) -> List[List[float]]:
-        if self.show_progress_bar:
+        if self.show_progress:
             try:
                 from tqdm import tqdm
 
