@@ -118,11 +118,19 @@ class FileSystemBlobLoader(BlobLoader):
 
     def _yield_paths(self) -> Iterable[Path]:
         """Yield paths that match the requested pattern."""
+
+        def match_exclude(path: Path) -> bool:
+            """Check if the path matches any of the exclude patterns."""
+            for exclude_pattern in self.exclude:
+                for part in path.parents:
+                    if part.match(exclude_pattern):
+                        return True
+            return False
+
         paths = self.path.glob(self.glob)
         for path in paths:
-            if self.exclude:
-                if any(path.match(glob) for glob in self.exclude):
-                    continue
+            if self.exclude and match_exclude(path):
+                continue
             if path.is_file():
                 if self.suffixes and path.suffix not in self.suffixes:
                     continue
