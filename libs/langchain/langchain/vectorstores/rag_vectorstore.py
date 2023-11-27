@@ -95,7 +95,7 @@ class RAGVectorStore(BaseModel, WrapperVectorStore):
     """The metadata to identify the id of the parents """
 
     chunk_id_key: str = "_chunk_id"
-    """The metadata to identify the chunck. Add an id if the chunk can not have one """
+    """The metadata to identify the chunk. Add an id if the chunk can not have one """
 
     child_ids_key: str = "_child_ids"
     """Contain a list with the vectorstore id for all 
@@ -315,7 +315,7 @@ class RAGVectorStore(BaseModel, WrapperVectorStore):
                 full_chunk_docs.append((chunk_id, chunk_doc))
 
             # Add the chunks in docstore.
-            # In the retriever, it's this intances to return
+            # In the retriever, it's this instances to return
             # in metadata[child_ids_key], it's possible to find the id of all
             # transformed versions
             self.docstore.mset(full_chunk_docs)
@@ -325,7 +325,7 @@ class RAGVectorStore(BaseModel, WrapperVectorStore):
             # we must save the id of all chunk.
             # Then, it's possible to remove/update all chunk when the parent document
             # was updated.
-            # Save the parent association wih all chunk
+            # Save the parent association with all chunk
             ids = cast(List[str], ids)
             mset_values: List[Tuple[str, List[str]]] = []
             for parent_id, doc in zip(ids, documents):
@@ -393,7 +393,7 @@ class RAGVectorStore(BaseModel, WrapperVectorStore):
     ) -> VST:
         raise NotImplementedError("from_texts not implemented")
 
-    # %% searchs
+    # %% searches
     def _trunk_k(
         self, result: List[Document], kwargs: Dict[str, Any]
     ) -> List[Document]:

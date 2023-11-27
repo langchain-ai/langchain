@@ -4,7 +4,7 @@
 @startuml
 
 
-database "Persistance" {
+database "Persistence" {
     object rag_vectorstore
     database "VectorStore"{
         object chroma_vectorstore

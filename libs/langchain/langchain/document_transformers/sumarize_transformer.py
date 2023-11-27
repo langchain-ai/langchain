@@ -24,7 +24,7 @@ def _default_get_input(doc: Document) -> Dict[str, Any]:
 
 
 _default_template = """
-Sumarize a text input in the same language. 
+Summarize a text input in the same language. 
 Context:
 ```
 {context}

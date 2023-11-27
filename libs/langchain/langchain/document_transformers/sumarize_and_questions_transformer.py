@@ -51,7 +51,7 @@ _default_parser: BaseOutputParser = PydanticOutputParser(
 _default_template = (
     "1. Given a text input, generate {nb_of_questions} questions from it in "
     "the same language. "
-    "2. Sumarize a text input in the same language.\n"
+    "2. Summarize a text input in the same language.\n"
     "Context:\n"
     "```\n"
     "{context}\n"

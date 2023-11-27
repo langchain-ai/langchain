@@ -261,7 +261,7 @@ def test_parent_and_chunk_transformer(mocker: MockerFixture) -> None:
 def test_parent_and_chunk_tranformer_childid(mocker: MockerFixture) -> None:
     """
     Sometime, the result of a parent transformation is a list of documents
-    with an uniq id. It's not necessery to inject a new one.
+    with an uniq id. It's not necessary to inject a new one.
     You can set the name of this id with `chunk_id_key`.
 
     parent_transformer = True
