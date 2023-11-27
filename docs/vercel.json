@@ -2918,7 +2918,7 @@
     },
     {
       "source": "/en/latest/modules/memory/examples/cassandra_chat_message_history.html",
-      "destination": "/docs/integrations/adapters/cassandra_chat_message_history"
+      "destination": "/docs/integrations/memory/cassandra_chat_message_history"
     },
     {
       "source": "/docs/guides/adapters/openai",
