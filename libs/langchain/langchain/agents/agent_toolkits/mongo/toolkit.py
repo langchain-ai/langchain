@@ -29,7 +29,7 @@ class MongoDatabaseToolkit(BaseToolkit):
         list_mongo_database_tool = ListMongoDBTool(db=self.db)
         info_mongo_database_tool_description = (
             "Input to this tool is a comma-separated list of collections, output is "
-            "the indexes and sample documents for those collections. "
+            "the name, indexes and sample documents for those collections. "
             "Be sure that the collections actually exist by calling "
             f"{list_mongo_database_tool.name} first! "
             "Example Input: collection1, collection2, collection3"
@@ -38,12 +38,12 @@ class MongoDatabaseToolkit(BaseToolkit):
             db=self.db, description=info_mongo_database_tool_description
         )
         query_mongo_database_tool_description = (
-            "Input to this tool is a detailed and correct MongoDB query, output is a "
-            "result from the database. If the query is not correct, an error message "
-            "will be returned. If an error is returned, rewrite the query, check the "
-            "query, and try again. If you encounter an issue with Unknown field "
-            f"'xxxx' in 'field list', use {info_mongo_database_tool.name} "
-            "to query the correct document fields."
+            "Input to this tool is a detailed and correct MongoDB query, "
+            "output is a result from the database. If the query is not "
+            "correct, an error message will be returned. If an error is returned, "
+            "rewrite the query, check the query, and try again. If you encounter an "
+            "issue with Unknown field 'xxxx' in 'field list', use "
+            f"{info_mongo_database_tool.name} to query the correct document fields."
         )
         query_mongo_database_tool = QueryMongoDBTool(
             db=self.db, description=query_mongo_database_tool_description

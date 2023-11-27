@@ -49,8 +49,7 @@ class InfoMongoDBTool(BaseMongoDBTool, BaseTool):
 
     name: str = "mongo_db_schema"
     description: str = """
-    Input to this tool is a comma-separated list of collections, output is the name 
-    and sample documents for those collections.    
+    Input to this tool is a comma-separated list of collections, output is the name, indexes, and sample documents for those collections.    
 
     Example Input: "collection1, collection2, collection3"
     """
@@ -69,11 +68,12 @@ class ListMongoDBTool(BaseMongoDBTool, BaseTool):
 
     name: str = "mongo_db_list"
     description: str = """
-    Output of this tool is a list of collections in the database.
+    Input is an empty string, output is a comma separated list of collections in the database.
     """
 
     def _run(
         self,
+        tool_input: str = "",
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get a list of collections in the database."""
@@ -117,7 +117,6 @@ class QueryMongoDBCheckerTool(BaseMongoDBTool, BaseTool):
         """Use the LLM to check the query."""
         return self.llm_chain.predict(
             query=query,
-            client=self.db._client,
             callbacks=run_manager.get_child() if run_manager else None,
         )
 
@@ -128,6 +127,5 @@ class QueryMongoDBCheckerTool(BaseMongoDBTool, BaseTool):
     ) -> str:
         return await self.llm_chain.apredict(
             query=query,
-            client=self.db._client,
             callbacks=run_manager.get_child() if run_manager else None,
         )

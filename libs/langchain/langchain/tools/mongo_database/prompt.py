@@ -2,8 +2,8 @@
 QUERY_CHECKER = """
 {query}
 Double check the MongoDB query above for common mistakes, including:
-- Not a valid Python dictionary/MongoDB document
-- Not an existing MongoDB command
+- Not using PyMongo syntax and instead using MongoDB shell syntax
+- No quotes around keys in find() or find_one() filters
 - Improper use of $nin operator with null values
 - Using $merge instead of $concat for combining arrays
 - Incorrect use of $not or $ne for exclusive ranges

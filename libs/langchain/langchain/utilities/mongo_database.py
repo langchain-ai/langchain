@@ -1,8 +1,9 @@
 """MongoEngine wrapper around a database."""
 from __future__ import annotations
 
-import ast
-from pprint import pformat
+import re
+from ast import literal_eval
+from pprint import pformat, pprint
 from typing import Any, Iterable, List, Optional
 
 from pymongo import MongoClient
@@ -165,7 +166,22 @@ class MongoDatabase:
     def _execute(self, command: str) -> dict[str, Any]:
         """Execute a command and return the result."""
         db = self._client.get_default_database()
-        result = db.command(ast.literal_eval(command))
+        result = {}
+        try:
+            command_dict = literal_eval(command)
+            if isinstance(command_dict, dict):
+                result = db.command(command_dict)
+        except ValueError:
+            pass
+
+        # checks if command is a find query
+        if not result and re.match(r"^db\.\w+\.find\w*\(\{.*\}\)", command):
+            cursor = eval(command) # dangerous, might need to find a better solution
+            result_list = []
+            for doc in cursor:
+                result_list.append(doc)
+            result = {"cursor": result_list}
+
         return result
 
     def run(self, command: str) -> str:
@@ -173,9 +189,12 @@ class MongoDatabase:
         result = self._execute(command)
         result_formatted = ""
         if "cursor" in result:
-            result_formatted = "\n".join(
-                map(pformat, list(result["cursor"]["firstBatch"]))
-            )
+            if "firstBatch" in result["cursor"]:
+                result_formatted = "\n".join(
+                    map(pformat, list(result["cursor"]["firstBatch"]))
+                )
+            else:
+                result_formatted = "\n".join(map(pformat, result["cursor"]))
         else:
             result_formatted = pformat(result)
         return f"Result:\n{result_formatted}"
