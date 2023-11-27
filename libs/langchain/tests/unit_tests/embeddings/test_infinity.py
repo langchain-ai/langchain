@@ -36,9 +36,8 @@ def mocked_requests_post(
 
     assert "input" in json and isinstance(json["input"], list)
     embeddings = []
-    for inp in json["inputs"]:
+    for inp in json["input"]:
         # verify correct ordering
-        inp = inp["input"]
         if "pizza" in inp:
             v = [1.0, 0.0, 0.0]
         elif "document" in inp:
