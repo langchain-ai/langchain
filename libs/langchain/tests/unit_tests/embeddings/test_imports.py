@@ -10,6 +10,7 @@ EXPECTED_ALL = [
     "FastEmbedEmbeddings",
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
+    "InfinityEmbeddings",
     "GradientEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
