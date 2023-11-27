@@ -1,11 +1,10 @@
-# ruff: noqa: I001
 from datetime import datetime
 from typing import List
 
 import pytest
-from langchain.schema.embeddings import Embeddings
 
 from langchain.indexes import MemoryRecordManager
+from langchain.schema.embeddings import Embeddings
 
 
 class _FakeEmbeddings(Embeddings):
