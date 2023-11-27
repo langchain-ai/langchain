@@ -1132,6 +1132,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "MyScale",
         "PGVector",
         "Pinecone",
+        "RAGVectorStore",
         "Qdrant",
         "Redis",
         "ScaNN",

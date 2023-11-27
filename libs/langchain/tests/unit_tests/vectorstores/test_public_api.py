@@ -43,6 +43,7 @@ _EXPECTED = [
     "PGVector",
     "Pinecone",
     "Qdrant",
+    "RAGVectorStore",
     "Redis",
     "Rockset",
     "SKLearnVectorStore",

@@ -290,6 +290,12 @@ def _import_redis() -> Any:
     return Redis
 
 
+def _import_rag_vectorstore() -> Any:
+    from langchain.vectorstores.rag_vectorstore import RAGVectorStore
+
+    return RAGVectorStore
+
+
 def _import_rocksetdb() -> Any:
     from langchain.vectorstores.rocksetdb import Rockset
 
@@ -515,6 +521,8 @@ def __getattr__(name: str) -> Any:
         return _import_pinecone()
     elif name == "Qdrant":
         return _import_qdrant()
+    elif name == "RAGVectorStore":
+        return _import_rag_vectorstore()
     elif name == "Redis":
         return _import_redis()
     elif name == "Rockset":
@@ -609,6 +617,7 @@ __all__ = [
     "PGVector",
     "Pinecone",
     "Qdrant",
+    "RAGVectorStore",
     "Redis",
     "Rockset",
     "SKLearnVectorStore",

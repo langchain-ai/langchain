@@ -13,6 +13,11 @@ EXPECTED_ALL = [
     "NucliaTextTransformer",
     "OpenAIMetadataTagger",
     "Html2TextTransformer",
+    "DocumentTransformers",
+    "CopyDocumentTransformer",
+    "GenerateQuestionsTransformer",
+    "SummarizeAndQuestionsTransformer",
+    "SummarizeTransformer",
 ]
 
 
