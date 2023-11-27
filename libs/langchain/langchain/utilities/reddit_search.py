@@ -1,16 +1,39 @@
-from typing import Any, Dict, List, Optional
+"""Wrapper for the Reddit API"""
+
+from typing import Dict, List, Optional
+
 import praw
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.utils import get_from_dict_or_env
 
-class RedditSearchAPIWrapper(BaseModel):
 
+class RedditSearchAPIWrapper(BaseModel):
+    """Wrapper for Reddit API
+    
+    To use, set the environment variables ``REDDIT_CLIENT_ID``,
+    ``REDDIT_CLIENT_SECRET``, ``REDDIT_USER_AGENT`` to set the client ID,
+    client secret, and user agent, respectively, as given by Reddit's API.
+    Alternatively, all three can be supplied as named parameters in the
+    constructor: ``reddit_client_id``, ``reddit_client_secret``, and 
+    ``reddit_user_agent``, respectively.
+
+    Example:
+        .. code-block:: python
+            
+            from langchain.utilities import RedditSearchAPIWrapper
+            reddit_search = RedditSearchAPIWrapper()
+    """
+
+    # Values required to access Reddit API via praw
     reddit_client_id: Optional[str]
     reddit_client_secret: Optional[str]
     reddit_user_agent: Optional[str]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that the API ID, secret and user agent exists in environment
+        and check that praw module is present.
+        """
         reddit_client_id = get_from_dict_or_env(
             values, "reddit_client_id", "REDDIT_CLIENT_ID"
         )
@@ -32,6 +55,7 @@ class RedditSearchAPIWrapper(BaseModel):
             raise ImportError(
                 "praw package not found, please install it with pip install praw"
             )
+        
         return values
 
     def run(self, 
@@ -40,15 +64,23 @@ class RedditSearchAPIWrapper(BaseModel):
         time_filter: str,
         subreddit: str,
         limit: int) -> str:
-        results: List[Dict] = self.results(query=query, sort=sort, time_filter=time_filter, subreddit=subreddit, limit=limit)
+        """Search Reddit and return posts as a single string."""
+        results: List[Dict] = self.results(query=query, 
+            sort=sort, 
+            time_filter=time_filter,
+            subreddit=subreddit,
+            limit=limit
+        )
         if len(results) > 0:
             output: List[str] = [f'Searching r/{subreddit} found {len(results)} posts:']
             for r in results:
                 category = 'N/A' if r['post_category'] is None else r['post_category']
-                p = f"Post Title: '{r['post_title']}'\nUser: {r['post_author']}\nSubreddit: {r['post_subreddit']}:\n \
-                    Text body: {r['post_text']}\n \
-                    Post URL: {r['post_url']}\n \
-                    Post Category: {category}.\n \
+                p = f"Post Title: '{r['post_title']}'\n\
+                    User: {r['post_author']}\n\
+                    Subreddit: {r['post_subreddit']}:\n\
+                    Text body: {r['post_text']}\n\
+                    Post URL: {r['post_url']}\n\
+                    Post Category: {category}.\n\
                     Score: {r['post_score']}\n"
                 output.append(p)
             return '\n'.join(output)
@@ -63,13 +95,20 @@ class RedditSearchAPIWrapper(BaseModel):
         subreddit: str,
         limit: int
     ) -> List[Dict]:
+        """Use praw to search Reddit and return a list of dictionaries, 
+        one for each post.
+        """
         reddit = praw.Reddit(
             client_id=self.reddit_client_id,
             client_secret=self.reddit_client_secret,
             user_agent=self.reddit_user_agent,
         )
         subredditObject = reddit.subreddit(subreddit) 
-        search_results = subredditObject.search(query=query, sort=sort, time_filter=time_filter, limit=limit) 
+        search_results = subredditObject.search(query=query, 
+            sort=sort, 
+            time_filter=time_filter, 
+            limit=limit
+        ) 
         search_results = [r for r in search_results]
         results_object = []
         for submission in search_results:
