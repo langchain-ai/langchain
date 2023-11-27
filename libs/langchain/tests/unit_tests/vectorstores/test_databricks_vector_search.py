@@ -137,14 +137,14 @@ def default_databricks_vector_search(index: MagicMock) -> DatabricksVectorSearch
     )
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_init_delta_sync_with_managed_embeddings() -> None:
     index = mock_index(DELTA_SYNC_INDEX_MANAGED_EMBEDDINGS)
     vectorsearch = DatabricksVectorSearch(index)
     assert vectorsearch.index == index
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_init_delta_sync_with_self_managed_embeddings() -> None:
     index = mock_index(DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS)
     vectorsearch = DatabricksVectorSearch(
@@ -155,7 +155,7 @@ def test_init_delta_sync_with_self_managed_embeddings() -> None:
     assert vectorsearch.index == index
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_init_direct_access_index() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = DatabricksVectorSearch(
@@ -166,20 +166,20 @@ def test_init_direct_access_index() -> None:
     assert vectorsearch.index == index
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_init_fail_no_index() -> None:
     with pytest.raises(TypeError):
         DatabricksVectorSearch()
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_init_fail_index_none() -> None:
     with pytest.raises(TypeError) as ex:
         DatabricksVectorSearch(None)
     assert "index must be of type VectorSearchIndex." in str(ex.value)
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_init_fail_text_column_mismatch() -> None:
     index = mock_index(DELTA_SYNC_INDEX_MANAGED_EMBEDDINGS)
     with pytest.raises(ValueError) as ex:
@@ -193,7 +193,7 @@ def test_init_fail_text_column_mismatch() -> None:
     )
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
     "index_details", [DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS, DIRECT_ACCESS_INDEX]
 )
@@ -207,7 +207,7 @@ def test_init_fail_no_text_column(index_details: dict) -> None:
     assert "`text_column` is required for this index." in str(ex.value)
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize("index_details", [DIRECT_ACCESS_INDEX])
 def test_init_fail_columns_not_in_schema(index_details: dict) -> None:
     index = mock_index(index_details)
@@ -221,7 +221,7 @@ def test_init_fail_columns_not_in_schema(index_details: dict) -> None:
     assert "column 'some_random_column' is not in the index's schema." in str(ex.value)
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
     "index_details", [DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS, DIRECT_ACCESS_INDEX]
 )
@@ -235,7 +235,7 @@ def test_init_fail_no_embedding(index_details: dict) -> None:
     assert "`embedding` is required for this index." in str(ex.value)
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
     "index_details", [DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS, DIRECT_ACCESS_INDEX]
 )
@@ -253,7 +253,7 @@ def test_init_fail_embedding_dim_mismatch(index_details: dict) -> None:
     ) in str(ex.value)
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_from_texts_not_supported() -> None:
     with pytest.raises(NotImplementedError) as ex:
         DatabricksVectorSearch.from_texts(fake_texts, FakeEmbeddings())
@@ -263,7 +263,7 @@ def test_from_texts_not_supported() -> None:
     ) in str(ex.value)
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
     "index_details",
     [DELTA_SYNC_INDEX_MANAGED_EMBEDDINGS, DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS],
@@ -284,7 +284,7 @@ def is_valid_uuid(val: str) -> bool:
         return False
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_add_texts() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = DatabricksVectorSearch(
@@ -310,7 +310,7 @@ def test_add_texts() -> None:
     assert added_ids == ids
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_add_texts_handle_single_text() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = DatabricksVectorSearch(
@@ -335,7 +335,7 @@ def test_add_texts_handle_single_text() -> None:
     assert is_valid_uuid(added_ids[0])
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_add_texts_with_default_id() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = default_databricks_vector_search(index)
@@ -356,7 +356,7 @@ def test_add_texts_with_default_id() -> None:
     assert all([is_valid_uuid(id_) for id_ in added_ids])
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_add_texts_with_metadata() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = default_databricks_vector_search(index)
@@ -381,7 +381,7 @@ def test_add_texts_with_metadata() -> None:
     assert all([is_valid_uuid(id_) for id_ in added_ids])
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
     "index_details",
     [DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS, DIRECT_ACCESS_INDEX],
@@ -392,7 +392,7 @@ def test_embeddings_property(index_details: dict) -> None:
     assert vectorsearch.embeddings == DEFAULT_EMBEDDING_MODEL
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
     "index_details",
     [DELTA_SYNC_INDEX_MANAGED_EMBEDDINGS, DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS],
@@ -405,7 +405,7 @@ def test_delete_not_supported_for_delta_sync_index(index_details: dict) -> None:
     assert "`delete` is only supported for direct-access index." in str(ex.value)
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_delete() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = default_databricks_vector_search(index)
@@ -414,7 +414,7 @@ def test_delete() -> None:
     index.delete.assert_called_once_with(["some id"])
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_delete_fail_no_ids() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = default_databricks_vector_search(index)
@@ -424,7 +424,7 @@ def test_delete_fail_no_ids() -> None:
     assert "ids must be provided." in str(ex.value)
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize("index_details", ALL_INDEXES)
 def test_similarity_search(index_details: dict) -> None:
     index = mock_index(index_details)
@@ -456,7 +456,7 @@ def test_similarity_search(index_details: dict) -> None:
     assert all([DEFAULT_PRIMARY_KEY in d.metadata for d in search_result])
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
     "index_details", [DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS, DIRECT_ACCESS_INDEX]
 )
@@ -482,7 +482,7 @@ def test_similarity_search_by_vector(index_details: dict) -> None:
     assert all([DEFAULT_PRIMARY_KEY in d.metadata for d in search_result])
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize("index_details", ALL_INDEXES)
 def test_similarity_search_empty_result(index_details: dict) -> None:
     index = mock_index(index_details)
@@ -507,7 +507,7 @@ def test_similarity_search_empty_result(index_details: dict) -> None:
     assert len(search_result) == 0
 
 
-@pytest.mark.requires("databricks.vector_search")
+@pytest.mark.requires("databricks", "databricks.vector_search")
 def test_similarity_search_by_vector_not_supported_for_managed_embedding() -> None:
     index = mock_index(DELTA_SYNC_INDEX_MANAGED_EMBEDDINGS)
     index.similarity_search.return_value = EXAMPLE_SEARCH_RESPONSE

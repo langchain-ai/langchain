@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import uuid
@@ -100,20 +102,19 @@ class DatabricksVectorSearch(VectorStore):
 
     def __init__(
         self,
-        index: "VectorSearchIndex",
+        index: VectorSearchIndex,
         *,
         embedding: Optional[Embeddings] = None,
         text_column: Optional[str] = None,
         columns: Optional[List[str]] = None,
-        **kwargs: Any,
     ):
         try:
             from databricks.vector_search.client import VectorSearchIndex
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "Could not import databricks-vectorsearch python package. "
                 "Please install it with `pip install databricks-vectorsearch`."
-            )
+            ) from e
         # index
         self.index = index
         if not isinstance(index, VectorSearchIndex):
