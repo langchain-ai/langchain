@@ -8,7 +8,7 @@ STEAM_GET_GAMES_ID = """
 STEAM_GET_GAMES_DETAILS = """
     This tool is a wrapper around steamspypi's Returns details for a given application API(steamspypi.download), useful when you want to get details of the game.
     The input to this tool is a dictionary specifying the request and appid of the game you want to search for, and will be passed into steamspypi's 'steamspypi.download' function.
-    For example, to search for a game with id "730", you would input {'request': 'appdetails', 'appid': '730'} as the dictionary.
+    For example, to search for a game with id "730", you would input {{'request': 'appdetails', 'appid': '730'}} as the dictionary.
 
 """
 
