@@ -14,7 +14,7 @@ def test_collection_info() -> None:
     db = MongoDatabase.from_uri(uri)
     collection = db._client["test_db"]["test_collection"]
 
-    if "test" not in collection.find_one({"test": "test"}):
+    if "test" not in collection.find_one({"test": "test"}):  # type: ignore
         collection.insert_many(
             [
                 {"test": "test"},
@@ -45,7 +45,7 @@ def test_collection_info_w_sample_documents() -> None:
     )
     collection = db._client["test_db"]["test_collection"]
 
-    if "test" not in collection.find_one({"test": "test"}):
+    if "test" not in collection.find_one({"test": "test"}):  # type: ignore
         collection.insert_many(
             [
                 {"test": "test"},

@@ -69,8 +69,7 @@ class MongoDatabase:
     @classmethod
     def from_uri(cls, database_uri: str, **kwargs: Any) -> MongoDatabase:
         """Construct a MongoEngine engine from URI."""
-        connection = MongoClient(host=database_uri, **kwargs)
-        return cls(connection, **kwargs)
+        return cls(MongoClient(host=database_uri, **kwargs), **kwargs)
 
     @property
     def get_usable_collection_names(self) -> Iterable[str]:
