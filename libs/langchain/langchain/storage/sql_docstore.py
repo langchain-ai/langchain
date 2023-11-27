@@ -33,6 +33,8 @@ from sqlalchemy.orm import (
     sessionmaker,
 )
 
+# Note: Import directly from langchain_core is not stable and generate some errors
+# from langchain_core.stores import BaseStore
 from langchain.schema import BaseStore
 
 Base = declarative_base()
