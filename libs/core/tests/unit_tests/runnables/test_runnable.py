@@ -236,6 +236,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "type": "object",
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
+                    "parent": {"$ref": "#/definitions/Document"},
                     "metadata": {"title": "Metadata", "type": "object"},
                     "type": {
                         "title": "Type",
