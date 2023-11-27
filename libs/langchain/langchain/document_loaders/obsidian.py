@@ -1,7 +1,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import Any, List
+from typing import Any, Dict, List
 
 import yaml
 
@@ -64,7 +64,7 @@ class ObsidianLoader(BaseLoader):
         if not match:
             return {}
 
-        self._placeholders: dict[str, str] = {}
+        self._placeholders: Dict[str, str] = {}
         front_matter_text = self.TEMPLATE_VARIABLE_REGEX.sub(
             self._replace_template_var, match.group(1)
         )
