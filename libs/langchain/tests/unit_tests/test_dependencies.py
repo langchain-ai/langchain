@@ -47,6 +47,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "langsmith",
         "numpy",
         "pydantic",
+        "pymongo",
         "python",
         "requests",
         "tenacity",
