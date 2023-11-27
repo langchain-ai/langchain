@@ -390,6 +390,11 @@ class MathpixPDFLoader(BasePDFLoader):
         self.mathpix_api_id = get_from_dict_or_env(
             kwargs, "mathpix_api_id", "MATHPIX_API_ID"
         )
+
+        # The base class isn't expecting these and doesn't collect **kwargs
+        kwargs.pop("mathpix_api_key")
+        kwargs.pop("mathpix_api_id")
+
         super().__init__(file_path, **kwargs)
         self.processed_file_format = processed_file_format
         self.max_wait_time_seconds = max_wait_time_seconds
@@ -415,6 +420,8 @@ class MathpixPDFLoader(BasePDFLoader):
                 self.url, headers=self._mathpix_headers, files=files, data=self.data
             )
         response_data = response.json()
+        if "error" in response_data:
+            raise ValueError(f"Mathpix request failed: {response_data['error']}")
         if "pdf_id" in response_data:
             pdf_id = response_data["pdf_id"]
             return pdf_id
@@ -431,13 +438,21 @@ class MathpixPDFLoader(BasePDFLoader):
         """
         url = self.url + "/" + pdf_id
         for _ in range(0, self.max_wait_time_seconds, 5):
-            response = requests.get(url, headers=self.headers)
+            response = requests.get(url, headers=self._mathpix_headers)
             response_data = response.json()
+
+            # This indicates an error with the request (e.g. auth problems)
+            error = response_data.get("error", None)
+
+            if error is not None:
+                raise ValueError(f"Unable to retrieve PDF from Mathpix: {error}")
+
             status = response_data.get("status", None)
 
             if status == "completed":
                 return
             elif status == "error":
+                # This indicates an error with the PDF processing
                 raise ValueError("Unable to retrieve PDF from Mathpix")
             else:
                 print(f"Status: {status}, waiting for processing to complete")
@@ -447,7 +462,7 @@ class MathpixPDFLoader(BasePDFLoader):
     def get_processed_pdf(self, pdf_id: str) -> str:
         self.wait_for_processing(pdf_id)
         url = f"{self.url}/{pdf_id}.{self.processed_file_format}"
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(url, headers=self._mathpix_headers)
         return response.content.decode("utf-8")
 
     def clean_pdf(self, contents: str) -> str:
