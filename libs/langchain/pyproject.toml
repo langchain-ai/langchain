@@ -343,6 +343,7 @@ extended_testing = [
  "atlassian-python-api",
  "mwparserfromhell",
  "mwxml",
+ "msal",
  "pandas",
  "telethon",
  "psychicapi",
