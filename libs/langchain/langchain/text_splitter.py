@@ -61,7 +61,7 @@ TS = TypeVar("TS", bound="TextSplitter")
 
 
 def _make_spacy_pipeline_for_splitting(
-    pipeline: str, max_length: int
+    pipeline: str, *, max_length: int = 1_000_000
 ) -> Any:  # avoid importing spacy
     try:
         import spacy
@@ -1388,12 +1388,14 @@ class SpacyTextSplitter(TextSplitter):
         self,
         separator: str = "\n\n",
         pipeline: str = "en_core_web_sm",
-        max_length: int = 1000000,
+        max_length: int = 1_000_000,
         **kwargs: Any,
     ) -> None:
         """Initialize the spacy text splitter."""
         super().__init__(**kwargs)
-        self._tokenizer = _make_spacy_pipeline_for_splitting(pipeline, max_length)
+        self._tokenizer = _make_spacy_pipeline_for_splitting(
+            pipeline, max_length=max_length
+        )
         self._separator = separator
 
     def split_text(self, text: str) -> List[str]:
