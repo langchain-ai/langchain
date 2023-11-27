@@ -4,11 +4,12 @@ import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
 
+from langchain_core.outputs import Generation, LLMResult
+from langchain_core.pydantic_v1 import Extra
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra
-from langchain.schema import Generation, LLMResult
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"

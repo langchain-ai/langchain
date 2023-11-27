@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-aws-kendra"
 version = "0.0.1"
-description = ""
+description = "RAG using AWS-Kendra and anthropic"
 authors = []
 readme = "README.md"
 
@@ -20,6 +20,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "rag_aws_kendra.chain"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["AWS"]
+tags = ["vectordbs"]
 
 [build-system]
 requires = [

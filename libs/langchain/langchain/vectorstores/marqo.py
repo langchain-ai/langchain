@@ -15,9 +15,10 @@ from typing import (
     Union,
 )
 
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 
 if TYPE_CHECKING:
     import marqo
