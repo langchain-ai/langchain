@@ -562,7 +562,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 # Split tokens into chunks respecting the embedding_ctx_length
                 for j in range(0, len(tokenized), self.embedding_ctx_length):
                     token_chunk = tokenized[j : j + self.embedding_ctx_length]
-                
+
                     # Convert token IDs back to a string
                     chunk_text = tokenizer.decode(token_chunk)
                     tokens.append(chunk_text)
