@@ -22,6 +22,8 @@ EXPECTED_ALL = [
     "indent_lines_after_first",
     "Input",
     "Output",
+    "Addable",
+    "AnyConfigurableField",
 ]
 
 
