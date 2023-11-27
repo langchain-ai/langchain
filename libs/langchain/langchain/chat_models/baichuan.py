@@ -5,22 +5,18 @@ import time
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 
 import requests
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.schema import (
+from langchain_core.messages import (
     AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatMessage,
-    ChatResult,
-    HumanMessage,
-)
-from langchain_core.schema.messages import (
     AIMessageChunk,
+    BaseMessage,
     BaseMessageChunk,
+    ChatMessage,
     ChatMessageChunk,
+    HumanMessage,
     HumanMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_pydantic_field_names,

@@ -15,8 +15,8 @@ from typing import (
     Union,
 )
 
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain_core.schema.embeddings import Embeddings
 from langchain_core.utils import get_pydantic_field_names
 from tenacity import (
     AsyncRetrying,

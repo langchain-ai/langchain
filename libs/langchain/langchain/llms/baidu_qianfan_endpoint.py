@@ -10,8 +10,8 @@ from typing import (
     Optional,
 )
 
+from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema.output import GenerationChunk
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

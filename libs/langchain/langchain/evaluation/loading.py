@@ -1,7 +1,7 @@
 """Loading datasets and evaluators."""
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
-from langchain_core.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI

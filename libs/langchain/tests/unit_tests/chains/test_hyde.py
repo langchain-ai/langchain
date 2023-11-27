@@ -2,8 +2,8 @@
 from typing import Any, List, Optional
 
 import numpy as np
-from langchain_core.schema import Generation, LLMResult
-from langchain_core.schema.embeddings import Embeddings
+from langchain_core.embeddings import Embeddings
+from langchain_core.outputs import Generation, LLMResult
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

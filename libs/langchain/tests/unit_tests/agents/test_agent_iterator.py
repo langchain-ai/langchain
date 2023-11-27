@@ -57,7 +57,6 @@ def test_agent_iterator_stopped_early() -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_agent_async_iterator_stopped_early() -> None:
     """
     Test react chain async iterator when max iterations or
@@ -151,7 +150,6 @@ def test_agent_iterator_with_callbacks() -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_agent_async_iterator_with_callbacks() -> None:
     """Test react chain async iterator with callbacks by setting verbose globally."""
     handler1 = FakeCallbackHandler()
@@ -281,7 +279,6 @@ def test_agent_iterator_output_structure() -> None:
             assert False, "Unexpected output structure"
 
 
-@pytest.mark.asyncio
 async def test_agent_async_iterator_output_structure() -> None:
     """Test the async output structure of AgentExecutorIterator."""
     agent = _get_agent()

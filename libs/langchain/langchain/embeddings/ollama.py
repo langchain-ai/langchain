@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
-from langchain_core.schema.embeddings import Embeddings
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
