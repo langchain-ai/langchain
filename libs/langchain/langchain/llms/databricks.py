@@ -24,13 +24,21 @@ class _DatabricksClientBase(BaseModel, ABC):
     api_url: str
     api_token: str
 
-    def post_raw(self, request: Any) -> Any:
+    def request(self, method: str, url: str, request: Any) -> Any:
         headers = {"Authorization": f"Bearer {self.api_token}"}
-        response = requests.post(self.api_url, headers=headers, json=request)
+        response = requests.request(
+            method=method, url=url, headers=headers, json=request
+        )
         # TODO: error handling and automatic retries
         if not response.ok:
             raise ValueError(f"HTTP {response.status_code} error: {response.text}")
         return response.json()
+
+    def _get(self, url: str) -> Any:
+        return self.request("GET", url, None)
+
+    def _post(self, url: str, request: Any) -> Any:
+        return self.request("POST", url, request)
 
     @abstractmethod
     def post(self, request: Any) -> Any:
@@ -42,6 +50,34 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
 
     host: str
     endpoint_name: str
+    target_uri: str
+    client: Any = None
+    no_wrap: bool = False
+
+    def __init__(self, **data: Any):
+        super().__init__(**data)
+
+        try:
+            from mlflow.deployments import get_deploy_client
+
+            self.client = get_deploy_client(self.target_uri)
+        except ImportError as e:
+            raise ImportError(
+                "Failed to create the client. "
+                "Please install mlflow with `pip install mlflow`."
+            ) from e
+
+        self.no_wrap = self._is_external_or_foundation_model()
+
+    def _is_external_or_foundation_model(self) -> bool:
+        """
+        Does this endpoint serve an external or foundation model?
+        """
+        endpoint = self.client.get_endpoint(self.endpoint_name)
+        return any(
+            e.get("type", "").lower() in ("external_model", "foundation_model")
+            for e in endpoint.get("config", {}).get("served_entities", [])
+        )
 
     @root_validator(pre=True)
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -53,13 +89,17 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
         return values
 
     def post(self, request: Any) -> Any:
-        # See https://docs.databricks.com/machine-learning/model-serving/score-model-serving-endpoints.html
-        wrapped_request = {"dataframe_records": [request]}
-        response = self.post_raw(wrapped_request)["predictions"]
-        # For a single-record query, the result is not a list.
-        if isinstance(response, list):
-            response = response[0]
-        return response
+        if self.no_wrap:
+            return self.client.predict(endpoint=self.endpoint_name, inputs=request)
+        else:
+            # See https://docs.databricks.com/machine-learning/model-serving/score-model-serving-endpoints.html
+            wrapped_request = {"dataframe_records": [request]}
+            response = self.client.predict(
+                endpoint=self.endpoint_name, inputs=wrapped_request
+            )
+            preds = response["predictions"]
+            # For a single-record query, the result is not a list.
+            return preds[0] if isinstance(preds, list) else preds
 
 
 class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
@@ -80,7 +120,7 @@ class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
         return values
 
     def post(self, request: Any) -> Any:
-        return self.post_raw(request)
+        return self._post(self.api_url, request)
 
 
 def get_repl_context() -> Any:
@@ -137,16 +177,19 @@ def get_default_api_token() -> str:
 
 
 class Databricks(LLM):
+
     """Databricks serving endpoint or a cluster driver proxy app for LLM.
 
     It supports two endpoint types:
 
     * **Serving endpoint** (recommended for both production and development).
-      We assume that an LLM was registered and deployed to a serving endpoint.
+      We assume that an LLM was deployed to a serving endpoint.
       To wrap it as an LLM you must have "Can Query" permission to the endpoint.
       Set ``endpoint_name`` accordingly and do not set ``cluster_id`` and
       ``cluster_driver_port``.
-      The expected model signature is:
+
+      If the underlying model is a model registered by MLflow, the expected model
+      signature is:
 
       * inputs::
 
@@ -154,6 +197,10 @@ class Databricks(LLM):
            {"name": "stop", "type": "list[string]"}]
 
       * outputs: ``[{"type": "string"}]``
+
+      If the underlying model is an external or foundation model, make sure to use
+      `transform_input_fn` and `transform_output_fn` to transform the input and output
+      to the expected format.
 
     * **Cluster driver proxy app** (recommended for interactive development).
       One can load an LLM on a Databricks interactive cluster and start a local HTTP
@@ -233,6 +280,9 @@ class Databricks(LLM):
     """A function that transforms the output from the endpoint to the generated text.
     """
 
+    target_uri: str = "databricks"
+    """The target URI for Databricks. Only used when using a serving endpoint."""
+
     _client: _DatabricksClientBase = PrivateAttr()
 
     class Config:
@@ -288,6 +338,7 @@ class Databricks(LLM):
                 host=self.host,
                 api_token=self.api_token,
                 endpoint_name=self.endpoint_name,
+                target_uri=self.target_uri,
             )
         elif self.cluster_id and self.cluster_driver_port:
             self._client = _DatabricksClusterDriverProxyClient(

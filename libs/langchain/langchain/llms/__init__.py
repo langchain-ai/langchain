@@ -276,6 +276,12 @@ def _import_minimax() -> Any:
     return Minimax
 
 
+def _import_mlflow() -> Any:
+    from langchain.llms.mlflow import Mlflow
+
+    return Mlflow
+
+
 def _import_mlflow_ai_gateway() -> Any:
     from langchain.llms.mlflow_ai_gateway import MlflowAIGateway
 
@@ -589,6 +595,8 @@ def __getattr__(name: str) -> Any:
         return _import_manifest()
     elif name == "Minimax":
         return _import_minimax()
+    elif name == "Mlflow":
+        return _import_mlflow()
     elif name == "MlflowAIGateway":
         return _import_mlflow_ai_gateway()
     elif name == "Modal":

@@ -26,6 +26,7 @@ from langchain.embeddings.cache import CacheBackedEmbeddings
 from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.dashscope import DashScopeEmbeddings
+from langchain.embeddings.databricks import DatabricksEmbeddings
 from langchain.embeddings.deepinfra import DeepInfraEmbeddings
 from langchain.embeddings.edenai import EdenAiEmbeddings
 from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
@@ -49,6 +50,7 @@ from langchain.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
 from langchain.embeddings.llamacpp import LlamaCppEmbeddings
 from langchain.embeddings.localai import LocalAIEmbeddings
 from langchain.embeddings.minimax import MiniMaxEmbeddings
+from langchain.embeddings.mlflow import MlflowEmbeddings
 from langchain.embeddings.mlflow_gateway import MlflowAIGatewayEmbeddings
 from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
 from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
@@ -77,6 +79,7 @@ __all__ = [
     "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
+    "DatabricksEmbeddings",
     "ElasticsearchEmbeddings",
     "FastEmbedEmbeddings",
     "HuggingFaceEmbeddings",
@@ -85,6 +88,7 @@ __all__ = [
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
     "HuggingFaceHubEmbeddings",
+    "MlflowEmbeddings",
     "MlflowAIGatewayEmbeddings",
     "ModelScopeEmbeddings",
     "TensorflowHubEmbeddings",

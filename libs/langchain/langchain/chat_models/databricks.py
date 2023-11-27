@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import warnings
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -30,62 +29,56 @@ logger = logging.getLogger(__name__)
 # Ignoring type because below is valid pydantic code
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"  [call-arg]
 class ChatParams(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
-    """Parameters for the `MLflow AI Gateway` LLM."""
+    """Parameters for the `Databricks` LLM."""
 
     temperature: float = 0.0
-    candidate_count: int = 1
-    """The number of candidates to return."""
+    n: int = 1
     stop: Optional[List[str]] = None
     max_tokens: Optional[int] = None
 
 
-class ChatMLflowAIGateway(BaseChatModel):
-    """`MLflow AI Gateway` chat models API.
+class ChatDatabricks(BaseChatModel):
+    """`Databricks` chat models API.
 
-    To use, you should have the ``mlflow[gateway]`` python package installed.
-    For more information, see https://mlflow.org/docs/latest/gateway/index.html.
+    To use, you should have the ``mlflow`` python package installed.
+    For more information, see https://mlflow.org/docs/latest/llms/deployments/databricks.html.
 
     Example:
         .. code-block:: python
 
-            from langchain.chat_models import ChatMLflowAIGateway
+            from langchain.chat_models import ChatDatabricks
 
-            chat = ChatMLflowAIGateway(
-                gateway_uri="<your-mlflow-ai-gateway-uri>",
-                route="<your-mlflow-ai-gateway-chat-route>",
+            chat = ChatDatabricks(
+                target_uri="<target_uri>",
+                endpoint="<endpoint>",
                 params={
                     "temperature": 0.1
                 }
             )
     """
 
+    endpoint: str
+    target_uri: str = "databricks"
+    params: Optional[ChatParams] = None
+    client: Any = None
+
     def __init__(self, **kwargs: Any):
-        warnings.warn(
-            "`ChatMLflowAIGateway` is deprecated. Use `ChatMlflow` or "
-            "`ChatDatabricks` instead.",
-            DeprecationWarning,
-        )
+        super().__init__(**kwargs)
         try:
-            import mlflow.gateway
+            from mlflow.deployments import get_deploy_client
+
+            self.client = get_deploy_client(self.target_uri)
         except ImportError as e:
             raise ImportError(
-                "Could not import `mlflow.gateway` module. "
-                "Please install it with `pip install mlflow[gateway]`."
+                "Failed to create the client. "
+                "Please install mlflow with `pip install mlflow`."
             ) from e
-
-        super().__init__(**kwargs)
-        if self.gateway_uri:
-            mlflow.gateway.set_gateway_uri(self.gateway_uri)
-
-    route: str
-    gateway_uri: Optional[str] = None
-    params: Optional[ChatParams] = None
 
     @property
     def _default_params(self) -> Dict[str, Any]:
         params: Dict[str, Any] = {
-            "gateway_uri": self.gateway_uri,
-            "route": self.route,
+            "target_uri": self.target_uri,
+            "endpoint": self.endpoint,
             **(self.params.dict() if self.params else {}),
         }
         return params
@@ -97,25 +90,16 @@ class ChatMLflowAIGateway(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        try:
-            import mlflow.gateway
-        except ImportError as e:
-            raise ImportError(
-                "Could not import `mlflow.gateway` module. "
-                "Please install it with `pip install mlflow[gateway]`."
-            ) from e
-
         message_dicts = [
-            ChatMLflowAIGateway._convert_message_to_dict(message)
-            for message in messages
+            ChatDatabricks._convert_message_to_dict(message) for message in messages
         ]
         data: Dict[str, Any] = {
             "messages": message_dicts,
             **(self.params.dict() if self.params else {}),
         }
 
-        resp = mlflow.gateway.query(self.route, data=data)
-        return ChatMLflowAIGateway._create_chat_result(resp)
+        resp = self.client.predict(endpoint=self.endpoint, inputs=data)
+        return ChatDatabricks._create_chat_result(resp)
 
     async def _agenerate(
         self,
@@ -145,7 +129,7 @@ class ChatMLflowAIGateway(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "mlflow-ai-gateway-chat"
+        return "databricks-chat"
 
     @staticmethod
     def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -163,7 +147,7 @@ class ChatMLflowAIGateway(BaseChatModel):
     @staticmethod
     def _raise_functions_not_supported() -> None:
         raise ValueError(
-            "Function messages are not supported by the MLflow AI Gateway. Please"
+            "Function messages are not supported by Databricks. Please"
             " create a feature request at https://github.com/mlflow/mlflow/issues."
         )
 
@@ -179,17 +163,17 @@ class ChatMLflowAIGateway(BaseChatModel):
             message_dict = {"role": "system", "content": message.content}
         elif isinstance(message, FunctionMessage):
             raise ValueError(
-                "Function messages are not supported by the MLflow AI Gateway. Please"
+                "Function messages are not supported by Databricks. Please"
                 " create a feature request at https://github.com/mlflow/mlflow/issues."
             )
         else:
             raise ValueError(f"Got unknown message type: {message}")
 
         if "function_call" in message.additional_kwargs:
-            ChatMLflowAIGateway._raise_functions_not_supported()
+            ChatDatabricks._raise_functions_not_supported()
         if message.additional_kwargs:
             logger.warning(
-                "Additional message arguments are unsupported by MLflow AI Gateway "
+                "Additional message arguments are unsupported by Databricks"
                 " and will be ignored: %s",
                 message.additional_kwargs,
             )
@@ -198,14 +182,14 @@ class ChatMLflowAIGateway(BaseChatModel):
     @staticmethod
     def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
         generations = []
-        for candidate in response["candidates"]:
-            message = ChatMLflowAIGateway._convert_dict_to_message(candidate["message"])
-            message_metadata = candidate.get("metadata", {})
+        for choice in response["choices"]:
+            message = ChatDatabricks._convert_dict_to_message(choice["message"])
+            usage = choice.get("usage", {})
             gen = ChatGeneration(
                 message=message,
-                generation_info=dict(message_metadata),
+                generation_info=usage,
             )
             generations.append(gen)
 
-        response_metadata = response.get("metadata", {})
-        return ChatResult(generations=generations, llm_output=response_metadata)
+        usage = response.get("usage", {})
+        return ChatResult(generations=generations, llm_output=usage)

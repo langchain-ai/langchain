@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra
@@ -12,62 +11,56 @@ from langchain.llms.base import LLM
 # Ignoring type because below is valid pydantic code
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
 class Params(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
-    """Parameters for the MLflow AI Gateway LLM."""
+    """Parameters for MLflow"""
 
     temperature: float = 0.0
-    candidate_count: int = 1
-    """The number of candidates to return."""
+    n: int = 1
     stop: Optional[List[str]] = None
     max_tokens: Optional[int] = None
 
 
-class MlflowAIGateway(LLM):
-    """
-    Wrapper around completions LLMs in the MLflow AI Gateway.
+class Mlflow(LLM):
+    """Wrapper around completions LLMs in MLflow.
 
-    To use, you should have the ``mlflow[gateway]`` python package installed.
-    For more information, see https://mlflow.org/docs/latest/gateway/index.html.
+    To use, you should have the `mlflow[genai]` python package installed.
+    For more information, see https://mlflow.org/docs/latest/llms/deployments/server.html.
 
     Example:
         .. code-block:: python
 
-            from langchain.llms import MlflowAIGateway
+            from langchain.llms import Mlflow
 
-            completions = MlflowAIGateway(
-                gateway_uri="<your-mlflow-ai-gateway-uri>",
-                route="<your-mlflow-ai-gateway-completions-route>",
+            completions = Mlflow(
+                target_uri="<target_uri>",
+                endpoint="<endpoint>",
                 params={
                     "temperature": 0.1
                 }
             )
     """
 
-    route: str
-    gateway_uri: Optional[str] = None
+    endpoint: str
+    target_uri: str
     params: Optional[Params] = None
+    client: Any = None
 
     def __init__(self, **kwargs: Any):
-        warnings.warn(
-            "`MlflowAIGateway` is deprecated. Use `Mlflow` or `Databricks` instead.",
-            DeprecationWarning,
-        )
+        super().__init__(**kwargs)
         try:
-            import mlflow.gateway
+            from mlflow.deployments import get_deploy_client
+
+            self.client = get_deploy_client(self.target_uri)
         except ImportError as e:
             raise ImportError(
-                "Could not import `mlflow.gateway` module. "
-                "Please install it with `pip install mlflow[gateway]`."
+                "Failed to create the client. "
+                "Please install mlflow with `pip install mlflow[genai]`."
             ) from e
-
-        super().__init__(**kwargs)
-        if self.gateway_uri:
-            mlflow.gateway.set_gateway_uri(self.gateway_uri)
 
     @property
     def _default_params(self) -> Dict[str, Any]:
         params: Dict[str, Any] = {
-            "gateway_uri": self.gateway_uri,
-            "route": self.route,
+            "target_uri": self.target_uri,
+            "endpoint": self.endpoint,
             **(self.params.dict() if self.params else {}),
         }
         return params
@@ -83,23 +76,15 @@ class MlflowAIGateway(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        try:
-            import mlflow.gateway
-        except ImportError as e:
-            raise ImportError(
-                "Could not import `mlflow.gateway` module. "
-                "Please install it with `pip install mlflow[gateway]`."
-            ) from e
-
         data: Dict[str, Any] = {
             "prompt": prompt,
             **(self.params.dict() if self.params else {}),
         }
         if s := (stop or (self.params.stop if self.params else None)):
             data["stop"] = s
-        resp = mlflow.gateway.query(self.route, data=data)
-        return resp["candidates"][0]["text"]
+        resp = self.client.predict(endpoint=self.endpoint, inputs=data)
+        return resp["choices"][0]["text"]
 
     @property
     def _llm_type(self) -> str:
-        return "mlflow-ai-gateway"
+        return "mlflow"
