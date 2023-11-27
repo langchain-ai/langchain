@@ -51,9 +51,7 @@ from typing import (
 )
 
 import requests
-from langchain_core.documents import BaseDocumentTransformer
-
-from langchain.docstore.document import Document
+from langchain_core.documents import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
 

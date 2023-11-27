@@ -16,8 +16,8 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -221,7 +221,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             "indexes": [
                 {
                     "name": self._index_name,
-                    "key": {"vectorContent": "cosmosSearch"},
+                    "key": {self._embedding_key: "cosmosSearch"},
                     "cosmosSearchOptions": {
                         "kind": "vector-ivf",
                         "numLists": num_lists,
