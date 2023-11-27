@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
-from tqdm import tqdm
+
 
 class OllamaEmbeddings(BaseModel, Embeddings):
     """Ollama locally runs large language models.
@@ -186,7 +186,13 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        instruction_pairs = [f"{self.embed_instruction}{text}" for text in tqdm(texts, desc="OllamaEmbeddings)]
+        try:
+            from tqdm import tqdm
+
+            text_iter = tqdm(texts, desc="OllamaEmbeddings")
+        except ImportError:
+            text_iter = texts
+        instruction_pairs = [f"{self.embed_instruction}{text}" for text in text_iter]
         embeddings = self._embed(instruction_pairs)
         return embeddings
 

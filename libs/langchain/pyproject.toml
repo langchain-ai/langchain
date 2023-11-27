@@ -22,8 +22,8 @@ aiohttp = "^3.8.3"
 tenacity = "^8.1.0"
 anyio = "<4.0"
 jsonpatch = "^1.33"
-tqdm = ">=4.48.0"
 azure-core = {version = "^1.26.4", optional=true}
+tqdm = {version = ">=4.48.0", optional = true}
 openapi-pydantic = {version = "^0.3.2", optional = true}
 faiss-cpu = {version = "^1", optional = true}
 wikipedia = {version = "^1", optional = true}
