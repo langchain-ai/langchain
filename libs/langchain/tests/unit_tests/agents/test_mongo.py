@@ -5,7 +5,7 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 def test_create_mongo_agent() -> None:
-    db = MongoDatabase.from_uri("mongodb://localhost/test_db")
+    db = MongoDatabase.from_uri("mongodb://%2Ftmp%2Fmongodb-27017.sock/test_db")
     queries = {"foo": "Final Answer: baz"}
     llm = FakeLLM(queries=queries, sequential_responses=True)
     toolkit = MongoDatabaseToolkit(db=db, llm=llm)

@@ -6,10 +6,12 @@ from pymongo import MongoClient
 
 from langchain.utilities.mongo_database import MongoDatabase
 
+uri = "mongodb://%2Ftmp%2Fmongodb-27017.sock/test_db"
+
 
 def test_collection_info() -> None:
     """Test that collection info is constructed properly."""
-    db = MongoDatabase.from_uri("mongodb://localhost/test_db")
+    db = MongoDatabase.from_uri(uri)
     collection = db._client["test_db"]["test_collection"]
 
     if "test" not in collection.find_one({"test": "test"}):
@@ -38,7 +40,7 @@ def test_collection_info() -> None:
 def test_collection_info_w_sample_documents() -> None:
     """Test that collection info is constructed properly."""
     db = MongoDatabase(
-        MongoClient("mongodb://localhost/test_db"),
+        MongoClient(uri),
         sample_documents_in_collection_info=2,
     )
     collection = db._client["test_db"]["test_collection"]
@@ -67,7 +69,7 @@ def test_collection_info_w_sample_documents() -> None:
 
 def test_mongo_database_run() -> None:
     """Test that run works properly."""
-    db = MongoDatabase.from_uri("mongodb://localhost/test_db")
+    db = MongoDatabase.from_uri(uri)
     output = db.run("{ 'find': 'test_collection', 'filter': { 'test4': 'test' } }")
     expected_output = """
     Result:
