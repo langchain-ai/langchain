@@ -1,8 +1,11 @@
+import logging
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
+
+logger = logging.getLogger(__name__)
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -99,6 +102,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
 
+    show_progress_bar: bool = False
+    """Whether to show a tqdm progress bar. Must have `tqdm` installed."""
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -170,11 +176,18 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             )
 
     def _embed(self, input: List[str]) -> List[List[float]]:
-        try:
-            from tqdm import tqdm
+        if self.show_progress_bar:
+            try:
+                from tqdm import tqdm
 
-            iter_ = tqdm(input, desc="OllamaEmbeddings")
-        except ImportError:
+                iter_ = tqdm(input, desc="OllamaEmbeddings")
+            except ImportError:
+                logger.warning(
+                    "Unable to show progress bar because tqdm could not be imported. "
+                    "Please install with `pip install tqdm`."
+                )
+                iter_ = input
+        else:
             iter_ = input
         return [self._process_emb_response(prompt) for prompt in iter_]
 
