@@ -13,7 +13,7 @@ tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
-	poetry run ptw --snapshot-update --now . -- -x tests/unit_tests
+	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
 
 
 ######################
