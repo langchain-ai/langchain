@@ -18,11 +18,11 @@ def _model_default_factory() -> Pipeline:
             "Cannot import transformers, please install with "
             "`pip install transformers`."
         ) from e
-    return pipeline("text-classification", model="deepset/deberta-v3-base-injection")
+    return pipeline("text-classification", model="laiyer/deberta-v3-base-prompt-injection")
 
 
 class HuggingFaceInjectionIdentifier(BaseTool):
-    """Tool that uses deberta-v3-base-injection to detect prompt injection attacks."""
+    """Tool that uses deberta-v3-base-prompt-injection to detect prompt injection attacks."""
 
     name: str = "hugging_face_injection_identifier"
     description: str = (
