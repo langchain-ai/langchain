@@ -24,11 +24,13 @@ class DGraphQAChain(Chain):
     graph: DGraph = Field(exclude=True)
     dql_gen_chain: LLMChain
     dql_fix_chain: LLMChain
-    dql_examples: str = ""
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
-    max_generation_attempts: int = 10
+    
+    # Class modifiers
+    max_generation_attempts: int = 5
+    dql_examples: str = ""
     use_generic_query_examples: bool = False
     # Flag to enable experimental DQL Syntax Injection
     experimental_dql_syntax_injection: bool = False 
@@ -91,7 +93,6 @@ class DGraphQAChain(Chain):
       _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
       callbacks = _run_manager.get_child()
       user_input = inputs[self.input_key]
-      print(self.graph.get_schema())
       dql_generation_output = self.dql_gen_chain.run(
         {
           "dgraph_schema": self.graph.get_schema(),

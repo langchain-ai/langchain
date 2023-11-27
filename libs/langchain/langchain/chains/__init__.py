@@ -34,6 +34,7 @@ from langchain.chains.conversational_retrieval.base import (
 from langchain.chains.example_generator import generate_example
 from langchain.chains.flare.base import FlareChain
 from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
+from langchain.chains.graph_qa.dgraph_chain import DGraphQAChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.graph_qa.falkordb import FalkorDBQAChain
@@ -85,6 +86,7 @@ __all__ = [
     "ConstitutionalChain",
     "ConversationChain",
     "ConversationalRetrievalChain",
+    "DGraphQAChain",
     "FalkorDBQAChain",
     "FlareChain",
     "GraphCypherQAChain",

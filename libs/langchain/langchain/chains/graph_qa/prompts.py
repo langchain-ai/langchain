@@ -198,12 +198,10 @@ SPARQL_QA_PROMPT = PromptTemplate(
 )
 
 DQL_GENERATION_TEMPLATE= """Task: Generate an DGraph Query Language (DQL) query from a User Input.
-
 You are an DGraph Query Language (DQL) expert responsible for translating a `User Input` into an DGraph Query Language (DQL) query.
 
 You are given an `DGraph Schema`. It is a JSON Object containing an dictionary/json with schema type name as key,
 and it's properties as values.
-
 
 You may also be given a set of `DQL Query Examples` to help you create the `DQL Query`. If provided, the `DQL Query Examples` should be used as a reference, similar to how `DGraph Schema` should be used.
 
@@ -217,10 +215,14 @@ If you want to reference cast from an Actor, you MUST use "~cast" to reference i
 - Only answer to requests related to generating an DQL Query.
 - If a request is unrelated to generating DQL Query, say that you cannot help the user.
 
-
-
 Things you should not do:
-- IMPORTANT: When references fields, do not prefix with the Type. For example don't do Movie.year. Just use year.
+
+- You should NEVER prefix a field with its type. For example DO NOT USE Movie.year, or Movie.cast, INSTEAD use year or cast.
+  For example, NEVER do:
+    var(func: eq(name, "Forrest Gump")) 
+      Movie.cast 
+        Actor.name
+        
 - Do not use any properties/relationships that can't be inferred from the `DGraph Schema` or the `DQL Query Examples`.
 - Do not include any text except the generated DQL Query.
 - Do not provide explanations or apologies in your responses.
