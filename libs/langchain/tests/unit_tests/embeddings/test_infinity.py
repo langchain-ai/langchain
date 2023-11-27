@@ -4,7 +4,7 @@ from pytest_mock import MockerFixture
 
 from langchain.embeddings import InfinityEmbeddings
 
-_MODEL_ID = "my_model_valid_id"
+_MODEL_ID = "BAAI/bge-small"
 _INFINITY_BASE_URL = "https://localhost/api"
 _DOCUMENTS = [
     "pizza",

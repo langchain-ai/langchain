@@ -28,7 +28,7 @@ class InfinityEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import InfinityEmbeddings
             InfinityEmbeddings(
-                model="bge-large",
+                model="BAAI/bge-small",
                 infinity_api_url="http://localhost:7797/v1",
             )
     """
@@ -126,12 +126,12 @@ class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
             mini_client = TinyAsyncInfinityEmbeddingClient(
             )
             embeds = mini_client.embed(
-                model="bge-large",
+                model="BAAI/bge-small",
                 text=["doc1", "doc2"]
             )
             # or
             embeds = await mini_client.aembed(
-                model="bge-large",
+                model="BAAI/bge-small",
                 text=["doc1", "doc2"]
             )
 
