@@ -299,8 +299,12 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     ]
 
     default_key: str = "default"
+    """The enum value to use for the default option. Defaults to "default"."""
 
     prefix_keys: bool
+    """Whether to prefix configurable fields of each alternative with a namespace
+    of the form <which.id>==<alternative_key>, eg. a key named "temperature" used by 
+    the alternative named "gpt3" becomes "model==gpt3/temperature"."""
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:

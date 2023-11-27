@@ -1032,6 +1032,7 @@ def test_configurable_fields_prefix_keys() -> None:
             },
             default=["hello", "bye"],
         ),
+        # (sleep is a configurable field in FakeListChatModel)
         sleep=ConfigurableField(
             id="chat_sleep",
             is_shared=True,
@@ -1094,34 +1095,36 @@ def test_configurable_fields_prefix_keys() -> None:
                 "title": "Configurable",
                 "type": "object",
                 "properties": {
-                    # not prefixed because marked as shared
-                    "chat_sleep": {
-                        "title": "Chat Sleep",
-                        "type": "number",
+                    "prompt_template": {
+                        "title": "Prompt Template",
+                        "description": "The prompt template for this chain",
+                        "default": "hello",
+                        "allOf": [{"$ref": "#/definitions/Prompt_Template"}],
                     },
                     "llm": {
                         "title": "LLM",
                         "default": "default",
                         "allOf": [{"$ref": "#/definitions/LLM"}],
                     },
+                    # not prefixed because marked as shared
+                    "chat_sleep": {
+                        "title": "Chat Sleep",
+                        "type": "number",
+                    },
+                    # prefixed for "chat" option
                     "llm==chat/responses": {
                         "title": "Chat Responses",
                         "default": ["hello", "bye"],
                         "type": "array",
                         "items": {"$ref": "#/definitions/Chat_Responses"},
                     },
+                    # prefixed for "default" option
                     "llm==default/responses": {
                         "title": "LLM Responses",
                         "description": "A list of fake responses for this LLM",
                         "default": ["a"],
                         "type": "array",
                         "items": {"type": "string"},
-                    },
-                    "prompt_template": {
-                        "title": "Prompt Template",
-                        "description": "The prompt template for this chain",
-                        "default": "hello",
-                        "allOf": [{"$ref": "#/definitions/Prompt_Template"}],
                     },
                 },
             },

@@ -1204,6 +1204,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_alternatives(
         self,
         which: ConfigurableField,
+        *,
         default_key: str = "default",
         prefix_keys: bool = False,
         **kwargs: Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
