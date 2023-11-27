@@ -34,9 +34,9 @@ class SlackSendMessage(SlackBaseTool):
         channel: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        logger = logging.getLogger(__name__)
-        logger.error("Message: %s", message)
-        logger.error("Channel: %s", channel)
-        result = self.client.chat_postMessage(channel=channel, text=message)
-        output = "Message sent: " + str(result)
-        return output
+        try:
+            result = self.client.chat_postMessage(channel=channel, text=message)
+            output = "Message sent: " + str(result)
+            return output
+        except Exception as e:
+            return "Error creating conversation: {}".format(e)
