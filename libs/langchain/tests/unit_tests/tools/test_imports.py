@@ -77,6 +77,7 @@ EXPECTED_ALL = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",

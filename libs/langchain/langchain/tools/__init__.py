@@ -472,6 +472,12 @@ def _import_python_tool_PythonREPLTool() -> Any:
     )
 
 
+def _import_reddit_search_RedditSearchRun() -> Any:
+    from langchain.tools.reddit_search.tool import RedditSearchRun
+
+    return RedditSearchRun
+
+
 def _import_render() -> Any:
     from langchain.tools.render import format_tool_to_openai_function
 
@@ -817,6 +823,8 @@ def __getattr__(name: str) -> Any:
         return _import_python_tool_PythonAstREPLTool()
     elif name == "PythonREPLTool":
         return _import_python_tool_PythonREPLTool()
+    elif name == "RedditSearchRun":
+        return _import_reddit_search_RedditSearchRun()
     elif name == "format_tool_to_openai_function":
         return _import_render()
     elif name == "BaseRequestsTool":
@@ -964,6 +972,7 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
