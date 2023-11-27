@@ -10,17 +10,29 @@ from langchain.utilities.reddit_search import RedditSearchAPIWrapper
 
 class RedditSearchSchema(BaseModel):
     """Input for Reddit search."""
-    query: str = Field(description="should be query string that post title should \
-        contain, or '*' if anything is allowed.")
-    sort: str = Field(description='should be sort method, which is one of: "relevance" \
-        , "hot", "top", "new", or "comments".')
-    time_filter: str = Field(description='should be time period to filter by, which is \
-        one of "all", "day", "hour", "month", "week", or "year"')
-    subreddit: str = Field(description='should be name of subreddit, like "all" for \
-        r/all')
-    limit: str = Field(description='a positive integer indicating the maximum number \
-        of results to return')
-    
+
+    query: str = Field(
+        description="should be query string that post title should \
+        contain, or '*' if anything is allowed."
+    )
+    sort: str = Field(
+        description='should be sort method, which is one of: "relevance" \
+        , "hot", "top", "new", or "comments".'
+    )
+    time_filter: str = Field(
+        description='should be time period to filter by, which is \
+        one of "all", "day", "hour", "month", "week", or "year"'
+    )
+    subreddit: str = Field(
+        description='should be name of subreddit, like "all" for \
+        r/all'
+    )
+    limit: str = Field(
+        description="a positive integer indicating the maximum number \
+        of results to return"
+    )
+
+
 class RedditSearchRun(BaseTool):
     """Tool that queries for posts on a subreddit."""
 
@@ -32,9 +44,10 @@ class RedditSearchRun(BaseTool):
     api_wrapper: RedditSearchAPIWrapper = Field(default_factory=RedditSearchAPIWrapper)
     args_schema: Type[BaseModel] = RedditSearchSchema
 
-    def _run(self,
+    def _run(
+        self,
         query: str,
-        sort: str, 
+        sort: str,
         time_filter: str,
         subreddit: str,
         limit: str,
@@ -46,6 +59,5 @@ class RedditSearchRun(BaseTool):
             sort=sort,
             time_filter=time_filter,
             subreddit=subreddit,
-            limit=int(limit)
+            limit=int(limit),
         )
-
