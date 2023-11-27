@@ -1204,7 +1204,9 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_alternatives(
         self,
         which: ConfigurableField,
+        *,
         default_key: str = "default",
+        prefix_keys: bool = False,
         **kwargs: Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ) -> RunnableSerializable[Input, Output]:
         from langchain_core.runnables.configurable import (
@@ -1212,7 +1214,11 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         )
 
         return RunnableConfigurableAlternatives(
-            which=which, default=self, alternatives=kwargs, default_key=default_key
+            which=which,
+            default=self,
+            alternatives=kwargs,
+            default_key=default_key,
+            prefix_keys=prefix_keys,
         )
 
 
