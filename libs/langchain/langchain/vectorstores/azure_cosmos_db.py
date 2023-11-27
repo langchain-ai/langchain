@@ -221,7 +221,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             "indexes": [
                 {
                     "name": self._index_name,
-                    "key": {"vectorContent": "cosmosSearch"},
+                    "key": {self._embedding_key: "cosmosSearch"},
                     "cosmosSearchOptions": {
                         "kind": "vector-ivf",
                         "numLists": num_lists,
