@@ -385,8 +385,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def _get_len_safe_embeddings(
         self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
-        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
-        batched_embeddings: List[List[float]] = []
         """
         Generate length-safe embeddings for a list of texts.
 
@@ -497,6 +495,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             results[indices[i]].append(batched_embeddings[i])
             num_tokens_in_batch[indices[i]].append(len(tokens[i]))
 
+        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
@@ -519,11 +518,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     async def _aget_len_safe_embeddings(
         self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
-        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
         """
         Asynchronously generate length-safe embeddings for a list of texts.
 
-        This method handles tokenization and asynchronous embedding generation, 
+        This method handles tokenization and asynchronous embedding generation,
         respecting the set embedding context length and chunk size. It supports both
         `tiktoken` and HuggingFace `tokenizer` based on the tiktoken_enabled flag.
 
@@ -620,6 +618,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             results[indices[i]].append(batched_embeddings[i])
             num_tokens_in_batch[indices[i]].append(len(tokens[i]))
 
+        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
