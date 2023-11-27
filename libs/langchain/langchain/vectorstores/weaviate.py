@@ -164,7 +164,7 @@ class Weaviate(VectorStore):
                     class_name=self._index_name,
                     uuid=_id,
                     vector=embeddings[i] if embeddings else None,
-                    tenant=kwargs.get("tenant")
+                    tenant=kwargs.get("tenant"),
                 )
                 ids.append(_id)
         return ids
