@@ -300,6 +300,22 @@ def _import_nlpcloud() -> Any:
     return NLPCloud
 
 
+def _import_oci_md_tgi() -> Any:
+    from langchain.llms.oci_data_science_model_deployment_endpoint import (
+        OCIModelDeploymentTGI,
+    )
+
+    return OCIModelDeploymentTGI
+
+
+def _import_oci_md_vllm() -> Any:
+    from langchain.llms.oci_data_science_model_deployment_endpoint import (
+        OCIModelDeploymentVLLM,
+    )
+
+    return OCIModelDeploymentVLLM
+
+
 def _import_octoai_endpoint() -> Any:
     from langchain.llms.octoai_endpoint import OctoAIEndpoint
 
@@ -597,6 +613,10 @@ def __getattr__(name: str) -> Any:
         return _import_mosaicml()
     elif name == "NLPCloud":
         return _import_nlpcloud()
+    elif name == "OCIModelDeploymentTGI":
+        return _import_oci_md_tgi()
+    elif name == "OCIModelDeploymentVLLM":
+        return _import_oci_md_vllm()
     elif name == "OctoAIEndpoint":
         return _import_octoai_endpoint()
     elif name == "Ollama":
@@ -702,8 +722,8 @@ __all__ = [
     "FakeListLLM",
     "Fireworks",
     "ForefrontAI",
-    "GigaChat",
     "GPT4All",
+    "GigaChat",
     "GooglePalm",
     "GooseAI",
     "GradientLLM",
@@ -712,18 +732,22 @@ __all__ = [
     "HuggingFacePipeline",
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
+    "JavelinAIGateway",
     "KoboldApiLLM",
     "LlamaCpp",
-    "TextGen",
     "ManifestWrapper",
     "Minimax",
     "MlflowAIGateway",
     "Modal",
     "MosaicML",
-    "Nebula",
     "NIBittensorLLM",
     "NLPCloud",
+    "Nebula",
+    "OCIModelDeploymentTGI",
+    "OCIModelDeploymentVLLM",
+    "OctoAIEndpoint",
     "Ollama",
+    "OpaquePrompts",
     "OpenAI",
     "OpenAIChat",
     "OpenLLM",
@@ -735,25 +759,23 @@ __all__ = [
     "PredictionGuard",
     "PromptLayerOpenAI",
     "PromptLayerOpenAIChat",
-    "OpaquePrompts",
+    "QianfanLLMEndpoint",
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "StochasticAI",
+    "TextGen",
     "TitanTakeoff",
     "TitanTakeoffPro",
     "Tongyi",
-    "VertexAI",
-    "VertexAIModelGarden",
     "VLLM",
     "VLLMOpenAI",
+    "VertexAI",
+    "VertexAIModelGarden",
     "Writer",
-    "OctoAIEndpoint",
     "Xinference",
-    "JavelinAIGateway",
-    "QianfanLLMEndpoint",
     "YandexGPT",
 ]
 
@@ -805,6 +827,8 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nebula": _import_symblai_nebula,
         "nibittensor": _import_bittensor,
         "nlpcloud": _import_nlpcloud,
+        "oci_model_deployment_tgi_endpoint": _import_oci_md_tgi,
+        "oci_model_deployment_vllm_endpoint": _import_oci_md_vllm,
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,
