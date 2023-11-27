@@ -50,13 +50,7 @@ class SteamWebAPIWrapper(BaseModel):
     def validate_environment(cls, values: dict) -> dict:
         """Validate api key and python package has been configed."""
 
-        steam_key = get_from_dict_or_env(
-            values, "steam_key", "STEAM_KEY"
-        )  # look for a value in two places: values dictionary/environment variables of the operating system
-
-        # if it's in env, then added to values dictionary
-        values["steam_key"] = steam_key
-
+    
         # check if the python package is installed
         try:
             from steam import Steam
@@ -69,7 +63,7 @@ class SteamWebAPIWrapper(BaseModel):
             raise ImportError("decouple library is not installed. ")
 
         # initilize the steam attribute for python-steam-api usage
-        KEY = config(values["steam_key"])
+        KEY = config("STEAM_KEY")
         steam = Steam(KEY)
         values["steam"] = steam
         return values
