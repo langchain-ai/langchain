@@ -218,7 +218,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         url = f"{self.api}/projects/{project_id}/artifacts/latest"
         all_artifacts = []
 
-        per_file_metadata = {}
+        per_file_metadata: Dict = {}
         while url:
             response = requests.request(
                 "GET",
