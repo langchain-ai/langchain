@@ -6,7 +6,7 @@ from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.slack.base import SlackBaseTool
 
 
-class SlackGetChannelIdNameDict(SlackBaseTool):
+class SlackGetChannel(SlackBaseTool):
     name: str = "get_channelid_name_dict"
     description: str = "Use this tool to get channelid-name dict."
 
