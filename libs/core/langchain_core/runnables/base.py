@@ -2691,11 +2691,6 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     bound: Runnable[Input, Output]
     """The underlying runnable that this runnable delegates to."""
 
-    custom_output_type: Optional[Any] = None
-    """Override the input type of the underlying runnable with a custom type.
-    The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
-    """
-
     kwargs: Mapping[str, Any] = Field(default_factory=dict)
     """kwargs to pass to the underlying runnable when running.
 
@@ -2712,9 +2707,15 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     )
     """The config factories to bind to the underlying runnable."""
 
+    # Union[Type[Input], BaseModel] + things like List[str]
+    custom_input_type: Optional[Any] = None
+    """Override the input type of the underlying runnable with a custom type.
+
+    The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
+    """
     # Union[Type[Output], BaseModel] + things like List[str]
     custom_output_type: Optional[Any] = None
-    """Override the input type of the underlying runnable with a custom type.
+    """Override the output type of the underlying runnable with a custom type.
 
     The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
     """
