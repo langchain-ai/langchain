@@ -138,9 +138,12 @@ class PGVector(VectorStore):
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
         self.engine_args = engine_args or {}
-        # Create a connection if not provided, otherwise use the provided connection
-        self._conn = connection if connection else self.connect()
         self.engine = engine
+        self.async_mode = async_mode
+
+        # Create a connection if not provided, otherwise use the provided connection
+        if not async_mode:
+            self._conn = connection if connection else self.connect()
 
         # TODO: Remove this so we can initialize the store without
         # creating the extension.
@@ -186,6 +189,9 @@ class PGVector(VectorStore):
         await self.acreate_collection()
 
     def __del__(self) -> None:
+        if self.async_mode:
+            return
+
         if self._conn:
             self._conn.close()
 
@@ -220,13 +226,8 @@ class PGVector(VectorStore):
     async def acreate_vector_extension(self) -> None:
         try:
             async with self._amake_session() as session:
-                statement = sqlalchemy.text(
-                    "BEGIN;"
-                    "SELECT pg_advisory_xact_lock(1573678846307946496);"
-                    "CREATE EXTENSION IF NOT EXISTS vector;"
-                    "COMMIT;"
-                )
-                await session.execute(statement)
+                query = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector;")
+                await session.execute(query)
                 await session.commit()
         except Exception as e:
             raise Exception(f"Failed to create vector extension: {e}") from e
@@ -236,9 +237,12 @@ class PGVector(VectorStore):
             Base.metadata.create_all(self._conn)
 
     async def acreate_tables_if_not_exists(self) -> None:
-        async with self._amake_session() as session:
-            async with session.begin():
-                await session.run_sync(Base.metadata.create_all)
+        if isinstance(self.engine, AsyncEngine):
+            async with self.engine.begin() as connection:
+                await connection.run_sync(Base.metadata.create_all)
+                return
+
+        raise ValueError("Engine is not an AsyncEngine")
 
     def drop_tables(self) -> None:
         with self._conn.begin():
@@ -414,6 +418,8 @@ class PGVector(VectorStore):
             pre_delete_collection=pre_delete_collection,
             **kwargs,
         )
+
+        await store.__apost_init__()
 
         await store.aadd_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
@@ -755,7 +761,8 @@ class PGVector(VectorStore):
             if filter is not None:
                 # TODO: Add types to filter
                 # TODO: Refactor filter construction to a separate function
-                # to avoid code duplication between __query_collection and __aquery_collection
+                # to avoid code duplication between
+                # __query_collection and __aquery_collection
                 filter_clauses: list[ColumnExpressionArgument[bool]] = []
                 for key, value in filter.items():
                     IN = "in"
