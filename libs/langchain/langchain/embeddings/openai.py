@@ -429,7 +429,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 # Split tokens into chunks respecting the embedding_ctx_length
                 for j in range(0, len(tokenized), self.embedding_ctx_length):
                     token_chunk = tokenized[j : j + self.embedding_ctx_length]
-                
+
                     # Convert token IDs back to a string
                     chunk_text = tokenizer.decode(token_chunk)
                     tokens.append(chunk_text)
@@ -452,7 +452,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 encoding = tiktoken.get_encoding(model)
             for i, text in enumerate(texts):
                 if self.model.endswith("001"):
-                    # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
+                    # See: https://github.com/openai/openai-python/
+                    #      issues/418#issuecomment-1525939500
                     # replace newlines, which can negatively affect performance.
                     text = text.replace("\n", " ")
  
@@ -584,7 +585,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 encoding = tiktoken.get_encoding(model)
             for i, text in enumerate(texts):
                 if self.model.endswith("001"):
-                    # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
+                    # See: https://github.com/openai/openai-python/
+                    #      issues/418#issuecomment-1525939500
                     # replace newlines, which can negatively affect performance.
                     text = text.replace("\n", " ")
  
