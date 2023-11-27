@@ -4,8 +4,9 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field, root_validator, Extra
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.utils import build_extra_kwargs
 
@@ -18,21 +19,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class LlamaCpp(LLM):
-    """llama.cpp model.
-
-    To use, you should have the llama-cpp-python library installed, and provide the
-    path to the Llama model as a named parameter to the constructor.
-    Check out: https://github.com/abetlen/llama-cpp-python
-
-    Example:
-        .. code-block:: python
-
-            from langchain.llms import LlamaCpp
-            llm = LlamaCpp(model_path="/path/to/llama/model")
-    """
-
-    client: Any  #: :meta private:
+class _LlamaCppCommon(BaseLanguageModel):
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_path: str
     """The path to the Llama model file."""
 
@@ -231,11 +219,6 @@ class LlamaCpp(LLM):
         """Get the identifying parameters."""
         return {**{"model_path": self.model_path}, **self._default_params}
 
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "llamacpp"
-
     def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
         """
         Performs sanity check, preparing parameters in format needed by llama_cpp.
@@ -260,6 +243,35 @@ class LlamaCpp(LLM):
         params["stop"] = self.stop or stop or []
 
         return params
+
+    def get_num_tokens(self, text: str) -> int:
+        tokenized_text = self.client.tokenize(text.encode("utf-8"))
+        return len(tokenized_text)
+
+
+class LlamaCpp(LLM, _LlamaCppCommon):
+    """llama.cpp model.
+
+    To use, you should have the llama-cpp-python library installed, and provide the
+    path to the Llama model as a named parameter to the constructor.
+    Check out: https://github.com/abetlen/llama-cpp-python
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import LlamaCpp
+            llm = ChatLlamaCpp(model_path="./path/to/model.gguf")
+    """
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "llamacpp"
 
     def _call(
         self,
@@ -353,7 +365,3 @@ class LlamaCpp(LLM):
                 run_manager.on_llm_new_token(
                     token=chunk.text, verbose=self.verbose, log_probs=logprobs
                 )
-
-    def get_num_tokens(self, text: str) -> int:
-        tokenized_text = self.client.tokenize(text.encode("utf-8"))
-        return len(tokenized_text)
