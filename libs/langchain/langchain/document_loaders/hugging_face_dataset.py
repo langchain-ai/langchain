@@ -87,7 +87,7 @@ class HuggingFaceDatasetLoader(BaseLoader):
         """Load documents."""
         return list(self.lazy_load())
 
-    def parse_obj(self, page_content: str | object) -> str:
+    def parse_obj(self, page_content: Union[str, object]) -> str:
         if isinstance(page_content, object):
             return json.dumps(page_content)
         return page_content
