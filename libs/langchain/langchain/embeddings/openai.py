@@ -456,7 +456,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     #      issues/418#issuecomment-1525939500
                     # replace newlines, which can negatively affect performance.
                     text = text.replace("\n", " ")
- 
+
                 token = encoding.encode(
                     text=text,
                     allowed_special=self.allowed_special,
@@ -589,7 +589,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     #      issues/418#issuecomment-1525939500
                     # replace newlines, which can negatively affect performance.
                     text = text.replace("\n", " ")
- 
+
                 token = encoding.encode(
                     text=text,
                     allowed_special=self.allowed_special,
