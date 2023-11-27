@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain_core.schema import AgentAction, AgentStep
+from langchain_core.agents import AgentAction, AgentStep
 
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
