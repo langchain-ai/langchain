@@ -1,6 +1,6 @@
 from langchain.schema.storage import __all__
 
-EXPECTED_ALL = ["BaseStore"]
+EXPECTED_ALL = ["BaseStore", "K", "V"]
 
 
 def test_all_imports() -> None:

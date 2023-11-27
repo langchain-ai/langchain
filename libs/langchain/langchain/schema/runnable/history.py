@@ -1,3 +1,11 @@
-from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.runnables.history import (
+    GetSessionHistoryCallable,
+    MessagesOrDictWithMessages,
+    RunnableWithMessageHistory,
+)
 
-__all__ = ["RunnableWithMessageHistory"]
+__all__ = [
+    "RunnableWithMessageHistory",
+    "GetSessionHistoryCallable",
+    "MessagesOrDictWithMessages",
+]
