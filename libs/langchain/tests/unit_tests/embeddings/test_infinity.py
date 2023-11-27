@@ -30,7 +30,7 @@ def mocked_requests_post(
     json: dict,
 ) -> MockResponse:
     assert url.startswith(_INFINITY_BASE_URL)
-    assert _MODEL_ID in url
+    assert "model" in json and _MODEL_ID in json["model"]
     assert json
     assert headers
 
