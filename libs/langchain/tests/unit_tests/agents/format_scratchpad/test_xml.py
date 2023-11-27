@@ -1,4 +1,4 @@
-from langchain_core.schema.agent import AgentAction
+from langchain_core.agents import AgentAction
 
 from langchain.agents.format_scratchpad.xml import format_xml
 

@@ -16,25 +16,21 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import (
+from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
-    ChatGeneration,
+    BaseMessageChunk,
     ChatMessage,
-    ChatResult,
+    ChatMessageChunk,
     FunctionMessage,
     HumanMessage,
-    SystemMessage,
-)
-from langchain_core.schema.messages import (
-    AIMessageChunk,
-    BaseMessageChunk,
-    ChatMessageChunk,
     HumanMessageChunk,
+    SystemMessage,
     SystemMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_pydantic_field_names
 from tenacity import (
     before_sleep_log,

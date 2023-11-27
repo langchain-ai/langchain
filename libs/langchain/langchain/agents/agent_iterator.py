@@ -15,15 +15,14 @@ from typing import (
     Union,
 )
 
-from langchain_core.load.dump import dumpd
-from langchain_core.runnables.utils import AddableDict
-from langchain_core.schema import (
-    RUN_KEY,
+from langchain_core.agents import (
     AgentAction,
     AgentFinish,
     AgentStep,
-    RunInfo,
 )
+from langchain_core.load.dump import dumpd
+from langchain_core.outputs import RunInfo
+from langchain_core.runnables.utils import AddableDict
 from langchain_core.utils.input import get_color_mapping
 
 from langchain.callbacks.manager import (
@@ -33,6 +32,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain.schema import RUN_KEY
 from langchain.tools import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 

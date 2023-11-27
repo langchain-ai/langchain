@@ -1,4 +1,4 @@
-from langchain_core.callbacks.tracers.stdout import (
+from langchain_core.tracers.stdout import (
     ConsoleCallbackHandler,
     FunctionCallbackHandler,
 )

@@ -21,21 +21,17 @@ from typing import (
 )
 
 import yaml
+from langchain_core.agents import AgentAction, AgentFinish, AgentStep
+from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.runnables.utils import AddableDict
-from langchain_core.schema import (
-    AgentAction,
-    AgentFinish,
-    AgentStep,
-    BaseOutputParser,
-    BasePromptTemplate,
-    OutputParserException,
-)
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.messages import BaseMessage
 from langchain_core.utils.input import get_color_mapping
 
 from langchain.agents.agent_iterator import AgentExecutorIterator

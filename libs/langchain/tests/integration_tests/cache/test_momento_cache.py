@@ -11,7 +11,7 @@ from datetime import timedelta
 from typing import Iterator
 
 import pytest
-from langchain_core.schema import Generation, LLMResult
+from langchain_core.outputs import Generation, LLMResult
 
 from langchain.cache import MomentoCache
 from langchain.globals import set_llm_cache
