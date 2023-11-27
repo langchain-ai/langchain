@@ -1,10 +1,14 @@
 # skeleton-of-thought
 
-TODO: What does this package do
+Implements "Skeleton of Thought" from [this](https://sites.google.com/view/sot-llm) paper.
+
+This technique makes it possible to generate longer generates more quickly by first generating a skeleton, then generating each point of the outline.
 
 ## Environment Setup
 
-TODO: What environment variables need to be set (if any)
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+
+To get your `OPENAI_API_KEY`, navigate to [API keys](https://platform.openai.com/account/api-keys) on your OpenAI account and create a new secret key.
 
 ## Usage
 
