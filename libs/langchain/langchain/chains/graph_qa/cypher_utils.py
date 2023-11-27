@@ -14,9 +14,7 @@ class CypherQueryCorrector:
 
     property_pattern = re.compile(r"\{.+?\}")
     node_pattern = re.compile(r"\(.+?\)")
-    path_pattern = re.compile(
-        r"(\([^\,\(\)]*?(\{.+\})?[^\,\(\)]*?\))(<?-)(\[.*?\])?(->?)(\([^\,\(\)]*?(\{.+\})?[^\,\(\)]*?\))"
-    )
+    path_pattern = re.compile(r"\(.*\).*-.*-.*\(.*\)")
     node_relation_node_pattern = re.compile(
         r"(\()+(?P<left_node>[^()]*?)\)(?P<relation>.*?)\((?P<right_node>[^()]*?)(\))+"
     )
@@ -64,17 +62,7 @@ class CypherQueryCorrector:
         Args:
             query: cypher query
         """
-        paths = []
-        idx = 0
-        while matched := self.path_pattern.findall(query[idx:]):
-            matched = matched[0]
-            matched = [
-                m for i, m in enumerate(matched) if i not in [1, len(matched) - 1]
-            ]
-            path = "".join(matched)
-            idx = query.find(path) + len(path) - len(matched[-1])
-            paths.append(path)
-        return paths
+        return re.findall(self.path_pattern, query)
 
     def judge_direction(self, relation: str) -> str:
         """

@@ -23,7 +23,6 @@ EXPECTED_ALL = [
     "MetalRetriever",
     "MilvusRetriever",
     "MultiQueryRetriever",
-    "OutlineRetriever",
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
     "RemoteLangChainRetriever",
