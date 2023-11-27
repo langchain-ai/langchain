@@ -15,19 +15,25 @@ from typing import (
     no_type_check,
 )
 
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
 )
 from langchain_core.runnables.base import coerce_to_runnable
 
+from langchain.pydantic_v1 import BaseModel
+
+# Note: Import directly from langchain_core is not stable and generate some errors
+# from langchain_core.documents import BaseDocumentTransformer, Document
+# from langchain_core.pydantic_v1 import BaseModel
 from langchain.schema import BaseDocumentTransformer, Document
 
 if TYPE_CHECKING:
     from .document_transformers import DocumentTransformers
+else:
+    DocumentTransformers = Any
 
-_LEGACY = False  # Use legacy langchain transformer interface
+_LEGACY = True  # Use legacy langchain transformer interface
 
 """
     We propose an alternative way of making transformers compatible with LCEL.
