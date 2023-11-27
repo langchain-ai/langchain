@@ -1,7 +1,7 @@
 # flake8: noqa
 
 MONGO_PREFIX = """You are an agent designed to interact with a MongoDB database.
-Given an input question, create a syntactically correct PyMongo db.command() query command document (dict) to run, then look at the results of the query and return the answer.
+Given an input question, create a syntactically correct MongoDB query in the form of a document or string to run, then look at the results of the query and return the answer.
 Unless the user specifies a specific number of examples they wish to obtain, always limit your query to at most {top_k} results.
 You can order the results by a relevant field to return the most interesting examples in the database.
 You have access to tools for interacting with the database.
@@ -16,7 +16,7 @@ If the question does not seem related to the database, just return "I don't know
 MONGO_SUFFIX = """Begin!
 
 Question: {input}
-Thought: I should look at the collections in the database to see what I can query.  Then I should query the schema of the most relevant collections.
+Thought: I should look at the collections in the database to see what I can query.  Then I should query the fields of the documents of the most relevant collections.
 {agent_scratchpad}"""
 
-MONGO_FUNCTIONS_SUFFIX = """I should look at the collections in the database to see what I can query.  Then I should query the schema of the most relevant collections."""
+MONGO_FUNCTIONS_SUFFIX = """I should look at the collections in the database to see what I can query.  Then I should query the fields of the documents of the most relevant collections."""

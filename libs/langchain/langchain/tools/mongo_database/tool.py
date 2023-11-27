@@ -49,7 +49,7 @@ class InfoMongoDBTool(BaseMongoDBTool, BaseTool):
 
     name: str = "mongo_db_schema"
     description: str = """
-    Input to this tool is a comma-separated list of collections, output is the schema 
+    Input to this tool is a comma-separated list of collections, output is the name 
     and sample documents for those collections.    
 
     Example Input: "collection1, collection2, collection3"
@@ -98,13 +98,13 @@ class QueryMongoDBCheckerTool(BaseMongoDBTool, BaseTool):
             values["llm_chain"] = LLMChain(
                 llm=values.get("llm"),
                 prompt=PromptTemplate(
-                    template=QUERY_CHECKER, input_variables=["client", "query"]
+                    template=QUERY_CHECKER, input_variables=["query"]
                 ),
             )
 
-        if values["llm_chain"].prompt.input_variables != ["client", "query"]:
+        if values["llm_chain"].prompt.input_variables != ["query"]:
             raise ValueError(
-                "LLM chain for QueryCheckerTool must have input variables ['query', 'client']"
+                "LLM chain for QueryCheckerTool must have input variables ['query']"
             )
 
         return values
