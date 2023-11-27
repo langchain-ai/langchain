@@ -1,4 +1,3 @@
-import logging
 from typing import Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun

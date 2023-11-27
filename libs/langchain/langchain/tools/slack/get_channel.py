@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Optional
+from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.slack.base import SlackBaseTool
@@ -19,11 +19,15 @@ class SlackGetChannel(SlackBaseTool):
 
             result = self.client.conversations_list()
             channels = result["channels"]
-            filtered_result = [{
-                key: channel[key] for key in ('id', 'name', 'created','num_members')}
-                for channel in channels if 'id' in channel and 'name' in channel \
-                and 'created' in channel and 'num_members' in channel]
+            filtered_result = [
+                {key: channel[key] for key in ("id", "name", "created", "num_members")}
+                for channel in channels
+                if "id" in channel
+                and "name" in channel
+                and "created" in channel
+                and "num_members" in channel
+            ]
             return json.dumps(filtered_result)
-        
+
         except Exception as e:
             return "Error creating conversation: {}".format(e)
