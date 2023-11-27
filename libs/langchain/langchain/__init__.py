@@ -300,6 +300,12 @@ def __getattr__(name: str) -> Any:
         _warn_on_import(name, replacement="langchain.utilities.WikipediaAPIWrapper")
 
         return WikipediaAPIWrapper
+    elif name == "StackExchangeAPIWrapper":
+        from langchain.utilities import StackExchangeAPIWrapper
+
+        _warn_on_import(name, replacement="langchain.utilities.StackExchangeAPIWrapper")
+
+        return StackExchangeAPIWrapper
     elif name == "WolframAlphaAPIWrapper":
         from langchain.utilities import WolframAlphaAPIWrapper
 
@@ -382,6 +388,7 @@ __all__ = [
     "GoogleSerperAPIWrapper",
     "WolframAlphaAPIWrapper",
     "WikipediaAPIWrapper",
+    "StackExchangeAPIWrapper",
     "Anthropic",
     "Banana",
     "CerebriumAI",

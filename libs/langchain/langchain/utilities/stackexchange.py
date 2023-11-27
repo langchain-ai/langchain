@@ -1,23 +1,18 @@
-from stackapi import StackAPI
 import html
 from typing import Any, Dict, Optional
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 
 class StackExchangeAPIWrapper:
     """Wrapper for Stack Exchange API."""
 
     stackapi_client: Any  #: :meta private:
 
-    def __init__(self):
-        self.validate_environment()
-
-        self.stackapi_client = StackAPI('stackoverflow')
-
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the required Python package exists."""
         try:
-            import stackapi
-            values["stackapi"] = stackapi
+            from stackapi import StackAPI
+            values["stackapi_client"] = StackAPI("stackoverflow")
         except ImportError:
             raise ImportError(
                 "The 'stackapi' Python package is not installed. "
@@ -27,7 +22,8 @@ class StackExchangeAPIWrapper:
 
     def run(self, title: str) -> str:
         """Run query through StackExchange API and parse results."""
-        output = self.stackapi_client.fetch('search/excerpts', title=title)
+        SITE = self.stackapi_client
+        output = SITE.fetch('search/excerpts', title=title)
 
         result_text = ""
         for ans in output['items']:
