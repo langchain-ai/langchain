@@ -197,7 +197,7 @@ class Runnable(Generic[Input, Output], ABC):
 
     Alternatively, you can pass existing or custom callbacks to any given chain:
 
-       ... code-block:: python
+        .. code-block:: python
 
             from langchain_core.tracers import ConsoleCallbackHandler
 
