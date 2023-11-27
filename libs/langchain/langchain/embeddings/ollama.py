@@ -170,15 +170,16 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             )
 
     def _embed(self, input: List[str]) -> List[List[float]]:
-        embeddings_list: List[List[float]] = []
-        for prompt in input:
-            embeddings = self._process_emb_response(prompt)
-            embeddings_list.append(embeddings)
+        try:
+            from tqdm import tqdm
 
-        return embeddings_list
+            iter_ = tqdm(input, desc="OllamaEmbeddings")
+        except ImportError:
+            iter_ = input
+        return [self._process_emb_response(prompt) for prompt in iter_]
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed documents using a Ollama deployed embedding model.
+        """Embed documents using an Ollama deployed embedding model.
 
         Args:
             texts: The list of texts to embed.
@@ -186,13 +187,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        try:
-            from tqdm import tqdm
-
-            text_iter = tqdm(texts, desc="OllamaEmbeddings")
-        except ImportError:
-            text_iter = texts
-        instruction_pairs = [f"{self.embed_instruction}{text}" for text in text_iter]
+        instruction_pairs = [f"{self.embed_instruction}{text}" for text in texts]
         embeddings = self._embed(instruction_pairs)
         return embeddings
 
