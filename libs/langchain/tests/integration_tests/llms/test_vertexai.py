@@ -10,11 +10,11 @@ Your end-user credentials would be used to make the calls (make sure you've run
 import os
 
 import pytest
+from langchain_core.documents import Document
 from langchain_core.outputs import LLMResult
 from pytest_mock import MockerFixture
 
 from langchain.chains.summarize import load_summarize_chain
-from langchain.docstore.document import Document
 from langchain.llms import VertexAI, VertexAIModelGarden
 
 
