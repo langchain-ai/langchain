@@ -415,11 +415,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             except ImportError:
                 raise ValueError(
                     "Could not import transformers python package. "
-                    "This is needed in order to for OpenAIEmbeddings without `tiktoken`. "
-                    "Please install it with `pip install transformers`."
+                    "This is needed in order to for OpenAIEmbeddings without "
+                    "`tiktoken`. Please install it with `pip install transformers`. "
                 )
 
-            tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_name)
+            tokenizer = AutoTokenizer.from_pretrained(
+                pretrained_model_name_or_path=model_name
+            )
             for i, text in enumerate(texts):
                 # Tokenize the text using HuggingFace transformers
                 tokenized = tokenizer.encode(text, add_special_tokens=False)
@@ -520,9 +522,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         Asynchronously generate length-safe embeddings for a list of texts.
 
-        This method handles tokenization and asynchronous embedding generation, respecting
-        the set embedding context length and chunk size. It supports both tiktoken
-        and Hugging Face tokenizer based on the tiktoken_enabled flag.
+        This method handles tokenization and asynchronous embedding generation, 
+        respecting the set embedding context length and chunk size. It supports both
+        `tiktoken` and HuggingFace `tokenizer` based on the tiktoken_enabled flag.
 
         Args:
             texts (List[str]): A list of texts to embed.
@@ -545,11 +547,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             except ImportError:
                 raise ValueError(
                     "Could not import transformers python package. "
-                    "This is needed in order to for OpenAIEmbeddings without `tiktoken`. "
-                    "Please install it with `pip install transformers`."
+                    "This is needed in order to for OpenAIEmbeddings without "
+                    " `tiktoken`. Please install it with `pip install transformers`."
                 )
 
-            tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_name)
+            tokenizer = AutoTokenizer.from_pretrained(
+                pretrained_model_name_or_path=model_name
+            )
             for i, text in enumerate(texts):
                 # Tokenize the text using HuggingFace transformers
                 tokenized = tokenizer.encode(text, add_special_tokens=False)
