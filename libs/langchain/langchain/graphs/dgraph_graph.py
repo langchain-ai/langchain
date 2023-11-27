@@ -1,6 +1,11 @@
 from typing import Any, Dict, List
 import json
-
+try:
+  import pydgraph
+except ImportError:
+  raise ImportError(
+    "Please install pydgraph with `pip install pydgraph` to use DGraph."
+  )
 class DGraph:
     """DGraph wrapper for graph operations.
 
@@ -21,13 +26,6 @@ class DGraph:
                 username: str = None,
                 password: str = None,
                 namespace: str = None):
-      try:
-        import pydgraph
-      except ImportError:
-        raise ImportError(
-          "Please install pydgraph with `pip install pydgraph` to use DGraph."
-        )
-      
       client_stub = None
       if apiToken != None:
         client_stub = pydgraph.DgraphClientStub.from_cloud(clientUrl, apiToken)
@@ -48,6 +46,30 @@ class DGraph:
         return reformattedSchema
       finally:
         txn.discard()
+    
+    def add_schema(self, schema_string: str):
+      op = pydgraph.Operation(schema=schema_string)
+      self.client.alter(op)
+    
+    def add_node(self, data: Dict[str, Any]):
+      txn = self.client.txn()
+      try:
+        txn.mutate(set_obj=data)
+        txn.commit()
+      finally:
+        txn.discard()
+      
+    def add_node_rdf(self, rdf_string: str):
+      txn = self.client.txn()
+      try:
+        txn.mutate(set_nquads=rdf_string)
+        txn.commit()
+      finally:
+        txn.discard()
+
+    def drop_all(self):
+      op = pydgraph.Operation(drop_all=True)
+      self.client.alter(op)
       
     """
     Reformats a schema from the DGraph schema response to be of the form:
