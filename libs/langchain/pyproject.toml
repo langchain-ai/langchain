@@ -384,8 +384,8 @@ extended_testing = [
  "rspace_client",
  "fireworks-ai",
  "javelin-sdk",
- "dgml-utils",
  "databricks-vectorsearch",
+ "dgml-utils",
 ]
 
 [tool.ruff]
