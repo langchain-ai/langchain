@@ -2962,6 +2962,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     Example:
 
     `bind`: Bind kwargs to pass to the underlying runnable when running it.
+
         .. code-block:: python
             # Create a runnable binding that invokes the ChatModel with the
             # additional kwarg `stop=['-']` when running it.
@@ -2972,8 +2973,11 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             # RunnableBinding
             runnable_binding = model.bind(stop=['-'])
             runnable_binding.invoke('Say "Parrot-MAGIC"') # Should return `Parrot`
+
         Can also be done by instantiating a RunnableBinding directly (not recommended):
+
         .. code-block:: python
+
             from langchain.schema.runnable import RunnableBinding
             runnable_binding = RunnableBinding(
                 bound=model,
