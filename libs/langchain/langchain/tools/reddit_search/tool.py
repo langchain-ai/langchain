@@ -38,8 +38,8 @@ class RedditSearchRun(BaseTool):
 
     name: str = "reddit_search"
     description: str = (
-        "A tool that searches for posts on Reddit.",
-        "Useful when you need to know post information on a subreddit.",
+        "A tool that searches for posts on Reddit."
+        "Useful when you need to know post information on a subreddit."
     )
     api_wrapper: RedditSearchAPIWrapper = Field(default_factory=RedditSearchAPIWrapper)
     args_schema: Type[BaseModel] = RedditSearchSchema
