@@ -287,6 +287,9 @@ class ChatOpenAI(BaseChatModel):
             "OPENAI_PROXY",
             default="",
         )
+        values["http_client"] = values["http_client"] or httpx.Client(
+            proxies=values["openai_proxy"]
+        )
         try:
             import openai
 
