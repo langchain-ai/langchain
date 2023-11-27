@@ -80,8 +80,13 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        try:
+            from tqdm import tqdm
+            iter_ = tqdm(texts, desc="GooglePalmEmbeddings")
+        except ImportError:
+            iter_ = texts
         return [
-            self.embed_query(text) for text in tqdm(texts, desc="GooglePalmEmbeddings")
+            self.embed_query(text) for text in iter_
         ]
 
     def embed_query(self, text: str) -> List[float]:
