@@ -54,7 +54,7 @@ class MongoDatabaseToolkit(BaseToolkit):
             f"{query_mongo_database_tool.name}."
         )
         query_mongo_checker_tool = QueryMongoDBCheckerTool(
-            db=self.db, description=query_mongo_checker_tool_description
+            db=self.db, llm=self.llm, description=query_mongo_checker_tool_description
         )
         return [
             list_mongo_database_tool,
