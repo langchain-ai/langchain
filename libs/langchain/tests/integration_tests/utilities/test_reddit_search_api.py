@@ -1,11 +1,12 @@
-from langchain.utilities.reddit_search import RedditSearchAPIWrapper
-
 import pytest
+
+from langchain.utilities.reddit_search import RedditSearchAPIWrapper
 
 
 @pytest.fixture
 def api_client() -> RedditSearchAPIWrapper:
     return RedditSearchAPIWrapper()
+
 
 def assert_results_exists(results: list) -> None:
     if len(results) > 0:
@@ -21,17 +22,17 @@ def assert_results_exists(results: list) -> None:
     else:
         assert results == []
 
+
+@pytest.mark.requires("praw")
 def test_run_empty_query(api_client: RedditSearchAPIWrapper) -> None:
     """Test that run gives the correct answer with empty query."""
     search = api_client.run(
-        query="",
-        sort="relevance",
-        time_filter="all",
-        subreddit="all",
-        limit=5
+        query="", sort="relevance", time_filter="all", subreddit="all", limit=5
     )
     assert search == "Searching r/all did not find any posts:"
 
+
+@pytest.mark.requires("praw")
 def test_run_query(api_client: RedditSearchAPIWrapper) -> None:
     """Test that run gives the correct answer."""
     search = api_client.run(
@@ -39,10 +40,12 @@ def test_run_query(api_client: RedditSearchAPIWrapper) -> None:
         sort="relevance",
         time_filter="all",
         subreddit="funny",
-        limit=5
+        limit=5,
     )
     assert "University" in search
 
+
+@pytest.mark.requires("praw")
 def test_results_exists(api_client: RedditSearchAPIWrapper) -> None:
     """Test that results gives the correct output format."""
     search = api_client.results(
@@ -50,17 +53,15 @@ def test_results_exists(api_client: RedditSearchAPIWrapper) -> None:
         sort="relevance",
         time_filter="all",
         subreddit="all",
-        limit=10
+        limit=10,
     )
     assert_results_exists(search)
 
+
+@pytest.mark.requires("praw")
 def test_results_empty_query(api_client: RedditSearchAPIWrapper) -> None:
     """Test that results gives the correct output with empty query."""
     search = api_client.results(
-        query="",
-        sort="relevance",
-        time_filter="all",
-        subreddit="all",
-        limit=10
+        query="", sort="relevance", time_filter="all", subreddit="all", limit=10
     )
     assert search == []
