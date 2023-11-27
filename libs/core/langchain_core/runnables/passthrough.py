@@ -62,8 +62,11 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
         .. code-block:: python
 
-            from langchain_core.runnables import RunnablePassthrough, RunnableParallel
-            from langchain_core.runnables import RunnableLambda
+            from langchain_core.runnables import (
+                RunnableLambda,
+                RunnableParallel,
+                RunnablePassthrough,
+            )
 
             runnable = RunnableParallel(
                 origin=RunnablePassthrough(),
