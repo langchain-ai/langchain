@@ -9,6 +9,7 @@ from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 
+
 class SearchType(str, Enum):
     """Enumerator of the types of search to perform."""
 
@@ -16,7 +17,8 @@ class SearchType(str, Enum):
     """Similarity search."""
     mmr = "mmr"
     """Maximal Marginal Relevance reranking of similarity search."""
-    
+
+
 class MultiVectorRetriever(BaseRetriever):
     """Retrieve from a set of multiple embeddings for the same document."""
 
