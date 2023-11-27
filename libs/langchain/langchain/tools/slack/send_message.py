@@ -1,4 +1,3 @@
-import logging
 from typing import Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
@@ -33,10 +32,12 @@ class SlackSendMessage(SlackBaseTool):
         message: str,
         channel: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
+        *args,
+        **kwargs
     ) -> str:
-        logger = logging.getLogger(__name__)
-        logger.error("Message: %s", message)
-        logger.error("Channel: %s", channel)
-        result = self.client.chat_postMessage(channel=channel, text=message)
-        output = "Message sent: " + str(result)
-        return output
+        try:
+            result = self.client.chat_postMessage(channel=channel, text=message)
+            output = "Message sent: " + str(result)
+            return output
+        except Exception as e:
+            return "Error creating conversation: {}".format(e)

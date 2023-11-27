@@ -108,7 +108,6 @@ _EXPECTED = [
     "ZapierNLARunAction",
     "format_tool_to_openai_function",
     "tool",
-    "SlackGetChannelIdNameDict",
     "SlackSendMessage",
     "login",
 ]
