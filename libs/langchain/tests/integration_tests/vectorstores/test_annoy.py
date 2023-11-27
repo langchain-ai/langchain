@@ -2,8 +2,8 @@
 import tempfile
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.vectorstores.annoy import Annoy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings

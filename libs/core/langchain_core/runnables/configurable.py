@@ -220,6 +220,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                     annotation=spec.annotation
                     or self.default.__fields__[field_name].annotation,
                     default=getattr(self.default, field_name),
+                    is_shared=spec.is_shared,
                 )
                 if isinstance(spec, ConfigurableField)
                 else make_options_spec(
@@ -298,6 +299,12 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     ]
 
     default_key: str = "default"
+    """The enum value to use for the default option. Defaults to "default"."""
+
+    prefix_keys: bool
+    """Whether to prefix configurable fields of each alternative with a namespace
+    of the form <which.id>==<alternative_key>, eg. a key named "temperature" used by 
+    the alternative named "gpt3" becomes "model==gpt3/temperature"."""
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -313,21 +320,37 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                     ),
                 )
                 _enums_for_spec[self.which] = cast(Type[StrEnum], which_enum)
-        return [
-            ConfigurableFieldSpec(
-                id=self.which.id,
-                name=self.which.name,
-                description=self.which.description,
-                annotation=which_enum,
-                default=self.default_key,
-            ),
-            *self.default.config_specs,
-        ] + [
-            s
-            for alt in self.alternatives.values()
-            if isinstance(alt, RunnableSerializable)
-            for s in alt.config_specs
-        ]
+        return get_unique_config_specs(
+            # which alternative
+            [
+                ConfigurableFieldSpec(
+                    id=self.which.id,
+                    name=self.which.name,
+                    description=self.which.description,
+                    annotation=which_enum,
+                    default=self.default_key,
+                    is_shared=self.which.is_shared,
+                ),
+            ]
+            # config specs of the default option
+            + (
+                [
+                    prefix_config_spec(s, f"{self.which.id}=={self.default_key}")
+                    for s in self.default.config_specs
+                ]
+                if self.prefix_keys
+                else self.default.config_specs
+            )
+            # config specs of the alternatives
+            + [
+                prefix_config_spec(s, f"{self.which.id}=={alt_key}")
+                if self.prefix_keys
+                else s
+                for alt_key, alt in self.alternatives.items()
+                if isinstance(alt, RunnableSerializable)
+                for s in alt.config_specs
+            ]
+        )
 
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
@@ -355,6 +378,23 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             raise ValueError(f"Unknown alternative: {which}")
 
 
+def prefix_config_spec(
+    spec: ConfigurableFieldSpec, prefix: str
+) -> ConfigurableFieldSpec:
+    return (
+        ConfigurableFieldSpec(
+            id=f"{prefix}/{spec.id}",
+            name=spec.name,
+            description=spec.description,
+            annotation=spec.annotation,
+            default=spec.default,
+            is_shared=spec.is_shared,
+        )
+        if not spec.is_shared
+        else spec
+    )
+
+
 def make_options_spec(
     spec: Union[ConfigurableFieldSingleOption, ConfigurableFieldMultiOption],
     description: Optional[str],
@@ -377,6 +417,7 @@ def make_options_spec(
             description=spec.description or description,
             annotation=enum,
             default=spec.default,
+            is_shared=spec.is_shared,
         )
     else:
         return ConfigurableFieldSpec(
@@ -385,4 +426,5 @@ def make_options_spec(
             description=spec.description or description,
             annotation=Sequence[enum],  # type: ignore[valid-type]
             default=spec.default,
+            is_shared=spec.is_shared,
         )

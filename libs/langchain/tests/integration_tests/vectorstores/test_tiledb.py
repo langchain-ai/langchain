@@ -2,8 +2,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.tiledb import TileDB
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
