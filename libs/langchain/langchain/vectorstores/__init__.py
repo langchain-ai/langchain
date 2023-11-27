@@ -410,6 +410,12 @@ def _import_weaviate() -> Any:
     return Weaviate
 
 
+def _import_wrapper_vectorestore() -> Any:
+    from langchain.vectorstores.wrapper_vectorstore import WrapperVectorStore
+
+    return WrapperVectorStore
+
+
 def _import_zep() -> Any:
     from langchain.vectorstores.zep import ZepVectorStore
 
@@ -549,6 +555,8 @@ def __getattr__(name: str) -> Any:
         return _import_vectara()
     elif name == "Weaviate":
         return _import_weaviate()
+    elif name == "WrapperVectorStore":
+        return _import_wrapper_vectorestore()
     elif name == "ZepVectorStore":
         return _import_zep()
     elif name == "Zilliz":
@@ -626,4 +634,5 @@ __all__ = [
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
+    "WrapperVectorStore",
 ]

@@ -1,6 +1,6 @@
 """Retriever that generates and executes structured queries over its own data source."""
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
@@ -45,6 +45,7 @@ from langchain.vectorstores import (
     TimescaleVector,
     Vectara,
     Weaviate,
+    WrapperVectorStore,
 )
 
 logger = logging.getLogger(__name__)
@@ -67,6 +68,9 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         TimescaleVector: TimescaleVectorTranslator,
         OpenSearchVectorSearch: OpenSearchTranslator,
     }
+
+    if isinstance(vectorstore, WrapperVectorStore):
+        return _get_builtin_translator(cast(Any, vectorstore).vectorstore)
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
     elif isinstance(vectorstore, MyScale):

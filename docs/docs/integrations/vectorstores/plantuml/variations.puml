@@ -1,0 +1,40 @@
+@startuml
+folder "doc1" {
+    object document1
+
+    object chunk1_1
+    object chunk1_2
+
+    document1 --> chunk1_1
+    document1 --> chunk1_2
+
+    object var1_1_1
+    object var1_1_2
+    object var1_1_3
+    object var1_2_1
+    object var1_2_2
+    object var1_2_3
+
+    chunk1_1 --> var1_1_1
+    chunk1_1 --> var1_1_2
+    chunk1_1 --> var1_1_3
+
+    chunk1_2 --> var1_2_1
+    chunk1_2 --> var1_2_2
+    chunk1_2 --> var1_2_3
+}
+
+folder "doc2" {
+    object document2
+    object chunk2_1
+    object var2_1_1
+    object var2_1_2
+    object var2_1_3
+    document2 --> chunk2_1
+
+    chunk2_1 --> var2_1_1
+    chunk2_1 --> var2_1_2
+    chunk2_1 --> var2_1_3
+}
+
+@enduml

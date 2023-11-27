@@ -68,6 +68,7 @@ _EXPECTED = [
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
+    "WrapperVectorStore",
 ]
 
 

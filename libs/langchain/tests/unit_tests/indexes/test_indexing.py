@@ -1143,6 +1143,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Vearch",
         "VespaStore",
         "Weaviate",
+        "WrapperVectorStore",
         "ZepVectorStore",
     }
     assert compatible == documented

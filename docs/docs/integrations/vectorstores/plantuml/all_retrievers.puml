@@ -1,0 +1,58 @@
+#%% raw
+%%plantuml
+
+@startuml
+
+
+database "Persistance" {
+    object rag_vectorstore
+    database "VectorStore"{
+        object chroma_vectorstore
+    }
+    database "DocStore" {
+        object docstore
+    }
+
+    database "RecordManager" {
+        object record_manager
+    }
+}
+
+package "Retrievers" {
+    object rag_retriever
+    object multi_query_retriever
+    object merge_retriever
+    object self_retriever
+    object summary_retriever
+
+    summary_retriever --> chroma_vectorstore
+    rag_vectorstore --> chroma_vectorstore
+    self_retriever --> rag_retriever : "filters"
+    rag_retriever --> rag_vectorstore
+    rag_vectorstore --> docstore
+    merge_retriever --> summary_retriever
+    merge_retriever --> self_retriever
+    multi_query_retriever -> merge_retriever
+}
+
+package "Compressors" {
+
+    object compression_retriever
+
+    package "Filters" {
+        object embeddings_filter
+        object long_context_reoder
+    }
+    compression_retriever *--> embeddings_filter
+    compression_retriever --> multi_query_retriever
+    embeddings_filter --> long_context_reoder
+}
+object final_retriever
+final_retriever -> compression_retriever
+
+
+object "index()" as index
+rag_vectorstore <- index : use
+record_manager <- index : use
+
+@enduml
