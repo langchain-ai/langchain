@@ -23,11 +23,11 @@ from typing import (
 import numpy as np
 import yaml
 from langchain_core._api import deprecated
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.docstore.document import Document
 from langchain.utilities.redis import (
     _array_to_buffer,
     _buffer_to_array,
