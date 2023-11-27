@@ -26,8 +26,6 @@ class SlackGetMessage(SlackBaseTool):
         self,
         channel_id: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        *args,
-        **kwargs
     ) -> str:
         logging.getLogger(__name__)
         try:

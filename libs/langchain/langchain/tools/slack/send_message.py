@@ -32,8 +32,6 @@ class SlackSendMessage(SlackBaseTool):
         message: str,
         channel: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        *args,
-        **kwargs
     ) -> str:
         try:
             result = self.client.chat_postMessage(channel=channel, text=message)
