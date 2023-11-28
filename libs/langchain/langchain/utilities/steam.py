@@ -86,7 +86,7 @@ class SteamWebAPIWrapper(BaseModel):
 
     def details_of_games(self, name: str) -> str:
         games = self.steam.apps.search_games(name)
-        info_partOne_dict = self.get_id_link_price(games, name)
+        info_partOne_dict = self.get_id_link_price(games)
         info_partOne = self.parse_to_str(info_partOne_dict)
         id = str(info_partOne_dict.get("id"))
         info_dict = self.steam.apps.get_app_details(id)
