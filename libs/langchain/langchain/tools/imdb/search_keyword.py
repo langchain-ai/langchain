@@ -5,12 +5,12 @@ from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.imdb.base import IMDbBaseTool
 
 
-class IMDbSearchMovie(IMDbBaseTool):
-    """Tool that searches movies with a given title."""
+class IMDbSearchMovieKeyword(IMDbBaseTool):
+    """Tool that searches movies with key word"""
 
-    name: str = "imdb_search_movie"
+    name: str = "imdb_search_movie_keyword"
     description: str = (
-        "Searches IMDb for a movie with the given title and returns a "
+        "Searches IMDb for a movie with the given key word returns a "
         "JSON array containing the search results, sorted by relevance. "
         "Each entry in the array contains the movie title and its ID."
     )
