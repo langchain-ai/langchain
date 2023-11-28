@@ -16,7 +16,7 @@ from wsgiref.handlers import format_date_time
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import (
     BaseChatModel,
-    _generate_from_stream,
+    generate_from_stream,
 )
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
@@ -238,7 +238,7 @@ class ChatSparkLLM(BaseChatModel):
             stream_iter = self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         self.client.arun(
             [_convert_message_to_dict(m) for m in messages],
