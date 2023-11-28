@@ -1,6 +1,7 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 from typing import Any, List, Optional, Sequence
 
+from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
@@ -13,7 +14,6 @@ from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
 from langchain.docstore.base import Docstore
-from langchain.docstore.document import Document
 from langchain.tools.base import BaseTool
 
 

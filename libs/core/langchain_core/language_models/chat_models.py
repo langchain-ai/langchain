@@ -55,7 +55,7 @@ def _get_verbosity() -> bool:
     return get_verbose()
 
 
-def _generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
+def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     generation: Optional[ChatGenerationChunk] = None
     for chunk in stream:
         if generation is None:
@@ -66,7 +66,7 @@ def _generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     return ChatResult(generations=[generation])
 
 
-async def _agenerate_from_stream(
+async def agenerate_from_stream(
     stream: AsyncIterator[ChatGenerationChunk],
 ) -> ChatResult:
     generation: Optional[ChatGenerationChunk] = None

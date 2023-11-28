@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import yaml
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
