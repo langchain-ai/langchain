@@ -55,6 +55,7 @@ class LlamaChat(NVAIPlayChat):
             **kwargs,
         )
 
+
 class MistralChat(NVAIPlayChat):
     def __init__(
         self,
@@ -75,6 +76,7 @@ class MistralChat(NVAIPlayChat):
             streaming=streaming,
             **kwargs,
         )
+
 
 class SteerLMChat(NVAIPlayChat):
     def __init__(
@@ -103,6 +105,7 @@ class SteerLMChat(NVAIPlayChat):
             streaming=streaming,
             **kwargs,
         )
+
 
 class NemotronQAChat(NVAIPlayChat):
     def __init__(
