@@ -1,9 +1,9 @@
 import datetime
+import warnings
 from typing import Any, Literal, Optional, Sequence, Union
 
+from langchain_core.utils import check_package_version
 from typing_extensions import TypedDict
-
-from langchain.utils import check_package_version
 
 try:
     check_package_version("lark", gte_version="1.1.5")
@@ -55,6 +55,8 @@ GRAMMAR = r"""
 
 
 class ISO8601Date(TypedDict):
+    """A date in ISO 8601 format (YYYY-MM-DD)."""
+
     date: str
     type: Literal["date"]
 
@@ -140,11 +142,11 @@ class QueryTransformer(Transformer):
         item = str(item).strip("\"'")
         try:
             datetime.datetime.strptime(item, "%Y-%m-%d")
-        except ValueError as e:
-            raise ValueError(
+        except ValueError:
+            warnings.warn(
                 "Dates are expected to be provided in ISO 8601 date format "
                 "(YYYY-MM-DD)."
-            ) from e
+            )
         return {"date": item, "type": "date"}
 
     def string(self, item: Any) -> str:

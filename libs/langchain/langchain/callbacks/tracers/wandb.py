@@ -14,8 +14,8 @@ from typing import (
     Union,
 )
 
-from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run
+from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings

@@ -166,7 +166,7 @@ const config = {
             label: "Guides",
           },
           {
-            href: "https://api.python.langchain.com",
+            href: "https://api.python.langchain.com/en/stable/api_reference.html",
             label: "API",
             position: "left",
           },
@@ -193,8 +193,16 @@ const config = {
                 label: "Dependents",
               },
               {
+                label: "Integrations Hub",
+                href: "https://integrations.langchain.com/",
+              },
+              {
                 to: "/docs/additional_resources/tutorials",
                 label: "Tutorials"
+              },
+              {
+                label: "Cookbooks",
+                href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
               {
                 to: "/docs/additional_resources/youtube",

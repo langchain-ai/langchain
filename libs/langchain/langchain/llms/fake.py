@@ -2,13 +2,14 @@ import asyncio
 import time
 from typing import Any, AsyncIterator, Iterator, List, Mapping, Optional
 
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.runnables import RunnableConfig
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
-from langchain.schema.language_model import LanguageModelInput
-from langchain.schema.runnable import RunnableConfig
 
 
 class FakeListLLM(LLM):
