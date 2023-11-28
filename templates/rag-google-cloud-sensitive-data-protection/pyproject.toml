@@ -24,7 +24,7 @@ export_attr = "chain"
 [tool.templates-hub]
 use-case = "rag"
 author = "Datatonic"
-integrations = ["OpenAI", "Google"]
+integrations = ["OpenAI", "Google Cloud"]
 tags = ["data"]
 
 [build-system]

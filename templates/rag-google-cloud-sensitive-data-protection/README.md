@@ -17,7 +17,7 @@ project.
 Set the following environment variables:
 
 * `GOOGLE_CLOUD_PROJECT_ID` - Your Google Cloud project ID.
-* `MODEL_TYPE` - The model type for Vertex AI Search.
+* `MODEL_TYPE` - The model type for Vertex AI Search (e.g. `chat-bison`)
 
 ## Usage
 
