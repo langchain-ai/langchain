@@ -4238,16 +4238,18 @@ version = "0.0.6"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
-files = [
-    {file = "langchain_core-0.0.6-py3-none-any.whl", hash = "sha256:dcc727ff811159e09fc1d72caae4aaea892611349d5c3fc1c18b3a19573faf27"},
-    {file = "langchain_core-0.0.6.tar.gz", hash = "sha256:cffd1031764d838ad2a2f3f64477b710923ddad58eb9fe3130ff94b3669e8dd8"},
-]
+files = []
+develop = true
 
 [package.dependencies]
-jsonpatch = ">=1.33,<2.0"
-langsmith = ">=0.0.63,<0.1.0"
+jsonpatch = "^1.33"
+langsmith = "~0.0.63"
 pydantic = ">=1,<3"
-tenacity = ">=8.1.0,<9.0.0"
+tenacity = "^8.1.0"
+
+[package.source]
+type = "directory"
+url = "../core"
 
 [[package]]
 name = "langkit"
@@ -11365,3 +11367,4 @@ content-hash = "2e6a3d2370b12302f338bee317b467bff45e8a92954530cbaac164f01635076a
 content-hash = "9e9f9edcf4543eca60bc207ed6d91991e172a5b853b0caf869ff1762ead37186"
 content-hash = "37e62f668e1acddc4e462fdac5f694af3916b6edbd1ccde0a54c9a57524d6c92"
 content-hash = "d57493dcdb7c864d71aa43463a57491f0c9cbd8fa8674d21c0b11117e8d7ea67"
+content-hash = "d049735bc75655dbdda59770b6f5b2fe9fe3c1985c75e3ad662f0863158f1e7b"
