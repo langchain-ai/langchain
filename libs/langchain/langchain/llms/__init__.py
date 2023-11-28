@@ -148,6 +148,12 @@ def _import_databricks() -> Any:
     return Databricks
 
 
+def _import_databricks_chat() -> Any:
+    from langchain.chat_models.databricks import ChatDatabricks
+
+    return ChatDatabricks
+
+
 def _import_deepinfra() -> Any:
     from langchain.llms.deepinfra import DeepInfra
 
@@ -280,6 +286,12 @@ def _import_mlflow() -> Any:
     from langchain.llms.mlflow import Mlflow
 
     return Mlflow
+
+
+def _import_mlflow_chat() -> Any:
+    from langchain.chat_models.mlflow import ChatMlflow
+
+    return ChatMlflow
 
 
 def _import_mlflow_ai_gateway() -> Any:
@@ -788,6 +800,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "ctransformers": _import_ctransformers,
         "ctranslate2": _import_ctranslate2,
         "databricks": _import_databricks,
+        "databricks-chat": _import_databricks_chat,
         "deepinfra": _import_deepinfra,
         "deepsparse": _import_deepsparse,
         "edenai": _import_edenai,
@@ -807,6 +820,8 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "llamacpp": _import_llamacpp,
         "textgen": _import_textgen,
         "minimax": _import_minimax,
+        "mlflow": _import_mlflow,
+        "mlflow-chat": _import_mlflow_chat,
         "mlflow-ai-gateway": _import_mlflow_ai_gateway,
         "modal": _import_modal,
         "mosaic": _import_mosaicml,

@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra
 
-from langchain.llms.databricks import ChatDatabricks
+from langchain.chat_models.databricks import ChatDatabricks
 
 logger = logging.getLogger(__name__)
 
@@ -38,3 +38,8 @@ class ChatMlflow(ChatDatabricks):
                 }
             )
     """
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "mlflow-chat"
