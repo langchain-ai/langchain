@@ -2,10 +2,7 @@
 
 from typing import Generator
 
-import pytest
-
 from langchain.llms.volcengine_maas import VolcEngineMaasLLM
-
 from langchain.schema import LLMResult
 
 

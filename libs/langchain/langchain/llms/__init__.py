@@ -763,7 +763,7 @@ __all__ = [
     "JavelinAIGateway",
     "QianfanLLMEndpoint",
     "YandexGPT",
-    "VolcEngineMaasLLM"
+    "VolcEngineMaasLLM",
 ]
 
 

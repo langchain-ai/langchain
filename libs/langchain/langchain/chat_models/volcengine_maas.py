@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Mapping
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, FunctionMessage, SystemMessage, AIMessageChunk
-
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
 )
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.volcengine_maas import VolcEngineMaasBase
 
@@ -35,19 +40,25 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
 
 class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
 
-    """volc engine maas hosts a plethora of models. You can utilize these models through this class.
+    """volc engine maas hosts a plethora of models.
+    You can utilize these models through this class.
 
     To use, you should have the ``volcengine`` python package installed.
-    and set access key and secret key by environment variable or direct pass those to this class.
-    access key, secret key are required parameters which you could get help https://www.volcengine.com/docs/6291/65568
+    and set access key and secret key by environment variable or direct pass those
+    to this class.
+    access key, secret key are required parameters which you could get help
+    https://www.volcengine.com/docs/6291/65568
 
     In order to use them, it is necessary to install the 'volcengine' Python package.
-    The access key and secret key must be set either via environment variables or passed directly to this class.
-    access key and secret key are mandatory parameters for which assistance can be sought at https://www.volcengine.com/docs/6291/65568.
+    The access key and secret key must be set either via environment variables or
+    passed directly to this class.
+    access key and secret key are mandatory parameters for which assistance can be
+    sought at https://www.volcengine.com/docs/6291/65568.
 
     The two methods are as follows:
     * Environment Variable
-    Set the environment variables 'VOLC_ACCESSKEY' and 'VOLC_SECRETKEY' with your access key and secret key.
+    Set the environment variables 'VOLC_ACCESSKEY' and 'VOLC_SECRETKEY' with your
+    access key and secret key.
 
     * Pass Directly to Class
     Example:
@@ -77,9 +88,9 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
         }
 
     def _convert_prompt_msg_params(
-            self,
-            messages: List[BaseMessage],
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         model_req = {
             "model": {
@@ -95,11 +106,11 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
         }
 
     def _stream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         params = self._convert_prompt_msg_params(messages, **kwargs)
         for res in self.client.stream_chat(params):
@@ -110,11 +121,11 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
                     run_manager.on_llm_new_token(msg.content)
 
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         completion = ""
         if self.streaming:
