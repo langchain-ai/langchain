@@ -4,7 +4,7 @@ from abc import ABC
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -148,14 +148,14 @@ class LLMInputOutputAdapter:
 class BedrockBase(BaseModel, ABC):
     """Base class for Bedrock models."""
 
-    client: Any  #: :meta private:
+    client: Any = Field(exclude=True)  #: :meta private:
 
     region_name: Optional[str] = None
     """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
     or region specified in ~/.aws/config in case it is not provided here.
     """
 
-    credentials_profile_name: Optional[str] = None
+    credentials_profile_name: Optional[str] = Field(default=None, exclude=True)
     """The name of the profile in the ~/.aws/credentials or ~/.aws/config files, which
     has either access keys or role information specified.
     If not specified, the default credential profile or, if on an EC2 instance,

@@ -129,6 +129,11 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         ]
     ] = None
 
+    def __repr_args__(self) -> Any:
+        # Without this repr(self) raises a RecursionError
+        # See https://github.com/pydantic/pydantic/issues/7327
+        return []
+
     def __init__(
         self,
         func: Optional[
@@ -183,7 +188,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                 Union[Runnable[Dict[str, Any], Any], Callable[[Dict[str, Any]], Any]],
             ],
         ],
-    ) -> RunnableAssign:
+    ) -> "RunnableAssign":
         """Merge the Dict input with the output produced by the mapping argument.
 
         Args:
