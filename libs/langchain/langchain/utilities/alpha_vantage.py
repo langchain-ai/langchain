@@ -88,6 +88,24 @@ class AlphaVantageAPIWrapper(BaseModel):
 
         return data
 
+    def _get_quote_endpoint(self, symbol: str) -> Dict[str, Any]:
+        """Make a request to the AlphaVantage API to get the latest price and volume information."""
+        response = requests.get(
+            "https://www.alphavantage.co/query/",
+            params={
+                "function": "GLOBAL_QUOTE",
+                "symbol": symbol,
+                "apikey": self.alphavantage_api_key,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "Error Message" in data:
+            raise ValueError(f"API Error: {data['Error Message']}")
+
+        return data
+
     def _get_exchange_rate(
         self, from_currency: str, to_currency: str
     ) -> Dict[str, Any]:
