@@ -1,5 +1,5 @@
 ---
-name: libs/anthropic Release
+name: libs/openai Release
 
 on:
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
@@ -9,5 +9,5 @@ jobs:
     uses:
       ./.github/workflows/_release.yml
     with:
-      working-directory: libs/anthropic
+      working-directory: libs/openai
     secrets: inherit
