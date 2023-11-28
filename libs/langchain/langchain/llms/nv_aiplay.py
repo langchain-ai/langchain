@@ -358,13 +358,13 @@ class NVAIPlayClient(ClientModel):
     Is subclassed by NVAIPlayLLM/NVAIPlayChat to provide a simple LangChain interface.
     """
 
-    client: NVCRModel = Field(NVCRModel())
+    client: NVCRModel = Field(NVCRModel)
 
     model_name: str = Field("llama2_13b")
     labels: dict = Field({})
 
-    temperature: float = Field(0.2, le=1, gt=0)
-    top_p: float = Field(0.7, le=1, gt=0)
+    temperature: float = Field(0.2)
+    top_p: float = Field(0.7)
     max_tokens: int = Field(1024, le=1024, ge=32)
     streaming: bool = Field(False)
 
@@ -380,7 +380,7 @@ class NVAIPlayClient(ClientModel):
 
     @root_validator()
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        values["client"] = values["client"].subscope(**values)
+        values["client"] = values["client"](**values)
         return values
 
     @property
@@ -612,12 +612,12 @@ class NVAIPlayLLM(NVAIPlayBaseModel, LLM):
         **kwargs: dict,
     ):
         super().__init__(
-            model_name=Field(model_name),
-            temperature=Field(temperature, le=1, gt=0),
-            top_p=Field(top_p, le=1, gt=0),
-            max_tokens=Field(max_tokens, le=1024, ge=32),
-            stop=Field(stop),
-            streaming=Field(streaming),
+            model_name=model_name,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+            streaming=streaming,
             **kwargs,
         )
 
@@ -636,12 +636,12 @@ if STANDALONE:
             **kwargs: dict,
         ):
             super().__init__(
-                model_name=Field(model_name),
-                temperature=Field(temperature, le=1, gt=0),
-                top_p=Field(top_p, le=1, gt=0),
-                max_tokens=Field(max_tokens, le=1024, ge=32),
-                stop=Field(stop),
-                streaming=Field(streaming),
+                model_name=model_name,
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=max_tokens,
+                stop=stop,
+                streaming=streaming,
                 **kwargs,
             )
 
@@ -660,12 +660,12 @@ class LlamaLLM(NVAIPlayLLM):
         **kwargs: dict,
     ):
         super().__init__(
-            model_name=Field(model_name),
-            temperature=Field(temperature, le=1, gt=0),
-            top_p=Field(top_p, le=1, gt=0),
-            max_tokens=Field(max_tokens, le=1024, ge=32),
-            stop=Field(stop),
-            streaming=Field(streaming),
+            model_name=model_name,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+            streaming=streaming,
             **kwargs,
         )
 
@@ -682,12 +682,12 @@ class MistralLLM(NVAIPlayLLM):
         **kwargs: dict,
     ):
         super().__init__(
-            model_name=Field(model_name),
-            temperature=Field(temperature, le=1, gt=0),
-            top_p=Field(top_p, le=1, gt=0),
-            max_tokens=Field(max_tokens, le=1024, ge=32),
-            stop=Field(stop),
-            streaming=Field(streaming),
+            model_name=model_name,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+            streaming=streaming,
             **kwargs,
         )
 
@@ -710,13 +710,13 @@ class SteerLM(NVAIPlayLLM):
         **kwargs: dict,
     ):
         super().__init__(
-            model_name=Field(model_name),
-            labels=Field(labels),
-            temperature=Field(temperature, le=1, gt=0),
-            top_p=Field(top_p, le=1, gt=0),
-            max_tokens=Field(max_tokens, le=1024, ge=32),
-            stop=Field(stop),
-            streaming=Field(streaming),
+            model_name=model_name,
+            labels=labels,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+            streaming=streaming,
             **kwargs,
         )
 
@@ -733,12 +733,12 @@ class NemotronQA(NVAIPlayLLM):
         **kwargs: dict,
     ):
         super().__init__(
-            model_name=Field(model_name),
-            temperature=Field(temperature, le=1, gt=0),
-            top_p=Field(top_p, le=1, gt=0),
-            max_tokens=Field(max_tokens, le=1024, ge=32),
-            stop=Field(stop),
-            streaming=Field(streaming),
+            model_name=model_name,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+            streaming=streaming,
             **kwargs,
         )
 
@@ -757,12 +757,12 @@ if STANDALONE:
             **kwargs: dict,
         ):
             super().__init__(
-                model_name=Field(model_name),
-                temperature=Field(temperature, le=1, gt=0),
-                top_p=Field(top_p, le=1, gt=0),
-                max_tokens=Field(max_tokens, le=1024, ge=32),
-                stop=Field(stop),
-                streaming=Field(streaming),
+                model_name=model_name,
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=max_tokens,
+                stop=stop,
+                streaming=streaming,
                 **kwargs,
             )
 
@@ -778,12 +778,12 @@ if STANDALONE:
             **kwargs: dict,
         ):
             super().__init__(
-                model_name=Field(model_name),
-                temperature=Field(temperature, le=1, gt=0),
-                top_p=Field(top_p, le=1, gt=0),
-                max_tokens=Field(max_tokens, le=1024, ge=32),
-                stop=Field(stop),
-                streaming=Field(streaming),
+                model_name=model_name,
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=max_tokens,
+                stop=stop,
+                streaming=streaming,
                 **kwargs,
             )
 
@@ -805,13 +805,13 @@ if STANDALONE:
             **kwargs: dict,
         ):
             super().__init__(
-                model_name=Field(model_name),
-                labels=Field(labels),
-                temperature=Field(temperature, le=1, gt=0),
-                top_p=Field(top_p, le=1, gt=0),
-                max_tokens=Field(max_tokens, le=1024, ge=32),
-                stop=Field(stop),
-                streaming=Field(streaming),
+                model_name=model_name,
+                labels=labels,
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=max_tokens,
+                stop=stop,
+                streaming=streaming,
                 **kwargs,
             )
 
@@ -827,11 +827,12 @@ if STANDALONE:
             **kwargs: dict,
         ):
             super().__init__(
-                model_name=Field(model_name),
-                temperature=Field(temperature, le=1, gt=0),
-                top_p=Field(top_p, le=1, gt=0),
-                max_tokens=Field(max_tokens, le=1024, ge=32),
-                stop=Field(stop),
-                streaming=Field(streaming),
+                model_name=model_name,
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=max_tokens,
+                stop=stop,
+                streaming=streaming,
                 **kwargs,
             )
+

@@ -22,12 +22,12 @@ class NVAIPlayChat(NVAIPlayBaseModel, SimpleChatModel):
         **kwargs: dict,
     ):
         super().__init__(
-            model_name=Field(model_name),
-            temperature=Field(temperature, le=1, gt=0),
-            top_p=Field(top_p, le=1, gt=0),
-            max_tokens=Field(max_tokens, le=1024, ge=32),
-            stop=Field(stop),
-            streaming=Field(streaming),
+            model_name=model_name,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+            streaming=streaming,
             **kwargs,
         )
 
@@ -47,15 +47,14 @@ class LlamaChat(NVAIPlayChat):
         **kwargs: dict,
     ):
         super().__init__(
-            model_name=Field(model_name),
-            temperature=Field(temperature, le=1, gt=0),
-            top_p=Field(top_p, le=1, gt=0),
-            max_tokens=Field(max_tokens, le=1024, ge=32),
-            stop=Field(stop),
-            streaming=Field(streaming),
+            model_name=model_name,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+            streaming=streaming,
             **kwargs,
         )
-
 
 class MistralChat(NVAIPlayChat):
     def __init__(
@@ -69,17 +68,16 @@ class MistralChat(NVAIPlayChat):
         **kwargs: dict,
     ):
         super().__init__(
-            model_name=Field(model_name),
-            temperature=Field(temperature, le=1, gt=0),
-            top_p=Field(top_p, le=1, gt=0),
-            max_tokens=Field(max_tokens, le=1024, ge=32),
-            stop=Field(stop),
-            streaming=Field(streaming),
+            model_name=model_name,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+            streaming=streaming,
             **kwargs,
         )
 
-
-class SteerLM(NVAIPlayChat):
+class SteerLMChat(NVAIPlayChat):
     def __init__(
         self,
         model_name: str = "gpt_steerlm_8b",
@@ -97,18 +95,17 @@ class SteerLM(NVAIPlayChat):
         **kwargs: dict,
     ):
         super().__init__(
-            model_name=Field(model_name),
-            labels=Field(labels),
-            temperature=Field(temperature, le=1, gt=0),
-            top_p=Field(top_p, le=1, gt=0),
-            max_tokens=Field(max_tokens, le=1024, ge=32),
-            stop=Field(stop),
-            streaming=Field(streaming),
+            model_name=model_name,
+            labels=labels,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+            streaming=streaming,
             **kwargs,
         )
 
-
-class NemotronQA(NVAIPlayChat):
+class NemotronQAChat(NVAIPlayChat):
     def __init__(
         self,
         model_name: str = "gpt_qa_8b",
@@ -120,11 +117,11 @@ class NemotronQA(NVAIPlayChat):
         **kwargs: dict,
     ):
         super().__init__(
-            model_name=Field(model_name),
-            temperature=Field(temperature, le=1, gt=0),
-            top_p=Field(top_p, le=1, gt=0),
-            max_tokens=Field(max_tokens, le=1024, ge=32),
-            stop=Field(stop),
-            streaming=Field(streaming),
+            model_name=model_name,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
+            streaming=streaming,
             **kwargs,
         )
