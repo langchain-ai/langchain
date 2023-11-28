@@ -11194,4 +11194,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "d57493dcdb7c864d71aa43463a57491f0c9cbd8fa8674d21c0b11117e8d7ea67"
+content-hash = "7287b4b9a1ed02ef8d602dc094c429e8b493cb11c662238010e6ec490054af0f"
