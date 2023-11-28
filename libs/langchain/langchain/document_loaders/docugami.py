@@ -38,7 +38,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
     access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY")
     """The Docugami API access token to use."""
 
-    max_text_length = 1024 * 4
+    max_text_length = 4096
     """Max length of chunk text returned."""
 
     min_text_length: int = 32
@@ -106,7 +106,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         try:
             from lxml import etree
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import lxml python package. "
                 "Please install it with `pip install lxml`."
             )
@@ -115,7 +115,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             from dgml_utils.models import Chunk
             from dgml_utils.segmentation import get_chunks
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import from dgml-utils python package. "
                 "Please install it with `pip install dgml-utils`."
             )
