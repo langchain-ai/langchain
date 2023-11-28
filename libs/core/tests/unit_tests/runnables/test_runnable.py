@@ -4146,3 +4146,44 @@ async def test_ainvoke_on_returned_runnable() -> None:
         return idchain
 
     assert await RunnableLambda(func).ainvoke({})
+
+
+def test_invoke_stream_passthrough_assign_trace() -> None:
+    def idchain_sync(__input: dict) -> bool:
+        return False
+
+    chain = RunnablePassthrough.assign(urls=idchain_sync)
+
+    tracer = FakeTracer()
+    chain.invoke({"example": [1, 2, 3]}, dict(callbacks=[tracer]))
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+    tracer = FakeTracer()
+    for item in chain.stream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+        pass
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_astream_passthrough_assign_trace() -> None:
+    def idchain_sync(__input: dict) -> bool:
+        return False
+
+    chain = RunnablePassthrough.assign(urls=idchain_sync)
+
+    tracer = FakeTracer()
+    await chain.ainvoke({"example": [1, 2, 3]}, dict(callbacks=[tracer]))
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+    tracer = FakeTracer()
+    async for item in chain.astream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+        pass
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
