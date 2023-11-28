@@ -351,39 +351,53 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.mapper.config_specs
 
-    def invoke(
+    def _invoke(
         self,
         input: Dict[str, Any],
-        config: Optional[RunnableConfig] = None,
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         assert isinstance(
             input, dict
         ), "The input to RunnablePassthrough.assign() must be a dict."
 
-        config = ensure_config(config)
-        callback_manager = get_callback_manager_for_config(config)
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self),
-            input,
-            name=config.get("run_name"),
-        )
+        return {
+            **input,
+            **self.mapper.invoke(
+                input,
+                patch_config(config, callbacks=run_manager.get_child()),
+                **kwargs,
+            ),
+        }
 
-        try:
-            output = {
-                **input,
-                **self.mapper.invoke(
-                    input,
-                    patch_config(config, callbacks=run_manager.get_child()),
-                    **kwargs,
-                ),
-            }
-        except Exception as e:
-            run_manager.on_chain_error(e)
-            raise
+    def invoke(
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        return self._call_with_config(self._invoke, input, config, **kwargs)
 
-        run_manager.on_chain_end(dumpd(output))
-        return output
+    async def _ainvoke(
+        self,
+        input: Dict[str, Any],
+        run_manager: AsyncCallbackManagerForChainRun,
+        config: RunnableConfig,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        assert isinstance(
+            input, dict
+        ), "The input to RunnablePassthrough.assign() must be a dict."
+
+        return {
+            **input,
+            **await self.mapper.ainvoke(
+                input,
+                patch_config(config, callbacks=run_manager.get_child()),
+                **kwargs,
+            ),
+        }
 
     async def ainvoke(
         self,
@@ -391,33 +405,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        assert isinstance(
-            input, dict
-        ), "The input to RunnablePassthrough.assign() must be a dict."
-
-        config = ensure_config(config)
-        callback_manager = get_callback_manager_for_config(config)
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self),
-            input,
-            name=config.get("run_name"),
-        )
-
-        try:
-            output = {
-                **input,
-                **await self.mapper.ainvoke(
-                    input,
-                    patch_config(config, callbacks=run_manager.get_child()),
-                    **kwargs,
-                ),
-            }
-        except Exception as e:
-            run_manager.on_chain_error(e)
-            raise
-
-        run_manager.on_chain_end(output)
-        return output
+        return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
     def _transform(
         self,
