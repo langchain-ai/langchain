@@ -380,13 +380,16 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         which = config.get("configurable", {}).get(self.which.id, self.default_key)
         # remap configurable keys for the chosen alternative
         if self.prefix_keys:
-            config = {
-                **config,
-                "configurable": {
-                    k.removeprefix(f"{self.which.id}=={which}/"): v
-                    for k, v in config.get("configurable", {}).items()
+            config = cast(
+                RunnableConfig,
+                {
+                    **config,
+                    "configurable": {
+                        k.removeprefix(f"{self.which.id}=={which}/"): v
+                        for k, v in config.get("configurable", {}).items()
+                    },
                 },
-            }
+            )
         # return the chosen alternative
         if which == self.default_key:
             return (self.default, config)
