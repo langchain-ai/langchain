@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 from ast import literal_eval
-from pprint import pformat, pprint
+from pprint import pformat
 from typing import Any, Iterable, List, Optional
 
 from pymongo import MongoClient
@@ -176,7 +176,7 @@ class MongoDatabase:
 
         # checks if command is a find query
         if not result and re.match(r"^db\.\w+\.find\w*\(\{.*\}\)", command):
-            cursor = eval(command) # dangerous, might need to find a better solution
+            cursor = eval(command)  # dangerous, might need to find a better solution
             result_list = []
             for doc in cursor:
                 result_list.append(doc)
