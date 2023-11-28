@@ -106,7 +106,11 @@ class GitHubAPIWrapper(BaseModel):
         for issue in issues:
             title = issue.title
             number = issue.number
-            parsed.append({"title": title, "number": number})
+            opened_by = issue.user.login if issue.user else None
+            issue_dict = {"title": title, "number": number}
+            if opened_by is not None:
+                issue_dict["opened_by"] = opened_by
+            parsed.append(issue_dict)
         return parsed
 
     def parse_pull_requests(self, pull_requests: List[PullRequest]) -> List[dict]:
@@ -131,14 +135,16 @@ class GitHubAPIWrapper(BaseModel):
 
     def get_issues(self) -> str:
         """
-        Fetches all open issues from the repo
+        Fetches all open issues from the repo excluding pull requests
 
         Returns:
             str: A plaintext report containing the number of issues
             and each issue's title and number.
         """
         issues = self.github_repo_instance.get_issues(state="open")
-        if issues.totalCount > 0:
+        # Filter out pull requests (part of GH issues object)
+        issues = [issue for issue in issues if not issue.pull_request]
+        if issues:
             parsed_issues = self.parse_issues(issues)
             parsed_issues_str = (
                 "Found " + str(len(parsed_issues)) + " issues:\n" + str(parsed_issues)
@@ -260,7 +266,7 @@ class GitHubAPIWrapper(BaseModel):
                     # Handle any other exceptions
                     print(f"Failed to create branch. Error: {e}")
                     raise Exception(
-                        f"Unable to create branch name from proposed_branch_name: "
+                        "Unable to create branch name from proposed_branch_name: "
                         f"{proposed_branch_name}"
                     )
         return ("Unable to create branch. "
@@ -322,8 +328,8 @@ class GitHubAPIWrapper(BaseModel):
         Parameters:
             issue_number(int): The number for the github issue
         Returns:
-            dict: A doctionary containing the issue's title,
-            body, and comments as a string
+            dict: A dictionary containing the issue's title,
+            body, comments as a string, and the username of the user who opened the issue
         """
         issue = self.github_repo_instance.get_issue(number=issue_number)
         page = 0
@@ -336,11 +342,16 @@ class GitHubAPIWrapper(BaseModel):
                 comments.append({"body": comment.body, "user": comment.user.login})
             page += 1
 
+        opened_by = None
+        if issue.user and issue.user.login:
+            opened_by = issue.user.login
+
         return {
             "number": issue_number,
             "title": issue.title,
             "body": issue.body,
             "comments": str(comments),
+            "opened_by": str(opened_by),
         }
 
     def list_pull_request_files(self, pr_number: int) -> Dict[str, Any]:
@@ -667,7 +678,6 @@ class GitHubAPIWrapper(BaseModel):
             results.append(
                 f"Title: {issue.title}, Number: {issue.number}, State: {issue.state}"
             )
-
         return "\n".join(results)
 
     def search_code(self, query: str) -> str:
@@ -679,17 +689,23 @@ class GitHubAPIWrapper(BaseModel):
             query(str): The search query
 
         Returns:
-            str: A string containing the first 5 code results
+            str: A string containing, at most, the top 5 search results
         """
-        search_result = self.github.search_code(query, repo=self.github_repository)
-        results = []
-        for code in search_result[:5]:
+        search_result = self.github.search_code(query=query, repo=self.github_repository)
+        if search_result.totalCount == 0:
+            return "0 results found."
+        max_results = min(5, search_result.totalCount)
+        results = [f'Showing top {max_results} of {search_result.totalCount} results:']
+        count = 0
+        for code in search_result:
+            if count >= max_results:
+                break
             # Get the file content using the PyGithub get_contents method
             file_content = self.github_repo_instance.get_contents(
                 code.path, ref=self.active_branch
-            ).decoded_content
-            results.append(f"Path: {code.path}, Content: {file_content}")
-
+            ).decoded_content.decode()
+            results.append(f"Filepath: `{code.path}`\nFile contents: {file_content}\n<END OF FILE>")
+            count += 1
         return "\n".join(results)
 
     def create_review_request(self, reviewer_username: str) -> str:
@@ -711,7 +727,7 @@ class GitHubAPIWrapper(BaseModel):
             (pr for pr in pull_requests if pr.head.ref == self.active_branch), None
         )
         if pr is None:
-            return (f"No open pull request found for the "
+            return ("No open pull request found for the "
                     f"current branch `{self.active_branch}`")
 
         try:
