@@ -4,9 +4,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence, Union
 
+from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base_o365 import (
     O365BaseLoader,
     _FileType,

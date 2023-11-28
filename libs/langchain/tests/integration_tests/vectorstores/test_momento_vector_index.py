@@ -3,8 +3,8 @@ import uuid
 from typing import Iterator, List
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import MomentoVectorIndex
 
