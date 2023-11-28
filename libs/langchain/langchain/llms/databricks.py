@@ -55,10 +55,6 @@ def _transform_chat(response: Dict[str, Any]) -> str:
     return response["choices"][0]["message"]["content"]
 
 
-def _no_transform(response: Dict[str, Any]) -> Dict[str, Any]:
-    return response
-
-
 class _DatabricksServingEndpointClient(_DatabricksClientBase):
     """An API client that talks to a Databricks serving endpoint."""
 
@@ -134,18 +130,17 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             )
             preds = response["predictions"]
             # For a single-record query, the result is not a list.
-            transform_output_fn = transform_output_fn or _no_transform
             pred = preds[0] if isinstance(preds, list) else preds
-            return transform_output_fn(pred)
+            return pred if transform_output_fn is None else transform_output_fn(pred)
         else:
             resp = self.client.predict(endpoint=self.endpoint_name, inputs=request)
             if transform_output_fn is None:
                 if self.task == "chat":
-                    transform_output_fn = _transform_chat
+                    return _transform_chat(resp)
                 elif self.task == "completions":
-                    transform_output_fn = _transform_completions
-                else:
-                    transform_output_fn = _no_transform
+                    return _transform_completions(resp)
+
+                return resp
 
             return transform_output_fn(resp)
 
