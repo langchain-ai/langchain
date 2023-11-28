@@ -1569,6 +1569,17 @@ click = ">=4.0"
 test = ["pytest-cov"]
 
 [[package]]
+name = "cloudpickle"
+version = "2.2.1"
+description = "Extended pickling support for Python objects"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "cloudpickle-2.2.1-py3-none-any.whl", hash = "sha256:61f594d1f4c295fa5cd9014ceb3a1fc4a70b0de1164b94fbc2d854ccba056f9f"},
+    {file = "cloudpickle-2.2.1.tar.gz", hash = "sha256:d89684b8de9e34a2a43b3460fbca07d09d6e25ce858df4d5a44240403b6178f5"},
+]
+
+[[package]]
 name = "codespell"
 version = "2.2.6"
 description = "Codespell"
@@ -1793,6 +1804,41 @@ grpcio = [
 ]
 numpy = "*"
 protobuf = ">=3.8.0,<4.0.0"
+
+[[package]]
+name = "databricks-cli"
+version = "0.18.0"
+description = "A command line interface for Databricks"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "databricks-cli-0.18.0.tar.gz", hash = "sha256:87569709eda9af3e9db8047b691e420b5e980c62ef01675575c0d2b9b4211eb7"},
+    {file = "databricks_cli-0.18.0-py2.py3-none-any.whl", hash = "sha256:1176a5f42d3e8af4abfc915446fb23abc44513e325c436725f5898cbb9e3384b"},
+]
+
+[package.dependencies]
+click = ">=7.0"
+oauthlib = ">=3.1.0"
+pyjwt = ">=1.7.0"
+requests = ">=2.17.3"
+six = ">=1.10.0"
+tabulate = ">=0.7.7"
+urllib3 = ">=1.26.7,<3"
+
+[[package]]
+name = "databricks-vectorsearch"
+version = "0.21"
+description = "Databricks Vector Search Client"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "databricks_vectorsearch-0.21-py3-none-any.whl", hash = "sha256:18265affdb38d44e7ec4cc95f8267379c5109bdb6e75bb61a729f126b2433868"},
+]
+
+[package.dependencies]
+mlflow-skinny = ">=2.4.0,<3"
+protobuf = ">=3.12.0,<5"
+requests = ">=2"
 
 [[package]]
 name = "dataclasses-json"
@@ -4128,20 +4174,22 @@ tests = ["pandas (>=1.4)", "pytest", "pytest-asyncio", "pytest-mock"]
 
 [[package]]
 name = "langchain-core"
-version = "0.0.3"
+version = "0.0.6"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
-files = [
-    {file = "langchain_core-0.0.3-py3-none-any.whl", hash = "sha256:7d24630714104aa2f77c199831fdf7a28e09d67cac992f0b8e1398f5a45f9142"},
-    {file = "langchain_core-0.0.3.tar.gz", hash = "sha256:0dd242eb452c321f1fa5cf2c221d38783b7ff8e8bf27caa1ff0b2ae3a7e3e885"},
-]
+files = []
+develop = true
 
 [package.dependencies]
-jsonpatch = ">=1.33,<2.0"
-langsmith = ">=0.0.63,<0.1.0"
+jsonpatch = "^1.33"
+langsmith = "~0.0.63"
 pydantic = ">=1,<3"
-tenacity = ">=8.1.0,<9.0.0"
+tenacity = "^8.1.0"
+
+[package.source]
+type = "directory"
+url = "../core"
 
 [[package]]
 name = "langkit"
@@ -4720,6 +4768,39 @@ files = [
 ]
 
 [[package]]
+name = "mlflow-skinny"
+version = "2.8.1"
+description = "MLflow: A Platform for ML Development and Productionization"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "mlflow-skinny-2.8.1.tar.gz", hash = "sha256:8f46462e2df5ffd93a7f7d92ad1d3d7335adbe5e8e999543a3879963ae576d33"},
+    {file = "mlflow_skinny-2.8.1-py3-none-any.whl", hash = "sha256:8e2a1a5b8f1e2a3437c1fab972115a4df25934cd07cd83b8eb70202af8ad814a"},
+]
+
+[package.dependencies]
+click = ">=7.0,<9"
+cloudpickle = "<3"
+databricks-cli = ">=0.8.7,<1"
+entrypoints = "<1"
+gitpython = ">=2.1.0,<4"
+importlib-metadata = ">=3.7.0,<4.7.0 || >4.7.0,<7"
+packaging = "<24"
+protobuf = ">=3.12.0,<5"
+pytz = "<2024"
+pyyaml = ">=5.1,<7"
+requests = ">=2.17.3,<3"
+sqlparse = ">=0.4.0,<1"
+
+[package.extras]
+aliyun-oss = ["aliyunstoreplugin"]
+databricks = ["azure-storage-file-datalake (>12)", "boto3 (>1)", "google-cloud-storage (>=1.30.0)"]
+extras = ["azureml-core (>=1.2.0)", "boto3", "google-cloud-storage (>=1.30.0)", "kubernetes", "mlserver (>=1.2.0,!=1.3.1)", "mlserver-mlflow (>=1.2.0,!=1.3.1)", "prometheus-flask-exporter", "pyarrow", "pysftp", "requests-auth-aws-sigv4", "virtualenv"]
+gateway = ["aiohttp (<4)", "boto3 (>=1.28.56,<2)", "fastapi (<1)", "pydantic (>=1.0,<3)", "uvicorn[standard] (<1)", "watchfiles (<1)"]
+sqlserver = ["mlflow-dbstore"]
+xethub = ["mlflow-xethub"]
+
+[[package]]
 name = "mmh3"
 version = "3.1.0"
 description = "Python wrapper for MurmurHash (MurmurHash3), a set of fast and robust hash functions."
@@ -4848,13 +4929,13 @@ tests = ["pytest (>=4.6)"]
 
 [[package]]
 name = "msal"
-version = "1.24.1"
+version = "1.25.0"
 description = "The Microsoft Authentication Library (MSAL) for Python library"
 optional = true
 python-versions = ">=2.7"
 files = [
-    {file = "msal-1.24.1-py2.py3-none-any.whl", hash = "sha256:ce4320688f95c301ee74a4d0e9dbcfe029a63663a8cc61756f40d0d0d36574ad"},
-    {file = "msal-1.24.1.tar.gz", hash = "sha256:aa0972884b3c6fdec53d9a0bd15c12e5bd7b71ac1b66d746f54d128709f3f8f8"},
+    {file = "msal-1.25.0-py2.py3-none-any.whl", hash = "sha256:386df621becb506bc315a713ec3d4d5b5d6163116955c7dde23622f156b81af6"},
+    {file = "msal-1.25.0.tar.gz", hash = "sha256:f44329fdb59f4f044c779164a34474b8a44ad9e4940afbc4c3a3a2bbe90324d9"},
 ]
 
 [package.dependencies]
@@ -9272,6 +9353,22 @@ files = [
 ]
 
 [[package]]
+name = "sqlparse"
+version = "0.4.4"
+description = "A non-validating SQL parser."
+optional = true
+python-versions = ">=3.5"
+files = [
+    {file = "sqlparse-0.4.4-py3-none-any.whl", hash = "sha256:5430a4fe2ac7d0f93e66f1efc6e1338a41884b7ddf2a350cedd20ccc4d9d28f3"},
+    {file = "sqlparse-0.4.4.tar.gz", hash = "sha256:d446183e84b8349fa3061f0fe7f06ca94ba65b426946ffebe6e3e8295332420c"},
+]
+
+[package.extras]
+dev = ["build", "flake8"]
+doc = ["sphinx"]
+test = ["pytest", "pytest-cov"]
+
+[[package]]
 name = "stack-data"
 version = "0.6.3"
 description = "Extract data from python stack frames and tracebacks for informative displays"
@@ -9367,6 +9464,20 @@ files = [
 
 [package.dependencies]
 pytest = ">=7.0.0,<8.0.0"
+
+[[package]]
+name = "tabulate"
+version = "0.9.0"
+description = "Pretty-print tabular data"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f"},
+    {file = "tabulate-0.9.0.tar.gz", hash = "sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c"},
+]
+
+[package.extras]
+widechars = ["wcwidth"]
 
 [[package]]
 name = "telethon"
@@ -11075,7 +11186,7 @@ cli = ["typer"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "html2text", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict"]
+extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "dashvector", "databricks-vectorsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "html2text", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -11085,4 +11196,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "54acd6074885fa2e4069cdba7dfe5b497ca4820b506983a5792fb1e78b53f4a3"
+content-hash = "d049735bc75655dbdda59770b6f5b2fe9fe3c1985c75e3ad662f0863158f1e7b"

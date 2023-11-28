@@ -5,7 +5,7 @@ import logging
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
@@ -19,9 +19,11 @@ from tenacity import (
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
-from langchain_core.messages import BaseMessage
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+
+if TYPE_CHECKING:
+    from langchain_core.messages import BaseMessage
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()

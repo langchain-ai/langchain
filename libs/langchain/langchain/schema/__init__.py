@@ -2,8 +2,7 @@
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.caches import BaseCache
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.document_transformers import BaseDocumentTransformer
-from langchain_core.documents import Document
+from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.exceptions import LangChainException, OutputParserException
 from langchain_core.memory import BaseMemory
 from langchain_core.messages import (

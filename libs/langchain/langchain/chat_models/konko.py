@@ -24,7 +24,7 @@ from langchain.adapters.openai import convert_dict_to_message, convert_message_t
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel, _generate_from_stream
+from langchain.chat_models.base import BaseChatModel, generate_from_stream
 from langchain.chat_models.openai import _convert_delta_to_message_chunk
 from langchain.utils import get_from_dict_or_env
 
@@ -229,7 +229,7 @@ class ChatKonko(BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}

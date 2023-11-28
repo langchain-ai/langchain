@@ -21,7 +21,6 @@ from typing import (
     TypeVar,
 )
 
-from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
@@ -31,6 +30,7 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,
     )
+    from langchain_core.documents import Document
 
 logger = logging.getLogger(__name__)
 

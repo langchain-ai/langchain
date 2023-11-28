@@ -13,6 +13,7 @@ from langchain_core.utils.input import (
 )
 from langchain_core.utils.loading import try_load_from_hub
 from langchain_core.utils.utils import (
+    build_extra_kwargs,
     check_package_version,
     convert_to_secret_str,
     get_pydantic_field_names,
@@ -37,4 +38,5 @@ __all__ = [
     "raise_for_status_with_text",
     "xor_args",
     "try_load_from_hub",
+    "build_extra_kwargs",
 ]
