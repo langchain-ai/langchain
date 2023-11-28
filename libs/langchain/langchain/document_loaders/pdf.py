@@ -394,7 +394,7 @@ class MathpixPDFLoader(BasePDFLoader):
         )
         super().__init__(file_path, **kwargs)
         self.processed_file_format = processed_file_format
-        self.extra_params = extra_params if extra_params is None else dict()
+        self.extra_params = extra_params if extra_params is not None else dict()
         self.max_wait_time_seconds = max_wait_time_seconds
         self.should_clean_pdf = should_clean_pdf
 
