@@ -2845,22 +2845,52 @@ requests = "*"
 
 [[package]]
 name = "gpudb"
-version = "7.2.0.0b"
-description = ""
+version = "7.2.0.0b0"
+description = "Python client for Kinetica DB"
 optional = false
 python-versions = "*"
-files = []
-develop = false
+files = [
+    {file = "gpudb-7.2.0.0b0-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:1ce8a0369165c81f9e3b6334bcae0a8818fc6ea403a01e4fb66f0b56f9dab9a2"},
+    {file = "gpudb-7.2.0.0b0-cp27-cp27m-manylinux1_x86_64.whl", hash = "sha256:01eb9dfc3fe77d4ad90c51d2bd4384cf02dba09e9c551d6d9de750e767a5dd28"},
+    {file = "gpudb-7.2.0.0b0-cp27-cp27m-win32.whl", hash = "sha256:987276e2e06cab1973ac7cea96f33557a3ac6f20e9113691f1fe2f6e9e04e9cc"},
+    {file = "gpudb-7.2.0.0b0-cp27-cp27m-win_amd64.whl", hash = "sha256:482be9ebad4c3ae8c6672559bac696292a2a2deeb42f093bf91cf2b484f567a4"},
+    {file = "gpudb-7.2.0.0b0-cp27-cp27mu-manylinux1_i686.whl", hash = "sha256:6aad0aca127ebdb5deb022b4da332d1f6d3d4b876dadcee893370993fa4753dc"},
+    {file = "gpudb-7.2.0.0b0-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:3a79ab89a9e6048d32e903cbe69ddfca245b4f989e7d296ad02355aedbc579ff"},
+    {file = "gpudb-7.2.0.0b0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:77b6c7957ac0435f344787f19ea16efbcbc7e45ab84a5dc88670efa4f62741ff"},
+    {file = "gpudb-7.2.0.0b0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2cfbf71ab3d688cf7b5c9d895358c4eb8b5e4346f1a1715641049b314918f4c1"},
+    {file = "gpudb-7.2.0.0b0-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2a311c91d08c2fa21bcc7e0a1f8792d927005e15c2302dd8a84d894fd13b3df4"},
+    {file = "gpudb-7.2.0.0b0-cp310-cp310-win32.whl", hash = "sha256:a20f2aadcd656dc584ba5b317e188de9fc32b3f746a7de514589f68243b7081a"},
+    {file = "gpudb-7.2.0.0b0-cp310-cp310-win_amd64.whl", hash = "sha256:ae43925bf5c008a2aaa8bde367ca3d268d75b3d8af392a06a9f5978816837fe9"},
+    {file = "gpudb-7.2.0.0b0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:3ff47de9b22377af77f7ef80f9c805e2d1076c2ca90483f853de535a6ee2dc7d"},
+    {file = "gpudb-7.2.0.0b0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1c13dab71bf5a0d539d23112009e068e7f7277889960904ba7e7ae6fa9eada42"},
+    {file = "gpudb-7.2.0.0b0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:0f2dd1e717628fd00472520d09a9be574970ae223009370f082f632e82f0a336"},
+    {file = "gpudb-7.2.0.0b0-cp34-cp34m-manylinux1_i686.whl", hash = "sha256:cbc114ab2797ee80d8b040e743b59ee48288a60787dc4e2fc156545e004f0a73"},
+    {file = "gpudb-7.2.0.0b0-cp34-cp34m-manylinux1_x86_64.whl", hash = "sha256:2fe4dc329eb601bdb56688a10c8daa484f90ed0fea2e229751a9b0c8fe515a98"},
+    {file = "gpudb-7.2.0.0b0-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:3f7ddda3f7c1a92f5b0a27a62814904efd3a2f49e8f73a5fe8f84eb51f6f9c87"},
+    {file = "gpudb-7.2.0.0b0-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:c6f864dd39bd61860c19de06bea8a45b02aacaa9a771eaa257957bcbc5f934bb"},
+    {file = "gpudb-7.2.0.0b0-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8a6f6c1dee18e578e4ac18cfc272a8be2a6cca95c693717bf2395308f17885fb"},
+    {file = "gpudb-7.2.0.0b0-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2e7b361fb55dd948a82a80267ed7f21abd28746ee7d89822499d80d6e173f7fc"},
+    {file = "gpudb-7.2.0.0b0-cp36-cp36m-win32.whl", hash = "sha256:d9768017588e6251f306ca21bdd57b2e5502118ec04bde4b2061d9941c0ef0eb"},
+    {file = "gpudb-7.2.0.0b0-cp36-cp36m-win_amd64.whl", hash = "sha256:1714fe89eb2209b518b0dc20cde8830d1b276763fd62b1c13b0e2f247e371ea2"},
+    {file = "gpudb-7.2.0.0b0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fa7cc6848548a18e4fa896a7fc30b7ee7775a167597aefc45efe131896f19915"},
+    {file = "gpudb-7.2.0.0b0-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a4dde9034571aba26a341904fc8d958633c3e4384ac1a090fd229149a0b5ac1e"},
+    {file = "gpudb-7.2.0.0b0-cp37-cp37m-win32.whl", hash = "sha256:3dc2911fbb6c39bd6b8f8efba16cccfc2e0602dede45fc46be57404dcad4cf0a"},
+    {file = "gpudb-7.2.0.0b0-cp37-cp37m-win_amd64.whl", hash = "sha256:523b5a8a24a8195a390112f9d0f110c86f3a62cd73fbfcdc6ed8ec574c9cf847"},
+    {file = "gpudb-7.2.0.0b0-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:efc959259bc5fe458f8f6a0bfc5478b09571fa8cf2d74fb5466762c68c2676b8"},
+    {file = "gpudb-7.2.0.0b0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:861e308521e93b1790d4a36dcadb3044f51f548c229fab12f944221783c7cea4"},
+    {file = "gpudb-7.2.0.0b0-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1bb6a6ebeb68e779e6142939fe5905adfad3548287a7501d4344d06850041091"},
+    {file = "gpudb-7.2.0.0b0-cp38-cp38-win32.whl", hash = "sha256:4ea9533cb81ebfc63b25c41593748348cced0a76211c97b11612c994d2646021"},
+    {file = "gpudb-7.2.0.0b0-cp38-cp38-win_amd64.whl", hash = "sha256:ffb8f8521a0c3e73e105c2029aba1a5264d11a3a0705231cdcaca15263ca4b98"},
+    {file = "gpudb-7.2.0.0b0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:d2a8755d8efd7349154eeae971f4a7356c72aa6531d9a7b7bae89649d8196629"},
+    {file = "gpudb-7.2.0.0b0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eee0796cccafbbd1904cccea96014269e3a141b55c3c8c294860984c62e1e60f"},
+    {file = "gpudb-7.2.0.0b0-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:d8fd9a5df4e70fd081d5bf47d2dd4cc5745ad203d2b93db3e3db32799a08627a"},
+    {file = "gpudb-7.2.0.0b0-cp39-cp39-win32.whl", hash = "sha256:063ae60c1b5f0e48e102290d864c94d03b920771da55061a41332c4973ea0661"},
+    {file = "gpudb-7.2.0.0b0-cp39-cp39-win_amd64.whl", hash = "sha256:9c1745231e4a322d02827850aa3a99459c16a455d806d4a4707f6807c1f24596"},
+]
 
 [package.dependencies]
 future = "*"
 pyzmq = "*"
-
-[package.source]
-type = "git"
-url = "https://bitbucket.org/gisfederal/gpudb-api-python"
-reference = "HEAD"
-resolved_reference = "2f5a33a5ca27b6a244cfb84206e50b473dd986f8"
 
 [[package]]
 name = "gql"
@@ -11072,4 +11102,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5e9d2493e660072b38c77df3c327dd91ab151cb5302852079d16a91cf62e6eff"
+content-hash = "e5b077afb026f45971175d0797e7abf2a8434f5744a39da73c28bb0acfe20c93"
