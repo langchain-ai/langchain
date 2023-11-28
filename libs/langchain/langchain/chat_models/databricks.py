@@ -56,8 +56,11 @@ class ChatDatabricks(BaseChatModel):
     """
 
     endpoint: str
+    """The endpoint to use."""
     target_uri: str
+    """The target URI to use."""
     params: Optional[ChatParams] = None
+    """Extra parameters such as `temperature`."""
     _client: Any = PrivateAttr()
 
     def __init__(self, **kwargs: Any):

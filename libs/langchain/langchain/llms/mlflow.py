@@ -38,9 +38,9 @@ class Mlflow(LLM):
     """
 
     endpoint: str
-    """The endpoint name."""
+    """The endpoint to use."""
     target_uri: str
-    """The target URI."""
+    """The target URI to use."""
     params: Optional[Params] = None
     """Extra parameters such as `temperature`."""
     _client: Any = PrivateAttr()

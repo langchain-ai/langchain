@@ -32,7 +32,7 @@ class DatabricksEmbeddings(Embeddings, BaseModel):
     endpoint: str
     """The endpoint to use."""
     target_uri: str
-    """The target URI to use. For example, ``"""
+    """The target URI to use."""
     _client: Any = PrivateAttr()
 
     def __init__(self, **kwargs: Any):
