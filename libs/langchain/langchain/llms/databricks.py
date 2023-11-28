@@ -60,9 +60,9 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
 
     host: str
     endpoint_name: str
-    target_uri: str
+    databricks_uri: str
     client: Any = None
-    wrap: bool = False
+    external_or_foundation: bool = False
     task: Optional[str] = None
 
     def __init__(self, **data: Any):
@@ -71,7 +71,7 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
         try:
             from mlflow.deployments import get_deploy_client
 
-            self.client = get_deploy_client(self.target_uri)
+            self.client = get_deploy_client(self.databricks_uri)
         except ImportError as e:
             raise ImportError(
                 "Failed to create the client. "
@@ -79,7 +79,9 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             ) from e
 
         endpoint = self.client.get_endpoint(self.endpoint_name)
-        self.wrap = not self._is_external_or_foundation_model(endpoint)
+        self.external_or_foundation = not self._is_external_or_foundation_model(
+            endpoint
+        )
         self.task = self._get_task_type(endpoint)
 
     def _is_external_or_foundation_model(self, endpoint: Dict[str, Any]) -> bool:
@@ -92,9 +94,6 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
         )
 
     def _get_task_type(self, endpoint: Dict[str, Any]) -> Optional[str]:
-        """
-        Get the task type of the endpoint.
-        """
         config = endpoint.get("config")
         if not config:
             return None
@@ -122,7 +121,18 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
     def post(
         self, request: Any, transform_output_fn: Optional[Callable[..., str]] = None
     ) -> Any:
-        if self.wrap:
+        if self.external_or_foundation:
+            resp = self.client.predict(endpoint=self.endpoint_name, inputs=request)
+            if transform_output_fn:
+                return transform_output_fn(resp)
+
+            if self.task == "llm/v1/chat":
+                return _transform_chat(resp)
+            elif self.task == "llm/v1/completions":
+                return _transform_completions(resp)
+
+            return resp
+        else:
             # See https://docs.databricks.com/machine-learning/model-serving/score-model-serving-endpoints.html
             wrapped_request = {"dataframe_records": [request]}
             response = self.client.predict(
@@ -131,18 +141,7 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             preds = response["predictions"]
             # For a single-record query, the result is not a list.
             pred = preds[0] if isinstance(preds, list) else preds
-            return pred if transform_output_fn is None else transform_output_fn(pred)
-        else:
-            resp = self.client.predict(endpoint=self.endpoint_name, inputs=request)
-            if transform_output_fn is None:
-                if self.task == "llm/v1/chat":
-                    return _transform_chat(resp)
-                elif self.task == "llm/v1/completions":
-                    return _transform_completions(resp)
-
-                return resp
-
-            return transform_output_fn(resp)
+            return transform_output_fn(pred) if transform_output_fn else pred
 
 
 class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
@@ -324,7 +323,7 @@ class Databricks(LLM):
     """
 
     databricks_uri: str = "databricks"
-    """The target URI for Databricks. Only used when using a serving endpoint."""
+    """The databricks URI. Only used when using a serving endpoint."""
 
     _client: _DatabricksClientBase = PrivateAttr()
 
@@ -381,7 +380,7 @@ class Databricks(LLM):
                 host=self.host,
                 api_token=self.api_token,
                 endpoint_name=self.endpoint_name,
-                target_uri=self.databricks_uri,
+                databricks_uri=self.databricks_uri,
             )
         elif self.cluster_id and self.cluster_driver_port:
             self._client = _DatabricksClusterDriverProxyClient(
