@@ -1,5 +1,6 @@
 # 🦜️🔗 LangChain
 
+
 ⚡ Building applications with LLMs through composability ⚡
 
 [![Release Notes](https://img.shields.io/github/release/langchain-ai/langchain)](https://github.com/langchain-ai/langchain/releases)
@@ -17,8 +18,8 @@
 
 Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
-To help you ship LangChain apps to production faster, check out [LangSmith](https://smith.langchain.com). 
-[LangSmith](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications. 
+To help you ship LangChain apps to production faster, check out [LangSmith](https://smith.langchain.com).
+[LangSmith](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications.
 Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) to get off the waitlist or speak with our sales team.
 
 ## Quick Install
@@ -72,7 +73,7 @@ The main value props of the LangChain libraries are:
 1. **Components**: composable tools and integrations for working with language models. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not
 2. **Off-the-shelf chains**: built-in assemblages of components for accomplishing higher-level tasks
 
-Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones. 
+Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones.
 
 Components fall into the following **modules**:
 
