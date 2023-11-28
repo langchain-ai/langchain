@@ -49,7 +49,7 @@ def test_aiplay_in_chain() -> None:
 def test_aiplay_model_param() -> None:
     """Tests model parameters for LlamaLLM"""
     llm = LlamaLLM(model="mistral-7B-inst")
-    assert llm.model_name == "mistral-7B-inst"
+    assert llm.model == "mistral-7B-inst"
 
 
 @pytest.mark.scheduled
