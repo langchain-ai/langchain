@@ -8,14 +8,16 @@ def test_call() -> None:
     output = stackexchange.run("zsh: command not found: python")
     assert output != "hello"
 
+
 def test_failure() -> None:
     """Test that call that doesn't run."""
     stackexchange = StackExchangeAPIWrapper()
     output = stackexchange.run("sjefbsmnf")
     assert output == "No relevant results found for 'sjefbsmnf' on Stack Overflow"
-    
+
+
 def test_success() -> None:
     """Test that call that doesn't run."""
     stackexchange = StackExchangeAPIWrapper()
     output = stackexchange.run("zsh: command not found: python")
-    assert "zsh: command not found: python" in output 
+    assert "zsh: command not found: python" in output

@@ -27,12 +27,12 @@ class StackExchangeAPIWrapper(BaseModel):
         """Run query through StackExchange API and parse results."""
         SITE = self.stackapi_client
         output = SITE.fetch("search/excerpts", title=title)
-        if(len(output["items"]) < 1):
-             return f"No relevant results found for '{title}' on Stack Overflow"
+        if len(output["items"]) < 1:
+            return f"No relevant results found for '{title}' on Stack Overflow"
         res_text = ""
         count = 0
         for sol in output["items"]:
-            if(count > 3):
+            if count > 3:
                 break
             if sol["item_type"] == "question":
                 res_text += f"Title: {sol['title']}\n"
