@@ -49,6 +49,7 @@ from langchain_core.prompts import (
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
+    AddableDict,
     ConfigurableField,
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
@@ -1542,6 +1543,7 @@ async def test_prompt() -> None:
 
     assert stream_log[1:] == [
         RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": expected},
             {
                 "op": "replace",
                 "path": "/final_output",
@@ -1551,9 +1553,8 @@ async def test_prompt() -> None:
                         HumanMessage(content="What is your name?"),
                     ]
                 ),
-            }
+            },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
     ]
 
     stream_log_state = [
@@ -1612,6 +1613,7 @@ async def test_prompt() -> None:
 
     assert stream_log_nested[1:] == [
         RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": expected},
             {
                 "op": "replace",
                 "path": "/final_output",
@@ -1621,9 +1623,8 @@ async def test_prompt() -> None:
                         HumanMessage(content="What is your name?"),
                     ]
                 ),
-            }
+            },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
     ]
 
 
@@ -2107,9 +2108,9 @@ async def test_prompt_with_llm(
                 "value": "2023-01-01T00:00:00.000",
             },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": "foo"}),
         RunLogPatch(
-            {"op": "replace", "path": "/final_output", "value": {"output": "foo"}}
+            {"op": "add", "path": "/streamed_output/-", "value": "foo"},
+            {"op": "replace", "path": "/final_output", "value": "foo"},
         ),
     ]
 
@@ -2154,6 +2155,71 @@ async def test_stream_log_retriever() -> None:
     ]
 
 
+@freeze_time("2023-01-01")
+async def test_stream_log_lists() -> None:
+    async def list_producer(input: AsyncIterator[Any]) -> AsyncIterator[AddableDict]:
+        for i in range(4):
+            yield AddableDict(alist=[str(i)])
+
+    chain: Runnable = RunnableGenerator(list_producer)
+
+    stream_log = [
+        part async for part in chain.astream_log({"question": "What is your name?"})
+    ]
+
+    # remove ids from logs
+    for part in stream_log:
+        for op in part.ops:
+            if (
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
+            ):
+                del op["value"]["id"]
+
+    assert stream_log == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "",
+                "value": {"final_output": None, "logs": {}, "streamed_output": []},
+            }
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["0"]}},
+            {"op": "replace", "path": "/final_output", "value": {"alist": ["0"]}},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["1"]}},
+            {"op": "add", "path": "/final_output/alist/1", "value": "1"},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["2"]}},
+            {"op": "add", "path": "/final_output/alist/2", "value": "2"},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["3"]}},
+            {"op": "add", "path": "/final_output/alist/3", "value": "3"},
+        ),
+    ]
+
+    state = add(stream_log)
+
+    assert isinstance(state, RunLog)
+
+    assert state.state == {
+        "final_output": {"alist": ["0", "1", "2", "3"]},
+        "logs": {},
+        "streamed_output": [
+            {"alist": ["0"]},
+            {"alist": ["1"]},
+            {"alist": ["2"]},
+            {"alist": ["3"]},
+        ],
+    }
+
+
+@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm_and_async_lambda(
     mocker: MockerFixture, snapshot: SnapshotAssertion
