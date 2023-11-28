@@ -167,7 +167,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     parent_id = framework_parent_chunk.metadata.get(ID_KEY)
                     if parent_id and framework_parent_chunk.page_content:
                         framework_chunk.metadata[self.parent_id_key] = parent_id
-                        framework_chunks[parent_id] = framework_chunk
+                        framework_chunks[parent_id] = framework_parent_chunk
 
         return list(framework_chunks.values())
 
