@@ -911,7 +911,7 @@ def _prepare_eval_run(
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
     try:
-        project_extra = {"metadata": project_metadata} if project_metadata else {}
+        project_extra: dict = {"metadata": project_metadata} if project_metadata else {}
         if tags:
             project_extra["tags"] = tags
         project = client.create_project(
