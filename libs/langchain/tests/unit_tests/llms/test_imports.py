@@ -49,6 +49,7 @@ EXPECT_ALL = [
     "Nebula",
     "NIBittensorLLM",
     "NLPCloud",
+    "NVAIPlayLLM",
     "Ollama",
     "OpenAI",
     "OpenAIChat",
