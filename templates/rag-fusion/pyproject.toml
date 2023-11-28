@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-fusion"
 version = "0.0.1"
-description = ""
+description = "RAG using RAG fusion approach"
 authors = []
 readme = "README.md"
 
@@ -18,6 +18,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "rag_fusion.chain"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["OpenAI", "Pinecone"]
+tags = ["vectordbs"]
 
 [build-system]
 requires = [

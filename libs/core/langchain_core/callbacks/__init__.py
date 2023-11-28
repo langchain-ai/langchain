@@ -28,8 +28,6 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForToolRun,
     ParentRunManager,
     RunManager,
-    env_var_is_set,
-    register_configure_hook,
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -64,6 +62,4 @@ __all__ = [
     "AsyncCallbackManagerForChainGroup",
     "StdOutCallbackHandler",
     "StreamingStdOutCallbackHandler",
-    "env_var_is_set",
-    "register_configure_hook",
 ]

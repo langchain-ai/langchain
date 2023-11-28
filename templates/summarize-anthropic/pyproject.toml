@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "summarize-anthropic"
 version = "0.1.0"
-description = ""
+description = "This template uses Anthropic's `Claude2` to summarize long documents."
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]
@@ -19,6 +19,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "summarize_anthropic"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "summarization"
+author = "LangChain"
+integrations = ["Anthropic"]
+tags = ["summarization"]
 
 [build-system]
 requires = [

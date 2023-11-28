@@ -1,15 +1,16 @@
 """Base callback handler that can be used to handle callbacks in langchain."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypeVar, Union
 from uuid import UUID
 
 from tenacity import RetryCallState
 
-from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.documents import Document
-from langchain_core.messages import BaseMessage
-from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
+if TYPE_CHECKING:
+    from langchain_core.agents import AgentAction, AgentFinish
+    from langchain_core.documents import Document
+    from langchain_core.messages import BaseMessage
+    from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
 
 
 class RetrieverManagerMixin:

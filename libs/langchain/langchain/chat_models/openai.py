@@ -45,8 +45,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import (
     BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
+    agenerate_from_stream,
+    generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
 from langchain.utils import get_from_dict_or_env
@@ -416,7 +416,7 @@ class ChatOpenAI(BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         response = self.completion_with_retry(
@@ -499,7 +499,7 @@ class ChatOpenAI(BaseChatModel):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return await _agenerate_from_stream(stream_iter)
+            return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}

@@ -11,9 +11,9 @@ from uuid import UUID
 import langsmith
 from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
 
-from langchain_core.callbacks import manager
 from langchain_core.tracers import langchain as langchain_tracer
 from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.context import tracing_v2_enabled
 from langchain_core.tracers.langchain import _get_executor
 from langchain_core.tracers.schemas import Run
 
@@ -115,7 +115,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             if self.project_name is None:
                 eval_result = self.client.evaluate_run(run, evaluator)
                 eval_results = [eval_result]
-            with manager.tracing_v2_enabled(
+            with tracing_v2_enabled(
                 project_name=self.project_name, tags=["eval"], client=self.client
             ) as cb:
                 reference_example = (

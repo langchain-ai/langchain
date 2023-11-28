@@ -6,8 +6,8 @@ from typing import Generator, Union
 from uuid import uuid4
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
 
 logging.basicConfig(level=logging.DEBUG)
