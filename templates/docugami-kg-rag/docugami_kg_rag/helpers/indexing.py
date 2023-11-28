@@ -21,10 +21,7 @@ from docugami_kg_rag.config import (
     SUB_CHUNK_TABLES,
     LocalIndexState,
 )
-from docugami_kg_rag.helpers.documents import (
-    build_summary_mappings,
-    get_parent_id_mappings,
-)
+from docugami_kg_rag.helpers.documents import build_summary_mappings
 from docugami_kg_rag.helpers.reports import build_report_details
 from docugami_kg_rag.helpers.retrieval import (
     chunks_to_direct_retriever_tool_description,
@@ -40,26 +37,27 @@ def read_all_local_index_state() -> Dict[str, LocalIndexState]:
         return pickle.load(file)
 
 
-def update_local_index(docset_id: str, name: str, chunks: List[Document]):
+def update_local_index(docset_id: str, name: str, parents_by_id: Dict[str, Document]):
     # Populate local index
 
     state = read_all_local_index_state()
 
-    parents = get_parent_id_mappings(chunks)
-    parents_by_id = InMemoryStore()
-    parents_by_id.mset(parents.items())  # type: ignore
+    parents_by_id_store = InMemoryStore()
+    parents_by_id_store.mset(list(parents_by_id.items()))
 
-    doc_summaries = build_summary_mappings(parents)
-    doc_summaries_by_id = InMemoryStore()
-    doc_summaries_by_id.mset(doc_summaries.items())  # type: ignore
+    doc_summaries = build_summary_mappings(parents_by_id)
+    doc_summaries_by_id_store = InMemoryStore()
+    doc_summaries_by_id_store.mset(list(doc_summaries.items()))
 
     direct_tool_function_name = docset_name_to_direct_retriever_tool_function_name(name)
-    direct_tool_description = chunks_to_direct_retriever_tool_description(name, chunks)
+    direct_tool_description = chunks_to_direct_retriever_tool_description(
+        name, list(parents_by_id.values())
+    )
     report_details = build_report_details(docset_id)
 
     doc_index_state = LocalIndexState(
-        parents_by_id=parents_by_id,
-        doc_summaries_by_id=doc_summaries_by_id,
+        parents_by_id=parents_by_id_store,
+        doc_summaries_by_id=doc_summaries_by_id_store,
         retrieval_tool_function_name=direct_tool_function_name,
         retrieval_tool_description=direct_tool_description,
         reports=report_details,
@@ -119,6 +117,22 @@ def index_docset(docset_id: str, name: str, force: bool = False):
     )
 
     chunks = loader.load()
+
+    # Build separate maps of parent and child chunks
+    parents_by_id: Dict[str, Document] = {}
+    children_by_id: Dict[str, Document] = {}
+    for chunk in chunks:
+        chunk_id = chunk.metadata.get("id")
+        parent_chunk_id = chunk.metadata.get(loader.parent_id_key)
+        if not parent_chunk_id:
+            # parent chunk
+            parents_by_id[chunk_id] = chunk
+        else:
+            # child chunk
+            children_by_id[chunk_id] = chunk
+
     docset_pinecone_index_name = f"{PINECONE_INDEX}-{docset_id}"
-    populate_pinecode_index(docset_pinecone_index_name, chunks, force)
-    update_local_index(docset_id, name, chunks)
+    populate_pinecode_index(
+        docset_pinecone_index_name, list(children_by_id.values()), force
+    )
+    update_local_index(docset_id, name, parents_by_id)

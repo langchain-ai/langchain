@@ -71,7 +71,7 @@ def chunks_to_direct_retriever_tool_description(name: str, chunks: List[Document
         | StrOutputParser()
     )
     summary = chain.invoke({"docset_name": name, "doc_fragment": doc_fragment})
-    return f"Searches for and returns chunks from {name} documents. {summary}."
+    return f"Searches for and returns chunks from {name} documents. {summary}"
 
 
 def get_retrieval_tool_for_docset(
