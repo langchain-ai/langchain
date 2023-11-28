@@ -54,6 +54,9 @@ class ClientModel(BaseModel):
     Custom BaseModel subclass with some desirable properties for subclassing
     """
 
+    def __init__(self, *args: Sequence, **kwargs: Dict[str, Any]):
+        super().__init__(*args, **kwargs)
+
     def subscope(self, *args: Sequence, **kwargs: dict) -> Any:
         """Create a new ClientModel with the same values but new arguments"""
         named_args = dict({k: v for k, v in zip(getattr(self, "arg_keys", []), args)})
@@ -374,13 +377,17 @@ class NVAIPlayClient(ClientModel):
     arg_keys: Sequence[str] = Field(["inputs", "labels", "stop"])
     valid_roles: Sequence[str] = Field(["user", "system", "assistant", "context"])
 
-    def __init__(self, *args: Sequence, **kwargs: dict):
+    def __init__(self, *args: Sequence, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
     @root_validator()
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["client"] = values["client"](**values)
         return values
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
 
     @property
     def available_models(self) -> List[str]:
@@ -600,237 +607,60 @@ class NVAIPlayBaseModel(NVAIPlayClient):
 
 
 class NVAIPlayLLM(NVAIPlayBaseModel, LLM):
-    def __init__(
-        self,
-        model_name: str = "",
-        temperature: float = 0.2,
-        top_p: float = 0.7,
-        max_tokens: int = 1024,
-        streaming: bool = False,
-        stop: Union[Sequence[str], str] = [],
-        **kwargs: dict,
-    ):
-        super().__init__(
-            model_name=model_name,
-            temperature=temperature,
-            top_p=top_p,
-            max_tokens=max_tokens,
-            stop=stop,
-            streaming=streaming,
-            **kwargs,
-        )
+    pass
 
 
 if STANDALONE:
 
     class NVAIPlayChat(NVAIPlayBaseModel, SimpleChatModel):
-        def __init__(
-            self,
-            model_name: str = "",
-            temperature: float = 0.2,
-            top_p: float = 0.7,
-            max_tokens: int = 1024,
-            streaming: bool = False,
-            stop: Union[Sequence[str], str] = [],
-            **kwargs: dict,
-        ):
-            super().__init__(
-                model_name=model_name,
-                temperature=temperature,
-                top_p=top_p,
-                max_tokens=max_tokens,
-                stop=stop,
-                streaming=streaming,
-                **kwargs,
-            )
+        pass
+
 
 ################################################################################
 
 
 class LlamaLLM(NVAIPlayLLM):
-    def __init__(
-        self,
-        model_name: str = "llama2_13b",
-        temperature: float = 0.2,
-        top_p: float = 0.7,
-        max_tokens: int = 1024,
-        streaming: bool = False,
-        stop: Union[Sequence[str], str] = [],
-        **kwargs: dict,
-    ):
-        super().__init__(
-            model_name=model_name,
-            temperature=temperature,
-            top_p=top_p,
-            max_tokens=max_tokens,
-            stop=stop,
-            streaming=streaming,
-            **kwargs,
-        )
+    model_name: str = Field("llama2_13b")
 
 
 class MistralLLM(NVAIPlayLLM):
-    def __init__(
-        self,
-        model_name: str = "mistral",
-        temperature: float = 0.2,
-        top_p: float = 0.7,
-        max_tokens: int = 1024,
-        streaming: bool = False,
-        stop: Union[Sequence[str], str] = [],
-        **kwargs: dict,
-    ):
-        super().__init__(
-            model_name=model_name,
-            temperature=temperature,
-            top_p=top_p,
-            max_tokens=max_tokens,
-            stop=stop,
-            streaming=streaming,
-            **kwargs,
-        )
+    model_name: str = Field("mistral")
 
 
 class SteerLM(NVAIPlayLLM):
-    def __init__(
-        self,
-        model_name: str = "gpt_steerlm_8b",
-        labels: dict = {
+    model_name: str = Field("gpt_steerlm_8b")
+    labels: dict = Field(
+        {
             "creativity": 5,
             "helpfulness": 5,
             "humor": 5,
             "quality": 5,
-        },
-        temperature: float = 0.2,
-        top_p: float = 0.7,
-        max_tokens: int = 1024,
-        streaming: bool = False,
-        stop: Union[Sequence[str], str] = [],
-        **kwargs: dict,
-    ):
-        super().__init__(
-            model_name=model_name,
-            labels=labels,
-            temperature=temperature,
-            top_p=top_p,
-            max_tokens=max_tokens,
-            stop=stop,
-            streaming=streaming,
-            **kwargs,
-        )
+        }
+    )
 
 
 class NemotronQA(NVAIPlayLLM):
-    def __init__(
-        self,
-        model_name: str = "gpt_qa_8b",
-        temperature: float = 0.2,
-        top_p: float = 0.7,
-        max_tokens: int = 1024,
-        streaming: bool = False,
-        stop: Union[Sequence[str], str] = [],
-        **kwargs: dict,
-    ):
-        super().__init__(
-            model_name=model_name,
-            temperature=temperature,
-            top_p=top_p,
-            max_tokens=max_tokens,
-            stop=stop,
-            streaming=streaming,
-            **kwargs,
-        )
+    model_name: str = Field("gpt_qa_8b")
 
 
 if STANDALONE:
 
     class LlamaChat(NVAIPlayChat):
-        def __init__(
-            self,
-            model_name: str = "llama2_13b",
-            temperature: float = 0.2,
-            top_p: float = 0.7,
-            max_tokens: int = 1024,
-            streaming: bool = False,
-            stop: Union[Sequence[str], str] = [],
-            **kwargs: dict,
-        ):
-            super().__init__(
-                model_name=model_name,
-                temperature=temperature,
-                top_p=top_p,
-                max_tokens=max_tokens,
-                stop=stop,
-                streaming=streaming,
-                **kwargs,
-            )
+        model_name: str = Field("llama2_13b")
 
     class MistralChat(NVAIPlayChat):
-        def __init__(
-            self,
-            model_name: str = "mistral",
-            temperature: float = 0.2,
-            top_p: float = 0.7,
-            max_tokens: int = 1024,
-            streaming: bool = False,
-            stop: Union[Sequence[str], str] = [],
-            **kwargs: dict,
-        ):
-            super().__init__(
-                model_name=model_name,
-                temperature=temperature,
-                top_p=top_p,
-                max_tokens=max_tokens,
-                stop=stop,
-                streaming=streaming,
-                **kwargs,
-            )
+        model_name: str = Field("mistral")
 
     class SteerLMChat(NVAIPlayChat):
-        def __init__(
-            self,
-            model_name: str = "gpt_steerlm_8b",
-            labels: dict = {
+        model_name: str = Field("gpt_steerlm_8b")
+        labels: dict = Field(
+            {
                 "creativity": 5,
                 "helpfulness": 5,
                 "humor": 5,
                 "quality": 5,
-            },
-            temperature: float = 0.2,
-            top_p: float = 0.7,
-            max_tokens: int = 1024,
-            streaming: bool = False,
-            stop: Union[Sequence[str], str] = [],
-            **kwargs: dict,
-        ):
-            super().__init__(
-                model_name=model_name,
-                labels=labels,
-                temperature=temperature,
-                top_p=top_p,
-                max_tokens=max_tokens,
-                stop=stop,
-                streaming=streaming,
-                **kwargs,
-            )
+            }
+        )
 
     class NemotronQAChat(NVAIPlayChat):
-        def __init__(
-            self,
-            model_name: str = "gpt_qa_8b",
-            temperature: float = 0.2,
-            top_p: float = 0.7,
-            max_tokens: int = 1024,
-            streaming: bool = False,
-            stop: Union[Sequence[str], str] = [],
-            **kwargs: dict,
-        ):
-            super().__init__(
-                model_name=model_name,
-                temperature=temperature,
-                top_p=top_p,
-                max_tokens=max_tokens,
-                stop=stop,
-                streaming=streaming,
-                **kwargs,
-            )
+        model_name: str = Field("gpt_qa_8b")
