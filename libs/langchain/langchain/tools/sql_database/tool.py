@@ -52,6 +52,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.    
 
     Example Input: "table1, table2, table3"
+    The arg to pass the string of tables to the function is table_names.
     """
 
     def _run(
