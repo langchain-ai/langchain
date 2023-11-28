@@ -15,7 +15,6 @@ TABLE_NAME = "{http://www.w3.org/1999/xhtml}table"
 
 XPATH_KEY = "xpath"
 ID_KEY = "id"
-PARENT_DOC_ID_KEY = "doc_id"
 DOCUMENT_SOURCE_KEY = "source"
 DOCUMENT_NAME_KEY = "name"
 STRUCTURE_KEY = "structure"
@@ -53,6 +52,9 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
     parent_hierarchy_levels: int = 0
     """Set appropriately to get parent chunks using the chunk hierarchy."""
+
+    parent_id_key: str = "doc_id"
+    """Metadata key for parent doc ID."""
 
     sub_chunk_tables: bool = False
     """Set to True to return sub-chunks within tables."""
@@ -144,7 +146,6 @@ class DocugamiLoader(BaseLoader, BaseModel):
         tree = etree.parse(io.BytesIO(content))
         root = tree.getroot()
 
-        framework_chunks: List[Document] = []
         dg_chunks = get_chunks(
             root,
             min_text_length=self.min_text_length,
@@ -155,18 +156,20 @@ class DocugamiLoader(BaseLoader, BaseModel):
             parent_hierarchy_levels=self.parent_hierarchy_levels,
         )
 
+        framework_chunks: Dict[str, Document] = {}
         for dg_chunk in dg_chunks:
             framework_chunk = _build_framework_chunk(dg_chunk)
-            if hasattr(dg_chunk, "parent") and dg_chunk.parent:
-                if hasattr(framework_chunk, "parent"):
-                    framework_chunk.parent = _build_framework_chunk(dg_chunk.parent)
-                    if framework_chunk.parent and framework_chunk.parent.page_content:
-                        framework_chunk.metadata[
-                            PARENT_DOC_ID_KEY
-                        ] = framework_chunk.parent.metadata[ID_KEY]
-            framework_chunks.append(framework_chunk)
+            chunk_id = framework_chunk.metadata.get(ID_KEY)
+            if chunk_id:
+                framework_chunks[chunk_id] = framework_chunk
+                if dg_chunk.parent:
+                    framework_parent_chunk = _build_framework_chunk(dg_chunk.parent)
+                    parent_id = framework_parent_chunk.metadata.get(ID_KEY)
+                    if parent_id and framework_parent_chunk.page_content:
+                        framework_chunk.metadata[self.parent_id_key] = parent_id
+                        framework_chunks[parent_id] = framework_chunk
 
-        return framework_chunks
+        return list(framework_chunks.values())
 
     def _document_details_for_docset_id(self, docset_id: str) -> List[Dict]:
         """Gets all document details for the given docset ID"""

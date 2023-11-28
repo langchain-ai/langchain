@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Field
@@ -16,10 +16,6 @@ class Document(Serializable):
         documents, etc.).
     """
     type: Literal["Document"] = "Document"
-
-    parent: Optional[Document] = None
-    """Parent document, optionally set by document loaders that support
-    hierarchical chunking."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
