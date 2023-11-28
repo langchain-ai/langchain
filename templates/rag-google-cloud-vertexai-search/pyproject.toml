@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-google-cloud-vertexai-search"
 version = "0.0.1"
-description = ""
+description = "RAG using Google Vertex AI Search"
 authors = ["Juan Calvo <juan.calvo@datatonic.com>"]
 readme = "README.md"
 
@@ -19,6 +19,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "rag_google_cloud_vertexai_search"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Datatonic"
+integrations = ["OpenAI", "Google"]
+tags = ["vectordbs"]
 
 [build-system]
 requires = [

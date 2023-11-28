@@ -76,7 +76,7 @@ jobs:
         env:
           LANGCHAIN_LOCATION: ${{ inputs.langchain-location }}
         run: |
-          pip install -e "$LANGCHAIN_LOCATION"
+          poetry run pip install -e "$LANGCHAIN_LOCATION"
 
       - name: Get .mypy_cache to speed up mypy
         uses: actions/cache@v3

@@ -30,13 +30,25 @@ def test_azure_openai_embedding_documents_multiple() -> None:
     embedding = _get_embeddings(chunk_size=2)
     embedding.embedding_ctx_length = 8191
     output = embedding.embed_documents(documents)
+    assert embedding.chunk_size == 2
     assert len(output) == 3
     assert len(output[0]) == 1536
     assert len(output[1]) == 1536
     assert len(output[2]) == 1536
 
 
-@pytest.mark.asyncio
+def test_azure_openai_embedding_documents_chunk_size() -> None:
+    """Test openai embeddings."""
+    documents = ["foo bar"] * 20
+    embedding = _get_embeddings()
+    embedding.embedding_ctx_length = 8191
+    output = embedding.embed_documents(documents)
+    # Max 16 chunks per batch on Azure OpenAI embeddings
+    assert embedding.chunk_size == 16
+    assert len(output) == 20
+    assert all([len(out) == 1536 for out in output])
+
+
 async def test_azure_openai_embedding_documents_async_multiple() -> None:
     """Test openai embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
@@ -57,7 +69,6 @@ def test_azure_openai_embedding_query() -> None:
     assert len(output) == 1536
 
 
-@pytest.mark.asyncio
 async def test_azure_openai_embedding_async_query() -> None:
     """Test openai embeddings."""
     document = "foo bar"
