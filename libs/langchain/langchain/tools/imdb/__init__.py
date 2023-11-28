@@ -11,13 +11,13 @@ from langchain.tools.imdb.search_movie import IMDbSearchMovie
 from langchain.tools.imdb.search_person import IMDbSearchPerson
 
 __all__ = [
-    "IMDbSearchMovie",
     "IMDBCastOfMovie",
-    "IMDBPlotOfMovie",
-    "IMDbSearchPerson",
     "IMDbGetMovieCrew",
     "IMDbGetMovieInfo",
     "IMDbGetPersonBio",
     "IMDbGetPersonMovies",
     "IMDbPopularMovies",
+    "IMDBPlotOfMovie",
+    "IMDbSearchMovie",
+    "IMDbSearchPerson",
 ]

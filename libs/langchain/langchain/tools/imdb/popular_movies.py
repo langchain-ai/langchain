@@ -21,5 +21,7 @@ class IMDbPopularMovies(IMDbBaseTool):
         input: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
+        # dummy input used so that the tool is compatible
+        # with non-structured agents
         movies = self.client.get_popular100_movies()
         return json.dumps(movies_to_dicts(movies[:20]))
