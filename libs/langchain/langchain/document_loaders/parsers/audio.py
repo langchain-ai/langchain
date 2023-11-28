@@ -1,11 +1,12 @@
 import logging
 import time
-from typing import Dict, Iterator, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from langchain_core.documents import Document
 
+from langchain.document_loaders import Blob
 from langchain.document_loaders.base import BaseBlobParser
-from langchain.document_loaders.blob_loaders import Blob
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ class OpenAIWhisperParser(BaseBlobParser):
                 file_obj.name = f"part_{split_number}.mp3"
 
             # Transcribe
-            print(f"Transcribing part {split_number+1}!")
+            print(f"Transcribing part {split_number + 1}!")
             attempts = 0
             while attempts < 3:
                 try:
@@ -298,3 +299,191 @@ class YandexSTTParser(BaseBlobParser):
                 page_content=res.normalized_text,
                 metadata={"source": blob.source},
             )
+
+
+class AzureSpeechServiceParser(BaseBlobParser):
+    """Loads an Audio with azure.cognitiveservices.speech."""
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the parser.
+
+        Args:
+            kwargs: Keyword arguments to pass to ``speechsdk.SpeechConfig(()``
+        """
+
+        self.key = get_from_dict_or_env(kwargs, "key", "AZURE_SPEECH_SERVICE_KEY")
+
+        self.endpoint: Optional[str] = get_from_dict_or_env(
+            kwargs, "endpoint", "AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT", ""
+        )
+        self.endpoint = None if self.endpoint == "" else self.endpoint
+
+        self.region: Optional[str] = get_from_dict_or_env(
+            kwargs, "region", "AZURE_SPEECH_SERVICE_REGION", ""
+        )
+        self.region = None if self.region == "" else self.region
+
+        self.log_path: Optional[str] = get_from_dict_or_env(
+            kwargs, "log_path", "AZURE_SPEECH_SERVICE_LOG_PATH", ""
+        )
+        self.log_path = None if self.log_path == "" else self.log_path
+
+        srl = "speech_recognition_language"
+        self.speech_recognition_language = kwargs[srl] if srl in kwargs else None
+
+        adl = "auto_detect_languages"
+        self.auto_detect_languages = kwargs[adl] if adl in kwargs else None
+
+        self.raw_json_list: List[dict] = []
+        self.document_list: List[Document] = []
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        """Lazily parse the blob."""
+        import json
+
+        try:
+            import azure.cognitiveservices.speech as speechsdk
+        except ImportError:
+            raise ImportError(
+                "azure.cognitiveservices.speech package not found, please install "
+                "it with `pip install azure-cognitiveservices-speech`"
+            )
+
+        """transcribes a conversation"""
+
+        def conversation_transcriber_recognition_canceled_cb(
+            evt: speechsdk.SessionEventArgs
+        ) -> None:
+            # Canceled event
+            pass
+
+        def conversation_transcriber_session_stopped_cb(
+            evt: speechsdk.SessionEventArgs
+        ) -> None:
+            # SessionStopped event
+            pass
+
+        def conversation_transcriber_transcribed_cb(
+            evt: speechsdk.SpeechRecognitionEventArgs
+        ) -> None:
+            if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
+                evt_dict = json.loads(evt.result.json)
+
+                content = evt_dict["DisplayText"]
+
+                if self.speech_recognition_language is not None:
+                    language = self.speech_recognition_language
+                elif self.auto_detect_languages is not None:
+                    temp_dict = evt_dict["PrimaryLanguage"]
+                    language = (
+                        temp_dict["Language"] if "Language" in temp_dict else "Unknown"
+                    )
+                else:
+                    language = "Unsigned"
+
+                speaker_id = (
+                    evt_dict["SpeakerId"] if "SpeakerId" in evt_dict else "Unknown"
+                )
+                offset_second = evt_dict["Offset"]
+                duration_second = evt_dict["Duration"]
+
+                evt_dict = json.loads(evt.result.json)
+                _doc = Document(
+                    page_content=content,
+                    metadata={
+                        "offset_second": int(offset_second) / 10**7,
+                        "duration_second": int(duration_second) / 10**7,
+                        "language": language,
+                        "speaker_id": speaker_id,
+                    },
+                )
+                print(f"TRANSCRIBED:{evt_dict}")
+                self.raw_json_list.append(evt_dict)
+                self.document_list.append(_doc)
+            elif evt.result.reason == speechsdk.ResultReason.NoMatch:
+                print(
+                    "\tNOMATCH: Speech could not be TRANSCRIBED: {}".format(
+                        evt.result.no_match_details
+                    )
+                )
+
+        def conversation_transcriber_session_started_cb(
+            evt: speechsdk.SessionEventArgs
+        ) -> None:
+            # SessionStarted event
+            pass
+
+        def recognize_from_file() -> Iterator[Document]:
+            # Speech service speech config
+            speech_config = speechsdk.SpeechConfig(
+                subscription=self.key,
+                region=self.region,
+                endpoint=self.endpoint,
+                speech_recognition_language=self.speech_recognition_language,
+            )
+            speech_config.output_format = speechsdk.OutputFormat.Detailed
+
+            if self.log_path is not None:
+                speech_config.set_property(
+                    speechsdk.PropertyId.Speech_LogFilename, self.log_path
+                )
+
+            # Speech service audio config
+            audio_config = speechsdk.audio.AudioConfig(filename=blob.path)
+
+            # Speech service auto_detect_source_language_config config
+            if self.auto_detect_languages is not None:
+                auto_detect_source_language_config = (
+                    speechsdk.languageconfig.AutoDetectSourceLanguageConfig(
+                        languages=self.auto_detect_languages
+                    )
+                )
+            else:
+                auto_detect_source_language_config = None
+
+            conversation_transcriber = speechsdk.transcription.ConversationTranscriber(
+                speech_config=speech_config,
+                audio_config=audio_config,
+                auto_detect_source_language_config=auto_detect_source_language_config,
+            )
+
+            transcribing_stop = False
+
+            def stop_cb(evt: speechsdk.SessionEventArgs) -> None:
+                # callback that signals to stop continuous recognition
+                # upon receiving an event `evt`
+                print("CLOSING on {}".format(evt))
+                nonlocal transcribing_stop
+                transcribing_stop = True
+
+            # Connect callbacks to the events fired by the conversation transcriber
+            conversation_transcriber.transcribed.connect(
+                conversation_transcriber_transcribed_cb
+            )
+            conversation_transcriber.session_started.connect(
+                conversation_transcriber_session_started_cb
+            )
+            conversation_transcriber.session_stopped.connect(
+                conversation_transcriber_session_stopped_cb
+            )
+            conversation_transcriber.canceled.connect(
+                conversation_transcriber_recognition_canceled_cb
+            )
+            # stop transcribing on either session stopped or canceled events
+            conversation_transcriber.session_stopped.connect(stop_cb)
+            conversation_transcriber.canceled.connect(stop_cb)
+
+            conversation_transcriber.start_transcribing_async()
+
+            # Waits for completion.
+            while not transcribing_stop:
+                time.sleep(0.5)
+
+            conversation_transcriber.stop_transcribing_async()
+            return iter(self.document_list)
+
+        try:
+            return recognize_from_file()
+        except Exception as err:
+            print("Encountered exception. {}".format(err))
+            raise err
