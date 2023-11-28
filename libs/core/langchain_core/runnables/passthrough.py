@@ -372,7 +372,11 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         try:
             output = {
                 **input,
-                **self.mapper.invoke(input, config, **kwargs),
+                **self.mapper.invoke(
+                    input,
+                    patch_config(config, callbacks=run_manager.get_child()),
+                    **kwargs,
+                ),
             }
         except Exception as e:
             run_manager.on_chain_error(e)
@@ -402,7 +406,11 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         try:
             output = {
                 **input,
-                **await self.mapper.ainvoke(input, config, **kwargs),
+                **await self.mapper.ainvoke(
+                    input,
+                    patch_config(config, callbacks=run_manager.get_child()),
+                    **kwargs,
+                ),
             }
         except Exception as e:
             run_manager.on_chain_error(e)
