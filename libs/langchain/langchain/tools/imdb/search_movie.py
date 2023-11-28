@@ -1,5 +1,5 @@
-from typing import Optional
 import json
+from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.imdb.base import IMDbBaseTool
