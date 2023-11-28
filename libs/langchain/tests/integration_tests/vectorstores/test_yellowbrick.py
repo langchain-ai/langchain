@@ -1,19 +1,13 @@
 from typing import List, Optional
 
-from langchain.vectorstores import Yellowbrick
-
 import pytest
-
-import psycopg2
-
-from langchain.docstore.document import Document 
-
-from itertools import repeat
-
 from fake_embeddings import (
     FakeEmbeddings,
     fake_texts,
 )
+
+from langchain.docstore.document import Document
+from langchain.vectorstores import Yellowbrick
 
 YELLOWBRICK_URL = "postgres://username:password@host:port/database"
 YELLOWBRICK_TABLE = "test_table"

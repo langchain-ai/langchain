@@ -1,16 +1,11 @@
 from __future__ import annotations
 
 import json
-import uuid
 import logging
+import uuid
 import warnings
-import psycopg2
-from psycopg2 import sql
-
 from itertools import repeat
-
 from typing import (
-    TYPE_CHECKING,
     Any,
     Iterable,
     List,
@@ -19,8 +14,11 @@ from typing import (
     Type,
 )
 
+import psycopg2
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from psycopg2 import sql
+
 from langchain.docstore.document import Document
 
 logger = logging.getLogger(__name__)
@@ -50,7 +48,8 @@ class Yellowbrick(VectorStore):
         self._table = table
         self._embedding = embedding
         # Create a connection if not provided, otherwise use the provided connection
-        self._connection = connection if connection else self.create_connection(connection_string)
+        self._connection = \
+            connection if connection else self.create_connection(connection_string)
         self.__post_init__()
 
     def __post_init__(
@@ -67,7 +66,10 @@ class Yellowbrick(VectorStore):
     def create_table_if_not_exists(self) -> None:
         cursor = self._connection.cursor()
         cursor.execute(sql.SQL('CREATE TABLE IF NOT EXISTS {} ( \
-            id UUID, embedding_id INTEGER, text VARCHAR(60000), metadata VARCHAR(1024), \
+            id UUID, \
+            embedding_id INTEGER, \
+            text VARCHAR(60000), \
+            metadata VARCHAR(1024), \
             embedding FLOAT)').format(sql.Identifier(self._table)))
         self._connection.commit()
         cursor.close()
@@ -87,14 +89,17 @@ class Yellowbrick(VectorStore):
         Helper function: Test the database is UTF-8 encoded
         """
         cursor = self._connection.cursor()
-        query = "SELECT pg_encoding_to_char(encoding) FROM pg_database WHERE datname = current_database();"
+        query = "SELECT pg_encoding_to_char(encoding) \
+        FROM pg_database \
+        WHERE datname = current_database();"
         cursor.execute(query)
         encoding = cursor.fetchone()[0]
         cursor.close()
         if encoding.lower() == 'utf8' or encoding.lower() == 'utf-8':
             return True
         else:
-            raise Exception(f"Database '{self.connection_string.split('/')[-1]}' encoding is not UTF-8")
+            raise Exception(f"Database \
+           '{self.connection_string.split('/')[-1]}' encoding is not UTF-8")
 
     def add_texts(
         self,
@@ -118,8 +123,10 @@ class Yellowbrick(VectorStore):
             results.append(doc_uuid)
             data_input = [
                 (str(id), embedding_id, text, json.dumps(metadata), embedding)
-                for id, embedding_id, text, metadata, embedding in zip(repeat(doc_uuid), 
-                    range(len(embeddings[id])), repeat(texts[id]), repeat(metadatas[id]), embeddings[id])
+                for id, embedding_id, text, metadata, \
+                embedding in zip(repeat(doc_uuid), 
+                    range(len(embeddings[id])), repeat(texts[id]), \
+                    repeat(metadatas[id]), embeddings[id])
             ]
             data_input = [val for sublist in data_input for val in sublist]
             insert_query = sql.SQL('INSERT INTO {t} \
@@ -186,7 +193,8 @@ class Yellowbrick(VectorStore):
             for embedding_id, embedding in zip(range(len(embedding)), embedding)
         ]
         data_input = [val for sublist in data_input for val in sublist]
-        insert_query = sql.SQL('INSERT INTO {t} (embedding_id, embedding) VALUES {v}').format(
+        insert_query = sql.SQL('INSERT INTO {t} \
+            (embedding_id, embedding) VALUES {v}').format(
             t=sql.Identifier(tmp_table), v=sql.SQL(',').join(
             [sql.SQL('(%s,%s)') for _ in range(len(embedding))])
         )
@@ -195,12 +203,15 @@ class Yellowbrick(VectorStore):
         sql_query = sql.SQL('SELECT text, \
             metadata, \
             sum(v1.embedding * v2.embedding) / \
-            ( sqrt(sum(v1.embedding * v1.embedding)) * sqrt(sum(v2.embedding * v2.embedding))) AS score \
+            ( sqrt(sum(v1.embedding * v1.embedding)) * \
+            sqrt(sum(v2.embedding * v2.embedding))) AS score \
             FROM {v1} v1 INNER JOIN {v2} v2 \
             ON v1.embedding_id = v2.embedding_id \
             GROUP BY v2.id, v2.text, v2.metadata \
             ORDER BY score DESC \
-            LIMIT %s').format(v1=sql.Identifier(tmp_table), v2=sql.Identifier(self._table))
+            LIMIT %s').format(
+                v1=sql.Identifier(tmp_table), v2=sql.Identifier(self._table)
+            )
         cursor.execute(sql_query, (k,))
         results = cursor.fetchall()
         self.drop(tmp_table)
@@ -283,7 +294,7 @@ class Yellowbrick(VectorStore):
         Args:
             connection_string (str): URI to Yellobrick instance
 
-	    Connection string format: 'postgres://username:password@host:port/database'
+            Connection string format: 'postgres://username:password@host:port/database'
 
         Returns:
             psycopg2.connection: Yellowbrick connection
