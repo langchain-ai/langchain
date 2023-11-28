@@ -15,6 +15,14 @@ class IMDBPlotOfMovie(IMDbBaseTool):
     def _run(
         self, id: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-        res_movie = self.client.get_movie(id)
+        from imdb import IMDbError
+
+        try:
+            res_movie = self.client.get_movie(id)
+        except IMDbError:
+            return (
+                "The movie could not be found. "
+                "Please make sure to give a movie ID instead of the movie's name."
+            )
 
         return json.dumps(res_movie["plot"])

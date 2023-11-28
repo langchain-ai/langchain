@@ -18,6 +18,14 @@ class IMDBCastOfMovie(IMDbBaseTool):
     def _run(
         self, id: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-        res_movie = self.client.get_movie(id)
+        from imdb import IMDbError
+
+        try:
+            res_movie = self.client.get_movie(id)
+        except IMDbError:
+            return (
+                "The movie could not be found. "
+                "Please make sure to give a movie ID instead of a movie name."
+            )
 
         return json.dumps(people_to_dicts(res_movie["cast"]))
