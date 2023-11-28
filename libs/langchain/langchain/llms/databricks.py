@@ -41,8 +41,22 @@ class _DatabricksClientBase(BaseModel, ABC):
         return self.request("POST", url, request)
 
     @abstractmethod
-    def post(self, request: Any) -> Any:
+    def post(
+        self, request: Any, transform_output_fn: Optional[Callable[..., str]] = None
+    ) -> Any:
         ...
+
+
+def _transform_completions(response: Dict[str, Any]) -> str:
+    return response["choices"][0]["text"]
+
+
+def _transform_chat(response: Dict[str, Any]) -> str:
+    return response["choices"][0]["message"]["content"]
+
+
+def _no_transform(response: Dict[str, Any]) -> Dict[str, Any]:
+    return response
 
 
 class _DatabricksServingEndpointClient(_DatabricksClientBase):
@@ -53,6 +67,7 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
     target_uri: str
     client: Any = None
     wrap: bool = False
+    task: Optional[str] = None
 
     def __init__(self, **data: Any):
         super().__init__(**data)
@@ -67,17 +82,37 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
                 "Please install mlflow with `pip install mlflow`."
             ) from e
 
-        self._wrap = self._is_external_or_foundation_model()
+        endpoint = self.client.get_endpoint(self.endpoint_name)
+        self.wrap = not self._is_external_or_foundation_model(endpoint)
+        self.task = self._get_task_type(endpoint)
 
-    def _is_external_or_foundation_model(self) -> bool:
+    def _is_external_or_foundation_model(self, endpoint: Dict[str, Any]) -> bool:
         """
         Does this endpoint serve an external or foundation model?
         """
-        endpoint = self.client.get_endpoint(self.endpoint_name)
         return any(
             e.get("type", "").lower() in ("external_model", "foundation_model")
             for e in endpoint.get("config", {}).get("served_entities", [])
         )
+
+    def _get_task_type(self, endpoint: Dict[str, Any]) -> Optional[str]:
+        """
+        Get the task type of the endpoint.
+        """
+        config = endpoint.get("config")
+        if not config:
+            return None
+
+        served_entities = config.get("served_entities")
+        if not served_entities:
+            return None
+
+        entity = served_entities[0]
+        model = entity.get("external_model") or entity.get("foundation_model")
+        if not model:
+            return None
+
+        return model.get("task")
 
     @root_validator(pre=True)
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -88,7 +123,9 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             values["api_url"] = api_url
         return values
 
-    def post(self, request: Any) -> Any:
+    def post(
+        self, request: Any, transform_output_fn: Optional[Callable[..., str]] = None
+    ) -> Any:
         if self.wrap:
             # See https://docs.databricks.com/machine-learning/model-serving/score-model-serving-endpoints.html
             wrapped_request = {"dataframe_records": [request]}
@@ -97,9 +134,20 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             )
             preds = response["predictions"]
             # For a single-record query, the result is not a list.
-            return preds[0] if isinstance(preds, list) else preds
+            transform_output_fn = transform_output_fn or _no_transform
+            pred = preds[0] if isinstance(preds, list) else preds
+            return transform_output_fn(pred)
         else:
-            return self.client.predict(endpoint=self.endpoint_name, inputs=request)
+            resp = self.client.predict(endpoint=self.endpoint_name, inputs=request)
+            if transform_output_fn is None:
+                if self.task == "chat":
+                    transform_output_fn = _transform_chat
+                elif self.task == "completions":
+                    transform_output_fn = _transform_completions
+                else:
+                    transform_output_fn = _no_transform
+
+            return transform_output_fn(resp)
 
 
 class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
@@ -119,7 +167,7 @@ class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
             values["api_url"] = api_url
         return values
 
-    def post(self, request: Any) -> Any:
+    def post(self, request: Any, transform: Optional[Callable[..., str]] = None) -> Any:
         return self._post(self.api_url, request)
 
 
@@ -198,9 +246,8 @@ class Databricks(LLM):
 
       * outputs: ``[{"type": "string"}]``
 
-      If the underlying model is an external or foundation model, make sure to use
-      `transform_input_fn` and `transform_output_fn` to transform the input and output
-      to the expected format.
+      If the underlying model is an external or foundation model, the response from the
+      endpoint is automatically transformed to the expected format unless
 
     * **Cluster driver proxy app** (recommended for interactive development).
       One can load an LLM on a Databricks interactive cluster and start a local HTTP
