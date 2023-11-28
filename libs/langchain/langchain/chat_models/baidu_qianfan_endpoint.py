@@ -318,13 +318,13 @@ class QianfanChatEndpoint(BaseChatModel):
         for res in self.client.do(**params):
             if res:
                 msg = _convert_dict_to_message(res)
+                additional_kwargs = msg.additional_kwargs.get("function_call", {})
                 chunk = ChatGenerationChunk(
                     text=res["result"],
                     message=AIMessageChunk(
                         content=msg.content,
                         role="assistant",
-                        # additional_kwargs=msg.additional_kwargs, might cause stream chunk __add__ error
-                        # but which is also needed in function_call agent of OpenAI.
+                        additional_kwargs=additional_kwargs,
                     ),
                     generation_info=msg.additional_kwargs,
                 )
@@ -344,11 +344,13 @@ class QianfanChatEndpoint(BaseChatModel):
         async for res in await self.client.ado(**params):
             if res:
                 msg = _convert_dict_to_message(res)
+                additional_kwargs = msg.additional_kwargs.get("function_call", {})
                 chunk = ChatGenerationChunk(
                     text=res["result"],
                     message=AIMessageChunk(
                         content=msg.content,
                         role="assistant",
+                        additional_kwargs=additional_kwargs,
                     ),
                     generation_info=msg.additional_kwargs,
                 )
