@@ -238,6 +238,8 @@ class ChatBaichuan(BaseChatModel):
         if self.baichuan_secret_key is None:
             raise ValueError("Baichuan secret key is not set.")
 
+        baichuan_secret_key = self.baichuan_secret_key
+
         parameters = {**self._default_params, **kwargs}
 
         model = parameters.pop("model")
@@ -261,7 +263,7 @@ class ChatBaichuan(BaseChatModel):
             timeout=self.request_timeout,
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.baichuan_api_key}",
+                "Authorization": f"Bearer {baichuan_secret_key.get_secret_value()}",
                 "X-BC-Timestamp": str(timestamp),
                 "X-BC-Signature": _signature(
                     secret_key=self.baichuan_secret_key,
