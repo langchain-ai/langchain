@@ -12,7 +12,6 @@ from tests.integration_tests.vectorstores.qdrant.async_api.fixtures import (  # 
 )
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_aadd_texts_returns_all_ids(
@@ -31,7 +30,6 @@ async def test_qdrant_aadd_texts_returns_all_ids(
     assert 3 == len(set(ids))
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_aadd_texts_stores_duplicated_texts(
@@ -60,7 +58,6 @@ async def test_qdrant_aadd_texts_stores_duplicated_texts(
     assert 2 == client.count(collection_name).count
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_aadd_texts_stores_ids(
@@ -93,7 +90,6 @@ async def test_qdrant_aadd_texts_stores_ids(
     assert set(ids) == set(stored_ids)
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", ["custom-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_aadd_texts_stores_embeddings_as_named_vectors(

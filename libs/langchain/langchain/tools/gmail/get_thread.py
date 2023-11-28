@@ -1,7 +1,8 @@
 from typing import Dict, Optional, Type
 
+from langchain_core.pydantic_v1 import BaseModel, Field
+
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.gmail.base import GmailBaseTool
 
 

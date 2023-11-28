@@ -94,7 +94,7 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain",
+          "langchain_core",
           "prompts",
           "prompt",
           "PromptTemplate"
@@ -149,7 +149,7 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain",
+          "langchain_core",
           "prompts",
           "chat",
           "ChatPromptTemplate"
@@ -163,7 +163,7 @@
               "lc": 1,
               "type": "constructor",
               "id": [
-                "langchain",
+                "langchain_core",
                 "prompts",
                 "chat",
                 "HumanMessagePromptTemplate"
@@ -173,7 +173,7 @@
                   "lc": 1,
                   "type": "constructor",
                   "id": [
-                    "langchain",
+                    "langchain_core",
                     "prompts",
                     "prompt",
                     "PromptTemplate"
@@ -233,7 +233,7 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain",
+          "langchain_core",
           "prompts",
           "prompt",
           "PromptTemplate"
