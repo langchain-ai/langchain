@@ -2,6 +2,7 @@ import json
 from typing import Any, AsyncIterator, Iterator, Tuple
 
 import pytest
+from langchain_core.messages import AIMessageChunk
 
 from langchain.output_parsers.json import (
     SimpleJsonOutputParser,
@@ -9,7 +10,6 @@ from langchain.output_parsers.json import (
     parse_partial_json,
 )
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.schema.messages import AIMessageChunk
 
 GOOD_JSON = """```json
 {
@@ -494,7 +494,6 @@ def test_partial_functions_json_output_parser_diff() -> None:
     assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON_DIFF
 
 
-@pytest.mark.asyncio
 async def test_partial_text_json_output_parser_async() -> None:
     async def input_iter(_: Any) -> AsyncIterator[str]:
         for token in STREAMED_TOKENS:
@@ -505,7 +504,6 @@ async def test_partial_text_json_output_parser_async() -> None:
     assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
 
 
-@pytest.mark.asyncio
 async def test_partial_functions_json_output_parser_async() -> None:
     async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:
@@ -518,7 +516,6 @@ async def test_partial_functions_json_output_parser_async() -> None:
     assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
 
 
-@pytest.mark.asyncio
 async def test_partial_text_json_output_parser_diff_async() -> None:
     async def input_iter(_: Any) -> AsyncIterator[str]:
         for token in STREAMED_TOKENS:
@@ -529,7 +526,6 @@ async def test_partial_text_json_output_parser_diff_async() -> None:
     assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON_DIFF
 
 
-@pytest.mark.asyncio
 async def test_partial_functions_json_output_parser_diff_async() -> None:
     async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:

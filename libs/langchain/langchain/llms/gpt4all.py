@@ -1,10 +1,11 @@
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional, Set
 
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, Field, root_validator
 
 
 class GPT4All(LLM):
