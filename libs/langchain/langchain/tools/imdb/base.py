@@ -10,7 +10,7 @@ class IMDbBaseTool(BaseTool):
     client: Any = None  #: :meta private:
 
     @root_validator
-    def validate_environment(cls, values: Dict) -> Dict:
+    def validate_environment(self, cls, values: Dict) -> Dict:
         try:
             from imdb import Cinemagoer
         except ImportError:
