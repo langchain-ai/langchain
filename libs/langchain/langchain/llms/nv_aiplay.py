@@ -410,7 +410,7 @@ class NVAIPlayClient(ClientModel):
             messages += [{'labels' : labels, 'role' : 'assistant'}]
         return {'messages' : messages}
 
-    def prep_msg(self, msg:Union[str,dict]):
+    def prep_msg(self, msg:Union[str,dict,BaseMessage]):
         '''Helper Method: Ensures a message is a dictionary with a role and content.'''
         if isinstance(msg, str):
             return dict(role='user', content=msg)
@@ -503,7 +503,7 @@ class NVAIPlayBaseModel(NVAIPlayClient):
         if isinstance(msgs, str):
             msgs = re.split("///ROLE ", msgs.strip())
             if msgs[0] == "": msgs = msgs[1:]
-        elif not hasattr(msgs, '__iter__'):
+        elif not hasattr(msgs, '__iter__') or isinstance(msgs, BaseMessage):
             msgs = [msgs]
         out = [self.preprocess_msg(m) for m in msgs]
         return out
