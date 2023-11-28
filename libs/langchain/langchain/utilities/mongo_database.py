@@ -80,21 +80,6 @@ class MongoDatabase:
             return sorted(self._include_collections)
         return sorted(self._all_collections - self._ignore_collections)
 
-    def get_document_ids(self, collection_name: str) -> Iterable[str]:
-        """Get names of documents available in a given collection."""
-        if collection_name not in self._ignore_collections:
-            db = self._client.get_default_database()
-            # Check if the collection is included or not,
-            # if included fetch document ids
-            if collection_name in self._include_collections:
-                documents = db[collection_name].find()
-                return pformat(sorted(doc["_id"] for doc in documents))
-            else:
-                # Fetch all documents in the collection
-                documents = db[collection_name].find()
-                return pformat(sorted(doc["_id"] for doc in documents))
-        return []
-
     @property
     def collection_info(self) -> str:
         """Information about all collections in the database."""
