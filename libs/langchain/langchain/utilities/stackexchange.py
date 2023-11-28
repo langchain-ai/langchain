@@ -1,8 +1,10 @@
 import html
-from typing import Any, Dict, Optional
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from typing import Any, Dict
 
-class StackExchangeAPIWrapper:
+from langchain.pydantic_v1 import BaseModel, root_validator
+
+
+class StackExchangeAPIWrapper(BaseModel):
     """Wrapper for Stack Exchange API."""
 
     stackapi_client: Any  #: :meta private:
@@ -25,17 +27,19 @@ class StackExchangeAPIWrapper:
         SITE = self.stackapi_client
         output = SITE.fetch('search/excerpts', title=title)
 
-        result_text = ""
-        for ans in output['items']:
-            if ans['item_type'] == 'question':
-                result_text += f"Title: {ans['title']}\n"
-                if ans['answer_count'] > 0:
-                    index = output['items'].index(ans)
-                    result_text += f"Answer: {html.unescape(output['items'][index + 1]['excerpt'])}\n"
-                result_text += "\n"
+        res_text = ""
+        for sol in output['items']:
+            if sol['item_type'] == 'question':
+                res_text += f"Title: {sol['title']}\n"
+                if sol['solwer_count'] > 0:
+                    index = output['items'].index(sol)
+                    res_text += "Answer: "
+                    res_text+=f"{html.unescape(output['items'][index + 1]['excerpt'])}"
+                    res_text += "\n"
+                res_text += "\n"
 
-        if not result_text:
-            result_text = f"No relevant results found for '{title}' on Stack Overflow"
+        if not res_text:
+            res_text = f"No relevant results found for '{title}' on Stack Overflow"
 
-        return result_text
+        return res_text
 

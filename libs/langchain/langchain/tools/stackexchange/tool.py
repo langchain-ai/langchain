@@ -13,7 +13,7 @@ class StackExchangeTool(BaseTool):
     name: str = "StackExchange"
     description: str = (
         "A wrapper around StackExchange. "
-        "Useful for when you need to answer specific programming or technical questions."
+        "Useful for when you need to answer specific programming questions"
         "code excerpts, code examples and solutions"
         "Input should be a fully formed question."
     )
