@@ -90,13 +90,15 @@ class GoogleTrendsAPIWrapper(BaseModel):
             "data_type": "RELATED_QUERIES",
             "q": query,
         }
+
+        total_results2 = {}
         client = self.serp_search_engine(params)
-        total_results = client.get_dict()["related_queries"]
+        total_results2 = client.get_dict().get("related_queries", {})
         rising = []
         top = []
 
-        rising = [results.get("query") for results in total_results["rising"]]
-        top = [results.get("query") for results in total_results["top"]]
+        rising = [results.get("query") for results in total_results2.get("rising", [])]
+        top = [results.get("query") for results in total_results2.get("top", [])]
 
         doc = [
             f"Query: {query}\n"
@@ -105,7 +107,7 @@ class GoogleTrendsAPIWrapper(BaseModel):
             f"Min Value: {min_value}\n"
             f"Max Value: {max_value}\n"
             f"Average Value: {avg_value}\n"
-            f"Precent Change: {str(percentage_change) + '%'}\n"
+            f"Percent Change: {str(percentage_change) + '%'}\n"
             f"Trend values: {', '.join([str(x) for x in values])}\n"
             f"Rising Related Queries: {', '.join(rising)}\n"
             f"Top Related Queries: {', '.join(top)}"

@@ -1,6 +1,8 @@
 """Util that calls Google Lens Search."""
 from typing import Any, Dict, Optional, cast
 
+import requests
+
 from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
@@ -40,15 +42,6 @@ class GoogleLensAPIWrapper(BaseModel):
             get_from_dict_or_env(values, "serp_api_key", "SERPAPI_API_KEY")
         )
 
-        try:
-            import requests
-        except ImportError:
-            raise ImportError(
-                "requests is not installed. "
-                "Please install it with `pip install requests'"
-            )
-        values["requests"] = requests
-
         return values
 
     def run(self, query: str) -> str:
@@ -61,7 +54,7 @@ class GoogleLensAPIWrapper(BaseModel):
             "url": query,
         }
         queryURL = f"https://serpapi.com/search?engine={params['engine']}&api_key={params['api_key']}&url={params['url']}"
-        response = self.requests.get(queryURL)
+        response = requests.get(queryURL)
 
         if response.status_code != 200:
             return "Google Lens search failed"
