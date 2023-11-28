@@ -38,10 +38,6 @@ def test_chat_aiplay() -> None:
 
 def test_chat_aiplay_model() -> None:
     """Test LlamaChat wrapper handles model_name."""
-    # chat = LlamaChat(model="foo")
-    # assert chat.model_name == "foo"
-    # chat = LlamaChat(model_name="bar")
-    # assert chat.model_name == "bar"
     chat = NVAIPlayChat(model_name="mistral")
     assert chat.model_name == "mistral"
 
