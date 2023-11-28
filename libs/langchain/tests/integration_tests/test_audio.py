@@ -15,7 +15,7 @@ def _get_csv_file_path() -> str:
 
 
 def test_azure_speech_load_key_region_auto_detect_languages() -> None:
-    loader = AzureSpeechServiceLoader(
+    loader = AzureSpeechServiceLoader.from_path(
         _get_csv_file_path(),
         key=SPEECH_SERVICE_KEY,
         region=SPEECH_SERVICE_REGION,
@@ -26,7 +26,7 @@ def test_azure_speech_load_key_region_auto_detect_languages() -> None:
 
 
 def test_azure_speech_load_key_region_language() -> None:
-    loader = AzureSpeechServiceLoader(
+    loader = AzureSpeechServiceLoader.from_path(
         _get_csv_file_path(),
         key=SPEECH_SERVICE_KEY,
         region=SPEECH_SERVICE_REGION,
@@ -37,7 +37,7 @@ def test_azure_speech_load_key_region_language() -> None:
 
 
 def test_azure_speech_load_key_region() -> None:
-    loader = AzureSpeechServiceLoader(
+    loader = AzureSpeechServiceLoader.from_path(
         _get_csv_file_path(), key=SPEECH_SERVICE_KEY, region=SPEECH_SERVICE_REGION
     )
     documents = loader.load()
@@ -45,10 +45,13 @@ def test_azure_speech_load_key_region() -> None:
 
 
 def test_azure_speech_load_key_endpoint() -> None:
-    loader = AzureSpeechServiceLoader(
+    loader = AzureSpeechServiceLoader.from_path(
         _get_csv_file_path(),
         key=SPEECH_SERVICE_KEY,
-        endpoint=f"wss://{SPEECH_SERVICE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1",
+        endpoint=(
+            f"wss://{SPEECH_SERVICE_REGION}.stt.speech.microsoft.com/speech/recognition"
+            "/conversation/cognitiveservices/v1",
+        ),
     )
     documents = loader.load()
     assert "what" in documents[0].page_content.lower()

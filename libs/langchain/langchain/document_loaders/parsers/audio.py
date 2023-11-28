@@ -346,10 +346,8 @@ class AzureSpeechServiceParser(BaseBlobParser):
         except ImportError:
             raise ImportError(
                 "azure.cognitiveservices.speech package not found, please install "
-                "it with `pip install azure-cognitiveservices-speech`"
+                "it with `pip install azure-cognitiveservices-speech`."
             )
-
-        """transcribes a conversation"""
 
         def conversation_transcriber_recognition_canceled_cb(
             evt: speechsdk.SessionEventArgs
