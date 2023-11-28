@@ -20,7 +20,6 @@ from typing import (
     cast,
 )
 
-from langchain_core.load.dump import dumpd
 from langchain_core.pydantic_v1 import BaseModel, create_model
 from langchain_core.runnables.base import (
     Other,
@@ -32,8 +31,6 @@ from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,
     call_func_with_variable_args,
-    ensure_config,
-    get_callback_manager_for_config,
     get_executor_for_config,
     patch_config,
 )
