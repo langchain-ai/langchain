@@ -165,6 +165,7 @@ pytest-mock  = "^3.10.0"
 pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
+langchain-core = {path = "../core", develop = true}
 
 
 [tool.poetry.group.codespell.dependencies]
