@@ -54,7 +54,8 @@ class Mlflow(LLM):
         except ImportError as e:
             raise ImportError(
                 "Failed to create the client. "
-                "Please install mlflow with `pip install mlflow[genai]`."
+                "Please run `pip install mlflow[genai]` to install "
+                "required dependencies."
             ) from e
 
     @property

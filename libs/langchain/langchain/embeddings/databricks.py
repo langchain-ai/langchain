@@ -44,8 +44,13 @@ class DatabricksEmbeddings(Embeddings, BaseModel):
         except ImportError as e:
             raise ImportError(
                 "Failed to create the client. "
-                "Please install mlflow with `pip install mlflow`."
+                f"Please run `pip install mlflow{self._extras}` to install "
+                "required dependencies."
             ) from e
+
+    @property
+    def _extras(self):
+        return ""
 
     def _query(self, texts: List[str]) -> List[List[float]]:
         embeddings: List[List[float]] = []

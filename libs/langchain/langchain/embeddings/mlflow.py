@@ -26,3 +26,7 @@ class MlflowEmbeddings(DatabricksEmbeddings):
                 endpoint="embeddings",
             )
     """
+
+    @property
+    def _extras(self):
+        return "[genai]"

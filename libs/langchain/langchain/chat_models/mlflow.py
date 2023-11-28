@@ -43,3 +43,7 @@ class ChatMlflow(ChatDatabricks):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "mlflow-chat"
+
+    @property
+    def _extras(self):
+        return "[genai]"

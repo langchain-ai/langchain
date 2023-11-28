@@ -72,8 +72,13 @@ class ChatDatabricks(BaseChatModel):
         except ImportError as e:
             raise ImportError(
                 "Failed to create the client. "
-                "Please install mlflow with `pip install mlflow`."
+                f"Please run `pip install mlflow{self._extras}` to install "
+                "required dependencies."
             ) from e
+
+    @property
+    def _extras(self):
+        return "mlflow"
 
     @property
     def _default_params(self) -> Dict[str, Any]:
