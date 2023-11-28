@@ -574,7 +574,7 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_types: Exclude logs with these types.
             exclude_tags: Exclude logs with these tags.
         """
-        import jsonpatch
+        import jsonpatch  # type: ignore[import]
 
         from langchain_core.callbacks.base import BaseCallbackManager
         from langchain_core.tracers.log_stream import (
