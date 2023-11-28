@@ -392,8 +392,8 @@ class MathpixPDFLoader(BasePDFLoader):
         )
 
         # The base class isn't expecting these and doesn't collect **kwargs
-        kwargs.pop("mathpix_api_key")
-        kwargs.pop("mathpix_api_id")
+        kwargs.pop("mathpix_api_key", None)
+        kwargs.pop("mathpix_api_id", None)
 
         super().__init__(file_path, **kwargs)
         self.processed_file_format = processed_file_format
