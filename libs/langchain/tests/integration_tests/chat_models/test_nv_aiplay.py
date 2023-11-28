@@ -1,28 +1,12 @@
 """Test LlamaChat wrapper."""
 
-# from typing import Any, List, Optional, Union
-
 import pytest
 
-from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.callbacks.manager import CallbackManager
-
-from langchain.chat_models.nv_aiplay import NVAIPlayChat, LlamaChat  
-from langchain.pydantic_v1 import BaseModel, Field
-# from langchain.schema import (
-#     ChatGeneration,
-#     ChatResult,
-#     LLMResult,
-# )
+from langchain.chat_models.nv_aiplay import LlamaChat, NVAIPlayChat
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
-# from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
-######################################################################
-## NOTE: Commandeering ChatOpenAI tests to see what we're missing. 
-## Some tests are commented out to represent features we'd like 
-## to support later or are otherwise waiting to have dialog on.
-## Interested parties can try to add support or discard tests as time permits. 
 
 @pytest.mark.scheduled
 def test_chat_aiplay() -> None:
@@ -41,9 +25,6 @@ def test_chat_aiplay_model() -> None:
     chat = NVAIPlayChat(model_name="mistral")
     assert chat.model_name == "mistral"
 
-    chat = LlamaChat(model="mistral")
-    assert chat.model_name == "mistral"
-
 
 def test_chat_aiplay_system_message() -> None:
     """Test LlamaChat wrapper with system message."""
@@ -54,7 +35,9 @@ def test_chat_aiplay_system_message() -> None:
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
+
 ## TODO: Not sure if we want to support the n syntax. Trash or keep test
+
 
 @pytest.mark.scheduled
 def test_chat_aiplay_streaming() -> None:
@@ -66,13 +49,11 @@ def test_chat_aiplay_streaming() -> None:
         streaming=True,
         temperature=0.1,
         callbacks=callback_manager,
-        verbose=True,
     )
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
-
 
 
 @pytest.mark.scheduled

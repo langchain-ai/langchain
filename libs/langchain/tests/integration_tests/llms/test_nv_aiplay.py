@@ -1,5 +1,5 @@
 """Test AI Playground API Wrapper. Inspired by Fireworks"""
-import sys
+
 from typing import Generator
 
 import pytest
@@ -7,14 +7,8 @@ import pytest
 from langchain.chains import LLMChain
 from langchain.llms.nv_aiplay import LlamaLLM, NemotronQA, SteerLM
 from langchain.prompts import PromptTemplate
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-)
+from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.schema import LLMResult
-
-if sys.version_info < (3, 9):
-    pytest.skip("Nvidia AI-Playground requires Python > 3.8", allow_module_level=True)
 
 
 @pytest.fixture
@@ -48,8 +42,8 @@ def test_aiplay_in_chain() -> None:
 @pytest.mark.scheduled
 def test_aiplay_model_param() -> None:
     """Tests model parameters for LlamaLLM"""
-    llm = LlamaLLM(model="mistral-7B-inst")
-    assert llm.model == "mistral-7B-inst"
+    llm = LlamaLLM(model_name="mistral-7B-inst")
+    assert llm.model_name == "mistral-7B-inst"
 
 
 @pytest.mark.scheduled
@@ -174,12 +168,8 @@ async def test_aiplay_multiple_prompts_async_agenerate(llm: LlamaLLM) -> None:
     assert len(output.generations) == 2
 
 
-
-
 @pytest.mark.scheduled
-def test_aiplay_steerlm(
-    llm: LlamaLLM
-) -> None:
+def test_aiplay_steerlm(llm: LlamaLLM) -> None:
     """Test completion with multiple prompts."""
     llm2 = SteerLM()
     output = llm2.generate(["How is the weather in New York today?", "I'm pickle rick"])
@@ -189,15 +179,18 @@ def test_aiplay_steerlm(
 
 
 @pytest.mark.scheduled
-def test_aiplay_nemotron_qa(
-    llm: LlamaLLM
-) -> None:
+def test_aiplay_nemotron_qa(llm: LlamaLLM) -> None:
     """Test completion with multiple prompts."""
     llm2 = NemotronQA()
-    output = llm2.generate(["""
-    ///ROLE USER: How is the weather in New York today?
-    ///ROLE CONTEXT: There is extreme heat in New York today, and some extreme cold in the south. The east is underwater. There is panic everywhere.
-    """])
+    output = llm2.generate(
+        [
+            """
+        ///ROLE USER: How is the weather in New York today?
+        ///ROLE CONTEXT: There is extreme heat in New York today, and some extreme 
+        cold in the south. The east is underwater. There is panic everywhere.
+    """
+        ]
+    )
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations, list)
     assert len(output.generations) == 1
