@@ -72,9 +72,10 @@ tell Poetry to use the virtualenv python environment (`poetry config virtualenvs
 
 ### Core vs. Experimental
 
-This repository contains two separate projects:
+This repository contains three separate projects:
 - `langchain`: core langchain code, abstractions, and use cases.
-- `langchain.experimental`: see the [Experimental README](https://github.com/langchain-ai/langchain/tree/master/libs/experimental/README.md) for more information.
+- `langchain_core`: contain interfaces for key abstractions as well as logic for combining them in chains (LCEL).
+- `langchain_experimental`: see the [Experimental README](https://github.com/langchain-ai/langchain/tree/master/libs/experimental/README.md) for more information.
 
 Each of these has its own development environment. Docs are run from the top-level makefile, but development
 is split across separate test & release flows.
@@ -127,6 +128,24 @@ make docker_tests
 ```
 
 There are also [integration tests and code-coverage](https://github.com/langchain-ai/langchain/tree/master/libs/langchain/tests/README.md) available.
+
+### Only develop langchain_core or langchain_experimental
+
+If you are only developing `langchain_core` or `langchain_experimental`, you can simply install the dependencies for the respective projects and run tests:
+
+```bash
+cd libs/core
+poetry install --with test
+make test
+```
+
+Or:
+
+```bash
+cd libs/experimental
+poetry install --with test
+make test
+```
 
 ### Formatting and Linting
 
