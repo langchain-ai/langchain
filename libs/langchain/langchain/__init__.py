@@ -128,12 +128,6 @@ def __getattr__(name: str) -> Any:
         _warn_on_import(name, replacement="langchain.docstore.Wikipedia")
 
         return Wikipedia
-    elif name == "stackapi":
-        from langchain.docstore import stackapi
-
-        _warn_on_import(name, replacement="langchain.docstore.stackapi")
-
-        return stackapi
     elif name == "Anthropic":
         from langchain.llms import Anthropic
 
@@ -306,6 +300,12 @@ def __getattr__(name: str) -> Any:
         _warn_on_import(name, replacement="langchain.utilities.WikipediaAPIWrapper")
 
         return WikipediaAPIWrapper
+    elif name == "StackExchangeAPIWrapper":
+        from langchain.utilities import StackExchangeAPIWrapper
+
+        _warn_on_import(name, replacement="langchain.utilities.StackExchangeAPIWrapper")
+
+        return StackExchangeAPIWrapper
     elif name == "WolframAlphaAPIWrapper":
         from langchain.utilities import WolframAlphaAPIWrapper
 
@@ -395,6 +395,7 @@ __all__ = [
     "WolframAlphaAPIWrapper",
     "StackExchangeAPIWrapper",
     "WikipediaAPIWrapper",
+    "StackExchangeAPIWrapper",
     "Anthropic",
     "Banana",
     "CerebriumAI",

@@ -1,23 +1,21 @@
-from stackapi import StackAPI
 import html
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
-class StackExchangeAPIWrapper:
+from langchain.pydantic_v1 import BaseModel, root_validator
+
+
+class StackExchangeAPIWrapper(BaseModel):
     """Wrapper for Stack Exchange API."""
 
     stackapi_client: Any  #: :meta private:
-
-    def __init__(self):
-        self.validate_environment()
-
-        self.stackapi_client = StackAPI('stackoverflow')
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the required Python package exists."""
         try:
-            import stackapi
-            values["stackapi"] = stackapi
+            from stackapi import StackAPI
+
+            values["stackapi_client"] = StackAPI("stackoverflow")
         except ImportError:
             raise ImportError(
                 "The 'stackapi' Python package is not installed. "
@@ -26,24 +24,24 @@ class StackExchangeAPIWrapper:
         return values
 
     def run(self, title: str) -> str:
-    """Run query through StackExchange API and parse results."""
-    output = self.stackapi_client.fetch('search/excerpts', title=title)
+        """Run query through StackExchange API and parse results."""
+        SITE = self.stackapi_client
+        output = SITE.fetch("search/excerpts", title=title)
 
-    result_text = ""
-    count = 0  # Track the number of results processed
-    for ans in output['items']:
-        if count >= 3:  # Limit the number of results to 3
-            break
+        res_text = ""
+        for sol in output["items"]:
+            if sol["item_type"] == "question":
+                res_text += f"Title: {sol['title']}\n"
+                if sol["answer_count"] > 0:
+                    index = output["items"].index(sol)
+                    res_text += "Answer: "
+                    res_text += (
+                        f"{html.unescape(output['items'][index + 1]['excerpt'])}"
+                    )
+                    res_text += "\n"
+                res_text += "\n"
 
-        if ans['item_type'] == 'question':
-            result_text += f"Title: {ans['title']}\n"
-            if ans['answer_count'] > 0:
-                index = output['items'].index(ans)
-                result_text += f"Answer: {html.unescape(output['items'][index + 1]['excerpt'])}\n"
-            result_text += "\n"
-            count += 1
+        if not res_text:
+            res_text = f"No relevant results found for '{title}' on Stack Overflow"
 
-    if not result_text:
-        result_text = f"No relevant results found for '{title}' on Stack Overflow"
-
-    return result_text
+        return res_text

@@ -603,10 +603,12 @@ def _import_sql_database_tool_QuerySQLDataBaseTool() -> Any:
 
     return QuerySQLDataBaseTool
 
+
 def _import_stackexchange_tool() -> Any:
     from langchain.tools.stackexchange.tool import StackExchangeTool
 
     return StackExchangeTool
+
 
 def _import_steamship_image_generation() -> Any:
     from langchain.tools.steamship_image_generation import SteamshipImageGenerationTool

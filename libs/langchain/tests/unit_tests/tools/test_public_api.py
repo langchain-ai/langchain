@@ -95,6 +95,7 @@ _EXPECTED = [
     "ShellTool",
     "SleepTool",
     "StdInInquireTool",
+    "StackExchangeTool",
     "SteamshipImageGenerationTool",
     "StructuredTool",
     "Tool",
