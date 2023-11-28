@@ -3,8 +3,8 @@ import uuid
 from typing import Optional
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.schema import Document
 from langchain.vectorstores import Qdrant
 from langchain.vectorstores.qdrant import QdrantException
 from tests.integration_tests.vectorstores.fake_embeddings import (

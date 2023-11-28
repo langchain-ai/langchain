@@ -5,6 +5,9 @@ import logging
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.outputs import LLMResult
+
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     BaseMetadataCallbackHandler,
@@ -13,7 +16,6 @@ from langchain.callbacks.utils import (
     import_spacy,
     import_textstat,
 )
-from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 if TYPE_CHECKING:
     import flytekit
