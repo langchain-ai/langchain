@@ -7,7 +7,10 @@ from langchain.document_loaders.parsers.language.code_segmenter import CodeSegme
 class CobolSegmenter(CodeSegmenter):
     """Code segmenter for `COBOL`."""
 
-    PARAGRAPH_PATTERN = re.compile(r"^(?!.*\b(REPOSITORY|SPECIAL-NAMES|SECURITY|DATE-COMPILED|SOURCE-COMPUTER|OBJECT-COMPUTER|FILE-CONTROL|FILE CONTROL|PROGRAM-ID|AUTHOR|DATE-WRITTEN|END-IF|END-PERFORM|GOBACK|EXIT|END IF|END PERFORM|END-PROGRAM|END PROGRAM|GO BACK|END-EXEC|END-EVALUATE)\b)[A-Z0-9\-]+(\s+.*)?\.$", re.IGNORECASE)
+    PARAGRAPH_PATTERN = re.compile(
+        r"^(?!.*\b(REPOSITORY|SPECIAL-NAMES|SECURITY|DATE-COMPILED|SOURCE-COMPUTER|OBJECT-COMPUTER|FILE-CONTROL|FILE CONTROL|PROGRAM-ID|AUTHOR|DATE-WRITTEN|END-IF|END-PERFORM|GOBACK|EXIT|END IF|END PERFORM|END-PROGRAM|END PROGRAM|GO BACK|END-EXEC|END-EVALUATE)\b)[A-Z0-9\-]+(\s+.*)?\.$",
+        re.IGNORECASE,
+    )
     DIVISION_PATTERN = re.compile(
         r"^\s*(IDENTIFICATION|DATA|PROCEDURE|ENVIRONMENT)\s+DIVISION.*$", re.IGNORECASE
     )
@@ -41,7 +44,7 @@ class CobolSegmenter(CodeSegmenter):
                 inside_relevant_section = True
                 start_idx = i
                 break
-    
+
         for i, line in enumerate(self.source_lines[start_idx:], start=start_idx):
             if self._is_relevant_code(line):
                 inside_relevant_section = True
