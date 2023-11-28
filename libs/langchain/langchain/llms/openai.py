@@ -379,7 +379,7 @@ class BaseOpenAI(BaseLLM):
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         params = {**self._invocation_params, **kwargs, "stream": True}
-        self.get_sub_prompts(params, [prompt], stop)  # this mutate params
+        self.get_sub_prompts(params, [prompt], stop)  # this mutates params
         async for stream_resp in await acompletion_with_retry(
             self, prompt=prompt, run_manager=run_manager, **params
         ):

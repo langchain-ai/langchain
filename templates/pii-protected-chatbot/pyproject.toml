@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "pii_protected_chatbot"
 version = "0.0.1"
-description = ""
+description = "Flag PII before passing it to the LLM"
 authors = []
 readme = "README.md"
 
@@ -19,6 +19,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "pii_protected_chatbot.chain"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "chatbot"
+author = "LangChain"
+integrations = ["OpenAI", "Microsoft Presidio"]
+tags = ["data", "redaction"]
 
 [build-system]
 requires = [

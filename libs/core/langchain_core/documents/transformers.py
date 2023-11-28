@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
-from langchain_core.documents import Document
+if TYPE_CHECKING:
+    from langchain_core.documents import Document
 
 
 class BaseDocumentTransformer(ABC):

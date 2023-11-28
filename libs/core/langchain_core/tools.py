@@ -9,10 +9,10 @@ from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from langchain_core.callbacks.base import BaseCallbackManager
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForToolRun,
+    BaseCallbackManager,
     CallbackManager,
     CallbackManagerForToolRun,
     Callbacks,
