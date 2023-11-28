@@ -542,6 +542,15 @@ class DocumentIntelligenceParser(BaseBlobParser):
     (formerly Forms Recognizer) and chunks at character level."""
 
     def __init__(self, client: Any, model: str):
+        warnings.warn(
+            "langchain.document_loaders.parsers.pdf.DocumentIntelligenceParser"
+            "and langchain.document_loaders.pdf.DocumentIntelligenceLoader"
+            " are depracated. Please upgrade to "
+            "langchain.document_loaders.DocumentIntelligenceLoader "
+            "for any file parsing purpose using Azure Document Intelligence "
+            "service."
+        )
+
         self.client = client
         self.model = model
 

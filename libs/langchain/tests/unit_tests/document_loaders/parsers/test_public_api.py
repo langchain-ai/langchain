@@ -6,6 +6,7 @@ def test_parsers_public_api_correct() -> None:
     assert set(__all__) == {
         "BS4HTMLParser",
         "DocAIParser",
+        "DocumentIntelligenceParser",
         "GrobidParser",
         "LanguageParser",
         "OpenAIWhisperParser",
