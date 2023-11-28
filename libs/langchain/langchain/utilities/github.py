@@ -7,11 +7,12 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import requests
 import tiktoken
-from github import GithubException
+
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
+    from github import GithubException
     from github.Issue import Issue
     from github.PullRequest import PullRequest
 
@@ -228,7 +229,8 @@ class GitHubAPIWrapper(BaseModel):
             if branches:
                 branches_str = "\n".join(branches)
                 return (
-                    f"Found {len(branches)} branches in the repository:\n{branches_str}"
+                    f"Found {len(branches)} branches in the repository:"
+                    f"\n{branches_str}"
                 )
             else:
                 return "No branches found in the repository"
@@ -329,7 +331,8 @@ class GitHubAPIWrapper(BaseModel):
             issue_number(int): The number for the github issue
         Returns:
             dict: A dictionary containing the issue's title,
-            body, comments as a string, and the username of the user who opened the issue
+            body, comments as a string, and the username of the user 
+            who opened the issue
         """
         issue = self.github_repo_instance.get_issue(number=issue_number)
         page = 0
@@ -420,7 +423,9 @@ class GitHubAPIWrapper(BaseModel):
 
     def get_pull_request(self, pr_number: int) -> Dict[str, Any]:
         """
-        Fetches a specific pull request and its first 10 comments, limited by max_tokens
+        Fetches a specific pull request and its first 10 comments, 
+        limited by max_tokens.
+
         Parameters:
             pr_number(int): The number for the Github pull
             max_tokens(int): The maximum number of tokens in the response
@@ -538,7 +543,9 @@ class GitHubAPIWrapper(BaseModel):
             str: A success or failure message
         """
         if self.active_branch == self.github_base_branch:
-            return(f"You're attempting to commit to the directly to the {self.github_base_branch} branch, which is protected. Please create a new branch and try again.")
+            return("You're attempting to commit to the directly to the" 
+            f"{self.github_base_branch} branch, which is protected. "
+            "Please create a new branch and try again.")
 
         file_path = file_query.split("\n")[0]
         file_contents = file_query[len(file_path) + 2 :]
@@ -603,7 +610,9 @@ class GitHubAPIWrapper(BaseModel):
             A success or failure message
         """
         if self.active_branch == self.github_base_branch:
-            return(f"You're attempting to commit to the directly to the {self.github_base_branch} branch, which is protected. Please create a new branch and try again.")
+            return("You're attempting to commit to the directly"
+            f"to the {self.github_base_branch} branch, which is protected. "
+            "Please create a new branch and try again.")
         try:
             file_path = file_query.split("\n")[0]
             old_file_contents = (
@@ -647,7 +656,9 @@ class GitHubAPIWrapper(BaseModel):
             str: Success or failure message
         """
         if self.active_branch == self.github_base_branch:
-            return(f"You're attempting to commit to the directly to the {self.github_base_branch} branch, which is protected. Please create a new branch and try again.")
+            return("You're attempting to commit to the directly"
+            f"to the {self.github_base_branch} branch, which is protected. "
+            "Please create a new branch and try again.")
         try:
             self.github_repo_instance.delete_file(
                 path=file_path,
@@ -691,7 +702,8 @@ class GitHubAPIWrapper(BaseModel):
         Returns:
             str: A string containing, at most, the top 5 search results
         """
-        search_result = self.github.search_code(query=query, repo=self.github_repository)
+        search_result = self.github.search_code(query=query, 
+                                                repo=self.github_repository)
         if search_result.totalCount == 0:
             return "0 results found."
         max_results = min(5, search_result.totalCount)
@@ -704,7 +716,8 @@ class GitHubAPIWrapper(BaseModel):
             file_content = self.github_repo_instance.get_contents(
                 code.path, ref=self.active_branch
             ).decoded_content.decode()
-            results.append(f"Filepath: `{code.path}`\nFile contents: {file_content}\n<END OF FILE>")
+            results.append(f"Filepath: `{code.path}`\nFile contents: "
+            f"{file_content}\n<END OF FILE>")
             count += 1
         return "\n".join(results)
 

@@ -3,10 +3,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from github import GithubException
+from github.Issue import Issue
+
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts.chat import (ChatPromptTemplate,
-                                    HumanMessagePromptTemplate,
-                                    SystemMessagePromptTemplate)
+from langchain.chat_models.base import BaseChatModel
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 
 if TYPE_CHECKING:
     from github.Issue import Issue
