@@ -439,14 +439,13 @@ class NVAIPlayBaseModel(NVAIPlayClient):
     ) -> str:
         '''_call hook for LLM/SimpleChatModel. Allows for streaming and non-streaming calls'''
         inputs = self.custom_preprocess(messages)
-        labels = kwargs.get('labels', self.labels)
         if kwargs.get('streaming', self.streaming) or stop or self.client.stop:
             buffer = ''
             for chunk in self._stream(messages=messages, stop=stop, run_manager=run_manager, **kwargs):
                 buffer += chunk if isinstance(chunk, str) else chunk.text
             responses = {'content' : buffer}
         else:
-            responses = self.get_generation(inputs, labels=labels, stop=stop, **kwargs)
+            responses = self.get_generation(inputs, **kwargs)
         outputs = self.custom_postprocess(responses)
         return outputs
 
@@ -469,8 +468,7 @@ class NVAIPlayBaseModel(NVAIPlayClient):
     ) -> Iterator[Union[GenerationChunk, ChatGenerationChunk]]:
         '''Allows streaming to model!'''
         inputs = self.custom_preprocess(messages)
-        labels = kwargs.get('labels', self.labels)
-        for response in self.get_stream(inputs, labels=labels, stop=stop, **kwargs):
+        for response in self.get_stream(inputs, **kwargs):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
@@ -488,8 +486,7 @@ class NVAIPlayBaseModel(NVAIPlayClient):
         **kwargs: Any,
     ) -> AsyncIterator[Union[GenerationChunk, ChatGenerationChunk]]:
         inputs = self.custom_preprocess(messages)
-        labels = kwargs.get('labels', self.labels)
-        async for response in self.get_astream(inputs, labels=labels, stop=stop, **kwargs):
+        async for response in self.get_astream(inputs, **kwargs):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
