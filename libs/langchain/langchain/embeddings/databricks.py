@@ -28,5 +28,5 @@ class DatabricksEmbeddings(MlflowEmbeddings):
     """
 
     @property
-    def _extras(self):
+    def _mlflow_extras(self):
         return ""

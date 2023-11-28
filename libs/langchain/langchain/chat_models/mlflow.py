@@ -74,12 +74,12 @@ class ChatMlflow(BaseChatModel):
         except ImportError as e:
             raise ImportError(
                 "Failed to create the client. "
-                f"Please run `pip install mlflow{self._extras}` to install "
+                f"Please run `pip install mlflow{self._mlflow_extras}` to install "
                 "required dependencies."
             ) from e
 
     @property
-    def _extras(self):
+    def _mlflow_extras(self):
         return "[genai]"
 
     @property
