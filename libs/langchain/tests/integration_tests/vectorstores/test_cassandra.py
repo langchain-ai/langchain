@@ -2,9 +2,8 @@
 import time
 from typing import List, Optional, Type
 
-from cassandra.cluster import Cluster
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores import Cassandra
 from tests.integration_tests.vectorstores.fake_embeddings import (
     AngularTwoDimensionalEmbeddings,
@@ -19,6 +18,8 @@ def _vectorstore_from_texts(
     embedding_class: Type[Embeddings] = ConsistentFakeEmbeddings,
     drop: bool = True,
 ) -> Cassandra:
+    from cassandra.cluster import Cluster
+
     keyspace = "vector_test_keyspace"
     table_name = "vector_test_table"
     # get db connection
@@ -154,12 +155,3 @@ def test_cassandra_delete() -> None:
     time.sleep(0.3)
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 0
-
-
-# if __name__ == "__main__":
-#     test_cassandra()
-#     test_cassandra_with_score()
-#     test_cassandra_max_marginal_relevance_search()
-#     test_cassandra_add_extra()
-#     test_cassandra_no_drop()
-#     test_cassandra_delete()

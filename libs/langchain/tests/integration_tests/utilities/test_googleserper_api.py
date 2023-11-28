@@ -1,6 +1,4 @@
 """Integration test for Serper.dev's Google Search API Wrapper."""
-import pytest
-
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 
 
@@ -25,7 +23,6 @@ async def test_results() -> None:
     assert "Barack Hussein Obama II" in output["answerBox"]["answer"]
 
 
-@pytest.mark.asyncio
 async def test_async_call() -> None:
     """Test that call gives the correct answer."""
     search = GoogleSerperAPIWrapper()
@@ -33,7 +30,6 @@ async def test_async_call() -> None:
     assert "Barack Hussein Obama II" in output
 
 
-@pytest.mark.asyncio
 async def test_async_results() -> None:
     """Test that call gives the correct answer."""
     search = GoogleSerperAPIWrapper()

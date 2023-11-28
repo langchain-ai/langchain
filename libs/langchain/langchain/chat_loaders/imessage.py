@@ -3,9 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
+from langchain_core.chat_sessions import ChatSession
+from langchain_core.messages import HumanMessage
+
 from langchain.chat_loaders.base import BaseChatLoader
-from langchain.schema import HumanMessage
-from langchain.schema.chat import ChatSession
 
 if TYPE_CHECKING:
     import sqlite3
