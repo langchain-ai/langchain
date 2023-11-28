@@ -3,13 +3,10 @@
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from typing import Any
 from langchain.tools.steam.prompt import (
-    STEAM_GET_GAMES_ID,
     STEAM_GET_GAMES_DETAILS,
     STEAM_GET_RECOMMENDED_GAMES,
 )
-from langchain.utils import get_from_dict_or_env
 import steamspypi
-import json
 from bs4 import BeautifulSoup
 
 
@@ -20,11 +17,7 @@ class SteamWebAPIWrapper(BaseModel):
 
     # oprations: a list of dictionaries, each representing a specific operation that can be performed with the API
     operations: list[dict] = [
-        {
-            "mode": "get_games_id",
-            "name": "Get Games ID",
-            "description": STEAM_GET_GAMES_ID,
-        },
+    
         {
             "mode": "get_game_details",
             "name": "Get Game Details",

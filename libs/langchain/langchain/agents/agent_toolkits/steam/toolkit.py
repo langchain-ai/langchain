@@ -5,7 +5,6 @@ from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
 from langchain.tools.steam.prompt import (
     STEAM_GET_GAMES_DETAILS,
-    STEAM_GET_GAMES_ID,
     STEAM_GET_RECOMMENDED_GAMES,
 )
 from langchain.tools.steam.tool import SteamWebAPIQueryRun
@@ -26,11 +25,6 @@ class SteamToolkit(BaseToolkit):
                 "mode": "get_games_details",
                 "name": "Get Games Details",
                 "description": STEAM_GET_GAMES_DETAILS,
-            },
-            {
-                "mode": "get_games_id",
-                "name": "Get Games ID",
-                "description": STEAM_GET_GAMES_ID,
             },
             {
                 "mode": "get_recommended_games",
