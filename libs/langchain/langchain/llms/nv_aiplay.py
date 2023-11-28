@@ -331,7 +331,7 @@ class NVAIPlayClient(ClientModel):
     max_tokens:  int   = Field(1024, le=1024, ge=32)
     streaming:   bool  = Field(False)
 
-    inputs: Union[Sequence[str], str] = Field([])
+    inputs: Any = Field([])
     stop:   Union[Sequence[str], str] = Field([])
 
     gen_keys:    Sequence[str] = Field(['temperature', 'top_p', 'max_tokens', 'streaming'])
