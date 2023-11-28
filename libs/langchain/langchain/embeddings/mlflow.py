@@ -22,7 +22,7 @@ class MlflowEmbeddings(DatabricksEmbeddings):
             from langchain.embeddings import MlflowEmbeddings
 
             embeddings = MlflowEmbeddings(
-                target_uri="<target_uri>",
-                endpoint="<endpoint>"
+                target_uri="http://localhost:5000",
+                endpoint="embeddings",
             )
     """

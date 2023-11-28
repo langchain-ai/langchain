@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel, Extra, PrivateAttr
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -31,25 +31,26 @@ class Mlflow(LLM):
             from langchain.llms import Mlflow
 
             completions = Mlflow(
-                target_uri="<target_uri>",
-                endpoint="<endpoint>",
-                params={
-                    "temperature": 0.1
-                }
+                target_uri="http://localhost:5000",
+                endpoint="test",
+                params={"temperature": 0.1}
             )
     """
 
     endpoint: str
+    """The endpoint name."""
     target_uri: str
+    """The target URI."""
     params: Optional[Params] = None
-    client: Any = None
+    """Extra parameters such as `temperature`."""
+    _client: Any = PrivateAttr()
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         try:
             from mlflow.deployments import get_deploy_client
 
-            self.client = get_deploy_client(self.target_uri)
+            self._client = get_deploy_client(self.target_uri)
         except ImportError as e:
             raise ImportError(
                 "Failed to create the client. "
@@ -82,7 +83,7 @@ class Mlflow(LLM):
         }
         if s := (stop or (self.params.stop if self.params else None)):
             data["stop"] = s
-        resp = self.client.predict(endpoint=self.endpoint, inputs=data)
+        resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return resp["choices"][0]["text"]
 
     @property

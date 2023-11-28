@@ -15,7 +15,7 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel, Extra, PrivateAttr
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -49,25 +49,23 @@ class ChatDatabricks(BaseChatModel):
             from langchain.chat_models import ChatDatabricks
 
             chat = ChatDatabricks(
-                target_uri="<target_uri>",
-                endpoint="<endpoint>",
-                params={
-                    "temperature": 0.1
-                }
+                target_uri="databricks",
+                endpoint="chat",
+                params={"temperature": 0.1},
             )
     """
 
     endpoint: str
     target_uri: str
     params: Optional[ChatParams] = None
-    client: Any = None
+    _client: Any = PrivateAttr()
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         try:
             from mlflow.deployments import get_deploy_client
 
-            self.client = get_deploy_client(self.target_uri)
+            self._client = get_deploy_client(self.target_uri)
         except ImportError as e:
             raise ImportError(
                 "Failed to create the client. "
@@ -98,7 +96,7 @@ class ChatDatabricks(BaseChatModel):
             **(self.params.dict() if self.params else {}),
         }
 
-        resp = self.client.predict(endpoint=self.endpoint, inputs=data)
+        resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return ChatDatabricks._create_chat_result(resp)
 
     async def _agenerate(

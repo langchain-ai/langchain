@@ -135,9 +135,9 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
         else:
             resp = self.client.predict(endpoint=self.endpoint_name, inputs=request)
             if transform_output_fn is None:
-                if self.task == "chat":
+                if self.task == "llm/v1/chat":
                     return _transform_chat(resp)
-                elif self.task == "completions":
+                elif self.task == "llm/v1/completions":
                     return _transform_completions(resp)
 
                 return resp
