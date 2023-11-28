@@ -54,10 +54,10 @@ class ClientModel(BaseModel):
     Custom BaseModel subclass with some desirable properties for subclassing
     """
 
-    def __init__(self, *args: Sequence, **kwargs: Dict[str, Any]):
+    def __init__(self, *args: Sequence, **kwargs: Any[str, Any]):
         super().__init__(*args, **kwargs)
 
-    def subscope(self, *args: Sequence, **kwargs: dict) -> Any:
+    def subscope(self, *args: Sequence, **kwargs: Any) -> Any:
         """Create a new ClientModel with the same values but new arguments"""
         named_args = dict({k: v for k, v in zip(getattr(self, "arg_keys", []), args)})
         named_args = {**named_args, **kwargs}
@@ -138,7 +138,7 @@ class NVCRModel(ClientModel):
             values["stop"] = [values["stop"]]
         return values
 
-    def __init__(self, *args: Sequence, **kwargs: dict):
+    def __init__(self, *args: Sequence, **kwargs: Any):
         """Useful to define custom operations on construction after validation"""
         super().__init__(*args, **kwargs)
         self.fetch_url_format = self._stagify(self.fetch_url_format)
@@ -394,7 +394,7 @@ class NVAIPlayClient(ClientModel):
         return list(getattr(self.client, "available_models", {}).keys())
 
     # ## Default Call Behavior. Great for standalone use, but not for LangChain
-    # def __call__(self, *args: Sequence, **kwargs: dict):
+    # def __call__(self, *args: Sequence, **kwargs: Any):
     #     '''
     #     Calls the AI Playground API with the given arguments.
     #     Directs to `generate` or `stream` depending on the `stream` argument.
@@ -403,37 +403,31 @@ class NVAIPlayClient(ClientModel):
     #     out_fn = self.get_stream if stream else self.get_generation
     #     return out_fn(*args, **kwargs)
 
-    def get_generation(
-        self, *args: Sequence, stop: Optional[List[str]], **kwargs: dict
-    ) -> dict:
+    def get_generation(self, *args: Sequence, **kwargs: Any) -> dict:
         """Call to client generate method with call scope"""
         call = self.subscope(*args, **kwargs)
-        payload = call.get_payload(stop=stop if stop else [], stream=False)
+        payload = call.get_payload(stream=False)
         out = call.client.get_req_generation(call.model_name, payload=payload)
         call.transfer_state(self)
         return out
 
-    def get_stream(
-        self, *args: Sequence, stop: Optional[List[str]], **kwargs: dict
-    ) -> Iterator:
+    def get_stream(self, *args: Sequence, **kwargs: Any) -> Iterator:
         """Call to client stream method with call scope"""
         call = self.subscope(*args, **kwargs)
-        payload = call.get_payload(stop=stop if stop else [], stream=True)
+        payload = call.get_payload(stream=True)
         out = call.client.get_req_stream(call.model_name, payload=payload)
         call.transfer_state(self)
         return out
 
-    def get_astream(
-        self, *args: Sequence, stop: Optional[List[str]], **kwargs: dict
-    ) -> AsyncIterator:
+    def get_astream(self, *args: Sequence, **kwargs: Any) -> AsyncIterator:
         """Call to client astream method with call scope"""
         call = self.subscope(*args, **kwargs)
-        payload = call.get_payload(stop=stop if stop else [], stream=True)
+        payload = call.get_payload(stream=True)
         out = call.client.get_req_astream(call.model_name, payload=payload)
         call.transfer_state(self)
         return out
 
-    def get_payload(self, *args: Sequence, **kwargs: dict) -> dict:
+    def get_payload(self, *args: Sequence, **kwargs: Any) -> dict:
         """Generates payload for the NVAIPlayClient API to send to service."""
 
         def k_map(k: str) -> str:
@@ -485,7 +479,7 @@ class NVAIPlayBaseModel(NVAIPlayClient):
         messages: Union[List[BaseMessage], str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManager] = None,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> str:
         """hook for LLM/SimpleChatModel. Allows for easy standard/streaming calls"""
         inputs = self.custom_preprocess(messages)
@@ -515,7 +509,7 @@ class NVAIPlayBaseModel(NVAIPlayClient):
         messages: Union[List[BaseMessage], str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManager] = None,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> Iterator[Union[GenerationChunk, ChatGenerationChunk]]:
         """Allows streaming to model!"""
         inputs = self.custom_preprocess(messages)
@@ -539,7 +533,7 @@ class NVAIPlayBaseModel(NVAIPlayClient):
         messages: Union[List[BaseMessage], str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManager] = None,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> AsyncIterator[Union[GenerationChunk, ChatGenerationChunk]]:
         inputs = self.custom_preprocess(messages)
         labels = kwargs.get("labels", self.labels)
