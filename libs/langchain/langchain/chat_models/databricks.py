@@ -58,7 +58,7 @@ class ChatDatabricks(BaseChatModel):
     """
 
     endpoint: str
-    target_uri: str = "databricks"
+    target_uri: str
     params: Optional[ChatParams] = None
     client: Any = None
 

@@ -52,7 +52,7 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
     endpoint_name: str
     target_uri: str
     client: Any = None
-    no_wrap: bool = False
+    wrap: bool = False
 
     def __init__(self, **data: Any):
         super().__init__(**data)
@@ -67,7 +67,7 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
                 "Please install mlflow with `pip install mlflow`."
             ) from e
 
-        self.no_wrap = self._is_external_or_foundation_model()
+        self._wrap = self._is_external_or_foundation_model()
 
     def _is_external_or_foundation_model(self) -> bool:
         """
@@ -89,9 +89,7 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
         return values
 
     def post(self, request: Any) -> Any:
-        if self.no_wrap:
-            return self.client.predict(endpoint=self.endpoint_name, inputs=request)
-        else:
+        if self.wrap:
             # See https://docs.databricks.com/machine-learning/model-serving/score-model-serving-endpoints.html
             wrapped_request = {"dataframe_records": [request]}
             response = self.client.predict(
@@ -100,6 +98,8 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             preds = response["predictions"]
             # For a single-record query, the result is not a list.
             return preds[0] if isinstance(preds, list) else preds
+        else:
+            return self.client.predict(endpoint=self.endpoint_name, inputs=request)
 
 
 class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
@@ -280,7 +280,7 @@ class Databricks(LLM):
     """A function that transforms the output from the endpoint to the generated text.
     """
 
-    target_uri: str = "databricks"
+    databricks_uri: str = "databricks"
     """The target URI for Databricks. Only used when using a serving endpoint."""
 
     _client: _DatabricksClientBase = PrivateAttr()
@@ -338,7 +338,7 @@ class Databricks(LLM):
                 host=self.host,
                 api_token=self.api_token,
                 endpoint_name=self.endpoint_name,
-                target_uri=self.target_uri,
+                target_uri=self.databricks_uri,
             )
         elif self.cluster_id and self.cluster_driver_port:
             self._client = _DatabricksClusterDriverProxyClient(

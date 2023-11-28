@@ -30,7 +30,7 @@ class DatabricksEmbeddings(Embeddings, BaseModel):
     """
 
     endpoint: str
-    target_uri: str = "databricks"
+    target_uri: str
     client: Any = None
 
     def __init__(self, **kwargs: Any):
