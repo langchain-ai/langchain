@@ -54,6 +54,8 @@ class ClientModel(BaseModel):
     Custom BaseModel subclass with some desirable properties for subclassing
     """
 
+    saved_parent: Optional[ClientModel] = None
+
     def __init__(self, *args: Sequence, **kwargs: Any[str, Any]):
         super().__init__(*args, **kwargs)
 
@@ -65,14 +67,17 @@ class ClientModel(BaseModel):
         for k, v in self.__dict__.items():
             if isinstance(v, ClientModel):
                 setattr(out, k, v.copy(update=named_args))
+        out.saved_parent = self
         return out
 
     def get(self, key: str) -> Any:
         """Get a value from the ClientModel, using it like a dictionary"""
         return getattr(self, key)
 
-    def transfer_state(self, other: ClientModel) -> None:
+    def transfer_state(self, other: Optional[ClientModel]) -> None:
         """Transfer state from one ClientModel to another"""
+        if not other:
+            return
         for k, v in self.__dict__.items():
             if k in getattr(self, "state_vars", []):
                 setattr(other, k, v)
@@ -80,6 +85,13 @@ class ClientModel(BaseModel):
                 other_sub = getattr(other, k, None)
                 if other_sub is not None:
                     v.transfer_state(other_sub)
+
+    def __enter__(self) -> ClientModel:
+        return self
+
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
+        self.transfer_state(self.saved_parent)
+        self.saved_parent = None
 
 
 class NVCRModel(ClientModel):
@@ -162,7 +174,10 @@ class NVCRModel(ClientModel):
     def _post(self, invoke_url: str, payload: dict = {}) -> Tuple[Response, Any]:
         """Method for posting to the AI Playground API."""
         self.last_inputs = dict(
-            url=invoke_url, headers=self.headers["call"], json=payload, stream=False
+            url=invoke_url,
+            headers=self.headers["call"].copy(),
+            json=payload,
+            stream=False,
         )
         session = self.get_session_fn()
         self.last_response = session.post(**self.last_inputs)
@@ -171,7 +186,10 @@ class NVCRModel(ClientModel):
     def _get(self, invoke_url: str, payload: dict = {}) -> Tuple[Response, Any]:
         """Method for getting from the AI Playground API."""
         self.last_inputs = dict(
-            url=invoke_url, headers=self.headers["call"], json=payload, stream=False
+            url=invoke_url,
+            headers=self.headers["call"].copy(),
+            json=payload,
+            stream=False,
         )
         session = self.get_session_fn()
         self.last_response = session.get(**self.last_inputs)
@@ -183,7 +201,8 @@ class NVCRModel(ClientModel):
         while response.status_code == 202:
             request_id = response.headers.get("NVCF-REQID", "")
             response = session.get(
-                self.fetch_url_format + request_id, headers=self.headers["call"]
+                self.fetch_url_format + request_id,
+                headers=self.headers["call"].copy(),
             )
             if response.status_code == 202:
                 try:
@@ -212,8 +231,8 @@ class NVCRModel(ClientModel):
             try:
                 return [response.json()]
             except json.JSONDecodeError:
-                pass
-        elif isinstance(response, str):  ## For set of responses (i.e. streaming)
+                response = str(response.__dict__)
+        if isinstance(response, str):  ## For set of responses (i.e. streaming)
             msg_list = []
             for msg in response.split("\n\n"):
                 if "{" not in msg:
@@ -315,7 +334,10 @@ class NVCRModel(ClientModel):
         if payload.get("stream", True) is False:
             payload = {**payload, "stream": True}
         self.last_inputs = dict(
-            url=invoke_url, headers=self.headers["stream"], json=payload, stream=True
+            url=invoke_url,
+            headers=self.headers["stream"].copy(),
+            json=payload,
+            stream=True,
         )
         self.last_response = self.get_session_fn().post(**self.last_inputs)
         for line in self.last_response.iter_lines():
@@ -340,7 +362,9 @@ class NVCRModel(ClientModel):
         if payload.get("stream", True) is False:
             payload = {**payload, "stream": True}
         self.last_inputs = dict(
-            url=invoke_url, headers=self.headers["stream"], json=payload
+            url=invoke_url,
+            headers=self.headers["stream"].copy(),
+            json=payload,
         )
         async with self.get_asession_fn() as session:
             async with session.post(**self.last_inputs) as self.last_response:
@@ -405,26 +429,23 @@ class NVAIPlayClient(ClientModel):
 
     def get_generation(self, *args: Sequence, **kwargs: Any) -> dict:
         """Call to client generate method with call scope"""
-        call = self.subscope(*args, **kwargs)
-        payload = call.get_payload(stream=False)
-        out = call.client.get_req_generation(call.model_name, payload=payload)
-        call.transfer_state(self)
+        with self.subscope(*args, **kwargs) as call:
+            payload = call.get_payload(stream=False)
+            out = call.client.get_req_generation(call.model_name, payload=payload)
         return out
 
     def get_stream(self, *args: Sequence, **kwargs: Any) -> Iterator:
         """Call to client stream method with call scope"""
-        call = self.subscope(*args, **kwargs)
-        payload = call.get_payload(stream=True)
-        out = call.client.get_req_stream(call.model_name, payload=payload)
-        call.transfer_state(self)
+        with self.subscope(*args, **kwargs) as call:
+            payload = call.get_payload(stream=True)
+            out = call.client.get_req_stream(call.model_name, payload=payload)
         return out
 
     def get_astream(self, *args: Sequence, **kwargs: Any) -> AsyncIterator:
         """Call to client astream method with call scope"""
-        call = self.subscope(*args, **kwargs)
-        payload = call.get_payload(stream=True)
-        out = call.client.get_req_astream(call.model_name, payload=payload)
-        call.transfer_state(self)
+        with self.subscope(*args, **kwargs) as call:
+            payload = call.get_payload(stream=True)
+            out = call.client.get_req_astream(call.model_name, payload=payload)
         return out
 
     def get_payload(self, *args: Sequence, **kwargs: Any) -> dict:
