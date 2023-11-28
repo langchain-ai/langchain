@@ -44,5 +44,4 @@ conversation."""
     prompt = PromptTemplate.from_template(template="{instruction}\n{conversation}")
     llm_chain = LLMChain(prompt=prompt, llm=llm)
     output = llm_chain.run(instruction=instruction, conversation=conversation)
-    print(output)
     assert isinstance(output, str)
