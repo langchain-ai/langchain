@@ -731,7 +731,7 @@ __all__ = [
     "Nebula",
     "NIBittensorLLM",
     "NLPCloud",
-    "NVAIPlay",
+    "NVAIPlayLLM",
     "Ollama",
     "OpenAI",
     "OpenAIChat",
