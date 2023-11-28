@@ -8,14 +8,21 @@ class IMDBPlotOfMovie(IMDbBaseTool):
     """Tool to find plot of a movie given its name."""
 
     name: str = "PlotOfMovie"
-    description: str = (
-        """Use this tool to retrieve a summary of the plot of a movie, 
+    description: str = """Use this tool to retrieve a summary of the plot of a movie, 
         given its IMDB movie ID."""
-    )
 
-    def _run(self, 
-             id: str, 
-             run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
-        res_movie = self.client.get_movie(id)
+    def _run(
+        self, id: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        from imdb import IMDbError
 
-        return res_movie['plot']
+        try:
+            res_movie = self.client.get_movie(id)
+        except IMDbError:
+            return (
+                "The movie could not be found. "
+                "Please make sure to give a movie ID instead of the movie's name."
+            )
+
+            
+        return res_movie["plot"]
