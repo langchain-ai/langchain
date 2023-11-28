@@ -1031,7 +1031,7 @@ def _collect_test_results(
             "execution_time": all_execution_time.get(str(example.id)),
         }
         if isinstance(output, EvalError):
-            results[str(example.id)]["Error"] = output.error
+            results[str(example.id)]["Error"] = output.Error
         else:
             results[str(example.id)]["output"] = output
         if example.outputs:
