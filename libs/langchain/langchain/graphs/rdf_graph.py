@@ -45,7 +45,7 @@ rel_query_rdf = prefixes["rdfs"] + (
     """SELECT DISTINCT ?rel ?com\n"""
     """WHERE { \n"""
     """    ?subj ?rel ?obj . \n"""
-    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+    """    OPTIONAL { ?rel rdfs:comment ?com } \n"""
     """}"""
 )
 
@@ -56,7 +56,7 @@ rel_query_rdfs = (
         """SELECT DISTINCT ?rel ?com\n"""
         """WHERE { \n"""
         """    ?rel a/rdfs:subPropertyOf* rdf:Property . \n"""
-        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+        """    OPTIONAL { ?rel rdfs:comment ?com } \n"""
         """}"""
     )
 )
@@ -68,7 +68,7 @@ op_query_owl = (
         """SELECT DISTINCT ?op ?com\n"""
         """WHERE { \n"""
         """    ?op a/rdfs:subPropertyOf* owl:ObjectProperty . \n"""
-        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+        """    OPTIONAL { ?op rdfs:comment ?com } \n"""
         """}"""
     )
 )
@@ -80,20 +80,31 @@ dp_query_owl = (
         """SELECT DISTINCT ?dp ?com\n"""
         """WHERE { \n"""
         """    ?dp a/rdfs:subPropertyOf* owl:DatatypeProperty . \n"""
-        """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+        """    OPTIONAL { ?dp rdfs:comment ?com } \n"""
         """}"""
     )
 )
 
 
 class RdfGraph:
-    """
-    RDFlib wrapper for graph operations.
+    """RDFlib wrapper for graph operations.
+
     Modes:
     * local: Local file - can be queried and changed
     * online: Online file - can only be queried, changes can be stored locally
     * store: Triple store - can be queried and changed if update_endpoint available
     Together with a source file, the serialization should be specified.
+
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
     """
 
     def __init__(

@@ -18,17 +18,25 @@ the backbone of a retriever, but there are other types of retrievers as well.
     CallbackManagerForRetrieverRun, AsyncCallbackManagerForRetrieverRun
 """
 
+from langchain.retrievers.arcee import ArceeRetriever
 from langchain.retrievers.arxiv import ArxivRetriever
 from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
 from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.chaindesk import ChaindeskRetriever
 from langchain.retrievers.chatgpt_plugin_retriever import ChatGPTPluginRetriever
+from langchain.retrievers.cohere_rag_retriever import CohereRagRetriever
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.docarray import DocArrayRetriever
 from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
+from langchain.retrievers.embedchain import EmbedchainRetriever
 from langchain.retrievers.ensemble import EnsembleRetriever
-from langchain.retrievers.google_cloud_enterprise_search import (
+from langchain.retrievers.google_cloud_documentai_warehouse import (
+    GoogleDocumentAIWarehouseRetriever,
+)
+from langchain.retrievers.google_vertex_ai_search import (
     GoogleCloudEnterpriseSearchRetriever,
+    GoogleVertexAIMultiTurnSearchRetriever,
+    GoogleVertexAISearchRetriever,
 )
 from langchain.retrievers.kay import KayAiRetriever
 from langchain.retrievers.kendra import AmazonKendraRetriever
@@ -42,6 +50,7 @@ from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.milvus import MilvusRetriever
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.multi_vector import MultiVectorRetriever
+from langchain.retrievers.outline import OutlineRetriever
 from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
 from langchain.retrievers.pubmed import PubMedRetriever
@@ -63,13 +72,19 @@ from langchain.retrievers.zilliz import ZillizRetriever
 
 __all__ = [
     "AmazonKendraRetriever",
+    "ArceeRetriever",
     "ArxivRetriever",
     "AzureCognitiveSearchRetriever",
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
     "ChaindeskRetriever",
+    "CohereRagRetriever",
     "ElasticSearchBM25Retriever",
+    "EmbedchainRetriever",
+    "GoogleDocumentAIWarehouseRetriever",
     "GoogleCloudEnterpriseSearchRetriever",
+    "GoogleVertexAIMultiTurnSearchRetriever",
+    "GoogleVertexAISearchRetriever",
     "KayAiRetriever",
     "KNNRetriever",
     "LlamaIndexGraphRetriever",
@@ -78,6 +93,7 @@ __all__ = [
     "MetalRetriever",
     "MilvusRetriever",
     "MultiQueryRetriever",
+    "OutlineRetriever",
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
     "RemoteLangChainRetriever",

@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from uuid import uuid4
 
 import pytest
+from langchain_core.documents import Document
 from pytest_mock import MockerFixture
 
-from langchain.schema import Document
 from langchain.vectorstores import ZepVectorStore
 from langchain.vectorstores.zep import CollectionConfig
 
@@ -168,7 +168,7 @@ def test_from_texts(
     vs = zep_vectorstore.from_texts(
         **texts_metadatas,
         collection_name=mock_collection_config.name,
-        api_url="http://localhost:8000"
+        api_url="http://localhost:8000",
     )
 
     vs._collection.add_documents.assert_called_once_with(  # type: ignore
@@ -191,7 +191,6 @@ def test_add_documents(
 
 
 @pytest.mark.requires("zep_python")
-@pytest.mark.asyncio
 async def test_asearch_similarity(
     zep_vectorstore: ZepVectorStore,
 ) -> None:
@@ -205,7 +204,6 @@ async def test_asearch_similarity(
 
 
 @pytest.mark.requires("zep_python")
-@pytest.mark.asyncio
 async def test_asearch_mmr(
     zep_vectorstore: ZepVectorStore,
 ) -> None:

@@ -1,0 +1,37 @@
+---
+name: templates CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    paths:
+      - '.github/actions/poetry_setup/action.yml'
+      - '.github/tools/**'
+      - '.github/workflows/_lint.yml'
+      - '.github/workflows/templates_ci.yml'
+      - 'templates/**'
+  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
+
+# If another push to the same PR or branch happens while this workflow is still running,
+# cancel the earlier run in favor of the next run.
+#
+# There's no point in testing an outdated version of the code. GitHub only allows
+# a limited number of job runners to be active at the same time, so it's better to cancel
+# pointless jobs early so that more useful jobs can run sooner.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VERSION: "1.6.1"
+  WORKDIR: "templates"
+
+jobs:
+  lint:
+    uses:
+      ./.github/workflows/_lint.yml
+    with:
+      working-directory: templates
+      langchain-location: ../libs/langchain
+    secrets: inherit

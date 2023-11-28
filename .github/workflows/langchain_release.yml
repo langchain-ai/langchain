@@ -24,3 +24,4 @@ jobs:
       - release
     uses:
       ./.github/workflows/langchain_release_docker.yml
+    secrets: inherit

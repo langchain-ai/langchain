@@ -1,13 +1,14 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
 from typing import Any, Dict, List, Optional
 
+from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.utils.input import get_color_mapping
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.utils.input import get_color_mapping
 
 
 class SequentialChain(Chain):
@@ -52,7 +53,7 @@ class SequentialChain(Chain):
             if set(input_variables).intersection(set(memory_keys)):
                 overlapping_keys = set(input_variables) & set(memory_keys)
                 raise ValueError(
-                    f"The the input key(s) {''.join(overlapping_keys)} are found "
+                    f"The input key(s) {''.join(overlapping_keys)} are found "
                     f"in the Memory keys ({memory_keys}) - please use input and "
                     f"memory keys that don't overlap."
                 )

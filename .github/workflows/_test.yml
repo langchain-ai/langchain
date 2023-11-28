@@ -7,6 +7,14 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
+      langchain-location:
+        required: false
+        type: string
+        description: "Relative path to the langchain library folder"
+      langchain-core-location:
+        required: false
+        type: string
+        description: "Relative path to the langchain core library folder"
 
 env:
   POETRY_VERSION: "1.6.1"
@@ -26,7 +34,7 @@ jobs:
           - "3.11"
     name: Python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
@@ -40,9 +48,26 @@ jobs:
         shell: bash
         run: poetry install
 
+      - name: Install langchain editable
+        working-directory: ${{ inputs.working-directory }}
+        if: ${{ inputs.langchain-location }}
+        env:
+          LANGCHAIN_LOCATION: ${{ inputs.langchain-location }}
+        run: |
+          poetry run pip install -e "$LANGCHAIN_LOCATION"
+
+      - name: Install langchain core editable
+        working-directory: ${{ inputs.working-directory }}
+        if: ${{ inputs.langchain-core-location }}
+        env:
+          LANGCHAIN_CORE_LOCATION: ${{ inputs.langchain-core-location }}
+        run: |
+          poetry run pip install -e "$LANGCHAIN_CORE_LOCATION"
+
       - name: Run core tests
         shell: bash
-        run: make test
+        run: |
+          make test
 
       - name: Ensure the tests did not create any additional files
         shell: bash

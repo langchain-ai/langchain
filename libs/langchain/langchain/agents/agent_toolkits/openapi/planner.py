@@ -5,6 +5,9 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
 import yaml
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+from langchain_core.pydantic_v1 import Field
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.openapi.planner_prompt import (
@@ -33,10 +36,6 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
-from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import Field
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.requests.tool import BaseRequestsTool
 from langchain.utilities.requests import RequestsWrapper
@@ -291,13 +290,16 @@ def _create_api_controller_tool(
             "{method} {route}".format(method=method, route=route.split("?")[0])
             for method, route in matches
         ]
-        endpoint_docs_by_name = {name: docs for name, _, docs in api_spec.endpoints}
         docs_str = ""
         for endpoint_name in endpoint_names:
-            docs = endpoint_docs_by_name.get(endpoint_name)
-            if not docs:
+            found_match = False
+            for name, _, docs in api_spec.endpoints:
+                regex_name = re.compile(re.sub("\{.*?\}", ".*", name))
+                if regex_name.match(endpoint_name):
+                    found_match = True
+                    docs_str += f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
+            if not found_match:
                 raise ValueError(f"{endpoint_name} endpoint does not exist.")
-            docs_str += f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
 
         agent = _create_api_controller_agent(base_url, docs_str, requests_wrapper, llm)
         return agent.run(plan_str)
@@ -317,7 +319,7 @@ def create_openapi_agent(
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = True,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Instantiate OpenAI API planner and controller for a given spec.
 

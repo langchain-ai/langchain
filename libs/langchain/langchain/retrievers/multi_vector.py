@@ -1,9 +1,12 @@
 from typing import List
 
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Field
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.stores import BaseStore
+from langchain_core.vectorstores import VectorStore
+
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.pydantic_v1 import Field
-from langchain.schema import BaseRetriever, BaseStore, Document
-from langchain.vectorstores import VectorStore
 
 
 class MultiVectorRetriever(BaseRetriever):

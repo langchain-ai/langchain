@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import logging
 import uuid
 from typing import (
@@ -15,11 +16,11 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.utils import xor_args
+from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
-from langchain.utils import xor_args
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -124,9 +125,7 @@ class Chroma(VectorStore):
         self._embedding_function = embedding_function
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=self._embedding_function.embed_documents
-            if self._embedding_function is not None
-            else None,
+            embedding_function=None,
             metadata=collection_metadata,
         )
         self.override_relevance_score_fn = relevance_score_fn
@@ -161,6 +160,94 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
+
+    def encode_image(self, uri: str) -> str:
+        """Get base64 string from image URI."""
+        with open(uri, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode("utf-8")
+
+    def add_images(
+        self,
+        uris: List[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more images through the embeddings and add to the vectorstore.
+
+        Args:
+            images (List[List[float]]): Images to add to the vectorstore.
+            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
+            ids (Optional[List[str]], optional): Optional list of IDs.
+
+        Returns:
+            List[str]: List of IDs of the added images.
+        """
+        # Map from uris to b64 encoded strings
+        b64_texts = [self.encode_image(uri=uri) for uri in uris]
+        # Populate IDs
+        if ids is None:
+            ids = [str(uuid.uuid1()) for _ in uris]
+        embeddings = None
+        # Set embeddings
+        if self._embedding_function is not None and hasattr(
+            self._embedding_function, "embed_image"
+        ):
+            embeddings = self._embedding_function.embed_image(uris=uris)
+        if metadatas:
+            # fill metadatas with empty dicts if somebody
+            # did not specify metadata for all images
+            length_diff = len(uris) - len(metadatas)
+            if length_diff:
+                metadatas = metadatas + [{}] * length_diff
+            empty_ids = []
+            non_empty_ids = []
+            for idx, m in enumerate(metadatas):
+                if m:
+                    non_empty_ids.append(idx)
+                else:
+                    empty_ids.append(idx)
+            if non_empty_ids:
+                metadatas = [metadatas[idx] for idx in non_empty_ids]
+                images_with_metadatas = [uris[idx] for idx in non_empty_ids]
+                embeddings_with_metadatas = (
+                    [embeddings[idx] for idx in non_empty_ids] if embeddings else None
+                )
+                ids_with_metadata = [ids[idx] for idx in non_empty_ids]
+                try:
+                    self._collection.upsert(
+                        metadatas=metadatas,
+                        embeddings=embeddings_with_metadatas,
+                        documents=images_with_metadatas,
+                        ids=ids_with_metadata,
+                    )
+                except ValueError as e:
+                    if "Expected metadata value to be" in str(e):
+                        msg = (
+                            "Try filtering complex metadata using "
+                            "langchain.vectorstores.utils.filter_complex_metadata."
+                        )
+                        raise ValueError(e.args[0] + "\n\n" + msg)
+                    else:
+                        raise e
+            if empty_ids:
+                images_without_metadatas = [uris[j] for j in empty_ids]
+                embeddings_without_metadatas = (
+                    [embeddings[j] for j in empty_ids] if embeddings else None
+                )
+                ids_without_metadatas = [ids[j] for j in empty_ids]
+                self._collection.upsert(
+                    embeddings=embeddings_without_metadatas,
+                    documents=images_without_metadatas,
+                    ids=ids_without_metadatas,
+                )
+        else:
+            self._collection.upsert(
+                embeddings=embeddings,
+                documents=b64_texts,
+                ids=ids,
+            )
+        return ids
 
     def add_texts(
         self,
@@ -558,12 +645,31 @@ class Chroma(VectorStore):
             )
         embeddings = self._embedding_function.embed_documents(text)
 
-        self._collection.update(
-            ids=ids,
-            embeddings=embeddings,
-            documents=text,
-            metadatas=metadata,
-        )
+        if hasattr(
+            self._collection._client, "max_batch_size"
+        ):  # for Chroma 0.4.10 and above
+            from chromadb.utils.batch_utils import create_batches
+
+            for batch in create_batches(
+                api=self._collection._client,
+                ids=ids,
+                metadatas=metadata,
+                documents=text,
+                embeddings=embeddings,
+            ):
+                self._collection.update(
+                    ids=batch[0],
+                    embeddings=batch[1],
+                    documents=batch[3],
+                    metadatas=batch[2],
+                )
+        else:
+            self._collection.update(
+                ids=ids,
+                embeddings=embeddings,
+                documents=text,
+                metadatas=metadata,
+            )
 
     @classmethod
     def from_texts(
@@ -607,7 +713,26 @@ class Chroma(VectorStore):
             collection_metadata=collection_metadata,
             **kwargs,
         )
-        chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
+        if ids is None:
+            ids = [str(uuid.uuid1()) for _ in texts]
+        if hasattr(
+            chroma_collection._client, "max_batch_size"
+        ):  # for Chroma 0.4.10 and above
+            from chromadb.utils.batch_utils import create_batches
+
+            for batch in create_batches(
+                api=chroma_collection._client,
+                ids=ids,
+                metadatas=metadatas,
+                documents=texts,
+            ):
+                chroma_collection.add_texts(
+                    texts=batch[3] if batch[3] else [],
+                    metadatas=batch[2] if batch[2] else None,
+                    ids=batch[0],
+                )
+        else:
+            chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
 
     @classmethod

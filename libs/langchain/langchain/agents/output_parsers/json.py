@@ -3,15 +3,17 @@ from __future__ import annotations
 import logging
 from typing import Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
+
 from langchain.agents.agent import AgentOutputParser
 from langchain.output_parsers.json import parse_json_markdown
-from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 logger = logging.getLogger(__name__)
 
 
 class JSONAgentOutputParser(AgentOutputParser):
-    """Parses tool invocations and final answers in XML format.
+    """Parses tool invocations and final answers in JSON format.
 
     Expects output to be in one of two formats.
 

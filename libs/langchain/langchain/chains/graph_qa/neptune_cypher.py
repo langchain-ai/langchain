@@ -3,6 +3,9 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
+from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.pydantic_v1 import Field
+
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -14,13 +17,12 @@ from langchain.chains.graph_qa.prompts import (
 from langchain.chains.llm import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.graphs import NeptuneGraph
-from langchain.prompts.base import BasePromptTemplate
-from langchain.pydantic_v1 import Field
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 
 def trim_query(query: str) -> str:
+    """Trim the query to only include Cypher keywords."""
     keywords = (
         "CALL",
         "CREATE",
@@ -84,6 +86,17 @@ class NeptuneOpenCypherQAChain(Chain):
     """Chain for question-answering against a Neptune graph
     by generating openCypher statements.
 
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
+
     Example:
         .. code-block:: python
 
@@ -104,6 +117,8 @@ class NeptuneOpenCypherQAChain(Chain):
     """Whether or not to return the intermediate steps along with the final answer."""
     return_direct: bool = False
     """Whether or not to return the result of querying the graph directly."""
+    extra_instructions: Optional[str] = None
+    """Extra instructions by the appended to the query generation prompt."""
 
     @property
     def input_keys(self) -> List[str]:
@@ -129,6 +144,7 @@ class NeptuneOpenCypherQAChain(Chain):
         *,
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
         cypher_prompt: Optional[BasePromptTemplate] = None,
+        extra_instructions: Optional[str] = None,
         **kwargs: Any,
     ) -> NeptuneOpenCypherQAChain:
         """Initialize from LLM."""
@@ -140,6 +156,7 @@ class NeptuneOpenCypherQAChain(Chain):
         return cls(
             qa_chain=qa_chain,
             cypher_generation_chain=cypher_generation_chain,
+            extra_instructions=extra_instructions,
             **kwargs,
         )
 
@@ -156,7 +173,12 @@ class NeptuneOpenCypherQAChain(Chain):
         intermediate_steps: List = []
 
         generated_cypher = self.cypher_generation_chain.run(
-            {"question": question, "schema": self.graph.get_schema}, callbacks=callbacks
+            {
+                "question": question,
+                "schema": self.graph.get_schema,
+                "extra_instructions": self.extra_instructions or "",
+            },
+            callbacks=callbacks,
         )
 
         # Extract Cypher code if it is wrapped in backticks

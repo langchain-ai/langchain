@@ -6,8 +6,8 @@ import uuid
 from typing import Any, Dict, Generator, List, Union
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -157,7 +157,6 @@ class TestElasticsearch:
         output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
 
-    @pytest.mark.asyncio
     async def test_similarity_search_without_metadat_async(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
@@ -171,6 +170,34 @@ class TestElasticsearch:
         )
         output = await docsearch.asimilarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
+
+    def test_add_embeddings(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """
+        Test add_embeddings, which accepts pre-built embeddings instead of
+         using inference for the texts.
+        This allows you to separate the embeddings text and the page_content
+         for better proximity between user's question and embedded text.
+        For example, your embedding text can be a question, whereas page_content
+         is the answer.
+        """
+        embeddings = ConsistentFakeEmbeddings()
+        text_input = ["foo1", "foo2", "foo3"]
+        metadatas = [{"page": i} for i in range(len(text_input))]
+
+        """In real use case, embedding_input can be questions for each text"""
+        embedding_input = ["foo2", "foo3", "foo1"]
+        embedding_vectors = embeddings.embed_documents(embedding_input)
+
+        docsearch = ElasticsearchStore._create_cls_from_kwargs(
+            embeddings,
+            **elasticsearch_connection,
+            index_name=index_name,
+        )
+        docsearch.add_embeddings(list(zip(text_input, embedding_vectors)), metadatas)
+        output = docsearch.similarity_search("foo1", k=1)
+        assert output == [Document(page_content="foo3", metadata={"page": 2})]
 
     def test_similarity_search_with_metadata(
         self, elasticsearch_connection: dict, index_name: str
@@ -225,6 +252,35 @@ class TestElasticsearch:
             custom_query=assert_query,
         )
         assert output == [Document(page_content="foo", metadata={"page": 1})]
+
+    def test_similarity_search_with_doc_builder(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        texts = ["foo", "foo", "foo"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            metadatas=metadatas,
+            **elasticsearch_connection,
+            index_name=index_name,
+        )
+
+        def custom_document_builder(_: Dict) -> Document:
+            return Document(
+                page_content="Mock content!",
+                metadata={
+                    "page_number": -1,
+                    "original_filename": "Mock filename!",
+                },
+            )
+
+        output = docsearch.similarity_search(
+            query="foo", k=1, doc_builder=custom_document_builder
+        )
+        assert output[0].page_content == "Mock content!"
+        assert output[0].metadata["page_number"] == -1
+        assert output[0].metadata["original_filename"] == "Mock filename!"
 
     def test_similarity_search_exact_search(
         self, elasticsearch_connection: dict, index_name: str
@@ -385,6 +441,42 @@ class TestElasticsearch:
                 distance_strategy="NOT_A_STRATEGY",
             )
 
+    def test_max_marginal_relevance_search(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test max marginal relevance search."""
+        texts = ["foo", "bar", "baz"]
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+            strategy=ElasticsearchStore.ExactRetrievalStrategy(),
+        )
+
+        mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=3, fetch_k=3)
+        sim_output = docsearch.similarity_search(texts[0], k=3)
+        assert mmr_output == sim_output
+
+        mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=2, fetch_k=3)
+        assert len(mmr_output) == 2
+        assert mmr_output[0].page_content == texts[0]
+        assert mmr_output[1].page_content == texts[1]
+
+        mmr_output = docsearch.max_marginal_relevance_search(
+            texts[0],
+            k=2,
+            fetch_k=3,
+            lambda_mult=0.1,  # more diversity
+        )
+        assert len(mmr_output) == 2
+        assert mmr_output[0].page_content == texts[0]
+        assert mmr_output[1].page_content == texts[2]
+
+        # if fetch_k < k, then the output will be less than k
+        mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=3, fetch_k=2)
+        assert len(mmr_output) == 2
+
     def test_similarity_search_approx_with_hybrid_search(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
@@ -419,6 +511,115 @@ class TestElasticsearch:
 
         output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
+
+    def test_similarity_search_approx_with_hybrid_search_rrf(
+        self, es_client: Any, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test end to end construction and rrf hybrid search with metadata."""
+        from functools import partial
+        from typing import Optional
+
+        # 1. check query_body is okay
+        rrf_test_cases: List[Optional[Union[dict, bool]]] = [
+            True,
+            False,
+            {"rank_constant": 1, "window_size": 5},
+        ]
+        for rrf_test_case in rrf_test_cases:
+            texts = ["foo", "bar", "baz"]
+            docsearch = ElasticsearchStore.from_texts(
+                texts,
+                FakeEmbeddings(),
+                **elasticsearch_connection,
+                index_name=index_name,
+                strategy=ElasticsearchStore.ApproxRetrievalStrategy(
+                    hybrid=True, rrf=rrf_test_case
+                ),
+            )
+
+            def assert_query(
+                query_body: dict,
+                query: str,
+                rrf: Optional[Union[dict, bool]] = True,
+            ) -> dict:
+                cmp_query_body = {
+                    "knn": {
+                        "field": "vector",
+                        "filter": [],
+                        "k": 3,
+                        "num_candidates": 50,
+                        "query_vector": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0,
+                        ],
+                    },
+                    "query": {
+                        "bool": {
+                            "filter": [],
+                            "must": [{"match": {"text": {"query": "foo"}}}],
+                        }
+                    },
+                }
+
+                if isinstance(rrf, dict):
+                    cmp_query_body["rank"] = {"rrf": rrf}
+                elif isinstance(rrf, bool) and rrf is True:
+                    cmp_query_body["rank"] = {"rrf": {}}
+
+                assert query_body == cmp_query_body
+
+                return query_body
+
+            ## without fetch_k parameter
+            output = docsearch.similarity_search(
+                "foo", k=3, custom_query=partial(assert_query, rrf=rrf_test_case)
+            )
+
+        # 2. check query result is okay
+        es_output = es_client.search(
+            index=index_name,
+            query={
+                "bool": {
+                    "filter": [],
+                    "must": [{"match": {"text": {"query": "foo"}}}],
+                }
+            },
+            knn={
+                "field": "vector",
+                "filter": [],
+                "k": 3,
+                "num_candidates": 50,
+                "query_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+            },
+            size=3,
+            rank={"rrf": {"rank_constant": 1, "window_size": 5}},
+        )
+
+        assert [o.page_content for o in output] == [
+            e["_source"]["text"] for e in es_output["hits"]["hits"]
+        ]
+
+        # 3. check rrf default option is okay
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+            strategy=ElasticsearchStore.ApproxRetrievalStrategy(hybrid=True),
+        )
+
+        ## with fetch_k parameter
+        output = docsearch.similarity_search(
+            "foo", k=3, fetch_k=50, custom_query=assert_query
+        )
 
     def test_similarity_search_approx_with_custom_query_fn(
         self, elasticsearch_connection: dict, index_name: str
@@ -498,7 +699,7 @@ class TestElasticsearch:
                     },
                 }
             },
-            settings={"index": {"default_pipeline": "pipeline"}},
+            settings={"index": {"default_pipeline": "test_pipeline"}},
         )
 
         # adding documents to the index

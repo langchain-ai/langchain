@@ -2,18 +2,23 @@ import builtins
 import json
 from typing import Optional, Type
 
+from langchain_core.pydantic_v1 import BaseModel, Field
+
 from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.ainetwork.base import AINBaseTool, OperationType
 
 
 class RuleSchema(BaseModel):
+    """Schema for owner operations."""
+
     type: OperationType = Field(...)
     path: str = Field(..., description="Path on the blockchain where the rule applies")
     eval: Optional[str] = Field(None, description="eval string to determine permission")
 
 
 class AINRuleOps(AINBaseTool):
+    """Tool for owner operations."""
+
     name: str = "AINruleOps"
     description: str = """
 Covers the write `rule` for the AINetwork Blockchain database. The SET type specifies write permissions using the `eval` variable as a JavaScript eval string.

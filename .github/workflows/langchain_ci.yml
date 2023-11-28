@@ -12,7 +12,9 @@ on:
       - '.github/workflows/_test.yml'
       - '.github/workflows/_pydantic_compatibility.yml'
       - '.github/workflows/langchain_ci.yml'
+      - 'libs/*'
       - 'libs/langchain/**'
+      - 'libs/core/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
 # If another push to the same PR or branch happens while this workflow is still running,
@@ -35,6 +37,7 @@ jobs:
       ./.github/workflows/_lint.yml
     with:
       working-directory: libs/langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   test:
@@ -42,6 +45,15 @@ jobs:
       ./.github/workflows/_test.yml
     with:
       working-directory: libs/langchain
+      langchain-core-location: ../core
+    secrets: inherit
+
+  compile-integration-tests:
+    uses:
+      ./.github/workflows/_compile_integration_test.yml
+    with:
+      working-directory: libs/langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   pydantic-compatibility:
@@ -49,7 +61,48 @@ jobs:
       ./.github/workflows/_pydantic_compatibility.yml
     with:
       working-directory: libs/langchain
+      langchain-core-location: ../core
     secrets: inherit
+
+  # It's possible that langchain works fine with the latest *published* langchain-core,
+  # but is broken with the langchain-core on `master`.
+  #
+  # We want to catch situations like that *before* releasing a new langchain-core, hence this test.
+  test-with-latest-langchain-core:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    name: test with unpublished langchain-core - Python ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ env.WORKDIR }}
+          cache-key: unpublished-langchain-core
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          echo "Running tests with unpublished langchain, installing dependencies with poetry..."
+          poetry install
+
+          echo "Editably installing langchain-core outside of poetry, to avoid messing up lockfile..."
+          poetry run pip install -e ../core
+
+      - name: Run tests
+        run: make test
 
   extended-tests:
     runs-on: ubuntu-latest
@@ -65,7 +118,7 @@ jobs:
           - "3.11"
     name: Python ${{ matrix.python-version }} extended tests
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
@@ -80,6 +133,11 @@ jobs:
         run: |
           echo "Running extended tests, installing dependencies with poetry..."
           poetry install -E extended_testing
+
+      - name: Install langchain core editable
+        shell: bash
+        run: |
+          poetry run pip install -e ../core
 
       - name: Run extended tests
         run: make extended_tests

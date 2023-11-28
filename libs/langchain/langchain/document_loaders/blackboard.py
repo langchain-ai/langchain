@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Any, List, Optional, Tuple
 from urllib.parse import unquote
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.pdf import PyPDFLoader
 from langchain.document_loaders.web_base import WebBaseLoader
@@ -211,7 +212,9 @@ class BlackboardLoader(WebBaseLoader):
         """
         # Create the document loader
         loader = DirectoryLoader(
-            path=self.folder_path, glob="*.pdf", loader_cls=PyPDFLoader  # type: ignore
+            path=self.folder_path,
+            glob="*.pdf",
+            loader_cls=PyPDFLoader,  # type: ignore
         )
         # Load the documents
         documents = loader.load()

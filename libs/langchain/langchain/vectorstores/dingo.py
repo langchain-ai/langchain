@@ -5,10 +5,10 @@ import uuid
 from typing import Any, Iterable, List, Optional, Tuple
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
@@ -36,6 +36,7 @@ class Dingo(VectorStore):
         *,
         client: Any = None,
         index_name: Optional[str] = None,
+        dimension: int = 1024,
         host: Optional[List[str]] = None,
         user: str = "root",
         password: str = "123123",
@@ -65,11 +66,17 @@ class Dingo(VectorStore):
         self._text_key = text_key
         self._client = dingo_client
 
-        if index_name is not None and index_name not in dingo_client.get_index():
+        if (
+            index_name is not None
+            and index_name not in dingo_client.get_index()
+            and index_name.upper() not in dingo_client.get_index()
+        ):
             if self_id is True:
-                dingo_client.create_index(index_name, 1024, auto_id=False)
+                dingo_client.create_index(
+                    index_name, dimension=dimension, auto_id=False
+                )
             else:
-                dingo_client.create_index(index_name, 1024)
+                dingo_client.create_index(index_name, dimension=dimension)
 
         self._index_name = index_name
         self._embedding = embedding
@@ -174,8 +181,9 @@ class Dingo(VectorStore):
             id = res["id"]
             score = res["distance"]
             text = metadatas[self._text_key]["fields"][0]["data"]
-
             metadata = {"id": id, "text": text, "score": score}
+            for meta_key in metadatas.keys():
+                metadata[meta_key] = metadatas[meta_key]["fields"][0]["data"]
             docs.append((Document(page_content=text, metadata=metadata), score))
 
         return docs
@@ -268,6 +276,7 @@ class Dingo(VectorStore):
         ids: Optional[List[str]] = None,
         text_key: str = "text",
         index_name: Optional[str] = None,
+        dimension: int = 1024,
         client: Any = None,
         host: List[str] = ["172.20.31.10:13000"],
         user: str = "root",
@@ -314,12 +323,21 @@ class Dingo(VectorStore):
             except ValueError as e:
                 raise ValueError(f"Dingo failed to connect: {e}")
         if kwargs is not None and kwargs.get("self_id") is True:
-            if index_name not in dingo_client.get_index():
-                dingo_client.create_index(index_name, 1024, auto_id=False)
+            if (
+                index_name is not None
+                and index_name not in dingo_client.get_index()
+                and index_name.upper() not in dingo_client.get_index()
+            ):
+                dingo_client.create_index(
+                    index_name, dimension=dimension, auto_id=False
+                )
         else:
-            if index_name not in dingo_client.get_index():
-                dingo_client.create_index(index_name, 1024)
-            # dingo_client.create_index(index_name, 1024, index_type="hnsw")
+            if (
+                index_name is not None
+                and index_name not in dingo_client.get_index()
+                and index_name.upper() not in dingo_client.get_index()
+            ):
+                dingo_client.create_index(index_name, dimension=dimension)
 
         # Embed and create the documents
 

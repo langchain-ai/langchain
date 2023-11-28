@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
-import warnings
+import uuid
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -20,15 +20,26 @@ from typing import (
     cast,
 )
 
-from langsmith import Client, RunEvaluator
-from langsmith.schemas import Dataset, DataType, Example
-
-from langchain.callbacks.manager import Callbacks
-from langchain.callbacks.tracers.evaluation import (
+from langchain_core._api import warn_deprecated
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage, messages_from_dict
+from langchain_core.outputs import ChatResult, LLMResult
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
+from langchain_core.runnables import config as runnable_config
+from langchain_core.runnables import utils as runnable_utils
+from langchain_core.tracers.evaluation import (
     EvaluatorCallbackHandler,
     wait_for_all_evaluators,
 )
-from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain_core.tracers.langchain import LangChainTracer
+from langsmith.client import Client
+from langsmith.evaluation import RunEvaluator
+from langsmith.run_helpers import as_runnable, is_traceable_function
+from langsmith.schemas import Dataset, DataType, Example
+from langsmith.utils import LangSmithError
+from requests import HTTPError
+
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.base import Chain
 from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.schema import (
@@ -36,12 +47,6 @@ from langchain.evaluation.schema import (
     PairwiseStringEvaluator,
     StringEvaluator,
 )
-from langchain.schema import ChatResult, LLMResult
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage, messages_from_dict
-from langchain.schema.runnable import Runnable, RunnableConfig, RunnableLambda
-from langchain.schema.runnable import config as runnable_config
-from langchain.schema.runnable import utils as runnable_utils
 from langchain.smith import evaluation as smith_eval
 from langchain.smith.evaluation import config as smith_eval_config
 from langchain.smith.evaluation import name_generation, progress
@@ -83,15 +88,8 @@ class TestResult(dict):
             A DataFrame containing the quantiles for each feedback key.
         """
         df = self.to_dataframe()
-        feedback_cols = [
-            col for col in df.columns if col not in ["input", "output", "reference"]
-        ]
-        _quantiles = df[feedback_cols].quantile(
-            quantiles or [0.25, 0.5, 0.75], numeric_only=True
-        )
-        _quantiles.loc["mean"] = df[feedback_cols].mean()
-        _quantiles.loc["mode"] = df[feedback_cols].mode().iloc[0]
-        return _quantiles.transpose()
+        to_drop = {"input", "output", "reference"}.intersection(df.columns)
+        return df.describe(include="all").drop(to_drop, axis=1)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the results to a dataframe."""
@@ -107,17 +105,44 @@ class TestResult(dict):
         records = []
         for example_id, result in self["results"].items():
             feedback = result["feedback"]
+            output_ = result.get("output")
+            if isinstance(output_, dict):
+                output = {f"outputs.{k}": v for k, v in output_.items()}
+            elif output_ is None:
+                output = {}
+            else:
+                output = {"output": output_}
+
             r = {
-                **{f.key: f.score for f in feedback},
-                "input": result["input"],
-                "output": result["output"],
+                **{f"inputs.{k}": v for k, v in result["input"].items()},
+                **output,
             }
             if "reference" in result:
                 r["reference"] = result["reference"]
+            r.update(
+                {
+                    **{f"feedback.{f.key}": f.score for f in feedback},
+                    "error": result.get("error"),
+                    "execution_time": result["execution_time"],
+                }
+            )
             records.append(r)
             indices.append(example_id)
 
         return pd.DataFrame(records, index=indices)
+
+
+class EvalError(dict):
+    """Your architecture raised an error."""
+
+    def __init__(self, Error: BaseException, **kwargs: Any) -> None:
+        super().__init__(Error=Error, **kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(f"'EvalError' object has no attribute '{name}'")
 
 
 def _wrap_in_chain_factory(
@@ -152,6 +177,9 @@ def _wrap_in_chain_factory(
         lcf = llm_or_chain_factory
         return lambda: lcf
     elif callable(llm_or_chain_factory):
+        if is_traceable_function(llm_or_chain_factory):
+            runnable_ = as_runnable(cast(Callable, llm_or_chain_factory))
+            return lambda: runnable_
         try:
             _model = llm_or_chain_factory()  # type: ignore[call-arg]
         except TypeError:
@@ -166,6 +194,9 @@ def _wrap_in_chain_factory(
             # It's not uncommon to do an LLM constructor instead of raw LLM,
             # so we'll unpack it for the user.
             return _model
+        elif is_traceable_function(cast(Callable, _model)):
+            runnable_ = as_runnable(cast(Callable, _model))
+            return lambda: runnable_
         elif not isinstance(_model, Runnable):
             # This is unlikely to happen - a constructor for a model function
             return lambda: RunnableLambda(constructor)
@@ -407,12 +438,17 @@ def _determine_input_key(
     if config.input_key:
         input_key = config.input_key
         if run_inputs and input_key not in run_inputs:
-            raise ValueError(f"Input key {input_key} not in run inputs {run_inputs}")
+            logger.warning(
+                f"Input key {input_key} not in chain's specified"
+                f" input keys {run_inputs}. Evaluation behavior may be undefined."
+            )
     elif run_inputs and len(run_inputs) == 1:
         input_key = run_inputs[0]
     elif run_inputs is not None and len(run_inputs) > 1:
-        raise ValueError(
-            f"Must specify input key for model with multiple inputs: {run_inputs}"
+        logger.warning(
+            f"Chain expects multiple input keys: {run_inputs},"
+            f" Evaluator is likely to fail. Evaluation behavior may be undefined."
+            " Specify an input_key in the RunEvalConfig to avoid this warning."
         )
 
     return input_key
@@ -426,15 +462,17 @@ def _determine_prediction_key(
     if config.prediction_key:
         prediction_key = config.prediction_key
         if run_outputs and prediction_key not in run_outputs:
-            raise ValueError(
-                f"Prediction key {prediction_key} not in run outputs {run_outputs}"
+            logger.warning(
+                f"Prediction key {prediction_key} not in chain's specified"
+                f" output keys {run_outputs}. Evaluation behavior may be undefined."
             )
     elif run_outputs and len(run_outputs) == 1:
         prediction_key = run_outputs[0]
     elif run_outputs is not None and len(run_outputs) > 1:
-        raise ValueError(
-            f"Must specify prediction key for model"
-            f" with multiple outputs: {run_outputs}"
+        logger.warning(
+            f"Chain expects multiple output keys: {run_outputs},"
+            f" Evaluation behavior may be undefined. Specify a prediction_key"
+            " in the RunEvalConfig to avoid this warning."
         )
     return prediction_key
 
@@ -476,6 +514,11 @@ def _construct_run_evaluator(
         kwargs = {"llm": eval_llm, **eval_config.get_kwargs()}
         evaluator_ = load_evaluator(eval_config.evaluator_type, **kwargs)
         eval_type_tag = eval_config.evaluator_type.value
+        # Override keys if specified in the config
+        if isinstance(eval_config, smith_eval_config.SingleKeyEvalConfig):
+            input_key = eval_config.input_key or input_key
+            prediction_key = eval_config.prediction_key or prediction_key
+            reference_key = eval_config.reference_key or reference_key
 
     if isinstance(evaluator_, StringEvaluator):
         if evaluator_.requires_reference and reference_key is None:
@@ -718,7 +761,7 @@ async def _arun_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\n{repr(e)}"
         )
-        result = {"Error": repr(e)}
+        result = EvalError(Error=e)
     return result
 
 
@@ -850,7 +893,7 @@ def _run_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\nError Type: {error_type}, Message: {e}"
         )
-        result = {"Error": repr(e)}
+        result = EvalError(Error=e)
     return result
 
 
@@ -872,14 +915,24 @@ def _prepare_eval_run(
             reference_dataset_id=dataset.id,
             project_extra={"metadata": project_metadata} if project_metadata else {},
         )
-    except ValueError as e:
+    except (HTTPError, ValueError, LangSmithError) as e:
         if "already exists " not in str(e):
             raise e
+        uid = uuid.uuid4()
+        example_msg = f"""
+run_on_dataset(
+    ...
+    project_name="{project_name} - {uid}", # Update since {project_name} already exists
+)
+"""
         raise ValueError(
-            f"Project {project_name} already exists. Please use a different name."
+            f"Test project {project_name} already exists. Please use a different name:"
+            f"\n\n{example_msg}"
         )
     print(
-        f"View the evaluation results for project '{project_name}' at:\n{project.url}",
+        f"View the evaluation results for project '{project_name}'"
+        f" at:\n{project.url}?eval=true\n\n"
+        f"View all tests for Dataset {dataset_name} at:\n{dataset.url}",
         flush=True,
     )
     examples = list(client.list_examples(dataset_id=dataset.id))
@@ -909,7 +962,7 @@ def _prepare_run_on_dataset(
     )
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
     run_evaluators = _setup_evaluation(
-        wrapped_model, examples, evaluation, dataset.data_type
+        wrapped_model, examples, evaluation, dataset.data_type or DataType.kv
     )
     _validate_example_inputs(examples[0], wrapped_model, input_mapper)
     progress_bar = progress.ProgressBarCallback(len(examples))
@@ -926,6 +979,7 @@ def _prepare_run_on_dataset(
                     evaluators=run_evaluators or [],
                     client=client,
                     example_id=example.id,
+                    max_concurrency=0,
                 ),
                 progress_bar,
             ],
@@ -945,6 +999,7 @@ def _collect_test_results(
 ) -> TestResult:
     wait_for_all_evaluators()
     all_eval_results = {}
+    all_execution_time = {}
     for c in configs:
         for callback in cast(list, c["callbacks"]):
             if isinstance(callback, EvaluatorCallbackHandler):
@@ -952,14 +1007,28 @@ def _collect_test_results(
                 all_eval_results.update(
                     {example_id: v for (_, example_id), v in eval_results.items()}
                 )
-    results = {}
+            elif isinstance(callback, LangChainTracer):
+                run = callback.latest_run
+                example_id = callback.example_id
+                execution_time = (
+                    (run.end_time - run.start_time).total_seconds()
+                    if run and run.end_time
+                    else None
+                )
+                all_execution_time[str(example_id)] = execution_time
+
+    results: dict = {}
     for example, output in zip(examples, batch_results):
         feedback = all_eval_results.get(str(example.id), [])
         results[str(example.id)] = {
-            "output": output,
             "input": example.inputs,
             "feedback": feedback,
+            "execution_time": all_execution_time.get(str(example.id)),
         }
+        if isinstance(output, EvalError):
+            results[str(example.id)]["error"] = output.error
+        else:
+            results[str(example.id)]["output"] = output
         if example.outputs:
             results[str(example.id)]["reference"] = example.outputs
     return TestResult(
@@ -998,17 +1067,15 @@ async def arun_on_dataset(
 ) -> Dict[str, Any]:
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
-        warnings.warn(
-            _INPUT_MAPPER_DEP_WARNING,
-            DeprecationWarning,
-        )
+        warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
 
     if kwargs:
-        warnings.warn(
-            "The following arguments are deprecated and "
+        warn_deprecated(
+            "0.0.305",
+            message="The following arguments are deprecated and "
             "will be removed in a future release: "
             f"{kwargs.keys()}.",
-            DeprecationWarning,
+            removal="0.0.305",
         )
     client = client or Client()
     wrapped_model, project_name, examples, configs = _prepare_run_on_dataset(
@@ -1022,7 +1089,6 @@ async def arun_on_dataset(
         concurrency_level,
         project_metadata=project_metadata,
     )
-
     batch_results = await runnable_utils.gather_with_concurrency(
         configs[0].get("max_concurrency"),
         *map(
@@ -1061,16 +1127,15 @@ def run_on_dataset(
 ) -> Dict[str, Any]:
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
-        warnings.warn(
-            _INPUT_MAPPER_DEP_WARNING,
-            DeprecationWarning,
-        )
+        warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
+
     if kwargs:
-        warnings.warn(
-            "The following arguments are deprecated and "
+        warn_deprecated(
+            "0.0.305",
+            message="The following arguments are deprecated and "
             "will be removed in a future release: "
             f"{kwargs.keys()}.",
-            DeprecationWarning,
+            removal="0.0.305",
         )
     client = client or Client()
     wrapped_model, project_name, examples, configs = _prepare_run_on_dataset(

@@ -4,10 +4,10 @@ import copy
 from typing import TYPE_CHECKING, List
 
 import pytest
+from langchain_core.documents import Document
 from pytest_mock import MockerFixture
 
 from langchain.retrievers import ZepRetriever
-from langchain.schema import Document
 
 if TYPE_CHECKING:
     from zep_python import MemorySearchResult, ZepClient
@@ -83,7 +83,6 @@ def test_zep_retriever_get_relevant_documents(
 
 
 @pytest.mark.requires("zep_python")
-@pytest.mark.asyncio
 async def test_zep_retriever_aget_relevant_documents(
     zep_retriever: ZepRetriever, search_results: List[MemorySearchResult]
 ) -> None:
@@ -101,14 +100,10 @@ def _test_documents(
         assert document.page_content == search_results[i].message.get(  # type: ignore
             "content"
         )
-        assert document.metadata.get("uuid") == search_results[
-            i
-        ].message.get(  # type: ignore
+        assert document.metadata.get("uuid") == search_results[i].message.get(  # type: ignore
             "uuid"
         )
-        assert document.metadata.get("role") == search_results[
-            i
-        ].message.get(  # type: ignore
+        assert document.metadata.get("role") == search_results[i].message.get(  # type: ignore
             "role"
         )
         assert document.metadata.get("score") == search_results[i].dist

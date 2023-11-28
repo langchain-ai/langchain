@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Literal, Optional
 
+from langchain_core.pydantic_v1 import root_validator
+
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.pydantic_v1 import root_validator
 from langchain.tools import BaseTool
 from langchain.tools.ainetwork.app import AINAppOps
 from langchain.tools.ainetwork.owner import AINOwnerOps
@@ -17,7 +18,14 @@ if TYPE_CHECKING:
 
 
 class AINetworkToolkit(BaseToolkit):
-    """Toolkit for interacting with AINetwork Blockchain."""
+    """Toolkit for interacting with AINetwork Blockchain.
+
+    *Security Note*: This toolkit contains tools that can read and modify
+        the state of a service; e.g., by reading, creating, updating, deleting
+        data associated with this service.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     network: Optional[Literal["mainnet", "testnet"]] = "testnet"
     interface: Optional[Ain] = None

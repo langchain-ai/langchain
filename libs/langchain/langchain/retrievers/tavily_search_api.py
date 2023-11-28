@@ -2,12 +2,15 @@ import os
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
+
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.schema import Document
-from langchain.schema.retriever import BaseRetriever
 
 
 class SearchDepth(Enum):
+    """Search depth as enumerator."""
+
     BASIC = "basic"
     ADVANCED = "advanced"
 
@@ -31,7 +34,7 @@ class TavilySearchAPIRetriever(BaseRetriever):
         try:
             from tavily import Client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Tavily python package not found. "
                 "Please install it with `pip install tavily-python`."
             )
@@ -47,7 +50,7 @@ class TavilySearchAPIRetriever(BaseRetriever):
             exclude_domains=self.exclude_domains,
             include_raw_content=self.include_raw_content,
             include_images=self.include_images,
-            **self.kwargs
+            **self.kwargs,
         )
         docs = [
             Document(

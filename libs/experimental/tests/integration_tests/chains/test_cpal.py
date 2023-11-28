@@ -39,7 +39,7 @@ from langchain_experimental.cpal.templates.univariate.narrative import (
 from langchain_experimental.cpal.templates.univariate.query import (
     template as query_template,
 )
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from tests.unit_tests.fake_llm import FakeLLM
 
 
 class TestUnitCPALChain_MathWordProblems(unittest.TestCase):

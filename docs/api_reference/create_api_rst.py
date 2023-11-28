@@ -2,9 +2,9 @@
 import importlib
 import inspect
 import typing
-from pathlib import Path
-from typing import TypedDict, Sequence, List, Dict, Literal, Union, Optional
 from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
 from pydantic import BaseModel
 
@@ -13,8 +13,10 @@ HERE = Path(__file__).parent
 
 PKG_DIR = ROOT_DIR / "libs" / "langchain" / "langchain"
 EXP_DIR = ROOT_DIR / "libs" / "experimental" / "langchain_experimental"
+CORE_DIR = ROOT_DIR / "libs" / "core" / "langchain_core"
 WRITE_FILE = HERE / "api_reference.rst"
 EXP_WRITE_FILE = HERE / "experimental_api_reference.rst"
+CORE_WRITE_FILE = HERE / "core_api_reference.rst"
 
 
 ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum"]
@@ -122,8 +124,7 @@ def _merge_module_members(
 
 
 def _load_package_modules(
-    package_directory: Union[str, Path],
-    submodule: Optional[str] = None
+    package_directory: Union[str, Path], submodule: Optional[str] = None
 ) -> Dict[str, ModuleMembers]:
     """Recursively load modules of a package based on the file system.
 
@@ -171,7 +172,8 @@ def _load_package_modules(
             # different way
             if submodule is not None:
                 module_members = _load_module_members(
-                    f"{package_name}.{submodule}.{namespace}", f"{submodule}.{namespace}"
+                    f"{package_name}.{submodule}.{namespace}",
+                    f"{submodule}.{namespace}",
                 )
             else:
                 module_members = _load_module_members(
@@ -280,24 +282,57 @@ Functions
     return full_doc
 
 
-def main() -> None:
-    """Generate the reference.rst file for each package."""
-    lc_members = _load_package_modules(PKG_DIR)
-    # Put some packages at top level
-    tools = _load_package_modules(PKG_DIR, "tools")
-    lc_members['tools.render'] = tools['render']
-    agents = _load_package_modules(PKG_DIR, "agents")
-    lc_members['agents.output_parsers'] = agents['output_parsers']
-    lc_members['agents.format_scratchpad'] = agents['format_scratchpad']
-    lc_doc = ".. _api_reference:\n\n" + _construct_doc("langchain", lc_members)
-    with open(WRITE_FILE, "w") as f:
-        f.write(lc_doc)
+def _document_langchain_experimental() -> None:
+    """Document the langchain_experimental package."""
+    # Generate experimental_api_reference.rst
     exp_members = _load_package_modules(EXP_DIR)
     exp_doc = ".. _experimental_api_reference:\n\n" + _construct_doc(
         "langchain_experimental", exp_members
     )
     with open(EXP_WRITE_FILE, "w") as f:
         f.write(exp_doc)
+
+
+def _document_langchain_core() -> None:
+    """Document the langchain_core package."""
+    # Generate core_api_reference.rst
+    core_members = _load_package_modules(CORE_DIR)
+    core_doc = ".. _core_api_reference:\n\n" + _construct_doc(
+        "langchain_core", core_members
+    )
+    with open(CORE_WRITE_FILE, "w") as f:
+        f.write(core_doc)
+
+
+def _document_langchain() -> None:
+    """Document the main langchain package."""
+    # load top level module members
+    lc_members = _load_package_modules(PKG_DIR)
+
+    # Add additional packages
+    tools = _load_package_modules(PKG_DIR, "tools")
+    agents = _load_package_modules(PKG_DIR, "agents")
+    schema = _load_package_modules(PKG_DIR, "schema")
+
+    lc_members.update(
+        {
+            "agents.output_parsers": agents["output_parsers"],
+            "agents.format_scratchpad": agents["format_scratchpad"],
+            "tools.render": tools["render"],
+        }
+    )
+
+    lc_doc = ".. _api_reference:\n\n" + _construct_doc("langchain", lc_members)
+
+    with open(WRITE_FILE, "w") as f:
+        f.write(lc_doc)
+
+
+def main() -> None:
+    """Generate the reference.rst file for each package."""
+    _document_langchain()
+    _document_langchain_experimental()
+    _document_langchain_core()
 
 
 if __name__ == "__main__":

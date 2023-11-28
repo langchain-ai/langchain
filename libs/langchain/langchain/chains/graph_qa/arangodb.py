@@ -4,6 +4,9 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Field
+
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -14,12 +17,22 @@ from langchain.chains.graph_qa.prompts import (
 )
 from langchain.chains.llm import LLMChain
 from langchain.graphs.arangodb_graph import ArangoGraph
-from langchain.pydantic_v1 import Field
-from langchain.schema import BasePromptTemplate
 
 
 class ArangoGraphQAChain(Chain):
-    """Chain for question-answering against a graph by generating AQL statements."""
+    """Chain for question-answering against a graph by generating AQL statements.
+
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     graph: ArangoGraph = Field(exclude=True)
     aql_generation_chain: LLMChain

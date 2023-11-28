@@ -1,8 +1,5 @@
 """Test openai embeddings."""
-import os
-
 import numpy as np
-import openai
 import pytest
 
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -32,7 +29,6 @@ def test_openai_embedding_documents_multiple() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_embedding_documents_async_multiple() -> None:
     """Test openai embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
@@ -55,7 +51,6 @@ def test_openai_embedding_query() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_openai_embedding_async_query() -> None:
     """Test openai embeddings."""
     document = "foo bar"
@@ -68,6 +63,8 @@ async def test_openai_embedding_async_query() -> None:
 @pytest.mark.scheduled
 def test_openai_embedding_with_empty_string() -> None:
     """Test openai embeddings with empty string."""
+    import openai
+
     document = ["", "abc"]
     embedding = OpenAIEmbeddings()
     output = embedding.embed_documents(document)
@@ -90,26 +87,3 @@ def test_embed_documents_normalized() -> None:
 def test_embed_query_normalized() -> None:
     output = OpenAIEmbeddings().embed_query("foo walked to the market")
     assert np.isclose(np.linalg.norm(output), 1.0)
-
-
-def test_azure_openai_embeddings() -> None:
-    from openai import error
-
-    os.environ["OPENAI_API_TYPE"] = "azure"
-    os.environ["OPENAI_API_BASE"] = "https://your-endpoint.openai.azure.com/"
-    os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
-    os.environ["OPENAI_API_VERSION"] = "2023-03-15-preview"
-
-    embeddings = OpenAIEmbeddings(deployment="your-embeddings-deployment-name")
-    text = "This is a test document."
-
-    try:
-        embeddings.embed_query(text)
-    except error.InvalidRequestError as e:
-        if "Must provide an 'engine' or 'deployment_id' parameter" in str(e):
-            assert (
-                False
-            ), "deployment was provided to but openai.Embeddings didn't get it."
-    except Exception:
-        # Expected to fail because endpoint doesn't exist.
-        pass

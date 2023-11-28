@@ -15,9 +15,10 @@ from typing import (
     Type,
 )
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.utils import get_from_env
 from langchain.vectorstores.utils import DistanceStrategy
 
@@ -61,6 +62,7 @@ def _get_search_index_query(search_type: SearchType) -> str:
 
 
 def check_if_not_null(props: List[str], values: List[Any]) -> None:
+    """Check if the values are not None or empty string"""
     for prop, value in zip(props, values):
         if not value:
             raise ValueError(f"Parameter `{prop}` must not be None or empty string")

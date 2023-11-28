@@ -14,10 +14,11 @@ from typing import (
     Union,
 )
 
-from langchain._api import deprecated
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
+from langchain_core._api import deprecated
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -156,11 +157,21 @@ class ElasticVectorSearch(VectorStore):
         self.index_name = index_name
         _ssl_verify = ssl_verify or {}
         try:
-            self.client = elasticsearch.Elasticsearch(elasticsearch_url, **_ssl_verify)
+            self.client = elasticsearch.Elasticsearch(
+                elasticsearch_url,
+                **_ssl_verify,
+                headers={"user-agent": self.get_user_agent()},
+            )
         except ValueError as e:
             raise ValueError(
                 f"Your elasticsearch client string is mis-formatted. Got error: {e} "
             )
+
+    @staticmethod
+    def get_user_agent() -> str:
+        from langchain import __version__
+
+        return f"langchain-py-dvs/{__version__}"
 
     @property
     def embeddings(self) -> Embeddings:

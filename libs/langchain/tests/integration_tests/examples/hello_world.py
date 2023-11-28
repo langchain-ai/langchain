@@ -3,7 +3,7 @@
 import sys
 
 
-def main():
+def main() -> int:
     print("Hello World!")
 
     return 0

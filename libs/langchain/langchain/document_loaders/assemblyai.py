@@ -3,7 +3,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 if TYPE_CHECKING:

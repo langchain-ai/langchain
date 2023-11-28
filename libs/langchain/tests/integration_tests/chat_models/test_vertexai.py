@@ -2,7 +2,7 @@
 In order to run this test, you need to install VertexAI SDK (that is is the private
 preview)  and be whitelisted to list the models themselves:
 In order to run this test, you need to install VertexAI SDK 
-pip install google-cloud-aiplatform>=1.25.0
+pip install google-cloud-aiplatform>=1.35.0
 
 Your end-user credentials would be used to make the calls (make sure you've run 
 `gcloud auth login` first).
@@ -11,16 +11,19 @@ from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import LLMResult
 
 from langchain.chat_models import ChatVertexAI
 from langchain.chat_models.vertexai import _parse_chat_history, _parse_examples
-from langchain.schema import LLMResult
-from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
 @pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
 def test_vertexai_instantiation(model_name: str) -> None:
-    model = ChatVertexAI(model_name=model_name)
+    if model_name:
+        model = ChatVertexAI(model_name=model_name)
+    else:
+        model = ChatVertexAI()
     assert model._llm_type == "vertexai"
     assert model.model_name == model.client._model_id
 
@@ -38,8 +41,16 @@ def test_vertexai_single_call(model_name: str) -> None:
     assert isinstance(response.content, str)
 
 
+def test_candidates() -> None:
+    model = ChatVertexAI(model_name="chat-bison@001", temperature=0.3, n=2)
+    message = HumanMessage(content="Hello")
+    response = model.generate(messages=[[message]])
+    assert isinstance(response, LLMResult)
+    assert len(response.generations) == 1
+    assert len(response.generations[0]) == 2
+
+
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_vertexai_agenerate() -> None:
     model = ChatVertexAI(temperature=0)
     message = HumanMessage(content="Hello")
@@ -153,7 +164,8 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
     with patch(
         "vertexai.language_models._language_models.ChatModel.start_chat"
     ) as start_chat:
-        mock_response = Mock(text=response_text)
+        mock_response = MagicMock()
+        mock_response.candidates = [Mock(text=response_text)]
         mock_chat = MagicMock()
         start_chat.return_value = mock_chat
         mock_send_message = MagicMock(return_value=mock_response)
@@ -167,13 +179,13 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
             response = model([message])
 
         assert response.content == response_text
-        mock_send_message.assert_called_once_with(user_prompt)
+        mock_send_message.assert_called_once_with(user_prompt, candidate_count=1)
         expected_stop_sequence = [stop] if stop else None
         start_chat.assert_called_once_with(
             context=None,
             message_history=[],
             **prompt_params,
-            stop_sequences=expected_stop_sequence
+            stop_sequences=expected_stop_sequence,
         )
 
 

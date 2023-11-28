@@ -3,8 +3,8 @@ from typing import List
 
 import numpy as np
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
@@ -347,5 +347,29 @@ def test_singlestoredb_filter_metadata_7(texts: List[str]) -> None:
             page_content="baz",
             metadata={"index": 2, "category": "budget", "score": 2.5},
         )
+    ]
+    drop(table_name)
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_singlestoredb_as_retriever(texts: List[str]) -> None:
+    table_name = "test_singlestoredb_8"
+    drop(table_name)
+    docsearch = SingleStoreDB.from_texts(
+        texts,
+        FakeEmbeddings(),
+        distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
+        table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    retriever = docsearch.as_retriever(search_kwargs={"k": 2})
+    output = retriever.get_relevant_documents("foo")
+    assert output == [
+        Document(
+            page_content="foo",
+        ),
+        Document(
+            page_content="bar",
+        ),
     ]
     drop(table_name)

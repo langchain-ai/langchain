@@ -4,10 +4,13 @@ import json
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Optional
 
-from langchain.schema import (
-    BaseChatMessageHistory,
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import (
+    BaseMessage,
+    message_to_dict,
+    messages_from_dict,
 )
-from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
+
 from langchain.utils import get_from_env
 
 if TYPE_CHECKING:
@@ -97,7 +100,8 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         ttl: timedelta,
         *,
         configuration: Optional[momento.config.Configuration] = None,
-        auth_token: Optional[str] = None,
+        api_key: Optional[str] = None,
+        auth_token: Optional[str] = None,  # for backwards compatibility
         **kwargs: Any,
     ) -> MomentoChatMessageHistory:
         """Construct cache from CacheClient parameters."""
@@ -110,8 +114,13 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
             )
         if configuration is None:
             configuration = Configurations.Laptop.v1()
-        auth_token = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
-        credentials = CredentialProvider.from_string(auth_token)
+
+        # Try checking `MOMENTO_AUTH_TOKEN` first for backwards compatibility
+        try:
+            api_key = auth_token or get_from_env("auth_token", "MOMENTO_AUTH_TOKEN")
+        except ValueError:
+            api_key = api_key or get_from_env("api_key", "MOMENTO_API_KEY")
+        credentials = CredentialProvider.from_string(api_key)
         cache_client = CacheClient(configuration, credentials, default_ttl=ttl)
         return cls(session_id, cache_client, cache_name, ttl=ttl, **kwargs)
 
@@ -152,7 +161,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         """
         from momento.responses import CacheListPushBack
 
-        item = json.dumps(_message_to_dict(message))
+        item = json.dumps(message_to_dict(message))
         push_response = self.cache_client.list_push_back(
             self.cache_name, self.key, item, ttl=self.ttl
         )

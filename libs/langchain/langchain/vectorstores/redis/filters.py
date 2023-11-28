@@ -1,7 +1,6 @@
 from enum import Enum
 from functools import wraps
-from numbers import Number
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from langchain.utilities.redis import TokenEscaper
 
@@ -10,6 +9,8 @@ from langchain.utilities.redis import TokenEscaper
 
 
 class RedisFilterOperator(Enum):
+    """RedisFilterOperator enumerator is used to create RedisFilterExpressions."""
+
     EQ = 1
     NE = 2
     LT = 3
@@ -23,6 +24,8 @@ class RedisFilterOperator(Enum):
 
 
 class RedisFilter:
+    """Collection of RedisFilterFields."""
+
     @staticmethod
     def text(field: str) -> "RedisText":
         return RedisText(field)
@@ -37,6 +40,8 @@ class RedisFilter:
 
 
 class RedisFilterField:
+    """Base class for RedisFilterFields."""
+
     escaper: "TokenEscaper" = TokenEscaper()
     OPERATORS: Dict[RedisFilterOperator, str] = {}
 
@@ -51,7 +56,7 @@ class RedisFilterField:
         return self._field == other._field and self._value == other._value
 
     def _set_value(
-        self, val: Any, val_type: type, operator: RedisFilterOperator
+        self, val: Any, val_type: Tuple[Any], operator: RedisFilterOperator
     ) -> None:
         # check that the operator is supported by this class
         if operator not in self.OPERATORS:
@@ -72,8 +77,10 @@ class RedisFilterField:
 
 
 def check_operator_misuse(func: Callable) -> Callable:
+    """Decorator to check for misuse of equality operators."""
+
     @wraps(func)
-    def wrapper(instance: Any, *args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+    def wrapper(instance: Any, *args: Any, **kwargs: Any) -> Any:
         # Extracting 'other' from positional arguments or keyword arguments
         other = kwargs.get("other") if "other" in kwargs else None
         if not other:
@@ -93,22 +100,22 @@ def check_operator_misuse(func: Callable) -> Callable:
 
 
 class RedisTag(RedisFilterField):
-    """A RedisTag is a RedisFilterField representing a tag in a Redis index."""
+    """A RedisFilterField representing a tag in a Redis index."""
 
     OPERATORS: Dict[RedisFilterOperator, str] = {
         RedisFilterOperator.EQ: "==",
         RedisFilterOperator.NE: "!=",
         RedisFilterOperator.IN: "==",
     }
-
     OPERATOR_MAP: Dict[RedisFilterOperator, str] = {
         RedisFilterOperator.EQ: "@%s:{%s}",
         RedisFilterOperator.NE: "(-@%s:{%s})",
         RedisFilterOperator.IN: "@%s:{%s}",
     }
+    SUPPORTED_VAL_TYPES = (list, set, tuple, str, type(None))
 
     def __init__(self, field: str):
-        """Create a RedisTag FilterField
+        """Create a RedisTag FilterField.
 
         Args:
             field (str): The name of the RedisTag field in the index to be queried
@@ -117,21 +124,33 @@ class RedisTag(RedisFilterField):
         super().__init__(field)
 
     def _set_tag_value(
-        self, other: Union[List[str], str], operator: RedisFilterOperator
+        self,
+        other: Union[List[str], Set[str], Tuple[str], str],
+        operator: RedisFilterOperator,
     ) -> None:
-        if isinstance(other, list):
-            if not all(isinstance(tag, str) for tag in other):
-                raise ValueError("All tags must be strings")
-        else:
+        if isinstance(other, (list, set, tuple)):
+            try:
+                # "if val" clause removes non-truthy values from list
+                other = [str(val) for val in other if val]
+            except ValueError:
+                raise ValueError("All tags within collection must be strings")
+        # above to catch the "" case
+        elif not other:
+            other = []
+        elif isinstance(other, str):
             other = [other]
-        self._set_value(other, list, operator)
+
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, operator)  # type: ignore
 
     @check_operator_misuse
-    def __eq__(self, other: Union[List[str], str]) -> "RedisFilterExpression":
-        """Create a RedisTag equality filter expression
+    def __eq__(
+        self, other: Union[List[str], Set[str], Tuple[str], str]
+    ) -> "RedisFilterExpression":
+        """Create a RedisTag equality filter expression.
 
         Args:
-            other (Union[List[str], str]): The tag(s) to filter on.
+            other (Union[List[str], Set[str], Tuple[str], str]):
+                The tag(s) to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisTag
@@ -141,11 +160,14 @@ class RedisTag(RedisFilterField):
         return RedisFilterExpression(str(self))
 
     @check_operator_misuse
-    def __ne__(self, other: Union[List[str], str]) -> "RedisFilterExpression":
-        """Create a RedisTag inequality filter expression
+    def __ne__(
+        self, other: Union[List[str], Set[str], Tuple[str], str]
+    ) -> "RedisFilterExpression":
+        """Create a RedisTag inequality filter expression.
 
         Args:
-            other (Union[List[str], str]): The tag(s) to filter on.
+            other (Union[List[str], Set[str], Tuple[str], str]):
+                The tag(s) to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisTag
@@ -159,12 +181,10 @@ class RedisTag(RedisFilterField):
         return "|".join([self.escaper.escape(tag) for tag in self._value])
 
     def __str__(self) -> str:
+        """Return the query syntax for a RedisTag filter expression."""
         if not self._value:
-            raise ValueError(
-                f"Operator must be used before calling __str__. Operators are "
-                f"{self.OPERATORS.values()}"
-            )
-        """Return the Redis Query syntax for a RedisTag filter expression"""
+            return "*"
+
         return self.OPERATOR_MAP[self._operator] % (
             self._field,
             self._formatted_tag_value,
@@ -183,21 +203,19 @@ class RedisNum(RedisFilterField):
         RedisFilterOperator.GE: ">=",
     }
     OPERATOR_MAP: Dict[RedisFilterOperator, str] = {
-        RedisFilterOperator.EQ: "@%s:[%f %f]",
-        RedisFilterOperator.NE: "(-@%s:[%f %f])",
-        RedisFilterOperator.GT: "@%s:[(%f +inf]",
-        RedisFilterOperator.LT: "@%s:[-inf (%f]",
-        RedisFilterOperator.GE: "@%s:[%f +inf]",
-        RedisFilterOperator.LE: "@%s:[-inf %f]",
+        RedisFilterOperator.EQ: "@%s:[%s %s]",
+        RedisFilterOperator.NE: "(-@%s:[%s %s])",
+        RedisFilterOperator.GT: "@%s:[(%s +inf]",
+        RedisFilterOperator.LT: "@%s:[-inf (%s]",
+        RedisFilterOperator.GE: "@%s:[%s +inf]",
+        RedisFilterOperator.LE: "@%s:[-inf %s]",
     }
+    SUPPORTED_VAL_TYPES = (int, float, type(None))
 
     def __str__(self) -> str:
-        """Return the Redis Query syntax for a Numeric filter expression"""
+        """Return the query syntax for a RedisNum filter expression."""
         if not self._value:
-            raise ValueError(
-                f"Operator must be used before calling __str__. Operators are "
-                f"{self.OPERATORS.values()}"
-            )
+            return "*"
 
         if (
             self._operator == RedisFilterOperator.EQ
@@ -213,102 +231,103 @@ class RedisNum(RedisFilterField):
 
     @check_operator_misuse
     def __eq__(self, other: Union[int, float]) -> "RedisFilterExpression":
-        """Create a Numeric equality filter expression
+        """Create a Numeric equality filter expression.
 
         Args:
-            other (Number): The value to filter on.
+            other (Union[int, float]): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("zipcode") == 90210
         """
-        self._set_value(other, Number, RedisFilterOperator.EQ)
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.EQ)  # type: ignore
         return RedisFilterExpression(str(self))
 
     @check_operator_misuse
     def __ne__(self, other: Union[int, float]) -> "RedisFilterExpression":
-        """Create a Numeric inequality filter expression
+        """Create a Numeric inequality filter expression.
 
         Args:
-            other (Number): The value to filter on.
+            other (Union[int, float]): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("zipcode") != 90210
         """
-        self._set_value(other, Number, RedisFilterOperator.NE)
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.NE)  # type: ignore
         return RedisFilterExpression(str(self))
 
     def __gt__(self, other: Union[int, float]) -> "RedisFilterExpression":
-        """Create a RedisNumeric greater than filter expression
+        """Create a Numeric greater than filter expression.
 
         Args:
-            other (Number): The value to filter on.
+            other (Union[int, float]): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") > 18
         """
-        self._set_value(other, Number, RedisFilterOperator.GT)
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.GT)  # type: ignore
         return RedisFilterExpression(str(self))
 
     def __lt__(self, other: Union[int, float]) -> "RedisFilterExpression":
-        """Create a Numeric less than filter expression
+        """Create a Numeric less than filter expression.
 
         Args:
-            other (Number): The value to filter on.
+            other (Union[int, float]): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") < 18
         """
-        self._set_value(other, Number, RedisFilterOperator.LT)
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.LT)  # type: ignore
         return RedisFilterExpression(str(self))
 
     def __ge__(self, other: Union[int, float]) -> "RedisFilterExpression":
-        """Create a Numeric greater than or equal to filter expression
+        """Create a Numeric greater than or equal to filter expression.
 
         Args:
-            other (Number): The value to filter on.
+            other (Union[int, float]): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") >= 18
         """
-        self._set_value(other, Number, RedisFilterOperator.GE)
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.GE)  # type: ignore
         return RedisFilterExpression(str(self))
 
     def __le__(self, other: Union[int, float]) -> "RedisFilterExpression":
-        """Create a Numeric less than or equal to filter expression
+        """Create a Numeric less than or equal to filter expression.
 
         Args:
-            other (Number): The value to filter on.
+            other (Union[int, float]): The value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") <= 18
         """
-        self._set_value(other, Number, RedisFilterOperator.LE)
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.LE)  # type: ignore
         return RedisFilterExpression(str(self))
 
 
 class RedisText(RedisFilterField):
-    """A RedisText is a RedisFilterField representing a text field in a Redis index."""
+    """A RedisFilterField representing a text field in a Redis index."""
 
-    OPERATORS = {
+    OPERATORS: Dict[RedisFilterOperator, str] = {
         RedisFilterOperator.EQ: "==",
         RedisFilterOperator.NE: "!=",
         RedisFilterOperator.LIKE: "%",
     }
-    OPERATOR_MAP = {
-        RedisFilterOperator.EQ: '@%s:"%s"',
+    OPERATOR_MAP: Dict[RedisFilterOperator, str] = {
+        RedisFilterOperator.EQ: '@%s:("%s")',
         RedisFilterOperator.NE: '(-@%s:"%s")',
-        RedisFilterOperator.LIKE: "@%s:%s",
+        RedisFilterOperator.LIKE: "@%s:(%s)",
     }
+    SUPPORTED_VAL_TYPES = (str, type(None))
 
     @check_operator_misuse
     def __eq__(self, other: str) -> "RedisFilterExpression":
-        """Create a RedisText equality filter expression
+        """Create a RedisText equality (exact match) filter expression.
 
         Args:
             other (str): The text value to filter on.
@@ -317,12 +336,12 @@ class RedisText(RedisFilterField):
             >>> from langchain.vectorstores.redis import RedisText
             >>> filter = RedisText("job") == "engineer"
         """
-        self._set_value(other, str, RedisFilterOperator.EQ)
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.EQ)  # type: ignore
         return RedisFilterExpression(str(self))
 
     @check_operator_misuse
     def __ne__(self, other: str) -> "RedisFilterExpression":
-        """Create a RedisText inequality filter expression
+        """Create a RedisText inequality filter expression.
 
         Args:
             other (str): The text value to filter on.
@@ -331,37 +350,38 @@ class RedisText(RedisFilterField):
             >>> from langchain.vectorstores.redis import RedisText
             >>> filter = RedisText("job") != "engineer"
         """
-        self._set_value(other, str, RedisFilterOperator.NE)
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.NE)  # type: ignore
         return RedisFilterExpression(str(self))
 
     def __mod__(self, other: str) -> "RedisFilterExpression":
-        """Create a RedisText like filter expression
+        """Create a RedisText "LIKE" filter expression.
 
         Args:
             other (str): The text value to filter on.
 
         Example:
             >>> from langchain.vectorstores.redis import RedisText
-            >>> filter = RedisText("job") % "engineer"
+            >>> filter = RedisText("job") % "engine*"         # suffix wild card match
+            >>> filter = RedisText("job") % "%%engine%%"      # fuzzy match w/ LD
+            >>> filter = RedisText("job") % "engineer|doctor" # contains either term
+            >>> filter = RedisText("job") % "engineer doctor" # contains both terms
         """
-        self._set_value(other, str, RedisFilterOperator.LIKE)
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.LIKE)  # type: ignore
         return RedisFilterExpression(str(self))
 
     def __str__(self) -> str:
+        """Return the query syntax for a RedisText filter expression."""
         if not self._value:
-            raise ValueError(
-                f"Operator must be used before calling __str__. Operators are "
-                f"{self.OPERATORS.values()}"
-            )
+            return "*"
 
-        try:
-            return self.OPERATOR_MAP[self._operator] % (self._field, self._value)
-        except KeyError:
-            raise Exception("Invalid operator")
+        return self.OPERATOR_MAP[self._operator] % (
+            self._field,
+            self._value,
+        )
 
 
 class RedisFilterExpression:
-    """A RedisFilterExpression is a logical expression of RedisFilterFields.
+    """A logical expression of RedisFilterFields.
 
     RedisFilterExpressions can be combined using the & and | operators to create
     complex logical expressions that evaluate to the Redis Query language.
@@ -405,16 +425,36 @@ class RedisFilterExpression:
             operator=RedisFilterOperator.OR, left=self, right=other
         )
 
+    @staticmethod
+    def format_expression(
+        left: "RedisFilterExpression", right: "RedisFilterExpression", operator_str: str
+    ) -> str:
+        _left, _right = str(left), str(right)
+        if _left == _right == "*":
+            return _left
+        if _left == "*" != _right:
+            return _right
+        if _right == "*" != _left:
+            return _left
+        return f"({_left}{operator_str}{_right})"
+
     def __str__(self) -> str:
         # top level check that allows recursive calls to __str__
         if not self._filter and not self._operator:
             raise ValueError("Improperly initialized RedisFilterExpression")
 
-        # allow for single filter expression without operators as last
-        # expression in the chain might not have an operator
+        # if there's an operator, combine expressions accordingly
         if self._operator:
+            if not isinstance(self._left, RedisFilterExpression) or not isinstance(
+                self._right, RedisFilterExpression
+            ):
+                raise TypeError(
+                    "Improper combination of filters."
+                    "Both left and right should be type FilterExpression"
+                )
+
             operator_str = " | " if self._operator == RedisFilterOperator.OR else " "
-            return f"({str(self._left)}{operator_str}{str(self._right)})"
+            return self.format_expression(self._left, self._right, operator_str)
 
         # check that base case, the filter is set
         if not self._filter:

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import List, Union
 
-from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import Field
-from langchain.schema import Document
+from langchain_core.documents import Document
+from langchain_core.load.serializable import Serializable
+from langchain_core.pydantic_v1 import Field
 
 
 class Node(Serializable):

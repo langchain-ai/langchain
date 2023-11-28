@@ -2,12 +2,13 @@ import uuid
 from typing import Any, Callable, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.prompts.base import StringPromptValue
-from langchain.prompts.chat import ChatPromptValue
 from langchain.schema import AIMessage, HumanMessage
+from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 
-from langchain_experimental.comprehend_moderation.intent import ComprehendIntent
 from langchain_experimental.comprehend_moderation.pii import ComprehendPII
+from langchain_experimental.comprehend_moderation.prompt_safety import (
+    ComprehendPromptSafety,
+)
 from langchain_experimental.comprehend_moderation.toxicity import ComprehendToxicity
 
 
@@ -59,7 +60,7 @@ class BaseModeration:
                 input_text = message.content
         else:
             raise ValueError(
-                f"Invalid input type {type(input)}. "
+                f"Invalid input type {type(input_text)}. "
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
         return input_text
@@ -109,13 +110,13 @@ class BaseModeration:
 
     def moderate(self, prompt: Any) -> str:
         from langchain_experimental.comprehend_moderation.base_moderation_config import (  # noqa: E501
-            ModerationIntentConfig,
             ModerationPiiConfig,
+            ModerationPromptSafetyConfig,
             ModerationToxicityConfig,
         )
         from langchain_experimental.comprehend_moderation.base_moderation_exceptions import (  # noqa: E501
-            ModerationIntentionError,
             ModerationPiiError,
+            ModerationPromptSafetyError,
             ModerationToxicityError,
         )
 
@@ -128,7 +129,7 @@ class BaseModeration:
             filter_functions = {
                 "pii": ComprehendPII,
                 "toxicity": ComprehendToxicity,
-                "intent": ComprehendIntent,
+                "prompt_safety": ComprehendPromptSafety,
             }
 
             filters = self.config.filters  # type: ignore
@@ -141,8 +142,8 @@ class BaseModeration:
                         "toxicity"
                         if isinstance(_filter, ModerationToxicityConfig)
                         else (
-                            "intent"
-                            if isinstance(_filter, ModerationIntentConfig)
+                            "prompt_safety"
+                            if isinstance(_filter, ModerationPromptSafetyConfig)
                             else None
                         )
                     )
@@ -171,7 +172,7 @@ class BaseModeration:
                 f"Found Toxic content..stopping..\n{str(e)}\n"
             )
             raise e
-        except ModerationIntentionError as e:
+        except ModerationPromptSafetyError as e:
             self._log_message_for_verbose(
                 f"Found Harmful intention..stopping..\n{str(e)}\n"
             )

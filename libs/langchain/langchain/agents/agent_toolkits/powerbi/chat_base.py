@@ -30,7 +30,7 @@ def create_pbi_chat_agent(
     top_k: int = 10,
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a Power BI agent from a Chat LLM and tools.
 

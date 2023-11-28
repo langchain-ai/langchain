@@ -1,12 +1,13 @@
 """Document transformers that use OpenAI Functions models"""
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
+from langchain_core.documents import BaseDocumentTransformer, Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
+
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions import create_tagging_chain
-from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema import BaseDocumentTransformer, Document
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
@@ -17,7 +18,7 @@ class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
 
                 from langchain.chat_models import ChatOpenAI
                 from langchain.document_transformers import OpenAIMetadataTagger
-                from langchain.schema import Document
+                from langchain_core.documents import Document
 
                 schema = {
                     "properties": {
@@ -40,7 +41,7 @@ class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
                 tagging_chain = create_tagging_chain(schema, llm)
                 document_transformer = OpenAIMetadataTagger(tagging_chain=tagging_chain)
                 original_documents = [
-                    Document(page_content="Review of The Bee Movie\nBy Roger Ebert\n\This is the greatest movie ever made. 4 out of 5 stars."),
+                    Document(page_content="Review of The Bee Movie\nBy Roger Ebert\n\nThis is the greatest movie ever made. 4 out of 5 stars."),
                     Document(page_content="Review of The Godfather\nBy Anonymous\n\nThis movie was super boring. 1 out of 5 stars.", metadata={"reliable": False}),
                 ]
 
@@ -100,7 +101,7 @@ def create_metadata_tagger(
 
                 from langchain.chat_models import ChatOpenAI
                 from langchain.document_transformers import create_metadata_tagger
-                from langchain.schema import Document
+                from langchain_core.documents import Document
 
                 schema = {
                     "properties": {
@@ -123,7 +124,7 @@ def create_metadata_tagger(
 
                 document_transformer = create_metadata_tagger(schema, llm)
                 original_documents = [
-                    Document(page_content="Review of The Bee Movie\nBy Roger Ebert\n\This is the greatest movie ever made. 4 out of 5 stars."),
+                    Document(page_content="Review of The Bee Movie\nBy Roger Ebert\n\nThis is the greatest movie ever made. 4 out of 5 stars."),
                     Document(page_content="Review of The Godfather\nBy Anonymous\n\nThis movie was super boring. 1 out of 5 stars.", metadata={"reliable": False}),
                 ]
 

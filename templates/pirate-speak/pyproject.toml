@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "pirate-speak"
+version = "0.0.1"
+description = "Get started with a simple template that speaks like a pirate"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.325"
+openai = "<2"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+fastapi = "^0.104.0"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "pirate_speak.chain"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "chatbot"
+author = "LangChain"
+integrations = ["OpenAI"]
+tags = ["getting-started"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

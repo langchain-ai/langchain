@@ -1,4 +1,3 @@
-"""Base class for AINetwork tools."""
 from __future__ import annotations
 
 import asyncio
@@ -6,8 +5,9 @@ import threading
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
+from langchain_core.pydantic_v1 import Field
+
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import Field
 from langchain.tools.ainetwork.utils import authenticate
 from langchain.tools.base import BaseTool
 
@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 
 class OperationType(str, Enum):
+    """Type of operation as enumerator."""
+
     SET = "SET"
     GET = "GET"
 

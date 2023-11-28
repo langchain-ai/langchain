@@ -6,10 +6,10 @@ from hashlib import sha1
 from threading import Thread
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from langchain.docstore.document import Document
-from langchain.pydantic_v1 import BaseSettings
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseSettings
+from langchain_core.vectorstores import VectorStore
 
 logger = logging.getLogger()
 
@@ -450,6 +450,165 @@ class MyScale(VectorStore):
             f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
         )
 
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        where_str: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        assert not (
+            ids is None and where_str is None
+        ), "You need to specify where to be deleted! Either with `ids` or `where_str`"
+        conds = []
+        if ids:
+            conds.extend([f"{self.config.column_map['id']} = '{id}'" for id in ids])
+        if where_str:
+            conds.append(where_str)
+        assert len(conds) > 0
+        where_str_final = " AND ".join(conds)
+        qstr = (
+            f"DELETE FROM {self.config.database}.{self.config.table} "
+            f"WHERE {where_str_final}"
+        )
+        try:
+            self.client.command(qstr)
+            return True
+        except Exception as e:
+            logger.error(str(e))
+            return False
+
     @property
     def metadata_column(self) -> str:
         return self.config.column_map["metadata"]
+
+
+class MyScaleWithoutJSON(MyScale):
+    """MyScale vector store without metadata column
+
+    This is super handy if you are working to a SQL-native table
+    """
+
+    def __init__(
+        self,
+        embedding: Embeddings,
+        config: Optional[MyScaleSettings] = None,
+        must_have_cols: List[str] = [],
+        **kwargs: Any,
+    ) -> None:
+        """Building a myscale vector store without metadata column
+
+        embedding (Embeddings): embedding model
+        config (MyScaleSettings): Configuration to MyScale Client
+        must_have_cols (List[str]): column names to be included in query
+        Other keyword arguments will pass into
+            [clickhouse-connect](https://docs.myscale.com/)
+        """
+        super().__init__(embedding, config, **kwargs)
+        self.must_have_cols: List[str] = must_have_cols
+
+    def _build_qstr(
+        self, q_emb: List[float], topk: int, where_str: Optional[str] = None
+    ) -> str:
+        q_emb_str = ",".join(map(str, q_emb))
+        if where_str:
+            where_str = f"PREWHERE {where_str}"
+        else:
+            where_str = ""
+
+        q_str = f"""
+            SELECT {self.config.column_map['text']}, dist, 
+                {','.join(self.must_have_cols)}
+            FROM {self.config.database}.{self.config.table}
+            {where_str}
+            ORDER BY distance({self.config.column_map['vector']}, [{q_emb_str}]) 
+                AS dist {self.dist_order}
+            LIMIT {topk}
+            """
+        return q_str
+
+    def similarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        where_str: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Perform a similarity search with MyScale by vectors
+
+        Args:
+            query (str): query string
+            k (int, optional): Top K neighbors to retrieve. Defaults to 4.
+            where_str (Optional[str], optional): where condition string.
+                                                 Defaults to None.
+
+            NOTE: Please do not let end-user to fill this and always be aware
+                  of SQL injection. When dealing with metadatas, remember to
+                  use `{self.metadata_column}.attribute` instead of `attribute`
+                  alone. The default name for it is `metadata`.
+
+        Returns:
+            List[Document]: List of (Document, similarity)
+        """
+        q_str = self._build_qstr(embedding, k, where_str)
+        try:
+            return [
+                Document(
+                    page_content=r[self.config.column_map["text"]],
+                    metadata={k: r[k] for k in self.must_have_cols},
+                )
+                for r in self.client.query(q_str).named_results()
+            ]
+        except Exception as e:
+            logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
+            return []
+
+    def similarity_search_with_relevance_scores(
+        self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Perform a similarity search with MyScale
+
+        Args:
+            query (str): query string
+            k (int, optional): Top K neighbors to retrieve. Defaults to 4.
+            where_str (Optional[str], optional): where condition string.
+                                                 Defaults to None.
+
+            NOTE: Please do not let end-user to fill this and always be aware
+                  of SQL injection. When dealing with metadatas, remember to
+                  use `{self.metadata_column}.attribute` instead of `attribute`
+                  alone. The default name for it is `metadata`.
+
+        Returns:
+            List[Document]: List of documents most similar to the query text
+            and cosine distance in float for each.
+            Lower score represents more similarity.
+        """
+        q_str = self._build_qstr(self._embeddings.embed_query(query), k, where_str)
+        try:
+            return [
+                (
+                    Document(
+                        page_content=r[self.config.column_map["text"]],
+                        metadata={k: r[k] for k in self.must_have_cols},
+                    ),
+                    r["dist"],
+                )
+                for r in self.client.query(q_str).named_results()
+            ]
+        except Exception as e:
+            logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
+            return []
+
+    @property
+    def metadata_column(self) -> str:
+        return ""

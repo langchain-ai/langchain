@@ -13,7 +13,7 @@ STRUCTURED_FORMAT_SIMPLE_INSTRUCTIONS = """
 {{
 {format}
 }}
-"""
+```"""
 
 
 PYDANTIC_FORMAT_INSTRUCTIONS = """The output should be formatted as a JSON instance that conforms to the JSON schema below.

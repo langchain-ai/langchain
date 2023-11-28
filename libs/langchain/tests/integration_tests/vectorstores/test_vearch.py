@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 from langchain.vectorstores.vearch import Vearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
@@ -57,7 +57,10 @@ def test_vearch() -> None:
 def test_vearch_add_texts() -> None:
     """Test end to end adding of texts."""
     texts = [
-        ("Vearch 是一款存储大语言模型数据的向量数据库，用于存储和快速搜索模型embedding后的向量，" "可用于基于个人知识库的大模型应用"),
+        (
+            "Vearch 是一款存储大语言模型数据的向量数据库，用于存储和快速搜索模型embedding后的向量，"
+            "可用于基于个人知识库的大模型应用"
+        ),
         "Vearch 支持OpenAI, Llama, ChatGLM等模型，以及LangChain库",
         "vearch 是基于C语言,go语言开发的，并提供python接口，可以直接通过pip安装",
     ]

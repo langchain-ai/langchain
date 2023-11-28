@@ -1,7 +1,7 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain.graphs.graph_document import GraphDocument
-from langchain.graphs.neo4j_graph import Neo4jGraph
+from langchain.graphs.graph_store import GraphStore
 
 node_properties_query = """
 MATCH (n)
@@ -32,11 +32,29 @@ RETURN DISTINCT {start: src_label, type: rel_type, end: dst_label} AS output
 """
 
 
-class FalkorDBGraph(Neo4jGraph):
-    """FalkorDB wrapper for graph operations."""
+class FalkorDBGraph(GraphStore):
+    """FalkorDB wrapper for graph operations.
+
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     def __init__(
-        self, database: str, host: str = "localhost", port: int = 6379
+        self,
+        database: str,
+        host: str = "localhost",
+        port: int = 6379,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        ssl: bool = False,
     ) -> None:
         """Create a new FalkorDB graph wrapper instance."""
         try:
@@ -48,8 +66,10 @@ class FalkorDBGraph(Neo4jGraph):
                 "Please install it with `pip install redis`."
             )
 
-        driver = redis.Redis(host=host, port=port)
-        self._graph = Graph(driver, database)
+        self._driver = redis.Redis(
+            host=host, port=port, username=username, password=password, ssl=ssl
+        )
+        self._graph = Graph(self._driver, database)
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
 

@@ -7,6 +7,14 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
+      langchain-location:
+        required: false
+        type: string
+        description: "Relative path to the langchain library folder"
+      langchain-core-location:
+        required: false
+        type: string
+        description: "Relative path to the langchain core library folder"
 
 env:
   POETRY_VERSION: "1.6.1"
@@ -26,7 +34,7 @@ jobs:
           - "3.11"
     name: Pydantic v1/v2 compatibility - Python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
@@ -39,6 +47,22 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: poetry install
+
+      - name: Install langchain editable
+        working-directory: ${{ inputs.working-directory }}
+        if: ${{ inputs.langchain-location }}
+        env:
+          LANGCHAIN_LOCATION: ${{ inputs.langchain-location }}
+        run: |
+          poetry run pip install -e "$LANGCHAIN_LOCATION"
+
+      - name: Install langchain core editable
+        working-directory: ${{ inputs.working-directory }}
+        if: ${{ inputs.langchain-core-location }}
+        env:
+          LANGCHAIN_CORE_LOCATION: ${{ inputs.langchain-core-location }}
+        run: |
+          poetry run pip install -e "$LANGCHAIN_CORE_LOCATION"
 
       - name: Install the opposite major version of pydantic
         # If normal tests use pydantic v1, here we'll use v2, and vice versa.

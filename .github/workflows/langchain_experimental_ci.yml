@@ -11,8 +11,10 @@ on:
       - '.github/workflows/_lint.yml'
       - '.github/workflows/_test.yml'
       - '.github/workflows/langchain_experimental_ci.yml'
-      - 'libs/langchain/**'
+      - 'libs/*'
       - 'libs/experimental/**'
+      - 'libs/langchain/**'
+      - 'libs/core/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
 # If another push to the same PR or branch happens while this workflow is still running,
@@ -35,11 +37,22 @@ jobs:
       ./.github/workflows/_lint.yml
     with:
       working-directory: libs/experimental
+      langchain-location: ../langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   test:
     uses:
       ./.github/workflows/_test.yml
+    with:
+      working-directory: libs/experimental
+      langchain-location: ../langchain
+      langchain-core-location: ../core
+    secrets: inherit
+
+  compile-integration-tests:
+    uses:
+      ./.github/workflows/_compile_integration_test.yml
     with:
       working-directory: libs/experimental
     secrets: inherit
@@ -62,7 +75,7 @@ jobs:
           - "3.11"
     name: test with unpublished langchain - Python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
@@ -80,6 +93,7 @@ jobs:
 
           echo "Editably installing langchain outside of poetry, to avoid messing up lockfile..."
           poetry run pip install -e ../langchain
+          poetry run pip install -e ../core
 
       - name: Run tests
         run: make test
@@ -97,7 +111,7 @@ jobs:
           - "3.11"
     name: Python ${{ matrix.python-version }} extended tests
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"

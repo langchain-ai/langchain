@@ -7,15 +7,17 @@ import sys
 from typing import TYPE_CHECKING, Dict, Optional, Set
 
 import requests
+from langchain_core.messages import BaseMessage
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
 
 from langchain.adapters.openai import convert_message_to_dict
 from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema.messages import BaseMessage
 from langchain.utils import get_from_dict_or_env
+from langchain.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
     import tiktoken
@@ -29,6 +31,8 @@ DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
 class ChatAnyscale(ChatOpenAI):
     """`Anyscale` Chat large language models.
+
+    See https://www.anyscale.com/ for information about Anyscale.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``ANYSCALE_API_KEY`` set with your API key.
@@ -53,7 +57,7 @@ class ChatAnyscale(ChatOpenAI):
     def lc_secrets(self) -> Dict[str, str]:
         return {"anyscale_api_key": "ANYSCALE_API_KEY"}
 
-    anyscale_api_key: Optional[str] = None
+    anyscale_api_key: SecretStr
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
@@ -103,6 +107,13 @@ class ChatAnyscale(ChatOpenAI):
             "anyscale_api_key",
             "ANYSCALE_API_KEY",
         )
+        values["anyscale_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "anyscale_api_key",
+                "ANYSCALE_API_KEY",
+            )
+        )
         values["openai_api_base"] = get_from_dict_or_env(
             values,
             "anyscale_api_base",
@@ -124,7 +135,21 @@ class ChatAnyscale(ChatOpenAI):
                 "Please install it with `pip install openai`.",
             ) from e
         try:
-            values["client"] = openai.ChatCompletion
+            if is_openai_v1():
+                client_params = {
+                    "api_key": values["openai_api_key"],
+                    "base_url": values["openai_api_base"],
+                    # To do: future support
+                    # "organization": values["openai_organization"],
+                    # "timeout": values["request_timeout"],
+                    # "max_retries": values["max_retries"],
+                    # "default_headers": values["default_headers"],
+                    # "default_query": values["default_query"],
+                    # "http_client": values["http_client"],
+                }
+                values["client"] = openai.OpenAI(**client_params).chat.completions
+            else:
+                values["client"] = openai.ChatCompletion
         except AttributeError as exc:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "

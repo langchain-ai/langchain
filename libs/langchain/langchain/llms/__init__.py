@@ -52,6 +52,12 @@ def _import_anyscale() -> Any:
     return Anyscale
 
 
+def _import_arcee() -> Any:
+    from langchain.llms.arcee import Arcee
+
+    return Arcee
+
+
 def _import_aviary() -> Any:
     from langchain.llms.aviary import Aviary
 
@@ -176,6 +182,12 @@ def _import_forefrontai() -> Any:
     from langchain.llms.forefrontai import ForefrontAI
 
     return ForefrontAI
+
+
+def _import_gigachat() -> Any:
+    from langchain.llms.gigachat import GigaChat
+
+    return GigaChat
 
 
 def _import_google_palm() -> Any:
@@ -336,6 +348,12 @@ def _import_openlm() -> Any:
     return OpenLM
 
 
+def _import_pai_eas_endpoint() -> Any:
+    from langchain.llms.pai_eas_endpoint import PaiEasEndpoint
+
+    return PaiEasEndpoint
+
+
 def _import_petals() -> Any:
     from langchain.llms.petals import Petals
 
@@ -426,6 +444,18 @@ def _import_titan_takeoff() -> Any:
     return TitanTakeoff
 
 
+def _import_titan_takeoff_pro() -> Any:
+    from langchain.llms.titan_takeoff_pro import TitanTakeoffPro
+
+    return TitanTakeoffPro
+
+
+def _import_together() -> Any:
+    from langchain.llms.together import Together
+
+    return Together
+
+
 def _import_tongyi() -> Any:
     from langchain.llms.tongyi import Tongyi
 
@@ -468,6 +498,12 @@ def _import_xinference() -> Any:
     return Xinference
 
 
+def _import_yandex_gpt() -> Any:
+    from langchain.llms.yandex import YandexGPT
+
+    return YandexGPT
+
+
 def __getattr__(name: str) -> Any:
     if name == "AI21":
         return _import_ai21()
@@ -479,6 +515,8 @@ def __getattr__(name: str) -> Any:
         return _import_anthropic()
     elif name == "Anyscale":
         return _import_anyscale()
+    elif name == "Arcee":
+        return _import_arcee()
     elif name == "Aviary":
         return _import_aviary()
     elif name == "AzureMLOnlineEndpoint":
@@ -521,6 +559,8 @@ def __getattr__(name: str) -> Any:
         return _import_fireworks()
     elif name == "ForefrontAI":
         return _import_forefrontai()
+    elif name == "GigaChat":
+        return _import_gigachat()
     elif name == "GooglePalm":
         return _import_google_palm()
     elif name == "GooseAI":
@@ -573,6 +613,8 @@ def __getattr__(name: str) -> Any:
         return _import_openllm()
     elif name == "OpenLM":
         return _import_openlm()
+    elif name == "PaiEasEndpoint":
+        return _import_pai_eas_endpoint()
     elif name == "Petals":
         return _import_petals()
     elif name == "PipelineAI":
@@ -603,6 +645,10 @@ def __getattr__(name: str) -> Any:
         return _import_textgen()
     elif name == "TitanTakeoff":
         return _import_titan_takeoff()
+    elif name == "TitanTakeoffPro":
+        return _import_titan_takeoff_pro()
+    elif name == "Together":
+        return _import_together()
     elif name == "Tongyi":
         return _import_tongyi()
     elif name == "VertexAI":
@@ -617,6 +663,8 @@ def __getattr__(name: str) -> Any:
         return _import_writer()
     elif name == "Xinference":
         return _import_xinference()
+    elif name == "YandexGPT":
+        return _import_yandex_gpt()
     elif name == "type_to_cls_dict":
         # for backwards compatibility
         type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -633,6 +681,7 @@ __all__ = [
     "AmazonAPIGateway",
     "Anthropic",
     "Anyscale",
+    "Arcee",
     "Aviary",
     "AzureMLOnlineEndpoint",
     "AzureOpenAI",
@@ -653,6 +702,7 @@ __all__ = [
     "FakeListLLM",
     "Fireworks",
     "ForefrontAI",
+    "GigaChat",
     "GPT4All",
     "GooglePalm",
     "GooseAI",
@@ -678,6 +728,7 @@ __all__ = [
     "OpenAIChat",
     "OpenLLM",
     "OpenLM",
+    "PaiEasEndpoint",
     "Petals",
     "PipelineAI",
     "Predibase",
@@ -692,6 +743,7 @@ __all__ = [
     "SelfHostedPipeline",
     "StochasticAI",
     "TitanTakeoff",
+    "TitanTakeoffPro",
     "Tongyi",
     "VertexAI",
     "VertexAIModelGarden",
@@ -702,6 +754,7 @@ __all__ = [
     "Xinference",
     "JavelinAIGateway",
     "QianfanLLMEndpoint",
+    "YandexGPT",
 ]
 
 
@@ -713,6 +766,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "amazon_bedrock": _import_bedrock,
         "anthropic": _import_anthropic,
         "anyscale": _import_anyscale,
+        "arcee": _import_arcee,
         "aviary": _import_aviary,
         "azure": _import_azure_openai,
         "azureml_endpoint": _import_azureml_endpoint,
@@ -731,6 +785,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "edenai": _import_edenai,
         "fake-list": _import_fake,
         "forefrontai": _import_forefrontai,
+        "giga-chat-model": _import_gigachat,
         "google_palm": _import_google_palm,
         "gooseai": _import_gooseai,
         "gradient": _import_gradient_ai,
@@ -753,6 +808,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,
+        "pai_eas_endpoint": _import_pai_eas_endpoint,
         "petals": _import_petals,
         "pipelineai": _import_pipelineai,
         "predibase": _import_predibase,
@@ -763,8 +819,10 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "self_hosted": _import_self_hosted,
         "self_hosted_hugging_face": _import_self_hosted_hugging_face,
         "stochasticai": _import_stochasticai,
+        "together": _import_together,
         "tongyi": _import_tongyi,
         "titan_takeoff": _import_titan_takeoff,
+        "titan_takeoff_pro": _import_titan_takeoff_pro,
         "vertexai": _import_vertex,
         "vertexai_model_garden": _import_vertex_model_garden,
         "openllm": _import_openllm,
@@ -775,4 +833,5 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,
         "qianfan_endpoint": _import_baidu_qianfan_endpoint,
+        "yandex_gpt": _import_yandex_gpt,
     }

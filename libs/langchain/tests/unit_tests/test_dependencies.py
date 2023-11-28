@@ -43,6 +43,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "async-timeout",
         "dataclasses-json",
         "jsonpatch",
+        "langchain-core",
         "langsmith",
         "numpy",
         "pydantic",
@@ -69,25 +70,30 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
     test_group_deps = sorted(poetry_conf["group"]["test"]["dependencies"])
 
-    assert test_group_deps == [
-        "duckdb-engine",
-        "freezegun",
-        "lark",
-        "pandas",
-        "pytest",
-        "pytest-asyncio",
-        "pytest-cov",
-        "pytest-dotenv",
-        "pytest-mock",
-        "pytest-socket",
-        "pytest-watcher",
-        "responses",
-        "syrupy",
-    ]
+    assert test_group_deps == sorted(
+        [
+            "duckdb-engine",
+            "freezegun",
+            "lark",
+            "pandas",
+            "pytest",
+            "pytest-asyncio",
+            "pytest-cov",
+            "pytest-dotenv",
+            "pytest-mock",
+            "pytest-socket",
+            "pytest-watcher",
+            "responses",
+            "syrupy",
+            "requests-mock",
+        ]
+    )
 
 
 def test_imports() -> None:
     """Test that you can import all top level things okay."""
+    from langchain_core.prompts import BasePromptTemplate  # noqa: F401
+
     from langchain.agents import OpenAIFunctionsAgent  # noqa: F401
     from langchain.callbacks import OpenAICallbackHandler  # noqa: F401
     from langchain.chains import LLMChain  # noqa: F401
@@ -96,7 +102,6 @@ def test_imports() -> None:
     from langchain.embeddings import OpenAIEmbeddings  # noqa: F401
     from langchain.llms import OpenAI  # noqa: F401
     from langchain.retrievers import VespaRetriever  # noqa: F401
-    from langchain.schema import BasePromptTemplate  # noqa: F401
     from langchain.tools import DuckDuckGoSearchResults  # noqa: F401
     from langchain.utilities import SerpAPIWrapper  # noqa: F401
     from langchain.vectorstores import FAISS  # noqa: F401

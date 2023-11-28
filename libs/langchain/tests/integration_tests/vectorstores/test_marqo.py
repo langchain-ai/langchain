@@ -2,8 +2,8 @@
 from typing import Dict
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.marqo import Marqo
 
 DEFAULT_MARQO_URL = "http://localhost:8882"
