@@ -78,9 +78,8 @@ class MomentoVectorIndex(VectorStore):
             index_name (str, optional): The name of the index to store the documents in.
                 Defaults to "default".
             distance_strategy (DistanceStrategy, optional): The distance strategy to
-                use. Defaults to DistanceStrategy.COSINE. If you select
-                DistanceStrategy.EUCLIDEAN_DISTANCE, Momento uses the squared
-                Euclidean distance.
+                use. If you select DistanceStrategy.EUCLIDEAN_DISTANCE, Momento uses
+                the squared Euclidean distance. Defaults to DistanceStrategy.COSINE.
             text_field (str, optional): The name of the metadata field to store the
                 original text in. Defaults to "text".
             ensure_index_exists (bool, optional): Whether to ensure that the index
