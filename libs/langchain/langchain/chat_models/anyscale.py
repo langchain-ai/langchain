@@ -7,15 +7,17 @@ import sys
 from typing import TYPE_CHECKING, Dict, Optional, Set
 
 import requests
+from langchain_core.messages import BaseMessage
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
 
 from langchain.adapters.openai import convert_message_to_dict
 from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-from langchain.pydantic_v1 import Field, SecretStr, root_validator
-from langchain.schema.messages import BaseMessage
-from langchain.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
+from langchain.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
     import tiktoken
@@ -133,7 +135,21 @@ class ChatAnyscale(ChatOpenAI):
                 "Please install it with `pip install openai`.",
             ) from e
         try:
-            values["client"] = openai.ChatCompletion
+            if is_openai_v1():
+                client_params = {
+                    "api_key": values["openai_api_key"],
+                    "base_url": values["openai_api_base"],
+                    # To do: future support
+                    # "organization": values["openai_organization"],
+                    # "timeout": values["request_timeout"],
+                    # "max_retries": values["max_retries"],
+                    # "default_headers": values["default_headers"],
+                    # "default_query": values["default_query"],
+                    # "http_client": values["http_client"],
+                }
+                values["client"] = openai.OpenAI(**client_params).chat.completions
+            else:
+                values["client"] = openai.ChatCompletion
         except AttributeError as exc:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
@@ -147,7 +163,7 @@ class ChatAnyscale(ChatOpenAI):
         model_name = values["model_name"]
 
         available_models = cls.get_available_models(
-            values["openai_api_key"].get_secret_value(),
+            values["openai_api_key"],
             values["openai_api_base"],
         )
 

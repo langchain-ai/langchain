@@ -1,5 +1,5 @@
 """Tavily Search API toolkit."""
 
-from langchain.tools.tavily_search.tool import TavilySearchResults
+from langchain.tools.tavily_search.tool import TavilyAnswer, TavilySearchResults
 
-__all__ = ["TavilySearchResults"]
+__all__ = ["TavilySearchResults", "TavilyAnswer"]
