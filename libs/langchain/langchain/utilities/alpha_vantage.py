@@ -71,7 +71,7 @@ class AlphaVantageAPIWrapper(BaseModel):
     def _get_time_series_daily(
         self, symbol: str
     ) -> Dict[str, Any]:
-        """Make a request to the AlphaVantage API to get the exchange rate."""
+        """Make a request to the AlphaVantage API to get the daily time series."""
         response = requests.get(
             "https://www.alphavantage.co/query/",
             params={
