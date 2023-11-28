@@ -1,3 +1,4 @@
+import functools
 import logging
 import re
 from pathlib import Path
@@ -36,23 +37,25 @@ class ObsidianLoader(BaseLoader):
         self.encoding = encoding
         self.collect_metadata = collect_metadata
 
-    def _replace_template_var(self, match: re.Match) -> str:
+    def _replace_template_var(
+        self, placeholders: Dict[str, str], match: re.Match
+    ) -> str:
         """Replace a template variable with a placeholder."""
-        placeholder = f"__TEMPLATE_VAR_{len(self._placeholders)}__"
-        self._placeholders[placeholder] = match.group(1)
+        placeholder = f"__TEMPLATE_VAR_{len(placeholders)}__"
+        placeholders[placeholder] = match.group(1)
         return placeholder
 
-    def _restore_template_vars(self, obj: Any) -> Any:
+    def _restore_template_vars(self, obj: Any, placeholders: Dict[str, str]) -> Any:
         """Restore template variables replaced with placeholders to original values."""
         if isinstance(obj, str):
-            for placeholder, value in self._placeholders.items():
+            for placeholder, value in placeholders.items():
                 obj = obj.replace(placeholder, f"{{{{{value}}}}}")
         elif isinstance(obj, dict):
             for key, value in obj.items():
-                obj[key] = self._restore_template_vars(value)
+                obj[key] = self._restore_template_vars(value, placeholders)
         elif isinstance(obj, list):
             for i, item in enumerate(obj):
-                obj[i] = self._restore_template_vars(item)
+                obj[i] = self._restore_template_vars(item, placeholders)
         return obj
 
     def _parse_front_matter(self, content: str) -> dict:
@@ -64,14 +67,17 @@ class ObsidianLoader(BaseLoader):
         if not match:
             return {}
 
-        self._placeholders: Dict[str, str] = {}
+        placeholders: Dict[str, str] = {}
+        replace_template_var = functools.partial(
+            self._replace_template_var, placeholders
+        )
         front_matter_text = self.TEMPLATE_VARIABLE_REGEX.sub(
-            self._replace_template_var, match.group(1)
+            replace_template_var, match.group(1)
         )
 
         try:
             front_matter = yaml.safe_load(front_matter_text)
-            front_matter = self._restore_template_vars(front_matter)
+            front_matter = self._restore_template_vars(front_matter, placeholders)
 
             # If tags are a string, split them into a list
             if "tags" in front_matter and isinstance(front_matter["tags"], str):
