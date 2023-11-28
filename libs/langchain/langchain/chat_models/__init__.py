@@ -17,7 +17,6 @@ an interface where "chat messages" are the inputs and outputs.
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
 
-from langchain.chat_models.aiplay import AIPlayChat
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.anyscale import ChatAnyscale
 from langchain.chat_models.azure_openai import AzureChatOpenAI
@@ -39,6 +38,7 @@ from langchain.chat_models.konko import ChatKonko
 from langchain.chat_models.litellm import ChatLiteLLM
 from langchain.chat_models.minimax import MiniMaxChat
 from langchain.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
+from langchain.chat_models.nv_aiplay import NVAIPlayChat
 from langchain.chat_models.ollama import ChatOllama
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
@@ -74,5 +74,5 @@ __all__ = [
     "ChatBaichuan",
     "ChatHunyuan",
     "GigaChat",
-    "AIPlayChat",
+    "NVAIPlayChat",
 ]

@@ -28,12 +28,6 @@ def _import_ai21() -> Any:
     return AI21
 
 
-def _import_aiplay() -> Any:
-    from langchain.llms.aiplay import AIPlayLLM
-
-    return AIPlayLLM
-
-
 def _import_aleph_alpha() -> Any:
     from langchain.llms.aleph_alpha import AlephAlpha
 
@@ -306,6 +300,12 @@ def _import_nlpcloud() -> Any:
     return NLPCloud
 
 
+def _import_nv_aiplay() -> Any:
+    from langchain.llms.nv_aiplay import NVAIPlayLLM
+
+    return NVAIPlayLLM
+
+
 def _import_octoai_endpoint() -> Any:
     from langchain.llms.octoai_endpoint import OctoAIEndpoint
 
@@ -513,8 +513,6 @@ def _import_yandex_gpt() -> Any:
 def __getattr__(name: str) -> Any:
     if name == "AI21":
         return _import_ai21()
-    elif name == "AIPlayLLM":
-        return _import_aiplay()
     elif name == "AlephAlpha":
         return _import_aleph_alpha()
     elif name == "AmazonAPIGateway":
@@ -605,6 +603,8 @@ def __getattr__(name: str) -> Any:
         return _import_mosaicml()
     elif name == "NLPCloud":
         return _import_nlpcloud()
+    elif name == "NVAIPlayLLM":
+        return _import_nv_aiplay()
     elif name == "OctoAIEndpoint":
         return _import_octoai_endpoint()
     elif name == "Ollama":
@@ -685,7 +685,6 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "AI21",
-    "AIPlay",
     "AlephAlpha",
     "AmazonAPIGateway",
     "Anthropic",
@@ -732,6 +731,7 @@ __all__ = [
     "Nebula",
     "NIBittensorLLM",
     "NLPCloud",
+    "NVAIPlay",
     "Ollama",
     "OpenAI",
     "OpenAIChat",
@@ -770,7 +770,6 @@ __all__ = [
 def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
     return {
         "ai21": _import_ai21,
-        "aiplay": _import_aiplay,
         "aleph_alpha": _import_aleph_alpha,
         "amazon_api_gateway": _import_amazon_api_gateway,
         "amazon_bedrock": _import_bedrock,
@@ -815,6 +814,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nebula": _import_symblai_nebula,
         "nibittensor": _import_bittensor,
         "nlpcloud": _import_nlpcloud,
+        "nv_aiplay": _import_nv_aiplay,
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,

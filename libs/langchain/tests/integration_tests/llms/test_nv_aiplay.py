@@ -5,7 +5,7 @@ from typing import Generator
 import pytest
 
 from langchain.chains import LLMChain
-from langchain.llms.aiplay import LlamaLLM, NemotronQA, SteerLM
+from langchain.llms.nv_aiplay import LlamaLLM, NemotronQA, SteerLM
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,

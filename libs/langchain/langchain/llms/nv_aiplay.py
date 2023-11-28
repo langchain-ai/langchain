@@ -61,7 +61,7 @@ class NVCRModel(ClientModel):
 
     """
     Underlying Client for interacting with the AI Playground API.
-    Leveraged by the AIPlayBaseModel to provide a simple requests-oriented interface.
+    Leveraged by the NVAIPlayBaseModel to provide a simple requests-oriented interface.
     Direct abstraction over NGC-recommended streaming/non-streaming Python solutions.
 
     NOTE: AI Playground does not currently support raw text continuation.
@@ -167,7 +167,7 @@ class NVCRModel(ClientModel):
     ####################################################################################
     ## Simple query interface to show the set of model options
 
-    def query(self, invoke_url, payload={}) -> dict:
+    def query(self, invoke_url:str, payload:dict={}) -> dict:
         '''Simple-as-possible method for an end-to-end get query. Returns result dictionary'''
         response, session = self._get(invoke_url, payload)
         response = self._wait(response, session)
@@ -177,7 +177,8 @@ class NVCRModel(ClientModel):
     def _process_response(self, response:Union[str,Response]) -> List[dict]:
         '''General-purpose response processing for single responses and streams'''
         if hasattr(response, 'json'):      ## For single response (i.e. non-streaming)
-            return [response.json()]
+            try: return [response.json()]
+            except json.JSONDecodeError: pass
         elif isinstance(response, str):    ## For set of responses (i.e. streaming)
             msg_list = []
             for msg in response.split('\n\n'):
@@ -312,16 +313,17 @@ class NVCRModel(ClientModel):
                 self.last_response.raise_for_status()
 
 
-class AIPlayClient(ClientModel):
+class NVAIPlayClient(ClientModel):
     '''
     Higher-Level Client for interacting with the AI Playground API with argument defaults.
-    Will be subclassed by AIPlayLLM/AIPlayChat to provide a simple LangChain interface.
+    Will be subclassed by NVAIPlayLLM/NVAIPlayChat to provide a simple LangChain interface.
     '''
     
     client: Optional[ClientModel]
 
     ## These default can get updated in child classes. Watch out for double-fielding
     model_name: str = Field('llama2_13b')
+    # model: Optional[str]
     labels: dict = Field({})
 
     temperature: float = Field( 0.2, le=1, gt=0)
@@ -345,6 +347,9 @@ class AIPlayClient(ClientModel):
             values['client'] = NVCRModel(**values)
         else: 
             values['client'] = values['client'].subscope(**values)
+        if values.get('model'):
+            values['model_name'] = values.get('model')
+        values['model'] = values['model_name']
         return values
 
     @property
@@ -383,7 +388,7 @@ class AIPlayClient(ClientModel):
         return out
 
     def get_payload(self, *args, **kwargs) -> dict:
-        '''Generates payload for the AIPlayClient API to send to service.'''
+        '''Generates payload for the NVAIPlayClient API to send to service.'''
         k_map = lambda k: k if k != 'streaming' else 'stream' 
         out = {
             **self.preprocess(),
@@ -414,10 +419,10 @@ class AIPlayClient(ClientModel):
         raise ValueError(f'Unknown message recieved: {msg} of type {type(msg)}')
     
 
-class AIPlayBaseModel(AIPlayClient):
+class NVAIPlayBaseModel(NVAIPlayClient):
     """
-    Base class for NVIDIA AI Playground models which can interface with AIPlayClient.
-    To be subclassed by AIPlayLLM/AIPlayChat by combining with LLM/SimpleChatModel.
+    Base class for NVIDIA AI Playground models which can interface with NVAIPlayClient.
+    To be subclassed by NVAIPlayLLM/NVAIPlayChat by combining with LLM/SimpleChatModel.
     """
 
     @property
@@ -537,22 +542,22 @@ class AIPlayBaseModel(AIPlayClient):
 
 ################################################################################
 
-class AIPlayLLM(AIPlayBaseModel, LLM):
+class NVAIPlayLLM(NVAIPlayBaseModel, LLM):
     pass
 
 if STANDALONE:
-    class AIPlayChat(AIPlayBaseModel, SimpleChatModel):
+    class NVAIPlayChat(NVAIPlayBaseModel, SimpleChatModel):
         pass
 
 ################################################################################
 
-class LlamaLLM(AIPlayLLM):
+class LlamaLLM(NVAIPlayLLM):
     model_name : str = Field("llama2_code_13b", alias='model')
 
-class MistralLLM(AIPlayLLM):
+class MistralLLM(NVAIPlayLLM):
     model_name : str = Field("mistral", alias='model')
 
-class SteerLM(AIPlayLLM):
+class SteerLM(NVAIPlayLLM):
     model_name : str = Field("gpt_steerlm_8b", alias='model')
     labels = Field({
         "creativity": 5,
@@ -561,17 +566,17 @@ class SteerLM(AIPlayLLM):
         "quality": 5
     })
 
-class NemotronQA(AIPlayLLM):
+class NemotronQA(NVAIPlayLLM):
     model_name : str = Field("gpt_qa_8b", alias='model')    
 
 if STANDALONE:
-    class LlamaChat(AIPlayChat):
+    class LlamaChat(NVAIPlayChat):
         model_name : str = Field('llama2_13b', alias='model')
 
-    class MistralChat(AIPlayChat):
+    class MistralChat(NVAIPlayChat):
         model_name : str = Field("mistral", alias='model')
 
-    class SteerLMChat(AIPlayChat):
+    class SteerLMChat(NVAIPlayChat):
         model_name : str = Field("gpt_steerlm_8b", alias='model')
         labels = Field(default={
             "creativity": 5,
@@ -580,5 +585,5 @@ if STANDALONE:
             "quality": 5
         })
 
-    class NemotronQAChat(AIPlayChat):
+    class NemotronQAChat(NVAIPlayChat):
         model_name : str = Field("gpt_qa_8b", alias='model')    
