@@ -6,7 +6,8 @@ https://python.langchain.com/docs/integrations/vectorstores/xata
 """
 import os
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores.xata import XataVectorStore
 

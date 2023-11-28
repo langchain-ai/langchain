@@ -5,11 +5,12 @@ from json import JSONDecodeError
 from time import sleep
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.load import dumpd
+from langchain_core.pydantic_v1 import Field
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
+
 from langchain.callbacks.manager import CallbackManager
-from langchain.load import dumpd
-from langchain.pydantic_v1 import Field
-from langchain.schema.agent import AgentAction, AgentFinish
-from langchain.schema.runnable import RunnableConfig, RunnableSerializable
 from langchain.tools.base import BaseTool
 from langchain.tools.render import format_tool_to_openai_tool
 
@@ -102,7 +103,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
 
             from langchain_experimental.openai_assistant import OpenAIAssistantRunnable
             from langchain.agents import AgentExecutor
-            from langchain.schema.agent import AgentFinish
+            from langchain_core.agents import AgentFinish
             from langchain.tools import E2BDataAnalysisTool
 
 

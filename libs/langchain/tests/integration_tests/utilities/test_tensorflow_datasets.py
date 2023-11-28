@@ -4,9 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import ValidationError
 
-from langchain.pydantic_v1 import ValidationError
-from langchain.schema.document import Document
 from langchain.utilities.tensorflow_datasets import TensorflowDatasets
 
 if TYPE_CHECKING:

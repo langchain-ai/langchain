@@ -1,6 +1,4 @@
 """Test DeepInfra API wrapper."""
-import pytest
-
 from langchain.llms.deepinfra import DeepInfra
 
 
@@ -11,7 +9,6 @@ def test_deepinfra_call() -> None:
     assert isinstance(output, str)
 
 
-@pytest.mark.asyncio
 async def test_deepinfra_acall() -> None:
     llm = DeepInfra(model_id="meta-llama/Llama-2-7b-chat-hf")
     output = await llm.apredict("What is 2 + 2?")
@@ -27,7 +24,6 @@ def test_deepinfra_stream() -> None:
     assert num_chunks > 0
 
 
-@pytest.mark.asyncio
 async def test_deepinfra_astream() -> None:
     llm = DeepInfra(model_id="meta-llama/Llama-2-7b-chat-hf")
     num_chunks = 0
