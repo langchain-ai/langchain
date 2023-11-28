@@ -197,7 +197,7 @@ SPARQL_QA_PROMPT = PromptTemplate(
     input_variables=["context", "prompt"], template=SPARQL_QA_TEMPLATE
 )
 
-DQL_GENERATION_TEMPLATE= """Task: Generate an DGraph Query Language (DQL) query from a User Input.
+DQL_GENERATION_TEMPLATE = """Task: Generate an DGraph Query Language (DQL) query from a User Input.
 You are an DGraph Query Language (DQL) expert responsible for translating a `User Input` into an DGraph Query Language (DQL) query.
 
 You are given an `DGraph Schema`. It is a JSON Object containing an dictionary/json with schema type name as key,
@@ -284,12 +284,7 @@ Corrected DQL Query:
 """
 
 DGRAPH_FIX_PROMPT = PromptTemplate(
-    input_variables=[
-        "dgraph_schema",
-        "dql_query",
-        "dql_error",
-        "dql_examples"
-    ],
+    input_variables=["dgraph_schema", "dql_query", "dql_error", "dql_examples"],
     template=DQL_FIX_TEMPLATE,
 )
 

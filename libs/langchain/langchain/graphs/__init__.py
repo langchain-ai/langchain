@@ -1,6 +1,7 @@
 """**Graphs** provide a natural language interface to graph databases."""
 
 from langchain.graphs.arangodb_graph import ArangoGraph
+from langchain.graphs.dgraph_graph import DGraph
 from langchain.graphs.falkordb_graph import FalkorDBGraph
 from langchain.graphs.hugegraph import HugeGraph
 from langchain.graphs.kuzu_graph import KuzuGraph
@@ -10,7 +11,6 @@ from langchain.graphs.neo4j_graph import Neo4jGraph
 from langchain.graphs.neptune_graph import NeptuneGraph
 from langchain.graphs.networkx_graph import NetworkxEntityGraph
 from langchain.graphs.rdf_graph import RdfGraph
-from langchain.graphs.dgraph_graph import DGraph
 
 __all__ = [
     "MemgraphGraph",
@@ -23,5 +23,5 @@ __all__ = [
     "RdfGraph",
     "ArangoGraph",
     "FalkorDBGraph",
-    "DGraph"
+    "DGraph",
 ]
