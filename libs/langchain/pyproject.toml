@@ -263,7 +263,7 @@ all = [
     "google-api-python-client",
     "google-auth",
     "wolframalpha",
-    "stackapi
+    "stackapi",
     "qdrant-client",
     "tensorflow-text",
     "pypdf",
