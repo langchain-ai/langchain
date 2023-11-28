@@ -3,7 +3,8 @@ import os
 from datetime import datetime, timedelta
 from typing import List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.vectorstores.timescalevector import TimescaleVector
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
