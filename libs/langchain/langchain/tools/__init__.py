@@ -293,15 +293,18 @@ def _import_ifttt() -> Any:
 
     return IFTTTWebhook
 
+
 def _import_imdb_CastOfMovieTool() -> Any:
     from langchain.tools.imdb.cast_of_movie import IMDBCastOfMovie
 
     return IMDBCastOfMovie
 
+
 def _import_imdb_PlotOfMovieTool() -> Any:
     from langchain.tools.imdb.plot_of_movie import IMDBPlotOfMovie
 
     return IMDBPlotOfMovie
+
 
 def _import_imdb_SearchMovieTool() -> Any:
     from langchain.tools.imdb.search_movie import IMDbSearchMovie
