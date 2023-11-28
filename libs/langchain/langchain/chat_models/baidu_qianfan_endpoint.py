@@ -117,7 +117,7 @@ class QianfanChatEndpoint(BaseChatModel):
     """Endpoint of the Qianfan LLM, required if custom model used."""
 
     @root_validator()
-    def validate_enviroment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = get_from_dict_or_env(
             values,
             "qianfan_ak",

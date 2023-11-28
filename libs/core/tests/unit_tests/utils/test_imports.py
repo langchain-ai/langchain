@@ -15,6 +15,7 @@ EXPECTED_ALL = [
     "raise_for_status_with_text",
     "xor_args",
     "try_load_from_hub",
+    "build_extra_kwargs",
 ]
 
 

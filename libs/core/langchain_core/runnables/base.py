@@ -2477,8 +2477,19 @@ class RunnableLambda(Runnable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Output:
+        if hasattr(self, "afunc"):
+            afunc = self.afunc
+        else:
+
+            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+                return await asyncio.get_running_loop().run_in_executor(
+                    None, partial(self.func, **kwargs), *args
+                )
+
+            afunc = f
+
         output = await acall_func_with_variable_args(
-            self.afunc, input, config, run_manager, **kwargs
+            afunc, input, config, run_manager, **kwargs
         )
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
@@ -2539,17 +2550,13 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         """Invoke this runnable asynchronously."""
-        if hasattr(self, "afunc"):
-            return await self._acall_with_config(
-                self._ainvoke,
-                input,
-                self._config(config, self.afunc),
-                **kwargs,
-            )
-        else:
-            # Delegating to super implementation of ainvoke.
-            # Uses asyncio executor to run the sync version (invoke)
-            return await super().ainvoke(input, config)
+        the_func = self.afunc if hasattr(self, "afunc") else self.func
+        return await self._acall_with_config(
+            self._ainvoke,
+            input,
+            self._config(config, the_func),
+            **kwargs,
+        )
 
 
 class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):

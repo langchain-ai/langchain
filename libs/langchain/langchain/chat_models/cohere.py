@@ -16,8 +16,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import (
     BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
+    agenerate_from_stream,
+    generate_from_stream,
 )
 from langchain.llms.cohere import BaseCohere
 
@@ -188,7 +188,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         response = self.client.chat(**request)
@@ -214,7 +214,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return await _agenerate_from_stream(stream_iter)
+            return await agenerate_from_stream(stream_iter)
 
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         response = self.client.chat(**request, stream=False)
