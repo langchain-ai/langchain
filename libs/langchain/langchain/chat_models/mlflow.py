@@ -49,11 +49,9 @@ class ChatMlflow(BaseChatModel):
             from langchain.chat_models import ChatMlflow
 
             chat = ChatMlflow(
-                target_uri="http://127.0.0.1:5000",
+                target_uri="http://localhost:5000",
                 endpoint="chat",
-                params={
-                    "temperature": 0.1
-                }
+                params={"temperature": 0.1},
             )
     """
 
