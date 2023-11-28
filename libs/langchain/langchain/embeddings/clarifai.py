@@ -86,14 +86,19 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
             )
+        if self.pat is not None:
+            pat = self.pat
         if self.model_url is not None:
-            _model_init = Model(url_init=self.model_url)
+            _model_init = Model(url=self.model_url, pat=pat)
         else:
             _model_init = Model(
-                model_id=self.model_id, user_id=self.user_id, app_id=self.app_id
+                model_id=self.model_id,
+                user_id=self.user_id,
+                app_id=self.app_id,
+                pat=pat,
             )
 
-        input_obj = Inputs()
+        input_obj = Inputs(pat=pat)
         batch_size = 32
         embeddings = []
 
@@ -133,12 +138,16 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
             )
-
+        if self.pat is not None:
+            pat = self.pat
         if self.model_url is not None:
-            _model_init = Model(url_init=self.model_url)
+            _model_init = Model(url=self.model_url, pat=pat)
         else:
             _model_init = Model(
-                model_id=self.model_id, user_id=self.user_id, app_id=self.app_id
+                model_id=self.model_id,
+                user_id=self.user_id,
+                app_id=self.app_id,
+                pat=pat,
             )
 
         try:

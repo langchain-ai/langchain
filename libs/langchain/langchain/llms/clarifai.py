@@ -52,7 +52,7 @@ class Clarifai(LLM):
         extra = Extra.forbid
 
     @root_validator()
-    def validate_environment(c1q, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validate that we have all required info to access Clarifai
         platform and python package exists in environment."""
         values["pat"] = get_from_dict_or_env(values, "pat", "CLARIFAI_PAT")
@@ -125,11 +125,16 @@ class Clarifai(LLM):
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
             )
+        if self.pat is not None:
+            pat = self.pat
         if self.model_url is not None:
-            _model_init = Model(url_init=self.model_url)
+            _model_init = Model(url=self.model_url, pat=pat)
         else:
             _model_init = Model(
-                model_id=self.model_id, user_id=self.user_id, app_id=self.app_id
+                model_id=self.model_id,
+                user_id=self.user_id,
+                app_id=self.app_id,
+                pat=pat,
             )
         try:
             (inference_params := {}) if inference_params is None else inference_params
@@ -166,16 +171,21 @@ class Clarifai(LLM):
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
             )
+        if self.pat is not None:
+            pat = self.pat
         if self.model_url is not None:
-            _model_init = Model(url_init=self.model_url)
+            _model_init = Model(url=self.model_url, pat=pat)
         else:
             _model_init = Model(
-                model_id=self.model_id, user_id=self.user_id, app_id=self.app_id
+                model_id=self.model_id,
+                user_id=self.user_id,
+                app_id=self.app_id,
+                pat=pat,
             )
 
         generations = []
         batch_size = 32
-        input_obj = Inputs()
+        input_obj = Inputs(pat=pat)
         try:
             for i in range(0, len(prompts), batch_size):
                 batch = prompts[i : i + batch_size]
