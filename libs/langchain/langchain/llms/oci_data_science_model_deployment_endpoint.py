@@ -5,7 +5,6 @@ import logging
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field, root_validator
 
 DEFAULT_TIME_OUT = 300
@@ -14,7 +13,7 @@ DEFAULT_CONTENT_TYPE_JSON = "application/json"
 logger = logging.getLogger(__name__)
 
 
-class BaseOCILLM(LLM, Serializable):
+class BaseOCILLM(LLM):
     """Base OCI LLM class. Contains common attributes."""
 
     auth: dict = Field(default_factory=dict, exclude=True)
@@ -207,7 +206,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
 
             from langchain.llms.oci_data_science_model_deployment_endpoint import ModelDeploymentTGI
 
-            oci_md = ModelDeploymentTGI(endpoint="<url_of_model_deployment_endpoint>")
+            oci_md = ModelDeploymentTGI(endpoint="https://<MD_OCID>/predict")
 
     """
 
@@ -270,7 +269,7 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
             from langchain.llms.oci_data_science_model_deployment_endpoint import OCIModelDeploymentVLLM
 
             oci_md = OCIModelDeploymentVLLM(
-                endpoint="<url_of_model_deployment_endpoint>",
+                endpoint="https://<MD_OCID>/predict",
                 model="/opt/ds/model/deployed_model"
             )
 
