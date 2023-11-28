@@ -3,33 +3,30 @@ import json
 from json import JSONDecodeError
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
-from langchain.agents import BaseMultiActionAgent
-from langchain.agents.format_scratchpad.openai_functions import (
-    format_to_openai_functions,
+from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
+from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    SystemMessage,
 )
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.prompts.chat import (
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    BasePromptTemplate,
-    OutputParserException,
+from langchain_core.pydantic_v1 import root_validator
+
+from langchain.agents import BaseMultiActionAgent
+from langchain.agents.format_scratchpad.openai_functions import (
+    format_to_openai_function_messages,
 )
-from langchain.schema.agent import AgentActionMessageLog
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import (
-    AIMessage,
-    BaseMessage,
-    SystemMessage,
-)
+from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
+from langchain.chat_models.openai import ChatOpenAI
 from langchain.tools import BaseTool
 
 # For backwards compatibility
@@ -87,7 +84,9 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
             final_tools.append(_tool)
         return final_tools
 
-    return AgentFinish(return_values={"output": message.content}, log=message.content)
+    return AgentFinish(
+        return_values={"output": message.content}, log=str(message.content)
+    )
 
 
 class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
@@ -206,7 +205,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        agent_scratchpad = format_to_openai_functions(intermediate_steps)
+        agent_scratchpad = format_to_openai_function_messages(intermediate_steps)
         selected_inputs = {
             k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
         }
@@ -235,7 +234,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        agent_scratchpad = format_to_openai_functions(intermediate_steps)
+        agent_scratchpad = format_to_openai_function_messages(intermediate_steps)
         selected_inputs = {
             k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
         }

@@ -12,9 +12,9 @@ from typing import (
     Union,
 )
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -95,7 +95,8 @@ class BESVectorStore(VectorStore):
         connection_params: Dict[str, Any] = {}
 
         connection_params["hosts"] = [bes_url]
-        connection_params["basic_auth"] = (username, password)
+        if username and password:
+            connection_params["basic_auth"] = (username, password)
 
         es_client = elasticsearch.Elasticsearch(**connection_params)
         try:
@@ -236,7 +237,6 @@ class BESVectorStore(VectorStore):
 
         if "linear" == self.index_type:
             query_vector_body["linear"] = True
-            query_vector_body["space_type"] = self.space_type
         else:
             query_vector_body["ef"] = search_params.get("ef", 10)
 
@@ -279,7 +279,7 @@ class BESVectorStore(VectorStore):
         logger.debug(f"Query body: {query_body}")
 
         # Perform the kNN search on the BES index and return the results.
-        response = self.client.search(index=self.index_name, **query_body)
+        response = self.client.search(index=self.index_name, body=query_body)
         logger.debug(f"response={response}")
 
         hits = [hit for hit in response["hits"]["hits"]]

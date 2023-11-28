@@ -2,19 +2,10 @@ import asyncio
 import json
 import logging
 from functools import partial
-from typing import Any, AsyncIterator, Dict, List, Optional
+from typing import Any, AsyncIterator, Dict, List, Optional, cast
 
 import requests
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
-from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -22,7 +13,15 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import root_validator
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
+from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -133,23 +132,24 @@ class PaiEasChatEndpoint(BaseChatModel):
 
         for message in messages:
             """Converts message to a dict according to role"""
+            content = cast(str, message.content)
             if isinstance(message, HumanMessage):
-                user_content = user_content + [message.content]
+                user_content = user_content + [content]
             elif isinstance(message, AIMessage):
-                assistant_content = assistant_content + [message.content]
+                assistant_content = assistant_content + [content]
             elif isinstance(message, SystemMessage):
-                prompt["system_prompt"] = message.content
+                prompt["system_prompt"] = content
             elif isinstance(message, ChatMessage) and message.role in [
                 "user",
                 "assistant",
                 "system",
             ]:
                 if message.role == "system":
-                    prompt["system_prompt"] = message.content
+                    prompt["system_prompt"] = content
                 elif message.role == "user":
-                    user_content = user_content + [message.content]
+                    user_content = user_content + [content]
                 elif message.role == "assistant":
-                    assistant_content = assistant_content + [message.content]
+                    assistant_content = assistant_content + [content]
             else:
                 supported = ",".join([role for role in ["user", "assistant", "system"]])
                 raise ValueError(
@@ -294,7 +294,7 @@ class PaiEasChatEndpoint(BaseChatModel):
                 # yield text, if any
                 if text:
                     if run_manager:
-                        await run_manager.on_llm_new_token(content.content)
+                        await run_manager.on_llm_new_token(cast(str, content.content))
                     yield ChatGenerationChunk(message=content)
 
                 # break if stop sequence found

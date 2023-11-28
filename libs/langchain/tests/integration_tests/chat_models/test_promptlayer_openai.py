@@ -1,15 +1,11 @@
 """Test PromptLayerChatOpenAI wrapper."""
 
 import pytest
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-    LLMResult,
-)
-from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -87,7 +83,6 @@ def test_promptlayer_chat_openai_invalid_streaming_params() -> None:
         )
 
 
-@pytest.mark.asyncio
 async def test_async_promptlayer_chat_openai() -> None:
     """Test async generation."""
     chat = PromptLayerChatOpenAI(max_tokens=10, n=2)
@@ -103,7 +98,6 @@ async def test_async_promptlayer_chat_openai() -> None:
             assert generation.text == generation.message.content
 
 
-@pytest.mark.asyncio
 async def test_async_promptlayer_chat_openai_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

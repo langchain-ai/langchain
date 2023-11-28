@@ -2,8 +2,8 @@ from typing import Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.mongodb import MongodbLoader
 
 
@@ -30,7 +30,6 @@ def expected_documents() -> List[Document]:
 
 
 @pytest.mark.requires("motor")
-@pytest.mark.asyncio
 async def test_load_mocked(expected_documents: List[Document]) -> None:
     mock_async_load = AsyncMock()
     mock_async_load.return_value = expected_documents

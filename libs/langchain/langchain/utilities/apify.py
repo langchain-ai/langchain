@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
-from langchain.pydantic_v1 import BaseModel, root_validator
-from langchain.schema.document import Document
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
