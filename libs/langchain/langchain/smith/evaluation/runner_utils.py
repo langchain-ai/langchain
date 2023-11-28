@@ -906,14 +906,18 @@ def _prepare_eval_run(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     project_name: str,
     project_metadata: Optional[Dict[str, Any]] = None,
+    tags: Optional[List[str]] = None,
 ) -> Tuple[MCF, str, Dataset, List[Example]]:
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
     try:
+        project_extra = {"metadata": project_metadata} if project_metadata else {}
+        if tags:
+            project_extra["tags"] = tags
         project = client.create_project(
             project_name,
             reference_dataset_id=dataset.id,
-            project_extra={"metadata": project_metadata} if project_metadata else {},
+            project_extra=project_extra,
         )
     except (HTTPError, ValueError, LangSmithError) as e:
         if "already exists " not in str(e):
@@ -959,6 +963,7 @@ def _prepare_run_on_dataset(
         llm_or_chain_factory,
         project_name,
         project_metadata=project_metadata,
+        tags=tags,
     )
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
     run_evaluators = _setup_evaluation(
