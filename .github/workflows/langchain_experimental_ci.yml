@@ -3,19 +3,19 @@ name: libs/experimental CI
 
 on:
   push:
-    branches: [master]
+    branches: [ master ]
   pull_request:
     paths:
-      - ".github/actions/poetry_setup/action.yml"
-      - ".github/tools/**"
-      - ".github/workflows/_lint.yml"
-      - ".github/workflows/_test.yml"
-      - ".github/workflows/langchain_experimental_ci.yml"
-      - "libs/*"
-      - "libs/experimental/**"
-      - "libs/langchain/**"
-      - "libs/core/**"
-  workflow_dispatch: # Allows to trigger the workflow manually in GitHub UI
+      - '.github/actions/poetry_setup/action.yml'
+      - '.github/tools/**'
+      - '.github/workflows/_lint.yml'
+      - '.github/workflows/_test.yml'
+      - '.github/workflows/langchain_experimental_ci.yml'
+      - 'libs/*'
+      - 'libs/experimental/**'
+      - 'libs/langchain/**'
+      - 'libs/core/**'
+  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
 # If another push to the same PR or branch happens while this workflow is still running,
 # cancel the earlier run in favor of the next run.
@@ -33,21 +33,26 @@ env:
 
 jobs:
   lint:
-    uses: ./.github/workflows/_lint.yml
+    uses:
+      ./.github/workflows/_lint.yml
     with:
       working-directory: libs/experimental
       langchain-location: ../langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   test:
-    uses: ./.github/workflows/_test.yml
+    uses:
+      ./.github/workflows/_test.yml
     with:
       working-directory: libs/experimental
       langchain-location: ../langchain
+      langchain-core-location: ../core
     secrets: inherit
 
   compile-integration-tests:
-    uses: ./.github/workflows/_compile_integration_test.yml
+    uses:
+      ./.github/workflows/_compile_integration_test.yml
     with:
       working-directory: libs/experimental
     secrets: inherit
