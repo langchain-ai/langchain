@@ -75,6 +75,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         base_embeddings: Embeddings,
         prompt_key: Optional[str] = None,
         custom_prompt: Optional[PromptTemplate] = None,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
         **kwargs: Any,
     ) -> HypotheticalDocumentEmbedder:
         """
@@ -87,6 +88,9 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         else:
             prompt = PROMPT_MAP["fiqa"]
 
+        if run_manager is not None:
+            kwargs['run_manager'] = run_manager
+            
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(base_embeddings=base_embeddings, llm_chain=llm_chain, **kwargs)
 
