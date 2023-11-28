@@ -2986,7 +2986,8 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
 
         .. code-block:: python
 
-            from langchain.schema.runnable import RunnableBinding
+            from langchain_core.runnables import RunnableBinding
+
             runnable_binding = RunnableBinding(
                 bound=model,
                 kwargs={'stop': ['-']} # <-- Note the additional kwargs
