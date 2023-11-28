@@ -185,7 +185,7 @@ class NVCRModel(ClientModel):
             if response.status_code == 202:
                 try:
                     body = response.json()
-                except ValueError as e:
+                except ValueError:
                     body = str(response)
                 if i > self.max_tries:
                     raise ValueError(f"Failed to get response with {i} tries: {body}")

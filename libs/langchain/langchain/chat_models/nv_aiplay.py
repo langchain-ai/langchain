@@ -3,7 +3,6 @@
 from typing import Sequence, Union
 
 from langchain.llms.nv_aiplay import NVAIPlayBaseModel
-from langchain.pydantic_v1 import Field
 
 ## NOTE: This file should not be ran in isolation as a single-file standalone.
 ## Please use llms.nv_aiplay instead.
