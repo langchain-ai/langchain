@@ -243,6 +243,7 @@ class Databricks(LLM):
 
       If the underlying model is an external or foundation model, the response from the
       endpoint is automatically transformed to the expected format unless
+      ``transform_output_fn`` is provided.
 
     * **Cluster driver proxy app** (recommended for interactive development).
       One can load an LLM on a Databricks interactive cluster and start a local HTTP
