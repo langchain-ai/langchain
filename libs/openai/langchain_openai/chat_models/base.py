@@ -418,7 +418,11 @@ class ChatOpenAI(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
+        params = {
+            **params,
+            **({"stream": stream} if stream is not None else {}),
+            **kwargs,
+        }
         response = self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         )
@@ -502,7 +506,11 @@ class ChatOpenAI(BaseChatModel):
             return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
+        params = {
+            **params,
+            **({"stream": stream} if stream is not None else {}),
+            **kwargs,
+        }
         response = await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         )
