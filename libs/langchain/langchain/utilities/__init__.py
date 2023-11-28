@@ -175,10 +175,6 @@ def _import_spark_sql() -> Any:
 
     return SparkSQL
 
-def _import_stackexchange() -> Any:
-    from langchain.utilities.stackexchange import StackExchangeAPIWrapper
-
-    return StackExchangeAPIWrapper
 
 def _import_sql_database() -> Any:
     from langchain.utilities.sql_database import SQLDatabase

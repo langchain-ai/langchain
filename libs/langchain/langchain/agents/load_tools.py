@@ -271,8 +271,10 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
         coroutine=SerpAPIWrapper(**kwargs).arun,
     )
 
+
 def _get_stackexchange(**kwargs: Any) -> BaseTool:
     return StackExchangeTool(api_wrapper=StackExchangeAPIWrapper(**kwargs))
+
 
 def _get_dalle_image_generator(**kwargs: Any) -> Tool:
     return Tool(

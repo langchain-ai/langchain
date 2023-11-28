@@ -128,12 +128,6 @@ def __getattr__(name: str) -> Any:
         _warn_on_import(name, replacement="langchain.docstore.Wikipedia")
 
         return Wikipedia
-    elif name == "stackapi":
-        from langchain.docstore import stackapi
-
-        _warn_on_import(name, replacement="langchain.docstore.stackapi")
-
-        return stackapi
     elif name == "Anthropic":
         from langchain.llms import Anthropic
 
