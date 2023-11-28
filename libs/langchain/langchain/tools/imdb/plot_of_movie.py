@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
@@ -24,5 +25,4 @@ class IMDBPlotOfMovie(IMDbBaseTool):
                 "Please make sure to give a movie ID instead of the movie's name."
             )
 
-            
-        return res_movie["plot"]
+        return json.dumps(res_movie["plot"])
