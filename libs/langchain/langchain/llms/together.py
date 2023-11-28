@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -11,7 +11,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import LLM
 from langchain.utilities.requests import Requests
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class Together(LLM):
 
     base_url: str = "https://api.together.xyz/inference"
     """Base inference API URL."""
-    together_api_key: str
+    together_api_key: Optional[SecretStr] = None
     """Together AI API key. Get it here: https://api.together.xyz/settings/api-keys"""
     model: str
     """Model name. Available models listed here: 
@@ -69,8 +69,8 @@ class Together(LLM):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        values["together_api_key"] = get_from_dict_or_env(
-            values, "together_api_key", "TOGETHER_API_KEY"
+        values["together_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "together_api_key", "TOGETHER_API_KEY")
         )
         return values
 
