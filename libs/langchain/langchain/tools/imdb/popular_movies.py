@@ -1,5 +1,5 @@
-from typing import Optional
 import json
+from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.imdb.base import IMDbBaseTool
@@ -17,7 +17,9 @@ class IMDbPopularMovies(IMDbBaseTool):
     )
 
     def _run(
-        self, input, run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         movies = self.client.get_popular100_movies()
         return json.dumps(movies_to_dicts(movies[:20]))

@@ -1,5 +1,5 @@
-from typing import Optional
 import json
+from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.imdb.base import IMDbBaseTool
@@ -27,6 +27,7 @@ class IMDbGetMovieInfo(IMDbBaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         from imdb import IMDbError
+
         try:
             movie = self.client.get_movie(id)
         except IMDbError:
@@ -34,28 +35,24 @@ class IMDbGetMovieInfo(IMDbBaseTool):
                 "The movie could not be found. "
                 "Please make sure to give a movie ID instead of the movie title."
             )
-        
-        keys = [
-            'title',
-            'year',
-            'genres',
-            'runtimes',
-            'countries',
-            'languages',
-            'box office',
-            'rating',
-        ]
-        info = {
-            key: movie.get(key)
-            for key in keys
-            if key in movie
-        }
 
-        prod_companies = movie.get('production companies')
+        keys = [
+            "title",
+            "year",
+            "genres",
+            "runtimes",
+            "countries",
+            "languages",
+            "box office",
+            "rating",
+        ]
+        info = {key: movie.get(key) for key in keys if key in movie}
+
+        prod_companies = movie.get("production companies")
         if prod_companies:
-            info['production companies'] = companies_to_strs(prod_companies)
-        distributors = movie.get('distributors')
+            info["production companies"] = companies_to_strs(prod_companies)
+        distributors = movie.get("distributors")
         if distributors:
-            info['distributors'] = companies_to_strs(distributors)
+            info["distributors"] = companies_to_strs(distributors)
 
         return json.dumps(info)

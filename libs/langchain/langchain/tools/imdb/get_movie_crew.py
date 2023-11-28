@@ -1,5 +1,5 @@
-from typing import Optional
 import json
+from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.imdb.base import IMDbBaseTool
@@ -25,6 +25,7 @@ class IMDbGetMovieCrew(IMDbBaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         from imdb import IMDbError
+
         try:
             movie = self.client.get_movie(id)
         except IMDbError:
@@ -34,16 +35,12 @@ class IMDbGetMovieCrew(IMDbBaseTool):
             )
 
         keys = [
-            'director',
-            'writer',
-            'producer',
-            'cinematographer',
-            'editor',
-            'composer',
+            "director",
+            "writer",
+            "producer",
+            "cinematographer",
+            "editor",
+            "composer",
         ]
-        crew = {
-            key: people_to_dicts(movie.get(key))
-            for key in keys
-            if key in movie
-        }
+        crew = {key: people_to_dicts(movie.get(key)) for key in keys if key in movie}
         return json.dumps(crew)

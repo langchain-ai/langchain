@@ -21,6 +21,7 @@ class IMDbGetPersonBio(IMDbBaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         from imdb import IMDbError
+
         try:
             person = self.client.get_person(id)
         except IMDbError:
@@ -28,8 +29,8 @@ class IMDbGetPersonBio(IMDbBaseTool):
                 "The person could not be found. "
                 "Please make sure to give a person ID instead of the person's name."
             )
-        
-        bio = person.get('mini biography')
+
+        bio = person.get("mini biography")
         if bio:
             return bio[0]
         return "This person does not have a biography."

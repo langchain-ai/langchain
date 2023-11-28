@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
@@ -23,6 +24,7 @@ class IMDbGetPersonMovies(IMDbBaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         from imdb import IMDbError
+
         try:
             person = self.client.get_person(id)
         except IMDbError:
@@ -30,12 +32,12 @@ class IMDbGetPersonMovies(IMDbBaseTool):
                 "The person could not be found. "
                 "Please make sure to give a person ID instead of the person's name."
             )
-        
+
         movies = {}
-        acted_in = person.get('actor') or person.get('actress')
+        acted_in = person.get("actor") or person.get("actress")
         if acted_in:
-            movies['acted in'] = movies_to_dicts(acted_in[:20])
-        directed = person.get('director')
+            movies["acted in"] = movies_to_dicts(acted_in[:20])
+        directed = person.get("director")
         if directed:
-            movies['directed'] = movies_to_dicts(directed[:20])
-        return movies
+            movies["directed"] = movies_to_dicts(directed[:20])
+        return json.dumps(movies)
