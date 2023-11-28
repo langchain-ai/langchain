@@ -5,13 +5,14 @@ from typing import Dict, List, Optional
 
 import aiohttp
 import requests
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
 

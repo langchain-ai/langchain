@@ -18,7 +18,7 @@ export OPENAI_API_KEY=...
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
@@ -38,6 +38,13 @@ And add the following code to your `server.py` file:
 from rag_mongo import chain as rag_mongo_chain
 
 add_routes(app, rag_mongo_chain, path="/rag-mongo")
+```
+
+If you want to set up an ingestion pipeline, you can add the following code to your `server.py` file:
+```python
+from rag_mongo import ingest as rag_mongo_ingest
+
+add_routes(app, rag_mongo_ingest, path="/rag-mongo-ingest")
 ```
 
 (Optional) Let's now configure LangSmith. 

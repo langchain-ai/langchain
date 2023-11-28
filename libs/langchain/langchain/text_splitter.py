@@ -51,9 +51,7 @@ from typing import (
 )
 
 import requests
-
-from langchain.docstore.document import Document
-from langchain.schema import BaseDocumentTransformer
+from langchain_core.documents import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
 
@@ -647,7 +645,7 @@ class Tokenizer:
     """Overlap in tokens between chunks"""
     tokens_per_chunk: int
     """Maximum number of tokens per chunk"""
-    decode: Callable[[list[int]], str]
+    decode: Callable[[List[int]], str]
     """ Function to decode a list of token ids to a string"""
     encode: Callable[[str], List[int]]
     """ Function to encode a string to a list of token ids"""

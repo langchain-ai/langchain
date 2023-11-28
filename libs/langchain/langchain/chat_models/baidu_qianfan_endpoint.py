@@ -1,24 +1,9 @@
 from __future__ import annotations
 
 import logging
-from typing import (
-    Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-)
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -27,7 +12,14 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, root_validator
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -125,7 +117,7 @@ class QianfanChatEndpoint(BaseChatModel):
     """Endpoint of the Qianfan LLM, required if custom model used."""
 
     @root_validator()
-    def validate_enviroment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = get_from_dict_or_env(
             values,
             "qianfan_ak",
@@ -211,7 +203,7 @@ class QianfanChatEndpoint(BaseChatModel):
         for i in [i for i, m in enumerate(messages) if isinstance(m, SystemMessage)]:
             if "system" not in messages_dict:
                 messages_dict["system"] = ""
-            messages_dict["system"] += messages[i].content + "\n"
+            messages_dict["system"] += cast(str, messages[i].content) + "\n"
 
         return {
             **messages_dict,

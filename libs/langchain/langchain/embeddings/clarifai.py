@@ -1,8 +1,9 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.embeddings import Embeddings
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import ClarifaiEmbeddings
             clarifai = ClarifaiEmbeddings(
-                model="embed-english-light-v2.0", clarifai_api_key="my-api-key"
+                model="embed-english-light-v3.0", clarifai_api_key="my-api-key"
             )
     """
 

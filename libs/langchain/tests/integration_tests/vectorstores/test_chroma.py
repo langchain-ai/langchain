@@ -3,8 +3,8 @@ import uuid
 
 import pytest
 import requests
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.embeddings import FakeEmbeddings as Fak
 from langchain.vectorstores import Chroma
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -23,7 +23,6 @@ def test_chroma() -> None:
     assert output == [Document(page_content="foo")]
 
 
-@pytest.mark.asyncio
 async def test_chroma_async() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]

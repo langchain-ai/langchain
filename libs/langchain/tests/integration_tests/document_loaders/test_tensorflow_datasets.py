@@ -4,10 +4,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import ValidationError
 
 from langchain.document_loaders.tensorflow_datasets import TensorflowDatasetLoader
-from langchain.pydantic_v1 import ValidationError
-from langchain.schema.document import Document
 
 if TYPE_CHECKING:
     import tensorflow as tf  # noqa: E402

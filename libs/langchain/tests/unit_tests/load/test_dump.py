@@ -3,15 +3,15 @@
 from typing import Any, Dict
 
 import pytest
+from langchain_core.load.dump import dumps
+from langchain_core.load.serializable import Serializable
+from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.tracers.langchain import LangChainTracer
 
-from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.openai import OpenAI
-from langchain.load.dump import dumps
-from langchain.load.serializable import Serializable
-from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.prompts.prompt import PromptTemplate
 
 
 class Person(Serializable):

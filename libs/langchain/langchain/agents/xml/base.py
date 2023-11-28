@@ -1,12 +1,13 @@
 from typing import Any, List, Tuple, Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.prompts.chat import AIMessagePromptTemplate, ChatPromptTemplate
+
 from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.output_parsers.xml import XMLAgentOutputParser
 from langchain.agents.xml.prompt import agent_instructions
 from langchain.callbacks.base import Callbacks
 from langchain.chains.llm import LLMChain
-from langchain.prompts.chat import AIMessagePromptTemplate, ChatPromptTemplate
-from langchain.schema import AgentAction, AgentFinish
 from langchain.tools.base import BaseTool
 
 

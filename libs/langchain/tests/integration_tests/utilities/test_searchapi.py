@@ -1,6 +1,4 @@
 """Integration tests for SearchApi"""
-import pytest
-
 from langchain.utilities.searchapi import SearchApiAPIWrapper
 
 
@@ -48,7 +46,6 @@ def test_jobs_call() -> None:
     assert "years of experience" in output
 
 
-@pytest.mark.asyncio
 async def test_async_call() -> None:
     """Test that call gives the correct answer."""
     search = SearchApiAPIWrapper()
@@ -56,7 +53,6 @@ async def test_async_call() -> None:
     assert "Barack Hussein Obama II" in output
 
 
-@pytest.mark.asyncio
 async def test_async_results() -> None:
     """Test that call gives the correct answer."""
     search = SearchApiAPIWrapper()

@@ -5,8 +5,9 @@ from typing_extensions import Annotated
 
 from langchain_cli.namespaces import app as app_namespace
 from langchain_cli.namespaces import template as template_namespace
+from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
-__version__ = "0.0.14"
+__version__ = "0.0.19"
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(
@@ -49,11 +50,17 @@ def serve(
     Start the LangServe app, whether it's a template or an app.
     """
 
-    # try starting template package, if error, try langserve
+    # see if is a template
     try:
-        template_namespace.serve(port=port, host=host)
+        project_dir = get_package_root()
+        pyproject = project_dir / "pyproject.toml"
+        get_langserve_export(pyproject)
     except KeyError:
+        # not a template
         app_namespace.serve(port=port, host=host)
+    else:
+        # is a template
+        template_namespace.serve(port=port, host=host)
 
 
 if __name__ == "__main__":

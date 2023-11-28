@@ -1,6 +1,7 @@
 from typing import Any, Iterator, List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 
@@ -43,7 +44,7 @@ class BaiduBOSDirectoryLoader(BaseLoader):
             if response.is_truncated or contents_len < int(str(response.max_keys)):
                 break
             marker = response.next_marker
-        from baidu_bos_file import BaiduBOSFileLoader
+        from langchain.document_loaders.baiducloud_bos_file import BaiduBOSFileLoader
 
         for content in contents:
             if str(content.key).endswith("/"):
