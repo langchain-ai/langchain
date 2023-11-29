@@ -372,7 +372,7 @@ class MathpixPDFLoader(BasePDFLoader):
         processed_file_format: str = "md",
         max_wait_time_seconds: int = 500,
         should_clean_pdf: bool = False,
-        extra_params: Optional[dict[str, Any]] = None,
+        extra_request_data: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with a file path.
@@ -383,7 +383,7 @@ class MathpixPDFLoader(BasePDFLoader):
             max_wait_time_seconds: a maximum time to wait for the response from
              the server. Default is 500.
             should_clean_pdf: a flag to clean the PDF file. Default is False.
-            extra_params: Additional request parameters
+            extra_request_data: Additional request data.
             **kwargs: additional keyword arguments.
         """
         self.mathpix_api_key = get_from_dict_or_env(
@@ -394,7 +394,9 @@ class MathpixPDFLoader(BasePDFLoader):
         )
         super().__init__(file_path, **kwargs)
         self.processed_file_format = processed_file_format
-        self.extra_params = extra_params if extra_params is not None else dict()
+        self.extra_request_data = (
+            extra_request_data if extra_request_data is not None else {}
+        )
         self.max_wait_time_seconds = max_wait_time_seconds
         self.should_clean_pdf = should_clean_pdf
 
@@ -408,8 +410,11 @@ class MathpixPDFLoader(BasePDFLoader):
 
     @property
     def data(self) -> dict:
-        options = {"conversion_formats": {self.processed_file_format: True}}
-        return {"options_json": json.dumps(options | self.extra_params)}
+        options = {
+            "conversion_formats": {self.processed_file_format: True},
+            **self.extra_request_data,
+        }
+        return {"options_json": json.dumps(options)}
 
     def send_pdf(self) -> str:
         with open(self.file_path, "rb") as f:
