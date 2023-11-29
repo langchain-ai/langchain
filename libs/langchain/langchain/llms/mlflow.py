@@ -70,7 +70,7 @@ class Mlflow(LLM):
         params: Dict[str, Any] = {
             "target_uri": self.target_uri,
             "endpoint": self.endpoint,
-            **(self.params.dict() if self.params else {}),
+            "params": self.params,
         }
         return params
 
