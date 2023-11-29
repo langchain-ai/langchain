@@ -204,7 +204,7 @@ class BedrockBase(BaseModel, ABC):
                 values,
                 "region_name",
                 "AWS_DEFAULT_REGION",
-                default=None,
+                default=session.region_name,
             )
 
             client_params = {}
