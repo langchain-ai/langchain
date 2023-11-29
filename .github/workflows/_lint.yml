@@ -68,7 +68,7 @@ jobs:
         # It doesn't matter how you change it, any change will cause a cache-bust.
         working-directory: ${{ inputs.working-directory }}
         run: |
-          poetry install --with dev,lint,test,typing
+          poetry install --with lint,typing
 
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
