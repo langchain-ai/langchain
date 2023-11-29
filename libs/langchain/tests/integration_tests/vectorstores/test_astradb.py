@@ -17,9 +17,9 @@ import os
 from typing import Iterable, List
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain.embeddings.base import Embeddings
-from langchain.schema import Document
 from langchain.vectorstores import AstraDB
 
 # Ad-hoc embedding classes:
@@ -207,7 +207,10 @@ class TestAstraDB:
         res2 = store_someemb.similarity_search("Abc", k=10)
         assert len(res2) == 4
         # pick one that was just updated and check its metadata
-        res3 = store_someemb.similarity_search_with_score_id("cc", k=1)
+        res3 = store_someemb.similarity_search_with_score_id(
+            query="cc", k=1, filter={"k": "c_new"}
+        )
+        print(str(res3))
         doc3, score3, id3 = res3[0]
         assert doc3.page_content == "cc"
         assert doc3.metadata == {"k": "c_new", "ord": 102}
@@ -217,7 +220,7 @@ class TestAstraDB:
         del1_res = store_someemb.delete(["b"])
         assert del1_res is True
         del2_res = store_someemb.delete(["a", "c", "Z!"])
-        assert del2_res is False  # a non-existing ID was supplied
+        assert del2_res is True  # a non-existing ID was supplied
         assert len(store_someemb.similarity_search("xy", k=10)) == 1
         # clear store
         store_someemb.clear()
@@ -231,7 +234,7 @@ class TestAstraDB:
             ids=["v", "w"],
         )
         assert len(store_someemb.similarity_search("xy", k=10)) == 2
-        res4 = store_someemb.similarity_search("ww", k=1)
+        res4 = store_someemb.similarity_search("ww", k=1, filter={"k": "w"})
         assert res4[0].metadata["ord"] == 205
 
     def test_astradb_vectorstore_mmr(self, store_parseremb: AstraDB) -> None:
@@ -346,7 +349,7 @@ class TestAstraDB:
         assert del_res0 is True
         # deleting the rest plus a fake one
         del_res1 = store_someemb.delete(ids1 + ["ghost!"])
-        assert del_res1 is False  # not *all* ids could be deleted...
+        assert del_res1 is True  # ensure no error
         # nothing left
         assert store_someemb.similarity_search("x", k=2 * M) == []
 

@@ -1,8 +1,8 @@
 """Test Deep Lake functionality."""
 import pytest
+from langchain_core.documents import Document
 from pytest import FixtureRequest
 
-from langchain.docstore.document import Document
 from langchain.vectorstores import DeepLake
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
@@ -259,3 +259,25 @@ def test_add_texts(deeplake_datastore: DeepLake) -> None:
             texts=texts,
             metada=metadatas,
         )
+
+
+def test_ids_backwards_compatibility() -> None:
+    """Test that ids are backwards compatible."""
+    db = DeepLake(
+        dataset_path="mem://test_path",
+        embedding_function=FakeEmbeddings(),
+        tensor_params=[
+            {"name": "ids", "htype": "text"},
+            {"name": "text", "htype": "text"},
+            {"name": "embedding", "htype": "embedding"},
+            {"name": "metadata", "htype": "json"},
+        ],
+    )
+    db.vectorstore.add(
+        ids=["1", "2", "3"],
+        text=["foo", "bar", "baz"],
+        embedding=FakeEmbeddings().embed_documents(["foo", "bar", "baz"]),
+        metadata=[{"page": str(i)} for i in range(3)],
+    )
+    output = db.similarity_search("foo", k=1)
+    assert len(output) == 1

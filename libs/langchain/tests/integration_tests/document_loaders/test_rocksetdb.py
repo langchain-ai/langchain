@@ -1,7 +1,8 @@
 import logging
 import os
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders import RocksetLoader
 
 logger = logging.getLogger(__name__)

@@ -2,13 +2,14 @@
 import datetime
 from typing import Any, Dict, List, Optional
 
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import ChatResult
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models import ChatOpenAI
-from langchain.schema import ChatResult
-from langchain.schema.messages import BaseMessage
 
 
 class PromptLayerChatOpenAI(ChatOpenAI):

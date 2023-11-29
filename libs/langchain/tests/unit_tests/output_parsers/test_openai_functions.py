@@ -1,12 +1,13 @@
 from typing import Any, Dict
 
 import pytest
+from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration
 
 from langchain.output_parsers.openai_functions import (
     JsonOutputFunctionsParser,
 )
-from langchain.schema import BaseMessage, ChatGeneration, OutputParserException
-from langchain.schema.messages import AIMessage, HumanMessage
 
 
 def test_json_output_function_parser() -> None:
