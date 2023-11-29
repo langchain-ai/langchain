@@ -81,13 +81,13 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
                 f" Expected: {self.input_variables}"
                 f" Received: {list(inner_input.keys())}"
             ) from e
-        return self.format(**input_dict)
+        return self.format_prompt(**input_dict)
 
     def invoke(
         self, input: Dict, config: Optional[RunnableConfig] = None
     ) -> PromptValue:
         return self._call_with_config(
-            self._format_prompt_inner,
+            self._format_prompt_with_error_handling,
             input,
             config,
             run_type="prompt",
