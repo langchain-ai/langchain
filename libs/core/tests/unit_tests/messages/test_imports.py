@@ -17,6 +17,7 @@ EXPECTED_ALL = [
     "ToolMessage",
     "ToolMessageChunk",
     "get_buffer_string",
+    "message_chunk_to_message",
     "messages_from_dict",
     "messages_to_dict",
     "message_to_dict",

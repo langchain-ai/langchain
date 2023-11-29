@@ -11,6 +11,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.office365.base import O365BaseTool
+from langchain.tools.office365.utils import UTC_FORMAT
 
 
 class SendEventSchema(BaseModel):
@@ -72,8 +73,8 @@ class O365SendEvent(O365BaseTool):
 
         event.body = body
         event.subject = subject
-        event.start = dt.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S%z")
-        event.end = dt.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S%z")
+        event.start = dt.strptime(start_datetime, UTC_FORMAT)
+        event.end = dt.strptime(end_datetime, UTC_FORMAT)
         for attendee in attendees:
             event.attendees.add(attendee)
 
