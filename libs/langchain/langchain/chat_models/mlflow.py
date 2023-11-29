@@ -135,7 +135,7 @@ class ChatMlflow(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "databricks-chat"
+        return "mlflow-chat"
 
     @staticmethod
     def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
