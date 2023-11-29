@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
+from urllib.parse import urlparse
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
@@ -46,6 +47,7 @@ class Mlflow(LLM):
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
+        self._validate_uri()
         try:
             from mlflow.deployments import get_deploy_client
 
@@ -56,6 +58,12 @@ class Mlflow(LLM):
                 "Please run `pip install mlflow[genai]` to install "
                 "required dependencies."
             ) from e
+
+    def _validate_uri(self) -> None:
+        if urlparse(self.target_uri).scheme not in ("http", "https"):
+            raise ValueError(
+                "Invalid target URI. The target URI must be a valid HTTP/HTTPS URI."
+            )
 
     @property
     def _default_params(self) -> Dict[str, Any]:

@@ -80,7 +80,7 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
         endpoint = self.client.get_endpoint(self.endpoint_name)
         self.external_or_foundation = endpoint.get("endpoint_type", "").lower() in (
             "external_model",
-            "foundation_model",
+            "foundation_model_api",
         )
         self.task = endpoint.get("task")
 
