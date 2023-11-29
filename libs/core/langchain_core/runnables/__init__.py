@@ -34,13 +34,16 @@ from langchain_core.runnables.fallbacks import RunnableWithFallbacks
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.router import RouterInput, RouterRunnable
 from langchain_core.runnables.utils import (
+    AddableDict,
     ConfigurableField,
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
+    aadd,
     add,
 )
 
 __all__ = [
+    "AddableDict",
     "ConfigurableField",
     "ConfigurableFieldSingleOption",
     "ConfigurableFieldMultiOption",
@@ -60,5 +63,6 @@ __all__ = [
     "RunnableSequence",
     "RunnableWithFallbacks",
     "get_config_list",
+    "aadd",
     "add",
 ]

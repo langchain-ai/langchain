@@ -34,6 +34,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    message_chunk_to_message,
 )
 from langchain_core.outputs import (
     ChatGeneration,
@@ -63,7 +64,14 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
         else:
             generation += chunk
     assert generation is not None
-    return ChatResult(generations=[generation])
+    return ChatResult(
+        generations=[
+            ChatGeneration(
+                message=message_chunk_to_message(generation.message),
+                generation_info=generation.generation_info,
+            )
+        ]
+    )
 
 
 async def agenerate_from_stream(
@@ -76,7 +84,14 @@ async def agenerate_from_stream(
         else:
             generation += chunk
     assert generation is not None
-    return ChatResult(generations=[generation])
+    return ChatResult(
+        generations=[
+            ChatGeneration(
+                message=message_chunk_to_message(generation.message),
+                generation_info=generation.generation_info,
+            )
+        ]
+    )
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
