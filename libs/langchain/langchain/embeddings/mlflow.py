@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Iterator, List
 
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
-
-from langchain.embeddings.base import Embeddings
 
 
 def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
@@ -52,15 +51,12 @@ class MlflowEmbeddings(Embeddings, BaseModel):
     def _mlflow_extras(self) -> str:
         return "[genai]"
 
-    def _query(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
         embeddings: List[List[float]] = []
         for txt in _chunk(texts, 20):
             resp = self._client.predict(endpoint=self.endpoint, inputs={"input": txt})
             embeddings.extend(r["embedding"] for r in resp["data"])
         return embeddings
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return self._query(texts)
-
     def embed_query(self, text: str) -> List[float]:
-        return self._query([text])[0]
+        return self.embed_documents([text])[0]

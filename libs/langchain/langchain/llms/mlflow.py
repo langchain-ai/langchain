@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
 
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import LLM
 from langchain_core.pydantic_v1 import BaseModel, Extra, PrivateAttr
-
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
 
 
 # Ignoring type because below is valid pydantic code
