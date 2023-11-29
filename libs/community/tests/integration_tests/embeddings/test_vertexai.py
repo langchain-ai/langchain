@@ -34,6 +34,60 @@ def test_large_batches() -> None:
     assert model_asianortheast1.instance["batch_size"] < 50
 
 
+def test_split_by_punctuation() -> None:
+    parts = VertexAIEmbeddings._split_by_punctuation("Hello, my friend!\nHow are you?")
+    assert parts == [
+        "Hello",
+        ",",
+        " ",
+        "my",
+        " ",
+        "friend",
+        "!",
+        "\n",
+        "How",
+        " ",
+        "are",
+        " ",
+        "you",
+        "?",
+        " ",
+        "I",
+        " ",
+        "have",
+        " ",
+        "2",
+        " ",
+        "news",
+        ":",
+        "\n",
+        "\n",
+        "-",
+        " ",
+        "good",
+        "\n",
+        "-",
+        "bad",
+    ]
+
+
+def test_batching() -> None:
+    long_text = "foo " * 500  # 1000 words, 2000 tokens
+    long_texts = [long_text for _ in range(0, 250)]
+    short_text = "foo bar"
+    short_texts = [short_text for _ in range(0, 250)]
+    model_uscentral1 = VertexAIEmbeddings(location="us-central1")
+    five_elem = model_uscentral1._prepare_batches(long_texts, 5)
+    # Default batch size is 250
+    default250_elem = model_uscentral1._prepare_batches(long_texts)
+    two_h_elem = model_uscentral1._prepare_batches(short_texts, 200)
+    assert len(five_elem) == 50  # 250/5 items
+    assert len(five_elem[0]) == 5  # 5 items per batch
+    assert len(default250_elem[0]) == 10  # Should not be more than 20K tokens
+    assert len(default250_elem) == 25
+    assert len(two_h_elem[0]) == 200  # Short texts can make big batches
+
+
 def test_paginated_texts() -> None:
     documents = [
         "foo bar",
