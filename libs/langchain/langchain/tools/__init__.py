@@ -294,6 +294,60 @@ def _import_ifttt() -> Any:
     return IFTTTWebhook
 
 
+def _import_imdb_CastOfMovieTool() -> Any:
+    from langchain.tools.imdb.cast_of_movie import IMDBCastOfMovie
+
+    return IMDBCastOfMovie
+
+
+def _import_imdb_GetMovieCrewTool() -> Any:
+    from langchain.tools.imdb.get_movie_crew import IMDbGetMovieCrew
+
+    return IMDbGetMovieCrew
+
+
+def _import_imdb_GetMovieInfoTool() -> Any:
+    from langchain.tools.imdb.get_movie_info import IMDbGetMovieInfo
+
+    return IMDbGetMovieInfo
+
+
+def _import_imdb_GetPersonBioTool() -> Any:
+    from langchain.tools.imdb.get_person_bio import IMDbGetPersonBio
+
+    return IMDbGetPersonBio
+
+
+def _import_imdb_GetPersonMoviesTool() -> Any:
+    from langchain.tools.imdb.get_person_movies import IMDbGetPersonMovies
+
+    return IMDbGetPersonMovies
+
+
+def _import_imdb_PlotOfMovieTool() -> Any:
+    from langchain.tools.imdb.plot_of_movie import IMDBPlotOfMovie
+
+    return IMDBPlotOfMovie
+
+
+def _import_imdb_PopularMoviesTool() -> Any:
+    from langchain.tools.imdb.popular_movies import IMDbPopularMovies
+
+    return IMDbPopularMovies
+
+
+def _import_imdb_SearchMovieTool() -> Any:
+    from langchain.tools.imdb.search_movie import IMDbSearchMovie
+
+    return IMDbSearchMovie
+
+
+def _import_imdb_SearchPersonTool() -> Any:
+    from langchain.tools.imdb.search_person import IMDbSearchPerson
+
+    return IMDbSearchPerson
+
+
 def _import_interaction_tool() -> Any:
     from langchain.tools.interaction.tool import StdInInquireTool
 
@@ -761,6 +815,24 @@ def __getattr__(name: str) -> Any:
         return _import_human_tool()
     elif name == "IFTTTWebhook":
         return _import_ifttt()
+    elif name == "IMDBCastOfMovie":
+        return _import_imdb_CastOfMovieTool()
+    elif name == "IMDbGetMovieCrew":
+        return _import_imdb_GetMovieCrewTool()
+    elif name == "IMDbGetMovieInfo":
+        return _import_imdb_GetMovieInfoTool()
+    elif name == "IMDbGetPersonBio":
+        return _import_imdb_GetPersonBioTool()
+    elif name == "IMDbGetPersonMovies":
+        return _import_imdb_GetPersonMoviesTool()
+    elif name == "IMDbPopularMovies":
+        return _import_imdb_PopularMoviesTool()
+    elif name == "IMDBPlotOfMovie":
+        return _import_imdb_PlotOfMovieTool()
+    elif name == "IMDbSearchMovie":
+        return _import_imdb_SearchMovieTool()
+    elif name == "IMDbSearchPerson":
+        return _import_imdb_SearchPersonTool()
     elif name == "StdInInquireTool":
         return _import_interaction_tool()
     elif name == "JiraAction":
@@ -942,6 +1014,15 @@ __all__ = [
     "GoogleSerperRun",
     "HumanInputRun",
     "IFTTTWebhook",
+    "IMDBCastOfMovie",
+    "IMDbGetMovieCrew",
+    "IMDbGetMovieInfo",
+    "IMDbGetPersonBio",
+    "IMDbGetPersonMovies",
+    "IMDbPopularMovies",
+    "IMDBPlotOfMovie",
+    "IMDbSearchMovie",
+    "IMDbSearchPerson",
     "InfoPowerBITool",
     "InfoSQLDatabaseTool",
     "InfoSparkSQLTool",
