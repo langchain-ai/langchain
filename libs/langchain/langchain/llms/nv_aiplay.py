@@ -76,7 +76,7 @@ class ClientModel(BaseModel):
 
     def transfer_state(self, other: Optional[ClientModel]) -> None:
         """Transfer state from one ClientModel to another"""
-        if other:
+        if other is None:
             return
         for k, v in self.__dict__.items():
             if k in getattr(self, "state_vars", []):
