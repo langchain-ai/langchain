@@ -76,25 +76,21 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         base_embeddings: Embeddings,
         prompt_key: Optional[str] = None,
         custom_prompt: Optional[PromptTemplate] = None,
-        run_manager: Optional[CallbackManagerForChainRun] = None,
         **kwargs: Any,
     ) -> HypotheticalDocumentEmbedder:
-        """
-        Load and use LLMChain with either a specific prompt key, a custom prompt, or a default prompt.
-        """
+        """Load and use LLMChain with either a specific prompt key or custom prompt."""
         if custom_prompt is not None:
             prompt = custom_prompt
         elif prompt_key is not None and prompt_key in PROMPT_MAP:
             prompt = PROMPT_MAP[prompt_key]
         else:
-            prompt = PROMPT_MAP["fiqa"]
+            raise ValueError(
+                f"Must specify prompt_key if custom_prompt not provided. Should be one "
+                f"of {list(PROMPT_MAP.keys())}."
+            )
 
-        if run_manager is not None:
-            kwargs['run_manager'] = run_manager
-            
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(base_embeddings=base_embeddings, llm_chain=llm_chain, **kwargs)
-
 
     @property
     def _chain_type(self) -> str:
