@@ -75,8 +75,8 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
                 input_dict = {key: inner_input[key] for key in self.input_variables}
             except TypeError as e:
                 raise TypeError(
-                    f"Input to {self.__class__.__name__} was not a dictionary, "
-                    f"but was instead {type(inner_input)}."
+                    f"Expected mapping type as input to {self.__class__.__name__}. "
+                    f"Received {type(inner_input)}."
                 ) from e
             except KeyError as e:
                 raise KeyError(
