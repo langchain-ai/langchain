@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Extra
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
@@ -75,7 +75,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         llm: BaseLanguageModel,
         base_embeddings: Embeddings,
         prompt_key: Optional[str] = None,
-        custom_prompt: Optional[PromptTemplate] = None,
+        custom_prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> HypotheticalDocumentEmbedder:
         """Load and use LLMChain with either a specific prompt key or custom prompt."""
