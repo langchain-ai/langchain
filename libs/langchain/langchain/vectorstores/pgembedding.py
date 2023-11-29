@@ -1,4 +1,3 @@
-"""VectorStore wrapper around a Postgres database."""
 from __future__ import annotations
 
 import logging
@@ -8,12 +7,18 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 import sqlalchemy
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import JSON, UUID
-from sqlalchemy.orm import Session, declarative_base, relationship
+from sqlalchemy.orm import Session, relationship
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
+
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 
 Base = declarative_base()  # type: Any
 
@@ -23,11 +28,15 @@ _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
 
 class BaseModel(Base):
+    """Base model for all SQL stores."""
+
     __abstract__ = True
     uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 
 class CollectionStore(BaseModel):
+    """Collection store."""
+
     __tablename__ = "langchain_pg_collection"
 
     name = sqlalchemy.Column(sqlalchemy.String)
@@ -67,6 +76,8 @@ class CollectionStore(BaseModel):
 
 
 class EmbeddingStore(BaseModel):
+    """Embedding store."""
+
     __tablename__ = "langchain_pg_embedding"
 
     collection_id = sqlalchemy.Column(
@@ -87,15 +98,14 @@ class EmbeddingStore(BaseModel):
 
 
 class QueryResult:
-    """QueryResult is a result from a query."""
+    """Result from a query."""
 
     EmbeddingStore: EmbeddingStore
     distance: float
 
 
 class PGEmbedding(VectorStore):
-    """
-    VectorStore implementation using Postgres and the pg_embedding extension.
+    """`Postgres` with the `pg_embedding` extension as a vector store.
 
     pg_embedding uses sequential scan by default. but you can create a HNSW index
     using the create_hnsw_index method.
@@ -356,6 +366,13 @@ class PGEmbedding(VectorStore):
                             value_case_insensitive[IN]
                         )
                         filter_clauses.append(filter_by_metadata)
+                    elif isinstance(value, dict) and "substring" in map(
+                        str.lower, value
+                    ):
+                        filter_by_metadata = EmbeddingStore.cmetadata[key].astext.ilike(
+                            f"%{value['substring']}%"
+                        )
+                        filter_clauses.append(filter_by_metadata)
                     else:
                         filter_by_metadata = EmbeddingStore.cmetadata[
                             key
@@ -385,7 +402,7 @@ class PGEmbedding(VectorStore):
                     page_content=result.EmbeddingStore.document,
                     metadata=result.EmbeddingStore.cmetadata,
                 ),
-                result.distance if self.embedding_function is not None else None,
+                result.distance if self.embedding_function is not None else 0.0,
             )
             for result in results
         ]

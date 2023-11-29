@@ -3,18 +3,7 @@ import logging
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-)
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
@@ -22,12 +11,25 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatResult,
+)
+from langchain_core.pydantic_v1 import BaseModel, Extra
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
 
 logger = logging.getLogger(__name__)
 
 
-class ChatParams(BaseModel, extra=Extra.allow):
-    """Parameters for the MLflow AI Gateway LLM."""
+# Ignoring type because below is valid pydantic code
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"  [call-arg]
+class ChatParams(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+    """Parameters for the `MLflow AI Gateway` LLM."""
 
     temperature: float = 0.0
     candidate_count: int = 1
@@ -37,8 +39,7 @@ class ChatParams(BaseModel, extra=Extra.allow):
 
 
 class ChatMLflowAIGateway(BaseChatModel):
-    """
-    Wrapper around chat LLMs in the MLflow AI Gateway.
+    """`MLflow AI Gateway` chat models API.
 
     To use, you should have the ``mlflow[gateway]`` python package installed.
     For more information, see https://mlflow.org/docs/latest/gateway/index.html.

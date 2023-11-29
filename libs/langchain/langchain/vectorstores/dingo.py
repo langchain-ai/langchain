@@ -1,4 +1,3 @@
-"""Wrapper around the Dingo vector database."""
 from __future__ import annotations
 
 import logging
@@ -6,17 +5,17 @@ import uuid
 from typing import Any, Iterable, List, Optional, Tuple
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
 
 
 class Dingo(VectorStore):
-    """Wrapper around Dingo vector database.
+    """`Dingo` vector store.
 
     To use, you should have the ``dingodb`` python package installed.
 
@@ -37,6 +36,7 @@ class Dingo(VectorStore):
         *,
         client: Any = None,
         index_name: Optional[str] = None,
+        dimension: int = 1024,
         host: Optional[List[str]] = None,
         user: str = "root",
         password: str = "123123",
@@ -66,11 +66,17 @@ class Dingo(VectorStore):
         self._text_key = text_key
         self._client = dingo_client
 
-        if index_name is not None and index_name not in dingo_client.get_index():
+        if (
+            index_name is not None
+            and index_name not in dingo_client.get_index()
+            and index_name.upper() not in dingo_client.get_index()
+        ):
             if self_id is True:
-                dingo_client.create_index(index_name, 1024, auto_id=False)
+                dingo_client.create_index(
+                    index_name, dimension=dimension, auto_id=False
+                )
             else:
-                dingo_client.create_index(index_name, 1024)
+                dingo_client.create_index(index_name, dimension=dimension)
 
         self._index_name = index_name
         self._embedding = embedding
@@ -112,9 +118,11 @@ class Dingo(VectorStore):
         # upsert to Dingo
         for i in range(0, len(list(texts)), batch_size):
             j = i + batch_size
-            self._client.vector_add(
+            add_res = self._client.vector_add(
                 self._index_name, metadatas_list[i:j], embeds[i:j], ids[i:j]
             )
+            if not add_res:
+                raise Exception("vector add fail")
 
         return ids
 
@@ -173,8 +181,9 @@ class Dingo(VectorStore):
             id = res["id"]
             score = res["distance"]
             text = metadatas[self._text_key]["fields"][0]["data"]
-
             metadata = {"id": id, "text": text, "score": score}
+            for meta_key in metadatas.keys():
+                metadata[meta_key] = metadatas[meta_key]["fields"][0]["data"]
             docs.append((Document(page_content=text, metadata=metadata), score))
 
         return docs
@@ -205,20 +214,26 @@ class Dingo(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         results = self._client.vector_search(
-            self._index_name, [embedding], search_params, k
+            self._index_name, [embedding], search_params=search_params, top_k=k
         )
 
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
-            [item["floatValues"] for item in results[0]["vectorWithDistances"]],
+            [
+                item["vector"]["floatValues"]
+                for item in results[0]["vectorWithDistances"]
+            ],
             k=k,
             lambda_mult=lambda_mult,
         )
-        selected = [
-            results[0]["vectorWithDistances"][i]["metaData"] for i in mmr_selected
-        ]
+        selected = []
+        for i in mmr_selected:
+            meta_data = {}
+            for k, v in results[0]["vectorWithDistances"][i]["scalarData"].items():
+                meta_data.update({str(k): v["fields"][0]["data"]})
+            selected.append(meta_data)
         return [
-            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)
+            Document(page_content=metadata.pop(self._text_key), metadata=metadata)
             for metadata in selected
         ]
 
@@ -261,6 +276,7 @@ class Dingo(VectorStore):
         ids: Optional[List[str]] = None,
         text_key: str = "text",
         index_name: Optional[str] = None,
+        dimension: int = 1024,
         client: Any = None,
         host: List[str] = ["172.20.31.10:13000"],
         user: str = "root",
@@ -279,7 +295,7 @@ class Dingo(VectorStore):
                 Example:
                     .. code-block:: python
 
-                        from langchain import Dingo
+                        from langchain.vectorstores import Dingo
                         from langchain.embeddings import OpenAIEmbeddings
                         import dingodb
         sss
@@ -307,12 +323,21 @@ class Dingo(VectorStore):
             except ValueError as e:
                 raise ValueError(f"Dingo failed to connect: {e}")
         if kwargs is not None and kwargs.get("self_id") is True:
-            if index_name not in dingo_client.get_index():
-                dingo_client.create_index(index_name, 1024, auto_id=False)
+            if (
+                index_name is not None
+                and index_name not in dingo_client.get_index()
+                and index_name.upper() not in dingo_client.get_index()
+            ):
+                dingo_client.create_index(
+                    index_name, dimension=dimension, auto_id=False
+                )
         else:
-            if index_name not in dingo_client.get_index():
-                dingo_client.create_index(index_name, 1024)
-            # dingo_client.create_index(index_name, 1024, index_type="hnsw")
+            if (
+                index_name is not None
+                and index_name not in dingo_client.get_index()
+                and index_name.upper() not in dingo_client.get_index()
+            ):
+                dingo_client.create_index(index_name, dimension=dimension)
 
         # Embed and create the documents
 
@@ -328,9 +353,11 @@ class Dingo(VectorStore):
         # upsert to Dingo
         for i in range(0, len(list(texts)), batch_size):
             j = i + batch_size
-            dingo_client.vector_add(
+            add_res = dingo_client.vector_add(
                 index_name, metadatas_list[i:j], embeds[i:j], ids[i:j]
             )
+            if not add_res:
+                raise Exception("vector add fail")
         return cls(embedding, text_key, client=dingo_client, index_name=index_name)
 
     def delete(

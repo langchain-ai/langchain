@@ -1,9 +1,9 @@
-"""Loader that fetches data from Stripe"""
 import json
 import urllib.request
 from typing import List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.utils import get_from_env, stringify_dict
 
@@ -18,7 +18,7 @@ STRIPE_ENDPOINTS = {
 
 
 class StripeLoader(BaseLoader):
-    """Loader that fetches data from Stripe."""
+    """Load from `Stripe` API."""
 
     def __init__(self, resource: str, access_token: Optional[str] = None) -> None:
         """Initialize with a resource and an access token.

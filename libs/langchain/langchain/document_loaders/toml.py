@@ -2,16 +2,16 @@ import json
 from pathlib import Path
 from typing import Iterator, List, Union
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 
 class TomlLoader(BaseLoader):
-    """
-    A TOML document loader that inherits from the BaseLoader class.
+    """Load `TOML` files.
 
-    This class can be initialized with either a single source file or a source
-    directory containing TOML files.
+    It can load a single source file or several files in a single
+    directory.
     """
 
     def __init__(self, source: Union[str, Path]):

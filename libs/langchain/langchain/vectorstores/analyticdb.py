@@ -1,4 +1,3 @@
-"""VectorStore wrapper around a Postgres/PGVector database."""
 from __future__ import annotations
 
 import logging
@@ -13,10 +12,11 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 
 _LANGCHAIN_DEFAULT_EMBEDDING_DIM = 1536
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain_document"
@@ -25,7 +25,7 @@ Base = declarative_base()  # type: Any
 
 
 class AnalyticDB(VectorStore):
-    """VectorStore implementation using AnalyticDB.
+    """`AnalyticDB` (distributed PostgreSQL) vector store.
 
     AnalyticDB is a distributed full postgresql syntax cloud-native database.
     - `connection_string` is a postgres connection string.

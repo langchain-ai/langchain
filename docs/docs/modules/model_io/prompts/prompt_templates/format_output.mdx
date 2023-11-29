@@ -1,0 +1,58 @@
+# Format template output
+
+The output of the format method is available as a string, list of messages and `ChatPromptValue`
+
+As string:
+
+
+```python
+output = chat_prompt.format(input_language="English", output_language="French", text="I love programming.")
+output
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    'System: You are a helpful assistant that translates English to French.\nHuman: I love programming.'
+```
+
+</CodeOutputBlock>
+
+
+```python
+# or alternatively
+output_2 = chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.").to_string()
+
+assert output == output_2
+```
+
+As list of Message objects:
+
+
+```python
+chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.").to_messages()
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [SystemMessage(content='You are a helpful assistant that translates English to French.', additional_kwargs={}),
+     HumanMessage(content='I love programming.', additional_kwargs={})]
+```
+
+</CodeOutputBlock>
+
+As `ChatPromptValue`:
+
+
+```python
+chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    ChatPromptValue(messages=[SystemMessage(content='You are a helpful assistant that translates English to French.', additional_kwargs={}), HumanMessage(content='I love programming.', additional_kwargs={})])
+```
+
+</CodeOutputBlock>

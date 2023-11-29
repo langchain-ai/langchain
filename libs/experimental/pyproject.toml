@@ -1,25 +1,29 @@
 [tool.poetry]
 name = "langchain-experimental"
-version = "0.0.8"
+version = "0.0.43"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
 readme = "README.md"
-repository = "https://www.github.com/hwchase17/langchain"
+repository = "https://github.com/langchain-ai/langchain"
 
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.239"
-
+langchain = ">=0.0.342,<0.1"
+presidio-anonymizer = {version = "^2.2.33", optional = true}
+presidio-analyzer = {version = "^2.2.33", optional = true}
+faker = {version = "^19.3.1", optional = true}
+vowpal-wabbit-next = {version = "0.6.0", optional = true}
+sentence-transformers = {version = "^2", optional = true}
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.0.249"
-black = "^23.1.0"
+ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
 types-pyyaml = "^6.0.12.2"
+types-requests = "^2.28.11.5"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
@@ -30,6 +34,26 @@ setuptools = "^67.6.1"
 # dependencies used for running tests (e.g., pytest, freezegun, response).
 # Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
+pytest-asyncio = "^0.20.3"
+langchain = {path = "../langchain", develop = true}
+langchain-core = {path = "../core", develop = true}
+
+
+[tool.poetry.group.test_integration]
+optional = true
+dependencies = {}
+
+# An extra used to be able to add extended testing.
+# Please use new-line on formatting to make it easier to add new packages without
+# merge-conflicts
+[tool.poetry.extras]
+extended_testing = [
+ "presidio-anonymizer",
+ "presidio-analyzer",
+ "faker",
+ "vowpal-wabbit-next",
+ "sentence-transformers",
+]
 
 [tool.ruff]
 select = [
@@ -66,5 +90,8 @@ addopts = "--strict-markers --strict-config --durations=5"
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
-  "requires: mark tests as requiring a specific library"
+  "requires: mark tests as requiring a specific library",
+  "asyncio: mark tests as requiring asyncio",
+  "compile: mark placeholder test used to compile integration tests without running them",
 ]
+asyncio_mode = "auto"

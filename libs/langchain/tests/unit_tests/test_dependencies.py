@@ -26,27 +26,37 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     # Get the dependencies from the [tool.poetry.dependencies] section
     dependencies = poetry_conf["dependencies"]
 
-    required_dependencies = [
-        package_name
+    is_required = {
+        package_name: isinstance(requirements, str)
+        or not requirements.get("optional", False)
         for package_name, requirements in dependencies.items()
-        if isinstance(requirements, str) or not requirements.get("optional", False)
+    }
+    required_dependencies = [
+        package_name for package_name, required in is_required.items() if required
     ]
 
     assert sorted(required_dependencies) == [
         "PyYAML",
         "SQLAlchemy",
         "aiohttp",
+        "anyio",
         "async-timeout",
         "dataclasses-json",
+        "jsonpatch",
+        "langchain-core",
         "langsmith",
-        "numexpr",
         "numpy",
-        "openapi-schema-pydantic",
         "pydantic",
         "python",
         "requests",
         "tenacity",
     ]
+
+    unrequired_dependencies = [
+        package_name for package_name, required in is_required.items() if not required
+    ]
+    in_extras = [dep for group in poetry_conf["extras"].values() for dep in group]
+    assert set(unrequired_dependencies) == set(in_extras)
 
 
 def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
@@ -60,25 +70,31 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
     test_group_deps = sorted(poetry_conf["group"]["test"]["dependencies"])
 
-    assert test_group_deps == [
-        "duckdb-engine",
-        "freezegun",
-        "lark",
-        "pandas",
-        "pytest",
-        "pytest-asyncio",
-        "pytest-cov",
-        "pytest-dotenv",
-        "pytest-mock",
-        "pytest-socket",
-        "pytest-watcher",
-        "responses",
-        "syrupy",
-    ]
+    assert test_group_deps == sorted(
+        [
+            "duckdb-engine",
+            "freezegun",
+            "langchain-core",
+            "lark",
+            "pandas",
+            "pytest",
+            "pytest-asyncio",
+            "pytest-cov",
+            "pytest-dotenv",
+            "pytest-mock",
+            "pytest-socket",
+            "pytest-watcher",
+            "responses",
+            "syrupy",
+            "requests-mock",
+        ]
+    )
 
 
 def test_imports() -> None:
     """Test that you can import all top level things okay."""
+    from langchain_core.prompts import BasePromptTemplate  # noqa: F401
+
     from langchain.agents import OpenAIFunctionsAgent  # noqa: F401
     from langchain.callbacks import OpenAICallbackHandler  # noqa: F401
     from langchain.chains import LLMChain  # noqa: F401
@@ -87,7 +103,6 @@ def test_imports() -> None:
     from langchain.embeddings import OpenAIEmbeddings  # noqa: F401
     from langchain.llms import OpenAI  # noqa: F401
     from langchain.retrievers import VespaRetriever  # noqa: F401
-    from langchain.schema import BasePromptTemplate  # noqa: F401
     from langchain.tools import DuckDuckGoSearchResults  # noqa: F401
     from langchain.utilities import SerpAPIWrapper  # noqa: F401
     from langchain.vectorstores import FAISS  # noqa: F401

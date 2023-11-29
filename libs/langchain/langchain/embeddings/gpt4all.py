@@ -1,8 +1,7 @@
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, root_validator
-
-from langchain.embeddings.base import Embeddings
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 class GPT4AllEmbeddings(BaseModel, Embeddings):

@@ -2,7 +2,11 @@ import logging
 import re
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from langchain_core.documents import Document
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -15,17 +19,14 @@ from langchain.document_transformers import Html2TextTransformer
 from langchain.llms import LlamaCpp
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.prompts import BasePromptTemplate, PromptTemplate
-from langchain.schema import BaseRetriever, Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.utilities import GoogleSearchAPIWrapper
-from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger(__name__)
 
 
 class SearchQueries(BaseModel):
-    """Search queries to run to research for the user's goal."""
+    """Search queries to research for the user's goal."""
 
     queries: List[str] = Field(
         ..., description="List of search queries to look up on Google"
@@ -62,12 +63,12 @@ class QuestionListOutputParser(PydanticOutputParser):
         super().__init__(pydantic_object=LineList)
 
     def parse(self, text: str) -> LineList:
-        lines = re.findall(r"\d+\..*?\n", text)
+        lines = re.findall(r"\d+\..*?(?:\n|$)", text)
         return LineList(lines=lines)
 
 
 class WebResearchRetriever(BaseRetriever):
-    """Retriever for web research based on the Google Search API."""
+    """`Google Search API` retriever."""
 
     # Inputs
     vectorstore: VectorStore = Field(
@@ -76,7 +77,7 @@ class WebResearchRetriever(BaseRetriever):
     llm_chain: LLMChain
     search: GoogleSearchAPIWrapper = Field(..., description="Google Search API Wrapper")
     num_search_results: int = Field(1, description="Number of pages per Google search")
-    text_splitter: RecursiveCharacterTextSplitter = Field(
+    text_splitter: TextSplitter = Field(
         RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=50),
         description="Text splitter for splitting web pages into chunks",
     )
@@ -151,7 +152,7 @@ class WebResearchRetriever(BaseRetriever):
         return query.strip()
 
     def search_tool(self, query: str, num_search_results: int = 1) -> List[dict]:
-        """Returns num_serch_results pages per Google search."""
+        """Returns num_search_results pages per Google search."""
         query_clean = self.clean_search_query(query)
         result = self.search.results(query_clean, num_search_results)
         return result
@@ -199,7 +200,7 @@ class WebResearchRetriever(BaseRetriever):
         logger.info(f"New URLs to load: {new_urls}")
         # Load, split, and add new urls to vectorstore
         if new_urls:
-            loader = AsyncHtmlLoader(new_urls)
+            loader = AsyncHtmlLoader(new_urls, ignore_load_errors=True)
             html2text = Html2TextTransformer()
             logger.info("Indexing new urls...")
             docs = loader.load()

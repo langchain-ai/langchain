@@ -1,17 +1,16 @@
-"""Load MHTML files, enriching metadata with page title."""
-
 import email
 import logging
 from typing import Dict, List, Union
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
 
 class MHTMLLoader(BaseLoader):
-    """Loader that uses beautiful soup to parse HTML files."""
+    """Parse `MHTML` files with `BeautifulSoup`."""
 
     def __init__(
         self,
@@ -54,7 +53,7 @@ class MHTMLLoader(BaseLoader):
             message = email.message_from_string(f.read())
             parts = message.get_payload()
 
-            if type(parts) is not list:
+            if not isinstance(parts, list):
                 parts = [message]
 
             for part in parts:

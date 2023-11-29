@@ -1,12 +1,12 @@
-"""Loader for .srt (subtitle) files."""
 from typing import List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 
 class SRTLoader(BaseLoader):
-    """Loader for .srt (subtitle) files."""
+    """Load `.srt` (subtitle) files."""
 
     def __init__(self, file_path: str):
         """Initialize with a file path."""

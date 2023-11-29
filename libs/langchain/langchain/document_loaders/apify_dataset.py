@@ -1,8 +1,8 @@
 from typing import Any, Callable, Dict, List
 
-from pydantic import BaseModel, root_validator
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
@@ -15,7 +15,7 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
         .. code-block:: python
 
             from langchain.document_loaders import ApifyDatasetLoader
-            from langchain.schema import Document
+            from langchain_core.documents import Document
 
             loader = ApifyDatasetLoader(
                 dataset_id="YOUR-DATASET-ID",

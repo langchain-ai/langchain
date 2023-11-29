@@ -3,7 +3,8 @@
 import logging
 from typing import Any, Dict, Iterator, Union
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class BS4HTMLParser(BaseBlobParser):
-    """Parser that uses beautiful soup to parse HTML files."""
+    """Pparse HTML files using `Beautiful Soup`."""
 
     def __init__(
         self,

@@ -20,8 +20,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from pydantic import Extra
 
+from langchain_experimental.pydantic_v1 import Extra
 from langchain_experimental.tot.checker import ToTChecker
 from langchain_experimental.tot.controller import ToTController
 from langchain_experimental.tot.memory import ToTDFSMemory
@@ -46,7 +46,7 @@ class ToTChain(Chain):
     """ToT Checker to use."""
     output_key: str = "response"  #: :meta private:
     k: int = 10
-    """The maximmum number of conversation rounds"""
+    """The maximum number of conversation rounds"""
     c: int = 3
     """The number of children to explore at each node"""
     tot_memory: ToTDFSMemory = ToTDFSMemory()

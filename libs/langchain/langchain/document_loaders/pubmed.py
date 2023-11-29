@@ -1,12 +1,13 @@
 from typing import Iterator, List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.utilities.pubmed import PubMedAPIWrapper
 
 
 class PubMedLoader(BaseLoader):
-    """Loads a query result from PubMed biomedical library into a list of Documents.
+    """Load from the `PubMed` biomedical library.
 
     Attributes:
         query: The query to be passed to the PubMed API.

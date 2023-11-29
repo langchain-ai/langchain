@@ -5,9 +5,9 @@ from typing import Any
 
 import pytest
 
-from langchain import LLMChain
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
+from langchain.chains.llm import LLMChain
 from langchain.utilities.requests import TextRequestsWrapper
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -22,8 +22,7 @@ class FakeRequestsChain(TextRequestsWrapper):
         return self.output
 
 
-@pytest.fixture
-def test_api_data() -> dict:
+def get_test_api_data() -> dict:
     """Fake api data to use for testing."""
     api_docs = """
     This API endpoint will search the notes for a user.
@@ -48,39 +47,59 @@ def test_api_data() -> dict:
     }
 
 
-@pytest.fixture
-def fake_llm_api_chain(test_api_data: dict) -> APIChain:
+def get_api_chain(**kwargs: Any) -> APIChain:
     """Fake LLM API chain for testing."""
-    TEST_API_DOCS = test_api_data["api_docs"]
-    TEST_QUESTION = test_api_data["question"]
-    TEST_URL = test_api_data["api_url"]
-    TEST_API_RESPONSE = test_api_data["api_response"]
-    TEST_API_SUMMARY = test_api_data["api_summary"]
+    data = get_test_api_data()
+    test_api_docs = data["api_docs"]
+    test_question = data["question"]
+    test_url = data["api_url"]
+    test_api_response = data["api_response"]
+    test_api_summary = data["api_summary"]
 
     api_url_query_prompt = API_URL_PROMPT.format(
-        api_docs=TEST_API_DOCS, question=TEST_QUESTION
+        api_docs=test_api_docs, question=test_question
     )
     api_response_prompt = API_RESPONSE_PROMPT.format(
-        api_docs=TEST_API_DOCS,
-        question=TEST_QUESTION,
-        api_url=TEST_URL,
-        api_response=TEST_API_RESPONSE,
+        api_docs=test_api_docs,
+        question=test_question,
+        api_url=test_url,
+        api_response=test_api_response,
     )
-    queries = {api_url_query_prompt: TEST_URL, api_response_prompt: TEST_API_SUMMARY}
+    queries = {api_url_query_prompt: test_url, api_response_prompt: test_api_summary}
     fake_llm = FakeLLM(queries=queries)
     api_request_chain = LLMChain(llm=fake_llm, prompt=API_URL_PROMPT)
     api_answer_chain = LLMChain(llm=fake_llm, prompt=API_RESPONSE_PROMPT)
-    requests_wrapper = FakeRequestsChain(output=TEST_API_RESPONSE)
+    requests_wrapper = FakeRequestsChain(output=test_api_response)
     return APIChain(
         api_request_chain=api_request_chain,
         api_answer_chain=api_answer_chain,
         requests_wrapper=requests_wrapper,
-        api_docs=TEST_API_DOCS,
+        api_docs=test_api_docs,
+        **kwargs,
     )
 
 
-def test_api_question(fake_llm_api_chain: APIChain, test_api_data: dict) -> None:
+def test_api_question() -> None:
     """Test simple question that needs API access."""
-    question = test_api_data["question"]
-    output = fake_llm_api_chain.run(question)
-    assert output == test_api_data["api_summary"]
+    with pytest.raises(ValueError):
+        get_api_chain()
+    with pytest.raises(ValueError):
+        get_api_chain(limit_to_domains=tuple())
+
+    # All domains allowed (not advised)
+    api_chain = get_api_chain(limit_to_domains=None)
+    data = get_test_api_data()
+    assert api_chain.run(data["question"]) == data["api_summary"]
+
+    # Use a domain that's allowed
+    api_chain = get_api_chain(
+        limit_to_domains=["https://thisapidoesntexist.com/api/notes?q=langchain"]
+    )
+    # Attempts to make a request against a domain that's not allowed
+    assert api_chain.run(data["question"]) == data["api_summary"]
+
+    # Use domains that are not valid
+    api_chain = get_api_chain(limit_to_domains=["h", "*"])
+    with pytest.raises(ValueError):
+        # Attempts to make a request against a domain that's not allowed
+        assert api_chain.run(data["question"]) == data["api_summary"]

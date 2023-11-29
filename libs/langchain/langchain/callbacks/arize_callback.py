@@ -1,9 +1,11 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
+
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import import_pandas
-from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class ArizeCallbackHandler(BaseCallbackHandler):
@@ -163,9 +165,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
                 else:
                     print(f'❌ Logging failed "{response_from_arize.text}"')
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
@@ -178,9 +178,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
@@ -205,9 +203,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
     ) -> None:
         pass
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         pass
 
     def on_text(self, text: str, **kwargs: Any) -> None:

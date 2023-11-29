@@ -10,8 +10,8 @@ from langchain.utilities.brave_search import BraveSearchWrapper
 class BraveSearch(BaseTool):
     """Tool that queries the BraveSearch."""
 
-    name = "brave_search"
-    description = (
+    name: str = "brave_search"
+    description: str = (
         "a search engine. "
         "useful for when you need to answer questions about current events."
         " input should be a search query."

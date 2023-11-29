@@ -9,6 +9,8 @@ from langchain.vectorstores.pgvector import BaseModel
 
 
 class CollectionStore(BaseModel):
+    """Collection store."""
+
     __tablename__ = "langchain_pg_collection"
 
     name = sqlalchemy.Column(sqlalchemy.String)
@@ -48,6 +50,8 @@ class CollectionStore(BaseModel):
 
 
 class EmbeddingStore(BaseModel):
+    """Embedding store."""
+
     __tablename__ = "langchain_pg_embedding"
 
     collection_id = sqlalchemy.Column(

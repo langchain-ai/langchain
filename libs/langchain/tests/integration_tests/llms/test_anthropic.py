@@ -2,11 +2,23 @@
 from typing import Generator
 
 import pytest
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.llms.anthropic import Anthropic
-from langchain.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+
+
+@pytest.mark.requires("anthropic")
+def test_anthropic_model_name_param() -> None:
+    llm = Anthropic(model_name="foo")
+    assert llm.model == "foo"
+
+
+@pytest.mark.requires("anthropic")
+def test_anthropic_model_param() -> None:
+    llm = Anthropic(model="foo")
+    assert llm.model == "foo"
 
 
 def test_anthropic_call() -> None:
@@ -24,7 +36,7 @@ def test_anthropic_streaming() -> None:
     assert isinstance(generator, Generator)
 
     for token in generator:
-        assert isinstance(token["completion"], str)
+        assert isinstance(token, str)
 
 
 def test_anthropic_streaming_callback() -> None:
@@ -40,7 +52,6 @@ def test_anthropic_streaming_callback() -> None:
     assert callback_handler.llm_streams > 1
 
 
-@pytest.mark.asyncio
 async def test_anthropic_async_generate() -> None:
     """Test async generate."""
     llm = Anthropic()
@@ -48,7 +59,6 @@ async def test_anthropic_async_generate() -> None:
     assert isinstance(output, LLMResult)
 
 
-@pytest.mark.asyncio
 async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

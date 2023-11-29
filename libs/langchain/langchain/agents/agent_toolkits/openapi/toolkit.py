@@ -3,13 +3,14 @@ from __future__ import annotations
 
 from typing import Any, List
 
+from langchain_core.language_models import BaseLanguageModel
+
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.agent_toolkits.openapi.prompt import DESCRIPTION
 from langchain.agents.tools import Tool
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.json.tool import JsonSpec
 from langchain.tools.requests.tool import (
@@ -23,7 +24,22 @@ from langchain.utilities.requests import TextRequestsWrapper
 
 
 class RequestsToolkit(BaseToolkit):
-    """Toolkit for making REST requests."""
+    """Toolkit for making REST requests.
+
+    *Security Note*: This toolkit contains tools to make GET, POST, PATCH, PUT,
+        and DELETE requests to an API.
+
+        Exercise care in who is allowed to use this toolkit. If exposing
+        to end users, consider that users will be able to make arbitrary
+        requests on behalf of the server hosting the code. For example,
+        users could ask the server to make a request to a private API
+        that is only accessible from the server.
+
+        Control access to who can submit issue requests using this toolkit and
+        what network access it has.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     requests_wrapper: TextRequestsWrapper
 
@@ -39,7 +55,15 @@ class RequestsToolkit(BaseToolkit):
 
 
 class OpenAPIToolkit(BaseToolkit):
-    """Toolkit for interacting with an OpenAPI API."""
+    """Toolkit for interacting with an OpenAPI API.
+
+    *Security Note*: This toolkit contains tools that can read and modify
+        the state of a service; e.g., by creating, deleting, or updating,
+        reading underlying data.
+
+        For example, this toolkit can be used to delete data exposed via
+        an OpenAPI compliant API.
+    """
 
     json_agent: AgentExecutor
     requests_wrapper: TextRequestsWrapper

@@ -1,13 +1,14 @@
 from typing import Any, List, Optional
 
-from pydantic import root_validator
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.schema import BaseRetriever, Document
 
 
 class MetalRetriever(BaseRetriever):
-    """Retriever that uses the Metal API."""
+    """`Metal API` retriever."""
 
     client: Any
     """The Metal client to use."""

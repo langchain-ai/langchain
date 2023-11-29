@@ -5,12 +5,13 @@ from typing import Any, Dict, Iterator, List, Optional, Union
 from unittest import mock
 
 import pytest
+from freezegun import freeze_time
+from langchain_core.language_models import BaseLanguageModel
 from langsmith.client import Client
 from langsmith.schemas import Dataset, Example
 
 from langchain.chains.base import Chain
 from langchain.chains.transform import TransformChain
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.smith.evaluation.runner_utils import (
     InputFormatError,
     _get_messages,
@@ -182,17 +183,16 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         return {"the right input": inputs["the wrong input"]}
 
     result = _run_llm_or_chain(
-        example, lambda: mock_chain, n_repetitions=1, input_mapper=input_mapper
-    )
-    assert len(result) == 1
-    assert result[0] == {"output": "2", "the right input": "1"}
-    bad_result = _run_llm_or_chain(
         example,
-        lambda: mock_chain,
-        n_repetitions=1,
+        {"callbacks": [], "tags": []},
+        llm_or_chain_factory=lambda: mock_chain,
+        input_mapper=input_mapper,
     )
-    assert len(bad_result) == 1
-    assert "Error" in bad_result[0]
+    assert result == {"output": "2", "the right input": "1"}
+    bad_result = _run_llm_or_chain(
+        example, {"callbacks": [], "tags": []}, llm_or_chain_factory=lambda: mock_chain
+    )
+    assert "Error" in bad_result
 
     # Try with LLM
     def llm_input_mapper(inputs: dict) -> str:
@@ -200,11 +200,12 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         return "the right input"
 
     mock_llm = FakeLLM(queries={"the right input": "somenumber"})
-    result = _run_llm_or_chain(
-        example, mock_llm, n_repetitions=1, input_mapper=llm_input_mapper
+    llm_result = _run_llm_or_chain(
+        example,
+        {"callbacks": [], "tags": []},
+        llm_or_chain_factory=mock_llm,
+        input_mapper=llm_input_mapper,
     )
-    assert len(result) == 1
-    llm_result = result[0]
     assert isinstance(llm_result, str)
     assert llm_result == "somenumber"
 
@@ -238,7 +239,7 @@ def test_run_chat_model_all_formats(inputs: Dict[str, Any]) -> None:
     _run_llm(llm, inputs, mock.MagicMock())
 
 
-@pytest.mark.asyncio
+@freeze_time("2023-01-01")
 async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     dataset = Dataset(
         id=uuid.uuid4(),
@@ -302,14 +303,11 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     async def mock_arun_chain(
         example: Example,
         llm_or_chain: Union[BaseLanguageModel, Chain],
-        n_repetitions: int,
         tags: Optional[List[str]] = None,
         callbacks: Optional[Any] = None,
         **kwargs: Any,
-    ) -> List[Dict[str, Any]]:
-        return [
-            {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)
-        ]
+    ) -> Dict[str, Any]:
+        return {"result": f"Result for example {example.id}"}
 
     def mock_create_project(*args: Any, **kwargs: Any) -> Any:
         proj = mock.MagicMock()
@@ -321,27 +319,32 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     ), mock.patch.object(Client, "list_examples", new=mock_list_examples), mock.patch(
         "langchain.smith.evaluation.runner_utils._arun_llm_or_chain",
         new=mock_arun_chain,
-    ), mock.patch.object(
-        Client, "create_project", new=mock_create_project
-    ):
+    ), mock.patch.object(Client, "create_project", new=mock_create_project):
         client = Client(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
         chain.input_keys = ["foothing"]
-        num_repetitions = 3
         results = await arun_on_dataset(
             dataset_name="test",
             llm_or_chain_factory=lambda: chain,
             concurrency_level=2,
             project_name="test_project",
-            num_repetitions=num_repetitions,
             client=client,
         )
-
         expected = {
-            uuid_: [
-                {"result": f"Result for example {uuid.UUID(uuid_)}"}
-                for _ in range(num_repetitions)
-            ]
-            for uuid_ in uuids
+            str(example.id): {
+                "output": {
+                    "result": f"Result for example {uuid.UUID(str(example.id))}"
+                },
+                "input": {"input": example.inputs["input"]},
+                "reference": {
+                    "output": example.outputs["output"]
+                    if example.outputs is not None
+                    else None
+                },
+                "feedback": [],
+                # No run since we mock the call to the llm above
+                "execution_time": None,
+            }
+            for example in examples
         }
         assert results["results"] == expected

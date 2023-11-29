@@ -1,10 +1,10 @@
-"""Mastodon document loader."""
 from __future__ import annotations
 
 import os
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 if TYPE_CHECKING:
@@ -23,7 +23,7 @@ def _dependable_mastodon_import() -> mastodon:
 
 
 class MastodonTootsLoader(BaseLoader):
-    """Mastodon toots loader."""
+    """Load the `Mastodon` 'toots'."""
 
     def __init__(
         self,

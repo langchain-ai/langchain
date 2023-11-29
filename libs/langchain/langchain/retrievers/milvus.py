@@ -2,18 +2,19 @@
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic import root_validator
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.milvus import Milvus
 
 # TODO: Update to MilvusClient + Hybrid Search when available
 
 
 class MilvusRetriever(BaseRetriever):
-    """Retriever that uses the Milvus API."""
+    """`Milvus API` retriever."""
 
     embedding_function: Embeddings
     collection_name: str = "LangChainCollection"

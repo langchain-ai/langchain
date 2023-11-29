@@ -1,9 +1,8 @@
-"""Loads iFixit data."""
 from typing import List, Optional
 
 import requests
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 
@@ -11,7 +10,7 @@ IFIXIT_BASE_URL = "https://www.ifixit.com/api/2.0"
 
 
 class IFixitLoader(BaseLoader):
-    """Load iFixit repair guides, device wikis and answers.
+    """Load `iFixit` repair guides, device wikis and answers.
 
     iFixit is the largest, open repair community on the web. The site contains nearly
     100k repair manuals, 200k Questions & Answers on 42k devices, and all the data is

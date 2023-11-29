@@ -1,12 +1,12 @@
-"""Loads IMSDb."""
 from typing import List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.web_base import WebBaseLoader
 
 
 class IMSDbLoader(WebBaseLoader):
-    """Loads IMSDb webpages."""
+    """Load `IMSDb` webpages."""
 
     def load(self) -> List[Document]:
         """Load webpage."""

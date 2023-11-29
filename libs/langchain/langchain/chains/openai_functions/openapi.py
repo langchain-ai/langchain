@@ -1,24 +1,27 @@
+from __future__ import annotations
+
 import json
 import re
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
-from openapi_schema_pydantic import Parameter
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
+from langchain_core.utils.input import get_colored_text
 from requests import Response
 
-from langchain import LLMChain
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
 from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import APIOperation
 from langchain.utilities.openapi import OpenAPISpec
-from langchain.utils.input import get_colored_text
+
+if TYPE_CHECKING:
+    from openapi_pydantic import Parameter
 
 
 def _get_description(o: Any, prefer_short: bool) -> Optional[str]:
@@ -223,7 +226,7 @@ class SimpleRequestChain(Chain):
             response = (
                 f"{api_response.status_code}: {api_response.reason}"
                 + f"\nFor {name} "
-                + f"Called with args: {args['params']}"
+                + f"Called with args: {args.get('params','')}"
             )
         else:
             try:
@@ -262,6 +265,8 @@ def get_openapi_chain(
             try:
                 spec = conversion(spec)  # type: ignore[arg-type]
                 break
+            except ImportError as e:
+                raise e
             except Exception:  # noqa: E722
                 pass
         if isinstance(spec, str):

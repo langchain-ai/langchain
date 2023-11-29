@@ -2,15 +2,16 @@ import asyncio
 import logging
 from typing import Iterator, List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
 
 class AsyncChromiumLoader(BaseLoader):
-    """Scrape HTML content from provided URLs using a
-    headless instance of the Chromium browser."""
+    """Scrape HTML pages from URLs using a
+    headless instance of the Chromium."""
 
     def __init__(
         self,

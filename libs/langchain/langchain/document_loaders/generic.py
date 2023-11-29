@@ -3,10 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterator, List, Literal, Optional, Sequence, Union
 
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseBlobParser, BaseLoader
 from langchain.document_loaders.blob_loaders import BlobLoader, FileSystemBlobLoader
 from langchain.document_loaders.parsers.registry import get_parser
-from langchain.schema import Document
 from langchain.text_splitter import TextSplitter
 
 _PathLike = Union[str, Path]
@@ -105,6 +106,7 @@ class GenericLoader(BaseLoader):
         path: _PathLike,
         *,
         glob: str = "**/[!.]*",
+        exclude: Sequence[str] = (),
         suffixes: Optional[Sequence[str]] = None,
         show_progress: bool = False,
         parser: Union[DEFAULT, BaseBlobParser] = "default",
@@ -116,6 +118,7 @@ class GenericLoader(BaseLoader):
             glob: The glob pattern to use to find documents.
             suffixes: The suffixes to use to filter documents. If None, all files
                       matching the glob will be loaded.
+            exclude: A list of patterns to exclude from the loader.
             show_progress: Whether to show a progress bar or not (requires tqdm).
                            Proxies to the file system loader.
             parser: A blob parser which knows how to parse blobs into documents
@@ -124,7 +127,11 @@ class GenericLoader(BaseLoader):
             A generic document loader.
         """
         blob_loader = FileSystemBlobLoader(
-            path, glob=glob, suffixes=suffixes, show_progress=show_progress
+            path,
+            glob=glob,
+            exclude=exclude,
+            suffixes=suffixes,
+            show_progress=show_progress,
         )
         if isinstance(parser, str):
             blob_parser = get_parser(parser)

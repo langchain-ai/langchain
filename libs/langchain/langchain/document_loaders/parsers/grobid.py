@@ -2,8 +2,8 @@ import logging
 from typing import Dict, Iterator, List, Union
 
 import requests
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 
@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 
 
 class ServerUnavailableException(Exception):
-    """Exception raised when the GROBID server is unavailable."""
+    """Exception raised when the Grobid server is unavailable."""
 
     pass
 
 
 class GrobidParser(BaseBlobParser):
-    """Loader that uses Grobid to load article PDF files."""
+    """Load  article `PDF` files using `Grobid`."""
 
     def __init__(
         self,

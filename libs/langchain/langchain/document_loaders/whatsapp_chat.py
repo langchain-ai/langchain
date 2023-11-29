@@ -2,7 +2,8 @@ import re
 from pathlib import Path
 from typing import List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 
@@ -12,7 +13,7 @@ def concatenate_rows(date: str, sender: str, text: str) -> str:
 
 
 class WhatsAppChatLoader(BaseLoader):
-    """Loads WhatsApp messages text file."""
+    """Load `WhatsApp` messages text file."""
 
     def __init__(self, path: str):
         """Initialize with path."""

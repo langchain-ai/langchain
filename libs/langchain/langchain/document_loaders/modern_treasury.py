@@ -1,10 +1,10 @@
-"""Loader that fetches data from Modern Treasury"""
 import json
 import urllib.request
 from base64 import b64encode
 from typing import List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.utils import get_from_env, stringify_value
 
@@ -27,7 +27,7 @@ incoming_payment_details",
 
 
 class ModernTreasuryLoader(BaseLoader):
-    """Loader that fetches data from Modern Treasury."""
+    """Load from `Modern Treasury`."""
 
     def __init__(
         self,

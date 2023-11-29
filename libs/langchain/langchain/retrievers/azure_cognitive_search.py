@@ -1,5 +1,3 @@
-"""Retriever for the Azure Cognitive Search service."""
-
 from __future__ import annotations
 
 import json
@@ -7,18 +5,19 @@ from typing import Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import Extra, root_validator
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
 
 class AzureCognitiveSearchRetriever(BaseRetriever):
-    """Retriever for the Azure Cognitive Search service."""
+    """`Azure Cognitive Search` service retriever."""
 
     service_name: str = ""
     """Name of Azure Cognitive Search service"""

@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -91,7 +91,7 @@ class Modal(LLM):
             if prompt in response.json()["prompt"]:
                 response_json = response.json()
         except KeyError:
-            raise ValueError("LangChain requires 'prompt' key in response.")
+            raise KeyError("LangChain requires 'prompt' key in response.")
         text = response_json["prompt"]
         if stop is not None:
             # I believe this is required since the stop tokens

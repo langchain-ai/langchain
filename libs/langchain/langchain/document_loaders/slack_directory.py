@@ -1,15 +1,15 @@
-"""Loader for documents from a Slack export."""
 import json
 import zipfile
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 
 class SlackDirectoryLoader(BaseLoader):
-    """Loads documents from a Slack directory dump."""
+    """Load from a `Slack` directory dump."""
 
     def __init__(self, zip_path: str, workspace_url: Optional[str] = None):
         """Initialize the SlackDirectoryLoader.

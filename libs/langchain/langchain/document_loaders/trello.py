@@ -1,9 +1,9 @@
-"""Loads cards from Trello"""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, List, Literal, Optional, Tuple
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.utils import get_from_env
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class TrelloLoader(BaseLoader):
-    """Trello loader. Reads all cards from a Trello board."""
+    """Load cards from a `Trello` board."""
 
     def __init__(
         self,

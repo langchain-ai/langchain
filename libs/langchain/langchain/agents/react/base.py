@@ -1,7 +1,10 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 from typing import Any, List, Optional, Sequence
 
-from pydantic import Field
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Field
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -11,9 +14,6 @@ from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
 from langchain.docstore.base import Docstore
-from langchain.docstore.document import Document
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
@@ -132,14 +132,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
 
 
 class ReActChain(AgentExecutor):
-    """Chain that implements the ReAct paper.
-
-    Example:
-        .. code-block:: python
-
-            from langchain import ReActChain, OpenAI
-            react = ReAct(llm=OpenAI())
-    """
+    """[Deprecated] Chain that implements the ReAct paper."""
 
     def __init__(self, llm: BaseLanguageModel, docstore: Docstore, **kwargs: Any):
         """Initialize with the LLM and a docstore."""

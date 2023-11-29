@@ -1,12 +1,12 @@
-"""Loads documents from Psychic.dev."""
 from typing import List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 
 class PsychicLoader(BaseLoader):
-    """Loads documents from Psychic.dev."""
+    """Load from `Psychic.dev`."""
 
     def __init__(
         self, api_key: str, account_id: str, connector_id: Optional[str] = None

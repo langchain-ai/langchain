@@ -2,17 +2,18 @@
 import datetime
 from typing import Any, Dict, List, Optional
 
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import ChatResult
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models import ChatOpenAI
-from langchain.schema import ChatResult
-from langchain.schema.messages import BaseMessage
 
 
 class PromptLayerChatOpenAI(ChatOpenAI):
-    """Wrapper around OpenAI Chat large language models and PromptLayer.
+    """`PromptLayer` and `OpenAI` Chat large language models API.
 
     To use, you should have the ``openai`` and ``promptlayer`` python
     package installed, and the environment variable ``OPENAI_API_KEY``
@@ -44,7 +45,7 @@ class PromptLayerChatOpenAI(ChatOpenAI):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         stream: Optional[bool] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResult:
         """Call ChatOpenAI generate and then call PromptLayer API to log the request."""
         from promptlayer.utils import get_api_key, promptlayer_api_request
@@ -86,7 +87,7 @@ class PromptLayerChatOpenAI(ChatOpenAI):
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         stream: Optional[bool] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResult:
         """Call ChatOpenAI agenerate and then call PromptLayer to log."""
         from promptlayer.utils import get_api_key, promptlayer_api_request_async

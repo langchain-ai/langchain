@@ -30,7 +30,7 @@ agent = initialize_agent(
 """
 from typing import Optional
 
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
@@ -42,8 +42,8 @@ class JiraAction(BaseTool):
 
     api_wrapper: JiraAPIWrapper = Field(default_factory=JiraAPIWrapper)
     mode: str
-    name = ""
-    description = ""
+    name: str = ""
+    description: str = ""
 
     def _run(
         self,

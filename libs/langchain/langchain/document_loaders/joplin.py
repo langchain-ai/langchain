@@ -3,16 +3,16 @@ import urllib
 from datetime import datetime
 from typing import Iterator, List, Optional
 
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
-from langchain.schema import Document
 from langchain.utils import get_from_env
 
 LINK_NOTE_TEMPLATE = "joplin://x-callback-url/openNote?id={id}"
 
 
 class JoplinLoader(BaseLoader):
-    """
-    Loader that fetches notes from Joplin.
+    """Load notes from `Joplin`.
 
     In order to use this loader, you need to have Joplin running with the
     Web Clipper enabled (look for "Web Clipper" in the app settings).

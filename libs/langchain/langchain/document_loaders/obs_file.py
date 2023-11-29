@@ -4,13 +4,14 @@ import os
 import tempfile
 from typing import Any, List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class OBSFileLoader(BaseLoader):
-    """Loader for Huawei OBS file."""
+    """Load from the `Huawei OBS file`."""
 
     def __init__(
         self,

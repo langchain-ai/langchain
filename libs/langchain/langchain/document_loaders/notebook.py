@@ -3,7 +3,8 @@ import json
 from pathlib import Path
 from typing import Any, List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 
@@ -56,7 +57,7 @@ def concatenate_cells(
 
 
 def remove_newlines(x: Any) -> Any:
-    """Recursively removes newlines, no matter the data structure they are stored in."""
+    """Recursively remove newlines, no matter the data structure they are stored in."""
     import pandas as pd
 
     if isinstance(x, str):
@@ -70,7 +71,7 @@ def remove_newlines(x: Any) -> Any:
 
 
 class NotebookLoader(BaseLoader):
-    """Loads .ipynb notebook files."""
+    """Load `Jupyter notebook` (.ipynb) files."""
 
     def __init__(
         self,
@@ -80,7 +81,7 @@ class NotebookLoader(BaseLoader):
         remove_newline: bool = False,
         traceback: bool = False,
     ):
-        """Initialize with path.
+        """Initialize with a path.
 
         Args:
             path: The path to load the notebook from.

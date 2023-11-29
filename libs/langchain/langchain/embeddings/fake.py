@@ -2,9 +2,8 @@ import hashlib
 from typing import List
 
 import numpy as np
-from pydantic import BaseModel
-
-from langchain.embeddings.base import Embeddings
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel
 
 
 class FakeEmbeddings(Embeddings, BaseModel):

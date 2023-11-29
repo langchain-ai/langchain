@@ -1,15 +1,14 @@
-"""Wrapper around USearch vector database."""
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
 from langchain.docstore.base import AddableMixin, Docstore
-from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
 
 
 def dependable_usearch_import() -> Any:
@@ -27,7 +26,8 @@ def dependable_usearch_import() -> Any:
 
 
 class USearch(VectorStore):
-    """Wrapper around USearch vector database.
+    """`USearch` vector store.
+
     To use, you should have the ``usearch`` python package installed.
     """
 

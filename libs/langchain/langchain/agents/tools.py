@@ -11,8 +11,8 @@ from langchain.tools.base import BaseTool, Tool, tool
 class InvalidTool(BaseTool):
     """Tool that is run when invalid tool name is encountered by agent."""
 
-    name = "invalid_tool"
-    description = "Called when tool name is invalid. Suggests valid tool names."
+    name: str = "invalid_tool"
+    description: str = "Called when tool name is invalid. Suggests valid tool names."
 
     def _run(
         self,

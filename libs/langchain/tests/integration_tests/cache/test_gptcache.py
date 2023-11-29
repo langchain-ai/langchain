@@ -2,10 +2,10 @@ import os
 from typing import Any, Callable, Union
 
 import pytest
+from langchain_core.outputs import Generation
 
-import langchain
 from langchain.cache import GPTCache
-from langchain.schema import Generation
+from langchain.globals import get_llm_cache, set_llm_cache
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 try:
@@ -48,15 +48,15 @@ def test_gptcache_caching(
     init_func: Union[Callable[[Any, str], None], Callable[[Any], None], None]
 ) -> None:
     """Test gptcache default caching behavior."""
-    langchain.llm_cache = GPTCache(init_func)
+    set_llm_cache(GPTCache(init_func))
     llm = FakeLLM()
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     _ = llm.generate(["foo", "bar", "foo"])
-    cache_output = langchain.llm_cache.lookup("foo", llm_string)
+    cache_output = get_llm_cache().lookup("foo", llm_string)
     assert cache_output == [Generation(text="fizz")]
 
-    langchain.llm_cache.clear()
-    assert langchain.llm_cache.lookup("bar", llm_string) is None
+    get_llm_cache().clear()
+    assert get_llm_cache().lookup("bar", llm_string) is None

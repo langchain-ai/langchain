@@ -1,9 +1,9 @@
-"""Wrapper around Hnswlib store."""
 from __future__ import annotations
 
 from typing import Any, List, Literal, Optional
 
-from langchain.embeddings.base import Embeddings
+from langchain_core.embeddings import Embeddings
+
 from langchain.vectorstores.docarray.base import (
     DocArrayIndex,
     _check_docarray_import,
@@ -11,7 +11,7 @@ from langchain.vectorstores.docarray.base import (
 
 
 class DocArrayHnswSearch(DocArrayIndex):
-    """Wrapper around HnswLib storage.
+    """`HnswLib` storage using `DocArray` package.
 
     To use it, you should have the ``docarray`` package with version >=0.32.0 installed.
     You can install it with `pip install "langchain[docarray]"`.

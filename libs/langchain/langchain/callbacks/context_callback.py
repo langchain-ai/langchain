@@ -3,11 +3,10 @@ import os
 from typing import Any, Dict, List
 from uuid import UUID
 
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import LLMResult
+
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import (
-    BaseMessage,
-    LLMResult,
-)
 
 
 def import_context() -> Any:
@@ -33,11 +32,11 @@ def import_context() -> Any:
 class ContextCallbackHandler(BaseCallbackHandler):
     """Callback Handler that records transcripts to the Context service.
 
-     (https://getcontext.ai).
+     (https://context.ai).
 
     Keyword Args:
         token (optional): The token with which to authenticate requests to Context.
-            Visit https://go.getcontext.ai/settings to generate a token.
+            Visit https://with.context.ai/settings to generate a token.
             If not provided, the value of the `CONTEXT_TOKEN` environment
             variable will be used.
 
@@ -63,8 +62,8 @@ class ContextCallbackHandler(BaseCallbackHandler):
         >>> chat(messages)
 
     Chain Example:
-        >>> from langchain import LLMChain
-        >>> from langchain.llms import ChatOpenAI
+        >>> from langchain.chains import LLMChain
+        >>> from langchain.chat_models import ChatOpenAI
         >>> from langchain.callbacks import ContextCallbackHandler
         >>> context_callback = ContextCallbackHandler(
         ...     token="<CONTEXT_TOKEN_HERE>",
@@ -122,7 +121,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
         """Run when the chat model is started."""
         llm_model = kwargs.get("invocation_params", {}).get("model", None)
         if llm_model is not None:
-            self.metadata["llm_model"] = llm_model
+            self.metadata["model"] = llm_model
 
         if len(messages) == 0:
             return

@@ -132,7 +132,14 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator, validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    PrivateAttr,
+    root_validator,
+    validator,
+)
 
 from langchain.utils import get_from_dict_or_env
 
@@ -144,7 +151,7 @@ def _get_default_params() -> dict:
 class SearxResults(dict):
     """Dict like wrapper around search api results."""
 
-    _data = ""
+    _data: str = ""
 
     def __init__(self, data: str):
         """Take a raw result from Searx and make it into a dict like object."""

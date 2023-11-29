@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List
 
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class AmadeusToolkit(BaseToolkit):
-    """Toolkit for interacting with Office365."""
+    """Toolkit for interacting with Amadeus which offers APIs for travel search."""
 
     client: Client = Field(default_factory=authenticate)
 

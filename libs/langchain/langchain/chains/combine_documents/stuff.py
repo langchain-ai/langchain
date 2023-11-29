@@ -2,16 +2,16 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import Extra, Field, root_validator
+from langchain_core.documents import Document
+from langchain_core.prompts import BasePromptTemplate, format_document
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
 )
 from langchain.chains.llm import LLMChain
-from langchain.docstore.document import Document
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BasePromptTemplate, format_document
 
 
 def _get_default_document_prompt() -> PromptTemplate:
@@ -31,7 +31,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         .. code-block:: python
 
             from langchain.chains import StuffDocumentsChain, LLMChain
-            from langchain.prompts import PromptTemplate
+            from langchain_core.prompts import PromptTemplate
             from langchain.llms import OpenAI
 
             # This controls how each document will be formatted. Specifically,
@@ -39,7 +39,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             # details.
             document_prompt = PromptTemplate(
                 input_variables=["page_content"],
-                 template="{page_content}"
+                template="{page_content}"
             )
             document_variable_name = "context"
             llm = OpenAI()
@@ -100,6 +100,13 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
                 )
         return values
 
+    @property
+    def input_keys(self) -> List[str]:
+        extra_keys = [
+            k for k in self.llm_chain.input_keys if k != self.document_variable_name
+        ]
+        return super().input_keys + extra_keys
+
     def _get_inputs(self, docs: List[Document], **kwargs: Any) -> dict:
         """Construct inputs from kwargs and docs.
 
@@ -144,7 +151,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         """
         inputs = self._get_inputs(docs, **kwargs)
         prompt = self.llm_chain.prompt.format(**inputs)
-        return self.llm_chain.llm.get_num_tokens(prompt)
+        return self.llm_chain._get_num_tokens(prompt)
 
     def combine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any

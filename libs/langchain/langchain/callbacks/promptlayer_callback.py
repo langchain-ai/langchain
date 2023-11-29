@@ -5,18 +5,19 @@ import datetime
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import (
-    ChatGeneration,
-    LLMResult,
-)
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.outputs import (
+    ChatGeneration,
+    LLMResult,
+)
+
+from langchain.callbacks.base import BaseCallbackHandler
 
 if TYPE_CHECKING:
     import promptlayer
@@ -40,12 +41,12 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
     def __init__(
         self,
         pl_id_callback: Optional[Callable[..., Any]] = None,
-        pl_tags: Optional[List[str]] = [],
+        pl_tags: Optional[List[str]] = None,
     ) -> None:
         """Initialize the PromptLayerCallbackHandler."""
         _lazy_import_promptlayer()
         self.pl_id_callback = pl_id_callback
-        self.pl_tags = pl_tags
+        self.pl_tags = pl_tags or []
         self.runs: Dict[UUID, Dict[str, Any]] = {}
 
     def on_chat_model_start(

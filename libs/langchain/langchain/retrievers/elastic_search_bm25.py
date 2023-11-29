@@ -5,13 +5,14 @@ from __future__ import annotations
 import uuid
 from typing import Any, Iterable, List
 
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
+
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.docstore.document import Document
-from langchain.schema import BaseRetriever
 
 
 class ElasticSearchBM25Retriever(BaseRetriever):
-    """Retriever for the Elasticsearch using BM25 as a retrieval method.
+    """`Elasticsearch` retriever that uses `BM25`.
 
     To connect to an Elasticsearch instance that requires login credentials,
     including Elastic Cloud, use the Elasticsearch URL format

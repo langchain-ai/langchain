@@ -8,10 +8,11 @@ import concurrent.futures
 from typing import Any, List, Optional
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
@@ -30,7 +31,7 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
 
 
 class KNNRetriever(BaseRetriever):
-    """KNN Retriever."""
+    """`KNN` retriever."""
 
     embeddings: Embeddings
     """Embeddings model to use."""

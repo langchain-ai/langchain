@@ -1,7 +1,9 @@
 """Chain that does self-ask with search."""
 from typing import Any, Sequence, Union
 
-from pydantic import Field
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Field
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -9,8 +11,6 @@ from langchain.agents.self_ask_with_search.output_parser import SelfAskOutputPar
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
@@ -59,15 +59,7 @@ class SelfAskWithSearchAgent(Agent):
 
 
 class SelfAskWithSearchChain(AgentExecutor):
-    """Chain that does self-ask with search.
-
-    Example:
-        .. code-block:: python
-
-            from langchain import SelfAskWithSearchChain, OpenAI, GoogleSerperAPIWrapper
-            search_chain = GoogleSerperAPIWrapper()
-            self_ask = SelfAskWithSearchChain(llm=OpenAI(), search_chain=search_chain)
-    """
+    """[Deprecated] Chain that does self-ask with search."""
 
     def __init__(
         self,

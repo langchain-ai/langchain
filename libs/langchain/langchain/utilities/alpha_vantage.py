@@ -2,9 +2,8 @@
 from typing import Any, Dict, List, Optional
 
 import requests
-from pydantic import Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
-from langchain.tools.base import BaseModel
 from langchain.utils import get_from_dict_or_env
 
 

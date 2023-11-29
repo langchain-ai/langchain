@@ -126,7 +126,7 @@ CHECKER_PROMPT = PromptTemplate(
         Evaluate the thoughts and respond with one word.
 
         - Respond VALID if the last thought is a valid final solution to the
-        poblem.
+        problem.
         - Respond INVALID if the last thought is invalid.
         - Respond INTERMEDIATE if the last thought is valid but not the final
         solution to the problem.

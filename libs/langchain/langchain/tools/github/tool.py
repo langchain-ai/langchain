@@ -9,7 +9,7 @@ To use this tool, you must first set as environment variables:
 """
 from typing import Optional
 
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
@@ -21,8 +21,8 @@ class GitHubAction(BaseTool):
 
     api_wrapper: GitHubAPIWrapper = Field(default_factory=GitHubAPIWrapper)
     mode: str
-    name = ""
-    description = ""
+    name: str = ""
+    description: str = ""
 
     def _run(
         self,

@@ -3,8 +3,12 @@ from time import sleep
 from typing import Any, Callable, List, Union
 from uuid import uuid4
 
-from langchain.schema import BaseChatMessageHistory
-from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import (
+    BaseMessage,
+    message_to_dict,
+    messages_from_dict,
+)
 
 
 class RocksetChatMessageHistory(BaseChatMessageHistory):
@@ -37,9 +41,9 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
     # These values are configured for the typical
     # free VI. Read more about VIs here:
     # https://rockset.com/docs/instances
-    SLEEP_INTERVAL_MS = 5
-    ADD_TIMEOUT_MS = 5000
-    CREATE_TIMEOUT_MS = 20000
+    SLEEP_INTERVAL_MS: int = 5
+    ADD_TIMEOUT_MS: int = 5000
+    CREATE_TIMEOUT_MS: int = 20000
 
     def _wait_until(self, method: Callable, timeout: int, **method_params: Any) -> None:
         """Sleeps until meth() evaluates to true. Passes kwargs into
@@ -197,6 +201,12 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
         self.message_uuid_method = message_uuid_method
         self.sync = sync
 
+        try:
+            self.client.set_application("langchain")
+        except AttributeError:
+            # ignore
+            pass
+
         if not self._collection_exists():
             self._create_collection()
             self._wait_until_collection_created()
@@ -239,7 +249,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
                         self.rockset.model.patch_operation.PatchOperation(
                             op="ADD",
                             path=f"/{self.messages_key}/-",
-                            value=_message_to_dict(message),
+                            value=message_to_dict(message),
                         )
                     ],
                 )

@@ -1,6 +1,6 @@
 from typing import Any, Callable, List, Mapping, Optional
 
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

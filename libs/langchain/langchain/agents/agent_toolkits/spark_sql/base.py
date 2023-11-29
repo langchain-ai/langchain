@@ -1,20 +1,22 @@
 """Spark SQL agent."""
 from typing import Any, Dict, List, Optional
 
+from langchain_core.language_models import BaseLanguageModel
+
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.spark_sql.prompt import SQL_PREFIX, SQL_SUFFIX
 from langchain.agents.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.base import BaseCallbackManager, Callbacks
 from langchain.chains.llm import LLMChain
-from langchain.schema.language_model import BaseLanguageModel
 
 
 def create_spark_sql_agent(
     llm: BaseLanguageModel,
     toolkit: SparkSQLToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
+    callbacks: Callbacks = None,
     prefix: str = SQL_PREFIX,
     suffix: str = SQL_SUFFIX,
     format_instructions: str = FORMAT_INSTRUCTIONS,
@@ -25,7 +27,7 @@ def create_spark_sql_agent(
     early_stopping_method: str = "force",
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a Spark SQL agent from an LLM and tools."""
     tools = toolkit.get_tools()
@@ -41,6 +43,7 @@ def create_spark_sql_agent(
         llm=llm,
         prompt=prompt,
         callback_manager=callback_manager,
+        callbacks=callbacks,
     )
     tool_names = [tool.name for tool in tools]
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
@@ -48,6 +51,7 @@ def create_spark_sql_agent(
         agent=agent,
         tools=tools,
         callback_manager=callback_manager,
+        callbacks=callbacks,
         verbose=verbose,
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,

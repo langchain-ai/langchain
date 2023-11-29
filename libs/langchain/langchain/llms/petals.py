@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -104,7 +104,7 @@ class Petals(LLM):
             values["huggingface_api_key"] = huggingface_api_key
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import transformers or petals python package."
                 "Please install with `pip install -U transformers petals`."
             )

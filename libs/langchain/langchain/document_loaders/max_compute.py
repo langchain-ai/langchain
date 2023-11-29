@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from typing import Any, Iterator, List, Optional, Sequence
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.utilities.max_compute import MaxComputeAPIWrapper
 
 
 class MaxComputeLoader(BaseLoader):
-    """Loads a query result from Alibaba Cloud MaxCompute table into documents."""
+    """Load from `Alibaba Cloud MaxCompute` table."""
 
     def __init__(
         self,

@@ -9,6 +9,7 @@ from langchain.tools.azure_cognitive_services import (
     AzureCogsImageAnalysisTool,
     AzureCogsSpeech2TextTool,
     AzureCogsText2SpeechTool,
+    AzureCogsTextAnalyticsHealthTool,
 )
 from langchain.tools.base import BaseTool
 
@@ -19,10 +20,11 @@ class AzureCognitiveServicesToolkit(BaseToolkit):
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
 
-        tools = [
+        tools: List[BaseTool] = [
             AzureCogsFormRecognizerTool(),
             AzureCogsSpeech2TextTool(),
             AzureCogsText2SpeechTool(),
+            AzureCogsTextAnalyticsHealthTool(),
         ]
 
         # TODO: Remove check once azure-ai-vision supports MacOS.

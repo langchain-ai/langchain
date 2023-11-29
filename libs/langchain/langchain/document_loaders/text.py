@@ -1,7 +1,8 @@
 import logging
 from typing import List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.helpers import detect_file_encodings
 
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class TextLoader(BaseLoader):
-    """Load text files.
+    """Load text file.
 
 
     Args:

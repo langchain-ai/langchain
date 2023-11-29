@@ -2,7 +2,7 @@ import importlib.util
 import logging
 from typing import Any, Callable, List, Mapping, Optional
 
-from pydantic import Extra
+from langchain_core.pydantic_v1 import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.self_hosted import SelfHostedPipeline
@@ -159,7 +159,7 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
     device: int = 0
     """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
     hardware: Any
     """Remote hardware to send the inference function to."""
     model_reqs: List[str] = ["./", "transformers", "torch"]

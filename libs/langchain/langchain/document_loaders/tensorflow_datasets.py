@@ -1,12 +1,13 @@
 from typing import Callable, Dict, Iterator, List, Optional
 
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
-from langchain.schema import Document
 from langchain.utilities.tensorflow_datasets import TensorflowDatasets
 
 
 class TensorflowDatasetLoader(BaseLoader):
-    """Loads from TensorFlow Datasets into a list of Documents.
+    """Load from `TensorFlow Dataset`.
 
     Attributes:
         dataset_name: the name of the dataset to load

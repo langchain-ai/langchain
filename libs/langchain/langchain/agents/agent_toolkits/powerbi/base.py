@@ -1,6 +1,8 @@
 """Power BI agent."""
 from typing import Any, Dict, List, Optional
 
+from langchain_core.language_models import BaseLanguageModel
+
 from langchain.agents import AgentExecutor
 from langchain.agents.agent_toolkits.powerbi.prompt import (
     POWERBI_PREFIX,
@@ -11,7 +13,6 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities.powerbi import PowerBIDataset
 
 
@@ -28,7 +29,7 @@ def create_pbi_agent(
     top_k: int = 10,
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a Power BI agent from an LLM and tools."""
     if toolkit is None:

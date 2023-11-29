@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Sequence
 
-from pydantic import Extra, root_validator
+from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.utils import convert_to_secret_str
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -170,14 +171,14 @@ class AlephAlpha(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        aleph_alpha_api_key = get_from_dict_or_env(
-            values, "aleph_alpha_api_key", "ALEPH_ALPHA_API_KEY"
+        values["aleph_alpha_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "aleph_alpha_api_key", "ALEPH_ALPHA_API_KEY")
         )
         try:
             from aleph_alpha_client import Client
 
             values["client"] = Client(
-                token=aleph_alpha_api_key,
+                token=values["aleph_alpha_api_key"].get_secret_value(),
                 host=values["host"],
                 hosting=values["hosting"],
                 request_timeout_seconds=values["request_timeout_seconds"],

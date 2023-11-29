@@ -2,8 +2,8 @@
 from typing import Dict
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.marqo import Marqo
 
 DEFAULT_MARQO_URL = "http://localhost:8882"
@@ -158,6 +158,7 @@ def test_marqo_multimodal() -> None:
                 "mainline/examples/ImageSearchGuide/data/image2.jpg",
             },
         ],
+        tensor_fields=["caption", "image"],
     )
 
     def get_content(res: Dict[str, str]) -> str:

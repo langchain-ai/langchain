@@ -4,13 +4,14 @@ This module contains some logic to help assemble more sophisticated parsers.
 """
 from typing import Iterator, Mapping, Optional
 
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders.schema import Blob
-from langchain.schema import Document
 
 
 class MimeTypeBasedParser(BaseBlobParser):
-    """A parser that uses mime-types to determine how to parse a blob.
+    """Parser that uses `mime`-types to parse a blob.
 
     This parser is useful for simple pipelines where the mime-type is sufficient
     to determine how to parse a blob.

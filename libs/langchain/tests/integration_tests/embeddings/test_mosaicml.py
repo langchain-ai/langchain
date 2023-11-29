@@ -34,7 +34,9 @@ def test_mosaicml_embedding_endpoint() -> None:
     """Test MosaicML embeddings with a different endpoint"""
     documents = ["foo bar"]
     embedding = MosaicMLInstructorEmbeddings(
-        endpoint_url="https://models.hosted-on.mosaicml.hosting/instructor-xl/v1/predict"
+        endpoint_url=(
+            "https://models.hosted-on.mosaicml.hosting/instructor-xl/v1/predict"
+        )
     )
     output = embedding.embed_documents(documents)
     assert len(output) == 1

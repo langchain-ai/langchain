@@ -12,18 +12,20 @@ EXAMPLE_DOCS_DIRECTORY = str(Path(__file__).parent.parent / "examples/")
 
 
 def test_unstructured_loader_with_post_processor() -> None:
-    from unstructured.cleaners.core import clean_extra_whitespace
+    def add_the_end(text: str) -> str:
+        return text + "THE END!"
 
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
     loader = UnstructuredFileLoader(
         file_path=file_path,
-        pos_processors=[clean_extra_whitespace],
+        post_processors=[add_the_end],
         strategy="fast",
         mode="elements",
     )
     docs = loader.load()
 
     assert len(docs) > 1
+    assert docs[0].page_content.endswith("THE END!")
 
 
 def test_unstructured_api_file_loader() -> None:

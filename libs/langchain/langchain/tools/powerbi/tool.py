@@ -3,7 +3,7 @@ import logging
 from time import perf_counter
 from typing import Any, Dict, Optional, Tuple
 
-from pydantic import Field, validator
+from langchain_core.pydantic_v1 import Field, validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 class QueryPowerBITool(BaseTool):
     """Tool for querying a Power BI Dataset."""
 
-    name = "query_powerbi"
-    description = """
+    name: str = "query_powerbi"
+    description: str = """
     Input to this tool is a detailed question about the dataset, output is a result from the dataset. It will try to answer the question using the dataset, and if it cannot, it will ask for clarification.
 
     Example Input: "How many rows are in table1?"
@@ -218,8 +218,8 @@ class QueryPowerBITool(BaseTool):
 class InfoPowerBITool(BaseTool):
     """Tool for getting metadata about a PowerBI Dataset."""
 
-    name = "schema_powerbi"
-    description = """
+    name: str = "schema_powerbi"
+    description: str = """
     Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
     Be sure that the tables actually exist by calling list_tables_powerbi first!
 
@@ -251,8 +251,8 @@ class InfoPowerBITool(BaseTool):
 class ListPowerBITool(BaseTool):
     """Tool for getting tables names."""
 
-    name = "list_tables_powerbi"
-    description = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
+    name: str = "list_tables_powerbi"
+    description: str = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
     powerbi: PowerBIDataset = Field(exclude=True)
 
     class Config:

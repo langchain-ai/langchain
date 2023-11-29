@@ -1,10 +1,21 @@
 """Pydantic models for parsing an OpenAPI spec."""
+from __future__ import annotations
+
 import logging
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
-from openapi_schema_pydantic import MediaType, Parameter, Reference, RequestBody, Schema
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
@@ -85,6 +96,15 @@ class APIPropertyBase(BaseModel):
     """The description of the property."""
 
 
+if TYPE_CHECKING:
+    from openapi_pydantic import (
+        MediaType,
+        Parameter,
+        RequestBody,
+        Schema,
+    )
+
+
 class APIProperty(APIPropertyBase):
     """A model for a property in the query, path, header, or cookie params."""
 
@@ -92,7 +112,9 @@ class APIProperty(APIPropertyBase):
     """The path/how it's being passed to the endpoint."""
 
     @staticmethod
-    def _cast_schema_list_type(schema: Schema) -> Optional[Union[str, Tuple[str, ...]]]:
+    def _cast_schema_list_type(
+        schema: Schema,
+    ) -> Optional[Union[str, Tuple[str, ...]]]:
         type_ = schema.type
         if not isinstance(type_, list):
             return type_
@@ -109,6 +131,11 @@ class APIProperty(APIPropertyBase):
     def _get_schema_type_for_array(
         schema: Schema,
     ) -> Optional[Union[str, Tuple[str, ...]]]:
+        from openapi_pydantic import (
+            Reference,
+            Schema,
+        )
+
         items = schema.items
         if isinstance(items, Schema):
             schema_type = APIProperty._cast_schema_list_type(items)
@@ -162,6 +189,11 @@ class APIProperty(APIPropertyBase):
 
     @staticmethod
     def _get_schema(parameter: Parameter, spec: OpenAPISpec) -> Optional[Schema]:
+        from openapi_pydantic import (
+            Reference,
+            Schema,
+        )
+
         schema = parameter.param_schema
         if isinstance(schema, Reference):
             schema = spec.get_referenced_schema(schema)
@@ -217,6 +249,10 @@ class APIRequestBodyProperty(APIPropertyBase):
     def _process_object_schema(
         cls, schema: Schema, spec: OpenAPISpec, references_used: List[str]
     ) -> Tuple[Union[str, List[str], None], List["APIRequestBodyProperty"]]:
+        from openapi_pydantic import (
+            Reference,
+        )
+
         properties = []
         required_props = schema.required or []
         if schema.properties is None:
@@ -245,8 +281,14 @@ class APIRequestBodyProperty(APIPropertyBase):
 
     @classmethod
     def _process_array_schema(
-        cls, schema: Schema, name: str, spec: OpenAPISpec, references_used: List[str]
+        cls,
+        schema: Schema,
+        name: str,
+        spec: OpenAPISpec,
+        references_used: List[str],
     ) -> str:
+        from openapi_pydantic import Reference, Schema
+
         items = schema.items
         if items is not None:
             if isinstance(items, Reference):
@@ -313,6 +355,7 @@ class APIRequestBodyProperty(APIPropertyBase):
         )
 
 
+# class APIRequestBodyProperty(APIPropertyBase):
 class APIRequestBody(BaseModel):
     """A model for a request body."""
 
@@ -332,6 +375,8 @@ class APIRequestBody(BaseModel):
         spec: OpenAPISpec,
     ) -> List[APIRequestBodyProperty]:
         """Process the media type of the request body."""
+        from openapi_pydantic import Reference
+
         references_used = []
         schema = media_type_obj.media_type_schema
         if isinstance(schema, Reference):
@@ -393,6 +438,8 @@ class APIRequestBody(BaseModel):
         )
 
 
+# class APIRequestBodyProperty(APIPropertyBase):
+#     class APIRequestBody(BaseModel):
 class APIOperation(BaseModel):
     """A model for a single API operation."""
 
@@ -527,7 +574,8 @@ class APIOperation(BaseModel):
                 prop_type = f"{{\n{nested_props}\n{' ' * indent}}}"
 
             formatted_props.append(
-                f"{prop_desc}\n{' ' * indent}{prop_name}{prop_required}: {prop_type},"
+                f"{prop_desc}\n{' ' * indent}{prop_name}"
+                f"{prop_required}: {prop_type},"
             )
 
         return "\n".join(formatted_props)

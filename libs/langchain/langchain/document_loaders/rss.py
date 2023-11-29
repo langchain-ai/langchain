@@ -1,8 +1,8 @@
-"""Loader that uses unstructured to load HTML files."""
 import logging
 from typing import Any, Iterator, List, Optional, Sequence
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.news import NewsURLLoader
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class RSSFeedLoader(BaseLoader):
-    """Loader that uses newspaper to load news articles from RSS feeds.
+    """Load news articles from `RSS` feeds using `Unstructured`.
 
     Args:
         urls: URLs for RSS feeds to load. Each articles in the feed is loaded into its own document.

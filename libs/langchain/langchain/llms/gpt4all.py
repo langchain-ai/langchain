@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional, Set
 
-from pydantic import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -90,6 +90,9 @@ class GPT4All(LLM):
     allow_download: bool = False
     """If model does not exist in ~/.cache/gpt4all/, download it."""
 
+    device: Optional[str] = Field("cpu", alias="device")
+    """Device name: cpu, gpu, nvidia, intel, amd or DeviceName."""
+
     client: Any = None  #: :meta private:
 
     class Config:
@@ -142,6 +145,7 @@ class GPT4All(LLM):
             model_path=model_path or None,
             model_type=values["backend"],
             allow_download=values["allow_download"],
+            device=values["device"],
         )
         if values["n_threads"] is not None:
             # set n_threads

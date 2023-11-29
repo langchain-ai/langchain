@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional
 
 import requests
+from langchain_core.messages import get_buffer_string
 
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema.messages import get_buffer_string
 
 MANAGED_URL = "https://api.getmetal.io/v1/motorhead"
 # LOCAL_URL = "http://localhost:8080"
@@ -13,8 +13,8 @@ class MotorheadMemory(BaseChatMemory):
     """Chat message memory backed by Motorhead service."""
 
     url: str = MANAGED_URL
-    timeout = 3000
-    memory_key = "history"
+    timeout: int = 3000
+    memory_key: str = "history"
     session_id: str
     context: Optional[str] = None
 

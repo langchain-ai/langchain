@@ -5,7 +5,7 @@ Based on https://github.com/saharNooby/rwkv.cpp/blob/master/rwkv/chat_with_bot.p
 """
 from typing import Any, Dict, List, Mapping, Optional, Set
 
-from pydantic import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -122,7 +122,7 @@ class RWKV(LLM, BaseModel):
             values["pipeline"] = PIPELINE(values["client"], values["tokens_path"])
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import rwkv python package. "
                 "Please install it with `pip install rwkv`."
             )

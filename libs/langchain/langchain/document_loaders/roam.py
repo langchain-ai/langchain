@@ -1,13 +1,13 @@
-"""Loads Roam directory dump."""
 from pathlib import Path
 from typing import List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 
 class RoamLoader(BaseLoader):
-    """Loads Roam files from disk."""
+    """Load `Roam` files from a directory."""
 
     def __init__(self, path: str):
         """Initialize with a path."""

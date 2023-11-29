@@ -1,6 +1,6 @@
 from typing import List, Optional, Type
 
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.office365.base import O365BaseTool
@@ -60,7 +60,7 @@ class O365CreateDraftMessage(O365BaseTool):
         if cc is not None:
             message.cc.add(cc)
         if bcc is not None:
-            message.bcc.add(cc)
+            message.bcc.add(bcc)
 
         message.save_draft()
 

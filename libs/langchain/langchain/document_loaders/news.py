@@ -2,14 +2,15 @@
 import logging
 from typing import Any, Iterator, List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
 
 class NewsURLLoader(BaseLoader):
-    """Loader that uses newspaper to load news articles from URLs.
+    """Load news articles from URLs using `Unstructured`.
 
     Args:
         urls: URLs to load. Each is loaded into its own document.

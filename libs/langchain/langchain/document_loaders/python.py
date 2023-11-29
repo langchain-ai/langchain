@@ -4,9 +4,7 @@ from langchain.document_loaders.text import TextLoader
 
 
 class PythonLoader(TextLoader):
-    """
-    Load Python files, respecting any non-default encoding if specified.
-    """
+    """Load `Python` files, respecting any non-default encoding if specified."""
 
     def __init__(self, file_path: str):
         """Initialize with a file path.

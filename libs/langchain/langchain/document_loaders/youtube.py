@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
 
-from pydantic import root_validator
-from pydantic.dataclasses import dataclass
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1.dataclasses import dataclass
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 @dataclass
 class GoogleApiClient:
-    """A Generic Google Api Client.
+    """Generic Google API Client.
 
     To use, you should have the ``google_auth_oauthlib,youtube_transcript_api,google``
     python package installed.
@@ -140,14 +140,14 @@ def _parse_video_id(url: str) -> Optional[str]:
 
 
 class YoutubeLoader(BaseLoader):
-    """Loads Youtube transcripts."""
+    """Load `YouTube` transcripts."""
 
     def __init__(
         self,
         video_id: str,
         add_video_info: bool = False,
         language: Union[str, Sequence[str]] = "en",
-        translation: str = "en",
+        translation: Optional[str] = None,
         continue_on_failure: bool = False,
     ):
         """Initialize with YouTube video ID."""
@@ -207,8 +207,10 @@ class YoutubeLoader(BaseLoader):
         try:
             transcript = transcript_list.find_transcript(self.language)
         except NoTranscriptFound:
-            en_transcript = transcript_list.find_transcript(["en"])
-            transcript = en_transcript.translate(self.translation)
+            transcript = transcript_list.find_transcript(["en"])
+
+        if self.translation is not None:
+            transcript = transcript.translate(self.translation)
 
         transcript_pieces = transcript.fetch()
 
@@ -252,7 +254,7 @@ class YoutubeLoader(BaseLoader):
 
 @dataclass
 class GoogleApiYoutubeLoader(BaseLoader):
-    """Loads all Videos from a Channel
+    """Load all Videos from a `YouTube` Channel.
 
     To use, you should have the ``googleapiclient,youtube_transcript_api``
     python package installed.

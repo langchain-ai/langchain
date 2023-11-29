@@ -1,4 +1,3 @@
-"""Loads Telegram chat json dump."""
 from __future__ import annotations
 
 import asyncio
@@ -6,7 +5,8 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -24,7 +24,7 @@ def concatenate_rows(row: dict) -> str:
 
 
 class TelegramChatFileLoader(BaseLoader):
-    """Loads Telegram chat json directory dump."""
+    """Load from `Telegram chat` dump."""
 
     def __init__(self, path: str):
         """Initialize with a path."""
@@ -48,7 +48,7 @@ class TelegramChatFileLoader(BaseLoader):
 
 
 def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
-    """Converts a string or list of strings to a list of Documents with metadata."""
+    """Convert a string or list of strings to a list of Documents with metadata."""
     if isinstance(text, str):
         # Take a single string as one page
         text = [text]
@@ -79,7 +79,7 @@ def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
 
 
 class TelegramChatApiLoader(BaseLoader):
-    """Loads Telegram chat json directory dump."""
+    """Load `Telegram` chat json directory dump."""
 
     def __init__(
         self,

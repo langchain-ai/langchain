@@ -11,9 +11,9 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 

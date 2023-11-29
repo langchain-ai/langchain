@@ -1,8 +1,10 @@
 from typing import Callable, List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
+from langchain.utilities.vertexai import get_client_info
 
 
 class GCSDirectoryLoader(BaseLoader):
@@ -18,10 +20,10 @@ class GCSDirectoryLoader(BaseLoader):
         """Initialize with bucket and key name.
 
         Args:
-            project_name: The name of the project for the GCS bucket.
+            project_name: The ID of the project for the GCS bucket.
             bucket: The name of the GCS bucket.
             prefix: The prefix of the GCS bucket.
-            loader_func: A loader function that instatiates a loader based on a
+            loader_func: A loader function that instantiates a loader based on a
                 file_path argument. If nothing is provided, the  GCSFileLoader
                 would use its default loader.
         """
@@ -39,7 +41,10 @@ class GCSDirectoryLoader(BaseLoader):
                 "Could not import google-cloud-storage python package. "
                 "Please install it with `pip install google-cloud-storage`."
             )
-        client = storage.Client(project=self.project_name)
+        client = storage.Client(
+            project=self.project_name,
+            client_info=get_client_info(module="google-cloud-storage"),
+        )
         docs = []
         for blob in client.list_blobs(self.bucket, prefix=self.prefix):
             # we shall just skip directories since GCSFileLoader creates
