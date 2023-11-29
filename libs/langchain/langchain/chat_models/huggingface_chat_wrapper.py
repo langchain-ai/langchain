@@ -30,10 +30,12 @@ class HuggingFaceChatWrapper(BaseChatModel):
     """
     Wrapper for using HF LLM's as ChatModels.
 
-    Works with `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`, and `HuggingFaceHub` LLMs.
+    Works with `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`,
+    and `HuggingFaceHub` LLMs.
 
-    Upon instantiating this class, the model_id is resolved from the url provided to the LLM,
-    and the appropriate tokenizer is loaded from the HuggingFace Hub.
+    Upon instantiating this class, the model_id is resolved from the url
+    provided to the LLM, and the appropriate tokenizer is loaded from
+    the HuggingFace Hub.
 
     Adapted from: https://python.langchain.com/docs/integrations/chat/llama2_chat
     """
@@ -153,8 +155,9 @@ class HuggingFaceChatWrapper(BaseChatModel):
 
         if not self.model_id:
             raise ValueError(
-                f"Could not find model id for inference server provided: {endpoint_url}.\
-                    Check to ensure the HF token you're using has access to the endpoint."
+                "Failed to resolve model_id"
+                f"Could not find model id for inference server provided: {endpoint_url}"
+                "Check to ensure the HF token you're using has access to the endpoint."
             )
 
     @property
