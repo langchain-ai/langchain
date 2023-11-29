@@ -26,6 +26,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
 
     base_embeddings: Embeddings
     llm_chain: LLMChain
+    run_manager: Optional[CallbackManagerForChainRun] = None
 
     class Config:
         """Configuration for this pydantic object."""
