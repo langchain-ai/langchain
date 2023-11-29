@@ -2,7 +2,8 @@
 import os
 from typing import List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.vectorstores.neo4j_vector import Neo4jVector, SearchType
 from langchain.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings

@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from google.auth.credentials import Credentials
 
 
-def raise_vertex_import_error(minimum_expected_version: str = "1.35.0") -> None:
+def raise_vertex_import_error(minimum_expected_version: str = "1.36.0") -> None:
     """Raise ImportError related to Vertex SDK being not available.
 
     Args:
@@ -16,7 +16,7 @@ def raise_vertex_import_error(minimum_expected_version: str = "1.35.0") -> None:
         ImportError: an ImportError that mentions a required version of the SDK.
     """
     raise ImportError(
-        "Could not import VertexAI. Please, install it with "
+        "Please, install or upgrade the google-cloud-aiplatform library: "
         f"pip install google-cloud-aiplatform>={minimum_expected_version}"
     )
 

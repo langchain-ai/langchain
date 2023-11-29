@@ -5,6 +5,7 @@ import inspect
 import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
+from copy import deepcopy
 from functools import partial
 from itertools import tee
 from operator import itemgetter
@@ -31,7 +32,7 @@ from typing import (
 
 from typing_extensions import Literal, get_args
 
-from langchain_core.load.dump import dumpd
+from langchain_core.load.dump import dumpd, dumps
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.runnables.config import (
@@ -197,7 +198,7 @@ class Runnable(Generic[Input, Output], ABC):
 
     Alternatively, you can pass existing or custom callbacks to any given chain:
 
-       ... code-block:: python
+        .. code-block:: python
 
             from langchain_core.tracers import ConsoleCallbackHandler
 
@@ -507,6 +508,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         diff: Literal[True] = True,
+        with_streamed_output_list: bool = True,
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -524,6 +526,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         diff: Literal[False],
+        with_streamed_output_list: bool = True,
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -540,6 +543,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         diff: bool = True,
+        with_streamed_output_list: bool = True,
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -557,7 +561,20 @@ class Runnable(Generic[Input, Output], ABC):
         step, and the final state of the run.
 
         The jsonpatch ops can be applied in order to construct state.
+
+        Args:
+            input: The input to the runnable.
+            config: The config to use for the runnable.
+            diff: Whether to yield diffs between each step, or the current state.
+            with_streamed_output_list: Whether to yield the streamed_output list.
+            include_names: Only include logs with these names.
+            include_types: Only include logs with these types.
+            include_tags: Only include logs with these tags.
+            exclude_names: Exclude logs with these names.
+            exclude_types: Exclude logs with these types.
+            exclude_tags: Exclude logs with these tags.
         """
+        import jsonpatch  # type: ignore[import]
 
         from langchain_core.callbacks.base import BaseCallbackManager
         from langchain_core.tracers.log_stream import (
@@ -598,16 +615,36 @@ class Runnable(Generic[Input, Output], ABC):
         # add each chunk to the output stream
         async def consume_astream() -> None:
             try:
+                prev_final_output: Optional[Output] = None
+                final_output: Optional[Output] = None
+
                 async for chunk in self.astream(input, config, **kwargs):
-                    await stream.send_stream.send(
-                        RunLogPatch(
+                    prev_final_output = final_output
+                    if final_output is None:
+                        final_output = chunk
+                    else:
+                        try:
+                            final_output = final_output + chunk  # type: ignore
+                        except TypeError:
+                            final_output = chunk
+                    patches: List[Dict[str, Any]] = []
+                    if with_streamed_output_list:
+                        patches.append(
                             {
                                 "op": "add",
                                 "path": "/streamed_output/-",
-                                "value": chunk,
+                                # chunk cannot be shared between
+                                # streamed_output and final_output
+                                # otherwise jsonpatch.apply will
+                                # modify both
+                                "value": deepcopy(chunk),
                             }
                         )
-                    )
+                    for op in jsonpatch.JsonPatch.from_diff(
+                        prev_final_output, final_output, dumps=dumps
+                    ):
+                        patches.append({**op, "path": f"/final_output{op['path']}"})
+                    await stream.send_stream.send(RunLogPatch(*patches))
             finally:
                 await stream.send_stream.aclose()
 
@@ -1204,7 +1241,9 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_alternatives(
         self,
         which: ConfigurableField,
+        *,
         default_key: str = "default",
+        prefix_keys: bool = False,
         **kwargs: Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ) -> RunnableSerializable[Input, Output]:
         from langchain_core.runnables.configurable import (
@@ -1212,7 +1251,11 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         )
 
         return RunnableConfigurableAlternatives(
-            which=which, default=self, alternatives=kwargs, default_key=default_key
+            which=which,
+            default=self,
+            alternatives=kwargs,
+            default_key=default_key,
+            prefix_keys=prefix_keys,
         )
 
 
@@ -2471,8 +2514,19 @@ class RunnableLambda(Runnable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Output:
+        if hasattr(self, "afunc"):
+            afunc = self.afunc
+        else:
+
+            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+                return await asyncio.get_running_loop().run_in_executor(
+                    None, partial(self.func, **kwargs), *args
+                )
+
+            afunc = f
+
         output = await acall_func_with_variable_args(
-            self.afunc, input, config, run_manager, **kwargs
+            afunc, input, config, run_manager, **kwargs
         )
         # If the output is a runnable, invoke it
         if isinstance(output, Runnable):
@@ -2533,17 +2587,13 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         """Invoke this runnable asynchronously."""
-        if hasattr(self, "afunc"):
-            return await self._acall_with_config(
-                self._ainvoke,
-                input,
-                self._config(config, self.afunc),
-                **kwargs,
-            )
-        else:
-            # Delegating to super implementation of ainvoke.
-            # Uses asyncio executor to run the sync version (invoke)
-            return await super().ainvoke(input, config)
+        the_func = self.afunc if hasattr(self, "afunc") else self.func
+        return await self._acall_with_config(
+            self._ainvoke,
+            input,
+            self._config(config, the_func),
+            **kwargs,
+        )
 
 
 class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
@@ -2675,26 +2725,44 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 
 
 class RunnableBindingBase(RunnableSerializable[Input, Output]):
-    """
-    A runnable that delegates calls to another runnable with a set of kwargs.
+    """A runnable that delegates calls to another runnable with a set of kwargs.
 
     Use only if creating a new RunnableBinding subclass with different __init__ args.
+
+    See documentation for RunnableBinding for more details.
     """
 
     bound: Runnable[Input, Output]
+    """The underlying runnable that this runnable delegates to."""
 
     kwargs: Mapping[str, Any] = Field(default_factory=dict)
+    """kwargs to pass to the underlying runnable when running.
+
+    For example, when the runnable binding is invoked the underlying
+    runnable will be invoked with the same input but with these additional
+    kwargs.
+    """
 
     config: RunnableConfig = Field(default_factory=dict)
+    """The config to bind to the underlying runnable."""
 
     config_factories: List[Callable[[RunnableConfig], RunnableConfig]] = Field(
         default_factory=list
     )
+    """The config factories to bind to the underlying runnable."""
 
     # Union[Type[Input], BaseModel] + things like List[str]
     custom_input_type: Optional[Any] = None
+    """Override the input type of the underlying runnable with a custom type.
+
+    The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
+    """
     # Union[Type[Output], BaseModel] + things like List[str]
     custom_output_type: Optional[Any] = None
+    """Override the output type of the underlying runnable with a custom type.
+
+    The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
+    """
 
     class Config:
         arbitrary_types_allowed = True
@@ -2712,6 +2780,21 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         custom_output_type: Optional[Union[Type[Output], BaseModel]] = None,
         **other_kwargs: Any,
     ) -> None:
+        """Create a RunnableBinding from a runnable and kwargs.
+
+        Args:
+            bound: The underlying runnable that this runnable delegates calls to.
+            kwargs: optional kwargs to pass to the underlying runnable, when running
+                    the underlying runnable (e.g., via `invoke`, `batch`,
+                    `transform`, or `stream` or async variants)
+            config: config_factories:
+            config_factories: optional list of config factories to apply to the
+            custom_input_type: Specify to override the input type of the underlying
+                               runnable with a custom type.
+            custom_output_type: Specify to override the output type of the underlying
+                runnable with a custom type.
+            **other_kwargs: Unpacked into the base class.
+        """
         config = config or {}
         # config_specs contains the list of valid `configurable` keys
         if configurable := config.get("configurable", None):
@@ -2901,11 +2984,63 @@ RunnableBindingBase.update_forward_refs(RunnableConfig=RunnableConfig)
 
 
 class RunnableBinding(RunnableBindingBase[Input, Output]):
-    """
-    A runnable that delegates calls to another runnable with a set of kwargs.
+    """Wrap a runnable with additional functionality.
+
+    A RunnableBinding can be thought of as a "runnable decorator" that
+    preserves the essential features of Runnable; i.e., batching, streaming,
+    and async support, while adding additional functionality.
+
+    Any class that inherits from Runnable can be bound to a `RunnableBinding`.
+    Runnables expose a standard set of methods for creating `RunnableBindings`
+    or sub-classes of `RunnableBindings` (e.g., `RunnableRetry`,
+    `RunnableWithFallbacks`) that add additional functionality.
+
+    These methods include:
+    - `bind`: Bind kwargs to pass to the underlying runnable when running it.
+    - `with_config`: Bind config to pass to the underlying runnable when running it.
+    - `with_listeners`:  Bind lifecycle listeners to the underlying runnable.
+    - `with_types`: Override the input and output types of the underlying runnable.
+    - `with_retry`: Bind a retry policy to the underlying runnable.
+    - `with_fallbacks`: Bind a fallback policy to the underlying runnable.
+
+    Example:
+
+    `bind`: Bind kwargs to pass to the underlying runnable when running it.
+
+        .. code-block:: python
+
+            # Create a runnable binding that invokes the ChatModel with the
+            # additional kwarg `stop=['-']` when running it.
+            from langchain.chat_models import ChatOpenAI
+            model = ChatOpenAI()
+            model.invoke('Say "Parrot-MAGIC"', stop=['-']) # Should return `Parrot`
+            # Using it the easy way via `bind` method which returns a new
+            # RunnableBinding
+            runnable_binding = model.bind(stop=['-'])
+            runnable_binding.invoke('Say "Parrot-MAGIC"') # Should return `Parrot`
+
+        Can also be done by instantiating a RunnableBinding directly (not recommended):
+
+        .. code-block:: python
+
+            from langchain.schema.runnable import RunnableBinding
+            runnable_binding = RunnableBinding(
+                bound=model,
+                kwargs={'stop': ['-']} # <-- Note the additional kwargs
+            )
+            runnable_binding.invoke('Say "Parrot-MAGIC"') # Should return `Parrot`
     """
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
+        """Bind additional kwargs to a Runnable, returning a new Runnable.
+
+        Args:
+            **kwargs: The kwargs to bind to the Runnable.
+
+        Returns:
+            A new Runnable with the same type and config as the original,
+            but with the additional kwargs bound.
+        """
         return self.__class__(
             bound=self.bound,
             config=self.config,
@@ -2935,16 +3070,17 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
         on_end: Optional[Listener] = None,
         on_error: Optional[Listener] = None,
     ) -> Runnable[Input, Output]:
-        """
-        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+        """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
-        on_start: Called before the runnable starts running, with the Run object.
-        on_end: Called after the runnable finishes running, with the Run object.
-        on_error: Called if the runnable throws an error, with the Run object.
+        Args:
+            on_start: Called before the runnable starts running, with the Run object.
+            on_end: Called after the runnable finishes running, with the Run object.
+            on_error: Called if the runnable throws an error, with the Run object.
 
-        The Run object contains information about the run, including its id,
-        type, input, output, error, start_time, end_time, and any tags or metadata
-        added to the run.
+        Returns:
+            The Run object contains information about the run, including its id,
+            type, input, output, error, start_time, end_time, and any tags or metadata
+            added to the run.
         """
         from langchain_core.tracers.root_listeners import RootListenersTracer
 
