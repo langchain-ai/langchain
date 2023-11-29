@@ -3,15 +3,14 @@
 from typing import Any, List
 
 import pytest
-from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.schema import format_document
+from langchain_core.documents import Document
+from langchain_core.prompts import PromptTemplate, format_document
 
 from langchain.chains.combine_documents.reduce import (
     collapse_docs,
     split_list_of_docs,
 )
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
-from langchain.docstore.document import Document
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

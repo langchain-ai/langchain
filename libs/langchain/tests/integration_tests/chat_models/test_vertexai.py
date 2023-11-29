@@ -12,13 +12,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from langchain_core.callbacks.manager import CallbackManager
-from langchain_core.schema import ChatGeneration, LLMResult
-from langchain_core.schema.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, BaseMessage
+from langchain_core.outputs import LLMResult, ChatGeneration
 
 from langchain.chat_models import ChatVertexAI
 from langchain.chat_models.vertexai import _parse_chat_history, _parse_examples
@@ -58,7 +53,6 @@ def test_candidates() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_vertexai_agenerate() -> None:
     model = ChatVertexAI(temperature=0)
     message = HumanMessage(content="Hello")

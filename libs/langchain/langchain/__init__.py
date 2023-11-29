@@ -251,7 +251,7 @@ def __getattr__(name: str) -> Any:
 
         return PromptTemplate
     elif name == "BasePromptTemplate":
-        from langchain_core.schema.prompt_template import BasePromptTemplate
+        from langchain_core.prompts import BasePromptTemplate
 
         _warn_on_import(
             name, replacement="langchain.schema.prompt_template.BasePromptTemplate"

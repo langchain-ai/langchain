@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
-from langchain_core.schema import BaseRetriever, Document
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 

@@ -1,8 +1,9 @@
 import logging
 from typing import List
 
+from langchain_core.documents import Document
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.schema import BaseRetriever, Document
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,

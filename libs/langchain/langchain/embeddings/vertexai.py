@@ -1,7 +1,7 @@
 from typing import Dict, List
 
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.schema.embeddings import Embeddings
 
 from langchain.llms.vertexai import _VertexAICommon
 from langchain.utilities.vertexai import raise_vertex_import_error
@@ -17,7 +17,7 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         """Validates that the python package exists in environment."""
         cls._try_init_vertexai(values)
         try:
-            from vertexai.preview.language_models import TextEmbeddingModel
+            from vertexai.language_models import TextEmbeddingModel
         except ImportError:
             raise_vertex_import_error()
         values["client"] = TextEmbeddingModel.from_pretrained(values["model_name"])

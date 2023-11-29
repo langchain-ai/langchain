@@ -15,28 +15,22 @@ from typing import (
     cast,
 )
 
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.messages import (
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel, generate_from_stream, agenerate_from_stream
+from langchain.llms.vertexai import _VertexAICommon, is_codey_model
+from langchain.utilities.vertexai import raise_vertex_import_error
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGenerationChunk
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import (
-    BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
-)
-from langchain.llms.vertexai import _VertexAICommon, is_codey_model
-from langchain.utilities.vertexai import raise_vertex_import_error
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import root_validator
 
 if TYPE_CHECKING:
     from vertexai.language_models import (
@@ -147,25 +141,23 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         """Validate that the python package exists in environment."""
         cls._try_init_vertexai(values)
         try:
-            if is_codey_model(values["model_name"]):
-                from vertexai.preview.language_models import CodeChatModel
-
-                values["client"] = CodeChatModel.from_pretrained(values["model_name"])
-            else:
-                from vertexai.preview.language_models import ChatModel
-
-                values["client"] = ChatModel.from_pretrained(values["model_name"])
+            from vertexai.language_models import ChatModel, CodeChatModel
         except ImportError:
             raise_vertex_import_error()
+        if is_codey_model(values["model_name"]):
+            model_cls = CodeChatModel
+        else:
+            model_cls = ChatModel
+        values["client"] = model_cls.from_pretrained(values["model_name"])
         return values
 
     def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stream: Optional[bool] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         """Generate next turn in the conversation.
 
@@ -187,7 +179,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
@@ -209,12 +201,12 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         return ChatResult(generations=generations)
 
     async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            stream: Optional[bool] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         """Asynchronously generate next turn in the conversation.
 
@@ -236,7 +228,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return await _agenerate_from_stream(stream_iter)
+            return await agenerate_from_stream(stream_iter)
 
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
@@ -257,11 +249,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         return ChatResult(generations=generations)
 
     def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
@@ -278,11 +270,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             yield ChatGenerationChunk(message=AIMessageChunk(content=response.text))
 
     async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
@@ -299,7 +291,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             yield ChatGenerationChunk(message=AIMessageChunk(content=response.text))
 
     def _start_chat(
-        self, history: _ChatHistory, **kwargs: Any
+            self, history: _ChatHistory, **kwargs: Any
     ) -> Union[ChatSession, CodeChatSession]:
         if not self.is_codey_model:
             return self.client.start_chat(

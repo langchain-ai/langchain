@@ -20,11 +20,8 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.runnables import Runnable
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.language_model import LanguageModelInput
-from langchain_core.schema.messages import (
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
@@ -34,7 +31,9 @@ from langchain_core.schema.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.runnables import Runnable
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
@@ -46,8 +45,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import (
     BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
+    agenerate_from_stream,
+    generate_from_stream,
 )
 from langchain.llms.base import create_base_retry_decorator
 from langchain.utils import get_from_dict_or_env
@@ -417,9 +416,13 @@ class ChatOpenAI(BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
+        params = {
+            **params,
+            **({"stream": stream} if stream is not None else {}),
+            **kwargs,
+        }
         response = self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         )
@@ -500,10 +503,14 @@ class ChatOpenAI(BaseChatModel):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return await _agenerate_from_stream(stream_iter)
+            return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
+        params = {
+            **params,
+            **({"stream": stream} if stream is not None else {}),
+            **kwargs,
+        }
         response = await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         )

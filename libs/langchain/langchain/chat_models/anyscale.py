@@ -7,8 +7,8 @@ import sys
 from typing import TYPE_CHECKING, Dict, Optional, Set
 
 import requests
+from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.schema.messages import BaseMessage
 from langchain_core.utils import convert_to_secret_str
 
 from langchain.adapters.openai import convert_message_to_dict

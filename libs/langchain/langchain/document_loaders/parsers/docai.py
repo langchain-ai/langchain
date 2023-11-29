@@ -10,9 +10,9 @@ import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence
 
+from langchain_core.documents import Document
 from langchain_core.utils.iter import batch_iterate
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.utilities.vertexai import get_client_info

@@ -94,6 +94,7 @@ EXPECTED_ALL = [
     "SearxSearchRun",
     "ShellTool",
     "SleepTool",
+    "StackExchangeTool",
     "StdInInquireTool",
     "SteamshipImageGenerationTool",
     "StructuredTool",
