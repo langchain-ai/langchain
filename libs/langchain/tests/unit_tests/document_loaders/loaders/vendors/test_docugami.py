@@ -8,19 +8,18 @@ from langchain.document_loaders import DocugamiLoader
 DOCUGAMI_XML_PATH = Path(__file__).parent / "test_data" / "docugami-example.xml"
 
 
-@pytest.mark.requires("lxml")
+@pytest.mark.requires("dgml_utils")
 def test_docugami_loader_local() -> None:
     """Test DocugamiLoader."""
     loader = DocugamiLoader(file_paths=[DOCUGAMI_XML_PATH])
     docs = loader.load()
 
-    assert len(docs) == 19
+    assert len(docs) == 25
 
-    xpath = docs[0].metadata.get("xpath")
-    assert str(xpath).endswith("/docset:Preamble")
-    assert docs[0].metadata["structure"] == "p"
-    assert docs[0].metadata["tag"] == "Preamble"
-    assert docs[0].page_content.startswith("MUTUAL NON-DISCLOSURE AGREEMENT")
+    assert "/docset:DisclosingParty" in docs[1].metadata["xpath"]
+    assert "h1" in docs[1].metadata["structure"]
+    assert "DisclosingParty" in docs[1].metadata["tag"]
+    assert docs[1].page_content.startswith("Disclosing")
 
 
 def test_docugami_initialization() -> None:
