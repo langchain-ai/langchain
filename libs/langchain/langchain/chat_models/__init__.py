@@ -47,6 +47,7 @@ from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.vertexai import ChatVertexAI
 from langchain.chat_models.volcengine_maas import VolcEngineMaasChat
 from langchain.chat_models.yandex import ChatYandexGPT
+from langchain.chat_models.huggingface_chat_wrapper import HuggingFaceChatWrapper
 
 __all__ = [
     "ChatOpenAI",
@@ -79,4 +80,5 @@ __all__ = [
     "ChatHunyuan",
     "GigaChat",
     "VolcEngineMaasChat",
+    "HuggingFaceChatWrapper",
 ]
