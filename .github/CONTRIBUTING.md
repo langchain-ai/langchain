@@ -214,6 +214,10 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 Langchain relies heavily on optional dependencies to keep the Langchain package lightweight.
 
+You only need to add a new dependency if a **unit test** relies on the package.
+If your package is only required for **integration tests**, then you can skip these
+steps and leave all pyproject.toml and poetry.lock files alone.
+
 If you're adding a new dependency to Langchain, assume that it will be an optional dependency, and
 that most users won't have it installed.
 

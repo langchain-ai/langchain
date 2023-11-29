@@ -1,7 +1,8 @@
 import logging
 from typing import Iterator, List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
@@ -22,10 +23,12 @@ class CouchbaseLoader(BaseLoader):
         db_username: str,
         db_password: str,
         query: str,
+        *,
         page_content_fields: Optional[List[str]] = None,
         metadata_fields: Optional[List[str]] = None,
     ) -> None:
         """Initialize Couchbase document loader.
+
         Args:
             connection_string (str): The connection string to the Couchbase cluster.
             db_username (str): The username to connect to the Couchbase cluster.
@@ -41,11 +44,11 @@ class CouchbaseLoader(BaseLoader):
             from couchbase.auth import PasswordAuthenticator
             from couchbase.cluster import Cluster
             from couchbase.options import ClusterOptions
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "Could not import couchbase package."
                 "Please install couchbase SDK with `pip install couchbase`."
-            )
+            ) from e
         if not connection_string:
             raise ValueError("connection_string must be provided.")
 
