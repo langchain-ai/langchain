@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type
+from typing import Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
@@ -31,9 +31,7 @@ class SlackSendMessage(SlackBaseTool):
         self,
         message: str,
         channel: str,
-        *args: Any,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
     ) -> str:
         try:
             result = self.client.chat_postMessage(channel=channel, text=message)

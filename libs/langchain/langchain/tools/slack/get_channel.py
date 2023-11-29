@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Optional
+from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.slack.base import SlackBaseTool
@@ -12,9 +12,7 @@ class SlackGetChannel(SlackBaseTool):
 
     def _run(
         self,
-        *args: Any,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
     ) -> str:
         try:
             logging.getLogger(__name__)

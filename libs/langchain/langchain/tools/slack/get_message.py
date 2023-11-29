@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Optional, Type
+from typing import Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
@@ -25,9 +25,7 @@ class SlackGetMessage(SlackBaseTool):
     def _run(
         self,
         channel_id: str,
-        *args: Any,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
     ) -> str:
         logging.getLogger(__name__)
         try:
