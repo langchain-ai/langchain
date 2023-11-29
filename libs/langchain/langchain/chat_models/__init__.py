@@ -31,6 +31,7 @@ from langchain.chat_models.fake import FakeListChatModel
 from langchain.chat_models.fireworks import ChatFireworks
 from langchain.chat_models.gigachat import GigaChat
 from langchain.chat_models.google_palm import ChatGooglePalm
+from langchain.chat_models.huggingface_chat_wrapper import HuggingFaceChatWrapper
 from langchain.chat_models.human import HumanInputChatModel
 from langchain.chat_models.hunyuan import ChatHunyuan
 from langchain.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
@@ -47,7 +48,6 @@ from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.vertexai import ChatVertexAI
 from langchain.chat_models.volcengine_maas import VolcEngineMaasChat
 from langchain.chat_models.yandex import ChatYandexGPT
-from langchain.chat_models.huggingface_chat_wrapper import HuggingFaceChatWrapper
 
 __all__ = [
     "ChatOpenAI",
