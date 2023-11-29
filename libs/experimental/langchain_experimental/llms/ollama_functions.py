@@ -1,17 +1,12 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
 from langchain.chat_models.ollama import ChatOllama
-from langchain.prompts import SystemMessagePromptTemplate
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.messages import (
-    AIMessage,
-    BaseMessage,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.prompts import SystemMessagePromptTemplate
 
 from langchain_experimental.pydantic_v1 import root_validator
 
