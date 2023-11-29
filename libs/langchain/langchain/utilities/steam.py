@@ -80,7 +80,7 @@ class SteamWebAPIWrapper(BaseModel):
             break
         return game_info
 
-    def remove_html_tags(html_string):
+    def remove_html_tags(self, html_string):
         soup = BeautifulSoup(html_string, "html.parser")
         return soup.get_text()
 
@@ -96,7 +96,7 @@ class SteamWebAPIWrapper(BaseModel):
         detailed_description = self.remove_html_tags(detailed_description)
         supported_languages = info_dict.get(id).get("data").get("supported_languages")
         info_partTwo = (
-            "The detailed description of the game is: "
+            "The summary of the game is: "
             + detailed_description
             + "\n"
             + "The supported languages of the game are: "
@@ -104,7 +104,6 @@ class SteamWebAPIWrapper(BaseModel):
             + "\n"
         )
         info = info_partOne + info_partTwo
-
         return info
 
     def get_steam_id(self, name: str) -> str:
@@ -150,7 +149,7 @@ class SteamWebAPIWrapper(BaseModel):
         return top_5_popular_not_owned
 
     def run(self, mode: str, game: str) -> str:
-        if mode == "get_game_details":
+        if mode == "get_games_details":
             return self.details_of_games(game)
         elif mode == "get_recommended_games":
             return self.recommended_games(game)

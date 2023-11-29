@@ -25,4 +25,4 @@ class SteamWebAPIQueryRun(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Steam-WebAPI tool."""
-        return self.api_wrapper.run(query)
+        return self.api_wrapper.run(self.mode, query)
