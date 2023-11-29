@@ -79,35 +79,11 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             ) from e
 
         endpoint = self.client.get_endpoint(self.endpoint_name)
-        self.external_or_foundation = not self._is_external_or_foundation_model(
-            endpoint
+        self.external_or_foundation = endpoint.get("endpoint_type", "").lower() in (
+            "external_model",
+            "foundation_model",
         )
-        self.task = self._get_task_type(endpoint)
-
-    def _is_external_or_foundation_model(self, endpoint: Dict[str, Any]) -> bool:
-        """
-        Does this endpoint serve an external or foundation model?
-        """
-        return any(
-            e.get("type", "").lower() in ("external_model", "foundation_model")
-            for e in endpoint.get("config", {}).get("served_entities", [])
-        )
-
-    def _get_task_type(self, endpoint: Dict[str, Any]) -> Optional[str]:
-        config = endpoint.get("config")
-        if not config:
-            return None
-
-        served_entities = config.get("served_entities")
-        if not served_entities:
-            return None
-
-        entity = served_entities[0]
-        model = entity.get("external_model") or entity.get("foundation_model")
-        if not model:
-            return None
-
-        return model.get("task")
+        self.task = endpoint.get("task")
 
     @root_validator(pre=True)
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
