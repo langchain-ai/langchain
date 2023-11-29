@@ -355,8 +355,10 @@ def test_tracer_llm_run_on_error_callback() -> None:
         error=repr(exception),
         run_type="llm",
     )
+
     class FakeTracerWithLlmErrorCallback(FakeTracer):
         error_run = None
+
         def _on_llm_error(self, run):
             self.error_run = run
 
