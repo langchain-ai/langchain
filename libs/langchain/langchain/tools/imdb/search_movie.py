@@ -1,5 +1,5 @@
-from typing import Optional
 import json
+from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.imdb.base import IMDbBaseTool
@@ -21,8 +21,5 @@ class IMDbSearchMovie(IMDbBaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         movies = self.client.search_movie(title)
-        movies = [
-            {'title': m.get('title'), 'id': m.getID()}
-            for m in movies
-        ]
+        movies = [{"title": m.get("title"), "id": m.getID()} for m in movies]
         return json.dumps(movies)

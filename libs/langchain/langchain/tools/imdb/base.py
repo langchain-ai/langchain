@@ -20,4 +20,3 @@ class IMDbBaseTool(BaseTool):
             )
         values["client"] = Cinemagoer()
         return values
-
