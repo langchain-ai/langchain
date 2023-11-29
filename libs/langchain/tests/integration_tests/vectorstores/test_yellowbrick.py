@@ -12,6 +12,7 @@ from langchain.vectorstores import Yellowbrick
 YELLOWBRICK_URL = "postgres://username:password@host:port/database"
 YELLOWBRICK_TABLE = "test_table"
 
+
 def _yellowbrick_vector_from_texts(
     metadatas: Optional[List[dict]] = None, drop: bool = True
 ) -> Yellowbrick:
@@ -23,6 +24,7 @@ def _yellowbrick_vector_from_texts(
         YELLOWBRICK_TABLE,
     )
 
+
 @pytest.mark.requires("yb-vss")
 def test_yellowbrick() -> None:
     """Test end to end construction and search."""
@@ -30,6 +32,7 @@ def test_yellowbrick() -> None:
     output = docsearch.similarity_search("foo", k=1)
     docsearch.drop(YELLOWBRICK_TABLE)
     assert output == [Document(page_content="foo", metadata={})]
+
 
 @pytest.mark.requires("yb-vss")
 def test_yellowbrick_with_score() -> None:
@@ -48,6 +51,7 @@ def test_yellowbrick_with_score() -> None:
     ]
     assert distances[0] > distances[1] > distances[2]
 
+
 @pytest.mark.requires("yb-vss")
 def test_yellowbrick_add_extra() -> None:
     """Test end to end construction and MRR search."""
@@ -58,7 +62,3 @@ def test_yellowbrick_add_extra() -> None:
     output = docsearch.similarity_search("foo", k=10)
     docsearch.drop(YELLOWBRICK_TABLE)
     assert len(output) == 6
-
-test_yellowbrick()
-test_yellowbrick_with_score()
-test_yellowbrick_add_extra()

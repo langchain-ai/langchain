@@ -409,10 +409,12 @@ def _import_weaviate() -> Any:
 
     return Weaviate
 
+
 def _import_yellowbrick() -> Any:
     from langchain.vectorstores.yellowbrick import Yellowbrick
 
     return Yellowbrick
+
 
 def _import_zep() -> Any:
     from langchain.vectorstores.zep import ZepVectorStore
