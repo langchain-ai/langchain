@@ -71,6 +71,7 @@ EXPECT_ALL = [
     "TitanTakeoff",
     "TitanTakeoffPro",
     "Tongyi",
+    "TritonTensorRT",
     "VertexAI",
     "VertexAIModelGarden",
     "VLLM",
