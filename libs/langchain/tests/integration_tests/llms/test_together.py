@@ -24,7 +24,6 @@ def test_together_call() -> None:
     assert isinstance(output, str)
 
 
-@pytest.mark.asyncio
 async def test_together_acall() -> None:
     """Test simple call to together."""
     llm = Together(
