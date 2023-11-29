@@ -374,7 +374,7 @@ class Databricks(LLM):
         """Return default params."""
         return {
             "host": self.host,
-            # "api_token": self.api_token,  # Never log the token
+            # "api_token": self.api_token,  # Never save the token
             "endpoint_name": self.endpoint_name,
             "cluster_id": self.cluster_id,
             "cluster_driver_port": self.cluster_driver_port,
