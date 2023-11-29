@@ -23,7 +23,7 @@ It's essential that we maintain great documentation and testing. If you:
   - Update any affected example notebooks and documentation. These live in `docs`.
   - Update unit and integration tests when relevant.
 - Add a feature
-  - Add a demo notebook in `docs/docs/modules`.
+  - Add a demo notebook in `docs/docs/`.
   - Add unit and integration tests.
 
 We are a small, progress-oriented team. If there's something you'd like to add or change, opening a pull request is the
