@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-matching-engine"
 version = "0.0.1"
-description = ""
+description = "RAG using Google Cloud Platform's Vertex AI"
 authors = ["Leonid Kuligin"]
 readme = "README.md"
 
@@ -18,6 +18,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "rag_matching_engine"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Google"
+integrations = ["OpenAI", "Google"]
+tags = ["vectordbs"]
 
 [build-system]
 requires = [

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-vectara-multiquery"
 version = "0.1.0"
-description = ""
+description = "RAG using vectara with multiquery retriever"
 authors = [
     "Ofer Mendelevitch <ofer@vectara.com>",
 ]
@@ -24,6 +24,12 @@ version = "^1.0.0"
 [tool.langserve]
 export_module = "rag_vectara_multiquery"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Vectara"
+integrations = ["OpenAI", "Vectara"]
+tags = ["vectordbs"]
 
 [build-system]
 requires = [
