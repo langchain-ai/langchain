@@ -2,7 +2,8 @@ import csv
 from io import TextIOWrapper
 from typing import Any, Dict, List, Optional, Sequence
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.helpers import detect_file_encodings
 from langchain.document_loaders.unstructured import (

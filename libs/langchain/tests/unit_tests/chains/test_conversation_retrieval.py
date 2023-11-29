@@ -1,10 +1,10 @@
 """Test conversation chain and memory."""
 import pytest
+from langchain_core.documents import Document
 
 from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
 from langchain.llms.fake import FakeListLLM
 from langchain.memory.buffer import ConversationBufferMemory
-from langchain.schema import Document
 from tests.unit_tests.retrievers.sequential_retriever import SequentialRetriever
 
 

@@ -4,7 +4,8 @@ import random
 from pathlib import Path
 from typing import Any, List, Optional, Type, Union
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.html_bs import BSHTMLLoader
 from langchain.document_loaders.text import TextLoader

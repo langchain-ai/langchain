@@ -5,14 +5,15 @@ import re
 import string
 from typing import Any, List, Optional, Sequence, Tuple
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
+from langchain_core.pydantic_v1 import Extra
+
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
-from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import Extra
 from langchain.schema import RUN_KEY
-from langchain.schema.language_model import BaseLanguageModel
 
 
 def _get_score(text: str) -> Optional[Tuple[str, int]]:

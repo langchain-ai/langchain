@@ -81,6 +81,7 @@ See a [usage example for the Azure Files](/docs/integrations/document_loaders/az
 from langchain.document_loaders import AzureBlobStorageFileLoader
 ```
 
+
 ### Microsoft OneDrive
 
 >[Microsoft OneDrive](https://en.wikipedia.org/wiki/OneDrive) (formerly `SkyDrive`) is a file-hosting service operated by Microsoft.
@@ -97,6 +98,7 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_onedrive).
 from langchain.document_loaders import OneDriveLoader
 ```
 
+
 ### Microsoft Word
 
 >[Microsoft Word](https://www.microsoft.com/en-us/microsoft-365/word) is a word processor developed by Microsoft.
@@ -105,6 +107,48 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_word).
 
 ```python
 from langchain.document_loaders import UnstructuredWordDocumentLoader
+```
+
+
+### Microsoft Excel
+
+>[Microsoft Excel](https://en.wikipedia.org/wiki/Microsoft_Excel) is a spreadsheet editor developed by 
+> Microsoft for Windows, macOS, Android, iOS and iPadOS. 
+> It features calculation or computation capabilities, graphing tools, pivot tables, and a macro programming 
+> language called Visual Basic for Applications (VBA). Excel forms part of the Microsoft 365 suite of software.
+
+The `UnstructuredExcelLoader` is used to load `Microsoft Excel` files. The loader works with both `.xlsx` and `.xls` files. 
+The page content will be the raw text of the Excel file. If you use the loader in `"elements"` mode, an HTML 
+representation of the Excel file will be available in the document metadata under the `text_as_html` key.
+
+See a [usage example](/docs/integrations/document_loaders/excel).
+
+```python
+from langchain.document_loaders import UnstructuredExcelLoader
+```
+
+
+### Microsoft SharePoint
+
+>[Microsoft SharePoint](https://en.wikipedia.org/wiki/SharePoint) is a website-based collaboration system 
+> that uses workflow applications, “list” databases, and other web parts and security features to 
+> empower business teams to work together developed by Microsoft.
+
+See a [usage example](/docs/integrations/document_loaders/microsoft_sharepoint).
+
+```python
+from langchain.document_loaders.sharepoint import SharePointLoader
+```
+
+
+### Microsoft PowerPoint
+
+>[Microsoft PowerPoint](https://en.wikipedia.org/wiki/Microsoft_PowerPoint) is a presentation program by Microsoft.
+
+See a [usage example](/docs/integrations/document_loaders/microsoft_powerpoint).
+
+```python
+from langchain.document_loaders import UnstructuredPowerPointLoader
 ```
 
 
