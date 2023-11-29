@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict
 
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
