@@ -49,7 +49,7 @@ class MlflowEmbeddings(Embeddings, BaseModel):
             ) from e
 
     @property
-    def _mlflow_extras(self):
+    def _mlflow_extras(self) -> str:
         return "[genai]"
 
     def _query(self, texts: List[str]) -> List[List[float]]:

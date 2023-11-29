@@ -29,5 +29,5 @@ class ChatDatabricks(ChatMlflow):
         return "databricks-chat"
 
     @property
-    def _mlflow_extras(self):
+    def _mlflow_extras(self) -> str:
         return ""

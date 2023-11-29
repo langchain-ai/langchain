@@ -77,7 +77,7 @@ class ChatMlflow(BaseChatModel):
             ) from e
 
     @property
-    def _mlflow_extras(self):
+    def _mlflow_extras(self) -> str:
         return "[genai]"
 
     @property
