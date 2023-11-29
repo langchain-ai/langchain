@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class ForefrontAI(LLM):
@@ -41,7 +41,7 @@ class ForefrontAI(LLM):
     repetition_penalty: int = 1
     """Penalizes repeated tokens according to frequency."""
 
-    forefrontai_api_key: Optional[str] = None
+    forefrontai_api_key: Optional[SecretStr] = None
 
     base_url: Optional[str] = None
     """Base url to use, if None decides based on model name."""
@@ -54,8 +54,8 @@ class ForefrontAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        forefrontai_api_key = get_from_dict_or_env(
-            values, "forefrontai_api_key", "FOREFRONTAI_API_KEY"
+        forefrontai_api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "forefrontai_api_key", "FOREFRONTAI_API_KEY")
         )
         values["forefrontai_api_key"] = forefrontai_api_key
         return values
@@ -105,7 +105,7 @@ class ForefrontAI(LLM):
         response = requests.post(
             url=self.endpoint_url,
             headers={
-                "Authorization": f"Bearer {self.forefrontai_api_key}",
+                "Authorization": f"Bearer {self.forefrontai_api_key.get_secret_value()}",
                 "Content-Type": "application/json",
             },
             json={"text": prompt, **self._default_params, **kwargs},
