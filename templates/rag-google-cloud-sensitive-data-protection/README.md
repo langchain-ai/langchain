@@ -15,6 +15,9 @@ Before using this template, please ensure that you enable the [DLP API](https://
 and [Vertex AI API](https://console.cloud.google.com/marketplace/product/google/aiplatform.googleapis.com) in your Google Cloud
 project.
 
+For some common environment troubleshooting steps related to Google Cloud, see the bottom
+of this readme.
+
 Set the following environment variables:
 
 * `GOOGLE_CLOUD_PROJECT_ID` - Your Google Cloud project ID.
@@ -79,4 +82,15 @@ from langserve.client import RemoteRunnable
 
 runnable = RemoteRunnable("http://localhost:8000/rag-google-cloud-sensitive-data-protection")
 ```
+```
+
+# Troubleshooting Google Cloud
+
+You can set your `gcloud` credentials with their CLI using `gcloud auth application-default login`
+
+You can set your `gcloud` project with the following commands
+```bash
+gcloud config set project <your project>
+gcloud auth application-default set-quota-project <your project>
+export GOOGLE_CLOUD_PROJECT_ID=<your project>
 ```
