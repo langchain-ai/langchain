@@ -564,8 +564,9 @@ class BaseOpenAI(BaseLLM):
     ) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
+        n = params.get("n", self.n)
         for i, _ in enumerate(prompts):
-            sub_choices = choices[i * params["n"] : (i + 1) * params["n"]]
+            sub_choices = choices[i * n : (i + 1) * n]
             generations.append(
                 [
                     Generation(
