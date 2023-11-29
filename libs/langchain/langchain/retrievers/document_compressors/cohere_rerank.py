@@ -40,7 +40,7 @@ class CohereRerank(BaseDocumentCompressor):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator(pre=False)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         try:
@@ -53,7 +53,7 @@ class CohereRerank(BaseDocumentCompressor):
         cohere_api_key = get_from_dict_or_env(
             values, "cohere_api_key", "COHERE_API_KEY"
         )
-        client_name = values["user_agent"]
+        client_name = values.get("user_agent", "langchain")
         values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
         return values
 
