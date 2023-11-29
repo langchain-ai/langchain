@@ -1,7 +1,7 @@
 import pytest
+from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain.chat_models.ernie import ErnieBotChat
-from langchain.schema.messages import AIMessage, HumanMessage
 
 
 def test_chat_ernie_bot() -> None:

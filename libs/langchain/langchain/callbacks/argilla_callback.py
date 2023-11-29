@@ -2,10 +2,11 @@ import os
 import warnings
 from typing import Any, Dict, List, Optional
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.outputs import LLMResult
 from packaging.version import parse
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class ArgillaCallbackHandler(BaseCallbackHandler):
