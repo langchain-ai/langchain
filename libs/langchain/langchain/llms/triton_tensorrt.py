@@ -1,38 +1,30 @@
-from typing import Any, Callable, Dict, List, Optional, Type, Union
-
 import abc
 import json
 import queue
 import random
 import time
 from functools import partial
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 
-import google.protobuf.json_format
 import numpy as np
-import tritonclient.grpc as grpcclient
-import tritonclient.http as httpclient
-from tritonclient.grpc.service_pb2 import ModelInferResponse
-from tritonclient.utils import np_to_triton_dtype
+from langchain_core.callbacks import CallbackManagerForLLMRun
 
-try:
-    from langchain.callbacks.manager import CallbackManagerForLLMRun
-    from langchain.llms.base import LLM
-    from langchain.pydantic_v1 import Field, root_validator
+from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Field, root_validator
 
-    USE_LANGCHAIN = True
-except ImportError:
-    USE_LANGCHAIN = False
+if TYPE_CHECKING:
+    import tritonclient.grpc as grpcclient
+    import tritonclient.http as httpclient
 
 
 STOP_WORDS = ["</s>"]
 RANDOM_SEED = 0
 
-if USE_LANGCHAIN:
-    # pylint: disable-next=too-few-public-methods  # Interface is defined by LangChain
-    class TritonTensorRT(LLM):  # type: ignore  # LLM class not typed in langchain
-        """A custom Langchain LLM class that integrates with TRTLLM triton models.
 
-        Arguments:
+class TritonTensorRT(LLM):
+    """TRTLLM triton models.
+
+    Arguments:
         server_url: (str) The URL of the Triton inference server to use.
         model_name: (str) The name of the Triton TRT model to use.
         temperature: (str) Temperature to use for sampling
@@ -43,137 +35,136 @@ if USE_LANGCHAIN:
         length_penalty: (float) The penalty to apply repeated tokens
         tokens: (int) The maximum number of tokens to generate.
         client: The client object used to communicate with the inference server
-        """
+    """
 
-        server_url: str = Field(None, alias="server_url")
+    server_url: Optional[str] = Field(None, alias="server_url")
 
-        # # all the optional arguments
-        model_name: str = "ensemble"
-        temperature: Optional[float] = 1.0
-        top_p: Optional[float] = 0
-        top_k: Optional[int] = 1
-        tokens: Optional[int] = 100
-        beam_width: Optional[int] = 1
-        repetition_penalty: Optional[float] = 1.0
-        length_penalty: Optional[float] = 1.0
-        client: Any
-        streaming: Optional[bool] = True
+    # all the optional arguments
+    model_name: str = "ensemble"
+    temperature: float = 1.0
+    top_p: float = 0
+    top_k: int = 1
+    tokens: int = 100
+    beam_width: int = 1
+    repetition_penalty: float = 1.0
+    length_penalty: float = 1.0
+    client: Any
+    streaming: bool = True
 
-        @root_validator()  # type: ignore  # typing not declared in langchain
-        @classmethod
-        def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-            """Validate that python package exists in environment."""
-            try:
-                if values.get("streaming", True):
-                    values["client"] = GrpcTritonClient(values["server_url"])
-                else:
-                    values["client"] = HttpTritonClient(values["server_url"])
-
-            except ImportError as err:
-                raise ImportError(
-                    "Could not import triton client python package. "
-                    "Please install it with `pip install tritonclient[all]`."
-                ) from err
+    @root_validator()
+    def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate that python package exists in environment."""
+        if values.get("client"):
             return values
+        try:
+            if values.get("streaming", True):
+                values["client"] = GrpcTritonClient(values["server_url"])
+            else:
+                values["client"] = HttpTritonClient(values["server_url"])
 
-        @property
-        def _get_model_default_parameters(self) -> Dict[str, Any]:
-            return {
-                "tokens": self.tokens,
-                "top_k": self.top_k,
-                "top_p": self.top_p,
-                "temperature": self.temperature,
-                "repetition_penalty": self.repetition_penalty,
-                "length_penalty": self.length_penalty,
-                "beam_width": self.beam_width,
-            }
+        except ImportError as err:
+            raise ImportError(
+                "Could not import triton client python package."
+                " Please install it with `pip install tritonclient[all]`."
+            ) from err
+        return values
 
-        @property
-        def _invocation_params(self, **kwargs: Any) -> Dict[str, Any]:
-            params = {**self._get_model_default_parameters, **kwargs}
-            return params
+    @property
+    def _get_model_default_parameters(self) -> Dict[str, Any]:
+        return {
+            "tokens": self.tokens,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
+            "temperature": self.temperature,
+            "repetition_penalty": self.repetition_penalty,
+            "length_penalty": self.length_penalty,
+            "beam_width": self.beam_width,
+        }
 
-        @property
-        def _identifying_params(self) -> Dict[str, Any]:
-            """Get all the identifying parameters."""
-            return {
-                "server_url": self.server_url,
-                "model_name": self.model_name,
-            }
+    @property
+    def _invocation_params(self, **kwargs: Any) -> Dict[str, Any]:
+        params = {**self._get_model_default_parameters, **kwargs}
+        return params
 
-        @property
-        def _llm_type(self) -> str:
-            return "triton_tensorrt"
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Get all the identifying parameters."""
+        return {
+            "server_url": self.server_url,
+            "model_name": self.model_name,
+        }
 
-        def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,  # pylint: disable=unused-argument
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
-        ) -> str:
-            """
-            Execute an inference request.
+    @property
+    def _llm_type(self) -> str:
+        return "triton_tensorrt"
 
-            Args:
-                prompt: The prompt to pass into the model.
-                stop: A list of strings to stop generation when encountered
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,  # pylint: disable=unused-argument
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """
+        Execute an inference request.
 
-            Returns:
-                The string generated by the model
-            """
-            text_callback = None
-            if run_manager:
-                text_callback = partial(
-                    run_manager.on_llm_new_token, verbose=self.verbose
-                )
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: A list of strings to stop generation when encountered
 
-            invocation_params = self._get_model_default_parameters
-            invocation_params.update(kwargs)
-            invocation_params["prompt"] = [[prompt]]
-            model_params = self._identifying_params
-            model_params.update(kwargs)
-            request_id = str(random.randint(1, 9999999))  # nosec
+        Returns:
+            The string generated by the model
+        """
+        text_callback = None
+        if run_manager:
+            text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
 
-            self.client.load_model(model_params["model_name"])
-            if isinstance(self.client, GrpcTritonClient):
-                return self._streaming_request(
-                    model_params, request_id, invocation_params, text_callback
-                )
-            return self._request(model_params, invocation_params, text_callback)
+        invocation_params = self._get_model_default_parameters
+        invocation_params.update(kwargs)
+        invocation_params["prompt"] = [[prompt]]
+        model_params = self._identifying_params
+        model_params.update(kwargs)
+        request_id = str(random.randint(1, 9999999))  # nosec
 
-        def _streaming_request(
-            self,
-            model_params: Dict[str, Any],
-            request_id: str,
-            invocation_params: Dict[str, Any],
-            text_callback: Optional[Callable[[str], None]],
-        ) -> str:
-            """Request a streaming inference session."""
-            result_queue = self.client.request_streaming(
-                model_params["model_name"], request_id, **invocation_params
+        self.client.load_model(model_params["model_name"])
+        if isinstance(self.client, GrpcTritonClient):
+            return self._streaming_request(
+                model_params, request_id, invocation_params, text_callback
             )
+        return self._request(model_params, invocation_params, text_callback)
 
-            response = ""
-            for token in result_queue:
-                if text_callback:
-                    text_callback(token)
-                response = response + token
-            return response
+    def _streaming_request(
+        self,
+        model_params: Dict[str, Any],
+        request_id: str,
+        invocation_params: Dict[str, Any],
+        text_callback: Optional[Callable[[str], None]],
+    ) -> str:
+        """Request a streaming inference session."""
+        result_queue = self.client.request_streaming(
+            model_params["model_name"], request_id, **invocation_params
+        )
 
-        def _request(
-            self,
-            model_params: Dict[str, Any],
-            invocation_params: Dict[str, Any],
-            text_callback: Optional[Callable[[str], None]],
-        ) -> str:
-            """Request a streaming inference session."""
-            token: str = self.client.request(
-                model_params["model_name"], **invocation_params
-            )
+        response = ""
+        for token in result_queue:
             if text_callback:
                 text_callback(token)
-            return token
+            response = response + token
+        return response
+
+    def _request(
+        self,
+        model_params: Dict[str, Any],
+        invocation_params: Dict[str, Any],
+        text_callback: Optional[Callable[[str], None]],
+    ) -> str:
+        """Request a streaming inference session."""
+        token: str = self.client.request(
+            model_params["model_name"], **invocation_params
+        )
+        if text_callback:
+            text_callback(token)
+        return token
 
 
 class StreamingResponseGenerator(queue.Queue[Optional[str]]):
@@ -191,7 +182,7 @@ class StreamingResponseGenerator(queue.Queue[Optional[str]]):
     def __iter__(self) -> "StreamingResponseGenerator":
         """Return self as a generator."""
         return self
-    
+
     def __next__(self) -> str:
         """Return the next retrieved token."""
         val = self.get()
@@ -293,6 +284,8 @@ class _BaseTritonClient(abc.ABC):
         self, name: str, input_data: Any
     ) -> Union[grpcclient.InferInput, httpclient.InferInput]:
         """Prepare an input data structure."""
+        from tritonclient.utils import np_to_triton_dtype
+
         t = self._infer_input(
             name, input_data.shape, np_to_triton_dtype(input_data.dtype)
         )
@@ -340,7 +333,7 @@ class _BaseTritonClient(abc.ABC):
         return inputs
 
     def _trim_batch_response(self, result_str: str) -> str:
-        """Trim the resulting response from a batch request by removing provided prompt and extra generated text."""
+        """Trim batch response by removing prompt and extra generated text."""
         # extract the generated part of the prompt
         split = result_str.split("[/INST]", 1)
         generated = split[-1]
@@ -359,19 +352,25 @@ class GrpcTritonClient(_BaseTritonClient):
         self,
     ) -> Type[grpcclient.InferenceServerClient]:
         """Return the prefered InferenceServerClient class."""
-        return grpcclient.InferenceServerClient  # type: ignore
+        import tritonclient.grpc as grpcclient
+
+        return grpcclient.InferenceServerClient
 
     @property
     def _infer_input(self) -> Type[grpcclient.InferInput]:
         """Return the preferred InferInput."""
-        return grpcclient.InferInput  # type: ignore
+        import tritonclient.grpc as grpcclient
+
+        return grpcclient.InferInput
 
     @property
     def _infer_output(
         self,
     ) -> Type[grpcclient.InferRequestedOutput]:
         """Return the preferred InferRequestedOutput."""
-        return grpcclient.InferRequestedOutput  # type: ignore
+        import tritonclient.grpc as grpcclient
+
+        return grpcclient.InferRequestedOutput
 
     def _send_stop_signals(self, model_name: str, request_id: str) -> None:
         """Send the stop signal to the Triton Inference server."""
@@ -386,8 +385,11 @@ class GrpcTritonClient(_BaseTritonClient):
     @staticmethod
     def _process_result(result: Dict[str, str]) -> str:
         """Post-process the result from the server."""
+        import google.protobuf.json_format
+        import tritonclient.grpc as grpcclient
+        from tritonclient.grpc.service_pb2 import ModelInferResponse
+
         message = ModelInferResponse()
-        generated_text: str = ""
         google.protobuf.json_format.Parse(json.dumps(result), message)
         infer_result = grpcclient.InferResult(message)
         np_res = infer_result.as_numpy("text_output")
@@ -490,19 +492,25 @@ class HttpTritonClient(_BaseTritonClient):
         self,
     ) -> Type[httpclient.InferenceServerClient]:
         """Return the prefered InferenceServerClient class."""
-        return httpclient.InferenceServerClient  # type: ignore
+        import tritonclient.http as httpclient
+
+        return httpclient.InferenceServerClient
 
     @property
     def _infer_input(self) -> Type[httpclient.InferInput]:
         """Return the preferred InferInput."""
-        return httpclient.InferInput  # type: ignore
+        import tritonclient.http as httpclient
+
+        return httpclient.InferInput
 
     @property
     def _infer_output(
         self,
     ) -> Type[httpclient.InferRequestedOutput]:
         """Return the preferred InferRequestedOutput."""
-        return httpclient.InferRequestedOutput  # type: ignore
+        import tritonclient.http as httpclient
+
+        return httpclient.InferRequestedOutput
 
     def request(
         self,
