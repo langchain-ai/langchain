@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urlparse
 
 from langchain.chat_models.mlflow import ChatMlflow
 
@@ -34,3 +35,12 @@ class ChatDatabricks(ChatMlflow):
     @property
     def _mlflow_extras(self) -> str:
         return ""
+
+    def _validate_uri(self):
+        if self.target_uri == "databricks":
+            return
+
+        if urlparse(self.target_uri).scheme != "databricks":
+            raise ValueError(
+                "Invalid target URI. The target URI must be a valid databricks URI."
+            )

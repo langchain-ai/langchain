@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Iterator, List
+from urllib.parse import urlparse
 
 from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
 
@@ -37,6 +38,7 @@ class MlflowEmbeddings(Embeddings, BaseModel):
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
+        self._validate_uri()
         try:
             from mlflow.deployments import get_deploy_client
 
@@ -51,6 +53,12 @@ class MlflowEmbeddings(Embeddings, BaseModel):
     @property
     def _mlflow_extras(self) -> str:
         return "[genai]"
+
+    def _validate_uri(self):
+        if urlparse(self.target_uri).scheme not in ("http", "https"):
+            raise ValueError(
+                "Invalid target URI. The target URI must be a valid HTTP/HTTPS URI."
+            )
 
     def _query(self, texts: List[str]) -> List[List[float]]:
         embeddings: List[List[float]] = []
