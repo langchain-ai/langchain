@@ -1,5 +1,5 @@
 """Test Tongyi API wrapper."""
-from langchain_core.schema import LLMResult
+from langchain_core.outputs import LLMResult
 
 from langchain.llms.tongyi import Tongyi
 

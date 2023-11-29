@@ -1,8 +1,7 @@
 import json
 from typing import Any, Iterator, List, Optional
 
-from langchain_core.schema import ChatResult
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -10,7 +9,7 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,

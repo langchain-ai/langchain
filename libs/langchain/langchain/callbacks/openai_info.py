@@ -1,7 +1,7 @@
 """Callback Handler that prints to std out."""
 from typing import Any, Dict, List
 
-from langchain_core.schema import LLMResult
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.base import BaseCallbackHandler
 

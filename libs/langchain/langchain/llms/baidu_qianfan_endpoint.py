@@ -10,8 +10,8 @@ from typing import (
     Optional,
 )
 
+from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema.output import GenerationChunk
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -73,7 +73,7 @@ class QianfanLLMEndpoint(LLM):
     """
 
     @root_validator()
-    def validate_enviroment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = get_from_dict_or_env(
             values,
             "qianfan_ak",

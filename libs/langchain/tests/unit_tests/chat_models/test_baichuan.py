@@ -1,6 +1,7 @@
+from typing import cast
+
 import pytest
-from langchain_core.pydantic_v1 import SecretStr
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     ChatMessage,
@@ -9,8 +10,11 @@ from langchain_core.schema.messages import (
     HumanMessageChunk,
     SystemMessage,
 )
+from langchain_core.pydantic_v1 import SecretStr
+from pytest import CaptureFixture, MonkeyPatch
 
 from langchain.chat_models.baichuan import (
+    ChatBaichuan,
     _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
@@ -97,3 +101,49 @@ def test__signature() -> None:
     # https://platform.baichuan-ai.com/docs/api#4
     expected_output = "24a50b2db1648e25a244c67c5ab57d3f"
     assert result == expected_output
+
+
+def test_baichuan_key_masked_when_passed_from_env(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+) -> None:
+    """Test initialization with an API key provided via an env variable"""
+    monkeypatch.setenv("BAICHUAN_API_KEY", "test-api-key")
+    monkeypatch.setenv("BAICHUAN_SECRET_KEY", "test-secret-key")
+
+    chat = ChatBaichuan()
+    print(chat.baichuan_api_key, end="")
+    captured = capsys.readouterr()
+    assert captured.out == "**********"
+
+    print(chat.baichuan_secret_key, end="")
+    captured = capsys.readouterr()
+    assert captured.out == "**********"
+
+
+def test_baichuan_key_masked_when_passed_via_constructor(
+    capsys: CaptureFixture,
+) -> None:
+    """Test initialization with an API key provided via the initializer"""
+    chat = ChatBaichuan(
+        baichuan_api_key="test-api-key", baichuan_secret_key="test-secret-key"
+    )
+    print(chat.baichuan_api_key, end="")
+    captured = capsys.readouterr()
+    assert captured.out == "**********"
+
+    print(chat.baichuan_secret_key, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_uses_actual_secret_value_from_secret_str() -> None:
+    """Test that actual secret is retrieved using `.get_secret_value()`."""
+    chat = ChatBaichuan(
+        baichuan_api_key="test-api-key", baichuan_secret_key="test-secret-key"
+    )
+    assert cast(SecretStr, chat.baichuan_api_key).get_secret_value() == "test-api-key"
+    assert (
+        cast(SecretStr, chat.baichuan_secret_key).get_secret_value()
+        == "test-secret-key"
+    )

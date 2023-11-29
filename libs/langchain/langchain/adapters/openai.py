@@ -13,8 +13,8 @@ from typing import (
     overload,
 )
 
-from langchain_core.schema.chat import ChatSession
-from langchain_core.schema.messages import (
+from langchain_core.chat_sessions import ChatSession
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,

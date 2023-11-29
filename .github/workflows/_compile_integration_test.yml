@@ -7,10 +7,6 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
-      langchain-core-location:
-        required: false
-        type: string
-        description: "Relative path to the langchain core library folder"
 
 env:
   POETRY_VERSION: "1.6.1"
@@ -43,14 +39,6 @@ jobs:
       - name: Install integration dependencies
         shell: bash
         run: poetry install --with=test_integration
-
-      - name: Install langchain core editable
-        working-directory: ${{ inputs.working-directory }}
-        if: ${{ inputs.langchain-core-location }}
-        env:
-          LANGCHAIN_CORE_LOCATION: ${{ inputs.langchain-core-location }}
-        run: |
-          poetry run pip install -e "$LANGCHAIN_CORE_LOCATION"
 
       - name: Check integration tests compile
         shell: bash

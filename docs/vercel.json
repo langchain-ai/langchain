@@ -505,6 +505,10 @@
       "destination": "/docs/integrations/vectorstores/faiss_async"
     },
     {
+      "source": "/docs/integrations/vectorstores/matchingengine",
+      "destination": "/docs/integrations/vectorstores/google_vertex_ai_vector_search"
+    },
+    {
       "source": "/docs/integrations/cerebriumai",
       "destination": "/docs/integrations/providers/cerebriumai"
     },
@@ -2919,6 +2923,10 @@
     {
       "source": "/en/latest/modules/memory/examples/cassandra_chat_message_history.html",
       "destination": "/docs/integrations/memory/cassandra_chat_message_history"
+    },
+    {
+      "source": "/docs/guides/adapters/openai",
+      "destination": "/docs/integrations/adapters/openai"
     },
     {
       "source": "/docs/modules/memory/integrations/cassandra_chat_message_history",

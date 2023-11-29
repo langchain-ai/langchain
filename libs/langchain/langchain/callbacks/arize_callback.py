@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from langchain_core.schema import AgentAction, AgentFinish, LLMResult
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import import_pandas

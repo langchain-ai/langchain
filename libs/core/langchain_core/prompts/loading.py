@@ -6,13 +6,12 @@ from typing import Callable, Dict, Union
 
 import yaml
 
+from langchain_core.output_parsers.string import StrOutputParser
+from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.schema import (
-    BasePromptTemplate,
-    StrOutputParser,
-)
-from langchain_core.utils.loading import try_load_from_hub
+from langchain_core.utils import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
 logger = logging.getLogger(__name__)
@@ -156,7 +155,21 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     return load_prompt_from_config(config)
 
 
+def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
+    """Load chat prompt from config"""
+
+    messages = config.pop("messages")
+    template = messages[0]["prompt"].pop("template") if messages else None
+    config.pop("input_variables")
+
+    if not template:
+        raise ValueError("Can't load chat prompt without template")
+
+    return ChatPromptTemplate.from_template(template=template, **config)
+
+
 type_to_loader_dict: Dict[str, Callable[[dict], BasePromptTemplate]] = {
     "prompt": _load_prompt,
     "few_shot": _load_few_shot_prompt,
+    "chat": _load_chat_prompt,
 }

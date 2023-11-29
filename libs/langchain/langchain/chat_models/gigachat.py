@@ -1,8 +1,7 @@
 import logging
 from typing import Any, AsyncIterator, Iterator, List, Optional
 
-from langchain_core.schema import ChatResult
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -10,7 +9,7 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -18,8 +17,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import (
     BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
+    agenerate_from_stream,
+    generate_from_stream,
 )
 from langchain.llms.gigachat import _BaseGigaChat
 
@@ -116,7 +115,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         payload = self._build_payload(messages)
         response = self._client.chat(payload)
@@ -136,7 +135,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return await _agenerate_from_stream(stream_iter)
+            return await agenerate_from_stream(stream_iter)
 
         payload = self._build_payload(messages)
         response = await self._client.achat(payload)
