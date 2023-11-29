@@ -1,6 +1,7 @@
 """Tool for Steam Web API"""
 
 from typing import Optional
+
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.steam import SteamWebAPIWrapper

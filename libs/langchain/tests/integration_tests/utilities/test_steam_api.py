@@ -1,7 +1,6 @@
 from langchain.utilities.steam import SteamWebAPIWrapper
 
 
-
 def test_get_game_details() -> None:
     """Test for getting game details on Steam"""
     steam = SteamWebAPIWrapper()

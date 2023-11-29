@@ -1,13 +1,15 @@
 """Util that calls Steam-WebAPI."""
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from typing import Any
+
+import steamspypi
+from bs4 import BeautifulSoup
+
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.tools.steam.prompt import (
     STEAM_GET_GAMES_DETAILS,
     STEAM_GET_RECOMMENDED_GAMES,
 )
-import steamspypi
-from bs4 import BeautifulSoup
 
 
 class SteamWebAPIWrapper(BaseModel):
@@ -15,9 +17,9 @@ class SteamWebAPIWrapper(BaseModel):
 
     steam: Any  # for python-steam-api
 
-    # oprations: a list of dictionaries, each representing a specific operation that can be performed with the API
+    # oprations: a list of dictionaries, each representing a specific operation that
+    # can be performed with the API
     operations: list[dict] = [
-    
         {
             "mode": "get_game_details",
             "name": "Get Game Details",
@@ -43,7 +45,6 @@ class SteamWebAPIWrapper(BaseModel):
     def validate_environment(cls, values: dict) -> dict:
         """Validate api key and python package has been configed."""
 
-    
         # check if the python package is installed
         try:
             from steam import Steam
@@ -69,8 +70,8 @@ class SteamWebAPIWrapper(BaseModel):
         return result
 
     def get_id_link_price(self, games: dict) -> dict:
-        """The response may contain more than one game, so we need to choose the right one and
-        return the id."""
+        """The response may contain more than one game, so we need to choose the right
+        one and return the id."""
 
         game_info = {}
         for app in games["apps"]:
@@ -92,7 +93,8 @@ class SteamWebAPIWrapper(BaseModel):
         info_dict = self.steam.apps.get_app_details(id)
         detailed_description = info_dict.get(id).get("data").get("detailed_description")
 
-        # detailed_description contains <li> <br> some other html tags, so we need to remove them
+        # detailed_description contains <li> <br> some other html tags, so we need to
+        # remove them
         detailed_description = self.remove_html_tags(detailed_description)
         supported_languages = info_dict.get(id).get("data").get("supported_languages")
         info_partTwo = (
