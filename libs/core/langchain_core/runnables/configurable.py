@@ -12,6 +12,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
     cast,
@@ -65,28 +66,32 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        return self._prepare(config).get_input_schema(config)
+        runnable, config = self._prepare(config)
+        return runnable.get_input_schema(config)
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        return self._prepare(config).get_output_schema(config)
+        runnable, config = self._prepare(config)
+        return runnable.get_output_schema(config)
 
     @abstractmethod
     def _prepare(
         self, config: Optional[RunnableConfig] = None
-    ) -> Runnable[Input, Output]:
+    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
         ...
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        return self._prepare(config).invoke(input, config, **kwargs)
+        runnable, config = self._prepare(config)
+        return runnable.invoke(input, config, **kwargs)
 
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        return await self._prepare(config).ainvoke(input, config, **kwargs)
+        runnable, config = self._prepare(config)
+        return await runnable.ainvoke(input, config, **kwargs)
 
     def batch(
         self,
@@ -99,21 +104,22 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         configs = get_config_list(config, len(inputs))
         prepared = [self._prepare(c) for c in configs]
 
-        if all(p is self.default for p in prepared):
+        if all(p is self.default for p, _ in prepared):
             return self.default.batch(
-                inputs, config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                [c for _, c in prepared],
+                return_exceptions=return_exceptions,
+                **kwargs,
             )
 
         if not inputs:
             return []
 
-        configs = get_config_list(config, len(inputs))
-
         def invoke(
-            bound: Runnable[Input, Output],
+            prepared: Tuple[Runnable[Input, Output], RunnableConfig],
             input: Input,
-            config: RunnableConfig,
         ) -> Union[Output, Exception]:
+            bound, config = prepared
             if return_exceptions:
                 try:
                     return bound.invoke(input, config, **kwargs)
@@ -124,12 +130,10 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
         # If there's only one input, don't bother with the executor
         if len(inputs) == 1:
-            return cast(List[Output], [invoke(prepared[0], inputs[0], configs[0])])
+            return cast(List[Output], [invoke(prepared[0], inputs[0])])
 
         with get_executor_for_config(configs[0]) as executor:
-            return cast(
-                List[Output], list(executor.map(invoke, prepared, inputs, configs))
-            )
+            return cast(List[Output], list(executor.map(invoke, prepared, inputs)))
 
     async def abatch(
         self,
@@ -142,21 +146,22 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         configs = get_config_list(config, len(inputs))
         prepared = [self._prepare(c) for c in configs]
 
-        if all(p is self.default for p in prepared):
+        if all(p is self.default for p, _ in prepared):
             return await self.default.abatch(
-                inputs, config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                [c for _, c in prepared],
+                return_exceptions=return_exceptions,
+                **kwargs,
             )
 
         if not inputs:
             return []
 
-        configs = get_config_list(config, len(inputs))
-
         async def ainvoke(
-            bound: Runnable[Input, Output],
+            prepared: Tuple[Runnable[Input, Output], RunnableConfig],
             input: Input,
-            config: RunnableConfig,
         ) -> Union[Output, Exception]:
+            bound, config = prepared
             if return_exceptions:
                 try:
                     return await bound.ainvoke(input, config, **kwargs)
@@ -165,7 +170,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
             else:
                 return await bound.ainvoke(input, config, **kwargs)
 
-        coros = map(ainvoke, prepared, inputs, configs)
+        coros = map(ainvoke, prepared, inputs)
         return await gather_with_concurrency(configs[0].get("max_concurrency"), *coros)
 
     def stream(
@@ -174,7 +179,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        return self._prepare(config).stream(input, config, **kwargs)
+        runnable, config = self._prepare(config)
+        return runnable.stream(input, config, **kwargs)
 
     async def astream(
         self,
@@ -182,7 +188,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        async for chunk in self._prepare(config).astream(input, config, **kwargs):
+        runnable, config = self._prepare(config)
+        async for chunk in runnable.astream(input, config, **kwargs):
             yield chunk
 
     def transform(
@@ -191,7 +198,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        return self._prepare(config).transform(input, config, **kwargs)
+        runnable, config = self._prepare(config)
+        return runnable.transform(input, config, **kwargs)
 
     async def atransform(
         self,
@@ -199,7 +207,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        async for chunk in self._prepare(config).atransform(input, config, **kwargs):
+        runnable, config = self._prepare(config)
+        async for chunk in runnable.atransform(input, config, **kwargs):
             yield chunk
 
 
@@ -238,7 +247,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
     def _prepare(
         self, config: Optional[RunnableConfig] = None
-    ) -> Runnable[Input, Output]:
+    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
         config = config or {}
         specs_by_id = {spec.id: (key, spec) for key, spec in self.fields.items()}
         configurable_fields = {
@@ -266,9 +275,12 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         }
 
         if configurable:
-            return self.default.__class__(**{**self.default.__dict__, **configurable})
+            return (
+                self.default.__class__(**{**self.default.__dict__, **configurable}),
+                config,
+            )
         else:
-            return self.default
+            return (self.default, config)
 
 
 # Before Python 3.11 native StrEnum is not available
@@ -363,19 +375,37 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     def _prepare(
         self, config: Optional[RunnableConfig] = None
-    ) -> Runnable[Input, Output]:
+    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
         config = config or {}
         which = config.get("configurable", {}).get(self.which.id, self.default_key)
+        # remap configurable keys for the chosen alternative
+        if self.prefix_keys:
+            config = cast(
+                RunnableConfig,
+                {
+                    **config,
+                    "configurable": {
+                        _strremoveprefix(k, f"{self.which.id}=={which}/"): v
+                        for k, v in config.get("configurable", {}).items()
+                    },
+                },
+            )
+        # return the chosen alternative
         if which == self.default_key:
-            return self.default
+            return (self.default, config)
         elif which in self.alternatives:
             alt = self.alternatives[which]
             if isinstance(alt, Runnable):
-                return alt
+                return (alt, config)
             else:
-                return alt()
+                return (alt(), config)
         else:
             raise ValueError(f"Unknown alternative: {which}")
+
+
+def _strremoveprefix(s: str, prefix: str) -> str:
+    """str.removeprefix() is only available in Python 3.9+."""
+    return s.replace(prefix, "", 1) if s.startswith(prefix) else s
 
 
 def prefix_config_spec(
