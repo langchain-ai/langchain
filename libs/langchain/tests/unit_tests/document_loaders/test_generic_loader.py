@@ -2,7 +2,7 @@
 import os
 import tempfile
 from pathlib import Path
-from typing import Generator, Iterator
+from typing import Any, Generator, Iterator
 
 import pytest
 from langchain_core.documents import Document
@@ -126,7 +126,9 @@ def test_specifying_parser_via_class_attribute(toy_dir: str) -> None:
     class TextLoader(GenericLoader):
         """Parser created for testing purposes."""
 
-        blob_parser = TextParser()
+        @staticmethod
+        def get_parser(**kwargs: Any) -> BaseBlobParser:
+            return TextParser()
 
     loader = TextLoader.from_filesystem(toy_dir, suffixes=[".txt"])
     docs = loader.load()

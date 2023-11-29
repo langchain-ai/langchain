@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterator, List, Literal, Optional, Sequence, Union
+from typing import Any, Iterator, List, Literal, Optional, Sequence, Union
 
 from langchain_core.documents import Document
 
@@ -80,12 +80,10 @@ class GenericLoader(BaseLoader):
 
     """
 
-    blob_parser: Optional[BaseBlobParser]
-
     def __init__(
         self,
         blob_loader: BlobLoader,
-        blob_parser: Optional[BaseBlobParser] = None,
+        blob_parser: BaseBlobParser,
     ) -> None:
         """A generic document loader.
 
@@ -94,16 +92,7 @@ class GenericLoader(BaseLoader):
             blob_parser: A blob parser which knows how to parse blobs into documents
         """
         self.blob_loader = blob_loader
-
-        parser_ = blob_parser or getattr(self, "blob_parser", None)
-
-        if parser_ is None:
-            raise ValueError(
-                "No parser provided and no default parser found on the class. "
-                "Please provide a parser."
-            )
-
-        self.blob_parser = blob_parser or self.blob_loader
+        self.blob_parser = blob_parser
 
     def lazy_load(
         self,
@@ -136,6 +125,7 @@ class GenericLoader(BaseLoader):
         suffixes: Optional[Sequence[str]] = None,
         show_progress: bool = False,
         parser: Union[DEFAULT, BaseBlobParser] = "default",
+        parser_kwargs: Optional[dict] = None,
     ) -> GenericLoader:
         """Create a generic document loader using a filesystem blob loader.
 
@@ -154,6 +144,7 @@ class GenericLoader(BaseLoader):
                     The default can be overridden by either passing a parser or
                     setting the class attribute `blob_parser` (the latter
                     should be used with inheritance).
+            parser_kwargs: Keyword arguments to pass to the parser.
 
         Returns:
             A generic document loader.
@@ -166,10 +157,16 @@ class GenericLoader(BaseLoader):
             show_progress=show_progress,
         )
         if isinstance(parser, str):
-            if parser == "default" and cls.blob_parser is not None:
-                blob_parser = cls.blob_parser
+            if parser == "default" and cls.get_parser != GenericLoader.get_parser:
+                # There is an implementation of get_parser on the class, use it.
+                blob_parser = cls.get_parser(**(parser_kwargs or {}))
             else:
                 blob_parser = get_parser(parser)
         else:
             blob_parser = parser
         return cls(blob_loader, blob_parser)
+
+    @staticmethod
+    def get_parser(**kwargs: Any) -> BaseBlobParser:
+        """Override this method to associate a default parser with the class."""
+        raise NotImplementedError()
