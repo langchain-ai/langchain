@@ -1,22 +1,15 @@
-# MLflow AI Gateway
+# MLflow Deployments
 
-:::warning
-
-MLflow AI Gateway has been deprecated. Please use [MLflow Deployments](./mlflow) instead.
-
-:::
-
->[The MLflow AI Gateway](https://www.mlflow.org/docs/latest/gateway/index) service is a powerful tool designed to streamline the usage and management of various large 
-> language model (LLM) providers, such as OpenAI and Anthropic, within an organization. It offers a high-level interface 
+>[The MLflow Deployments](https://www.mlflow.org/docs/latest/llms/deployments/index.html) service is a powerful tool designed to streamline the usage and management of various large
+> language model (LLM) providers, such as OpenAI and Anthropic, within an organization. It offers a high-level interface
 > that simplifies the interaction with these services by providing a unified endpoint to handle specific LLM related requests.
-> See [the MLflow AI Gateway documentation](https://mlflow.org/docs/latest/gateway/index) for more details.
 
 ## Installation and Setup
 
-Install `mlflow` with MLflow AI Gateway dependencies:
+Install `mlflow` with MLflow Deployments dependencies:
 
 ```sh
-pip install 'mlflow[gateway]'
+pip install 'mlflow[genai]'
 ```
 
 Set the OpenAI API key as an environment variable:
@@ -46,10 +39,10 @@ routes:
         openai_api_key: $OPENAI_API_KEY
 ```
 
-Start the Gateway server:
+Start the deployments server:
 
 ```sh
-mlflow gateway start --config-path /path/to/config.yaml
+mlflow deployments start-server --config-path /path/to/config.yaml
 ```
 
 ## Example provided by `MLflow`
@@ -67,11 +60,11 @@ See the [API documentation and examples](https://www.mlflow.org/docs/latest/pyth
 ```python
 import mlflow
 from langchain.chains import LLMChain, PromptTemplate
-from langchain.llms import MlflowAIGateway
+from langchain.llms import Mlflow
 
-gateway = MlflowAIGateway(
-    gateway_uri="http://127.0.0.1:5000",
-    route="completions",
+llm = Mlflow(
+    target_uri="http://127.0.0.1:5000",
+    endpoint="completions",
     params={
         "temperature": 0.0,
         "top_p": 0.1,
@@ -79,7 +72,7 @@ gateway = MlflowAIGateway(
 )
 
 llm_chain = LLMChain(
-    llm=gateway,
+    llm=Mlflow,
     prompt=PromptTemplate(
         input_variables=["adjective"],
         template="Tell me a {adjective} joke",
@@ -98,11 +91,11 @@ print(model.predict([{"adjective": "funny"}]))
 ## Embeddings Example
 
 ```python
-from langchain.embeddings import MlflowAIGatewayEmbeddings
+from langchain.embeddings import MlflowEmbeddings
 
-embeddings = MlflowAIGatewayEmbeddings(
-    gateway_uri="http://127.0.0.1:5000",
-    route="embeddings",
+embeddings = MlflowEmbeddings(
+    target_uri="http://127.0.0.1:5000",
+    endpoint="embeddings",
 )
 
 print(embeddings.embed_query("hello"))
@@ -112,12 +105,12 @@ print(embeddings.embed_documents(["hello"]))
 ## Chat Example
 
 ```python
-from langchain.chat_models import ChatMLflowAIGateway
+from langchain.chat_models import ChatMlflow
 from langchain.schema import HumanMessage, SystemMessage
 
-chat = ChatMLflowAIGateway(
-    gateway_uri="http://127.0.0.1:5000",
-    route="chat",
+chat = ChatMlflow(
+    target_uri="http://127.0.0.1:5000",
+    endpoint="chat",
     params={
         "temperature": 0.1
     }
@@ -132,30 +125,4 @@ messages = [
     ),
 ]
 print(chat(messages))
-```
-
-## Databricks MLflow AI Gateway
-
-Databricks MLflow AI Gateway is in private preview.
-Please contact a Databricks representative to enroll in the preview.
-
-```python
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain.llms import MlflowAIGateway
-
-gateway = MlflowAIGateway(
-    gateway_uri="databricks",
-    route="completions",
-)
-
-llm_chain = LLMChain(
-    llm=gateway,
-    prompt=PromptTemplate(
-        input_variables=["adjective"],
-        template="Tell me a {adjective} joke",
-    ),
-)
-result = llm_chain.run(adjective="funny")
-print(result)
 ```

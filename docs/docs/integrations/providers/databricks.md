@@ -28,6 +28,12 @@ Databricks MLflow makes it more convenient to develop LangChain applications on 
 Databricks MLflow AI Gateway
 ----------------------------
 
+:::warning
+
+MLflow AI Gateway has been deprecated. Please use [MLflow Deployments](./mlflow) instead.
+
+:::
+
 See [MLflow AI Gateway](/docs/integrations/providers/mlflow_ai_gateway).
 
 Databricks as an LLM provider
