@@ -62,8 +62,7 @@ class FileSystemBlobLoader(BlobLoader):
 
         Args:
             path: Path to directory to load from or path to file to load.
-                  If a path to a file is provided, the glob pattern will be set
-                  to the file name.
+                  If a path to a file is provided, glob/exclude/suffixes are ignored.
             glob: Glob pattern relative to the specified path
                   by default set to pick up all non-hidden files
             exclude: patterns to exclude from results, use glob syntax
@@ -106,11 +105,7 @@ class FileSystemBlobLoader(BlobLoader):
             raise TypeError(f"Expected str or Path, got {type(path)}")
 
         self.path = _path.expanduser()  # Expand user to handle ~
-
-        if self.path.is_file():
-            self.glob = self.path.name
-        else:
-            self.glob = glob
+        self.glob = glob
         self.suffixes = set(suffixes or [])
         self.show_progress = show_progress
         self.exclude = exclude
@@ -128,6 +123,10 @@ class FileSystemBlobLoader(BlobLoader):
 
     def _yield_paths(self) -> Iterable[Path]:
         """Yield paths that match the requested pattern."""
+        if self.path.is_file():
+            yield self.path
+            return
+
         paths = self.path.glob(self.glob)
         for path in paths:
             if self.exclude:
