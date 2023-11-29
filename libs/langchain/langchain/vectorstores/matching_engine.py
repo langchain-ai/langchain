@@ -25,7 +25,7 @@ logger = logging.getLogger()
 
 
 class MatchingEngine(VectorStore):
-    """`Google Vertex AI Vector Search` (previous Matching Engine) vector store.
+    """`Google Vertex AI Vector Search` (previously Matching Engine) vector store.
 
     While the embeddings are stored in the Matching Engine, the embedded
     documents will be stored in GCS.
@@ -49,7 +49,7 @@ class MatchingEngine(VectorStore):
         gcs_bucket_name: str,
         credentials: Optional[Credentials] = None,
     ):
-        """Google Vertex AI Vector Search (previous Matching Engine)
+        """Google Vertex AI Vector Search (previously Matching Engine)
          implementation of the vector store.
 
         While the embeddings are stored in the Matching Engine, the embedded
