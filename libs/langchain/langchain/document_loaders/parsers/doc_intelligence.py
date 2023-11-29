@@ -7,7 +7,7 @@ from langchain.document_loaders.blob_loaders import Blob
 
 class DocumentIntelligenceParser(BaseBlobParser):
     """Loads a PDF with Azure Document Intelligence
-    (formerly Forms Recognizer). """
+    (formerly Forms Recognizer)."""
 
     def __init__(
         self,
@@ -20,11 +20,7 @@ class DocumentIntelligenceParser(BaseBlobParser):
         from azure.ai.documentintelligence import DocumentIntelligenceClient
         from azure.core.credentials import AzureKeyCredential
 
-        kwargs = {
-            "headers": {
-                "x-ms-useragent": "langchain-parser/1.0.0"
-            }
-        }
+        kwargs = {"headers": {"x-ms-useragent": "langchain-parser/1.0.0"}}
         if api_version is not None:
             kwargs["api_version"] = api_version
         self.client = DocumentIntelligenceClient(

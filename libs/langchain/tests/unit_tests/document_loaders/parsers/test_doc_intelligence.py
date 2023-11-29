@@ -1,5 +1,5 @@
 """Tests for the Google Cloud DocAI parser."""
-from unittest.mock import ANY, patch, DEFAULT
+from unittest.mock import patch
 
 import pytest
 
