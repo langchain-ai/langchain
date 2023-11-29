@@ -37,10 +37,10 @@ We use a variety of environment variables to configure this application
 
 ## Usage
 
-To use this package, you should first have the LangChain CLI installed:
+To use this package, you should first have the LangChain CLI and Pydantic installed in a Python virtual environment:
 
 ```shell
-pip install -U langchain-cli
+pip install -U langchain-cli pydantic==1.10.13
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
