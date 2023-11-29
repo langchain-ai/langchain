@@ -34,6 +34,7 @@ from typing import (
     AsyncIterator,
     Callable,
     Dict,
+    Generator,
     Iterator,
     List,
     Optional,
@@ -133,6 +134,15 @@ class NVCRModel(ClientModel):
     last_response: Optional[Any] = None
     last_msg: dict = {}
     state_vars: Sequence[str] = ["last_inputs", "last_response", "last_msg"]
+
+    @property
+    def last_inputs_safe(self) -> dict:
+        """Redacts authorization header from last_inputs"""
+        if not self.last_inputs:
+            return {}
+        out = self.last_inputs.copy()
+        out["headers"]["Authorization"] = "Bearer nvapi-[REDACTED]"
+        return out
 
     @root_validator()
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -339,15 +349,22 @@ class NVCRModel(ClientModel):
             json=payload,
             stream=True,
         )
-        self.last_response = self.get_session_fn().post(**self.last_inputs)
-        for line in self.last_response.iter_lines():
-            if line and line.strip() != b"data: [DONE]":
-                line = line.decode("utf-8")
-                msg, final_line = self.postprocess(line)
-                yield msg
-                if final_line:
-                    break
-            self.last_response.raise_for_status()
+        response = self.get_session_fn().post(**self.last_inputs)
+        self.last_response = response
+        call = self.copy()
+
+        def out_gen() -> Generator[dict, Any, Any]:
+            ## Good for client, since it allows self.last_input
+            for line in response.iter_lines():
+                if line and line.strip() != b"data: [DONE]":
+                    line = line.decode("utf-8")
+                    msg, final_line = call.postprocess(line)
+                    yield msg
+                    if final_line:
+                        break
+                response.raise_for_status()
+
+        return (r for r in out_gen())
 
     ####################################################################################
     ## Asynchronous streaming interface to allow multiple generations to happen at once.
