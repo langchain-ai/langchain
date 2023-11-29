@@ -15,7 +15,11 @@ def test_docai_parser_valid_processor_name(mock_credential, mock_client) -> None
 
     parser = DocumentIntelligenceParser(api_endpoint=endpoint, api_key=key)
     mock_credential.assert_called_once_with(key)
-    mock_client.assert_called_once_with(endpoint=endpoint, credential=mock_credential())
+    mock_client.assert_called_once_with(
+        endpoint=endpoint,
+        credential=mock_credential(),
+        headers={"x-ms-useragent": "langchain-parser/1.0.0"},
+    )
     assert parser.client == mock_client()
     assert parser.api_model == "prebuilt-document"
     assert parser.mode == "markdown"

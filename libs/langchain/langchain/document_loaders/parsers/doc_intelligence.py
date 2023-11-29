@@ -20,12 +20,13 @@ class DocumentIntelligenceParser(BaseBlobParser):
         from azure.ai.documentintelligence import DocumentIntelligenceClient
         from azure.core.credentials import AzureKeyCredential
 
-        kwargs = {"headers": {"x-ms-useragent": "langchain-parser/1.0.0"}}
+        kwargs = {}
         if api_version is not None:
             kwargs["api_version"] = api_version
         self.client = DocumentIntelligenceClient(
             endpoint=api_endpoint,
             credential=AzureKeyCredential(api_key),
+            headers={"x-ms-useragent": "langchain-parser/1.0.0"},
             **kwargs,
         )
         self.api_model = api_model
