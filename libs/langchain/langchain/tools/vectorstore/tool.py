@@ -17,7 +17,6 @@ class BaseVectorStoreTool(BaseModel):
 
     vectorstore: VectorStore = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
-    # retriever_kwargs = Field()
     retriever_kwargs: Dict[str, Any] = Field()
 
     class Config(BaseTool.Config):

@@ -70,7 +70,8 @@ def _sanitize_branch_name(text):
         str: cleaned_text
     """
     cleaned_words = [
-        "".join(c for c in word if c.isalnum() or c == "_") for word in text.split()
+        "".join(c for c in word if c.isalnum()
+                or c in ["_", "-"]) for word in text.split()
     ]
     return "_".join(cleaned_words)
 

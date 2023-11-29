@@ -46,10 +46,6 @@ class GitHubAPIWrapper(BaseModel):
             values, "github_app_private_key", "GITHUB_APP_PRIVATE_KEY"
         )
 
-        active_branch = get_from_dict_or_env(
-            values, "active_branch", "ACTIVE_BRANCH", default="main"
-        )
-
         try:
             from github import Auth, GithubIntegration
 
@@ -83,6 +79,10 @@ class GitHubAPIWrapper(BaseModel):
             "github_base_branch",
             "GITHUB_BASE_BRANCH",
             default=repo.default_branch,
+        )
+        
+        active_branch = get_from_dict_or_env(
+            values, "active_branch", "ACTIVE_BRANCH", default=repo.default_branch,
         )
 
         values["github"] = g
