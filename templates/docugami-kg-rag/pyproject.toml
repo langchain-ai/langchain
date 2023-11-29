@@ -9,7 +9,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain = { git = "https://github.com/langchain-ai/langchain.git", subdirectory = "libs/langchain" }
+langchain = "^0.0.343"
 openai = "^0.28.1"
 tiktoken = ">=0.5.1"
 pinecone-client = ">=2.2.4"
