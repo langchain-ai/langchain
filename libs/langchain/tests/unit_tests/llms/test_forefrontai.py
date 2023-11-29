@@ -9,10 +9,7 @@ from langchain.llms.forefrontai import ForefrontAI
 
 def test_forefrontai_api_key_is_secret_string() -> None:
     """Test that the API key is stored as a SecretStr."""
-    llm = ForefrontAI(
-        forefrontai_api_key="secret-api-key",
-        temperature=0.2
-    )
+    llm = ForefrontAI(forefrontai_api_key="secret-api-key", temperature=0.2)
     assert isinstance(llm.forefrontai_api_key, SecretStr)
 
 
@@ -21,9 +18,7 @@ def test_forefrontai_api_key_masked_when_passed_from_env(
 ) -> None:
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("FOREFRONTAI_API_KEY", "secret-api-key")
-    llm = ForefrontAI(
-        temperature=0.2
-    )
+    llm = ForefrontAI(temperature=0.2)
     print(llm.forefrontai_api_key, end="")
     captured = capsys.readouterr()
 
@@ -50,4 +45,6 @@ def test_forefrontai_uses_actual_secret_value_from_secretstr() -> None:
         forefrontai_api_key="secret-api-key",
         temperature=0.2,
     )
-    assert cast(SecretStr, llm.forefrontai_api_key).get_secret_value() == "secret-api-key"
+    assert (
+        cast(SecretStr, llm.forefrontai_api_key).get_secret_value() == "secret-api-key"
+    )

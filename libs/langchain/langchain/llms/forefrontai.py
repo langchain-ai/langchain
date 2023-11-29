@@ -41,7 +41,7 @@ class ForefrontAI(LLM):
     repetition_penalty: int = 1
     """Penalizes repeated tokens according to frequency."""
 
-    forefrontai_api_key: Optional[SecretStr] = None
+    forefrontai_api_key: SecretStr = None
 
     base_url: Optional[str] = None
     """Base url to use, if None decides based on model name."""
@@ -54,10 +54,9 @@ class ForefrontAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        forefrontai_api_key = convert_to_secret_str(
+        values["forefrontai_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "forefrontai_api_key", "FOREFRONTAI_API_KEY")
         )
-        values["forefrontai_api_key"] = forefrontai_api_key
         return values
 
     @property
@@ -102,10 +101,11 @@ class ForefrontAI(LLM):
 
                 response = ForefrontAI("Tell me a joke.")
         """
+        auth_value = f"Bearer {self.forefrontai_api_key.get_secret_value()}"
         response = requests.post(
             url=self.endpoint_url,
             headers={
-                "Authorization": f"Bearer {self.forefrontai_api_key.get_secret_value()}",
+                "Authorization": auth_value,
                 "Content-Type": "application/json",
             },
             json={"text": prompt, **self._default_params, **kwargs},
