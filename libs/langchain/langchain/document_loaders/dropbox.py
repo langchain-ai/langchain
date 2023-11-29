@@ -134,8 +134,8 @@ class DropboxLoader(BaseLoader, BaseModel):
                 try:
                     loader = UnstructuredPDFLoader(str(temp_pdf))
                     docs = loader.load()
-                    if docs:
-                        return docs[0]
+                if docs:
+                    return docs[0]
                 except Exception as pdf_ex:
                     print(f"Error while trying to parse PDF {file_path}: {pdf_ex}")
                     return None
