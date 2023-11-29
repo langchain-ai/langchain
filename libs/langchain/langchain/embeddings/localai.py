@@ -27,7 +27,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, import_openai
 
 logger = logging.getLogger(__name__)
 

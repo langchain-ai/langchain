@@ -169,6 +169,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                     name="Session ID",
                     description="Unique identifier for a session.",
                     default="",
+                    is_shared=True,
                 ),
             ]
         )

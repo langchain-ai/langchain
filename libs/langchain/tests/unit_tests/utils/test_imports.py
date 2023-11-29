@@ -15,6 +15,7 @@ EXPECTED_ALL = [
     "get_from_env",
     "get_pydantic_field_names",
     "guard_import",
+    "import_openai",
     "mock_now",
     "print_text",
     "raise_for_status_with_text",

@@ -1,3 +1,6 @@
+# flake8: noqa
+
+
 def import_openai():
     try:
         import openai

@@ -25,8 +25,10 @@ class DallEAPIWrapper(BaseModel):
     """Size of image to generate"""
     separator: str = "\n"
     """Separator to use when multiple URLs are returned."""
-    model: Optional[str] = None
-    """Model to use for image generation."""
+    model: Optional[str] = "dall-e-2"
+    """Model to use for image generation"""
+    quality: Optional[str] = "standard"
+    """Quality of the image that will be generated"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -39,16 +41,24 @@ class DallEAPIWrapper(BaseModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+
         openai = import_openai()
 
-        openai.api_key = openai_api_key
-        values["client"] = openai.Image
+        client = openai.OpenAI(
+            api_key=openai_api_key,  # this is also the default, it can be omitted
+        )
+        values["client"] = client
+
         return values
 
     def run(self, query: str) -> str:
         """Run query through OpenAI and parse result."""
-        response = self.client.create(
-            prompt=query, n=self.n, size=self.size, model=self.model
+        response = self.client.images.generate(
+            prompt=query,
+            n=self.n,
+            size=self.size,
+            model=self.model,
+            quality=self.quality,
         )
-        image_urls = self.separator.join([item["url"] for item in response["data"]])
+        image_urls = self.separator.join([item.url for item in response.data])
         return image_urls if image_urls else "No image was generated"
