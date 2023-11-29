@@ -4,6 +4,7 @@ from io import BytesIO
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import requests
+from langchain_core.documents import Document
 from tenacity import (
     before_sleep_log,
     retry,
@@ -11,7 +12,6 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
