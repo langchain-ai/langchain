@@ -1,7 +1,8 @@
 from typing import Dict, List
 
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema import Document, StrOutputParser
+from langchain.schema import StrOutputParser
+from langchain_core.documents import Document
 from tqdm import tqdm
 
 from docugami_kg_rag.config import (
@@ -14,26 +15,6 @@ from docugami_kg_rag.helpers.prompts import (
     ASSISTANT_SYSTEM_MESSAGE,
     CREATE_FULL_DOCUMENT_SUMMARY_PROMPT,
 )
-
-
-def get_parent_id_mappings(chunks: List[Document]) -> Dict[str, Document]:
-    # Separate out unique child and parent chunks for small-to-big retrieval.
-
-    parents: Dict[str, Document] = {}
-    for chunk in chunks:
-        if not chunk.parent:
-            continue
-
-        parent_id: str = chunk.parent.metadata["id"]
-
-        # Set parent metadata on all child chunks
-        chunk.metadata["doc_id"] = parent_id
-
-        # Keep track of all unique parents (by ID)
-        if parent_id not in parents:
-            parents[parent_id] = chunk.parent
-
-    return parents
 
 
 def build_summary_mappings(docs_by_id: Dict[str, Document]) -> Dict[str, str]:
