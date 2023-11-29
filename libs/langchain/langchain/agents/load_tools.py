@@ -53,6 +53,7 @@ from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
 from langchain.tools.sleep.tool import SleepTool
+from langchain.tools.stackexchange.tool import StackExchangeTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
@@ -73,6 +74,7 @@ from langchain.utilities.graphql import GraphQLAPIWrapper
 from langchain.utilities.searchapi import SearchApiAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
+from langchain.utilities.stackexchange import StackExchangeAPIWrapper
 from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
@@ -269,6 +271,10 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
     )
 
 
+def _get_stackexchange(**kwargs: Any) -> BaseTool:
+    return StackExchangeTool(api_wrapper=StackExchangeAPIWrapper(**kwargs))
+
+
 def _get_dalle_image_generator(**kwargs: Any) -> Tool:
     return Tool(
         "Dall-E-Image-Generator",
@@ -397,6 +403,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_lambda_api,
         ["awslambda_tool_name", "awslambda_tool_description", "function_name"],
     ),
+    "stackexchange": (_get_stackexchange, []),
     "sceneXplain": (_get_scenexplain, []),
     "graphql": (_get_graphql_tool, ["graphql_endpoint"]),
     "openweathermap-api": (_get_openweathermap, ["openweathermap_api_key"]),

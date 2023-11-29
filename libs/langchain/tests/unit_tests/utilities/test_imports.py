@@ -33,6 +33,7 @@ EXPECTED_ALL = [
     "SearxSearchWrapper",
     "SerpAPIWrapper",
     "SparkSQL",
+    "StackExchangeAPIWrapper",
     "TensorflowDatasets",
     "TextRequestsWrapper",
     "TwilioAPIWrapper",
