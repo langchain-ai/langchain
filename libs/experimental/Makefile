@@ -32,9 +32,10 @@ lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/experimental --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
 
 lint lint_diff:
-	poetry run mypy $(PYTHON_FILES)
-	poetry run ruff format $(PYTHON_FILES) --diff
 	poetry run ruff .
+	poetry run ruff format $(PYTHON_FILES) --diff
+	poetry run ruff --select I $(PYTHON_FILES)
+	poetry run mypy $(PYTHON_FILES)
 
 format format_diff:
 	poetry run ruff format $(PYTHON_FILES)
