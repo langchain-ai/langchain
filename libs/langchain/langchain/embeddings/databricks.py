@@ -27,6 +27,9 @@ class DatabricksEmbeddings(MlflowEmbeddings):
             )
     """
 
+    target_uri: str = "databricks"
+    """The target URI to use. Defaults to ``databricks``."""
+
     @property
     def _mlflow_extras(self) -> str:
         return ""

@@ -23,6 +23,9 @@ class ChatDatabricks(ChatMlflow):
             )
     """
 
+    target_uri: str = "databricks"
+    """The target URI to use. Defaults to ``databricks``."""
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
