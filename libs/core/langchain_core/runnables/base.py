@@ -1456,8 +1456,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             )
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-        # setup callbacks
-        config = ensure_config(config)
+        from langchain_core.runnables.context import config_with_context
+
+        # setup callbacks and context
+        config = config_with_context(ensure_config(config), self.config_specs)
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
@@ -1488,8 +1490,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        # setup callbacks
-        config = ensure_config(config)
+        from langchain_core.runnables.context import aconfig_with_context
+
+        # setup callbacks and context
+        config = aconfig_with_context(ensure_config(config), self.config_specs)
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
@@ -1523,12 +1527,16 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> List[Output]:
         from langchain_core.callbacks.manager import CallbackManager
+        from langchain_core.runnables.context import config_with_context
 
         if not inputs:
             return []
 
-        # setup callbacks
-        configs = get_config_list(config, len(inputs))
+        # setup callbacks and context
+        configs = [
+            config_with_context(c, self.config_specs)
+            for c in get_config_list(config, len(inputs))
+        ]
         callback_managers = [
             CallbackManager.configure(
                 inheritable_callbacks=config.get("callbacks"),
@@ -1641,15 +1649,17 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain_core.callbacks.manager import (
-            AsyncCallbackManager,
-        )
+        from langchain_core.callbacks.manager import AsyncCallbackManager
+        from langchain_core.runnables.context import aconfig_with_context
 
         if not inputs:
             return []
 
-        # setup callbacks
-        configs = get_config_list(config, len(inputs))
+        # setup callbacks and context
+        configs = [
+            aconfig_with_context(c, self.config_specs)
+            for c in get_config_list(config, len(inputs))
+        ]
         callback_managers = [
             AsyncCallbackManager.configure(
                 inheritable_callbacks=config.get("callbacks"),
@@ -1763,7 +1773,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> Iterator[Output]:
+        from langchain_core.runnables.context import config_with_context
+
         steps = [self.first] + self.middle + [self.last]
+        config = config_with_context(config, self.config_specs)
 
         # transform the input stream of each step with the next
         # steps that don't natively support transforming an input stream will
@@ -1787,7 +1800,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> AsyncIterator[Output]:
+        from langchain_core.runnables.context import aconfig_with_context
+
         steps = [self.first] + self.middle + [self.last]
+        config = aconfig_with_context(config, self.config_specs)
 
         # stream the last steps
         # transform the input stream of each step with the next
