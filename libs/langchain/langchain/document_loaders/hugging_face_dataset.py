@@ -1,3 +1,4 @@
+import json
 from typing import Iterator, List, Mapping, Optional, Sequence, Union
 
 from langchain_core.documents import Document
@@ -28,10 +29,6 @@ class HuggingFaceDatasetLoader(BaseLoader):
         Args:
             path: Path or name of the dataset.
             page_content_column: Page content column name. Default is "text".
-                Note: Currently the function assumes the content is a string.
-                If it is not download the dataset using huggingface library and convert
-                using the json or pandas loaders.
-                https://github.com/langchain-ai/langchain/issues/10674
             name: Name of the dataset configuration.
             data_dir: Data directory of the dataset configuration.
             data_files: Path(s) to source data file(s).
@@ -80,7 +77,7 @@ class HuggingFaceDatasetLoader(BaseLoader):
 
         yield from (
             Document(
-                page_content=row.pop(self.page_content_column),
+                page_content=self.parse_obj(row.pop(self.page_content_column)),
                 metadata=row,
             )
             for key in dataset.keys()
@@ -90,3 +87,8 @@ class HuggingFaceDatasetLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
         return list(self.lazy_load())
+
+    def parse_obj(self, page_content: Union[str, object]) -> str:
+        if isinstance(page_content, object):
+            return json.dumps(page_content)
+        return page_content
