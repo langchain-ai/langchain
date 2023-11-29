@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -368,6 +368,26 @@ class Databricks(LLM):
             raise ValueError(
                 "Must specify either endpoint_name or cluster_id/cluster_driver_port."
             )
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Return default params."""
+        return {
+            "host": self.host,
+            # "api_token": self.api_token,  # Never log the token
+            "endpoint_name": self.endpoint_name,
+            "cluster_id": self.cluster_id,
+            "cluster_driver_port": self.cluster_driver_port,
+            "databricks_uri": self.databricks_uri,
+            "model_kwargs": self.model_kwargs,
+            # TODO: Support saving transform_input_fn and transform_output_fn
+            # "transform_input_fn": self.transform_input_fn,
+            # "transform_output_fn": self.transform_output_fn,
+        }
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        return self._default_params
 
     @property
     def _llm_type(self) -> str:
