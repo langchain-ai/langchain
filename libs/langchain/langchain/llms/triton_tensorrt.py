@@ -213,7 +213,7 @@ class _BaseTritonClient(abc.ABC):
     ) -> Union[
         Type[grpcclient.InferenceServerClient], Type[httpclient.InferenceServerClient]
     ]:
-        """Return the prefered InferenceServerClient class."""
+        """Return the preferred InferenceServerClient class."""
 
     @property
     @abc.abstractmethod
@@ -251,7 +251,7 @@ class _BaseTritonClient(abc.ABC):
         return [model["name"] for model in res["models"]]
 
     def get_model_concurrency(self, model_name: str, timeout: int = 1000) -> int:
-        """Get the modle concurrency."""
+        """Get the model concurrency."""
         self.load_model(model_name, timeout)
         instances = self._client.get_model_config(model_name, as_json=True)["config"][
             "instance_group"
@@ -351,7 +351,7 @@ class GrpcTritonClient(_BaseTritonClient):
     def _inference_server_client(
         self,
     ) -> Type[grpcclient.InferenceServerClient]:
-        """Return the prefered InferenceServerClient class."""
+        """Return the preferred InferenceServerClient class."""
         import tritonclient.grpc as grpcclient
 
         return grpcclient.InferenceServerClient
@@ -491,7 +491,7 @@ class HttpTritonClient(_BaseTritonClient):
     def _inference_server_client(
         self,
     ) -> Type[httpclient.InferenceServerClient]:
-        """Return the prefered InferenceServerClient class."""
+        """Return the preferred InferenceServerClient class."""
         import tritonclient.http as httpclient
 
         return httpclient.InferenceServerClient
