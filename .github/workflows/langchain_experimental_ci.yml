@@ -36,14 +36,12 @@ jobs:
     uses: ./.github/workflows/_lint.yml
     with:
       working-directory: libs/experimental
-      langchain-location: ../langchain
     secrets: inherit
 
   test:
     uses: ./.github/workflows/_test.yml
     with:
       working-directory: libs/experimental
-      langchain-location: ../langchain
     secrets: inherit
 
   compile-integration-tests:
