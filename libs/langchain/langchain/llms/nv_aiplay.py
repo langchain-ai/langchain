@@ -66,7 +66,7 @@ class ClientModel(BaseModel):
         out = self.copy(update=named_args)
         for k, v in self.__dict__.items():
             if isinstance(v, ClientModel):
-                setattr(out, k, v.copy(update=named_args))
+                setattr(out, k, v.subscope(*args, **kwargs))
         out.saved_parent = self
         return out
 
@@ -76,7 +76,7 @@ class ClientModel(BaseModel):
 
     def transfer_state(self, other: Optional[ClientModel]) -> None:
         """Transfer state from one ClientModel to another"""
-        if not other:
+        if other:
             return
         for k, v in self.__dict__.items():
             if k in getattr(self, "state_vars", []):
@@ -387,10 +387,11 @@ class NVAIPlayClient(ClientModel):
     client: NVCRModel = Field(NVCRModel)
 
     model_name: str = Field("llama2_13b")
+    model: Optional[str] = Field(None)
     labels: dict = Field({})
 
-    temperature: float = Field(0.2)
-    top_p: float = Field(0.7)
+    temperature: float = Field(0.2, le=1.0, gt=0.0)
+    top_p: float = Field(0.7, le=1.0, ge=0.0)
     max_tokens: int = Field(1024, le=1024, ge=32)
     streaming: bool = Field(False)
 
@@ -407,6 +408,10 @@ class NVAIPlayClient(ClientModel):
     @root_validator()
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["client"] = values["client"](**values)
+        model_name = values.get("model")
+        model_name = model_name if model_name else values["model_name"]
+        values["model_name"] = model_name
+        values["model"] = model_name
         return values
 
     @classmethod
@@ -415,6 +420,7 @@ class NVAIPlayClient(ClientModel):
 
     @property
     def available_models(self) -> List[str]:
+        """List the available models that can be invoked"""
         return list(getattr(self.client, "available_models", {}).keys())
 
     # ## Default Call Behavior. Great for standalone use, but not for LangChain

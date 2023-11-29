@@ -5,7 +5,7 @@ from typing import Generator
 import pytest
 
 from langchain.chains import LLMChain
-from langchain.llms.nv_aiplay import LlamaLLM, NemotronQA, SteerLM
+from langchain.llms.nv_aiplay import LlamaLLM, MistralLLM, NemotronQA, SteerLM
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.schema import LLMResult
@@ -42,8 +42,10 @@ def test_aiplay_in_chain() -> None:
 @pytest.mark.scheduled
 def test_aiplay_model_param() -> None:
     """Tests model parameters for LlamaLLM"""
-    llm = LlamaLLM(model_name="mistral-7B-inst")
-    assert llm.model_name == "mistral-7B-inst"
+    llm = LlamaLLM(model_name="mistral")
+    assert llm.model_name == "mistral"
+    llm = LlamaLLM(model="mistral")
+    assert llm.model_name == "mistral"
 
 
 @pytest.mark.scheduled
@@ -66,14 +68,14 @@ async def test_aiplay_ainvoke(llm: LlamaLLM) -> None:
 @pytest.mark.scheduled
 def test_aiplay_batch(llm: LlamaLLM) -> None:
     """Tests completion with invoke"""
-    llm = LlamaLLM()
+    llm = MistralLLM()
     output = llm.batch(
         [
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
+            "Give me some example usages of commas",
+            "Give me some example usages of commas",
+            "Give me some example usages of commas",
+            "Give me some example usages of commas",
+            "Give me some example usages of commas",
         ],
         stop=[","],
     )
@@ -88,11 +90,11 @@ async def test_aiplay_abatch(llm: LlamaLLM) -> None:
     """Tests completion with invoke"""
     output = await llm.abatch(
         [
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
+            "Give me some example usages of commas",
+            "Give me some example usages of commas",
+            "Give me some example usages of commas",
+            "Give me some example usages of commas",
+            "Give me some example usages of commas",
         ],
         stop=[","],
     )
