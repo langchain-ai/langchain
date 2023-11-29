@@ -12,8 +12,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from langchain_core.callbacks.manager import CallbackManager
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, BaseMessage
-from langchain_core.outputs import LLMResult, ChatGeneration
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain.chat_models import ChatVertexAI
 from langchain.chat_models.vertexai import _parse_chat_history, _parse_examples
