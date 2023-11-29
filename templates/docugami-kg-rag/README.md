@@ -9,7 +9,7 @@ You need to set some required environment variables before using your new app ba
 
 1. `OPENAI_API_KEY`: from the OpenAI platform.
 2. `PINECONE_API_KEY` and `PINECONE_ENVIRONMENT`: from pinecone.io
-3. `DOCUGAMI_API_KEY` from the [Docugami Developer Playground](https://help.docugami.com/home/docugami-api)
+3. `DOCUGAMI_API_KEY`: from the [Docugami Developer Playground](https://help.docugami.com/home/docugami-api)
 
 ```shell
 export OPENAI_API_KEY=...
