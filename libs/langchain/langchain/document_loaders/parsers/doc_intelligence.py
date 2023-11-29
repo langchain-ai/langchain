@@ -7,20 +7,24 @@ from langchain.document_loaders.blob_loaders import Blob
 
 class DocumentIntelligenceParser(BaseBlobParser):
     """Loads a PDF with Azure Document Intelligence
-    (formerly Forms Recognizer) and chunks at character level."""
+    (formerly Forms Recognizer). """
 
     def __init__(
         self,
         api_endpoint: str,
         api_key: str,
         api_version: Optional[str] = None,
-        api_model: str = "prebuilt-document",
+        api_model: str = "prebuilt-layout",
         mode: str = "markdown",
     ):
         from azure.ai.documentintelligence import DocumentIntelligenceClient
         from azure.core.credentials import AzureKeyCredential
 
-        kwargs = {}
+        kwargs = {
+            "headers": {
+                "x-ms-useragent": "langchain-parser/1.0.0"
+            }
+        }
         if api_version is not None:
             kwargs["api_version"] = api_version
         self.client = DocumentIntelligenceClient(

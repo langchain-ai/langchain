@@ -140,6 +140,7 @@ rspace_client = {version = "^2.5.0", optional = true}
 upstash-redis = {version = "^0.15.0", optional = true}
 google-cloud-documentai = {version = "^2.20.1", optional = true}
 fireworks-ai = {version = "^0.6.0", optional = true, python = ">=3.9,<4.0"}
+azure-ai-documentintelligence = {version = "^1.0.0b1", optional = true}
 
 
 [tool.poetry.group.test.dependencies]
@@ -232,6 +233,7 @@ azure = [
     "azure-ai-vision",
     "azure-cognitiveservices-speech",
     "azure-search-documents",
+    "azure-ai-documentintelligence",
 ]
 all = [
     "clarifai",
@@ -306,6 +308,7 @@ all = [
     "amadeus",
     "librosa",
     "python-arango",
+    "azure-ai-documentintelligence",
 ]
 
 cli = [
@@ -373,6 +376,7 @@ extended_testing = [
  "upstash-redis",
  "rspace_client",
  "fireworks-ai",
+ "azure-ai-documentintelligence",
 ]
 
 [tool.ruff]
