@@ -232,7 +232,9 @@ class MatchingEngine(VectorStore):
         filter = filter or []
 
         # If the endpoint is public we use the find_neighbors function.
-        if hasattr(self.endpoint, "_public_match_client"):
+        if hasattr(self.endpoint, "_public_match_client") and (
+            self.endpoint._public_match_client
+        ):
             response = self.endpoint.find_neighbors(
                 deployed_index_id=self._get_index_id(),
                 queries=[embedding],
