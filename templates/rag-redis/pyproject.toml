@@ -13,7 +13,7 @@ python = ">=3.9,<3.13"
 langchain = ">=0.0.325"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
-openai = "^0.28.1"
+openai = "<2"
 sentence-transformers = "2.2.2"
 redis = "5.0.1"
 tiktoken = "0.5.1"
@@ -32,6 +32,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "rag_redis.chain"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Redis"
+integrations = ["OpenAI", "Redis"]
+tags = ["vectordbs"]
 
 [tool.poe.tasks.start]
 cmd = "uvicorn langchain_cli.dev_scripts:create_demo_server --reload --port $port --host $host"

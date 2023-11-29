@@ -14,6 +14,9 @@ from typing import (
 )
 
 import requests
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
 from tenacity import (
     before_sleep_log,
     retry,
@@ -21,9 +24,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain.schema.embeddings import Embeddings
-from langchain.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -101,18 +102,28 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         )
         return values
 
-    def _invocation_params(self, input: List[str]) -> Dict:
+    def _invocation_params(
+        self, input: List[str], input_type: Optional[str] = None
+    ) -> Dict:
         api_key = cast(SecretStr, self.voyage_api_key).get_secret_value()
         params = {
             "url": self.voyage_api_base,
             "headers": {"Authorization": f"Bearer {api_key}"},
-            "json": {"model": self.model, "input": input},
+            "json": {"model": self.model, "input": input, "input_type": input_type},
             "timeout": self.request_timeout,
         }
         return params
 
-    def _get_embeddings(self, texts: List[str], batch_size: int) -> List[List[float]]:
+    def _get_embeddings(
+        self,
+        texts: List[str],
+        batch_size: Optional[int] = None,
+        input_type: Optional[str] = None,
+    ) -> List[List[float]]:
         embeddings: List[List[float]] = []
+
+        if batch_size is None:
+            batch_size = self.batch_size
 
         if self.show_progress_bar:
             try:
@@ -127,9 +138,18 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         else:
             _iter = range(0, len(texts), batch_size)
 
+        if input_type and input_type not in ["query", "document"]:
+            raise ValueError(
+                f"input_type {input_type} is invalid. Options: None, 'query', "
+                "'document'."
+            )
+
         for i in _iter:
             response = embed_with_retry(
-                self, **self._invocation_params(input=texts[i : i + batch_size])
+                self,
+                **self._invocation_params(
+                    input=texts[i : i + batch_size], input_type=input_type
+                ),
             )
             embeddings.extend(r["embedding"] for r in response["data"])
 
@@ -144,7 +164,9 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        return self._get_embeddings(texts, batch_size=self.batch_size)
+        return self._get_embeddings(
+            texts, batch_size=self.batch_size, input_type="document"
+        )
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to Voyage Embedding endpoint for embedding query text.
@@ -155,4 +177,21 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        return self.embed_documents([text])[0]
+        return self._get_embeddings([text], input_type="query")[0]
+
+    def embed_general_texts(
+        self, texts: List[str], *, input_type: Optional[str] = None
+    ) -> List[List[float]]:
+        """Call out to Voyage Embedding endpoint for embedding general text.
+
+        Args:
+            texts: The list of texts to embed.
+            input_type: Type of the input text. Default to None, meaning the type is
+                unspecified. Other options: query, document.
+
+        Returns:
+            Embedding for the text.
+        """
+        return self._get_embeddings(
+            texts, batch_size=self.batch_size, input_type=input_type
+        )

@@ -1,7 +1,7 @@
 import pytest
+from langchain_core.documents import Document
 
 from langchain.document_loaders import XorbitsLoader
-from langchain.schema import Document
 
 try:
     import xorbits  # noqa: F401

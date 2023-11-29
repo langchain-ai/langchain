@@ -166,7 +166,7 @@ const config = {
             label: "Guides",
           },
           {
-            href: "https://api.python.langchain.com",
+            href: "https://api.python.langchain.com/en/stable/api_reference.html",
             label: "API",
             position: "left",
           },
@@ -193,8 +193,16 @@ const config = {
                 label: "Dependents",
               },
               {
+                label: "Integrations Hub",
+                href: "https://integrations.langchain.com/",
+              },
+              {
                 to: "/docs/additional_resources/tutorials",
                 label: "Tutorials"
+              },
+              {
+                label: "Cookbooks",
+                href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
               {
                 to: "/docs/additional_resources/youtube",
@@ -204,18 +212,17 @@ const config = {
             ]
           },
           {
-            href: "https://chat.langchain.com",
-            label: "Chat our docs",
-            position: "right",
-          },
-          {
             type: "dropdown",
-            label: "Also by LangChain",
+            label: "🦜️🔗",
             position: "right",
             items: [
               {
                 href: "https://smith.langchain.com",
                 label: "LangSmith",
+              },
+              {
+                href: "https://docs.smith.langchain.com/",
+                label: "LangSmith Docs",
               },
               {
                 href: "https://github.com/langchain-ai/langserve",
@@ -234,6 +241,11 @@ const config = {
                 label: "JS/TS Docs",
               },
             ]
+          },
+          {
+            href: "https://chat.langchain.com",
+            label: "Chat",
+            position: "right",
           },
           // Please keep GitHub link to the right for consistency.
           {

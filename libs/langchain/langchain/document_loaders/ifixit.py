@@ -1,8 +1,8 @@
 from typing import List, Optional
 
 import requests
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 

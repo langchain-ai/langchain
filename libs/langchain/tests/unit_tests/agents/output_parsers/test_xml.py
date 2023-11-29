@@ -1,5 +1,6 @@
+from langchain_core.agents import AgentAction, AgentFinish
+
 from langchain.agents.output_parsers.xml import XMLAgentOutputParser
-from langchain.schema.agent import AgentAction, AgentFinish
 
 
 def test_tool_usage() -> None:

@@ -15,10 +15,10 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
+from langchain_core.documents import Document
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document
 
 if TYPE_CHECKING:
     import fitz.fitz

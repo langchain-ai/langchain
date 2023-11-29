@@ -4,8 +4,8 @@ import math
 import tempfile
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.vectorstores.faiss import FAISS
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
@@ -31,7 +31,6 @@ def test_faiss() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_afrom_texts() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -69,7 +68,6 @@ def test_faiss_vector_sim() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_vector_sim() -> None:
     """Test vector similarity."""
     texts = ["foo", "bar", "baz"]
@@ -108,7 +106,6 @@ def test_faiss_vector_sim_with_score_threshold() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_vector_async_sim_with_score_threshold() -> None:
     """Test vector similarity."""
     texts = ["foo", "bar", "baz"]
@@ -150,7 +147,6 @@ def test_similarity_search_with_score_by_vector() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_similarity_async_search_with_score_by_vector() -> None:
     """Test vector similarity with score by vector."""
     texts = ["foo", "bar", "baz"]
@@ -196,7 +192,6 @@ def test_similarity_search_with_score_by_vector_with_score_threshold() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_sim_asearch_with_score_by_vector_with_score_threshold() -> None:
     """Test vector similarity with score by vector."""
     texts = ["foo", "bar", "baz"]
@@ -237,7 +232,6 @@ def test_faiss_mmr() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_mmr() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     docsearch = await FAISS.afrom_texts(texts, FakeEmbeddings())
@@ -268,7 +262,6 @@ def test_faiss_mmr_with_metadatas() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_mmr_with_metadatas() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
@@ -298,7 +291,6 @@ def test_faiss_mmr_with_metadatas_and_filter() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_mmr_with_metadatas_and_filter() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
@@ -328,7 +320,6 @@ def test_faiss_mmr_with_metadatas_and_list_filter() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_mmr_with_metadatas_and_list_filter() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} if i <= 3 else {"page": 3} for i in range(len(texts))]
@@ -368,7 +359,6 @@ def test_faiss_with_metadatas() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -416,7 +406,6 @@ def test_faiss_with_metadatas_and_filter() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_with_metadatas_and_filter() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
@@ -469,7 +458,6 @@ def test_faiss_with_metadatas_and_list_filter() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_with_metadatas_and_list_filter() -> None:
     texts = ["foo", "bar", "baz", "foo", "qux"]
     metadatas = [{"page": i} if i <= 3 else {"page": 3} for i in range(len(texts))]
@@ -510,7 +498,6 @@ def test_faiss_search_not_found() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_search_not_found() -> None:
     """Test what happens when document is not found."""
     texts = ["foo", "bar", "baz"]
@@ -534,7 +521,6 @@ def test_faiss_add_texts() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_add_texts() -> None:
     """Test end to end adding of texts."""
     # Create initial doc store.
@@ -555,7 +541,6 @@ def test_faiss_add_texts_not_supported() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_add_texts_not_supported() -> None:
     """Test adding of texts to a docstore that doesn't support it."""
     docsearch = FAISS(FakeEmbeddings(), None, FakeDocstore(), {})
@@ -576,7 +561,6 @@ def test_faiss_local_save_load() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_local_save_load() -> None:
     """Test end to end serialization."""
     texts = ["foo", "bar", "baz"]
@@ -604,7 +588,6 @@ def test_faiss_similarity_search_with_relevance_scores() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_similarity_search_with_relevance_scores() -> None:
     """Test the similarity search with normalized similarities."""
     texts = ["foo", "bar", "baz"]
@@ -638,7 +621,6 @@ def test_faiss_similarity_search_with_relevance_scores_with_threshold() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_asimilarity_search_with_relevance_scores_with_threshold() -> None:
     """Test the similarity search with normalized similarities with score threshold."""
     texts = ["foo", "bar", "baz"]
@@ -668,7 +650,6 @@ def test_faiss_invalid_normalize_fn() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_faiss_async_invalid_normalize_fn() -> None:
     """Test the similarity search with normalized similarities."""
     texts = ["foo", "bar", "baz"]
@@ -689,7 +670,6 @@ def test_missing_normalize_score_fn() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_async_missing_normalize_score_fn() -> None:
     """Test doesn't perform similarity search without a valid distance strategy."""
     texts = ["foo", "bar", "baz"]
@@ -713,7 +693,6 @@ def test_delete() -> None:
 
 
 @pytest.mark.requires("faiss")
-@pytest.mark.asyncio
 async def test_async_delete() -> None:
     """Test the similarity search with normalized similarities."""
     ids = ["a", "b", "c"]
