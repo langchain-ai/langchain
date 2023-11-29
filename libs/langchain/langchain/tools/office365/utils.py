@@ -72,3 +72,7 @@ def authenticate() -> Account:
             return account
     else:
         return account
+
+
+UTC_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
+"""UTC format for datetime objects."""

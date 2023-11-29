@@ -38,7 +38,6 @@ def test_fastembed_embedding_query(model_name: str, max_length: int) -> None:
     assert len(output) == 384
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "model_name", ["sentence-transformers/all-MiniLM-L6-v2", "BAAI/bge-small-en-v1.5"]
 )
@@ -61,7 +60,6 @@ async def test_fastembed_async_embedding_documents(
     assert len(output[0]) == 384
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "model_name", ["sentence-transformers/all-MiniLM-L6-v2", "BAAI/bge-small-en-v1.5"]
 )

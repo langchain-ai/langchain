@@ -44,7 +44,6 @@ def test_update(manager: SQLRecordManager) -> None:
     assert read_keys == ["key1", "key2", "key3"]
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aupdate(amanager: SQLRecordManager) -> None:
     """Test updating records in the database."""
@@ -150,7 +149,6 @@ def test_update_timestamp(manager: SQLRecordManager) -> None:
         ]
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aupdate_timestamp(amanager: SQLRecordManager) -> None:
     """Test updating records in the database."""
@@ -274,7 +272,6 @@ def test_update_with_group_ids(manager: SQLRecordManager) -> None:
     assert read_keys == ["key1", "key2", "key3"]
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aupdate_with_group_ids(amanager: SQLRecordManager) -> None:
     """Test updating records in the database."""
@@ -304,7 +301,6 @@ def test_exists(manager: SQLRecordManager) -> None:
     assert exists == [True, False]
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aexists(amanager: SQLRecordManager) -> None:
     """Test checking if keys exist in the database."""
@@ -408,7 +404,6 @@ def test_list_keys(manager: SQLRecordManager) -> None:
     ) == ["key4"]
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_alist_keys(amanager: SQLRecordManager) -> None:
     """Test listing keys based on the provided date range."""
@@ -527,7 +522,6 @@ def test_namespace_is_used(manager: SQLRecordManager) -> None:
         ]
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_anamespace_is_used(amanager: SQLRecordManager) -> None:
     """Verify that namespace is taken into account for all operations."""
@@ -571,7 +565,6 @@ def test_delete_keys(manager: SQLRecordManager) -> None:
     assert remaining_keys == ["key3"]
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_adelete_keys(amanager: SQLRecordManager) -> None:
     """Test deleting keys from the database."""
