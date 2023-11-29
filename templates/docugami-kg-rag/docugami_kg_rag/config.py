@@ -4,20 +4,15 @@ from pathlib import Path
 from typing import List
 
 from langchain.cache import SQLiteCache
-from langchain.chat_models import ChatOpenAI  # , ChatCohere
-from langchain.embeddings import OpenAIEmbeddings  # , CohereEmbeddings
+from langchain.chat_models import ChatOpenAI
+from langchain.embeddings import OpenAIEmbeddings
 from langchain.globals import set_llm_cache
 from langchain.storage.in_memory import InMemoryStore
 
 LLM = ChatOpenAI(temperature=0, model="gpt-4-1106-preview")
-# LLM = ChatOpenAI(temperature=0, model="gpt-4")
-# LLM = ChatCohere(model="command")
 
 EMBEDDINGS = OpenAIEmbeddings(model="text-embedding-ada-002")
 EMBEDDINGS_DIMENSIONS = 1536  # known size of text-embedding-ada-002 embeddings
-
-# EMBEDDINGS = CohereEmbeddings(model="embed-english-v3.0")
-# EMBEDDINGS_DIMENSIONS = 1024  # known size of embed-english-v3.0 embeddings
 
 DOCUGAMI_API_KEY = os.environ.get("DOCUGAMI_API_KEY")
 if not DOCUGAMI_API_KEY:
