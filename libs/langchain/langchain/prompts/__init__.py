@@ -27,31 +27,31 @@ from multiple components. Prompt classes and functions make constructing
                     ChatPromptValue
 
 """  # noqa: E501
-from langchain.prompts.base import StringPromptTemplate
-from langchain.prompts.chat import (
-    AIMessagePromptTemplate,
-    BaseChatPromptTemplate,
-    ChatMessagePromptTemplate,
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-    SystemMessagePromptTemplate,
-)
-from langchain.prompts.example_selector import (
+from langchain_core.example_selectors import (
     LengthBasedExampleSelector,
     MaxMarginalRelevanceExampleSelector,
-    NGramOverlapExampleSelector,
     SemanticSimilarityExampleSelector,
 )
-from langchain.prompts.few_shot import (
+from langchain_core.prompts import (
+    AIMessagePromptTemplate,
+    BaseChatPromptTemplate,
+    BasePromptTemplate,
+    ChatMessagePromptTemplate,
+    ChatPromptTemplate,
     FewShotChatMessagePromptTemplate,
     FewShotPromptTemplate,
+    FewShotPromptWithTemplates,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    PipelinePromptTemplate,
+    PromptTemplate,
+    StringPromptTemplate,
+    SystemMessagePromptTemplate,
+    load_prompt,
 )
-from langchain.prompts.few_shot_with_templates import FewShotPromptWithTemplates
-from langchain.prompts.loading import load_prompt
-from langchain.prompts.pipeline import PipelinePromptTemplate
-from langchain.prompts.prompt import Prompt, PromptTemplate
-from langchain.schema.prompt_template import BasePromptTemplate
+
+from langchain.prompts.example_selector import NGramOverlapExampleSelector
+from langchain.prompts.prompt import Prompt
 
 __all__ = [
     "AIMessagePromptTemplate",
@@ -67,11 +67,11 @@ __all__ = [
     "MessagesPlaceholder",
     "NGramOverlapExampleSelector",
     "PipelinePromptTemplate",
-    "Prompt",
     "PromptTemplate",
     "SemanticSimilarityExampleSelector",
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
     "load_prompt",
     "FewShotChatMessagePromptTemplate",
+    "Prompt",
 ]

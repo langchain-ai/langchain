@@ -1,16 +1,6 @@
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import (
-    BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
-)
-from langchain.llms.anthropic import _AnthropicCommon
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -18,8 +8,19 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain.schema.prompt import PromptValue
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.prompt_values import PromptValue
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
+from langchain.llms.anthropic import _AnthropicCommon
 
 
 def _convert_one_message_to_text(
@@ -27,14 +28,15 @@ def _convert_one_message_to_text(
     human_prompt: str,
     ai_prompt: str,
 ) -> str:
+    content = cast(str, message.content)
     if isinstance(message, ChatMessage):
-        message_text = f"\n\n{message.role.capitalize()}: {message.content}"
+        message_text = f"\n\n{message.role.capitalize()}: {content}"
     elif isinstance(message, HumanMessage):
-        message_text = f"{human_prompt} {message.content}"
+        message_text = f"{human_prompt} {content}"
     elif isinstance(message, AIMessage):
-        message_text = f"{ai_prompt} {message.content}"
+        message_text = f"{ai_prompt} {content}"
     elif isinstance(message, SystemMessage):
-        message_text = message.content
+        message_text = content
     else:
         raise ValueError(f"Got unknown type {message}")
     return message_text
@@ -169,7 +171,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
         prompt = self._convert_messages_to_prompt(
             messages,
         )
@@ -196,7 +198,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return await _agenerate_from_stream(stream_iter)
+            return await agenerate_from_stream(stream_iter)
         prompt = self._convert_messages_to_prompt(
             messages,
         )

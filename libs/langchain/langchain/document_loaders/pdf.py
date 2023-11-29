@@ -10,8 +10,8 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 from urllib.parse import urlparse
 
 import requests
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
@@ -154,8 +154,8 @@ class PyPDFLoader(BasePDFLoader):
             raise ImportError(
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
-        self.parser = PyPDFParser(password=password, extract_images=extract_images)
         super().__init__(file_path, headers=headers)
+        self.parser = PyPDFParser(password=password, extract_images=extract_images)
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
@@ -165,7 +165,10 @@ class PyPDFLoader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
 
 
@@ -191,7 +194,10 @@ class PyPDFium2Loader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
 
 
@@ -251,8 +257,15 @@ class PDFMinerLoader(BasePDFLoader):
         *,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
+        concatenate_pages: bool = True,
     ) -> None:
-        """Initialize with file path."""
+        """Initialize with file path.
+
+        Args:
+            extract_images: Whether to extract images from PDF.
+            concatenate_pages: If True, concatenate all PDF pages into one a single
+                               document. Otherwise, return one document per page.
+        """
         try:
             from pdfminer.high_level import extract_text  # noqa:F401
         except ImportError:
@@ -262,7 +275,9 @@ class PDFMinerLoader(BasePDFLoader):
             )
 
         super().__init__(file_path, headers=headers)
-        self.parser = PDFMinerParser(extract_images=extract_images)
+        self.parser = PDFMinerParser(
+            extract_images=extract_images, concatenate_pages=concatenate_pages
+        )
 
     def load(self) -> List[Document]:
         """Eagerly load the content."""
@@ -272,7 +287,10 @@ class PDFMinerLoader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazily load documents."""
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
 
 
@@ -306,7 +324,9 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
                 laparams=LAParams(),
                 output_type="html",
             )
-        metadata = {"source": self.file_path}
+        metadata = {
+            "source": self.file_path if self.web_path is None else self.web_path
+        }
         return [Document(page_content=output_string.getvalue(), metadata=metadata)]
 
 
@@ -345,7 +365,10 @@ class PyMuPDFLoader(BasePDFLoader):
         parser = PyMuPDFParser(
             text_kwargs=text_kwargs, extract_images=self.extract_images
         )
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
 
@@ -360,6 +383,7 @@ class MathpixPDFLoader(BasePDFLoader):
         processed_file_format: str = "md",
         max_wait_time_seconds: int = 500,
         should_clean_pdf: bool = False,
+        extra_request_data: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with a file path.
@@ -370,6 +394,7 @@ class MathpixPDFLoader(BasePDFLoader):
             max_wait_time_seconds: a maximum time to wait for the response from
              the server. Default is 500.
             should_clean_pdf: a flag to clean the PDF file. Default is False.
+            extra_request_data: Additional request data.
             **kwargs: additional keyword arguments.
         """
         self.mathpix_api_key = get_from_dict_or_env(
@@ -380,6 +405,9 @@ class MathpixPDFLoader(BasePDFLoader):
         )
         super().__init__(file_path, **kwargs)
         self.processed_file_format = processed_file_format
+        self.extra_request_data = (
+            extra_request_data if extra_request_data is not None else {}
+        )
         self.max_wait_time_seconds = max_wait_time_seconds
         self.should_clean_pdf = should_clean_pdf
 
@@ -393,7 +421,10 @@ class MathpixPDFLoader(BasePDFLoader):
 
     @property
     def data(self) -> dict:
-        options = {"conversion_formats": {self.processed_file_format: True}}
+        options = {
+            "conversion_formats": {self.processed_file_format: True},
+            **self.extra_request_data,
+        }
         return {"options_json": json.dumps(options)}
 
     def send_pdf(self) -> str:
@@ -503,7 +534,10 @@ class PDFPlumberLoader(BasePDFLoader):
             dedupe=self.dedupe,
             extract_images=self.extract_images,
         )
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
 

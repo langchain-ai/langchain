@@ -1,18 +1,18 @@
 [tool.poetry]
 name = "langchain-cli"
-version = "0.0.10"
+version = "0.0.19"
 description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
+license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 typer = {extras = ["all"], version = "^0.9.0"}
-tomli = "^2.0.1"
 gitpython = "^3.1.40"
-langserve = {extras = ["all"], version = ">=0.0.16", optional = true}
-fastapi = "^0.104.0"
+langserve = {extras = ["all"], version = ">=0.0.16"}
 uvicorn = "^0.23.2"
+tomlkit = "^0.12.2"
 
 [tool.poetry.scripts]
 langchain = "langchain_cli.cli:app"
@@ -24,7 +24,7 @@ pytest = "^7.4.2"
 pytest-watch = "^4.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.3"
+ruff = "^0.1.5"
 
 [tool.poetry.group.test.dependencies]
 
@@ -32,7 +32,7 @@ ruff = "^0.1.3"
 
 [tool.poetry.extras]
 # For langserve
-serve = ["langserve"]
+serve = []
 
 [tool.ruff]
 select = [

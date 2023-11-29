@@ -3,24 +3,24 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel, _generate_from_stream
-from langchain.llms.vertexai import _VertexAICommon, is_codey_model
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import root_validator
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel, generate_from_stream
+from langchain.llms.vertexai import _VertexAICommon, is_codey_model
 from langchain.utilities.vertexai import raise_vertex_import_error
 
 if TYPE_CHECKING:
@@ -57,8 +57,9 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
 
     vertex_messages, context = [], None
     for i, message in enumerate(history):
+        content = cast(str, message.content)
         if i == 0 and isinstance(message, SystemMessage):
-            context = message.content
+            context = content
         elif isinstance(message, AIMessage):
             vertex_message = ChatMessage(content=message.content, author="bot")
             vertex_messages.append(vertex_message)
@@ -131,16 +132,14 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         """Validate that the python package exists in environment."""
         cls._try_init_vertexai(values)
         try:
-            if is_codey_model(values["model_name"]):
-                from vertexai.preview.language_models import CodeChatModel
-
-                values["client"] = CodeChatModel.from_pretrained(values["model_name"])
-            else:
-                from vertexai.preview.language_models import ChatModel
-
-                values["client"] = ChatModel.from_pretrained(values["model_name"])
+            from vertexai.language_models import ChatModel, CodeChatModel
         except ImportError:
             raise_vertex_import_error()
+        if is_codey_model(values["model_name"]):
+            model_cls = CodeChatModel
+        else:
+            model_cls = ChatModel
+        values["client"] = model_cls.from_pretrained(values["model_name"])
         return values
 
     def _generate(
@@ -171,7 +170,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])

@@ -19,6 +19,7 @@ from langchain.embeddings.aleph_alpha import (
     AlephAlphaSymmetricSemanticEmbedding,
 )
 from langchain.embeddings.awa import AwaEmbeddings
+from langchain.embeddings.azure_openai import AzureOpenAIEmbeddings
 from langchain.embeddings.baidu_qianfan_endpoint import QianfanEmbeddingsEndpoint
 from langchain.embeddings.bedrock import BedrockEmbeddings
 from langchain.embeddings.cache import CacheBackedEmbeddings
@@ -31,6 +32,7 @@ from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
 from langchain.embeddings.embaas import EmbaasEmbeddings
 from langchain.embeddings.ernie import ErnieEmbeddings
 from langchain.embeddings.fake import DeterministicFakeEmbedding, FakeEmbeddings
+from langchain.embeddings.fastembed import FastEmbedEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.gpt4all import GPT4AllEmbeddings
 from langchain.embeddings.gradient_ai import GradientEmbeddings
@@ -41,6 +43,7 @@ from langchain.embeddings.huggingface import (
     HuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
+from langchain.embeddings.infinity import InfinityEmbeddings
 from langchain.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings
 from langchain.embeddings.jina import JinaEmbeddings
 from langchain.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
@@ -71,12 +74,15 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "OpenAIEmbeddings",
+    "AzureOpenAIEmbeddings",
     "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
     "ElasticsearchEmbeddings",
+    "FastEmbedEmbeddings",
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
+    "InfinityEmbeddings",
     "GradientEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",

@@ -1,7 +1,7 @@
 import pytest
+from langchain_core.documents import Document
 from pytest_mock import MockerFixture
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.github import GitHubIssuesLoader
 
 

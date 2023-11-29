@@ -3,6 +3,8 @@ import logging
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import requests
+from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
 from requests import ConnectTimeout, ReadTimeout, RequestException
 from tenacity import (
     before_sleep_log,
@@ -15,7 +17,6 @@ from tenacity import (
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_NEBULA_SERVICE_URL = "https://api-nebula.symbl.ai"
@@ -50,14 +51,13 @@ class Nebula(LLM):
 
     nebula_service_url: Optional[str] = None
     nebula_service_path: Optional[str] = None
-    nebula_api_key: Optional[str] = None
+    nebula_api_key: Optional[SecretStr] = None
     model: Optional[str] = None
     max_new_tokens: Optional[int] = 128
     temperature: Optional[float] = 0.6
     top_p: Optional[float] = 0.95
     repetition_penalty: Optional[float] = 1.0
-    top_k: Optional[int] = 0
-    penalty_alpha: Optional[float] = 0.0
+    top_k: Optional[int] = 1
     stop_sequences: Optional[List[str]] = None
     max_retries: Optional[int] = 10
 
@@ -81,8 +81,8 @@ class Nebula(LLM):
             "NEBULA_SERVICE_PATH",
             DEFAULT_NEBULA_SERVICE_PATH,
         )
-        nebula_api_key = get_from_dict_or_env(
-            values, "nebula_api_key", "NEBULA_API_KEY", None
+        nebula_api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "nebula_api_key", "NEBULA_API_KEY", None)
         )
 
         if nebula_service_url.endswith("/"):
@@ -105,7 +105,6 @@ class Nebula(LLM):
             "top_k": self.top_k,
             "top_p": self.top_p,
             "repetition_penalty": self.repetition_penalty,
-            "penalty_alpha": self.penalty_alpha,
         }
 
     @property
@@ -161,16 +160,10 @@ class Nebula(LLM):
         """
         params = self._invocation_params(stop, **kwargs)
         prompt = prompt.strip()
-        if "\n" in prompt:
-            instruction = prompt.split("\n")[0]
-            conversation = "\n".join(prompt.split("\n")[1:])
-        else:
-            raise ValueError("Prompt must contain instruction and conversation.")
 
         response = completion_with_retry(
             self,
-            instruction=instruction,
-            conversation=conversation,
+            prompt=prompt,
             params=params,
             url=f"{self.nebula_service_url}{self.nebula_service_path}",
         )
@@ -180,24 +173,21 @@ class Nebula(LLM):
 
 def make_request(
     self: Nebula,
-    instruction: str,
-    conversation: str,
+    prompt: str,
     url: str = f"{DEFAULT_NEBULA_SERVICE_URL}{DEFAULT_NEBULA_SERVICE_PATH}",
     params: Optional[Dict] = None,
 ) -> Any:
     """Generate text from the model."""
     params = params or {}
+    api_key = None
+    if self.nebula_api_key is not None:
+        api_key = self.nebula_api_key.get_secret_value()
     headers = {
         "Content-Type": "application/json",
-        "ApiKey": f"{self.nebula_api_key}",
+        "ApiKey": f"{api_key}",
     }
 
-    body = {
-        "prompt": {
-            "instruction": instruction,
-            "conversation": {"text": f"{conversation}"},
-        }
-    }
+    body = {"prompt": prompt}
 
     # add params to body
     for key, value in params.items():

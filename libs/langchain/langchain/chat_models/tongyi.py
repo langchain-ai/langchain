@@ -13,23 +13,7 @@ from typing import (
     Type,
 )
 
-from requests.exceptions import HTTPError
-from tenacity import (
-    RetryCallState,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
-
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import (
-    BaseChatModel,
-    _generate_from_stream,
-)
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -43,7 +27,27 @@ from langchain.schema.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain.schema.output import ChatGenerationChunk, GenerationChunk
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    ChatResult,
+    GenerationChunk,
+)
+from langchain_core.pydantic_v1 import Field, root_validator
+from requests.exceptions import HTTPError
+from tenacity import (
+    RetryCallState,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.chat_models.base import (
+    BaseChatModel,
+    generate_from_stream,
+)
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -317,7 +321,7 @@ class ChatTongyi(BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         if not messages:
             raise ValueError("No messages provided.")
@@ -360,9 +364,10 @@ class ChatTongyi(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content, chunk=chunk)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             length = len(choice["message"]["content"])
 
     def _create_message_dicts(

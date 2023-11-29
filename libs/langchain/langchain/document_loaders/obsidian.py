@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import List
 
 import yaml
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
@@ -127,7 +127,9 @@ class ObsidianLoader(BaseLoader):
             }
 
             if tags or front_matter.get("tags"):
-                metadata["tags"] = ",".join(tags | set(front_matter.get("tags", [])))
+                metadata["tags"] = ",".join(
+                    tags | set(front_matter.get("tags", []) or [])
+                )
 
             docs.append(Document(page_content=text, metadata=metadata))
 

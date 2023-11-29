@@ -4,9 +4,8 @@ import os
 from typing import List, Optional
 
 import requests
-
-from langchain.pydantic_v1 import BaseModel, Extra
-from langchain.schema.embeddings import Embeddings
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra
 
 
 class LLMRailsEmbeddings(BaseModel, Embeddings):

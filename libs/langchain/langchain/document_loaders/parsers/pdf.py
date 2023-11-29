@@ -15,10 +15,10 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
+from langchain_core.documents import Document
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document
 
 if TYPE_CHECKING:
     import fitz.fitz
@@ -128,18 +128,36 @@ class PyPDFParser(BaseBlobParser):
 class PDFMinerParser(BaseBlobParser):
     """Parse `PDF` using `PDFMiner`."""
 
-    def __init__(self, extract_images: bool = False):
+    def __init__(self, extract_images: bool = False, *, concatenate_pages: bool = True):
+        """Initialize a parser based on PDFMiner.
+
+        Args:
+            extract_images: Whether to extract images from PDF.
+            concatenate_pages: If True, concatenate all PDF pages into one a single
+                               document. Otherwise, return one document per page.
+        """
         self.extract_images = extract_images
+        self.concatenate_pages = concatenate_pages
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
+
         if not self.extract_images:
             from pdfminer.high_level import extract_text
 
             with blob.as_bytes_io() as pdf_file_obj:
-                text = extract_text(pdf_file_obj)
-                metadata = {"source": blob.source}
-                yield Document(page_content=text, metadata=metadata)
+                if self.concatenate_pages:
+                    text = extract_text(pdf_file_obj)
+                    metadata = {"source": blob.source}
+                    yield Document(page_content=text, metadata=metadata)
+                else:
+                    from pdfminer.pdfpage import PDFPage
+
+                    pages = PDFPage.get_pages(pdf_file_obj)
+                    for i, _ in enumerate(pages):
+                        text = extract_text(pdf_file_obj, page_numbers=[i])
+                        metadata = {"source": blob.source, "page": str(i)}
+                        yield Document(page_content=text, metadata=metadata)
         else:
             import io
 
@@ -217,7 +235,10 @@ class PyMuPDFParser(BaseBlobParser):
         import fitz
 
         with blob.as_bytes_io() as file_path:
-            doc = fitz.open(file_path)  # open document
+            if blob.data is None:
+                doc = fitz.open(file_path)
+            else:
+                doc = fitz.open(stream=file_path, filetype="pdf")
 
             yield from [
                 Document(
@@ -458,8 +479,10 @@ class AmazonTextractPDFParser(BaseBlobParser):
                 self.textract_features = []
         except ImportError:
             raise ImportError(
-                "Could not import amazon-textract-caller python package. "
-                "Please install it with `pip install amazon-textract-caller`."
+                "Could not import amazon-textract-caller or "
+                "amazon-textract-textractor python package. Please install it "
+                "with `pip install amazon-textract-caller` & "
+                "`pip install amazon-textract-textractor`."
             )
 
         if not client:

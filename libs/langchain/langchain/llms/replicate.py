@@ -3,10 +3,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
+from langchain_core.outputs import GenerationChunk
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Extra, Field, root_validator
-from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:

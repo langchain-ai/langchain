@@ -2,6 +2,11 @@ import asyncio
 import logging
 from typing import List, Sequence
 
+from langchain_core.documents import Document
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.retrievers import BaseRetriever
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -9,9 +14,6 @@ from langchain.callbacks.manager import (
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.prompts.prompt import PromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema import BaseRetriever, Document
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +63,8 @@ class MultiQueryRetriever(BaseRetriever):
     llm_chain: LLMChain
     verbose: bool = True
     parser_key: str = "lines"
+    include_original: bool = False
+    """Whether to include the original query in the list of generated queries."""
 
     @classmethod
     def from_llm(
@@ -69,12 +73,15 @@ class MultiQueryRetriever(BaseRetriever):
         llm: BaseLLM,
         prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
         parser_key: str = "lines",
+        include_original: bool = False,
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.
 
         Args:
             retriever: retriever to query documents from
             llm: llm for query generation using DEFAULT_QUERY_PROMPT
+            include_original: Whether to include the original query in the list of
+                generated queries.
 
         Returns:
             MultiQueryRetriever
@@ -85,6 +92,7 @@ class MultiQueryRetriever(BaseRetriever):
             retriever=retriever,
             llm_chain=llm_chain,
             parser_key=parser_key,
+            include_original=include_original,
         )
 
     async def _aget_relevant_documents(
@@ -102,6 +110,8 @@ class MultiQueryRetriever(BaseRetriever):
             Unique union of relevant documents from all generated queries
         """
         queries = await self.agenerate_queries(query, run_manager)
+        if self.include_original:
+            queries.append(query)
         documents = await self.aretrieve_documents(queries, run_manager)
         return self.unique_union(documents)
 
@@ -160,6 +170,8 @@ class MultiQueryRetriever(BaseRetriever):
             Unique union of relevant documents from all generated queries
         """
         queries = self.generate_queries(query, run_manager)
+        if self.include_original:
+            queries.append(query)
         documents = self.retrieve_documents(queries, run_manager)
         return self.unique_union(documents)
 

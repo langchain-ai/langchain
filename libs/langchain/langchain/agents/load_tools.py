@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
 
 from langchain.agents.tools import Tool
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
@@ -53,12 +53,14 @@ from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
 from langchain.tools.sleep.tool import SleepTool
+from langchain.tools.stackexchange.tool import StackExchangeTool
 from langchain.tools.merriam_webster.tool import MerriamWebsterQueryRun
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchResults
+from langchain.tools.memorize.tool import Memorize
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.golden_query import GoldenQueryAPIWrapper
 from langchain.utilities.pubmed import PubMedAPIWrapper
@@ -73,6 +75,7 @@ from langchain.utilities.graphql import GraphQLAPIWrapper
 from langchain.utilities.searchapi import SearchApiAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
+from langchain.utilities.stackexchange import StackExchangeAPIWrapper
 from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.merriam_webster import MerriamWebsterAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
@@ -121,7 +124,6 @@ def _get_sleep() -> BaseTool:
 
 
 _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
-    "python_repl": _get_python_repl,
     "requests": _get_tools_requests_get,  # preserved for backwards compatibility
     "requests_get": _get_tools_requests_get,
     "requests_post": _get_tools_requests_post,
@@ -143,7 +145,11 @@ def _get_llm_math(llm: BaseLanguageModel) -> BaseTool:
 
 
 def _get_open_meteo_api(llm: BaseLanguageModel) -> BaseTool:
-    chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
+    chain = APIChain.from_llm_and_api_docs(
+        llm,
+        open_meteo_docs.OPEN_METEO_DOCS,
+        limit_to_domains=["https://api.open-meteo.com/"],
+    )
     return Tool(
         name="Open-Meteo-API",
         description="Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
@@ -160,7 +166,10 @@ _LLM_TOOLS: Dict[str, Callable[[BaseLanguageModel], BaseTool]] = {
 def _get_news_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     news_api_key = kwargs["news_api_key"]
     chain = APIChain.from_llm_and_api_docs(
-        llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
+        llm,
+        news_docs.NEWS_DOCS,
+        headers={"X-Api-Key": news_api_key},
+        limit_to_domains=["https://newsapi.org/"],
     )
     return Tool(
         name="News-API",
@@ -175,6 +184,7 @@ def _get_tmdb_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         llm,
         tmdb_docs.TMDB_DOCS,
         headers={"Authorization": f"Bearer {tmdb_bearer_token}"},
+        limit_to_domains=["https://api.themoviedb.org/"],
     )
     return Tool(
         name="TMDB-API",
@@ -189,6 +199,7 @@ def _get_podcast_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
         llm,
         podcast_docs.PODCAST_DOCS,
         headers={"X-ListenAPI-Key": listen_api_key},
+        limit_to_domains=["https://listen-api.listennotes.com/"],
     )
     return Tool(
         name="Podcast-API",
@@ -266,6 +277,10 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
     )
 
 
+def _get_stackexchange(**kwargs: Any) -> BaseTool:
+    return StackExchangeTool(api_wrapper=StackExchangeAPIWrapper(**kwargs))
+
+
 def _get_dalle_image_generator(**kwargs: Any) -> Tool:
     return Tool(
         "Dall-E-Image-Generator",
@@ -333,6 +348,10 @@ def _get_eleven_labs_text2speech(**kwargs: Any) -> BaseTool:
     return ElevenLabsText2SpeechTool(**kwargs)
 
 
+def _get_memorize(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
+    return Memorize(llm=llm)
+
+
 def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
     return GoogleCloudTextToSpeechTool(**kwargs)
 
@@ -344,6 +363,7 @@ _EXTRA_LLM_TOOLS: Dict[
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
     "podcast-api": (_get_podcast_api, ["listen_api_key"]),
+    "memorize": (_get_memorize, []),
 }
 _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[str]]] = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
@@ -390,6 +410,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_lambda_api,
         ["awslambda_tool_name", "awslambda_tool_description", "function_name"],
     ),
+    "stackexchange": (_get_stackexchange, []),
     "sceneXplain": (_get_scenexplain, []),
     "graphql": (_get_graphql_tool, ["graphql_endpoint"]),
     "openweathermap-api": (_get_openweathermap, ["openweathermap_api_key"]),

@@ -1,31 +1,32 @@
 [tool.poetry]
-name = "rag_timescale_hybrid_search_time"
+name = "rag-timescale-hybrid-search-time"
 version = "0.0.1"
-description = ""
+description = "RAG using timescale-vector DB with the self-query retriver for metadata filtering on time"
 authors = []
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.313, <0.1"
-openai = "^0.28.1"
+openai = "<2"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
+timescale-vector = "^0.0.3"
+lark = "^1.1.8"
+tiktoken = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
-langc = {git = "https://github.com/pingpong-templates/cli"}
-poethepoet = "^0.24.1"
+langchain-cli = ">=0.0.15"
 
 [tool.langserve]
 export_module = "rag_timescale_hybrid_search_time.chain"
 export_attr = "chain"
 
-[tool.poe.tasks.start]
-cmd="poetry run uvicorn langc.dev_scripts:create_demo_server --reload --port $port --host $host"
-args = [
-    {name = "port", help = "port to run on", default = "8000"},
-    {name = "host", help = "host to run on", default = "127.0.0.1"}
-]
+[tool.templates-hub]
+use-case = "rag"
+author = "Timescale"
+integrations = ["OpenAI", "Timescale"]
+tags = ["vectordbs", "hybrid-search", "timeseries"]
 
 [build-system]
 requires = ["poetry-core"]
