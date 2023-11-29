@@ -7,6 +7,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     Coroutine,
@@ -25,7 +26,6 @@ from uuid import UUID
 from langsmith.run_helpers import get_run_tree_context
 from tenacity import RetryCallState
 
-from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -37,10 +37,13 @@ from langchain_core.callbacks.base import (
     ToolManagerMixin,
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
-from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage, get_buffer_string
-from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
 from langchain_core.utils.env import env_var_is_set
+
+if TYPE_CHECKING:
+    from langchain_core.agents import AgentAction, AgentFinish
+    from langchain_core.documents import Document
+    from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
 
 logger = logging.getLogger(__name__)
 

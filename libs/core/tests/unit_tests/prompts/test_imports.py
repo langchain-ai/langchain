@@ -13,7 +13,6 @@ EXPECTED_ALL = [
     "HumanMessagePromptTemplate",
     "MessagesPlaceholder",
     "PipelinePromptTemplate",
-    "Prompt",
     "PromptTemplate",
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",

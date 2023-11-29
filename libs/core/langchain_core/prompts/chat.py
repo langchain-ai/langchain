@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Optional,
     Sequence,
     Set,
     Tuple,
@@ -136,6 +137,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         cls: Type[MessagePromptTemplateT],
         template: str,
         template_format: str = "f-string",
+        partial_variables: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> MessagePromptTemplateT:
         """Create a class from a string template.
@@ -143,12 +145,21 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         Args:
             template: a template.
             template_format: format of the template.
+            partial_variables: A dictionary of variables that can be used to partially
+                               fill in the template. For example, if the template is
+                              `"{variable1} {variable2}"`, and `partial_variables` is
+                              `{"variable1": "foo"}`, then the final prompt will be
+                              `"foo {variable2}"`.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
             A new instance of this class.
         """
-        prompt = PromptTemplate.from_template(template, template_format=template_format)
+        prompt = PromptTemplate.from_template(
+            template,
+            template_format=template_format,
+            partial_variables=partial_variables,
+        )
         return cls(prompt=prompt, **kwargs)
 
     @classmethod

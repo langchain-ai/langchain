@@ -3,15 +3,31 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    Union,
+)
 
 import yaml
 
-from langchain_core.documents import Document
 from langchain_core.output_parsers.base import BaseOutputParser
-from langchain_core.prompt_values import PromptValue
+from langchain_core.prompt_values import (
+    ChatPromptValueConcrete,
+    PromptValue,
+    StringPromptValue,
+)
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
+
+if TYPE_CHECKING:
+    from langchain_core.documents import Document
 
 
 class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
@@ -40,11 +56,6 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
 
     @property
     def OutputType(self) -> Any:
-        from langchain_core.prompt_values import (
-            ChatPromptValueConcrete,
-            StringPromptValue,
-        )
-
         return Union[StringPromptValue, ChatPromptValueConcrete]
 
     def get_input_schema(

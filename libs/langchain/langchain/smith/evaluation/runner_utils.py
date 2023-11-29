@@ -122,7 +122,7 @@ class TestResult(dict):
             r.update(
                 {
                     **{f"feedback.{f.key}": f.score for f in feedback},
-                    "error": result.get("error"),
+                    "error": result.get("Error"),
                     "execution_time": result["execution_time"],
                 }
             )
@@ -906,14 +906,18 @@ def _prepare_eval_run(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     project_name: str,
     project_metadata: Optional[Dict[str, Any]] = None,
+    tags: Optional[List[str]] = None,
 ) -> Tuple[MCF, str, Dataset, List[Example]]:
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
     try:
+        project_extra: dict = {"metadata": project_metadata} if project_metadata else {}
+        if tags:
+            project_extra["tags"] = tags
         project = client.create_project(
             project_name,
             reference_dataset_id=dataset.id,
-            project_extra={"metadata": project_metadata} if project_metadata else {},
+            project_extra=project_extra,
         )
     except (HTTPError, ValueError, LangSmithError) as e:
         if "already exists " not in str(e):
@@ -959,6 +963,7 @@ def _prepare_run_on_dataset(
         llm_or_chain_factory,
         project_name,
         project_metadata=project_metadata,
+        tags=tags,
     )
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
     run_evaluators = _setup_evaluation(
@@ -979,6 +984,7 @@ def _prepare_run_on_dataset(
                     evaluators=run_evaluators or [],
                     client=client,
                     example_id=example.id,
+                    max_concurrency=0,
                 ),
                 progress_bar,
             ],
@@ -1025,7 +1031,7 @@ def _collect_test_results(
             "execution_time": all_execution_time.get(str(example.id)),
         }
         if isinstance(output, EvalError):
-            results[str(example.id)]["error"] = output.error
+            results[str(example.id)]["Error"] = output.Error
         else:
             results[str(example.id)]["output"] = output
         if example.outputs:
@@ -1088,7 +1094,6 @@ async def arun_on_dataset(
         concurrency_level,
         project_metadata=project_metadata,
     )
-
     batch_results = await runnable_utils.gather_with_concurrency(
         configs[0].get("max_concurrency"),
         *map(

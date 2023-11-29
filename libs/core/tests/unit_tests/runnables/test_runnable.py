@@ -1020,6 +1020,118 @@ def test_configurable_alts_factory() -> None:
     assert fake_llm.with_config(configurable={"llm": "chat"}).invoke("...") == "b"
 
 
+def test_configurable_fields_prefix_keys() -> None:
+    fake_chat = FakeListChatModel(responses=["b"]).configurable_fields(
+        responses=ConfigurableFieldMultiOption(
+            id="responses",
+            name="Chat Responses",
+            options={
+                "hello": "A good morning to you!",
+                "bye": "See you later!",
+                "helpful": "How can I help you?",
+            },
+            default=["hello", "bye"],
+        ),
+        # (sleep is a configurable field in FakeListChatModel)
+        sleep=ConfigurableField(
+            id="chat_sleep",
+            is_shared=True,
+        ),
+    )
+    fake_llm = (
+        FakeListLLM(responses=["a"])
+        .configurable_fields(
+            responses=ConfigurableField(
+                id="responses",
+                name="LLM Responses",
+                description="A list of fake responses for this LLM",
+            )
+        )
+        .configurable_alternatives(
+            ConfigurableField(id="llm", name="LLM"),
+            chat=fake_chat | StrOutputParser(),
+            prefix_keys=True,
+        )
+    )
+    prompt = PromptTemplate.from_template("Hello, {name}!").configurable_fields(
+        template=ConfigurableFieldSingleOption(
+            id="prompt_template",
+            name="Prompt Template",
+            description="The prompt template for this chain",
+            options={
+                "hello": "Hello, {name}!",
+                "good_morning": "A very good morning to you, {name}!",
+            },
+            default="hello",
+        )
+    )
+
+    chain = prompt | fake_llm
+
+    assert chain.config_schema().schema() == {
+        "title": "RunnableSequenceConfig",
+        "type": "object",
+        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
+        "definitions": {
+            "LLM": {
+                "title": "LLM",
+                "description": "An enumeration.",
+                "enum": ["chat", "default"],
+                "type": "string",
+            },
+            "Chat_Responses": {
+                "title": "Chat Responses",
+                "description": "An enumeration.",
+                "enum": ["hello", "bye", "helpful"],
+                "type": "string",
+            },
+            "Prompt_Template": {
+                "title": "Prompt Template",
+                "description": "An enumeration.",
+                "enum": ["hello", "good_morning"],
+                "type": "string",
+            },
+            "Configurable": {
+                "title": "Configurable",
+                "type": "object",
+                "properties": {
+                    "prompt_template": {
+                        "title": "Prompt Template",
+                        "description": "The prompt template for this chain",
+                        "default": "hello",
+                        "allOf": [{"$ref": "#/definitions/Prompt_Template"}],
+                    },
+                    "llm": {
+                        "title": "LLM",
+                        "default": "default",
+                        "allOf": [{"$ref": "#/definitions/LLM"}],
+                    },
+                    # not prefixed because marked as shared
+                    "chat_sleep": {
+                        "title": "Chat Sleep",
+                        "type": "number",
+                    },
+                    # prefixed for "chat" option
+                    "llm==chat/responses": {
+                        "title": "Chat Responses",
+                        "default": ["hello", "bye"],
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/Chat_Responses"},
+                    },
+                    # prefixed for "default" option
+                    "llm==default/responses": {
+                        "title": "LLM Responses",
+                        "description": "A list of fake responses for this LLM",
+                        "default": ["a"],
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                },
+            },
+        },
+    }
+
+
 def test_configurable_fields_example() -> None:
     fake_chat = FakeListChatModel(responses=["b"]).configurable_fields(
         responses=ConfigurableFieldMultiOption(
@@ -3949,3 +4061,22 @@ def test_with_config_callbacks() -> None:
     # ConfigError: field "callbacks" not yet prepared so type is still a ForwardRef,
     # you might need to call RunnableConfig.update_forward_refs().
     assert isinstance(result, RunnableBinding)
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_on_returned_runnable() -> None:
+    """Verify that a runnable returned by a sync runnable in the async path will
+    be runthroughaasync path (issue #13407)"""
+
+    def idchain_sync(__input: dict) -> bool:
+        return False
+
+    async def idchain_async(__input: dict) -> bool:
+        return True
+
+    idchain = RunnableLambda(func=idchain_sync, afunc=idchain_async)
+
+    def func(__input: dict) -> Runnable:
+        return idchain
+
+    assert await RunnableLambda(func).ainvoke({})
