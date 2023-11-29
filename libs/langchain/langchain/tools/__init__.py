@@ -84,6 +84,14 @@ def _import_azure_cognitive_services_AzureCogsText2SpeechTool() -> Any:
     return AzureCogsText2SpeechTool
 
 
+def _import_azure_cognitive_services_AzureCogsTextAnalyticsHealthTool() -> Any:
+    from langchain.tools.azure_cognitive_services import (
+        AzureCogsTextAnalyticsHealthTool,
+    )
+
+    return AzureCogsTextAnalyticsHealthTool
+
+
 def _import_bing_search_tool_BingSearchResults() -> Any:
     from langchain.tools.bing_search.tool import BingSearchResults
 
@@ -697,6 +705,8 @@ def __getattr__(name: str) -> Any:
         return _import_azure_cognitive_services_AzureCogsSpeech2TextTool()
     elif name == "AzureCogsText2SpeechTool":
         return _import_azure_cognitive_services_AzureCogsText2SpeechTool()
+    elif name == "AzureCogsTextAnalyticsHealthTool":
+        return _import_azure_cognitive_services_AzureCogsTextAnalyticsHealthTool()
     elif name == "BingSearchResults":
         return _import_bing_search_tool_BingSearchResults()
     elif name == "BingSearchRun":
@@ -908,6 +918,7 @@ __all__ = [
     "AzureCogsImageAnalysisTool",
     "AzureCogsSpeech2TextTool",
     "AzureCogsText2SpeechTool",
+    "AzureCogsTextAnalyticsHealthTool",
     "BaseGraphQLTool",
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",

@@ -2,10 +2,11 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.schema import BaseRetriever, Document
-from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 

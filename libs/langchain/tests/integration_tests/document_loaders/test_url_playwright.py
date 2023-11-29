@@ -1,8 +1,6 @@
 """Tests for the Playwright URL loader"""
 from typing import TYPE_CHECKING
 
-import pytest
-
 from langchain.document_loaders import PlaywrightURLLoader
 from langchain.document_loaders.url_playwright import PlaywrightEvaluator
 
@@ -43,7 +41,6 @@ def test_playwright_url_loader() -> None:
     assert len(docs) > 0
 
 
-@pytest.mark.asyncio
 async def test_playwright_async_url_loader() -> None:
     """Test Playwright async URL loader."""
     urls = [
@@ -76,7 +73,6 @@ def test_playwright_url_loader_with_custom_evaluator() -> None:
     assert docs[0].page_content == "test"
 
 
-@pytest.mark.asyncio
 async def test_playwright_async_url_loader_with_custom_evaluator() -> None:
     """Test Playwright async URL loader with a custom evaluator."""
     urls = ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]

@@ -122,6 +122,12 @@ def _import_openweathermap() -> Any:
     return OpenWeatherMapAPIWrapper
 
 
+def _import_outline() -> Any:
+    from langchain.utilities.outline import OutlineAPIWrapper
+
+    return OutlineAPIWrapper
+
+
 def _import_portkey() -> Any:
     from langchain.utilities.portkey import Portkey
 
@@ -257,6 +263,8 @@ def __getattr__(name: str) -> Any:
         return _import_metaphor_search()
     elif name == "OpenWeatherMapAPIWrapper":
         return _import_openweathermap()
+    elif name == "OutlineAPIWrapper":
+        return _import_outline()
     elif name == "Portkey":
         return _import_portkey()
     elif name == "PowerBIDataset":
@@ -313,6 +321,7 @@ __all__ = [
     "MaxComputeAPIWrapper",
     "MetaphorSearchAPIWrapper",
     "OpenWeatherMapAPIWrapper",
+    "OutlineAPIWrapper",
     "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",
