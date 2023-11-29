@@ -1,7 +1,8 @@
 import os
 from typing import Any, Dict, Iterator, List, Optional, Union
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders import PyPDFLoader
 from langchain.document_loaders.base import BaseLoader
 from langchain.utils import get_from_dict_or_env

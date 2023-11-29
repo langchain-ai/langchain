@@ -3,8 +3,8 @@ from typing import List
 
 import numpy as np
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings

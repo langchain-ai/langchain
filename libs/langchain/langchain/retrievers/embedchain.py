@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional
 
+from langchain_core.documents import Document
+
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
 

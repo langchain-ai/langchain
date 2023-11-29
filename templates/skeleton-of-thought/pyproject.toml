@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "skeleton-of-thought"
 version = "0.0.1"
-description = ""
+description = "Generate longer outputs by building sections from a skeleton outline"
 authors = []
 readme = "README.md"
 
@@ -18,6 +18,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "skeleton_of_thought"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "research"
+author = "LangChain"
+integrations = ["OpenAI"]
+tags = ["research", "paper"]
 
 [build-system]
 requires = ["poetry-core"]

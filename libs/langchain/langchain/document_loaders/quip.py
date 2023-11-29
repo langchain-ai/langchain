@@ -6,7 +6,8 @@ from io import BytesIO
 from typing import List, Optional, Sequence
 from xml.etree.ElementTree import ElementTree
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)

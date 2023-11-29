@@ -1,8 +1,6 @@
 """Test Vertex AI API wrapper.
-In order to run this test, you need to install VertexAI SDK (that is is the private
-preview)  and be whitelisted to list the models themselves:
-In order to run this test, you need to install VertexAI SDK 
-pip install google-cloud-aiplatform>=1.35.0
+In order to run this test, you need to install VertexAI SDK:
+pip install google-cloud-aiplatform>=1.36.0
 
 Your end-user credentials would be used to make the calls (make sure you've run 
 `gcloud auth login` first).
@@ -11,11 +9,11 @@ import os
 from typing import Optional
 
 import pytest
+from langchain_core.documents import Document
 from langchain_core.outputs import LLMResult
 from pytest_mock import MockerFixture
 
 from langchain.chains.summarize import load_summarize_chain
-from langchain.docstore.document import Document
 from langchain.llms import VertexAI, VertexAIModelGarden
 
 
@@ -150,10 +148,10 @@ async def test_model_garden_agenerate(
     assert len(output.generations) == 2
 
 
-def test_vertex_call_trigger_count_tokens() -> None:
+def test_vertex_call_count_tokens() -> None:
     llm = VertexAI()
-    output = llm.get_num_tokens("Hi")
-    assert output == 2
+    output = llm.get_num_tokens("How are you?")
+    assert output == 4
 
 
 @pytest.mark.requires("google.cloud.aiplatform")

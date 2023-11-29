@@ -3,6 +3,7 @@ name = "langchain-cli"
 version = "0.0.19"
 description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
+license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
