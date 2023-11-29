@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob, FileSystemBlobLoader
 from langchain.document_loaders.generic import GenericLoader
+from langchain.document_loaders.parsers.txt import TextParser
 
 
 @pytest.fixture
@@ -78,6 +79,13 @@ def test_from_filesystem_classmethod(toy_dir: str) -> None:
     assert docs[0].page_content == "This is a test.txt file."
 
 
+def test_from_filesystem_classmethod_with_path(toy_dir: str) -> None:
+    loader = GenericLoader.from_filesystem(os.path.join(toy_dir, "test.txt"))
+    docs = loader.load()
+    assert len(docs) == 1
+    assert docs[0].page_content == "This is a test.txt file."
+
+
 def test_from_filesystem_classmethod_with_glob(toy_dir: str) -> None:
     """Test that glob parameter is taken into account."""
     loader = GenericLoader.from_filesystem(toy_dir, glob="*.txt", parser=AsIsParser())
@@ -107,6 +115,20 @@ def test_from_filesystem_using_default_parser(toy_dir: str) -> None:
         toy_dir,
         suffixes=[".txt"],
     )
+    docs = loader.load()
+    assert len(docs) == 3
+    # Glob order seems to be deterministic with recursion. If this test becomes flaky,
+    # we can sort the docs by page content.
+    assert docs[0].page_content == "This is a test.txt file."
+
+
+def test_specifying_parser_via_class_attribute(toy_dir: str) -> None:
+    class TextLoader(GenericLoader):
+        """Parser created for testing purposes."""
+
+        blob_parser = TextParser()
+
+    loader = TextLoader.from_filesystem(toy_dir, suffixes=[".txt"])
     docs = loader.load()
     assert len(docs) == 3
     # Glob order seems to be deterministic with recursion. If this test becomes flaky,

@@ -23,52 +23,69 @@ class GenericLoader(BaseLoader):
 
     Examples:
 
-       .. code-block:: python
-
-        from langchain.document_loaders import GenericLoader
-        from langchain.document_loaders.blob_loaders import FileSystemBlobLoader
-
-        loader = GenericLoader.from_filesystem(
-            path="path/to/directory",
-            glob="**/[!.]*",
-            suffixes=[".pdf"],
-            show_progress=True,
-        )
-
-        docs = loader.lazy_load()
-        next(docs)
-
-        Example instantiations to change which files are loaded:
+        Parse a specific PDF file:
 
         .. code-block:: python
 
-            # Recursively load all text files in a directory.
-            loader = GenericLoader.from_filesystem("/path/to/dir", glob="**/*.txt")
-
-            # Recursively load all non-hidden files in a directory.
-            loader = GenericLoader.from_filesystem("/path/to/dir", glob="**/[!.]*")
-
-            # Load all files in a directory without recursion.
-            loader = GenericLoader.from_filesystem("/path/to/dir", glob="*")
-
-        Example instantiations to change which parser is used:
-
-        .. code-block:: python
-
+            from langchain.document_loaders import GenericLoader
             from langchain.document_loaders.parsers.pdf import PyPDFParser
 
             # Recursively load all text files in a directory.
             loader = GenericLoader.from_filesystem(
-                "/path/to/dir",
-                glob="**/*.pdf",
+                "my_lovely_pdf.pdf",
                 parser=PyPDFParser()
             )
+
+       .. code-block:: python
+
+            from langchain.document_loaders import GenericLoader
+            from langchain.document_loaders.blob_loaders import FileSystemBlobLoader
+
+
+            loader = GenericLoader.from_filesystem(
+                path="path/to/directory",
+                glob="**/[!.]*",
+                suffixes=[".pdf"],
+                show_progress=True,
+            )
+
+            docs = loader.lazy_load()
+            next(docs)
+
+    Example instantiations to change which files are loaded:
+
+    .. code-block:: python
+
+        # Recursively load all text files in a directory.
+        loader = GenericLoader.from_filesystem("/path/to/dir", glob="**/*.txt")
+
+        # Recursively load all non-hidden files in a directory.
+        loader = GenericLoader.from_filesystem("/path/to/dir", glob="**/[!.]*")
+
+        # Load all files in a directory without recursion.
+        loader = GenericLoader.from_filesystem("/path/to/dir", glob="*")
+
+    Example instantiations to change which parser is used:
+
+    .. code-block:: python
+
+        from langchain.document_loaders.parsers.pdf import PyPDFParser
+
+        # Recursively load all text files in a directory.
+        loader = GenericLoader.from_filesystem(
+            "/path/to/dir",
+            glob="**/*.pdf",
+            parser=PyPDFParser()
+        )
+
     """
+
+    blob_parser: Optional[BaseBlobParser]
 
     def __init__(
         self,
         blob_loader: BlobLoader,
-        blob_parser: BaseBlobParser,
+        blob_parser: Optional[BaseBlobParser] = None,
     ) -> None:
         """A generic document loader.
 
@@ -77,7 +94,16 @@ class GenericLoader(BaseLoader):
             blob_parser: A blob parser which knows how to parse blobs into documents
         """
         self.blob_loader = blob_loader
-        self.blob_parser = blob_parser
+
+        parser_ = blob_parser or getattr(self, "blob_parser", None)
+
+        if parser_ is None:
+            raise ValueError(
+                "No parser provided and no default parser found on the class. "
+                "Please provide a parser."
+            )
+
+        self.blob_parser = blob_parser or self.blob_loader
 
     def lazy_load(
         self,
@@ -114,14 +140,20 @@ class GenericLoader(BaseLoader):
         """Create a generic document loader using a filesystem blob loader.
 
         Args:
-            path: The path to the directory to load documents from.
+            path: The path to the directory to load documents from OR the path to a
+                  single file to load. If this is a file, glob, exclude, suffixes
+                    will be ignored.
             glob: The glob pattern to use to find documents.
             suffixes: The suffixes to use to filter documents. If None, all files
                       matching the glob will be loaded.
             exclude: A list of patterns to exclude from the loader.
             show_progress: Whether to show a progress bar or not (requires tqdm).
                            Proxies to the file system loader.
-            parser: A blob parser which knows how to parse blobs into documents
+            parser: A blob parser which knows how to parse blobs into documents,
+                    will instantiate a default parser if not provided.
+                    The default can be overridden by either passing a parser or
+                    setting the class attribute `blob_parser` (the latter
+                    should be used with inheritance).
 
         Returns:
             A generic document loader.
@@ -134,7 +166,10 @@ class GenericLoader(BaseLoader):
             show_progress=show_progress,
         )
         if isinstance(parser, str):
-            blob_parser = get_parser(parser)
+            if parser == "default" and cls.blob_parser is not None:
+                blob_parser = cls.blob_parser
+            else:
+                blob_parser = get_parser(parser)
         else:
             blob_parser = parser
         return cls(blob_loader, blob_parser)
