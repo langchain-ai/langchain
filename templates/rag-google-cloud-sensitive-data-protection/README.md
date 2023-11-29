@@ -11,7 +11,8 @@ check [here](https://cloud.google.com/dlp/docs/sensitive-data-protection-overvie
 
 ## Environment Setup
 
-Before using this template, please ensure that you enable the DLP API and Vertex AI Search API in your Google Cloud
+Before using this template, please ensure that you enable the [DLP API](https://console.cloud.google.com/marketplace/product/google/dlp.googleapis.com)
+and [Vertex AI API](https://console.cloud.google.com/marketplace/product/google/aiplatform.googleapis.com) in your Google Cloud
 project.
 
 Set the following environment variables:
