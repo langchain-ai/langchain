@@ -385,6 +385,7 @@ extended_testing = [
  "javelin-sdk",
  "databricks-vectorsearch",
  "dgml-utils",
+ "cohere",
 ]
 
 [tool.ruff]
