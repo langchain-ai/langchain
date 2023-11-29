@@ -25,13 +25,14 @@ You must always select one of the above tools and respond with only a JSON objec
   "tool": <name of the selected tool>,
   "tool_input": <parameters for the selected tool, matching the tool's JSON schema>
 }}
-"""
+"""  # noqa: E501
 
 
 DEFAULT_RESPONSE_FUNCTION = {
     "name": "__conversational_response",
-    "description": "Respond conversationally if no other tools \
-should be called for a given query.",
+    "description": (
+        "Respond conversationally if no other tools should be called for a given query."
+    ),
     "parameters": {
         "type": "object",
         "properties": {
