@@ -3,13 +3,14 @@ import logging
 from time import perf_counter
 from typing import Any, Dict, Optional, Tuple
 
+from langchain_core.pydantic_v1 import Field, validator
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.openai import _import_tiktoken
-from langchain.pydantic_v1 import Field, validator
 from langchain.tools.base import BaseTool
 from langchain.tools.powerbi.prompt import (
     BAD_REQUEST_RESPONSE,

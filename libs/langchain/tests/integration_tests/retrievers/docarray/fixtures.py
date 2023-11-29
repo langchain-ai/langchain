@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, Tuple
 
 import numpy as np
 import pytest
-
-from langchain.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import Field
 
 if TYPE_CHECKING:
     from docarray.index import (

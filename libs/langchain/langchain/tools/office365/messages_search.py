@@ -6,10 +6,11 @@ https://learn.microsoft.com/en-us/graph/auth/
 
 from typing import Any, Dict, List, Optional, Type
 
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field
+
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Extra, Field
 from langchain.tools.office365.base import O365BaseTool
-from langchain.tools.office365.utils import clean_body
+from langchain.tools.office365.utils import UTC_FORMAT, clean_body
 
 
 class SearchEmailsInput(BaseModel):
@@ -45,7 +46,7 @@ class SearchEmailsInput(BaseModel):
         default=True,
         description=(
             "Whether the email body is truncated to meet token number limits. Set to "
-            "False for searches that will retrieve very few results, otherwise, set to "
+            "False for searches that will retrieve small messages, otherwise, set to "
             "True"
         ),
     )
@@ -77,6 +78,7 @@ class O365SearchEmails(O365BaseTool):
         max_results: int = 10,
         truncate: bool = True,
         run_manager: Optional[CallbackManagerForToolRun] = None,
+        truncate_limit: int = 150,
     ) -> List[Dict[str, Any]]:
         # Get mailbox object
         mailbox = self.account.mailbox()
@@ -96,13 +98,13 @@ class O365SearchEmails(O365BaseTool):
             output_message["from"] = message.sender
 
             if truncate:
-                output_message["body"] = message.body_preview
+                output_message["body"] = message.body_preview[:truncate_limit]
             else:
                 output_message["body"] = clean_body(message.body)
 
             output_message["subject"] = message.subject
 
-            output_message["date"] = message.modified.strftime("%Y-%m-%dT%H:%M:%S%z")
+            output_message["date"] = message.modified.strftime(UTC_FORMAT)
 
             output_message["to"] = []
             for recipient in message.to._recipients:

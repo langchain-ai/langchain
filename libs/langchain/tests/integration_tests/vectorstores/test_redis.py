@@ -3,8 +3,8 @@ import os
 from typing import Any, Dict, List, Optional
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.redis import (
     Redis,
     RedisFilter,

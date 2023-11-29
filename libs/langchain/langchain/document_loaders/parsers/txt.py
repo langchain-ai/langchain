@@ -1,9 +1,10 @@
 """Module for parsing text files.."""
 from typing import Iterator
 
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document
 
 
 class TextParser(BaseBlobParser):
