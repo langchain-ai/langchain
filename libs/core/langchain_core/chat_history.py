@@ -3,10 +3,19 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import (AIMessage,
+                                     BaseMessage,
+                                     HumanMessage,
+                                    message_to_dict,
+                                    messages_from_dict)
 
+from langchain.load.load import loads
 
-class BaseChatMessageHistory(ABC):
+import json
+
+from langchain.load.serializable import Serializable
+
+class BaseChatMessageHistory(Serializable, ABC):
     """Abstract base class for storing chat message history.
 
     See `ChatMessageHistory` for default implementation.
@@ -65,3 +74,35 @@ class BaseChatMessageHistory(ABC):
     @abstractmethod
     def clear(self) -> None:
         """Remove all messages from the store"""
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Is this class serializable?"""
+        return True
+
+    def to_json(self):
+        serialized = super().to_json()
+        serialized['obj'] = json.loads(json.dumps(self,
+                                default=lambda o: message_to_dict(o)
+                                    if isinstance(o, BaseMessage) else o.__dict__,
+                                    sort_keys=True, indent=4))
+
+        return serialized
+
+    @classmethod
+    def from_json(cls, json_input: str):
+        deserialized = loads(json_input)
+
+        memory_dict = json.loads(json_input)
+
+        messages = messages_from_dict(memory_dict['obj']['messages'])
+
+        # Extract additional attributes from memory_dict
+        additional_attributes = {key: memory_dict[key] for key in memory_dict['obj']
+                                 if key != 'messages'}
+
+        deserialized.messages = messages
+
+        deserialized.__dict__.update(additional_attributes)
+
+        return deserialized

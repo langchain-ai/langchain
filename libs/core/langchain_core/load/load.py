@@ -15,6 +15,7 @@ class Reviver:
         self,
         secrets_map: Optional[Dict[str, str]] = None,
         valid_namespaces: Optional[List[str]] = None,
+        llm: Optional[Any] = None
     ) -> None:
         self.secrets_map = secrets_map or dict()
         # By default only support langchain, but user can pass in additional namespaces
@@ -23,6 +24,7 @@ class Reviver:
             if valid_namespaces
             else DEFAULT_NAMESPACES
         )
+        self.llm = llm
 
     def __call__(self, value: Dict[str, Any]) -> Any:
         if (
@@ -72,6 +74,8 @@ class Reviver:
             # We don't need to recurse on kwargs
             # as json.loads will do that for us.
             kwargs = value.get("kwargs", dict())
+            if self.llm is not None:
+                kwargs['llm'] = self.llm
             return cls(**kwargs)
 
         return value
@@ -82,6 +86,7 @@ def loads(
     *,
     secrets_map: Optional[Dict[str, str]] = None,
     valid_namespaces: Optional[List[str]] = None,
+    llm: Optional[Any] = None
 ) -> Any:
     """Revive a LangChain class from a JSON string.
     Equivalent to `load(json.loads(text))`.
@@ -95,7 +100,7 @@ def loads(
     Returns:
         Revived LangChain objects.
     """
-    return json.loads(text, object_hook=Reviver(secrets_map, valid_namespaces))
+    return json.loads(text, object_hook=Reviver(secrets_map, valid_namespaces, llm))
 
 
 def load(
