@@ -7,6 +7,11 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
 
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Extra
+
 from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
@@ -14,10 +19,6 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
-from langchain.docstore.document import Document
-from langchain.pydantic_v1 import Extra
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.text_splitter import TextSplitter
 
 

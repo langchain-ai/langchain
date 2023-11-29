@@ -2,7 +2,6 @@
 import asyncio
 import os
 
-import pytest
 from aiohttp import ClientSession
 
 from langchain.agents import AgentType, initialize_agent, load_tools
@@ -60,7 +59,6 @@ def test_tracing_session_env_var() -> None:
     agent.run(questions[0])
 
 
-@pytest.mark.asyncio
 async def test_tracing_concurrent() -> None:
     os.environ["LANGCHAIN_WANDB_TRACING"] = "true"
     aiosession = ClientSession()
@@ -95,7 +93,6 @@ def test_tracing_context_manager() -> None:
     agent.run(questions[0])  # this should not be traced
 
 
-@pytest.mark.asyncio
 async def test_tracing_context_manager_async() -> None:
     llm = OpenAI(temperature=0)
     async_tools = load_tools(

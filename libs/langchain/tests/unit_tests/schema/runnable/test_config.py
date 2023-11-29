@@ -1,34 +1,19 @@
-from langchain.callbacks.manager import CallbackManager
-from langchain.callbacks.stdout import StdOutCallbackHandler
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
-from langchain.schema.runnable.config import RunnableConfig, merge_configs
+from langchain.schema.runnable.config import __all__
+
+EXPECTED_ALL = [
+    "EmptyDict",
+    "RunnableConfig",
+    "acall_func_with_variable_args",
+    "call_func_with_variable_args",
+    "ensure_config",
+    "get_async_callback_manager_for_config",
+    "get_callback_manager_for_config",
+    "get_config_list",
+    "get_executor_for_config",
+    "merge_configs",
+    "patch_config",
+]
 
 
-def test_merge_config_callbacks() -> None:
-    manager: RunnableConfig = {
-        "callbacks": CallbackManager(handlers=[StdOutCallbackHandler()])
-    }
-    handlers: RunnableConfig = {"callbacks": [ConsoleCallbackHandler()]}
-    other_handlers: RunnableConfig = {"callbacks": [StreamingStdOutCallbackHandler()]}
-
-    merged = merge_configs(manager, handlers)["callbacks"]
-
-    assert isinstance(merged, CallbackManager)
-    assert len(merged.handlers) == 2
-    assert isinstance(merged.handlers[0], StdOutCallbackHandler)
-    assert isinstance(merged.handlers[1], ConsoleCallbackHandler)
-
-    merged = merge_configs(handlers, manager)["callbacks"]
-
-    assert isinstance(merged, CallbackManager)
-    assert len(merged.handlers) == 2
-    assert isinstance(merged.handlers[0], StdOutCallbackHandler)
-    assert isinstance(merged.handlers[1], ConsoleCallbackHandler)
-
-    merged = merge_configs(handlers, other_handlers)["callbacks"]
-
-    assert isinstance(merged, list)
-    assert len(merged) == 2
-    assert isinstance(merged[0], ConsoleCallbackHandler)
-    assert isinstance(merged[1], StreamingStdOutCallbackHandler)
+def test_all_imports() -> None:
+    assert set(__all__) == set(EXPECTED_ALL)

@@ -5,13 +5,14 @@ import logging
 import sys
 from typing import TYPE_CHECKING, Dict, Optional, Set
 
+from langchain_core.messages import BaseMessage
+from langchain_core.pydantic_v1 import Field, root_validator
+
 from langchain.adapters.openai import convert_message_to_dict
 from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema.messages import BaseMessage
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:

@@ -1,8 +1,9 @@
 [tool.poetry]
 name = "langchain-cli"
-version = "0.0.16"
+version = "0.0.19"
 description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
+license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -23,7 +24,7 @@ pytest = "^7.4.2"
 pytest-watch = "^4.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.3"
+ruff = "^0.1.5"
 
 [tool.poetry.group.test.dependencies]
 
