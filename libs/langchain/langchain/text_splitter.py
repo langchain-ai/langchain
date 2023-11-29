@@ -591,7 +591,7 @@ class HTMLHeaderTextSplitter:
             pathlib.Path(__file__).parent
             / "document_transformers/xsl/html_chunks_with_headers.xslt"
         )
-        xslt_tree = etree.parse(str(xslt_path))
+        xslt_tree = etree.parse(xslt_path)
         transform = etree.XSLT(xslt_tree)
         result = transform(tree)
         result_dom = etree.fromstring(str(result))
