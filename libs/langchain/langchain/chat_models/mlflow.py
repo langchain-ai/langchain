@@ -2,6 +2,7 @@ import asyncio
 import logging
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional
+from urllib.parse import urlparse
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -61,6 +62,7 @@ class ChatMlflow(BaseChatModel):
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
+        self._validate_uri()
         try:
             from mlflow.deployments import get_deploy_client
 
@@ -75,6 +77,12 @@ class ChatMlflow(BaseChatModel):
     @property
     def _mlflow_extras(self) -> str:
         return "[genai]"
+
+    def _validate_uri(self) -> None:
+        if urlparse(self.target_uri).scheme not in ("http", "https"):
+            raise ValueError(
+                "Invalid target URI. The target URI must be a valid HTTP/HTTPS URI."
+            )
 
     @property
     def _default_params(self) -> Dict[str, Any]:
