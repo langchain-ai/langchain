@@ -217,12 +217,14 @@ class YoutubeLoader(BaseLoader):
             transcript = transcript.translate(self.translation)
 
         transcript_pieces = transcript.fetch()
-        
+
         if self.duration == None:
             transcript = " ".join([t["text"].strip(" ") for t in transcript_pieces])
             return [Document(page_content=transcript, metadata=metadata)]
         else:
-            transcript_pieces = chunk_transcripts(transcript_pieces, duration=self.duration)
+            transcript_pieces = chunk_transcripts(
+                transcript_pieces, duration=self.duration
+            )
             docs = []
             for t in transcript_pieces:
                 dct = {
