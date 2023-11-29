@@ -21,6 +21,8 @@ export DG_ENVIRONMENT=Production
 export DOCUGAMI_API_KEY=...
 ```
 
+Note that Pinecone only allows one index for your free starter project.
+
 ## Usage
 
 ### Indexing
