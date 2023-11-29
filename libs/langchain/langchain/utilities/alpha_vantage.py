@@ -30,7 +30,7 @@ class AlphaVantageAPIWrapper(BaseModel):
             values, "alphavantage_api_key", "ALPHAVANTAGE_API_KEY"
         )
         return values
-    
+
     def search_symbols(self, keywords: str) -> Dict[str, Any]:
         """Make a request to the AlphaVantage API to search for symbols."""
         response = requests.get(
