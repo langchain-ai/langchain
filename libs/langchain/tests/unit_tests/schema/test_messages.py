@@ -22,6 +22,7 @@ EXPECTED_ALL = [
     "merge_content",
     "messages_from_dict",
     "messages_to_dict",
+    "AnyMessage",
 ]
 
 

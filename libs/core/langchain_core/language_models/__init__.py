@@ -1,6 +1,7 @@
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LanguageModelInput,
+    LanguageModelOutput,
     get_tokenizer,
 )
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
@@ -14,4 +15,5 @@ __all__ = [
     "LLM",
     "LanguageModelInput",
     "get_tokenizer",
+    "LanguageModelOutput",
 ]
