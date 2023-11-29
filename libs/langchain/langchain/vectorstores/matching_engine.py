@@ -26,7 +26,7 @@ logger = logging.getLogger()
 
 
 class MatchingEngine(VectorStore):
-    """`Google Vertex AI Matching Engine` vector store.
+    """`Google Vertex AI Vector Search` (previously Matching Engine) vector store.
 
     While the embeddings are stored in the Matching Engine, the embedded
     documents will be stored in GCS.
@@ -34,7 +34,7 @@ class MatchingEngine(VectorStore):
     An existing Index and corresponding Endpoint are preconditions for
     using this module.
 
-    See usage in docs/modules/indexes/vectorstores/examples/matchingengine.ipynb
+    See usage in docs/integrations/vectorstores/google_vertex_ai_vector_search.ipynb
 
     Note that this implementation is mostly meant for reading if you are
     planning to do a real time implementation. While reading is a real time
@@ -50,7 +50,8 @@ class MatchingEngine(VectorStore):
         gcs_bucket_name: str,
         credentials: Optional[Credentials] = None,
     ):
-        """Vertex Matching Engine implementation of the vector store.
+        """Google Vertex AI Vector Search (previously Matching Engine)
+         implementation of the vector store.
 
         While the embeddings are stored in the Matching Engine, the embedded
         documents will be stored in GCS.
@@ -59,7 +60,7 @@ class MatchingEngine(VectorStore):
         using this module.
 
         See usage in
-        docs/modules/indexes/vectorstores/examples/matchingengine.ipynb.
+        docs/integrations/vectorstores/google_vertex_ai_vector_search.ipynb.
 
         Note that this implementation is mostly meant for reading if you are
         planning to do a real time implementation. While reading is a real time
@@ -232,7 +233,9 @@ class MatchingEngine(VectorStore):
         filter = filter or []
 
         # If the endpoint is public we use the find_neighbors function.
-        if self.endpoint._public_match_client:
+        if hasattr(self.endpoint, "_public_match_client") and (
+            self.endpoint._public_match_client
+        ):
             response = self.endpoint.find_neighbors(
                 deployed_index_id=self._get_index_id(),
                 queries=[embedding],
