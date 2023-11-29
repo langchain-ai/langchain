@@ -433,9 +433,9 @@ def _import_symblai_nebula() -> Any:
 
 
 def _import_triton_tensorrt() -> Any:
-    from libs.langchain.langchain.llms.triton_tensorrt import TensorRTLLM
+    from libs.langchain.langchain.llms.triton_tensorrt import TritonTensorRT
     
-    return TensorRTLLM
+    return TritonTensorRT
 
 
 def _import_textgen() -> Any:

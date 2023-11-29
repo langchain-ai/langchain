@@ -90,8 +90,7 @@ if USE_LANGCHAIN:
 
         @property
         def _invocation_params(self, **kwargs: Any) -> Dict[str, Any]:
-            params = {**self._get_model_default_parameters, **kwargs}
-            return params
+            return {**self._get_model_default_parameters, **kwargs}
 
         @property
         def _identifying_params(self) -> Dict[str, Any]:
