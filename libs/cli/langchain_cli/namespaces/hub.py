@@ -2,13 +2,17 @@
 Manage installable hub packages.
 """
 
-import typer
-from typing import Optional
-from typing_extensions import Annotated
-from pathlib import Path
+import re
 import shutil
 import subprocess
-import re
+from pathlib import Path
+from typing import Optional
+
+import typer
+from langserve.packages import get_langserve_export
+from typing_extensions import Annotated
+
+from langchain_cli.utils.packages import get_package_root
 
 hub = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -18,9 +22,7 @@ def new(
     name: Annotated[str, typer.Argument(help="The name of the folder to create")],
     with_poetry: Annotated[
         bool,
-        typer.Option(
-            "--with-poetry/--no-poetry", help="Don't run poetry install"
-        ),
+        typer.Option("--with-poetry/--no-poetry", help="Don't run poetry install"),
     ] = False,
 ):
     """
@@ -30,7 +32,7 @@ def new(
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
 
     # copy over template from ../package_template
-    project_template_dir = Path(__file__).parent.parent.parent / "package_template"
+    project_template_dir = Path(__file__).parents[1] / "package_template"
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=name == ".")
 
     package_name_split = computed_name.split("/")
@@ -81,9 +83,23 @@ def start(
     """
     Starts a demo LangServe instance for this hub package.
     """
-    cmd = ["poetry", "run", "poe", "start"]
-    if port is not None:
-        cmd += ["--port", str(port)]
-    if host is not None:
-        cmd += ["--host", host]
-    subprocess.run(cmd)
+    # load pyproject.toml
+    project_dir = get_package_root()
+    pyproject = project_dir / "pyproject.toml"
+
+    # get langserve export - throws KeyError if invalid
+    get_langserve_export(pyproject)
+
+    port_str = str(port) if port is not None else "8000"
+    host_str = host if host is not None else "127.0.0.1"
+
+    command = [
+        "uvicorn",
+        "langchain_cli.dev_scripts:create_demo_server",
+        "--reload",
+        "--port",
+        port_str,
+        "--host",
+        host_str,
+    ]
+    subprocess.run(command)

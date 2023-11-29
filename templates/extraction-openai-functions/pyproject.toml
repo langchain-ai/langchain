@@ -11,7 +11,7 @@ langchain = ">=0.0.323"
 openai = ">=0.27.9"
 
 [tool.langserve]
-export_module = "exctraction_openai_functions"
+export_module = "extraction_openai_functions"
 export_attr = "chain"
 
 [build-system]

@@ -1,13 +1,13 @@
 import os
 
-from cassandra.cluster import Cluster
 from cassandra.auth import PlainTextAuthProvider
+from cassandra.cluster import Cluster
 
 
 def get_cassandra_connection():
     contact_points = [
         cp.strip()
-        for cp in os.environ.get("CASSANDRA_CONTACT_POINTS", "").split(',')
+        for cp in os.environ.get("CASSANDRA_CONTACT_POINTS", "").split(",")
         if cp.strip()
     ]
     CASSANDRA_KEYSPACE = os.environ["CASSANDRA_KEYSPACE"]
@@ -22,6 +22,8 @@ def get_cassandra_connection():
     else:
         auth_provider = None
 
-    c_cluster = Cluster(contact_points if contact_points else None, auth_provider=auth_provider)
+    c_cluster = Cluster(
+        contact_points if contact_points else None, auth_provider=auth_provider
+    )
     session = c_cluster.connect()
     return (session, CASSANDRA_KEYSPACE)

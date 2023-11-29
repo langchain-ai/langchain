@@ -386,7 +386,7 @@ class Redis(VectorStore):
             generated_schema = _generate_field_schema(metadatas[0])
             if index_schema:
                 # read in the schema solely to compare to the generated schema
-                user_schema = read_schema(index_schema)
+                user_schema = read_schema(index_schema)  # type: ignore
 
                 # the very rare case where a super user decides to pass the index
                 # schema and a document loader is used that has metadata which
@@ -1166,7 +1166,7 @@ class Redis(VectorStore):
         # read in schema (yaml file or dict) and
         # pass to the Pydantic validators
         if index_schema:
-            schema_values = read_schema(index_schema)
+            schema_values = read_schema(index_schema)  # type: ignore
             schema = RedisModel(**schema_values)
 
             # ensure user did not exclude the content field

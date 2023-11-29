@@ -1,4 +1,5 @@
 import os
+
 from elasticsearch import Elasticsearch
 
 es_host = os.environ["ELASTIC_SEARCH_SERVER"]

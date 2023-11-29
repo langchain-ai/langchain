@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "rag-aws-bedrock"
+version = "0.1.0"
+description = ""
+authors = ["Lance Martin <lance@langchain.dev>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.313, <0.1"
+openai = ">=0.28.1"
+tiktoken = ">=0.5.1"
+pinecone-client = ">=2.2.4"
+boto3 = ">=1.28.57" 
+awscli = ">=1.29.57" 
+botocore = ">=1.31.57"
+
+[tool.langserve]
+export_module = "rag_aws_bedrock"
+export_attr = "chain"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

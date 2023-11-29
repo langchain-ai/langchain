@@ -1,28 +1,31 @@
-from langchain.vectorstores import Chroma
 from langchain.chat_models import ChatOllama
-from langchain.prompts import ChatPromptTemplate
-from langchain.embeddings import GPT4AllEmbeddings
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
 
 # Load
 from langchain.document_loaders import WebBaseLoader
+from langchain.embeddings import GPT4AllEmbeddings
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema.output_parser import StrOutputParser
+from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import Chroma
+
 loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
 data = loader.load()
 
 # Split
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 all_splits = text_splitter.split_documents(data)
 
 # Add to vectorDB
-vectorstore = Chroma.from_documents(documents=all_splits, 
-                                    collection_name="rag-private",
-                                    embedding=GPT4AllEmbeddings(),
-                                    )
+vectorstore = Chroma.from_documents(
+    documents=all_splits,
+    collection_name="rag-private",
+    embedding=GPT4AllEmbeddings(),
+)
 retriever = vectorstore.as_retriever()
 
-# Prompt 
+# Prompt
 # Optionally, pull from the Hub
 # from langchain import hub
 # prompt = hub.pull("rlm/rag-prompt")

@@ -89,10 +89,28 @@ See a [usage example and authorizing instructions](/docs/integrations/document_l
 from langchain.document_loaders import GoogleDriveLoader
 ```
 
-## Vector Store
-### Google Vertex AI Vector Search
+### Speech-to-Text
 
-> [Google Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview),
+> [Google Cloud Speech-to-Text](https://cloud.google.com/speech-to-text) is an audio transcription API powered by Google's speech recognition models.
+
+This document loader transcribes audio files and outputs the text results as Documents.
+
+First, we need to install the python package.
+
+```bash
+pip install google-cloud-speech
+```
+
+See a [usage example and authorizing instructions](/docs/integrations/document_loaders/google_speech_to_text).
+
+```python
+from langchain.document_loaders import GoogleSpeechToTextLoader
+```
+
+## Vector Store
+### Vertex AI Vector Search
+
+> [Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview),
 > formerly known as Vertex AI Matching Engine, provides the industry's leading high-scale 
 > low latency vector database. These vector databases are commonly
 > referred to as vector similarity-matching or an approximate nearest neighbor (ANN) service.

@@ -13,23 +13,3 @@ These documents can be loaded from [many sources](https://python.langchain.com/d
 ##  LLM
 
 Be sure that `OPENAI_API_KEY` is set in order to the OpenAI models.
-
-## Adding the template
-
-Create your LangServe app:
-```
-langchain serve new my-app
-cd my-app
-```
-
-Add template:
-```
-langchain serve add rag-chroma
-```
-
-Start server:
-```
-langchain start
-```
-
-See Jupyter notebook `rag_chroma` for various way to connect to the template.

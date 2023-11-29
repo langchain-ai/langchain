@@ -1,9 +1,9 @@
+from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chat_models import ChatOpenAI
 from langchain.graphs import Neo4jGraph
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
-from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 
 # Connection to Neo4j
 graph = Neo4jGraph()
@@ -24,7 +24,7 @@ cypher_template = """Based on the Neo4j graph schema below, write a Cypher query
 {schema}
 
 Question: {question}
-Cypher query:"""
+Cypher query:"""  # noqa: E501
 
 cypher_prompt = ChatPromptTemplate.from_messages(
     [
@@ -49,13 +49,14 @@ cypher_response = (
 response_template = """Based on the the question, Cypher query, and Cypher response, write a natural language response:
 Question: {question}
 Cypher query: {query}
-Cypher Response: {response}"""
+Cypher Response: {response}"""  # noqa: E501
 
 response_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "Given an input question and Cypher response, convert it to a natural language answer. No pre-amble.",
+            "Given an input question and Cypher response, convert it to a "
+            "natural language answer. No pre-amble.",
         ),
         ("human", response_template),
     ]

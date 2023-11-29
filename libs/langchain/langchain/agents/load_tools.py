@@ -40,7 +40,6 @@ from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerper
 from langchain.tools.searchapi.tool import SearchAPIResults, SearchAPIRun
 from langchain.tools.graphql.tool import BaseGraphQLTool
 from langchain.tools.human.tool import HumanInputRun
-from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import (
     RequestsDeleteTool,
     RequestsGetTool,
@@ -80,7 +79,14 @@ from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 
 
 def _get_python_repl() -> BaseTool:
-    return PythonREPLTool()
+    raise ImportError(
+        "This tool has been moved to langchain experiment. "
+        "This tool has access to a python REPL. "
+        "For best practices make sure to sandbox this tool. "
+        "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
+        "To keep using this code as is, install langchain experimental and "
+        "update relevant imports replacing 'langchain' with 'langchain_experimental'"
+    )
 
 
 def _get_tools_requests_get() -> BaseTool:

@@ -1,0 +1,42 @@
+[tool.poetry]
+name = "templates"
+version = "0.0.0"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+# dev, test, lint, typing
+
+[tool.poetry.group.dev.dependencies]
+poethepoet = "^0.24.1"
+pytest-watch = "^4.2.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.3"
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.1"
+
+[tool.poetry.group.typing.dependencies]
+
+[tool.ruff]
+select = [
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+]
+
+[tool.poe.tasks]
+test = "poetry run pytest"
+watch = "poetry run ptw"
+lint = "poetry run ruff ."
+format = "poetry run ruff . --fix"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

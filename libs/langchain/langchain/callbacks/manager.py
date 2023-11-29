@@ -1956,7 +1956,9 @@ def _configure(
 
     tracer_v2 = tracing_v2_callback_var.get()
     tracing_v2_enabled_ = (
-        env_var_is_set("LANGCHAIN_TRACING_V2") or tracer_v2 is not None
+        env_var_is_set("LANGCHAIN_TRACING_V2")
+        or tracer_v2 is not None
+        or run_tree is not None
     )
     tracer_project = getattr(
         run_tree,

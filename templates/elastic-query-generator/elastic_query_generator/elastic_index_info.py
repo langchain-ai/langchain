@@ -1,5 +1,6 @@
 from typing import List
 
+
 def _list_indices(database, include_indices=None, ignore_indices=None) -> List[str]:
     all_indices = [
         index["index"] for index in database.cat.indices(format="json")

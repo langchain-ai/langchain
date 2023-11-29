@@ -1,15 +1,12 @@
 import os
+
+from langchain.chains.query_constructor.base import AttributeInfo
+from langchain.embeddings import OpenAIEmbeddings
 from langchain.llms.openai import OpenAI
 from langchain.retrievers.self_query.base import SelfQueryRetriever
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
-from langchain.chains.query_constructor.base import AttributeInfo
-
-from supabase.client import create_client
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.vectorstores.supabase import SupabaseVectorStore
+from supabase.client import create_client
 
 supabase_url = os.environ.get("SUPABASE_URL")
 supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
@@ -21,7 +18,7 @@ vectorstore = SupabaseVectorStore(
     client=supabase,
     embedding=embeddings,
     table_name="documents",
-    query_name="match_documents"
+    query_name="match_documents",
 )
 
 # Adjust this based on the metadata you store in the `metadata` JSON column
@@ -51,14 +48,7 @@ document_content_description = "Brief summary of a movie"
 llm = OpenAI(temperature=0)
 
 retriever = SelfQueryRetriever.from_llm(
-    llm,
-    vectorstore,
-    document_content_description,
-    metadata_field_info,
-    verbose=True
+    llm, vectorstore, document_content_description, metadata_field_info, verbose=True
 )
 
-chain = (
-    RunnableParallel({"query": RunnablePassthrough()})
-    | retriever
-)
+chain = RunnableParallel({"query": RunnablePassthrough()}) | retriever

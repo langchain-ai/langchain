@@ -1,5 +1,4 @@
-from rag_fusion.chain import chain 
-
+from rag_fusion.chain import chain
 
 if __name__ == "__main__":
 	original_query = "impact of climate change"

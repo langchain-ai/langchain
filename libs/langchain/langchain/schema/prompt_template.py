@@ -205,6 +205,7 @@ def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
 
             from langchain.schema import Document
             from langchain.prompts import PromptTemplate
+
             doc = Document(page_content="This is a joke", metadata={"page": "1"})
             prompt = PromptTemplate.from_template("Page {page}: {page_content}")
             format_document(doc, prompt)
