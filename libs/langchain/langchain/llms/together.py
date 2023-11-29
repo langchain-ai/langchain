@@ -28,7 +28,7 @@ class Together(LLM):
 
     base_url: str = "https://api.together.xyz/inference"
     """Base inference API URL."""
-    together_api_key: Optional[SecretStr] = None
+    together_api_key: SecretStr
     """Together AI API key. Get it here: https://api.together.xyz/settings/api-keys"""
     model: str
     """Model name. Available models listed here: 
