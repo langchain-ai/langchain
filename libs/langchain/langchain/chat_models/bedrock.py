@@ -54,8 +54,6 @@ class BedrockChat(BaseChatModel, BedrockBase):
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
 
-        print(self.region_name)
-
         if self.region_name:
             attributes["region_name"] = self.region_name
 
