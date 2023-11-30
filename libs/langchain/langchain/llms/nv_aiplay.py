@@ -44,7 +44,6 @@ from typing import (
 )
 
 import aiohttp
-from collections import defaultdict
 import requests
 from requests.models import Response
 
@@ -137,9 +136,11 @@ class NVCRModel(ClientModel):
     state_vars: Sequence[str] = ["last_inputs", "last_response", "last_msg"]
 
     @property
-    def last_inputs_safe(self) -> Optional[dict]:
+    def last_inputs_safe(self) -> dict:
+        if self.last_inputs is None:
+            return {}
         out = self.last_inputs.copy()
-        out['headers']['Authorization'] = "Bearer nvapi-[REDACTED]"
+        out["headers"]["Authorization"] = "Bearer nvapi-[REDACTED]"
         return out
 
     @root_validator()
@@ -305,8 +306,8 @@ class NVCRModel(ClientModel):
 
     def _aggregate_msgs(self, msg_list: Sequence[dict]) -> Tuple[dict, bool]:
         """Dig out relevant details of aggregated message"""
-        content_buffer = dict()
-        content_holder = {}
+        content_buffer: Dict[str, Any] = dict()
+        content_holder: Dict[Any, Any] = dict()
         is_stopped = False
         for msg in msg_list:
             self.last_msg = msg
@@ -320,9 +321,9 @@ class NVCRModel(ClientModel):
                 msg = msg.get("data", [{}])[0]
             content_holder = msg
             for k, v in msg.items():
-                if k in ('content',) and k in content_buffer:
+                if k in ("content",) and k in content_buffer:
                     content_buffer[k] += v
-                else: 
+                else:
                     content_buffer[k] = v
             if is_stopped:
                 break
