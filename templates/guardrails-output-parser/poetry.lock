@@ -359,6 +359,17 @@ marshmallow = ">=3.18.0,<4.0.0"
 typing-inspect = ">=0.4.0,<1"
 
 [[package]]
+name = "distro"
+version = "1.8.0"
+description = "Distro - an OS platform information API"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "distro-1.8.0-py3-none-any.whl", hash = "sha256:99522ca3e365cac527b44bde033f64c6945d90eb9f769703caaec52b09bbd3ff"},
+    {file = "distro-1.8.0.tar.gz", hash = "sha256:02e111d1dc6a50abb8eed6bf31c3e48ed8b0830d1ea2a1b78c61765c2513fdd8"},
+]
+
+[[package]]
 name = "eliot"
 version = "1.15.0"
 description = "Logging library that tells you why it happened"
@@ -624,13 +635,13 @@ colorama = ">=0.4"
 
 [[package]]
 name = "guardrails-ai"
-version = "0.2.7"
+version = "0.2.6"
 description = "Adding guardrails to large language models."
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "guardrails-ai-0.2.7.tar.gz", hash = "sha256:f2fa4e9b0932790740dff944596b6249967734b6aa232a23c9af5dba681eb5a6"},
-    {file = "guardrails_ai-0.2.7-py2.py3-none-any.whl", hash = "sha256:948250d610cf1f09591aab1b9d7b0f5482f754aed5609ea6e510897ce5522d45"},
+    {file = "guardrails-ai-0.2.6.tar.gz", hash = "sha256:f5849b9986c56148a5bde7adedea474020d3602ef01dd0fda157dbf1f0f5beba"},
+    {file = "guardrails_ai-0.2.6-py2.py3-none-any.whl", hash = "sha256:8b6ade67fe0d0d0f945bdb6f64e7cbf9b8c7e70aa77596c66d0476c13f2da403"},
 ]
 
 [package.dependencies]
@@ -638,7 +649,7 @@ eliot = "*"
 eliot-tree = "*"
 griffe = "*"
 lxml = "*"
-openai = "<=0.28.1"
+openai = "*"
 pydantic = "1.10.9"
 pytest = "*"
 regex = "*"
@@ -1202,25 +1213,25 @@ files = [
 
 [[package]]
 name = "openai"
-version = "0.28.1"
-description = "Python client library for the OpenAI API"
+version = "1.3.2"
+description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-0.28.1-py3-none-any.whl", hash = "sha256:d18690f9e3d31eedb66b57b88c2165d760b24ea0a01f150dd3f068155088ce68"},
-    {file = "openai-0.28.1.tar.gz", hash = "sha256:4be1dad329a65b4ce1a660fe6d5431b438f429b5855c883435f0f7fcb6d2dcc8"},
+    {file = "openai-1.3.2-py3-none-any.whl", hash = "sha256:97e2febbedc5f1308444d961df63aafb649efebf900d59dd3676fdede9bcd7b6"},
+    {file = "openai-1.3.2.tar.gz", hash = "sha256:7904d8f029339931805a8962d88e955f9223a983a8fbd06e01ae40e14735362b"},
 ]
 
 [package.dependencies]
-aiohttp = "*"
-requests = ">=2.20"
-tqdm = "*"
+anyio = ">=3.5.0,<4"
+distro = ">=1.7.0,<2"
+httpx = ">=0.23.0,<1"
+pydantic = ">=1.9.0,<3"
+tqdm = ">4"
+typing-extensions = ">=4.5,<5"
 
 [package.extras]
-datalib = ["numpy", "openpyxl (>=3.0.7)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)"]
-dev = ["black (>=21.6b0,<22.0)", "pytest (==6.*)", "pytest-asyncio", "pytest-mock"]
-embeddings = ["matplotlib", "numpy", "openpyxl (>=3.0.7)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)", "plotly", "scikit-learn (>=1.0.2)", "scipy", "tenacity (>=8.0.1)"]
-wandb = ["numpy", "openpyxl (>=3.0.7)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)", "wandb"]
+datalib = ["numpy (>=1)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)"]
 
 [[package]]
 name = "orjson"
@@ -2202,4 +2213,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "6acd86e6e4182bcfa0f11ad8a86208f175597b86ece858a49d2a302842cf0062"
+content-hash = "dad7bce8c818647a58d34e608aa6965dfa3b47aad5d822170aac8ea1bf1da84b"

@@ -3,9 +3,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.retrievers import BaseRetriever
+
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain.schema import BaseRetriever, Document
 from langchain.utilities.vertexai import get_client_info
 from langchain.utils import get_from_dict_or_env
 
@@ -160,6 +162,7 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
         from google.protobuf.json_format import MessageToDict
 
         documents: List[Document] = []
+        chunk_type = "extractive_answers"
 
         for result in results:
             document_dict = MessageToDict(

@@ -2,7 +2,8 @@
 import logging
 from typing import Any, List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)

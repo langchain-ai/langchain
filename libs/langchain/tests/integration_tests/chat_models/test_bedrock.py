@@ -2,11 +2,11 @@
 from typing import Any
 
 import pytest
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models import BedrockChat
-from langchain.schema import ChatGeneration, LLMResult
-from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -92,7 +92,6 @@ def test_bedrock_streaming(chat: BedrockChat) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_bedrock_astream(chat: BedrockChat) -> None:
     """Test streaming tokens from OpenAI."""
 
@@ -101,7 +100,6 @@ async def test_bedrock_astream(chat: BedrockChat) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_bedrock_abatch(chat: BedrockChat) -> None:
     """Test streaming tokens from BedrockChat."""
     result = await chat.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -110,7 +108,6 @@ async def test_bedrock_abatch(chat: BedrockChat) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_bedrock_abatch_tags(chat: BedrockChat) -> None:
     """Test batch tokens from BedrockChat."""
     result = await chat.abatch(
@@ -129,7 +126,6 @@ def test_bedrock_batch(chat: BedrockChat) -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_bedrock_ainvoke(chat: BedrockChat) -> None:
     """Test invoke tokens from BedrockChat."""
     result = await chat.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
