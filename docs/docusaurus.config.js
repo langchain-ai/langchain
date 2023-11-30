@@ -212,18 +212,17 @@ const config = {
             ]
           },
           {
-            href: "https://chat.langchain.com",
-            label: "Chat our docs",
-            position: "right",
-          },
-          {
             type: "dropdown",
-            label: "Also by LangChain",
+            label: "🦜️🔗",
             position: "right",
             items: [
               {
                 href: "https://smith.langchain.com",
                 label: "LangSmith",
+              },
+              {
+                href: "https://docs.smith.langchain.com/",
+                label: "LangSmith Docs",
               },
               {
                 href: "https://github.com/langchain-ai/langserve",
@@ -242,6 +241,11 @@ const config = {
                 label: "JS/TS Docs",
               },
             ]
+          },
+          {
+            href: "https://chat.langchain.com",
+            label: "Chat",
+            position: "right",
           },
           // Please keep GitHub link to the right for consistency.
           {

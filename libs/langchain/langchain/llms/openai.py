@@ -467,6 +467,7 @@ class BaseOpenAI(BaseLLM):
         return self.create_llm_result(
             choices,
             prompts,
+            params,
             token_usage,
             system_fingerprint=system_fingerprint,
         )
@@ -524,6 +525,7 @@ class BaseOpenAI(BaseLLM):
         return self.create_llm_result(
             choices,
             prompts,
+            params,
             token_usage,
             system_fingerprint=system_fingerprint,
         )
@@ -555,14 +557,16 @@ class BaseOpenAI(BaseLLM):
         self,
         choices: Any,
         prompts: List[str],
+        params: Dict[str, Any],
         token_usage: Dict[str, int],
         *,
         system_fingerprint: Optional[str] = None,
     ) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
+        n = params.get("n", self.n)
         for i, _ in enumerate(prompts):
-            sub_choices = choices[i * self.n : (i + 1) * self.n]
+            sub_choices = choices[i * n : (i + 1) * n]
             generations.append(
                 [
                     Generation(
