@@ -7,9 +7,8 @@ Databricks embraces the LangChain ecosystem in various ways:
 
 1. Databricks connector for the SQLDatabase Chain: SQLDatabase.from_databricks() provides an easy way to query your data on Databricks through LangChain
 2. Databricks MLflow integrates with LangChain: Tracking and serving LangChain applications with fewer steps
-3. Databricks MLflow AI Gateway
-4. Databricks as an LLM provider: Deploy your fine-tuned LLMs on Databricks via serving endpoints or cluster driver proxy apps, and query it as langchain.llms.Databricks
-5. Databricks Dolly: Databricks open-sourced Dolly which allows for commercial use, and can be accessed through the Hugging Face Hub
+3. Databricks as an LLM provider: Deploy your fine-tuned LLMs on Databricks via serving endpoints or cluster driver proxy apps, and query it as langchain.llms.Databricks
+4. Databricks Dolly: Databricks open-sourced Dolly which allows for commercial use, and can be accessed through the Hugging Face Hub
 
 Databricks connector for the SQLDatabase Chain
 ----------------------------------------------
@@ -25,23 +24,59 @@ Databricks provides a fully managed and hosted version of MLflow integrated with
 
 Databricks MLflow makes it more convenient to develop LangChain applications on Databricks. For MLflow tracking, you don't need to set the tracking uri. For MLflow Model Serving, you can save LangChain Chains in the MLflow langchain flavor, and then register and serve the Chain with a few clicks on Databricks, with credentials securely managed by MLflow Model Serving.
 
-Databricks MLflow AI Gateway
-----------------------------
-
-:::warning
-
-MLflow AI Gateway has been deprecated. Please use [MLflow Deployments](./mlflow) instead.
-
-:::
-
-See [MLflow AI Gateway](/docs/integrations/providers/mlflow_ai_gateway).
-
 Databricks as an LLM provider
 -----------------------------
 
 The notebook [Wrap Databricks endpoints as LLMs](/docs/integrations/llms/databricks) illustrates the method to wrap Databricks endpoints as LLMs in LangChain. It supports two types of endpoints: the serving endpoint, which is recommended for both production and development, and the cluster driver proxy app, which is recommended for interactive development. 
 
-Databricks endpoints support Dolly, but are also great for hosting models like MPT-7B or any other models from the Hugging Face ecosystem. Databricks endpoints can also be used with proprietary models like OpenAI to provide a governance layer for enterprises.
+Databricks endpoints support foundation and external models (see the examples below), and are also great for hosting models like MPT-7B or any other models from the Hugging Face ecosystem. Databricks endpoints can also be used with proprietary models like OpenAI to provide a governance layer for enterprises.
+
+## External model
+
+The following example creates an endpoint that serves OpenAI's GPT-4 as an external model and generates a chat response from it:
+
+```python
+from langchain.chat_models import ChatDatabricks
+from langchain.schema.messages import HumanMessage
+from mlflow.deployments import get_deploy_client
+
+
+client = get_deploy_client("databricks")
+name = f"chat"
+client.create_endpoint(
+    name=name,
+    config={
+        "served_entities": [
+            {
+                "name": "test",
+                "external_model": {
+                    "name": "gpt-4",
+                    "provider": "openai",
+                    "task": "llm/v1/chat",
+                    "openai_config": {
+                        "openai_api_key": "{{secrets/<scope>/<key>}}",
+                    },
+                },
+            }
+        ],
+    },
+)
+chat = ChatDatabricks(endpoint=name, temperature=0.1)
+print(chat([HumanMessage(content="hello")]))
+# content='Hello! How can I assist you today?'
+```
+
+## Foundation model
+
+The following example uses a foundation model to embed text:
+
+```python
+from langchain.llms import DatabricksEmbeddings
+
+embeddings = DatabricksEmbeddings(endpoint="databricks-bge-large-en")
+print(embeddings.embed_query("hello")[:3])
+# [0.051055908203125, 0.007221221923828125, 0.003879547119140625, ...]
+```
 
 Databricks Dolly
 ----------------
