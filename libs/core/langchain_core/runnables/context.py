@@ -7,6 +7,7 @@ from typing import (
     Any,
     Awaitable,
     Callable,
+    DefaultDict,
     Dict,
     List,
     Mapping,
@@ -25,7 +26,7 @@ from langchain_core.runnables.config import RunnableConfig, patch_config
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 
 T = TypeVar("T")
-Values = Dict[asyncio.Event, Any]
+Values = Dict[Union[asyncio.Event, threading.Event], Any]
 CONTEXT_CONFIG_PREFIX = "__context__/"
 CONTEXT_CONFIG_SUFFIX_GET = "/get"
 CONTEXT_CONFIG_SUFFIX_SET = "/set"
@@ -37,7 +38,7 @@ async def _asetter(done: asyncio.Event, values: Values, value: T) -> T:
     return value
 
 
-async def _agetter(done: asyncio.Event, values: Values) -> T:
+async def _agetter(done: asyncio.Event, values: Values) -> Any:
     await done.wait()
     return values[done]
 
@@ -48,7 +49,7 @@ def _setter(done: threading.Event, values: Values, value: T) -> T:
     return value
 
 
-def _getter(done: threading.Event, values: Values) -> T:
+def _getter(done: threading.Event, values: Values) -> Any:
     done.wait()
     return values[done]
 
@@ -71,12 +72,12 @@ def _config_with_context(
     )
 
     values: Values = {}
-    events = defaultdict(event)
+    events: DefaultDict[str, Union[asyncio.Event, threading.Event]] = defaultdict(event)
     context_funcs: Dict[str, Callable[[], Any]] = {}
     for key, group in grouped_by_key:
-        group = list(group)
-        getters = [s for s in group if s.id.endswith(CONTEXT_CONFIG_SUFFIX_GET)]
-        setters = [s for s in group if s.id.endswith(CONTEXT_CONFIG_SUFFIX_SET)]
+        lgroup = list(group)
+        getters = [s for s in lgroup if s.id.endswith(CONTEXT_CONFIG_SUFFIX_GET)]
+        setters = [s for s in lgroup if s.id.endswith(CONTEXT_CONFIG_SUFFIX_SET)]
 
         if len(getters) < 1:
             raise KeyError(f"Expected at least one getter for context key {key}")
@@ -126,11 +127,9 @@ class ContextGet(RunnableSerializable):
         config = config or {}
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
-            return {
-                key: configurable.get(id_)() for key, id_ in zip(self.key, self.ids)
-            }
+            return {key: configurable[id_]() for key, id_ in zip(self.key, self.ids)}
         else:
-            return configurable.get(self.ids[0])()
+            return configurable[self.ids[0]]()
 
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -138,12 +137,10 @@ class ContextGet(RunnableSerializable):
         config = config or {}
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
-            values = await asyncio.gather(
-                *(configurable.get(id_)() for id_ in self.ids)
-            )
+            values = await asyncio.gather(*(configurable[id_]() for id_ in self.ids))
             return {key: value for key, value in zip(self.key, values)}
         else:
-            return await config.get("configurable", {}).get(self.ids[0])()
+            return await configurable[self.ids[0]]()
 
 
 SetValue = Union[

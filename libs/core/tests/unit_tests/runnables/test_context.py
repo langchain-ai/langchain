@@ -17,7 +17,7 @@ class TestCase(NamedTuple):
     output: Any
 
 
-def seq_naive_rag() -> None:
+def seq_naive_rag() -> Runnable:
     context = [
         "Hi there!",
         "How are you?",
@@ -45,7 +45,7 @@ def seq_naive_rag() -> None:
     )
 
 
-def seq_naive_rag_alt() -> None:
+def seq_naive_rag_alt() -> Runnable:
     context = [
         "Hi there!",
         "How are you?",
@@ -253,7 +253,7 @@ test_cases = [
 @pytest.mark.parametrize("runnable, cases", test_cases)
 async def test_context_runnables(
     runnable: Union[Runnable, Callable[[], Runnable]], cases: List[TestCase]
-):
+) -> None:
     runnable = runnable if isinstance(runnable, Runnable) else runnable()
     assert runnable.invoke(cases[0].input) == cases[0].output
     assert await runnable.ainvoke(cases[1].input) == cases[1].output
@@ -268,21 +268,21 @@ async def test_context_runnables(
 
 
 def test_runnable_context_seq_key_not_found() -> None:
-    seq = {"bar": ContextSet("input")} | ContextGet("foo")
+    seq: Runnable = {"bar": ContextSet("input")} | ContextGet("foo")
 
     with pytest.raises(KeyError):
         seq.invoke("foo")
 
 
 def test_runnable_context_seq_key_circular_ref() -> None:
-    seq = {"bar": ContextSet(input=ContextGet("input"))} | ContextGet("foo")
+    seq: Runnable = {"bar": ContextSet(input=ContextGet("input"))} | ContextGet("foo")
 
     with pytest.raises(ValueError):
         seq.invoke("foo")
 
 
 async def test_runnable_seq_streaming_chunks() -> None:
-    chain = (
+    chain: Runnable = (
         PromptTemplate.from_template("{foo} {bar}")
         | ContextSet("prompt")
         | FakeStreamingListLLM(responses=["hello"])
