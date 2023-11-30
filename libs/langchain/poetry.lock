@@ -5903,7 +5903,7 @@ pydantic = ">=1.8"
 name = "opencv-python"
 version = "4.8.1.78"
 description = "Wrapper package for OpenCV python bindings."
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "opencv-python-4.8.1.78.tar.gz", hash = "sha256:cc7adbbcd1112877a39274106cb2752e04984bc01a031162952e97450d6117f6"},
@@ -11273,4 +11273,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "0d8f8328312565a35c7c3e9e4213889c3d155f5a9c2a8f5cc3a159700b9e313c"
+content-hash = "7308ade2b9555f68a0cf976f3409bbbf181182ae2dd784946f9501591d69a6c7"
