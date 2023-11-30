@@ -9,6 +9,15 @@ from langchain.llms.arcee import Arcee
 
 class TestApiConfigSecurity(unittest.TestCase):
 
+
+    @pytest.fixture(autouse=True)
+    def capsys(self, capsys):
+        self.capsys = capsys
+
+    @pytest.fixture(autouse=True)
+    def monkeypatch(self, monkeypatch):
+        self.monkeypatch = monkeypatch
+
     @patch('langchain.utilities.arcee.requests.get')
     def setUp(self, mock_get) -> None:
         mock_response = mock_get.return_value
@@ -21,15 +30,13 @@ class TestApiConfigSecurity(unittest.TestCase):
             arcee_api_url="localhost",
             arcee_api_version="version",
         )
-
-
-    @pytest.fixture(autouse=True)
-    def capsys(self, capsys):
-        self.capsys = capsys
-
-    @pytest.fixture(autouse=True)
-    def monkeypatch(self, monkeypatch):
-        self.monkeypatch = monkeypatch
+        self.monkeypatch.setenv("ARCEE_API_KEY", "secret_api_key")
+        self.arcee_with_env_var = Arcee(
+            model="DALM-PubMed",
+            arcee_api_key="",
+            arcee_api_url="localhost",
+            arcee_api_version="version",
+        )
 
     def test_arcee_api_key_is_secret_string(self) -> None:
         self.assertTrue(isinstance(self.arcee_without_env_var.arcee_api_key, SecretStr))
