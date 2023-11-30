@@ -326,6 +326,12 @@ def _import_json_tool_JsonListKeysTool() -> Any:
     return JsonListKeysTool
 
 
+def _import_merriam_webster_tool() -> Any:
+    from langchain.tools.merriam_webster.tool import MerriamWebsterQueryRun
+
+    return MerriamWebsterQueryRun
+
+
 def _import_metaphor_search() -> Any:
     from langchain.tools.metaphor_search import MetaphorSearchResults
 
@@ -791,6 +797,8 @@ def __getattr__(name: str) -> Any:
         return _import_json_tool_JsonGetValueTool()
     elif name == "JsonListKeysTool":
         return _import_json_tool_JsonListKeysTool()
+    elif name == "MerriamWebsterQueryRun":
+        return _import_merriam_webster_tool()
     elif name == "MetaphorSearchResults":
         return _import_metaphor_search()
     elif name == "O365CreateDraftMessage":
@@ -979,6 +987,7 @@ __all__ = [
     "ListPowerBITool",
     "ListSQLDatabaseTool",
     "ListSparkSQLTool",
+    "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
     "MoveFileTool",
     "NavigateBackTool",

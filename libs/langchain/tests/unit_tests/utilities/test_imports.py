@@ -44,6 +44,7 @@ EXPECTED_ALL = [
     "WikipediaAPIWrapper",
     "WolframAlphaAPIWrapper",
     "ZapierNLAWrapper",
+    "MerriamWebsterAPIWrapper",
 ]
 
 
