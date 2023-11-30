@@ -98,9 +98,7 @@ class GooseAI(LLM):
         try:
             import openai
 
-            
-            # TODO: The 'openai.api_base' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(api_base="https://api.goose.ai/v1")'
-            # openai.api_base = "https://api.goose.ai/v1"
+            openai.base_url = "https://api.goose.ai/v1"
             values["client"] = openai.Completion
         except ImportError:
             raise ImportError(
