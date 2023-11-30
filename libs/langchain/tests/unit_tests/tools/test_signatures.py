@@ -11,8 +11,8 @@ from langchain.tools.amadeus.base import AmadeusBaseTool
 from langchain.tools.base import BaseTool
 from langchain.tools.gmail.base import GmailBaseTool
 from langchain.tools.office365.base import O365BaseTool
-from langchain.tools.slack.base import SlackBaseTool
 from langchain.tools.playwright.base import BaseBrowserTool
+from langchain.tools.slack.base import SlackBaseTool
 
 
 def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
@@ -21,7 +21,7 @@ def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
         BaseBrowserTool,
         GmailBaseTool,
         O365BaseTool,
-        SlackBaseTool
+        SlackBaseTool,
     }  # Abstract but not recognized
     subclasses = []
     for subclass in cls.__subclasses__():
