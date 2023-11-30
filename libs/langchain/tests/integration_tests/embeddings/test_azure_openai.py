@@ -81,7 +81,7 @@ async def test_azure_openai_embedding_async_query() -> None:
 def test_azure_openai_embedding_with_empty_string() -> None:
     """Test openai embeddings with empty string."""
     from openai import OpenAI
-    
+
     client = OpenAI()
 
     document = ["", "abc"]
@@ -89,9 +89,9 @@ def test_azure_openai_embedding_with_empty_string() -> None:
     output = embedding.embed_documents(document)
     assert len(output) == 2
     assert len(output[0]) == 1536
-    expected_output = client.embeddings.create(input="", model="text-embedding-ada-002")[
-        "data"
-    ][0]["embedding"]
+    expected_output = client.embeddings.create(
+        input="", model="text-embedding-ada-002"
+    )["data"][0]["embedding"]
     assert np.allclose(output[0], expected_output)
     assert len(output[1]) == 1536
 

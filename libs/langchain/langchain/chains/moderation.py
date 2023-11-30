@@ -47,11 +47,13 @@ class OpenAIModerationChain(Chain):
             default="",
         )
         try:
-            from openai import OpenAI
             import openai
+            from openai import OpenAI
 
             if openai_organization:
-                client = OpenAI(organization=openai_organization, api_key=openai_api_key)
+                client = OpenAI(
+                    organization=openai_organization, api_key=openai_api_key
+                )
             else:
                 client = OpenAI(api_key=openai_api_key)
             values["client"] = client

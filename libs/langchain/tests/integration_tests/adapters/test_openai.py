@@ -5,7 +5,7 @@ from langchain.adapters import openai as lcopenai
 
 def _test_no_stream(**kwargs: Any) -> None:
     from openai import OpenAI
-    
+
     client = OpenAI()
 
     result = client.chat.completions.create(**kwargs)
@@ -20,7 +20,7 @@ def _test_no_stream(**kwargs: Any) -> None:
 
 def _test_stream(**kwargs: Any) -> None:
     from openai import OpenAI
-    
+
     client = OpenAI()
 
     result = []
@@ -35,7 +35,7 @@ def _test_stream(**kwargs: Any) -> None:
 
 async def _test_async(**kwargs: Any) -> None:
     from openai import AsyncOpenAI
-    
+
     aclient = AsyncOpenAI()
 
     result = await aclient.chat.completions.create(**kwargs)
@@ -50,7 +50,7 @@ async def _test_async(**kwargs: Any) -> None:
 
 async def _test_astream(**kwargs: Any) -> None:
     from openai import AsyncOpenAI
-    
+
     aclient = AsyncOpenAI()
 
     result = []

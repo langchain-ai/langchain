@@ -63,7 +63,9 @@ class OpenAIWhisperParser(BaseBlobParser):
             attempts = 0
             while attempts < 3:
                 try:
-                    transcript = client.audio.transcriptions.create("whisper-1", file_obj)
+                    transcript = client.audio.transcriptions.create(
+                        "whisper-1", file_obj
+                    )
                     break
                 except Exception as e:
                     attempts += 1

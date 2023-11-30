@@ -538,7 +538,9 @@ class ChatOpenAI(BaseChatModel):
         if self.openai_proxy:
             from openai import OpenAI
 
-            client = OpenAI(proxy={"http": self.openai_proxy, "https": self.openai_proxy})
+            client = OpenAI(
+                proxy={"http": self.openai_proxy, "https": self.openai_proxy}
+            )
             # type: ignore[assignment]  # noqa: E501
         return {**self._default_params, **openai_creds}
 

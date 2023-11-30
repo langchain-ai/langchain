@@ -370,11 +370,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         "Could not import openai python package. "
                         "Please install it with `pip install openai`."
                     )
-                
-                client = OpenAI(proxy={
-                    "http": self.openai_proxy,
-                    "https": self.openai_proxy
-                }) # type: ignore[assignment]  # noqa: E501
+
+                client = OpenAI(
+                    proxy={"http": self.openai_proxy, "https": self.openai_proxy}
+                )  # type: ignore[assignment]  # noqa: E501
         return openai_args
 
     # please refer to

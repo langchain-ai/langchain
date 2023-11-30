@@ -98,7 +98,10 @@ class GooseAI(LLM):
         try:
             from openai import OpenAI
 
-            client = OpenAI(api_base="https://api.goose.ai/v1", api_key=gooseai_api_key.get_secret_value())
+            client = OpenAI(
+                api_base="https://api.goose.ai/v1",
+                api_key=gooseai_api_key.get_secret_value(),
+            )
 
             values["client"] = client
         except ImportError:
