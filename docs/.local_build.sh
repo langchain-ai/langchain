@@ -13,6 +13,8 @@ cp -r . ../_dist
 cd ../_dist
 poetry run python scripts/model_feat_table.py
 poetry run nbdoc_build --srcdir docs
+mkdir docs/templates
+cp ../templates/docs/INDEX.md docs/templates/index.md
 cp ../cookbook/README.md src/pages/cookbook.mdx
 cp ../.github/CONTRIBUTING.md docs/contributing.md
 wget https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
