@@ -134,6 +134,12 @@ def _import_max_compute() -> Any:
     return MaxComputeAPIWrapper
 
 
+def _import_merriam_webster() -> Any:
+    from langchain.utilities.merriam_webster import MerriamWebsterAPIWrapper
+
+    return MerriamWebsterAPIWrapper
+
+
 def _import_metaphor_search() -> Any:
     from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 
@@ -298,6 +304,8 @@ def __getattr__(name: str) -> Any:
         return _import_jira()
     elif name == "MaxComputeAPIWrapper":
         return _import_max_compute()
+    elif name == "MerriamWebsterAPIWrapper":
+        return _import_merriam_webster()
     elif name == "MetaphorSearchAPIWrapper":
         return _import_metaphor_search()
     elif name == "OpenWeatherMapAPIWrapper":
@@ -364,6 +372,7 @@ __all__ = [
     "JiraAPIWrapper",
     "LambdaWrapper",
     "MaxComputeAPIWrapper",
+    "MerriamWebsterAPIWrapper",
     "MetaphorSearchAPIWrapper",
     "OpenWeatherMapAPIWrapper",
     "OutlineAPIWrapper",

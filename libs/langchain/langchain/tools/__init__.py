@@ -326,6 +326,12 @@ def _import_json_tool_JsonListKeysTool() -> Any:
     return JsonListKeysTool
 
 
+def _import_merriam_webster_tool() -> Any:
+    from langchain.tools.merriam_webster.tool import MerriamWebsterQueryRun
+
+    return MerriamWebsterQueryRun
+
+
 def _import_metaphor_search() -> Any:
     from langchain.tools.metaphor_search import MetaphorSearchResults
 
@@ -478,6 +484,12 @@ def _import_python_tool_PythonREPLTool() -> Any:
         "To keep using this code as is, install langchain experimental and "
         "update relevant imports replacing 'langchain' with 'langchain_experimental'"
     )
+
+
+def _import_reddit_search_RedditSearchRun() -> Any:
+    from langchain.tools.reddit_search.tool import RedditSearchRun
+
+    return RedditSearchRun
 
 
 def _import_render() -> Any:
@@ -791,6 +803,8 @@ def __getattr__(name: str) -> Any:
         return _import_json_tool_JsonGetValueTool()
     elif name == "JsonListKeysTool":
         return _import_json_tool_JsonListKeysTool()
+    elif name == "MerriamWebsterQueryRun":
+        return _import_merriam_webster_tool()
     elif name == "MetaphorSearchResults":
         return _import_metaphor_search()
     elif name == "O365CreateDraftMessage":
@@ -839,6 +853,8 @@ def __getattr__(name: str) -> Any:
         return _import_python_tool_PythonAstREPLTool()
     elif name == "PythonREPLTool":
         return _import_python_tool_PythonREPLTool()
+    elif name == "RedditSearchRun":
+        return _import_reddit_search_RedditSearchRun()
     elif name == "format_tool_to_openai_function":
         return _import_render()
     elif name == "BaseRequestsTool":
@@ -979,6 +995,7 @@ __all__ = [
     "ListPowerBITool",
     "ListSQLDatabaseTool",
     "ListSparkSQLTool",
+    "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
     "MoveFileTool",
     "NavigateBackTool",
@@ -991,6 +1008,7 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
