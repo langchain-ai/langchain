@@ -68,16 +68,40 @@ def _import_golden_query() -> Any:
     return GoldenQueryAPIWrapper
 
 
+def _import_google_lens() -> Any:
+    from langchain.utilities.google_lens import GoogleLensAPIWrapper
+
+    return GoogleLensAPIWrapper
+
+
 def _import_google_places_api() -> Any:
     from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
 
     return GooglePlacesAPIWrapper
 
 
+def _import_google_jobs() -> Any:
+    from langchain.utilities.google_jobs import GoogleJobsAPIWrapper
+
+    return GoogleJobsAPIWrapper
+
+
 def _import_google_scholar() -> Any:
     from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
 
     return GoogleScholarAPIWrapper
+
+
+def _import_google_trends() -> Any:
+    from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
+
+    return GoogleTrendsAPIWrapper
+
+
+def _import_google_finance() -> Any:
+    from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
+
+    return GoogleFinanceAPIWrapper
 
 
 def _import_google_search() -> Any:
@@ -188,10 +212,17 @@ def _import_sql_database() -> Any:
     return SQLDatabase
 
 
+
 def _import_steam_webapi() -> Any:
     from langchain.utilities.steam import SteamWebAPIWrapper
 
     return SteamWebAPIWrapper
+
+def _import_stackexchange() -> Any:
+    from langchain.utilities.stackexchange import StackExchangeAPIWrapper
+
+    return StackExchangeAPIWrapper
+
 
 
 def _import_tensorflow_datasets() -> Any:
@@ -243,10 +274,18 @@ def __getattr__(name: str) -> Any:
         return _import_brave_search()
     elif name == "DuckDuckGoSearchAPIWrapper":
         return _import_duckduckgo_search()
+    elif name == "GoogleLensAPIWrapper":
+        return _import_google_lens()
     elif name == "GoldenQueryAPIWrapper":
         return _import_golden_query()
+    elif name == "GoogleJobsAPIWrapper":
+        return _import_google_jobs()
     elif name == "GoogleScholarAPIWrapper":
         return _import_google_scholar()
+    elif name == "GoogleFinanceAPIWrapper":
+        return _import_google_finance()
+    elif name == "GoogleTrendsAPIWrapper":
+        return _import_google_trends()
     elif name == "GooglePlacesAPIWrapper":
         return _import_google_places_api()
     elif name == "GoogleSearchAPIWrapper":
@@ -283,6 +322,8 @@ def __getattr__(name: str) -> Any:
         return _import_serpapi()
     elif name == "SparkSQL":
         return _import_spark_sql()
+    elif name == "StackExchangeAPIWrapper":
+        return _import_stackexchange()
     elif name == "SQLDatabase":
         return _import_sql_database()
     elif name == "SteamWebAPIWrapper":
@@ -311,8 +352,12 @@ __all__ = [
     "BraveSearchWrapper",
     "DuckDuckGoSearchAPIWrapper",
     "GoldenQueryAPIWrapper",
+    "GoogleFinanceAPIWrapper",
+    "GoogleLensAPIWrapper",
+    "GoogleJobsAPIWrapper",
     "GooglePlacesAPIWrapper",
     "GoogleScholarAPIWrapper",
+    "GoogleTrendsAPIWrapper",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
     "GraphQLAPIWrapper",
@@ -335,6 +380,7 @@ __all__ = [
     "SearxSearchWrapper",
     "SerpAPIWrapper",
     "SparkSQL",
+    "StackExchangeAPIWrapper",
     "TensorflowDatasets",
     "TextRequestsWrapper",
     "TwilioAPIWrapper",

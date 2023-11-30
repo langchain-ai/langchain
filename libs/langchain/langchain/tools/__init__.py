@@ -618,6 +618,12 @@ def _import_sql_database_tool_QuerySQLDataBaseTool() -> Any:
     return QuerySQLDataBaseTool
 
 
+def _import_stackexchange_tool() -> Any:
+    from langchain.tools.stackexchange.tool import StackExchangeTool
+
+    return StackExchangeTool
+
+
 def _import_steamship_image_generation() -> Any:
     from langchain.tools.steamship_image_generation import SteamshipImageGenerationTool
 
@@ -879,6 +885,8 @@ def __getattr__(name: str) -> Any:
         return _import_sql_database_tool_QuerySQLCheckerTool()
     elif name == "QuerySQLDataBaseTool":
         return _import_sql_database_tool_QuerySQLDataBaseTool()
+    elif name == "StackExchangeTool":
+        return _import_stackexchange_tool()
     elif name == "SteamshipImageGenerationTool":
         return _import_steamship_image_generation()
     elif name == "VectorStoreQATool":
@@ -1001,6 +1009,7 @@ __all__ = [
     "ShellTool",
     "SleepTool",
     "StdInInquireTool",
+    "StackExchangeTool",
     "SteamshipImageGenerationTool",
     "StructuredTool",
     "Tool",
