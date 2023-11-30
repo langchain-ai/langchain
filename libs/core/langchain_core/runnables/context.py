@@ -3,15 +3,32 @@ import threading
 from collections import defaultdict
 from functools import partial
 from itertools import groupby
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
-from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.base import (
+    Runnable,
+    RunnableSerializable,
+    coerce_to_runnable,
+)
 from langchain_core.runnables.config import RunnableConfig, patch_config
-from langchain_core.runnables.utils import ConfigurableFieldSpec
+from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 
 T = TypeVar("T")
 Values = Dict[asyncio.Event, Any]
 CONTEXT_CONFIG_PREFIX = "__context__/"
+CONTEXT_CONFIG_SUFFIX_GET = "/get"
+CONTEXT_CONFIG_SUFFIX_SET = "/set"
 
 
 async def _asetter(done: asyncio.Event, values: Values, value: T) -> T:
@@ -58,8 +75,8 @@ def _config_with_context(
     context_funcs: Dict[str, Callable[[], Any]] = {}
     for key, group in grouped_by_key:
         group = list(group)
-        getters = [s for s in group if s.id.endswith("/get")]
-        setters = [s for s in group if s.id.endswith("/set")]
+        getters = [s for s in group if s.id.endswith(CONTEXT_CONFIG_SUFFIX_GET)]
+        setters = [s for s in group if s.id.endswith(CONTEXT_CONFIG_SUFFIX_SET)]
 
         if len(getters) < 1:
             raise KeyError(f"Expected at least one getter for context key {key}")
@@ -85,60 +102,133 @@ def config_with_context(
 
 
 class ContextGet(RunnableSerializable):
-    key: str
+    key: Union[str, List[str]]
 
-    def __init__(self, key: str):
+    def __init__(self, key: Union[str, List[str]]):
         super().__init__(key=key)
 
     @property
-    def id(self) -> str:
-        return f"{CONTEXT_CONFIG_PREFIX}{self.key}/get"
+    def ids(self) -> List[str]:
+        keys = self.key if isinstance(self.key, list) else [self.key]
+        return [f"{CONTEXT_CONFIG_PREFIX}{k}{CONTEXT_CONFIG_SUFFIX_GET}" for k in keys]
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return super().config_specs + [
             ConfigurableFieldSpec(
-                id=self.id,
+                id=id_,
                 annotation=Callable[[], Any],
             )
+            for id_ in self.ids
         ]
 
     def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
         config = config or {}
-        return config.get("configurable", {}).get(self.id)()
+        configurable = config.get("configurable", {})
+        if isinstance(self.key, list):
+            return {
+                key: configurable.get(id_)() for key, id_ in zip(self.key, self.ids)
+            }
+        else:
+            return configurable.get(self.ids[0])()
 
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
         config = config or {}
-        return await config.get("configurable", {}).get(self.id)()
+        configurable = config.get("configurable", {})
+        if isinstance(self.key, list):
+            values = await asyncio.gather(
+                *(configurable.get(id_)() for id_ in self.ids)
+            )
+            return {key: value for key, value in zip(self.key, values)}
+        else:
+            return await config.get("configurable", {}).get(self.ids[0])()
+
+
+SetValue = Union[
+    Runnable[Input, Output],
+    Callable[[Input], Output],
+    Callable[[Input], Awaitable[Output]],
+    Any,
+]
+
+
+def _coerce_set_value(value: SetValue) -> Runnable[Input, Output]:
+    if not isinstance(value, Runnable) and not callable(value):
+        return coerce_to_runnable(lambda _: value)
+    return coerce_to_runnable(value)
 
 
 class ContextSet(RunnableSerializable):
-    key: str
+    keys: Mapping[str, Optional[Runnable]]
 
-    def __init__(self, key: str):
-        super().__init__(key=key)
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(
+        self,
+        key: Optional[str] = None,
+        value: Optional[SetValue] = None,
+        **kwargs: SetValue,
+    ):
+        if key is not None:
+            kwargs[key] = value
+        super().__init__(
+            keys={
+                k: _coerce_set_value(v) if v is not None else None
+                for k, v in kwargs.items()
+            }
+        )
 
     @property
-    def id(self) -> str:
-        return f"{CONTEXT_CONFIG_PREFIX}{self.key}/set"
+    def ids(self) -> List[str]:
+        return [
+            f"{CONTEXT_CONFIG_PREFIX}{key}{CONTEXT_CONFIG_SUFFIX_SET}"
+            for key in self.keys
+        ]
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
+        mapper_config_specs = [
+            s
+            for mapper in self.keys.values()
+            if mapper is not None
+            for s in mapper.config_specs
+        ]
+        for spec in mapper_config_specs:
+            if spec.id.endswith(CONTEXT_CONFIG_SUFFIX_GET):
+                getter_key = spec.id.split("/")[1]
+                if getter_key in self.keys:
+                    raise ValueError(
+                        f"Circular reference in context setter for key {getter_key}"
+                    )
         return super().config_specs + [
             ConfigurableFieldSpec(
-                id=self.id,
+                id=id_,
                 annotation=Callable[[], Any],
             )
+            for id_ in self.ids
         ]
 
     def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
         config = config or {}
-        return config.get("configurable", {}).get(self.id)(input)
+        configurable = config.get("configurable", {})
+        for id_, mapper in zip(self.ids, self.keys.values()):
+            if mapper is not None:
+                configurable[id_](mapper.invoke(input, config))
+            else:
+                configurable[id_](input)
+        return input
 
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
         config = config or {}
-        return await config.get("configurable", {}).get(self.id)(input)
+        configurable = config.get("configurable", {})
+        for id_, mapper in zip(self.ids, self.keys.values()):
+            if mapper is not None:
+                await configurable[id_](await mapper.ainvoke(input, config))
+            else:
+                await configurable[id_](input)
+        return input
