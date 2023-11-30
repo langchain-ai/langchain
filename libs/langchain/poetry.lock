@@ -2017,7 +2017,7 @@ files = [
 name = "dnspython"
 version = "2.4.2"
 description = "DNS toolkit"
-optional = true
+optional = false
 python-versions = ">=3.8,<4.0"
 files = [
     {file = "dnspython-2.4.2-py3-none-any.whl", hash = "sha256:57c6fbaaeaaf39c891292012060beb141791735dbb4004798328fc2c467402d8"},
@@ -7169,7 +7169,7 @@ tests = ["duckdb", "ml_dtypes", "pandas (>=1.4)", "polars[pandas,pyarrow]", "pyt
 name = "pymongo"
 version = "4.5.0"
 description = "Python driver for MongoDB <http://www.mongodb.org>"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "pymongo-4.5.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:2d4fa1b01fa7e5b7bb8d312e3542e211b320eb7a4e3d8dc884327039d93cb9e0"},
@@ -11256,7 +11256,7 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "amadeus", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-textanalytics", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "dgml-utils", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jinja2", "jq", "lancedb", "langkit", "lark", "librosa", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "python-arango", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["O365", "aleph-alpha-client", "amadeus", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-textanalytics", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "dgml-utils", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jinja2", "jq", "lancedb", "langkit", "lark", "librosa", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pyowm", "pypdf", "pytesseract", "python-arango", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-ai-formrecognizer", "azure-ai-textanalytics", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "azure-search-documents", "openai"]
 clarifai = ["clarifai"]
 cli = ["typer"]
@@ -11273,4 +11273,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "473f3af6bf8c6e224f9522df2ff78f7ab965ea044c60efe60e7fe0461d2d2014"
+content-hash = "5fc2acc951929548580ef8196f81587ab3fd7fcdcb435d6fb71059fc9c0dcd4d"
