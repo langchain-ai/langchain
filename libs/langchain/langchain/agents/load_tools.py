@@ -431,11 +431,6 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_google_serper_results_json,
         ["serper_api_key", "aiosession"],
     ),
-    "searchapi": (_get_searchapi, ["searchapi_api_key", "aiosession"]),
-    "searchapi-results-json": (
-        _get_searchapi_results_json,
-        ["searchapi_api_key", "aiosession"],
-    ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "dalle-image-generator": (_get_dalle_image_generator, ["openai_api_key"]),
     "twilio": (_get_twilio, ["account_sid", "auth_token", "from_number"]),
