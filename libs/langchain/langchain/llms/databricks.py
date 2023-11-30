@@ -383,7 +383,7 @@ class Databricks(LLM):
             )
 
     @property
-    def _params(self) -> Dict[str, Any]:
+    def _params(self) -> Optional[Dict[str, Any]]:
         return self.model_kwargs or self.params
 
     @property
