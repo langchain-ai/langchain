@@ -1,5 +1,6 @@
 import datasets
 
+
 class SampleHuggingface(datasets.GeneratorBasedBuilder):
     """Sample huggingface dataset with two different versions for testing."""
 
@@ -90,7 +91,7 @@ class SampleHuggingface(datasets.GeneratorBasedBuilder):
                     "list": ["Hello", "Bonjour", "Hola"],
                     "dict": [
                         {
-                            "dict_text": "This is an example huggingface dataset",
+                            "dict_text": "Hello world!",
                             "dict_int": "2",
                         },
                         {
