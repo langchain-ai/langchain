@@ -24,11 +24,6 @@ Databricks provides a fully managed and hosted version of MLflow integrated with
 
 Databricks MLflow makes it more convenient to develop LangChain applications on Databricks. For MLflow tracking, you don't need to set the tracking uri. For MLflow Model Serving, you can save LangChain Chains in the MLflow langchain flavor, and then register and serve the Chain with a few clicks on Databricks, with credentials securely managed by MLflow Model Serving.
 
-Databricks as an LLM provider
------------------------------
-
-The notebook [Wrap Databricks endpoints as LLMs](/docs/integrations/llms/databricks) illustrates the method to wrap Databricks endpoints as LLMs in LangChain. It supports two types of endpoints: the serving endpoint, which is recommended for both production and development, and the cluster driver proxy app, which is recommended for interactive development. 
-
 Databricks External Models
 --------------------------
 
@@ -78,6 +73,11 @@ embeddings = DatabricksEmbeddings(endpoint="databricks-bge-large-en")
 print(embeddings.embed_query("hello")[:3])
 # -> [0.051055908203125, 0.007221221923828125, 0.003879547119140625, ...]
 ```
+
+Databricks as an LLM provider
+-----------------------------
+
+The notebook [Wrap Databricks endpoints as LLMs](/docs/integrations/llms/databricks) illustrates the method to wrap Databricks endpoints as LLMs in LangChain. It supports two types of endpoints: the serving endpoint, which is recommended for both production and development, and the cluster driver proxy app, which is recommended for interactive development. 
 
 Databricks Dolly
 ----------------
