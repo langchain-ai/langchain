@@ -13,13 +13,14 @@ class TestApiConfigSecurity(unittest.TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = {"model_id": "", "status": "training_complete"}
 
-        llm = Arcee(
+        arcee = Arcee(
             model="DALM-PubMed",
             arcee_api_key="secret_api_key",
             arcee_api_url="localhost",
             arcee_api_version="version",
         )
 
+        self.assertTrue(isinstance(arcee.arcee_api_key, SecretStr))
 
 # def test_api_key_securely_wrapped(self):
 #     # Ensure that the API key is securely wrapped using SecretStr.
