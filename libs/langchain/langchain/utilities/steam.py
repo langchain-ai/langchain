@@ -14,7 +14,7 @@ class SteamWebAPIWrapper(BaseModel):
 
     steam: Any  # for python-steam-api
 
-    # oprations: a list of dictionaries, each representing a specific operation that
+    # operations: a list of dictionaries, each representing a specific operation that
     # can be performed with the API
     operations: list[dict] = [
         {
@@ -40,7 +40,7 @@ class SteamWebAPIWrapper(BaseModel):
 
     @root_validator
     def validate_environment(cls, values: dict) -> dict:
-        """Validate api key and python package has been configed."""
+        """Validate api key and python package has been configured."""
 
         # check if the python package is installed
         try:
@@ -53,7 +53,7 @@ class SteamWebAPIWrapper(BaseModel):
         except ImportError:
             raise ImportError("decouple library is not installed. ")
 
-        # initilize the steam attribute for python-steam-api usage
+        # initialize the steam attribute for python-steam-api usage
         KEY = config("STEAM_KEY")
         steam = Steam(KEY)
         values["steam"] = steam
