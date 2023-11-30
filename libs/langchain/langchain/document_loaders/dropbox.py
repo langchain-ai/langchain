@@ -118,8 +118,6 @@ class DropboxLoader(BaseLoader, BaseModel):
         try:
             text = response.content.decode("utf-8")
         except UnicodeDecodeError:
-            print(f"File {file_path} could not be decoded as text.")
-
             file_extension = os.path.splitext(file_path)[1].lower()
 
             if file_extension == ".pdf":
@@ -140,6 +138,11 @@ class DropboxLoader(BaseLoader, BaseModel):
                 except Exception as pdf_ex:
                     print(f"Error while trying to parse PDF {file_path}: {pdf_ex}")
                     return None
+            else:
+                print(
+                    f"File {file_path} could not be decoded as pdf or text. Skipping."
+                )
+
             return None
 
         metadata = {
