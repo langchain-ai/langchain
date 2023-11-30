@@ -30,7 +30,7 @@ class Arcee(LLM):
     _client: Optional[ArceeWrapper] = None  #: :meta private:
     """Arcee _client."""
 
-    arcee_api_key: Optional[SecretStr]
+    arcee_api_key: Optional[str, SecretStr]
     """Arcee API Key"""
 
     model: str
@@ -82,10 +82,12 @@ class Arcee(LLM):
         """Validate Arcee environment variables."""
 
         # validate env vars
-        values["arcee_api_key"] = get_from_dict_or_env(
-            values,
-            "arcee_api_key",
-            "ARCEE_API_KEY",
+        values["arcee_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "arcee_api_key",
+                "ARCEE_API_KEY",
+            )
         )
 
         values["arcee_api_url"] = get_from_dict_or_env(
