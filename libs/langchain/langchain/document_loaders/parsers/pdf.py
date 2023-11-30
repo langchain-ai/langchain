@@ -235,7 +235,10 @@ class PyMuPDFParser(BaseBlobParser):
         import fitz
 
         with blob.as_bytes_io() as file_path:
-            doc = fitz.open(file_path)  # open document
+            if blob.data is None:
+                doc = fitz.open(file_path)
+            else:
+                doc = fitz.open(stream=file_path, filetype="pdf")
 
             yield from [
                 Document(

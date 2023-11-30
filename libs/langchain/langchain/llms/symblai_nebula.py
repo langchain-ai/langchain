@@ -57,8 +57,7 @@ class Nebula(LLM):
     temperature: Optional[float] = 0.6
     top_p: Optional[float] = 0.95
     repetition_penalty: Optional[float] = 1.0
-    top_k: Optional[int] = 0
-    penalty_alpha: Optional[float] = 0.0
+    top_k: Optional[int] = 1
     stop_sequences: Optional[List[str]] = None
     max_retries: Optional[int] = 10
 
@@ -106,7 +105,6 @@ class Nebula(LLM):
             "top_k": self.top_k,
             "top_p": self.top_p,
             "repetition_penalty": self.repetition_penalty,
-            "penalty_alpha": self.penalty_alpha,
         }
 
     @property
@@ -162,16 +160,10 @@ class Nebula(LLM):
         """
         params = self._invocation_params(stop, **kwargs)
         prompt = prompt.strip()
-        if "\n" in prompt:
-            instruction = prompt.split("\n")[0]
-            conversation = "\n".join(prompt.split("\n")[1:])
-        else:
-            raise ValueError("Prompt must contain instruction and conversation.")
 
         response = completion_with_retry(
             self,
-            instruction=instruction,
-            conversation=conversation,
+            prompt=prompt,
             params=params,
             url=f"{self.nebula_service_url}{self.nebula_service_path}",
         )
@@ -181,8 +173,7 @@ class Nebula(LLM):
 
 def make_request(
     self: Nebula,
-    instruction: str,
-    conversation: str,
+    prompt: str,
     url: str = f"{DEFAULT_NEBULA_SERVICE_URL}{DEFAULT_NEBULA_SERVICE_PATH}",
     params: Optional[Dict] = None,
 ) -> Any:
@@ -196,12 +187,7 @@ def make_request(
         "ApiKey": f"{api_key}",
     }
 
-    body = {
-        "prompt": {
-            "instruction": instruction,
-            "conversation": {"text": f"{conversation}"},
-        }
-    }
+    body = {"prompt": prompt}
 
     # add params to body
     for key, value in params.items():

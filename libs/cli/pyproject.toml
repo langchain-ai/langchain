@@ -3,6 +3,7 @@ name = "gigachain-cli"
 version = "0.0.19"
 description = "CLI for interacting with GigaChain"
 authors = ["Erick Friis <erick@langchain.dev>", "Konstantin Krestnikov <k.krestnikov@gmail.com>"]
+license = "MIT"
 readme = "README.md"
 packages = [
     {include = "langchain_cli"}
