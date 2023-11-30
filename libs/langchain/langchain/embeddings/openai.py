@@ -364,21 +364,17 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             # TODO: Look into proxy with openai v1.
             if self.openai_proxy:
                 try:
-                    import openai
+                    from openai import OpenAI
                 except ImportError:
                     raise ImportError(
                         "Could not import openai python package. "
                         "Please install it with `pip install openai`."
                     )
-
-                # TODO: The 'openai.proxy' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(proxy={
-                #                     "http": self.openai_proxy,
-                #                     "https": self.openai_proxy,
-                #                 })'
-                # openai.proxy = {
-                #                     "http": self.openai_proxy,
-                #                     "https": self.openai_proxy,
-                #                 }  # type: ignore[assignment]  # noqa: E501
+                
+                client = OpenAI(proxy={
+                    "http": self.openai_proxy,
+                    "https": self.openai_proxy
+                }) # type: ignore[assignment]  # noqa: E501
         return openai_args
 
     # please refer to
