@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://www.github.com/langchain-ai/langchain"
 
 [tool.poetry.setuptools]
-py-modules = []
+py-modules = [langchain]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
