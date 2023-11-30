@@ -597,10 +597,12 @@ class BaseOpenAI(BaseLLM):
                 }
             )
         if self.openai_proxy:
-            import openai
+            from openai import OpenAI
 
-            # TODO: The 'openai.proxy' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(proxy={"http": self.openai_proxy, "https": self.openai_proxy})'
-            # openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
+            client = OpenAI(proxy={
+                "http": self.openai_proxy,
+                "https": self.openai_proxy
+            }) # type: ignore[assignment]  # noqa: E501
         return {**openai_creds, **self._default_params}
 
     @property
@@ -1019,18 +1021,18 @@ class OpenAIChat(BaseLLM):
             values, "openai_organization", "OPENAI_ORGANIZATION", default=""
         )
         try:
+            from openai import OpenAI
             import openai
 
+            params = {}
             
             if openai_api_base:
-                # TODO: The 'openai.api_base' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(api_base=openai_api_base)'
-                # openai.api_base = openai_api_base
+                params["api_base"]=openai_api_base
             if openai_organization:
-                # TODO: The 'openai.organization' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(organization=openai_organization)'
-                # openai.organization = openai_organization
+                params["organization"]=openai_organization
             if openai_proxy:
-                # TODO: The 'openai.proxy' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(proxy={"http": openai_proxy, "https": openai_proxy})'
-                # openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
+                params["proxy"]={"http": openai_proxy, "https": openai_proxy}
+            client = OpenAI(**params)
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
