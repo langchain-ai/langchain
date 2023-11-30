@@ -51,8 +51,6 @@ class OpenAIModerationChain(Chain):
             import openai
 
             if openai_organization:
-                # TODO: The 'openai.organization' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(organization=openai_organization)'
-                # openai.organization = openai_organization
                 client = OpenAI(organization=openai_organization, api_key=openai_api_key)
             else:
                 client = OpenAI(api_key=openai_api_key)
