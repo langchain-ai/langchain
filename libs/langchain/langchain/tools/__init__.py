@@ -545,20 +545,24 @@ def _import_shell_tool() -> Any:
 
     return ShellTool
 
+
 def _import_slack_get_channel() -> Any: 
     from langchain.tools.slack.get_channel import SlackGetChannel
 
     return SlackGetChannel
+
 
 def _import_slack_get_message() -> Any: 
     from langchain.tools.slack.get_message import SlackGetMessage
 
     return SlackGetMessage
 
+
 def _import_slack_send_message() -> Any: 
     from langchain.tools.slack.send_message import SlackSendMessage
 
     return SlackSendMessage
+
 
 def _import_sleep_tool() -> Any:
     from langchain.tools.sleep.tool import SleepTool
