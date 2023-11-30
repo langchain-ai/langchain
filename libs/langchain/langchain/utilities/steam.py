@@ -1,8 +1,6 @@
 """Util that calls Steam-WebAPI."""
 
-from typing import Any
-
-from bs4 import BeautifulSoup
+from typing import Any, List
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.tools.steam.prompt import (
@@ -16,9 +14,9 @@ class SteamWebAPIWrapper(BaseModel):
 
     steam: Any  # for python-steam-api
 
-    # oprations: a list of dictionaries, each representing a specific operation that
+    # operations: a list of dictionaries, each representing a specific operation that
     # can be performed with the API
-    operations: list[dict] = [
+    operations: List[dict] = [
         {
             "mode": "get_game_details",
             "name": "Get Game Details",
@@ -36,13 +34,13 @@ class SteamWebAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    def get_operations(self) -> list[dict]:
+    def get_operations(self) -> List[dict]:
         """Return a list of operations."""
         return self.operations
 
     @root_validator
     def validate_environment(cls, values: dict) -> dict:
-        """Validate api key and python package has been configed."""
+        """Validate api key and python package has been configured."""
 
         # check if the python package is installed
         try:
@@ -55,7 +53,7 @@ class SteamWebAPIWrapper(BaseModel):
         except ImportError:
             raise ImportError("decouple library is not installed. ")
 
-        # initilize the steam attribute for python-steam-api usage
+        # initialize the steam attribute for python-steam-api usage
         KEY = config("STEAM_KEY")
         steam = Steam(KEY)
         values["steam"] = steam
@@ -81,6 +79,8 @@ class SteamWebAPIWrapper(BaseModel):
         return game_info
 
     def remove_html_tags(self, html_string):
+        from bs4 import BeautifulSoup
+
         soup = BeautifulSoup(html_string, "html.parser")
         return soup.get_text()
 
@@ -112,10 +112,10 @@ class SteamWebAPIWrapper(BaseModel):
         steam_id = user["player"]["steamid"]
         return steam_id
 
-    def get_users_games(self, steam_id: str) -> list[str]:
+    def get_users_games(self, steam_id: str) -> List[str]:
         return self.steam.users.get_owned_games(steam_id, False, False)
 
-    def recommended_games(self, steam_id: str) -> dict:
+    def recommended_games(self, steam_id: str) -> str:
         try:
             import steamspypi
         except ImportError:
@@ -151,7 +151,7 @@ class SteamWebAPIWrapper(BaseModel):
             game for game in sorted_data if game["appid"] not in owned_games
         ]
         top_5_popular_not_owned = [game["name"] for game in remaining_games[:5]]
-        return top_5_popular_not_owned
+        return str(top_5_popular_not_owned)
 
     def run(self, mode: str, game: str) -> str:
         if mode == "get_games_details":

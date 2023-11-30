@@ -218,17 +218,16 @@ def _import_sql_database() -> Any:
     return SQLDatabase
 
 
-
 def _import_steam_webapi() -> Any:
     from langchain.utilities.steam import SteamWebAPIWrapper
 
     return SteamWebAPIWrapper
 
+
 def _import_stackexchange() -> Any:
     from langchain.utilities.stackexchange import StackExchangeAPIWrapper
 
     return StackExchangeAPIWrapper
-
 
 
 def _import_tensorflow_datasets() -> Any:
