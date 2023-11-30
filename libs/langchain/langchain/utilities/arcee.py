@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Literal, Mapping, Optional, Union
 import requests
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.retrievers import Document
+from pydantic import SecretStr
 
 
 class ArceeRoute(str, Enum):
@@ -100,7 +101,7 @@ class ArceeWrapper:
 
     def __init__(
         self,
-        arcee_api_key: str,
+        arcee_api_key: Union[Optional[str], SecretStr],
         arcee_api_url: str,
         arcee_api_version: str,
         model_kwargs: Optional[Dict[str, Any]],
@@ -167,7 +168,7 @@ class ArceeWrapper:
     def _make_request_headers(self, headers: Optional[Dict] = None) -> Dict:
         headers = headers or {}
         internal_headers = {
-            "X-Token": self.arcee_api_key,
+            "X-Token": self.arcee_api_key if isinstance(self.arcee_api_key, str) else self.arcee_api_key.get_secret_value(),
             "Content-Type": "application/json",
         }
         headers.update(internal_headers)
