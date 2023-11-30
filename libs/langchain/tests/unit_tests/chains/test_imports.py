@@ -56,6 +56,7 @@ EXPECTED_ALL = [
     "generate_example",
     "load_chain",
     "create_sql_query_chain",
+    "VideoCaptioningChain",
 ]
 
 

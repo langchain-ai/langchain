@@ -1,8 +1,6 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
-import cv2
 import numpy as np
-from cv2.typing import MatLike
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.video_captioning.models import VideoModel
@@ -16,6 +14,11 @@ class ImageProcessor:
         self.threshold = threshold
         self.frame_skip = frame_skip
 
+    def _ensure_cv2(self):
+        global cv2
+        if "cv2" not in globals():
+            import cv2
+
     def process(
         self,
         video_file_path: str,
@@ -24,6 +27,7 @@ class ImageProcessor:
         return self._extract_frames(video_file_path)
 
     def _extract_frames(self, video_file_path: str) -> list:
+        self._ensure_cv2()
         video_models: List[VideoModel] = []
 
         def _add_model(start_time: int, end_time: int) -> None:
@@ -49,7 +53,7 @@ class ImageProcessor:
             )
             video_models.append(video_model)
 
-        def _is_notable_frame(frame1: MatLike, frame2: MatLike, threshold: int) -> bool:
+        def _is_notable_frame(frame1: Any, frame2: Any, threshold: int) -> bool:
             # Convert frames to grayscale
             gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
             gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
