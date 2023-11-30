@@ -1,0 +1,41 @@
+# NVIDIA AI Playground
+
+> [NVIDIA AI Playground](https://www.nvidia.com/en-us/research/ai-playground/) gives users easy access to hosted endpoints for generative AI models like Llama-2, Mistral, etc. This example demonstrates how to use LangChain to interact with supported AI Playground models.
+
+## Setup and Authentication
+
+- Create a free account at [NVIDIA GPU Cloud](https://catalog.ngc.nvidia.com/).
+- Navigate to `Catalog > AI Foundation Models > (Model with API endpoint)`.
+- Select `API` and generate the key `NVAPI_KEY`.
+
+```python
+# Imports and Authentication
+from langchain.llms import NVAIPlayLLM
+from langchain.llms.nv_aiplay import LlamaLLM, NVCRModel
+import getpass, os
+
+# Authentication with NVAPI Key
+if os.environ.get("NVAPI_KEY", "").startswith("nvapi-"):
+    print("Valid NVAPI_KEY in environment.")
+else:
+    nvapi_key = getpass.getpass("NVAPI Key: ")
+    assert nvapi_key.startswith("nvapi-"), "Invalid key"
+    os.environ["NVAPI_KEY"] = nvapi_key
+```
+
+## Using NVIDIA AI Playground Models
+
+A selection of NVIDIA AI Playground models are supported directly in LangChain with familiar APIs. Lower than that, the `NVCRModel` class provides a lightweight low-assumptions interface for sending requests directly to the NVCF endpoints.
+
+**The following selection of models have strong support in LangChain:**
+- [`Llama-2 13B`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/llama2-13b)/[`Llama-2 70B`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/llama2-70b)
+- [`CodeLlama-13B`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/codellama-13b)/[`CodeLlama-34B`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/codellama-34b)
+- [`Mistral 7B Instruct`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/mistral-7b-instruct)
+- [`NVIDIA Retrieval QA Embedding`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/nvolve-29k)
+
+Additional models will be supported as APIs become more stable and must-have model support can be implemented as necessary by leaning on `NVCRModel`'s request specification and general abstraction.
+
+**The following may be useful examples to help you get started:**
+- **[`NVAIPlayLLM` Model](/docs/integrations/llms/nv_aiplay).**
+- **[`NVAIPlayChat` Model](/docs/integrations/chat/nv_aiplay).**
+- **[`NVAIPlayEmbedding` Model for RAG Workflows](/docs/integrations/text_embeddings/nv_aiplay).**
