@@ -10,7 +10,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 from langchain.chains.llm import LLMChain
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain.utilities.sql_database import SQLDatabase
 from langchain.tools.base import BaseTool
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
