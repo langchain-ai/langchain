@@ -1,3 +1,4 @@
+"""Hugging Face Chat Wrapper."""
 from typing import Any, List, Optional, Union
 
 from langchain.callbacks.manager import (
