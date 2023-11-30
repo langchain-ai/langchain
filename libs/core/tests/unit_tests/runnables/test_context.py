@@ -6,7 +6,7 @@ from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.prompt_values import StringPromptValue
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables.base import Runnable, RunnableLambda
-from langchain_core.runnables.context import ContextGet, ContextSet
+from langchain_core.runnables.context import Context
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import aadd, add
 from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
@@ -29,9 +29,9 @@ def seq_naive_rag() -> Runnable:
     llm = FakeListLLM(responses=["hello"])
 
     return (
-        ContextSet("input")
+        Context.setter("input")
         | {
-            "context": retriever | ContextSet("context"),
+            "context": retriever | Context.setter("context"),
             "question": RunnablePassthrough(),
         }
         | prompt
@@ -39,8 +39,8 @@ def seq_naive_rag() -> Runnable:
         | StrOutputParser()
         | {
             "result": RunnablePassthrough(),
-            "context": ContextGet("context"),
-            "input": ContextGet("input"),
+            "context": Context.getter("context"),
+            "input": Context.getter("input"),
         }
     )
 
@@ -57,36 +57,36 @@ def seq_naive_rag_alt() -> Runnable:
     llm = FakeListLLM(responses=["hello"])
 
     return (
-        ContextSet("input")
+        Context.setter("input")
         | {
-            "context": retriever | ContextSet("context"),
+            "context": retriever | Context.setter("context"),
             "question": RunnablePassthrough(),
         }
         | prompt
         | llm
         | StrOutputParser()
-        | ContextSet("result")
-        | ContextGet(["context", "input", "result"])
+        | Context.setter("result")
+        | Context.getter(["context", "input", "result"])
     )
 
 
 test_cases = [
     (
-        ContextSet("foo") | ContextGet("foo"),
+        Context.setter("foo") | Context.getter("foo"),
         (
             TestCase("foo", "foo"),
             TestCase("bar", "bar"),
         ),
     ),
     (
-        ContextSet("input") | {"bar": ContextGet("input")},
+        Context.setter("input") | {"bar": Context.getter("input")},
         (
             TestCase("foo", {"bar": "foo"}),
             TestCase("bar", {"bar": "bar"}),
         ),
     ),
     (
-        {"bar": ContextSet("input")} | ContextGet("input"),
+        {"bar": Context.setter("input")} | Context.getter("input"),
         (
             TestCase("foo", "foo"),
             TestCase("bar", "bar"),
@@ -95,12 +95,12 @@ test_cases = [
     (
         (
             PromptTemplate.from_template("{foo} {bar}")
-            | ContextSet("prompt")
+            | Context.setter("prompt")
             | FakeListLLM(responses=["hello"])
             | StrOutputParser()
             | {
                 "response": RunnablePassthrough(),
-                "prompt": ContextGet("prompt"),
+                "prompt": Context.getter("prompt"),
             }
         ),
         (
@@ -117,13 +117,13 @@ test_cases = [
     (
         (
             PromptTemplate.from_template("{foo} {bar}")
-            | ContextSet("prompt", prompt_str=lambda x: x.to_string())
+            | Context.setter("prompt", prompt_str=lambda x: x.to_string())
             | FakeListLLM(responses=["hello"])
             | StrOutputParser()
             | {
                 "response": RunnablePassthrough(),
-                "prompt": ContextGet("prompt"),
-                "prompt_str": ContextGet("prompt_str"),
+                "prompt": Context.getter("prompt"),
+                "prompt_str": Context.getter("prompt_str"),
             }
         ),
         (
@@ -148,12 +148,12 @@ test_cases = [
     (
         (
             PromptTemplate.from_template("{foo} {bar}")
-            | ContextSet("prompt_str", lambda x: x.to_string())
+            | Context.setter("prompt_str", lambda x: x.to_string())
             | FakeListLLM(responses=["hello"])
             | StrOutputParser()
             | {
                 "response": RunnablePassthrough(),
-                "prompt_str": ContextGet("prompt_str"),
+                "prompt_str": Context.getter("prompt_str"),
             }
         ),
         (
@@ -170,12 +170,12 @@ test_cases = [
     (
         (
             PromptTemplate.from_template("{foo} {bar}")
-            | ContextSet("prompt")
+            | Context.setter("prompt")
             | FakeStreamingListLLM(responses=["hello"])
             | StrOutputParser()
             | {
                 "response": RunnablePassthrough(),
-                "prompt": ContextGet("prompt"),
+                "prompt": Context.getter("prompt"),
             }
         ),
         (
@@ -268,14 +268,16 @@ async def test_context_runnables(
 
 
 def test_runnable_context_seq_key_not_found() -> None:
-    seq: Runnable = {"bar": ContextSet("input")} | ContextGet("foo")
+    seq: Runnable = {"bar": Context.setter("input")} | Context.getter("foo")
 
     with pytest.raises(KeyError):
         seq.invoke("foo")
 
 
 def test_runnable_context_seq_key_circular_ref() -> None:
-    seq: Runnable = {"bar": ContextSet(input=ContextGet("input"))} | ContextGet("foo")
+    seq: Runnable = {
+        "bar": Context.setter(input=Context.getter("input"))
+    } | Context.getter("foo")
 
     with pytest.raises(ValueError):
         seq.invoke("foo")
@@ -284,12 +286,12 @@ def test_runnable_context_seq_key_circular_ref() -> None:
 async def test_runnable_seq_streaming_chunks() -> None:
     chain: Runnable = (
         PromptTemplate.from_template("{foo} {bar}")
-        | ContextSet("prompt")
+        | Context.setter("prompt")
         | FakeStreamingListLLM(responses=["hello"])
         | StrOutputParser()
         | {
             "response": RunnablePassthrough(),
-            "prompt": ContextGet("prompt"),
+            "prompt": Context.getter("prompt"),
         }
     )
 

@@ -229,3 +229,15 @@ class ContextSet(RunnableSerializable):
             else:
                 await configurable[id_](input)
         return input
+
+
+class Context:
+    @staticmethod
+    def getter(key: Union[str, List[str]]) -> ContextGet:
+        return ContextGet(key)
+
+    @staticmethod
+    def setter(
+        key: Optional[str] = None, value: Optional[SetValue] = None, **kwargs: SetValue
+    ) -> ContextSet:
+        return ContextSet(key, value, **kwargs)
