@@ -1,23 +1,25 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-from pydantic import SecretStr
+from _pytest.capture import CaptureFixture
+from _pytest.monkeypatch import MonkeyPatch
+from langchain_core.pydantic_v1 import SecretStr
 
 from langchain.llms.arcee import Arcee
 
 
 class TestApiConfigSecurity(unittest.TestCase):
     @pytest.fixture(autouse=True)
-    def capsys(self, capsys):
+    def capsys(self, capsys: CaptureFixture) -> None:
         self.capsys = capsys
 
     @pytest.fixture(autouse=True)
-    def monkeypatch(self, monkeypatch):
+    def monkeypatch(self, monkeypatch: MonkeyPatch) -> None:
         self.monkeypatch = monkeypatch
 
     @patch("langchain.utilities.arcee.requests.get")
-    def setUp(self, mock_get) -> None:
+    def setUp(self, mock_get: MagicMock) -> None:
         mock_response = mock_get.return_value
         mock_response.status_code = 200
         mock_response.json.return_value = {
