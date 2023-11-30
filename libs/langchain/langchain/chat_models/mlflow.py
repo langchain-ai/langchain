@@ -79,9 +79,13 @@ class ChatMlflow(BaseChatModel):
         return "[genai]"
 
     def _validate_uri(self) -> None:
-        if urlparse(self.target_uri).scheme not in ("http", "https"):
+        if self.target_uri == "databricks":
+            return
+        allowed = ["http", "https", "databricks"]
+        if urlparse(self.target_uri).scheme not in allowed:
             raise ValueError(
-                "Invalid target URI. The target URI must be a valid HTTP/HTTPS URI."
+                f"Invalid target URI: {self.target_uri}. "
+                "The scheme must be one of {allowed}."
             )
 
     @property

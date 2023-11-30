@@ -1,4 +1,5 @@
 import os
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
@@ -284,8 +285,13 @@ class Databricks(LLM):
     We recommend the server using a port number between ``[3000, 8000]``.
     """
 
-    model_kwargs: Optional[Dict[str, Any]] = None
+    params: Optional[Dict[str, Any]] = None
     """Extra parameters to pass to the endpoint."""
+
+    model_kwargs: Optional[Dict[str, Any]] = None
+    """
+    Deprecated. Please use ``params`` instead. Extra parameters to pass to the endpoint.
+    """
 
     transform_input_fn: Optional[Callable] = None
     """A function that transforms ``{prompt, stop, **kwargs}`` into a JSON-compatible
@@ -350,6 +356,13 @@ class Databricks(LLM):
 
     def __init__(self, **data: Any):
         super().__init__(**data)
+        if self.model_kwargs is not None and self.params is not None:
+            raise ValueError("Cannot set both model_kwargs and params.")
+        elif self.model_kwargs is not None:
+            warnings.warn(
+                "model_kwargs is deprecated. Please use params instead.",
+                DeprecationWarning,
+            )
         if self.endpoint_name:
             self._client = _DatabricksServingEndpointClient(
                 host=self.host,
@@ -370,6 +383,10 @@ class Databricks(LLM):
             )
 
     @property
+    def _params(self) -> Dict[str, Any]:
+        return self.model_kwargs or self.params
+
+    @property
     def _default_params(self) -> Dict[str, Any]:
         """Return default params."""
         return {
@@ -380,6 +397,7 @@ class Databricks(LLM):
             "cluster_driver_port": self.cluster_driver_port,
             "databricks_uri": self.databricks_uri,
             "model_kwargs": self.model_kwargs,
+            "params": self.params,
             # TODO: Support saving transform_input_fn and transform_output_fn
             # "transform_input_fn": self.transform_input_fn,
             # "transform_output_fn": self.transform_output_fn,
@@ -407,8 +425,8 @@ class Databricks(LLM):
 
         request = {"prompt": prompt, "stop": stop}
         request.update(kwargs)
-        if self.model_kwargs:
-            request.update(self.model_kwargs)
+        if self._params:
+            request.update(self._params)
 
         if self.transform_input_fn:
             request = self.transform_input_fn(**request)
