@@ -5,7 +5,7 @@ from langchain_core.pydantic_v1 import Extra, root_validator, SecretStr
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.utilities.arcee import ArceeWrapper, DALMFilter
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, convert_to_secret_str
 
 
 class Arcee(LLM):
@@ -30,7 +30,7 @@ class Arcee(LLM):
     _client: Optional[ArceeWrapper] = None  #: :meta private:
     """Arcee _client."""
 
-    arcee_api_key: SecretStr
+    arcee_api_key: Optional[SecretStr]
     """Arcee API Key"""
 
     model: str
