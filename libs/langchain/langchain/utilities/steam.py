@@ -78,7 +78,7 @@ class SteamWebAPIWrapper(BaseModel):
             break
         return game_info
 
-    def remove_html_tags(self, html_string):
+    def remove_html_tags(self, html_string: str) -> str:
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(html_string, "html.parser")

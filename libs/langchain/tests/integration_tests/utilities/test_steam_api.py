@@ -1,4 +1,5 @@
 from langchain.utilities.steam import SteamWebAPIWrapper
+import ast
 
 
 def test_get_game_details() -> None:
@@ -16,4 +17,5 @@ def test_get_recommended_games() -> None:
     """Test for getting recommended games on Steam"""
     steam = SteamWebAPIWrapper()
     output = steam.run("get_recommended_games", "76561198362745711")
+    output = ast.literal_eval(output)
     assert len(output) == 5
