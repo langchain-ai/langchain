@@ -7,8 +7,6 @@ from typing import (
     Tuple,
 )
 
-from surrealdb import Surreal
-
 from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
@@ -57,6 +55,8 @@ class SurrealDBStore(VectorStore):
         embedding_function: Embeddings,
         **kwargs: Any,
     ) -> None:
+        from surrealdb import Surreal
+
         self.collection = kwargs.pop("collection", "documents")
         self.ns = kwargs.pop("ns", "langchain")
         self.db = kwargs.pop("db", "database")
