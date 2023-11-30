@@ -37,8 +37,8 @@ setuptools = "^67.6.1"
 # Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
 pytest-asyncio = "^0.20.3"
-langchain = {path = "../langchain", develop = true}
-langchain-core = {path = "../core", develop = true}
+gigachain = {path = "../langchain", develop = true}
+gigachain-core = {path = "../core", develop = true}
 
 
 [tool.poetry.group.test_integration]

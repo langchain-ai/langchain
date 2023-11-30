@@ -75,7 +75,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         [
             "duckdb-engine",
             "freezegun",
-            "langchain-core",
+            "gigachain-core",
             "lark",
             "pandas",
             "pytest",

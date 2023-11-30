@@ -7,13 +7,13 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.333"
+gigachain = ">=0.0.333"
 google-cloud-aiplatform = ">=1.35.0"
 google-cloud-dlp = "^3.13.0"
 
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+gigachain-cli = ">=0.0.15"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
