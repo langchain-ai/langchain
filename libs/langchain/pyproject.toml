@@ -91,7 +91,6 @@ telethon = {version = "^1.28.5", optional = true}
 neo4j = {version = "^5.8.1", optional = true}
 langkit = {version = ">=0.0.6, <0.1.0", optional = true}
 chardet = {version="^5.1.0", optional=true}
-datasets = {version="^2.15.0", optional=true}
 requests-toolbelt = {version = "^1.0.0", optional = true}
 openlm = {version = "^0.0.5", optional = true}
 scikit-learn = {version = "^1.2.2", optional = true}
@@ -148,6 +147,7 @@ praw = {version = "^7.7.1", optional = true}
 msal = {version = "^1.25.0", optional = true}
 databricks-vectorsearch = {version = "^0.21", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
+datasets = {version = "^2.15.0", optional = true}
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
