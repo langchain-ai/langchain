@@ -54,11 +54,11 @@ class ErnieBotChat(BaseChatModel):
             from langchain.chat_models import ErnieBotChat
             chat = ErnieBotChat(model_name='ERNIE-Bot')
 
-            
+
     Deprecated Note:
-    Please use `QianfanChatEndpoint` instead of this class. 
+    Please use `QianfanChatEndpoint` instead of this class.
     `QianfanChatEndpoint` is a more suitable choice for production.
-    
+
     Always test your code after changing to `QianfanChatEndpoint`.
 
     Example of `QianfanChatEndpoint`:
