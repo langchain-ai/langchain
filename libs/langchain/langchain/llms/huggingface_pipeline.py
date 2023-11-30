@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import importlib.util
 import logging
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Iterator, AsyncIterator
 
-from langchain_core.outputs import Generation, LLMResult
+from langchain_core.outputs import Generation, LLMResult, GenerationChunk
 from langchain_core.pydantic_v1 import Extra
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.callbacks.manager import CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -82,7 +81,7 @@ class HuggingFacePipeline(BaseLLM):
             from transformers import (
                 AutoModelForCausalLM,
                 AutoModelForSeq2SeqLM,
-                AutoTokenizer,
+                AutoTokenizer
             )
             from transformers import pipeline as hf_pipeline
 
@@ -198,9 +197,9 @@ class HuggingFacePipeline(BaseLLM):
 
         for i in range(0, len(prompts), self.batch_size):
             batch_prompts = prompts[i : i + self.batch_size]
-
             # Process batch of prompts
             responses = self.pipeline(batch_prompts)
+            print(responses)
 
             # Process each response in the batch
             for j, response in enumerate(responses):
@@ -245,3 +244,68 @@ class HuggingFacePipeline(BaseLLM):
         return LLMResult(
             generations=[[Generation(text=text)] for text in text_generations]
         )
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        print("HuggingFacePipeline _astream")
+        try:
+            from transformers import TextIteratorStreamer
+            from threading import Thread
+
+        except ImportError:
+            raise ValueError(
+                "Could not import transformers python package. "
+                "Please install it with `pip install transformers`."
+            )
+
+        # get TextIteratorStreamer from pipeline
+        try:
+            streamer = self.pipeline._forward_params["streamer"]
+
+            if streamer is None:
+                raise ValueError(
+                    "Could not get TextIteratorStreamer from pipeline. "
+                    "Please check your pipeline."
+                )
+            elif type(streamer) is not TextIteratorStreamer:
+                raise ValueError(
+                    "Passed Streamer is not supported. Please use TextIteratorStreamer."
+                    "Please check your pipeline."
+                )
+        except Exception as e:
+            raise ValueError(
+                "Could not get TextIteratorStreamer from pipeline. "
+                "Please check your pipeline."
+            ) from e
+        
+        # Prepare the inputs for the model
+        tok = self.pipeline.tokenizer
+        inputs = tok([prompt], return_tensors="pt")
+        inputs = inputs.to('cuda')
+        print(vars(self.pipeline))
+        if "max_length" in self.pipeline._forward_params:
+            max_new_tokens = self.pipeline._forward_params["max_length"]
+        else:
+            max_new_tokens = 20
+
+        
+        generation_kwargs = dict(inputs, streamer=streamer, max_new_tokens=max_new_tokens )
+        self.pipeline.model.to('cuda')
+
+        # Start the generation in a separate thread
+        thread = Thread(target=self.pipeline.model.generate, kwargs=generation_kwargs)
+        thread.start()
+        generated_text = ""
+        # Iterate over the streamer to yield chunks
+        for new_text in streamer:
+            print(new_text)
+            chunk = GenerationChunk(text=new_text)
+            print(f"IMPORTANT {chunk.text}")
+            yield chunk
+            if run_manager:
+                await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
