@@ -111,6 +111,7 @@ EXPECTED_ALL = [
     "authenticate",
     "format_tool_to_openai_function",
     "tool",
+    "MerriamWebsterQueryRun",
 ]
 
 

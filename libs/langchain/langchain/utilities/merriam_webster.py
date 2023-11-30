@@ -3,7 +3,7 @@ import json
 from typing import Dict, Iterator, List, Optional
 from urllib.parse import quote
 
-import requests as req
+import requests
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
@@ -52,14 +52,14 @@ class MerriamWebsterAPIWrapper(BaseModel):
             f"?key={self.merriam_webster_api_key}"
         )
 
-        response = req.get(request_url, timeout=MERRIAM_WEBSTER_TIMEOUT)
+        response = requests.get(request_url, timeout=MERRIAM_WEBSTER_TIMEOUT)
 
         if response.status_code != 200:
             return response.text
 
         return self._format_response(query, response)
 
-    def _format_response(self, query: str, response: req.Response) -> str:
+    def _format_response(self, query: str, response: requests.Response) -> str:
         content = json.loads(response.content)
 
         if not content:
