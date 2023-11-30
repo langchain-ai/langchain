@@ -147,6 +147,7 @@ praw = {version = "^7.7.1", optional = true}
 msal = {version = "^1.25.0", optional = true}
 databricks-vectorsearch = {version = "^0.21", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
+pydgraph = {version = "21.3.2", optional = true}
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
@@ -315,6 +316,7 @@ all = [
     "librosa",
     "python-arango",
     "dgml-utils",
+    "pydgraph",
 ]
 
 cli = [
@@ -388,6 +390,7 @@ extended_testing = [
  "databricks-vectorsearch",
  "dgml-utils",
  "cohere",
+ "pydgraph",
 ]
 
 [tool.ruff]
