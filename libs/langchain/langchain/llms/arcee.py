@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import Extra, root_validator, SecretStr
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -30,7 +30,7 @@ class Arcee(LLM):
     _client: Optional[ArceeWrapper] = None  #: :meta private:
     """Arcee _client."""
 
-    arcee_api_key: str = ""
+    arcee_api_key: SecretStr
     """Arcee API Key"""
 
     model: str
