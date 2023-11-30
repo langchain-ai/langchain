@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores.pinecone import Pinecone
 
