@@ -371,9 +371,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         "Please install it with `pip install openai`."
                     )
 
-                OpenAI(
-                    proxy={"http": self.openai_proxy, "https": self.openai_proxy}
-                )  # type: ignore[assignment]  # noqa: E501
+                OpenAI(proxy={"http": self.openai_proxy, "https": self.openai_proxy})  # type: ignore[assignment]  # noqa: E501
         return openai_args
 
     # please refer to

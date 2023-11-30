@@ -599,9 +599,7 @@ class BaseOpenAI(BaseLLM):
         if self.openai_proxy:
             from openai import OpenAI
 
-            OpenAI(
-                proxy={"http": self.openai_proxy, "https": self.openai_proxy}
-            )  # type: ignore[assignment]  # noqa: E501
+            OpenAI(proxy={"http": self.openai_proxy, "https": self.openai_proxy})  # type: ignore[assignment]  # noqa: E501
         return {**openai_creds, **self._default_params}
 
     @property
