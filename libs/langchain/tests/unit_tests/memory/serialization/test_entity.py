@@ -45,6 +45,7 @@ SERIALIZED_MEMORY_JSON = {
                     },
                 ]
             },
+            "repr": "",
             "type": "constructor",
         },
         "entity_cache": [],

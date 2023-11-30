@@ -18,6 +18,15 @@ class SerializedConstructor(BaseSerialized):
     kwargs: Dict[str, Any]
 
 
+class SerializedConstructorMemory(BaseSerialized):
+    """Serialized constructor."""
+
+    type: Literal["constructor"]
+    kwargs: Dict[str, Any]
+    obj: Optional[Any]
+    repr: Optional[str]
+
+
 class SerializedSecret(BaseSerialized):
     """Serialized secret."""
 
@@ -97,7 +106,11 @@ class Serializable(BaseModel, ABC):
         super().__init__(**kwargs)
         self._lc_kwargs = kwargs
 
-    def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
+    def to_json(
+        self
+    ) -> Union[
+        SerializedConstructor, SerializedNotImplemented, SerializedConstructorMemory
+    ]:
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 

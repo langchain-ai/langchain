@@ -61,6 +61,7 @@ SERIALIZED_MEMORY_JSON = {
                     },
                 ]
             },
+            "repr": "",
             "type": "constructor",
         },
         "human_prefix": "Human",

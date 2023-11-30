@@ -13,6 +13,7 @@ expected = {
     "type": "constructor",
     "id": ["langchain", "memory", "vectorstore", "VectorStoreRetrieverMemory"],
     "kwargs": {},
+    "repr": "",
     "obj": {
         "exclude_input_keys": [],
         "input_key": None,

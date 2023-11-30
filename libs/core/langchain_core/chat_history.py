@@ -1,19 +1,24 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import List
-
-from langchain_core.messages import (AIMessage,
-                                     BaseMessage,
-                                     HumanMessage,
-                                    message_to_dict,
-                                    messages_from_dict)
-
-from langchain.load.load import loads
-
 import json
+from abc import ABC, abstractmethod
+from typing import Any, List, Union, cast
 
-from langchain.load.serializable import Serializable
+from langchain_core.load.load import loads
+from langchain_core.load.serializable import (
+    Serializable,
+    SerializedConstructor,
+    SerializedConstructorMemory,
+    SerializedNotImplemented,
+)
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    message_to_dict,
+    messages_from_dict,
+)
+
 
 class BaseChatMessageHistory(Serializable, ABC):
     """Abstract base class for storing chat message history.
@@ -80,26 +85,47 @@ class BaseChatMessageHistory(Serializable, ABC):
         """Is this class serializable?"""
         return True
 
-    def to_json(self):
-        serialized = super().to_json()
-        serialized['obj'] = json.loads(json.dumps(self,
-                                default=lambda o: message_to_dict(o)
-                                    if isinstance(o, BaseMessage) else o.__dict__,
-                                    sort_keys=True, indent=4))
+    def to_json(
+        self
+    ) -> Union[
+        SerializedConstructor, SerializedNotImplemented, SerializedConstructorMemory
+    ]:
+        super_serialized: Union[
+            SerializedConstructor, SerializedNotImplemented
+        ] = super().to_json()
+        serialized: SerializedConstructorMemory = SerializedConstructorMemory(
+            lc=super_serialized.get("lc", 0),
+            id=super_serialized.get("id", []),
+            type="constructor",
+            kwargs=cast(dict, super_serialized.get("kwargs", {})),
+            obj=None,
+            repr=str(super_serialized.get("repr", "")),
+        )
+        serialized["obj"] = json.loads(
+            json.dumps(
+                self,
+                default=lambda o: message_to_dict(o)
+                if isinstance(o, BaseMessage)
+                else o.__dict__,
+                sort_keys=True,
+                indent=4,
+            )
+        )
 
         return serialized
 
     @classmethod
-    def from_json(cls, json_input: str):
+    def from_json(cls, json_input: str) -> Any:
         deserialized = loads(json_input)
 
         memory_dict = json.loads(json_input)
 
-        messages = messages_from_dict(memory_dict['obj']['messages'])
+        messages = messages_from_dict(memory_dict["obj"]["messages"])
 
         # Extract additional attributes from memory_dict
-        additional_attributes = {key: memory_dict[key] for key in memory_dict['obj']
-                                 if key != 'messages'}
+        additional_attributes = {
+            key: memory_dict[key] for key in memory_dict["obj"] if key != "messages"
+        }
 
         deserialized.messages = messages
 
