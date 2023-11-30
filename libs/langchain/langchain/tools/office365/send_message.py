@@ -60,7 +60,7 @@ class O365SendMessage(O365BaseTool):
         if cc is not None:
             message.cc.add(cc)
         if bcc is not None:
-            message.bcc.add(cc)
+            message.bcc.add(bcc)
 
         message.send()
 
