@@ -11,6 +11,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Tuple,
     Union,
     cast,
 )
@@ -187,17 +188,12 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             return generate_from_stream(stream_iter)
 
         question = _get_question(messages)
-        history = _parse_chat_history(messages[:-1])
-        params = self._prepare_params(stop=stop, stream=False, **kwargs)
-        examples = kwargs.get("examples") or self.examples
-        if examples:
-            params["examples"] = _parse_examples(examples)
-
+        chat, params = self._start_chat(
+            messages=messages, stop=stop, stream=False, **kwargs
+        )
         msg_params = {}
         if "candidate_count" in params:
             msg_params["candidate_count"] = params.pop("candidate_count")
-
-        chat = self._start_chat(history, **params)
         response = chat.send_message(question.content, **msg_params)
         generations = [
             ChatGeneration(message=AIMessage(content=r.text))
@@ -236,16 +232,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             return await agenerate_from_stream(stream_iter)
 
         question = _get_question(messages)
-        history = _parse_chat_history(messages[:-1])
-        params = self._prepare_params(stop=stop, **kwargs)
-        examples = kwargs.get("examples", None)
-        if examples:
-            params["examples"] = _parse_examples(examples)
-
+        chat, params = self._start_chat(messages=messages, stop=stop, **kwargs)
         msg_params = {}
         if "candidate_count" in params:
             msg_params["candidate_count"] = params.pop("candidate_count")
-        chat = self._start_chat(history, **params)
         response = await chat.send_message_async(question.content, **msg_params)
         generations = [
             ChatGeneration(message=AIMessage(content=r.text))
@@ -261,13 +251,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         question = _get_question(messages)
-        history = _parse_chat_history(messages[:-1])
-        params = self._prepare_params(stop=stop, **kwargs)
-        examples = kwargs.get("examples", None)
-        if examples:
-            params["examples"] = _parse_examples(examples)
-
-        chat = self._start_chat(history, **params)
+        chat, params = self._start_chat(messages=messages, stop=stop, **kwargs)
         responses = chat.send_message_streaming(question.content, **params)
         for response in responses:
             if run_manager:
@@ -282,13 +266,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         question = _get_question(messages)
-        history = _parse_chat_history(messages[:-1])
-        params = self._prepare_params(stop=stop, **kwargs)
-        examples = kwargs.get("examples", None)
-        if examples:
-            params["examples"] = _parse_examples(examples)
-
-        chat = self._start_chat(history, **params)
+        chat, params = self._start_chat(messages=messages, stop=stop, **kwargs)
         responses = chat.send_message_streaming_async(question.content, **params)
         async for response in responses:
             if run_manager:
@@ -296,8 +274,17 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             yield ChatGenerationChunk(message=AIMessageChunk(content=response.text))
 
     def _start_chat(
-        self, history: _ChatHistory, **kwargs: Any
-    ) -> Union[ChatSession, CodeChatSession]:
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Tuple[Union[ChatSession, CodeChatSession], dict]:
+        history = _parse_chat_history(messages[:-1])
+        params = self._prepare_params(stop=stop, **kwargs)
+        examples = kwargs.get("examples", None)
+        if examples:
+            params["examples"] = _parse_examples(examples)
+
         if not self.is_codey_model:
             return self.client.start_chat(
                 context=history.context, message_history=history.history, **kwargs
