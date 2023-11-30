@@ -2,10 +2,10 @@ import datetime
 import warnings
 from typing import Any, Dict, Literal, Optional, Sequence, Union
 
+from langchain_core.utils import check_package_version
 from typing_extensions import TypedDict
 
 from langchain.chains.query_constructor.schema import AttributeInfo, VirtualColumnName
-from langchain.utils import check_package_version
 
 try:
     check_package_version("lark", gte_version="1.1.5")

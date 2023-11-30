@@ -30,7 +30,7 @@ pip install langchain
 
 With conda:
 ```bash
-pip install langsmith && conda install langchain -c conda-forge
+conda install langchain -c conda-forge
 ```
 
 ## 🤔 What is LangChain?

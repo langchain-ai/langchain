@@ -2,8 +2,8 @@
 from typing import List
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.schema import Document
 from langchain.utilities import WikipediaAPIWrapper
 
 
@@ -28,7 +28,7 @@ def assert_docs(docs: List[Document], all_meta: bool = False) -> None:
     for doc in docs:
         assert doc.page_content
         assert doc.metadata
-        main_meta = {"title", "summary"}
+        main_meta = {"title", "summary", "source"}
         assert set(doc.metadata).issuperset(main_meta)
         if all_meta:
             assert len(set(doc.metadata)) > len(main_meta)
@@ -39,6 +39,7 @@ def assert_docs(docs: List[Document], all_meta: bool = False) -> None:
 def test_load_success(api_client: WikipediaAPIWrapper) -> None:
     docs = api_client.load("HUNTER X HUNTER")
     assert len(docs) > 1
+    assert len(docs) <= 3
     assert_docs(docs, all_meta=False)
 
 
@@ -46,7 +47,17 @@ def test_load_success_all_meta(api_client: WikipediaAPIWrapper) -> None:
     api_client.load_all_available_meta = True
     docs = api_client.load("HUNTER X HUNTER")
     assert len(docs) > 1
+    assert len(docs) <= 3
     assert_docs(docs, all_meta=True)
+
+
+def test_load_more_docs_success(api_client: WikipediaAPIWrapper) -> None:
+    top_k_results = 20
+    api_client = WikipediaAPIWrapper(top_k_results=top_k_results)
+    docs = api_client.load("HUNTER X HUNTER")
+    assert len(docs) > 10
+    assert len(docs) <= top_k_results
+    assert_docs(docs, all_meta=False)
 
 
 def test_load_no_result(api_client: WikipediaAPIWrapper) -> None:

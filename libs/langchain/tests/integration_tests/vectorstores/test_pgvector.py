@@ -2,9 +2,9 @@
 import os
 from typing import List
 
+from langchain_core.documents import Document
 from sqlalchemy.orm import Session
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.pgvector import PGVector
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 

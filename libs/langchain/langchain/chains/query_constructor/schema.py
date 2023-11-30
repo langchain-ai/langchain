@@ -1,6 +1,6 @@
 from typing import Callable, Optional, Union
+from langchain_core.pydantic_v1 import BaseModel
 
-from langchain.pydantic_v1 import BaseModel
 
 
 class VirtualColumnName(BaseModel):
