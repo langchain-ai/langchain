@@ -85,7 +85,7 @@ class ChatMlflow(BaseChatModel):
         if urlparse(self.target_uri).scheme not in allowed:
             raise ValueError(
                 f"Invalid target URI: {self.target_uri}. "
-                "The scheme must be one of {allowed}."
+                f"The scheme must be one of {allowed}."
             )
 
     @property

@@ -60,7 +60,7 @@ class MlflowEmbeddings(Embeddings, BaseModel):
         if urlparse(self.target_uri).scheme not in allowed:
             raise ValueError(
                 f"Invalid target URI: {self.target_uri}. "
-                "The scheme must be one of {allowed}."
+                f"The scheme must be one of {allowed}."
             )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
