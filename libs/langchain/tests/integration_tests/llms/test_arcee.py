@@ -26,7 +26,9 @@ def test_arcee_api_key_is_secret_string(mock_get: MagicMock) -> None:
 
 
 @patch("langchain.utilities.arcee.requests.get")
-def test_api_key_masked_when_passed_via_constructor(mock_get: MagicMock, capsys: CaptureFixture) -> None:
+def test_api_key_masked_when_passed_via_constructor(
+    mock_get: MagicMock, capsys: CaptureFixture
+) -> None:
     mock_response = mock_get.return_value
     mock_response.status_code = 200
     mock_response.json.return_value = {
@@ -47,8 +49,9 @@ def test_api_key_masked_when_passed_via_constructor(mock_get: MagicMock, capsys:
 
 
 @patch("langchain.utilities.arcee.requests.get")
-def test_api_key_masked_when_passed_from_env(mock_get: MagicMock, capsys: CaptureFixture,
-                                             monkeypatch: MonkeyPatch) -> None:
+def test_api_key_masked_when_passed_from_env(
+    mock_get: MagicMock, capsys: CaptureFixture, monkeypatch: MonkeyPatch
+) -> None:
     mock_response = mock_get.return_value
     mock_response.status_code = 200
     mock_response.json.return_value = {
