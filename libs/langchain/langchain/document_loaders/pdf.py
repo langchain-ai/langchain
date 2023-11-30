@@ -194,7 +194,10 @@ class PyPDFium2Loader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
 
 
@@ -284,7 +287,10 @@ class PDFMinerLoader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazily load documents."""
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
 
 
@@ -318,7 +324,9 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
                 laparams=LAParams(),
                 output_type="html",
             )
-        metadata = {"source": self.file_path}
+        metadata = {
+            "source": self.file_path if self.web_path is None else self.web_path
+        }
         return [Document(page_content=output_string.getvalue(), metadata=metadata)]
 
 
@@ -357,7 +365,10 @@ class PyMuPDFLoader(BasePDFLoader):
         parser = PyMuPDFParser(
             text_kwargs=text_kwargs, extract_images=self.extract_images
         )
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
 
@@ -523,7 +534,10 @@ class PDFPlumberLoader(BasePDFLoader):
             dedupe=self.dedupe,
             extract_images=self.extract_images,
         )
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
 
