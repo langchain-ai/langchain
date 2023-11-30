@@ -97,7 +97,7 @@ class ChatMlflow(BaseChatModel):
             "n": self.n,
             "stop": self.stop,
             "max_tokens": self.max_tokens,
-            **self.extra_params,
+            "extra_params": self.extra_params,
         }
         return params
 
