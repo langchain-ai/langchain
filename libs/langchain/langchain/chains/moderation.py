@@ -47,7 +47,6 @@ class OpenAIModerationChain(Chain):
             default="",
         )
         try:
-            import openai
             from openai import OpenAI
 
             if openai_organization:

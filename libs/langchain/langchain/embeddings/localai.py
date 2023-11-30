@@ -253,7 +253,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         if self.openai_proxy:
             from openai import OpenAI
 
-            client = OpenAI(
+            OpenAI(
                 proxy={
                     "http": self.openai_proxy,
                     "https": self.openai_proxy,

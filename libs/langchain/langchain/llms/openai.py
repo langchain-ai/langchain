@@ -599,7 +599,7 @@ class BaseOpenAI(BaseLLM):
         if self.openai_proxy:
             from openai import OpenAI
 
-            client = OpenAI(
+            OpenAI(
                 proxy={"http": self.openai_proxy, "https": self.openai_proxy}
             )  # type: ignore[assignment]  # noqa: E501
         return {**openai_creds, **self._default_params}
@@ -1020,11 +1020,12 @@ class OpenAIChat(BaseLLM):
             values, "openai_organization", "OPENAI_ORGANIZATION", default=""
         )
         try:
-            import openai
             from openai import OpenAI
 
             params = {}
 
+            if openai_api_key:
+                params["api_key"] = openai_api_key
             if openai_api_base:
                 params["api_base"] = openai_api_base
             if openai_organization:
@@ -1038,7 +1039,7 @@ class OpenAIChat(BaseLLM):
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = openai.ChatCompletion
+            values["client"] = client
         except AttributeError:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
