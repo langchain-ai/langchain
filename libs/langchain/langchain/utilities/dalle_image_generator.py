@@ -43,20 +43,12 @@ class DallEAPIWrapper(BaseModel):
         )
         try:
             from openai import OpenAI
-<<<<<<< HEAD
 
             client = OpenAI(
                 api_key=openai_api_key,  # this is also the default, it can be omitted
             )
 
             values["client"] = client
-=======
-            import openai
-
-            client = OpenAI(api_key=openai_api_key)
-            
-            values["client"] = openai.Image
->>>>>>> dalle image generation api fix
         except ImportError as e:
             raise ImportError(
                 "Could not import openai python package. "

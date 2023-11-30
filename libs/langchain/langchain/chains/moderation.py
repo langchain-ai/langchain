@@ -54,7 +54,7 @@ class OpenAIModerationChain(Chain):
                 client = OpenAI(organization=openai_organization, api_key=openai_api_key)
             else:
                 client = OpenAI(api_key=openai_api_key)
-            values["client"] = openai.Moderation
+            values["client"] = client
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
