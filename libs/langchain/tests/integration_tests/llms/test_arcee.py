@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 
+import pytest
 from pydantic import SecretStr
 
 from langchain.llms.arcee import Arcee
@@ -14,30 +15,27 @@ class TestApiConfigSecurity(unittest.TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = {"model_id": "", "status": "training_complete"}
 
-        self.arcee = Arcee(
+        self.arcee_without_env_var = Arcee(
             model="DALM-PubMed",
             arcee_api_key="secret_api_key",
             arcee_api_url="localhost",
             arcee_api_version="version",
         )
 
+
+    @pytest.fixture(autouse=True)
+    def capsys(self, capsys):
+        self.capsys = capsys
+
+    @pytest.fixture(autouse=True)
+    def monkeypatch(self, monkeypatch):
+        self.monkeypatch = monkeypatch
+
     def test_arcee_api_key_is_secret_string(self) -> None:
+        self.assertTrue(isinstance(self.arcee_without_env_var.arcee_api_key, SecretStr))
 
-        self.assertTrue(isinstance(self.arcee.arcee_api_key, SecretStr))
+    def test_api_key_masked_when_passed_via_constructor(self) -> None:
+        print(self.arcee_without_env_var.arcee_api_key, end="")
+        captured = self.capsys.readouterr()
 
-# def test_api_key_securely_wrapped(self):
-#     # Ensure that the API key is securely wrapped using SecretStr.
-#     config = ApiConfig(api_key="your_api_key_here")
-#     self.assertIsInstance(config.api_key, SecretStr)
-#
-# def test_no_secret_in_logs(self):
-#     # Ensure that sensitive data is not exposed in logs.
-#     config = ApiConfig(api_key="your_api_key_here")
-#     log_output = some_logging_function(config.api_key.get_secret_value())
-#     self.assertNotIn("your_api_key_here", log_output)
-#
-# def test_proper_access_control(self):
-#     # Ensure that proper access control is enforced for sensitive data.
-#     config = ApiConfig(api_key="your_api_key_here")
-#     # Perform actions that require API key and assert proper access control.
-#     self.assertTrue(some_function_requiring_api_key(config.api_key.get_secret_value()))
+        assert captured.out == "**********"
