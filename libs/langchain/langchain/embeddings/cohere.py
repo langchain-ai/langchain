@@ -1,8 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 
@@ -18,7 +17,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import CohereEmbeddings
             cohere = CohereEmbeddings(
-                model="embed-english-light-v3.0", cohere_api_key="my-api-key"
+                model="embed-english-light-v3.0", input_type="search_document", cohere_api_key="my-api-key"
             )
     """
 
@@ -28,6 +27,23 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """Cohere async client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
+    input_type: Optional[str] = None
+    """
+    This applies to embed v3 models only.
+
+    input_type="search_document": Use this for texts (documents) you want to
+    store in your vector database
+    input_type="search_query": Use this for search queries to find the most
+    relevant documents in your vector database
+    input_type="classification": Use this if you use the embeddings as an input
+    for a classification system
+    input_type="clustering": Use this if you use the embeddings for text
+    clustering
+
+    Using these input types ensures the highest possible quality for the
+    respective tasks. If you want to use the embeddings for multiple use
+    cases, we recommend using input_type="search_document".
+    """
 
     truncate: Optional[str] = None
     """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
@@ -90,7 +106,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.embed(
             model=self.model,
             texts=texts,
-            input_type="search_document",
+            input_type=self.input_type or "search_document",
             truncate=self.truncate,
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
@@ -107,7 +123,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = await self.async_client.embed(
             model=self.model,
             texts=texts,
-            input_type="search_document",
+            input_type=self.input_type or "search_document",
             truncate=self.truncate,
         )
         return [list(map(float, e)) for e in embeddings.embeddings]
@@ -124,7 +140,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.embed(
             model=self.model,
             texts=[text],
-            input_type="search_query",
+            input_type=self.input_type or "search_query",
             truncate=self.truncate,
         ).embeddings
         return [list(map(float, e)) for e in embeddings][0]
@@ -141,7 +157,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = await self.async_client.embed(
             model=self.model,
             texts=[text],
-            input_type="search_query",
+            input_type=self.input_type or "search_query",
             truncate=self.truncate,
         )
         return [list(map(float, e)) for e in embeddings.embeddings][0]
