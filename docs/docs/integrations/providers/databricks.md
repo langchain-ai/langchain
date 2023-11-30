@@ -29,7 +29,6 @@ Databricks as an LLM provider
 
 The notebook [Wrap Databricks endpoints as LLMs](/docs/integrations/llms/databricks) illustrates the method to wrap Databricks endpoints as LLMs in LangChain. It supports two types of endpoints: the serving endpoint, which is recommended for both production and development, and the cluster driver proxy app, which is recommended for interactive development. 
 
-
 Databricks External Models
 --------------------------
 
