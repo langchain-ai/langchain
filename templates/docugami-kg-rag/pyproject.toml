@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "docugami-kg-rag"
 version = "0.1.0"
-description = ""
+description = "This template contains a reference architecture for Retrieval Augmented Generation against a set of documents using Docugami's XML Knowledge Graph (KG-RAG)."
 authors = [
     "Docugami <contact@docugami.com>",
 ]
@@ -40,8 +40,11 @@ ignore = ["E501"]
 export_module = "docugami_kg_rag"
 export_attr = "chain"
 
-[tool.poetry.scripts]
-index = "docugami_kg_rag.cli:app"
+[tool.templates-hub]
+use-case = "rag"
+author = "Docugami"
+integrations = ["OpenAI", "Pinecone"]
+tags = ["vectordbs"]
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"

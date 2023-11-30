@@ -17,7 +17,6 @@ export OPENAI_API_KEY=...
 export PINECONE_API_KEY=...
 export PINECONE_ENVIRONMENT=...
 
-export DG_ENVIRONMENT=Production
 export DOCUGAMI_API_KEY=...
 ```
 
@@ -27,7 +26,7 @@ Note that Pinecone only allows one index for your free starter project.
 
 ### Indexing
 
-Before you can run your app, you need to build your index in Pinecone.io. See [cli.py](./docugami_kg_rag/cli.py) which you can directly run via `poetry run index` after setting the environment variables as specified above. The CLI will query docsets in the workspace corresponding to your `DOCUGAMI_API_KEY` and let you pick which one(s) you want to index. When this is done, you can check to make your index is created and populated in Pinecone.io.
+Before you can run your app, you need to build your index in Pinecone.io. See [ingest.py](./ingest.py) which you can run via `poetry run python ingest.py` after setting the environment variables as specified above. The CLI will query docsets in the workspace corresponding to your `DOCUGAMI_API_KEY` and let you pick which one(s) you want to index. When this is done, you can check to make sure your index is created and populated in Pinecone.io. Additionally, a `temp` directory will be created and used for various caching purposes.
 
 Indexing in this template uses the Docugami Loader for LangChain to create semantic chunks out of your documents. Refer to this [documentation](https://python.langchain.com/docs/integrations/document_loaders/docugami) for details.
 

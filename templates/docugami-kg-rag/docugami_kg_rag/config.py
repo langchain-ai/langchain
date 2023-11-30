@@ -92,9 +92,3 @@ SMALL_FRAGMENT_MAX_TEXT_LENGTH = 1024 * 4
 LARGE_FRAGMENT_MAX_TEXT_LENGTH = 1024 * 20
 
 BATCH_SIZE = 5
-
-# LangSmith options (set for tracing)
-LANGCHAIN_TRACING_V2 = True
-LANGCHAIN_ENDPOINT = "https://api.smith.langchain.com"
-LANGCHAIN_API_KEY = os.environ.get("LANGCHAIN_API_KEY", "")
-LANGCHAIN_PROJECT = os.environ.get("LANGCHAIN_PROJECT", "")
