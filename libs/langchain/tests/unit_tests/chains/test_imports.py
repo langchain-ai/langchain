@@ -46,7 +46,6 @@ EXPECTED_ALL = [
     "TransformChain",
     "VectorDBQA",
     "VectorDBQAWithSourcesChain",
-    "VideoCaptioningChain",
     "create_citation_fuzzy_match_chain",
     "create_extraction_chain",
     "create_extraction_chain_pydantic",
