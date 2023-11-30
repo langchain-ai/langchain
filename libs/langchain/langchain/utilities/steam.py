@@ -2,7 +2,6 @@
 
 from typing import Any
 
-import steamspypi
 from bs4 import BeautifulSoup
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
@@ -13,7 +12,7 @@ from langchain.tools.steam.prompt import (
 
 
 class SteamWebAPIWrapper(BaseModel):
-    # Steam WebAPI Implementation will go here...
+    """Wrapper for Steam API."""
 
     steam: Any  # for python-steam-api
 
@@ -117,6 +116,10 @@ class SteamWebAPIWrapper(BaseModel):
         return self.steam.users.get_owned_games(steam_id, False, False)
 
     def recommended_games(self, steam_id: str) -> dict:
+        try:
+            import steamspypi
+        except ImportError:
+            raise ImportError("steamspypi library is not installed.")
         users_games = self.get_users_games(steam_id)
         result = {}
         most_popular_genre = ""
