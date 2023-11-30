@@ -38,8 +38,8 @@ class HuggingFaceChatWrapper(BaseChatModel):
     """
 
     llm: Union[HuggingFaceTextGenInference, HuggingFaceEndpoint, HuggingFaceHub]
-    tokenizer: Any
     system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
+    tokenizer: Optional[Any] = None
     model_id: Optional[str] = None
 
     def __init__(self, **kwargs):
@@ -48,7 +48,11 @@ class HuggingFaceChatWrapper(BaseChatModel):
         from transformers import AutoTokenizer
 
         self._resolve_model_id()
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
+        self.tokenizer = (
+            AutoTokenizer.from_pretrained(self.model_id)
+            if self.tokenizer is None
+            else self.tokenizer
+        )
 
     def _generate(
         self,
