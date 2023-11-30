@@ -480,6 +480,12 @@ def _import_python_tool_PythonREPLTool() -> Any:
     )
 
 
+def _import_reddit_search_RedditSearchRun() -> Any:
+    from langchain.tools.reddit_search.tool import RedditSearchRun
+
+    return RedditSearchRun
+
+
 def _import_render() -> Any:
     from langchain.tools.render import format_tool_to_openai_function
 
@@ -610,6 +616,12 @@ def _import_sql_database_tool_QuerySQLDataBaseTool() -> Any:
     from langchain.tools.sql_database.tool import QuerySQLDataBaseTool
 
     return QuerySQLDataBaseTool
+
+
+def _import_stackexchange_tool() -> Any:
+    from langchain.tools.stackexchange.tool import StackExchangeTool
+
+    return StackExchangeTool
 
 
 def _import_steamship_image_generation() -> Any:
@@ -827,6 +839,8 @@ def __getattr__(name: str) -> Any:
         return _import_python_tool_PythonAstREPLTool()
     elif name == "PythonREPLTool":
         return _import_python_tool_PythonREPLTool()
+    elif name == "RedditSearchRun":
+        return _import_reddit_search_RedditSearchRun()
     elif name == "format_tool_to_openai_function":
         return _import_render()
     elif name == "BaseRequestsTool":
@@ -871,6 +885,8 @@ def __getattr__(name: str) -> Any:
         return _import_sql_database_tool_QuerySQLCheckerTool()
     elif name == "QuerySQLDataBaseTool":
         return _import_sql_database_tool_QuerySQLDataBaseTool()
+    elif name == "StackExchangeTool":
+        return _import_stackexchange_tool()
     elif name == "SteamshipImageGenerationTool":
         return _import_steamship_image_generation()
     elif name == "VectorStoreQATool":
@@ -975,6 +991,7 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
@@ -992,6 +1009,7 @@ __all__ = [
     "ShellTool",
     "SleepTool",
     "StdInInquireTool",
+    "StackExchangeTool",
     "SteamshipImageGenerationTool",
     "StructuredTool",
     "Tool",
