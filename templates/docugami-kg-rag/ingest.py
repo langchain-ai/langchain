@@ -1,12 +1,10 @@
-import sys
-from typing import Optional
-
 import typer
 from docugami import Docugami
 
 from docugami_kg_rag.helpers.indexing import index_docset
 
 docugami_client = Docugami()
+
 
 def main():
     docsets_response = docugami_client.docsets.list()
@@ -49,6 +47,7 @@ def main():
             raise Exception(f"Docset must have ID as well as Name: {docset}")
 
         index_docset(docset.id, docset.name, force)
+
 
 if __name__ == "__main__":
     main()
