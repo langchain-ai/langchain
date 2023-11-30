@@ -3,7 +3,8 @@ import re
 from pathlib import Path
 from typing import Any, Iterator, List, Mapping, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.utilities.bibtex import BibtexparserWrapper
 

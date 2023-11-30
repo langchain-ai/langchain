@@ -7,16 +7,17 @@ https://learn.microsoft.com/en-us/graph/auth/
 from datetime import datetime as dt
 from typing import Any, Dict, List, Optional, Type
 
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field
+
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Extra, Field
 from langchain.tools.office365.base import O365BaseTool
-from langchain.tools.office365.utils import clean_body
+from langchain.tools.office365.utils import UTC_FORMAT, clean_body
 
 
 class SearchEventsInput(BaseModel):
-    """Input for SearchEmails Tool."""
+    """Input for SearchEmails Tool.
 
-    """From https://learn.microsoft.com/en-us/graph/search-query-parameter"""
+    From https://learn.microsoft.com/en-us/graph/search-query-parameter"""
 
     start_datetime: str = Field(
         description=(
@@ -46,7 +47,7 @@ class SearchEventsInput(BaseModel):
         default=True,
         description=(
             "Whether the event's body is truncated to meet token number limits. Set to "
-            "False for searches that will retrieve very few results, otherwise, set to "
+            "False for searches that will retrieve small events, otherwise, set to "
             "True."
         ),
     )
@@ -81,16 +82,15 @@ class O365SearchEvents(O365BaseTool):
         max_results: int = 10,
         truncate: bool = True,
         run_manager: Optional[CallbackManagerForToolRun] = None,
+        truncate_limit: int = 150,
     ) -> List[Dict[str, Any]]:
-        TRUNCATE_LIMIT = 150
-
         # Get calendar object
         schedule = self.account.schedule()
         calendar = schedule.get_default_calendar()
 
         # Process the date range parameters
-        start_datetime_query = dt.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S%z")
-        end_datetime_query = dt.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S%z")
+        start_datetime_query = dt.strptime(start_datetime, UTC_FORMAT)
+        end_datetime_query = dt.strptime(end_datetime, UTC_FORMAT)
 
         # Run the query
         q = calendar.new_query("start").greater_equal(start_datetime_query)
@@ -106,7 +106,7 @@ class O365SearchEvents(O365BaseTool):
             output_event["subject"] = event.subject
 
             if truncate:
-                output_event["body"] = clean_body(event.body)[:TRUNCATE_LIMIT]
+                output_event["body"] = clean_body(event.body)[:truncate_limit]
             else:
                 output_event["body"] = clean_body(event.body)
 
@@ -114,14 +114,14 @@ class O365SearchEvents(O365BaseTool):
             time_zone = start_datetime_query.tzinfo
             # Assign the datetimes in the search time zone
             output_event["start_datetime"] = event.start.astimezone(time_zone).strftime(
-                "%Y-%m-%dT%H:%M:%S%z"
+                UTC_FORMAT
             )
             output_event["end_datetime"] = event.end.astimezone(time_zone).strftime(
-                "%Y-%m-%dT%H:%M:%S%z"
+                UTC_FORMAT
             )
             output_event["modified_date"] = event.modified.astimezone(
                 time_zone
-            ).strftime("%Y-%m-%dT%H:%M:%S%z")
+            ).strftime(UTC_FORMAT)
 
             output_events.append(output_event)
 

@@ -2,8 +2,8 @@ from typing import Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.psychic import PsychicLoader
 
 
