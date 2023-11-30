@@ -111,7 +111,7 @@ class SQLDatabaseChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        input_text = f"{inputs[self.input_key]}\nSQL_QUERY"
+        input_text = f"{inputs[self.input_key]}\n{SQL_QUERY}"
         _run_manager.on_text(input_text, verbose=self.verbose)
         # If not present, then defaults to None which is all tables.
         table_names_to_use = inputs.get("table_names_to_use")
