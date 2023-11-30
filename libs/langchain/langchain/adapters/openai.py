@@ -11,8 +11,11 @@ from typing import (
     Sequence,
     Union,
     overload,
+    Optional,
 )
 
+from typing_extensions import Literal
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.chat_sessions import ChatSession
 from langchain_core.messages import (
     AIMessage,
@@ -25,7 +28,6 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from typing_extensions import Literal
 
 
 async def aenumerate(
@@ -262,3 +264,109 @@ def convert_messages_for_finetuning(
         for session in sessions
         if _has_assistant_message(session)
     ]
+
+
+
+class Choice(BaseModel):
+    message: dict
+
+
+class ChatCompletions(BaseModel):
+    choices: List[Choice]
+
+
+class Completions:
+    """Completion."""
+
+    @overload
+    @staticmethod
+    def create(
+        messages: Sequence[Dict[str, Any]],
+        *,
+        provider: str = "ChatOpenAI",
+        stream: Literal[False] = False,
+        **kwargs: Any,
+    ) -> ChatCompletions:
+        ...
+
+    @overload
+    @staticmethod
+    def create(
+        messages: Sequence[Dict[str, Any]],
+        *,
+        provider: str = "ChatOpenAI",
+        stream: Literal[True],
+        **kwargs: Any,
+    ) -> Iterable:
+        ...
+
+    @staticmethod
+    def create(
+        messages: Sequence[Dict[str, Any]],
+        *,
+        provider: str = "ChatOpenAI",
+        stream: bool = False,
+        **kwargs: Any,
+    ) -> Union[ChatCompletions, Iterable]:
+        models = importlib.import_module("langchain.chat_models")
+        model_cls = getattr(models, provider)
+        model_config = model_cls(**kwargs)
+        converted_messages = convert_openai_messages(messages)
+        if not stream:
+            result = model_config.invoke(converted_messages)
+            return ChatCompletions(choices=[Choice(message=convert_message_to_dict(result))])
+        else:
+            return (
+                _convert_message_chunk_to_delta(c, i)
+                for i, c in enumerate(model_config.stream(converted_messages))
+            )
+
+    @overload
+    @staticmethod
+    async def acreate(
+        messages: Sequence[Dict[str, Any]],
+        *,
+        provider: str = "ChatOpenAI",
+        stream: Literal[False] = False,
+        **kwargs: Any,
+    ) -> ChatCompletions:
+        ...
+
+    @overload
+    @staticmethod
+    async def acreate(
+        messages: Sequence[Dict[str, Any]],
+        *,
+        provider: str = "ChatOpenAI",
+        stream: Literal[True],
+        **kwargs: Any,
+    ) -> AsyncIterator:
+        ...
+
+    @staticmethod
+    async def acreate(
+        messages: Sequence[Dict[str, Any]],
+        *,
+        provider: str = "ChatOpenAI",
+        stream: bool = False,
+        **kwargs: Any,
+    ) -> Union[ChatCompletions, AsyncIterator]:
+        models = importlib.import_module("langchain.chat_models")
+        model_cls = getattr(models, provider)
+        model_config = model_cls(**kwargs)
+        converted_messages = convert_openai_messages(messages)
+        if not stream:
+            result = await model_config.ainvoke(converted_messages)
+            return ChatCompletions(choices=[Choice(message=convert_message_to_dict(result))])
+        else:
+            return (
+                _convert_message_chunk_to_delta(c, i)
+                async for i, c in aenumerate(model_config.astream(converted_messages))
+            )
+
+class Chat:
+    def __init__(self) -> None:
+        self.completions = Completions()
+
+
+chat = Chat()
