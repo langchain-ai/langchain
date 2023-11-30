@@ -1,15 +1,14 @@
 """Filter that uses an LLM to rerank documents listwise and select top-k."""
 import logging
-
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
+from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from langchain.prompts import PromptTemplate
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.schema import BasePromptTemplate, Document
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 
 logger = logging.getLogger(__name__)
 
