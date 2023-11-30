@@ -233,11 +233,14 @@ class ContextSet(RunnableSerializable):
 
 class Context:
     @staticmethod
-    def getter(key: Union[str, List[str]]) -> ContextGet:
+    def getter(key: Union[str, List[str]], /) -> ContextGet:
         return ContextGet(key)
 
     @staticmethod
     def setter(
-        key: Optional[str] = None, value: Optional[SetValue] = None, **kwargs: SetValue
+        _key: Optional[str] = None,
+        _value: Optional[SetValue] = None,
+        /,
+        **kwargs: SetValue,
     ) -> ContextSet:
-        return ContextSet(key, value, **kwargs)
+        return ContextSet(_key, _value, **kwargs)

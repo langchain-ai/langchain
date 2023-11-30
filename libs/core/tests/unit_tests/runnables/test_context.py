@@ -148,6 +148,28 @@ test_cases = [
     (
         (
             PromptTemplate.from_template("{foo} {bar}")
+            | Context.setter(prompt_str=lambda x: x.to_string())
+            | FakeListLLM(responses=["hello"])
+            | StrOutputParser()
+            | {
+                "response": RunnablePassthrough(),
+                "prompt_str": Context.getter("prompt_str"),
+            }
+        ),
+        (
+            TestCase(
+                {"foo": "foo", "bar": "bar"},
+                {"response": "hello", "prompt_str": "foo bar"},
+            ),
+            TestCase(
+                {"foo": "bar", "bar": "foo"},
+                {"response": "hello", "prompt_str": "bar foo"},
+            ),
+        ),
+    ),
+    (
+        (
+            PromptTemplate.from_template("{foo} {bar}")
             | Context.setter("prompt_str", lambda x: x.to_string())
             | FakeListLLM(responses=["hello"])
             | StrOutputParser()
