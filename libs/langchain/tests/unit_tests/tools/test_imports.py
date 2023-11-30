@@ -78,6 +78,7 @@ EXPECTED_ALL = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
@@ -94,6 +95,7 @@ EXPECTED_ALL = [
     "SearxSearchRun",
     "ShellTool",
     "SleepTool",
+    "StackExchangeTool",
     "StdInInquireTool",
     "SteamshipImageGenerationTool",
     "StructuredTool",
@@ -110,6 +112,7 @@ EXPECTED_ALL = [
     "authenticate",
     "format_tool_to_openai_function",
     "tool",
+    "MerriamWebsterQueryRun",
 ]
 
 
