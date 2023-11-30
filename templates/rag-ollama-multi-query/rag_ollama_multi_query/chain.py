@@ -1,7 +1,6 @@
-import os
 
+from langchain.chat_models import ChatOllama, ChatOpenAI
 from langchain.document_loaders import WebBaseLoader
-from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel
@@ -9,8 +8,6 @@ from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chat_models import ChatOllama
-from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.vectorstores import Chroma
 
 # Load
