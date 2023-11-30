@@ -229,12 +229,14 @@ pretty_print_docs(compressed_docs)
 
 ### `ListRerank`
 
-`ListRerank` uses [zero-shot listwise document reranking](https://arxiv.org/pdf/2305.02156.pdf) and functions similarly to `LLMChainFilter` as a robust but more expensive option.
+`ListRerank` uses [zero-shot listwise document reranking](https://arxiv.org/pdf/2305.02156.pdf) and functions similarly to `LLMChainFilter` as a robust but more expensive option. It is recommended to use a more powerful LLM.
 
 
 ```python
+from langchain.chat_models import ChatOpenAI
 from langchain.retrievers.document_compressors import ListRerank
 
+llm = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0)
 _filter = ListRerank.from_llm(llm, top_n=1)
 compression_retriever = ContextualCompressionRetriever(base_compressor=_filter, base_retriever=retriever)
 
@@ -267,7 +269,7 @@ print(compressed_docs[0].metadata["relevance_score"])
 <CodeOutputBlock lang="python">
 
 ```
-0.99
+0.9
 ```
 
 </CodeOutputBlock>
