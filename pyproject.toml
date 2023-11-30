@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://www.github.com/langchain-ai/langchain"
 
 [project]
-name = "langchain-monorepo"
+name = "langchain"
 version = "0.0.1"
 
 [tool.setuptools]
