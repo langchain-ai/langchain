@@ -23,10 +23,13 @@ Sort the Documents by their relevance to the Query.
 {format_instructions}
 Sorted Documents:
     """
+    description = (
+        """Reranked documents. Format: {"document_id": <int>, "score": <number>}"""
+    )
     response_schemas = [
         ResponseSchema(
             name="reranked_documents",
-            description="""Reranked documents. Format: {"document_id": <int>, "score": <number>}""",
+            description=description,
             type="array[dict]",
         )
     ]
@@ -63,7 +66,7 @@ class ListRerank(BaseDocumentCompressor):
     """LLM wrapper to use for filtering documents."""
 
     get_input: Callable[[str, Document], dict] = default_get_input
-    """Callable for constructing the chain input from the query and a sequence of Documents."""
+    """Callable for constructing the chain input from the query and Documents."""
 
     fallback: bool = False
     """Whether to fallback to the original document scores if the LLM fails."""
@@ -121,7 +124,8 @@ class ListRerank(BaseDocumentCompressor):
         """Return the top documents by original ranking or raise an exception."""
         if self.fallback:
             logger.warning(
-                "Failed to generate or parse LLM response. Falling back to original scores."
+                "Failed to generate or parse LLM response. "
+                "Falling back to original scores."
             )
             return documents[: self.top_n]
         else:

@@ -16,7 +16,17 @@ input_docs = [
 def test__list_rerank_success() -> None:
     llm = FakeLLM(
         queries={
-            query: '```json {"reranked_documents": [{"document_id": 1, "score": 0.99}, {"document_id": 0, "score": 0.95}, {"document_id": 2, "score": 0.50}]}```'
+            query: """
+            ```json 
+            {
+                "reranked_documents": [
+                    {"document_id": 1, "score": 0.99}, 
+                    {"document_id": 0, "score": 0.95}, 
+                    {"document_id": 2, "score": 0.50}
+                ]
+            }
+            ```
+            """
         },
         sequential_responses=True,
     )
@@ -32,7 +42,17 @@ def test__list_rerank_success() -> None:
 def test__list_rerank_error() -> None:
     llm = FakeLLM(
         queries={
-            query: '```json {"reranked_documents": [{"<>": 1, "score": 0.99}, {"document_id": 0, "score": 0.95}, {"document_id": 2, "score": 0.50}]}```'
+            query: """
+            ```json 
+            {
+                "reranked_documents": [
+                    {"<>": 1, "score": 0.99}, 
+                    {"document_id": 0, "score": 0.95}, 
+                    {"document_id": 2, "score": 0.50}
+                ]
+            }
+            ```
+            """
         },
         sequential_responses=True,
     )
@@ -40,14 +60,24 @@ def test__list_rerank_error() -> None:
     list_rerank = ListRerank.from_llm(llm=llm, top_n=top_n)
 
     with pytest.raises(KeyError) as excinfo:
-        output_docs = list_rerank.compress_documents(input_docs, query)
+        list_rerank.compress_documents(input_docs, query)
     assert "document_id" in str(excinfo.value)
 
 
 def test__list_rerank_fallback() -> None:
     llm = FakeLLM(
         queries={
-            query: '```json {"reranked_documents": [{"<>": 1, "score": 0.99}, {"document_id": 0, "score": 0.95}, {"document_id": 2, "score": 0.50}]}```'
+            query: """
+            ```json 
+            {
+                "reranked_documents": [
+                    {"<>": 1, "score": 0.99}, 
+                    {"document_id": 0, "score": 0.95}, 
+                    {"document_id": 2, "score": 0.50}
+                ]
+            }
+            ```
+            """
         },
         sequential_responses=True,
     )
