@@ -20,7 +20,7 @@ class ChatDatabricks(ChatMlflow):
             chat = ChatDatabricks(
                 target_uri="databricks",
                 endpoint="chat",
-                params={"temperature": 0.1},
+                temperature-0.1,
             )
     """
 
