@@ -12,7 +12,7 @@ name = "langchain-monorepo"
 version = "0.0.1"
 
 [tool.setuptools]
-py-modules = []
+py-modules = ["libs"]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
