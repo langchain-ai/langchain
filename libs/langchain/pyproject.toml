@@ -245,7 +245,6 @@ all = [
     "clarifai",
     "cohere",
     "openai",
-    "opencv-python",
     "nlpcloud",
     "huggingface_hub",
     "manifest-ml",
@@ -390,6 +389,7 @@ extended_testing = [
  "databricks-vectorsearch",
  "dgml-utils",
  "cohere",
+ "opencv-python",
 ]
 
 [tool.ruff]
