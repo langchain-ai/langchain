@@ -199,7 +199,6 @@ class HuggingFacePipeline(BaseLLM):
             batch_prompts = prompts[i : i + self.batch_size]
             # Process batch of prompts
             responses = self.pipeline(batch_prompts)
-            print(responses)
 
             # Process each response in the batch
             for j, response in enumerate(responses):
@@ -252,7 +251,6 @@ class HuggingFacePipeline(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        print("HuggingFacePipeline _astream")
         try:
             from transformers import TextIteratorStreamer
             from threading import Thread
@@ -287,7 +285,6 @@ class HuggingFacePipeline(BaseLLM):
         tok = self.pipeline.tokenizer
         inputs = tok([prompt], return_tensors="pt")
         inputs = inputs.to('cuda')
-        print(vars(self.pipeline))
         if "max_length" in self.pipeline._forward_params:
             max_new_tokens = self.pipeline._forward_params["max_length"]
         else:
