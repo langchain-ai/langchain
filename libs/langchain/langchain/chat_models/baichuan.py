@@ -98,7 +98,7 @@ class ChatBaichuan(BaseChatModel):
 
     baichuan_api_base: str = Field(default=DEFAULT_API_BASE)
     """Baichuan custom endpoints"""
-    baichuan_api_key: Optional[str] = None
+    baichuan_api_key: Optional[SecretStr] = None
     """Baichuan API Key"""
     baichuan_secret_key: Optional[SecretStr] = None
     """Baichuan Secret Key"""
@@ -159,10 +159,12 @@ class ChatBaichuan(BaseChatModel):
             "BAICHUAN_API_BASE",
             DEFAULT_API_BASE,
         )
-        values["baichuan_api_key"] = get_from_dict_or_env(
-            values,
-            "baichuan_api_key",
-            "BAICHUAN_API_KEY",
+        values["baichuan_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "baichuan_api_key",
+                "BAICHUAN_API_KEY",
+            )
         )
         values["baichuan_secret_key"] = convert_to_secret_str(
             get_from_dict_or_env(
@@ -254,12 +256,16 @@ class ChatBaichuan(BaseChatModel):
             url = f"{url}/stream"
         url = f"{url}/chat"
 
+        api_key = ""
+        if self.baichuan_api_key:
+            api_key = self.baichuan_api_key.get_secret_value()
+
         res = requests.post(
             url=url,
             timeout=self.request_timeout,
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.baichuan_api_key}",
+                "Authorization": f"Bearer {api_key}",
                 "X-BC-Timestamp": str(timestamp),
                 "X-BC-Signature": _signature(
                     secret_key=self.baichuan_secret_key,
