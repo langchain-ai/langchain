@@ -251,16 +251,12 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             **self.model_kwargs,
         }
         if self.openai_proxy:
-            import openai
+            from openai import OpenAI
 
-            # TODO: The 'openai.proxy' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(proxy={
-            #                 "http": self.openai_proxy,
-            #                 "https": self.openai_proxy,
-            #             })'
-            # openai.proxy = {
-            #                 "http": self.openai_proxy,
-            #                 "https": self.openai_proxy,
-            #             }  # type: ignore[assignment]  # noqa: E501
+            client = OpenAI(proxy={
+                "http": self.openai_proxy,
+                "https": self.openai_proxy,
+            })
         return openai_args
 
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:
