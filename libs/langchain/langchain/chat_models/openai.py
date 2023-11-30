@@ -81,10 +81,10 @@ def _create_retry_decorator(
 
     errors = [
         openai.Timeout,
-        openai.error.APIError,
-        openai.error.APIConnectionError,
-        openai.error.RateLimitError,
-        openai.error.ServiceUnavailableError,
+        openai.APIError,
+        openai.APIConnectionError,
+        openai.RateLimitError,
+        openai.APIStatusError,
     ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
@@ -536,10 +536,9 @@ class ChatOpenAI(BaseChatModel):
                 }
             )
         if self.openai_proxy:
-            import openai
+            from openai import OpenAI
 
-            # TODO: The 'openai.proxy' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(proxy={"http": self.openai_proxy, "https": self.openai_proxy})'
-            # openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
+            client = OpenAI(proxy={"http": self.openai_proxy, "https": self.openai_proxy})
         return {**self._default_params, **openai_creds}
 
     def _get_invocation_params(
