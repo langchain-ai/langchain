@@ -34,9 +34,13 @@ from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
+from langchain.tools.google_lens.tool import GoogleLensQueryRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.google_scholar.tool import GoogleScholarQueryRun
+from langchain.tools.google_finance.tool import GoogleFinanceQueryRun
+from langchain.tools.google_trends.tool import GoogleTrendsQueryRun
 from langchain.tools.metaphor_search.tool import MetaphorSearchResults
+from langchain.tools.google_jobs.tool import GoogleJobsQueryRun
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
 from langchain.tools.searchapi.tool import SearchAPIResults, SearchAPIRun
 from langchain.tools.graphql.tool import BaseGraphQLTool
@@ -66,9 +70,13 @@ from langchain.utilities.golden_query import GoldenQueryAPIWrapper
 from langchain.utilities.pubmed import PubMedAPIWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
+from langchain.utilities.google_lens import GoogleLensAPIWrapper
+from langchain.utilities.google_jobs import GoogleJobsAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
+from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
+from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
 from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.graphql import GraphQLAPIWrapper
@@ -244,12 +252,28 @@ def _get_pubmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
 
 
+def _get_google_jobs(**kwargs: Any) -> BaseTool:
+    return GoogleJobsQueryRun(api_wrapper=GoogleJobsAPIWrapper(**kwargs))
+
+
+def _get_google_lens(**kwargs: Any) -> BaseTool:
+    return GoogleLensQueryRun(api_wrapper=GoogleLensAPIWrapper(**kwargs))
+
+
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
 
 
 def _get_google_scholar(**kwargs: Any) -> BaseTool:
     return GoogleScholarQueryRun(api_wrapper=GoogleScholarAPIWrapper(**kwargs))
+
+
+def _get_google_finance(**kwargs: Any) -> BaseTool:
+    return GoogleFinanceQueryRun(api_wrapper=GoogleFinanceAPIWrapper(**kwargs))
+
+
+def _get_google_trends(**kwargs: Any) -> BaseTool:
+    return GoogleTrendsQueryRun(api_wrapper=GoogleTrendsAPIWrapper(**kwargs))
 
 
 def _get_google_serper_results_json(**kwargs: Any) -> BaseTool:
@@ -379,10 +403,23 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "metaphor-search": (_get_metaphor_search, ["metaphor_api_key"]),
     "ddg-search": (_get_ddg_search, []),
+    "google-lens": (_get_google_lens, ["serp_api_key"]),
     "google-serper": (_get_google_serper, ["serper_api_key", "aiosession"]),
     "google-scholar": (
         _get_google_scholar,
         ["top_k_results", "hl", "lr", "serp_api_key"],
+    ),
+    "google-finance": (
+        _get_google_finance,
+        ["serp_api_key"],
+    ),
+    "google-trends": (
+        _get_google_trends,
+        ["serp_api_key"],
+    ),
+    "google-jobs": (
+        _get_google_jobs,
+        ["serp_api_key"],
     ),
     "google-serper-results-json": (
         _get_google_serper_results_json,
@@ -526,13 +563,14 @@ def load_tools(
     callbacks = _handle_callbacks(
         callback_manager=kwargs.get("callback_manager"), callbacks=callbacks
     )
+    # print(_BASE_TOOLS)
+    # print(1)
     for name in tool_names:
         if name == "requests":
             warnings.warn(
                 "tool name `requests` is deprecated - "
                 "please use `requests_all` or specify the requests method"
             )
-
         if name == "requests_all":
             # expand requests into various methods
             requests_method_tools = [
