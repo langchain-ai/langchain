@@ -2,8 +2,6 @@
 
 from typing import Any
 
-from bs4 import BeautifulSoup
-
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.tools.steam.prompt import (
     STEAM_GET_GAMES_DETAILS,
@@ -81,6 +79,8 @@ class SteamWebAPIWrapper(BaseModel):
         return game_info
 
     def remove_html_tags(self, html_string):
+        from bs4 import BeautifulSoup
+
         soup = BeautifulSoup(html_string, "html.parser")
         return soup.get_text()
 
@@ -115,7 +115,7 @@ class SteamWebAPIWrapper(BaseModel):
     def get_users_games(self, steam_id: str) -> list[str]:
         return self.steam.users.get_owned_games(steam_id, False, False)
 
-    def recommended_games(self, steam_id: str) -> dict:
+    def recommended_games(self, steam_id: str) -> str:
         try:
             import steamspypi
         except ImportError:
@@ -151,7 +151,7 @@ class SteamWebAPIWrapper(BaseModel):
             game for game in sorted_data if game["appid"] not in owned_games
         ]
         top_5_popular_not_owned = [game["name"] for game in remaining_games[:5]]
-        return top_5_popular_not_owned
+        return str(top_5_popular_not_owned)
 
     def run(self, mode: str, game: str) -> str:
         if mode == "get_games_details":
