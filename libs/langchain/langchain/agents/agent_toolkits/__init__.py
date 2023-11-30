@@ -29,7 +29,7 @@ from langchain.agents.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
 )
 from langchain.agents.agent_toolkits.gmail.toolkit import GmailToolkit
-from langchain.agents.agent_toolkits.IMDB.toolkit import IMDBToolkit
+from langchain.agents.agent_toolkits.imdb.toolkit import IMDBToolkit
 from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
 from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
@@ -88,6 +88,7 @@ __all__ = [
     "AzureCognitiveServicesToolkit",
     "FileManagementToolkit",
     "GmailToolkit",
+    "IMDBToolkit",
     "JiraToolkit",
     "JsonToolkit",
     "MultionToolkit",
@@ -112,5 +113,4 @@ __all__ = [
     "create_vectorstore_router_agent",
     "create_conversational_retrieval_agent",
     "create_retriever_tool",
-    "IMDBToolkit",
 ]

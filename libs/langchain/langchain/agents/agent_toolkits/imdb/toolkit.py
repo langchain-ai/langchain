@@ -15,7 +15,7 @@ from langchain.tools.imdb.search_person import IMDbSearchPerson
 
 
 class IMDBToolkit(BaseToolkit):
-    """Toolkit for interacting withIMDB."""
+    """Toolkit for interacting with IMDB."""
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
