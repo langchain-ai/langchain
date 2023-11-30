@@ -1,10 +1,16 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import numpy as np
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.video_captioning.models import VideoModel
 from langchain.document_loaders import ImageCaptionLoader
+
+try:
+    import cv2
+    from cv2.typing import MatLike
+except ImportError as e:
+    raise ImportError("The cv2 module is required for ImageProcessor.: %s" % e)
 
 
 class ImageProcessor:
@@ -13,11 +19,6 @@ class ImageProcessor:
     def __init__(self, frame_skip: int = -1, threshold: int = 3000000) -> None:
         self.threshold = threshold
         self.frame_skip = frame_skip
-
-    def _ensure_cv2(self):
-        global cv2
-        if "cv2" not in globals():
-            import cv2
 
     def process(
         self,
@@ -53,7 +54,7 @@ class ImageProcessor:
             )
             video_models.append(video_model)
 
-        def _is_notable_frame(frame1: Any, frame2: Any, threshold: int) -> bool:
+        def _is_notable_frame(frame1: MatLike, frame2: MatLike, threshold: int) -> bool:
             # Convert frames to grayscale
             gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
             gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
