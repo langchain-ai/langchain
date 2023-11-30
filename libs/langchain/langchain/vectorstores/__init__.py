@@ -140,6 +140,12 @@ def _import_dashvector() -> Any:
     return DashVector
 
 
+def _import_databricks_vector_search() -> Any:
+    from langchain.vectorstores.databricks_vector_search import DatabricksVectorSearch
+
+    return DatabricksVectorSearch
+
+
 def _import_deeplake() -> Any:
     from langchain.vectorstores.deeplake import DeepLake
 
@@ -461,6 +467,8 @@ def __getattr__(name: str) -> Any:
         return _import_clickhouse()
     elif name == "DashVector":
         return _import_dashvector()
+    elif name == "DatabricksVectorSearch":
+        return _import_databricks_vector_search()
     elif name == "DeepLake":
         return _import_deeplake()
     elif name == "Dingo":
@@ -575,6 +583,7 @@ __all__ = [
     "Clickhouse",
     "ClickhouseSettings",
     "DashVector",
+    "DatabricksVectorSearch",
     "DeepLake",
     "Dingo",
     "DocArrayHnswSearch",

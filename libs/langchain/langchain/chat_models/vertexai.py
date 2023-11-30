@@ -19,7 +19,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel, _generate_from_stream
+from langchain.chat_models.base import BaseChatModel, generate_from_stream
 from langchain.llms.vertexai import _VertexAICommon, is_codey_model
 from langchain.utilities.vertexai import raise_vertex_import_error
 
@@ -172,7 +172,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])

@@ -2,10 +2,10 @@ import io
 from typing import Any, Dict
 
 import pytest
+from langchain_core.documents import Document
 from pytest import raises
 from pytest_mock import MockerFixture
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.json_loader import JSONLoader
 
 pytestmark = pytest.mark.requires("jq")

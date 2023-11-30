@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 import logging
-import sqlite3
 import warnings
 from typing import (
+    TYPE_CHECKING,
     Any,
     Iterable,
     List,
@@ -13,10 +13,12 @@ from typing import (
     Type,
 )
 
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
+if TYPE_CHECKING:
+    import sqlite3
 
 logger = logging.getLogger(__name__)
 
@@ -204,6 +206,8 @@ class SQLiteVSS(VectorStore):
 
     @staticmethod
     def create_connection(db_file: str) -> sqlite3.Connection:
+        import sqlite3
+
         import sqlite_vss
 
         connection = sqlite3.connect(db_file)

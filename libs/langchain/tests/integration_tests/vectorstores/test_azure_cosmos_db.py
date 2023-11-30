@@ -5,8 +5,8 @@ from time import sleep
 from typing import Any, Generator, Optional, Union
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores.azure_cosmos_db import (
     AzureCosmosDBVectorSearch,

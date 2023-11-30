@@ -7,6 +7,8 @@ Additionally, it features a conversational memory module that stores the dialogu
 The conversation memory is uniquely maintained for each user session, ensuring personalized interactions.
 To facilitate this, please supply both the `user_id` and `session_id` when using the conversation chain.
 
+![Workflow diagram](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-memory/static/workflow.png)
+
 ## Environment Setup
 
 Define the following environment variables:
