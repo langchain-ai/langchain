@@ -10,6 +10,7 @@ HUGGING_FACE_EXAMPLE_DATASET = str(
 
 
 @pytest.mark.requires("datasets")
+@pytest.fixture
 def test_load_string() -> None:
     """Loads page_content of type string"""
     page_content_column = "text"
@@ -20,7 +21,7 @@ def test_load_string() -> None:
     )
     docs = loader.load()
 
-    # Length should be number of splits for specified `name``
+    # Length should be number of splits for specified `name`
     assert len(docs) == 2
     doc = docs[0]
     assert doc.page_content == '"This is text in version 1"'
@@ -32,6 +33,7 @@ def test_load_string() -> None:
 
 
 @pytest.mark.requires("datasets")
+@pytest.fixture
 def test_load_list() -> None:
     """Loads page_content of type List"""
     page_content_column = "list"
@@ -50,6 +52,7 @@ def test_load_list() -> None:
 
 
 @pytest.mark.requires("datasets")
+@pytest.fixture
 def test_load_object() -> None:
     """Loads page_content of type Object"""
     page_content_column = "dict"
@@ -71,6 +74,7 @@ def test_load_object() -> None:
 
 
 @pytest.mark.requires("datasets")
+@pytest.fixture
 def test_load_nonexistent_dataset() -> None:
     """Tests that ValueError is thrown for nonexistent dataset name"""
     page_content_column = "text"
@@ -84,6 +88,7 @@ def test_load_nonexistent_dataset() -> None:
 
 
 @pytest.mark.requires("datasets")
+@pytest.fixture
 def test_load_nonexistent_feature() -> None:
     """Tests that KeyError is thrown for nonexistent feature/key in dataset"""
     page_content_column = "langchain"
