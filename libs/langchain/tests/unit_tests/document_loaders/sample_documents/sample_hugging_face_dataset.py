@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import datasets
 
@@ -57,7 +57,7 @@ class SampleHuggingface(datasets.GeneratorBasedBuilder):
             ),
         ]
 
-    def _generate_examples(self, split, name) -> tuple[int, object]:
+    def _generate_examples(self, split, name) -> Tuple[int, object]:
         """This function returns the examples.
         Args:
             split (`string`):
