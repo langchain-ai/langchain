@@ -1,8 +1,6 @@
 import re
 from typing import Any, Dict, List, Tuple, Union
 
-import pandas as pd
-
 from langchain.output_parsers.format_instructions import (
     PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS,
 )
@@ -18,6 +16,8 @@ class PandasDataFrameOutputParser(BaseOutputParser):
 
     @validator("dataframe")
     def validate_dataframe(cls, val: Any) -> Any:
+        import pandas as pd
+
         if issubclass(type(val), pd.DataFrame):
             return val
         if pd.DataFrame(val).empty:
