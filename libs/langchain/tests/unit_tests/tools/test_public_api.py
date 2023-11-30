@@ -67,6 +67,7 @@ _EXPECTED = [
     "ListPowerBITool",
     "ListSQLDatabaseTool",
     "ListSparkSQLTool",
+    "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
     "MoveFileTool",
     "NavigateBackTool",
