@@ -1,8 +1,5 @@
 from typing import Any, List, Optional, Union
 
-from huggingface_hub import list_inference_endpoints
-from transformers import AutoTokenizer
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -47,6 +44,9 @@ class HuggingFaceChatWrapper(BaseChatModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        from transformers import AutoTokenizer
+
         self._resolve_model_id()
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
 
@@ -133,6 +133,9 @@ class HuggingFaceChatWrapper(BaseChatModel):
 
     def _resolve_model_id(self):
         """Resolve the model_id from the LLM's inference_server_url"""
+
+        from huggingface_hub import list_inference_endpoints
+
         available_endpoints = list_inference_endpoints("*")
 
         if isinstance(self.llm, HuggingFaceTextGenInference):
