@@ -1,10 +1,10 @@
 """Test GooseAI"""
 
 import pytest
+from langchain_core.pydantic_v1 import SecretStr
 from pytest import MonkeyPatch
 
 from langchain.llms.gooseai import GooseAI
-from langchain.pydantic_v1 import SecretStr
 from langchain.utils.openai import is_openai_v1
 
 

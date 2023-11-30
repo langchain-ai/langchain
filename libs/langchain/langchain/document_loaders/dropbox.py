@@ -3,7 +3,7 @@
 # 2. Give the app these scope permissions: `files.metadata.read`
 #    and `files.content.read`.
 # 3. Generate access token: https://www.dropbox.com/developers/apps/create.
-# 4. `pip install dropbox` (requires `pip install unstructured` for PDF filetype).
+# 4. `pip install dropbox` (requires `pip install unstructured[pdf]` for PDF filetype).
 
 
 import os
@@ -11,9 +11,10 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+
 from langchain.document_loaders.base import BaseLoader
-from langchain.pydantic_v1 import BaseModel, root_validator
 
 
 class DropboxLoader(BaseLoader, BaseModel):
@@ -117,11 +118,10 @@ class DropboxLoader(BaseLoader, BaseModel):
         try:
             text = response.content.decode("utf-8")
         except UnicodeDecodeError:
-            print(f"File {file_path} could not be decoded as text. Skipping.")
-
             file_extension = os.path.splitext(file_path)[1].lower()
 
             if file_extension == ".pdf":
+                print(f"File {file_path} type detected as .pdf")
                 from langchain.document_loaders import UnstructuredPDFLoader
 
                 # Download it to a temporary file.
@@ -138,6 +138,10 @@ class DropboxLoader(BaseLoader, BaseModel):
                 except Exception as pdf_ex:
                     print(f"Error while trying to parse PDF {file_path}: {pdf_ex}")
                     return None
+            else:
+                print(
+                    f"File {file_path} could not be decoded as pdf or text. Skipping."
+                )
 
             return None
 

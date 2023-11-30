@@ -5,8 +5,8 @@ import uuid
 from typing import Generator, List, Union
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings

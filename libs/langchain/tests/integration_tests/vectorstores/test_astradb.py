@@ -17,9 +17,9 @@ import os
 from typing import Iterable, List
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain.embeddings.base import Embeddings
-from langchain.schema import Document
 from langchain.vectorstores import AstraDB
 
 # Ad-hoc embedding classes:
