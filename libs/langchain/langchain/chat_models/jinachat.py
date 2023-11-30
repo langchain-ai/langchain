@@ -67,10 +67,10 @@ def _create_retry_decorator(llm: JinaChat) -> Callable[[Any], Any]:
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
             retry_if_exception_type(openai.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            | retry_if_exception_type(openai.APIError)
+            | retry_if_exception_type(openai.APIConnectionError)
+            | retry_if_exception_type(openai.RateLimitError)
+            | retry_if_exception_type(openai.APIStatusError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -263,10 +263,10 @@ class JinaChat(BaseChatModel):
             wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
             retry=(
                 retry_if_exception_type(openai.Timeout)
-                | retry_if_exception_type(openai.error.APIError)
-                | retry_if_exception_type(openai.error.APIConnectionError)
-                | retry_if_exception_type(openai.error.RateLimitError)
-                | retry_if_exception_type(openai.error.ServiceUnavailableError)
+                | retry_if_exception_type(openai.APIError)
+                | retry_if_exception_type(openai.APIConnectionError)
+                | retry_if_exception_type(openai.RateLimitError)
+                | retry_if_exception_type(openai.APIStatusError)
             ),
             before_sleep=before_sleep_log(logger, logging.WARNING),
         )
