@@ -44,6 +44,7 @@ from langchain.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.sparkllm import ChatSparkLLM
 from langchain.chat_models.vertexai import ChatVertexAI
+from langchain.chat_models.volcengine_maas import VolcEngineMaasChat
 from langchain.chat_models.yandex import ChatYandexGPT
 
 __all__ = [
@@ -75,4 +76,5 @@ __all__ = [
     "ChatHunyuan",
     "GigaChat",
     "ChatSparkLLM",
+    "VolcEngineMaasChat",
 ]

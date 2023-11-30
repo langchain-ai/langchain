@@ -195,19 +195,19 @@ class _VertexAICommon(_VertexAIBase):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        if self.is_codey_model:
-            return {
-                "temperature": self.temperature,
-                "max_output_tokens": self.max_output_tokens,
-            }
-        else:
-            return {
-                "temperature": self.temperature,
-                "max_output_tokens": self.max_output_tokens,
-                "top_k": self.top_k,
-                "top_p": self.top_p,
-                "candidate_count": self.n,
-            }
+        params = {
+            "temperature": self.temperature,
+            "max_output_tokens": self.max_output_tokens,
+            "candidate_count": self.n,
+        }
+        if not self.is_codey_model:
+            params.update(
+                {
+                    "top_k": self.top_k,
+                    "top_p": self.top_p,
+                }
+            )
+        return params
 
     @classmethod
     def _try_init_vertexai(cls, values: Dict) -> None:
@@ -250,24 +250,33 @@ class VertexAI(_VertexAICommon, BaseLLM):
         tuned_model_name = values.get("tuned_model_name")
         model_name = values["model_name"]
         try:
-            if not is_codey_model(model_name):
-                from vertexai.preview.language_models import TextGenerationModel
+            from vertexai.language_models import (
+                CodeGenerationModel,
+                TextGenerationModel,
+            )
+            from vertexai.preview.language_models import (
+                CodeGenerationModel as PreviewCodeGenerationModel,
+            )
+            from vertexai.preview.language_models import (
+                TextGenerationModel as PreviewTextGenerationModel,
+            )
 
-                if tuned_model_name:
-                    values["client"] = TextGenerationModel.get_tuned_model(
-                        tuned_model_name
-                    )
-                else:
-                    values["client"] = TextGenerationModel.from_pretrained(model_name)
+            if is_codey_model(model_name):
+                model_cls = CodeGenerationModel
+                preview_model_cls = PreviewCodeGenerationModel
             else:
-                from vertexai.preview.language_models import CodeGenerationModel
+                model_cls = TextGenerationModel
+                preview_model_cls = PreviewTextGenerationModel
 
-                if tuned_model_name:
-                    values["client"] = CodeGenerationModel.get_tuned_model(
-                        tuned_model_name
-                    )
-                else:
-                    values["client"] = CodeGenerationModel.from_pretrained(model_name)
+            if tuned_model_name:
+                values["client"] = model_cls.get_tuned_model(tuned_model_name)
+                values["client_preview"] = preview_model_cls.get_tuned_model(
+                    tuned_model_name
+                )
+            else:
+                values["client"] = model_cls.from_pretrained(model_name)
+                values["client_preview"] = preview_model_cls.from_pretrained(model_name)
+
         except ImportError:
             raise_vertex_import_error()
 
@@ -287,12 +296,9 @@ class VertexAI(_VertexAICommon, BaseLLM):
             The integer number of tokens in the text.
         """
         try:
-            result = self.client.count_tokens([text])
+            result = self.client_preview.count_tokens([text])
         except AttributeError:
-            raise NotImplementedError(
-                "Your google-cloud-aiplatform version didn't implement count_tokens."
-                "Please, install it with pip install google-cloud-aiplatform>=1.35.0"
-            )
+            raise_vertex_import_error()
 
         return result.total_tokens
 
@@ -319,12 +325,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 res = completion_with_retry(
                     self, prompt, run_manager=run_manager, **params
                 )
-                if self.is_codey_model:
-                    generations.append([_response_to_generation(res)])
-                else:
-                    generations.append(
-                        [_response_to_generation(r) for r in res.candidates]
-                    )
+                generations.append([_response_to_generation(r) for r in res.candidates])
         return LLMResult(generations=generations)
 
     async def _agenerate(
