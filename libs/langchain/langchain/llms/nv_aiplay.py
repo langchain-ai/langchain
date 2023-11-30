@@ -44,6 +44,7 @@ from typing import (
 )
 
 import aiohttp
+from collections import defaultdict
 import requests
 from requests.models import Response
 
@@ -136,12 +137,9 @@ class NVCRModel(ClientModel):
     state_vars: Sequence[str] = ["last_inputs", "last_response", "last_msg"]
 
     @property
-    def last_inputs_safe(self) -> dict:
-        """Redacts authorization header from last_inputs"""
-        if not self.last_inputs:
-            return {}
+    def last_inputs_safe(self) -> Optional[dict]:
         out = self.last_inputs.copy()
-        out["headers"]["Authorization"] = "Bearer nvapi-[REDACTED]"
+        out['headers']['Authorization'] = "Bearer nvapi-[REDACTED]"
         return out
 
     @root_validator()
@@ -207,6 +205,7 @@ class NVCRModel(ClientModel):
 
     def _wait(self, response: Response, session: Any) -> Response:
         """Wait for a response from API after an initial response is made."""
+        response.raise_for_status()
         i = 1
         while response.status_code == 202:
             request_id = response.headers.get("NVCF-REQID", "")
@@ -305,20 +304,29 @@ class NVCRModel(ClientModel):
         return msg, is_stopped
 
     def _aggregate_msgs(self, msg_list: Sequence[dict]) -> Tuple[dict, bool]:
-        """Dig into retrieved message and tease out ['choices'][0]['delta'/'message']"""
-        content_buffer = ""
-        content_holder = {"content": ""}
+        """Dig out relevant details of aggregated message"""
+        content_buffer = dict()
+        content_holder = {}
         is_stopped = False
         for msg in msg_list:
             self.last_msg = msg
-            msg = msg.get("choices", [{}])[0]
-            is_stopped = msg.get("finish_reason", "") == "stop"
-            msg = msg.get("delta", msg.get("message", {"content": ""}))
+            if "choices" in msg:
+                ## Tease out ['choices'][0]...['delta'/'message']
+                msg = msg.get("choices", [{}])[0]
+                is_stopped = msg.get("finish_reason", "") == "stop"
+                msg = msg.get("delta", msg.get("message", {"content": ""}))
+            elif "data" in msg:
+                ## Tease out ['data'][0]...['embedding']
+                msg = msg.get("data", [{}])[0]
             content_holder = msg
-            content_buffer += msg.get("content", "")
+            for k, v in msg.items():
+                if k in ('content',) and k in content_buffer:
+                    content_buffer[k] += v
+                else: 
+                    content_buffer[k] = v
             if is_stopped:
                 break
-        content_holder["content"] = content_buffer
+        content_holder = {**content_holder, **content_buffer}
         return content_holder, is_stopped
 
     def _early_stop_msg(self, msg: dict, is_stopped: bool) -> Tuple[dict, bool]:
