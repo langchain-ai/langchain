@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Any, Generator, List, Tuple
 
 import datasets
 
@@ -38,7 +38,9 @@ class SampleHuggingface(datasets.GeneratorBasedBuilder):
             ),
         )
 
-    def _split_generators(self, dl_manager) -> List[datasets.SplitGenerator]:
+    def _split_generators(
+        self, dl_manager: datasets.DownloadManager
+    ) -> List[datasets.SplitGenerator]:
         """
         This function defines how the dataset's splits will be generated.
         Args:
@@ -57,7 +59,9 @@ class SampleHuggingface(datasets.GeneratorBasedBuilder):
             ),
         ]
 
-    def _generate_examples(self, split, name) -> Tuple[int, object]:
+    def _generate_examples(
+        self, split: str, name: str
+    ) -> Generator[Tuple[int, object], Any, None]:
         """This function returns the examples.
         Args:
             split (`string`):
