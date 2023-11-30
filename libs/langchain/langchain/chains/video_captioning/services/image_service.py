@@ -10,7 +10,7 @@ try:
     import cv2
     from cv2.typing import MatLike
 except ImportError as e:
-    raise ImportError("The cv2 module is required for ImageProcessor.: %s" % e)
+    print("The cv2 module is required for ImageProcessor.: %s" % e)
 
 
 class ImageProcessor:
@@ -28,6 +28,7 @@ class ImageProcessor:
         return self._extract_frames(video_file_path)
 
     def _extract_frames(self, video_file_path: str) -> list:
+        self._ensure_cv2()
         video_models: List[VideoModel] = []
 
         def _add_model(start_time: int, end_time: int) -> None:
