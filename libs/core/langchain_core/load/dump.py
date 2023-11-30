@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict
 
-from langchain_core.load.serializable import Serializable, to_json_not_implemented
+from langchain.load.serializable import Serializable, to_json_not_implemented
 
 
 def default(obj: Any) -> Any:
@@ -13,12 +13,15 @@ def default(obj: Any) -> Any:
         return to_json_not_implemented(obj)
 
 
-def dumps(obj: Any, *, pretty: bool = False) -> str:
+def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
     """Return a json string representation of an object."""
+    if "default" in kwargs:
+        raise ValueError("`default` should not be passed to dumps")
     if pretty:
-        return json.dumps(obj, default=default, indent=2)
+        indent = kwargs.pop("indent", 2)
+        return json.dumps(obj, default=default, indent=indent, **kwargs)
     else:
-        return json.dumps(obj, default=default)
+        return json.dumps(obj, default=default, **kwargs)
 
 
 def dumpd(obj: Any) -> Dict[str, Any]:
