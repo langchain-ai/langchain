@@ -239,16 +239,11 @@ class ChatOpenAI(BaseChatModel):
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
+        extra = values.get("extra_params", {})
         for field_name in list(values):
             if field_name in extra:
                 raise ValueError(f"Found {field_name} supplied twice.")
             if field_name not in all_required_field_names:
-                logger.warning(
-                    f"""WARNING! {field_name} is not default parameter.
-                    {field_name} was transferred to model_kwargs.
-                    Please confirm that {field_name} is what you intended."""
-                )
                 extra[field_name] = values.pop(field_name)
 
         invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
@@ -258,7 +253,7 @@ class ChatOpenAI(BaseChatModel):
                 f"Instead they were passed in as part of `model_kwargs` parameter."
             )
 
-        values["model_kwargs"] = extra
+        values["extra_params"] = extra
         return values
 
     @root_validator()
