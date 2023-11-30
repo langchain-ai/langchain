@@ -38,6 +38,7 @@ EXPECTED_ALL = [
     "SerpAPIWrapper",
     "SparkSQL",
     "StackExchangeAPIWrapper",
+    "SteamWebAPIWrapper",
     "TensorflowDatasets",
     "TextRequestsWrapper",
     "TwilioAPIWrapper",
