@@ -1,3 +1,5 @@
+from typing import List
+
 import datasets
 
 
@@ -17,7 +19,7 @@ class SampleHuggingface(datasets.GeneratorBasedBuilder):
         ),
     ]
 
-    def _info(self):
+    def _info(self) -> datasets.DatasetInfo:
         """This function defines the structure of the dataset"""
         return datasets.DatasetInfo(
             description="Sample Huggingface dataset",
@@ -36,7 +38,7 @@ class SampleHuggingface(datasets.GeneratorBasedBuilder):
             ),
         )
 
-    def _split_generators(self, dl_manager):
+    def _split_generators(self, dl_manager) -> List[datasets.SplitGenerator]:
         """
         This function defines how the dataset's splits will be generated.
         Args:
@@ -55,7 +57,7 @@ class SampleHuggingface(datasets.GeneratorBasedBuilder):
             ),
         ]
 
-    def _generate_examples(self, split, name):
+    def _generate_examples(self, split, name) -> tuple[int, object]:
         """This function returns the examples.
         Args:
             split (`string`):
