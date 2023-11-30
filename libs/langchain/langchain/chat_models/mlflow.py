@@ -18,7 +18,14 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Extra, PrivateAttr
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    PrivateAttr,
+    root_validator,
+)
+from langchain_core.utils import get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +65,16 @@ class ChatMlflow(BaseChatModel):
     """The target URI to use."""
     params: Optional[ChatParams] = None
     """Extra parameters such as `temperature`."""
+    temperature: float = 0.0
+    """The sampling temperature."""
+    n: int = 1
+    """The number of completion choices to generate."""
+    stop: Optional[List[str]] = None
+    """The stop sequence."""
+    max_tokens: Optional[int] = None
+    """The maximum number of tokens to generate."""
+    extra_params: dict = Field(default_factory=dict)
+    """Any extra parameters to pass to the endpoint."""
     _client: Any = PrivateAttr()
 
     def __init__(self, **kwargs: Any):
@@ -87,6 +104,27 @@ class ChatMlflow(BaseChatModel):
                 f"Invalid target URI: {self.target_uri}. "
                 f"The scheme must be one of {allowed}."
             )
+
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = get_pydantic_field_names(cls)
+        extra = values.get("extra_params", {})
+        for field_name in list(values):
+            if field_name in extra:
+                raise ValueError(f"Found {field_name} supplied twice.")
+            if field_name not in all_required_field_names:
+                extra[field_name] = values.pop(field_name)
+
+        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
+        if invalid_model_kwargs:
+            raise ValueError(
+                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+                f"Instead they were passed in as part of `extra_params` parameter."
+            )
+
+        values["extra_params"] = extra
+        return values
 
     @property
     def _default_params(self) -> Dict[str, Any]:
