@@ -235,7 +235,7 @@ pretty_print_docs(compressed_docs)
 ```python
 from langchain.retrievers.document_compressors import ListRerank
 
-_filter = LLMChainFilter.from_llm(llm, top_n=1)
+_filter = ListRerank.from_llm(llm, top_n=1)
 compression_retriever = ContextualCompressionRetriever(base_compressor=_filter, base_retriever=retriever)
 
 compressed_docs = compression_retriever.get_relevant_documents("What did the president say about Ketanji Jackson Brown")
