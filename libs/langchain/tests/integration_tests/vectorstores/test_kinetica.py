@@ -1,13 +1,13 @@
 import os
 from typing import List
 
+import pytest
+from gpudb import GPUdb
 
 from langchain.docstore.document import Document
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores.kinetica import DistanceStrategy, Kinetica
-import pytest
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-from gpudb import GPUdb
 
 DIMENSIONS = 3
 HOST = os.getenv("KINETICA_HOST", "http://127.0.0.1:9191")
@@ -21,13 +21,12 @@ class FakeEmbeddingsWithAdaDimension(FakeEmbeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Return simple embeddings."""
-        return [
-            [float(1.0)] * (DIMENSIONS - 1) + [float(i)] for i in range(len(texts))
-        ]
+        return [[float(1.0)] * (DIMENSIONS - 1) + [float(i)] for i in range(len(texts))]
 
     def embed_query(self, text: str) -> List[float]:
         """Return simple embeddings."""
         return [float(1.0)] * (DIMENSIONS - 1) + [float(0.0)]
+
 
 @pytest.fixture
 def get_db() -> GPUdb:
@@ -37,9 +36,10 @@ def get_db() -> GPUdb:
     options.skip_ssl_cert_verification = True
     return GPUdb(host=HOST, options=options)
 
+
 # @pytest.mark.skip(reason="Isolating ...")
 @pytest.mark.order(1)
-def test_kinetica(get_db) -> None:
+def test_kinetica(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
     texts = ["foo", "bar", "baz"]
@@ -56,9 +56,10 @@ def test_kinetica(get_db) -> None:
     output = docsearch.similarity_search("foo", k=1)
     assert output[0].page_content == "foo"
 
+
 # @pytest.mark.skip(reason="Isolating ...")
 @pytest.mark.order(2)
-def test_kinetica_embeddings(get_db) -> None:
+def test_kinetica_embeddings(get_db: GPUdb) -> None:
     """Test end to end construction with embeddings and search."""
     db = get_db
     texts = ["foo", "bar", "baz"]
@@ -75,9 +76,10 @@ def test_kinetica_embeddings(get_db) -> None:
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
+
 # @pytest.mark.skip(reason="Isolating ...")
 @pytest.mark.order(3)
-def test_kinetica_with_metadatas(get_db) -> None:
+def test_kinetica_with_metadatas(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
     texts = ["foo", "bar", "baz"]
@@ -95,10 +97,11 @@ def test_kinetica_with_metadatas(get_db) -> None:
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
+
 @pytest.mark.order(4)
-def test_kinetica_with_metadatas_with_scores(get_db) -> None:
+def test_kinetica_with_metadatas_with_scores(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
-    db=get_db
+    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Kinetica.from_texts(
@@ -116,9 +119,9 @@ def test_kinetica_with_metadatas_with_scores(get_db) -> None:
 
 
 @pytest.mark.order(5)
-def test_kinetica_with_filter_match(get_db) -> None:
+def test_kinetica_with_filter_match(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
-    db=get_db
+    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Kinetica.from_texts(
@@ -136,9 +139,9 @@ def test_kinetica_with_filter_match(get_db) -> None:
 
 
 @pytest.mark.order(6)
-def test_kinetica_with_filter_distant_match(get_db) -> None:
+def test_kinetica_with_filter_distant_match(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
-    db=get_db
+    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Kinetica.from_texts(
@@ -152,16 +155,14 @@ def test_kinetica_with_filter_distant_match(get_db) -> None:
     )
 
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "2"})
-    assert output == [
-        (Document(page_content="baz", metadata={"page": "2"}), 2.0)
-    ]
+    assert output == [(Document(page_content="baz", metadata={"page": "2"}), 2.0)]
 
 
 @pytest.mark.order(7)
 @pytest.mark.skip(reason="Filter condition has IN clause")
-def test_kinetica_with_filter_in_set(get_db) -> None:
+def test_kinetica_with_filter_in_set(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
-    db=get_db
+    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Kinetica.from_texts(
@@ -184,9 +185,9 @@ def test_kinetica_with_filter_in_set(get_db) -> None:
 
 
 @pytest.mark.order(8)
-def test_kinetica_relevance_score(get_db) -> None:
+def test_kinetica_relevance_score(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
-    db=get_db
+    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Kinetica.from_texts(
@@ -208,9 +209,9 @@ def test_kinetica_relevance_score(get_db) -> None:
 
 
 @pytest.mark.order(9)
-def test_kinetica_max_marginal_relevance_search(get_db) -> None:
+def test_kinetica_max_marginal_relevance_search(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
-    db=get_db
+    db = get_db
     openai = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
     texts = ["foo", "bar", "baz"]
     docsearch = Kinetica.from_texts(
@@ -228,7 +229,7 @@ def test_kinetica_max_marginal_relevance_search(get_db) -> None:
 
 
 @pytest.mark.order(10)
-def test_kinetica_max_marginal_relevance_search_with_score(get_db) -> None:
+def test_kinetica_max_marginal_relevance_search_with_score(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
     texts = ["foo", "bar", "baz"]
@@ -249,7 +250,7 @@ def test_kinetica_max_marginal_relevance_search_with_score(get_db) -> None:
 ## Tests with OpenAI
 # @pytest.mark.skip(reason="rate limiting issue with OpenAI account")
 @pytest.mark.order(11)
-def test_kinetica_with_openai_embeddings(get_db) -> None:
+def test_kinetica_with_openai_embeddings(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
     if OPENAI_API_KEY == "":

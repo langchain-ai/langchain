@@ -1,36 +1,25 @@
 from __future__ import annotations
+
 import asyncio
-from functools import partial
-
-import struct
-from collections import OrderedDict
-
 import enum
 import json
 import logging
+import struct
 import uuid
-import gpudb
-
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-)
+from collections import OrderedDict
 from enum import Enum
+from functools import partial
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
+
+import gpudb
+import numpy as np
+from gpudb import GPUdb
 
 from langchain.schema.document import Document
-
+from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores.base import VectorStore
-from langchain.embeddings.base import Embeddings
-
-from gpudb import GPUdb
 from langchain.vectorstores.utils import maximal_marginal_relevance
-import numpy as np
+
 
 class DistanceStrategy(str, enum.Enum):
     """Enumerator of the Distance strategies."""
@@ -47,19 +36,20 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
 
 class Dimension(int, Enum):
     """Some default dimensions for known embeddings."""
+
     OPENAI = 1536
 
-    
+
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.EUCLIDEAN
 
 _LANGCHAIN_DEFAULT_SCHEMA_NAME = "langchain"  ## Default Kinetica schema name
-_LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain_kinetica_embeddings"  ## Default Kinetica table name
+_LANGCHAIN_DEFAULT_COLLECTION_NAME = (
+    "langchain_kinetica_embeddings"  ## Default Kinetica table name
+)
 
 
 class Kinetica(VectorStore):
-    """Kinetica vector store class which extends the `VectorStore` class
-
-    """
+    """Kinetica vector store class which extends the `VectorStore` class"""
 
     def __init__(
         self,
@@ -79,13 +69,21 @@ class Kinetica(VectorStore):
             db (GPUdb): a `GPUdb` instance
             embedding_function (Embeddings): embedding function to use
             dimensions (int): number of dimensions in the vector
-            collection_name (str, optional): the Kinetica table name. Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
-            schema_name (str, optional): the Kinetica table name. Defaults to _LANGCHAIN_DEFAULT_SCHEMA_NAME.
-            distance_strategy (DistanceStrategy, optional): _description_. Defaults to DEFAULT_DISTANCE_STRATEGY.
+            collection_name (str, optional): the Kinetica table name.
+                            Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
+            schema_name (str, optional): the Kinetica table name.
+                            Defaults to _LANGCHAIN_DEFAULT_SCHEMA_NAME.
+            distance_strategy (DistanceStrategy, optional): _description_.
+                            Defaults to DEFAULT_DISTANCE_STRATEGY.
             pre_delete_collection (bool, optional): _description_. Defaults to False.
-            logger (Optional[logging.Logger], optional): _description_. Defaults to None.
+            logger (Optional[logging.Logger], optional): _description_.
+                            Defaults to None.
         """
-        self.dimensions = int(Dimension.OPENAI) if dimensions is None or type(dimensions) != int or dimensions <= 0 else dimensions
+        self.dimensions = (
+            int(Dimension.OPENAI)
+            if dimensions is None or not isinstance(dimensions, int) or dimensions <= 0
+            else dimensions
+        )
 
         self._db = db
         self.embedding_function = embedding_function
@@ -96,15 +94,13 @@ class Kinetica(VectorStore):
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
-        self.__post_init__(db, dimensions)
+        self.__post_init__(dimensions)
 
-    def __post_init__(
-        self, db, dimensions
-    ) -> None:
+    def __post_init__(self, dimensions: int) -> None:
         """
         Initialize the store.
         """
-        dimension_field = f'vector({dimensions})'
+        dimension_field = f"vector({dimensions})"
 
         if self.pre_delete_collection:
             self.delete_schema()
@@ -114,11 +110,11 @@ class Kinetica(VectorStore):
             self.table_name = f"{self.schema_name}.{self.collection_name}"
 
         self.table_schema = [
-            ['text', 'string'],
-            ['embedding', 'bytes', dimension_field],
-            ['metadata', 'string', 'json'],
-            ['id', 'string', 'uuid']
-            ]
+            ["text", "string"],
+            ["embedding", "bytes", dimension_field],
+            ["metadata", "string", "json"],
+            ["id", "string", "uuid"],
+        ]
 
         self.create_schema()
         self.EmbeddingStore: gpudb.GPUdbTable = self.create_tables_if_not_exists()
@@ -143,7 +139,7 @@ class Kinetica(VectorStore):
         logger: Optional[logging.Logger] = None,
         **kwargs: Any,
     ) -> Kinetica:
-        """ Class method to assist in constructing the `Kinetica` store instance
+        """Class method to assist in constructing the `Kinetica` store instance
             using different combinations of parameters
 
         Args:
@@ -152,17 +148,27 @@ class Kinetica(VectorStore):
             embeddings (List[List[float]]): _description_
             embedding (Embeddings): the Embedding function
             dimensions (int): The number of dimensions the embeddings have
-            metadatas (Optional[List[dict]], optional): List of JSON data associated with each text. Defaults to None.
-            ids (Optional[List[str]], optional): List of unique IDs (UUID by default) associated with each text. Defaults to None.
-            collection_name (str, optional): Kinetica schema name. Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
-            distance_strategy (DistanceStrategy, optional): Not used for now. Defaults to DEFAULT_DISTANCE_STRATEGY.
-            pre_delete_collection (bool, optional): Whether to delete the Kinetica schema or not. Defaults to False.
-            logger (Optional[logging.Logger], optional): Logger to use for logging at different levels. Defaults to None.
+            metadatas (Optional[List[dict]], optional): List of JSON data associated
+                        with each text. Defaults to None.
+            ids (Optional[List[str]], optional): List of unique IDs (UUID by default)
+                        associated with each text. Defaults to None.
+            collection_name (str, optional): Kinetica schema name.
+                        Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
+            distance_strategy (DistanceStrategy, optional): Not used for now.
+                        Defaults to DEFAULT_DISTANCE_STRATEGY.
+            pre_delete_collection (bool, optional): Whether to delete the Kinetica
+                        schema or not. Defaults to False.
+            logger (Optional[logging.Logger], optional): Logger to use for logging at
+                        different levels. Defaults to None.
 
         Returns:
             Kinetica: An instance of Kinetica class
         """
-        dimensions = int(Dimension.OPENAI) if dimensions is None or type(dimensions) != int or dimensions <= 0 else dimensions
+        dimensions = (
+            int(Dimension.OPENAI)
+            if dimensions is None or not isinstance(dimensions, int) or dimensions <= 0
+            else dimensions
+        )
 
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
@@ -188,28 +194,33 @@ class Kinetica(VectorStore):
         return store
 
     def create_tables_if_not_exists(self) -> gpudb.GPUdbTable:
-        """ Create the table to store the texts and embeddings
-        """
+        """Create the table to store the texts and embeddings"""
 
-        return gpudb.GPUdbTable(_type = self.table_schema, name = self.table_name, db = self._db, options = {"is_replicated": "true"})
+        return gpudb.GPUdbTable(
+            _type=self.table_schema,
+            name=self.table_name,
+            db=self._db,
+            options={"is_replicated": "true"},
+        )
 
     def drop_tables(self) -> None:
-        """ Delete the table
-        """
-        self._db.clear_table(f"{self.table_name}", options={"no_error_if_not_exists": "true"})
-
+        """Delete the table"""
+        self._db.clear_table(
+            f"{self.table_name}", options={"no_error_if_not_exists": "true"}
+        )
 
     def create_schema(self) -> None:
-        """ Create a new Kinetica schema
-        """
+        """Create a new Kinetica schema"""
         self._db.create_schema(self.schema_name)
 
     def delete_schema(self) -> None:
-        """ Delete a Kinetica schema with cascade set to `true`
-            This method will delete a schema with all tables in it.
+        """Delete a Kinetica schema with cascade set to `true`
+        This method will delete a schema with all tables in it.
         """
         self.logger.debug("Trying to delete collection")
-        self._db.drop_schema(self.schema_name, {"no_error_if_not_exists": "true", "cascade": "true"})
+        self._db.drop_schema(
+            self.schema_name, {"no_error_if_not_exists": "true", "cascade": "true"}
+        )
 
     def add_embeddings(
         self,
@@ -231,9 +242,12 @@ class Kinetica(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
 
+        if not metadatas:
+            metadatas = [{} for _ in texts]
+
         records = []
         for text, embedding, metadata, id in zip(texts, embeddings, metadatas, ids):
-            buf = struct.pack('%sf' % self.dimensions, *embedding)
+            buf = struct.pack("%sf" % self.dimensions, *embedding)
             records.append([text, buf, json.dumps(metadata), id])
 
         self.EmbeddingStore.insert_records(records)
@@ -263,7 +277,6 @@ class Kinetica(VectorStore):
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
 
-
     def similarity_search(
         self,
         query: str,
@@ -288,7 +301,6 @@ class Kinetica(VectorStore):
             filter=filter,
         )
 
-
     def similarity_search_with_score(
         self,
         query: str,
@@ -311,21 +323,18 @@ class Kinetica(VectorStore):
         )
         return docs
 
-
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
-
-        resp = self.__query_collection(embedding, k, filter)
+        resp: Dict = self.__query_collection(embedding, k, filter)
 
         records: OrderedDict = resp["records"]
         results = list(zip(*list(records.values())))
 
         return self._results_to_docs_and_scores(results)
-
 
     def similarity_search_by_vector(
         self,
@@ -349,7 +358,6 @@ class Kinetica(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
-
     def _results_to_docs_and_scores(self, results: Any) -> List[Tuple[Document, float]]:
         """Return docs and scores from results."""
         docs = [
@@ -363,7 +371,6 @@ class Kinetica(VectorStore):
             for result in results
         ]
         return docs
-
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
@@ -392,7 +399,6 @@ class Kinetica(VectorStore):
                 "Consider providing relevance_score_fn to Kinetica constructor."
             )
 
-
     @property
     def distance_strategy(self) -> str:
         if self._distance_strategy == DistanceStrategy.EUCLIDEAN:
@@ -407,13 +413,12 @@ class Kinetica(VectorStore):
                 f"Should be one of {', '.join([ds.value for ds in DistanceStrategy])}."
             )
 
-
     def __query_collection(
         self,
         embedding: List[float],
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
-    ) -> List[Any]:
+    ) -> Dict:
         """Query the collection."""
         # if filter is not None:
         #     filter_clauses = []
@@ -432,16 +437,21 @@ class Kinetica(VectorStore):
         #                 key
         #             ].astext == str(value)
         #             filter_clauses.append(filter_by_metadata)
-        
-        json_filter = json.dumps(filter) if filter is not None else None
-        where_clause = f" where '{json_filter}' = JSON(metadata) " if json_filter is not None else ""
 
-        embedding_str = '[' + ','.join([str(x) for x in embedding]) + ']'
-        
+        json_filter = json.dumps(filter) if filter is not None else None
+        where_clause = (
+            f" where '{json_filter}' = JSON(metadata) "
+            if json_filter is not None
+            else ""
+        )
+
+        embedding_str = "[" + ",".join([str(x) for x in embedding]) + "]"
+
         dist_strategy = self.distance_strategy
 
         query_string = f"""
-                SELECT text, metadata, {dist_strategy}(embedding, '{embedding_str}') as distance, embedding
+                SELECT text, metadata, {dist_strategy}(embedding, '{embedding_str}') 
+                as distance, embedding
                 FROM {self.table_name}
                 {where_clause}
                 ORDER BY distance asc NULLS LAST
@@ -452,7 +462,6 @@ class Kinetica(VectorStore):
         resp = self._db.execute_sql_and_decode(query_string)
         self.logger.debug(resp)
         return resp
-
 
     def max_marginal_relevance_search_with_score_by_vector(
         self,
@@ -488,7 +497,10 @@ class Kinetica(VectorStore):
         records: OrderedDict = resp["records"]
         results = list(zip(*list(records.values())))
 
-        embedding_list = [struct.unpack('%sf' % self.dimensions, embedding) for embedding in records["embedding"]]
+        embedding_list = [
+            struct.unpack("%sf" % self.dimensions, embedding)
+            for embedding in records["embedding"]
+        ]
 
         mmr_selected = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
@@ -649,9 +661,9 @@ class Kinetica(VectorStore):
         cls: Type[Kinetica],
         texts: List[str],
         embedding: Embeddings,
-        db: GPUdb,
         metadatas: Optional[List[dict]] = None,
-        dimensions: int = None,
+        db: GPUdb = None,
+        dimensions: int = Dimension.OPENAI,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
@@ -664,18 +676,28 @@ class Kinetica(VectorStore):
             cls (Type[Kinetica]): Kinetica class
             texts (List[str]): A list of texts for which the embeddings are generated
             embedding (Embeddings): List of embeddings
+            metadatas (Optional[List[dict]], optional): List of dicts, JSON
+                        describing the texts/documents. Defaults to None.
             db (GPUdb): a GPUdb instance
-            metadatas (Optional[List[dict]], optional): List of dicts, JSON describing the texts/documents. Defaults to None.
-            dimensions (int, optional): Dimension for the vector data, if not passed a default will be used. Defaults to Dimension.OPENAI.
-            collection_name (str, optional): Kinetica schema name. Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
-            distance_strategy (DistanceStrategy, optional): Distance strategy e.g., l2, cosine etc.. Defaults to DEFAULT_DISTANCE_STRATEGY.
-            ids (Optional[List[str]], optional): A list of UUIDs for each text/document. Defaults to None.
-            pre_delete_collection (bool, optional): Indicates whether the Kinetica schema is to be deleted or not. Defaults to False.
+            dimensions (int, optional): Dimension for the vector data, if not passed
+                        a default will be used. Defaults to Dimension.OPENAI.
+            collection_name (str, optional): Kinetica schema name.
+                        Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
+            distance_strategy (DistanceStrategy, optional): Distance strategy
+                        e.g., l2, cosine etc.. Defaults to DEFAULT_DISTANCE_STRATEGY.
+            ids (Optional[List[str]], optional): A list of UUIDs for each
+                        text/document. Defaults to None.
+            pre_delete_collection (bool, optional): Indicates whether the Kinetica
+                        schema is to be deleted or not. Defaults to False.
 
         Returns:
             Kinetica: a `Kinetica` instance
         """
-        dimensions = Dimension.OPENAI if dimensions is None or type(dimensions) != int or dimensions <= 0 else dimensions
+        dimensions = (
+            Dimension.OPENAI
+            if dimensions is None or not isinstance(dimensions, int) or dimensions <= 0
+            else dimensions
+        )
 
         embeddings = embedding.embed_documents(list(texts))
 
@@ -693,15 +715,14 @@ class Kinetica(VectorStore):
             **kwargs,
         )
 
-
     @classmethod
     def from_embeddings(
         cls: Type[Kinetica],
         text_embeddings: List[Tuple[str, List[float]]],
         embedding: Embeddings,
-        db: GPUdb,
         metadatas: Optional[List[dict]] = None,
-        dimensions: int = None,
+        db: GPUdb = None,
+        dimensions: int = Dimension.OPENAI,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
@@ -714,18 +735,28 @@ class Kinetica(VectorStore):
             cls (Type[Kinetica]): Kinetica class
             texts (List[str]): A list of texts for which the embeddings are generated
             embedding (Embeddings): List of embeddings
+            metadatas (Optional[List[dict]], optional): List of dicts, JSON describing
+                        the texts/documents. Defaults to None.
             db (GPUdb): a GPUdb instance
-            metadatas (Optional[List[dict]], optional): List of dicts, JSON describing the texts/documents. Defaults to None.
-            dimensions (int, optional): Dimension for the vector data, if not passed a default will be used. Defaults to Dimension.OPENAI.
-            collection_name (str, optional): Kinetica schema name. Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
-            distance_strategy (DistanceStrategy, optional): Distance strategy e.g., l2, cosine etc.. Defaults to DEFAULT_DISTANCE_STRATEGY.
-            ids (Optional[List[str]], optional): A list of UUIDs for each text/document. Defaults to None.
-            pre_delete_collection (bool, optional): Indicates whether the Kinetica schema is to be deleted or not. Defaults to False.
+            dimensions (int, optional): Dimension for the vector data, if not passed a
+                        default will be used. Defaults to Dimension.OPENAI.
+            collection_name (str, optional): Kinetica schema name.
+                        Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
+            distance_strategy (DistanceStrategy, optional): Distance strategy
+                        e.g., l2, cosine etc.. Defaults to DEFAULT_DISTANCE_STRATEGY.
+            ids (Optional[List[str]], optional): A list of UUIDs for each text/document.
+                        Defaults to None.
+            pre_delete_collection (bool, optional): Indicates whether the
+                        Kinetica schema is to be deleted or not. Defaults to False.
 
         Returns:
             Kinetica: a `Kinetica` instance
         """
-        dimensions = Dimension.OPENAI if dimensions is None or type(dimensions) != int or dimensions <= 0 else dimensions
+        dimensions = (
+            Dimension.OPENAI
+            if dimensions is None or not isinstance(dimensions, int) or dimensions <= 0
+            else dimensions
+        )
 
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
@@ -749,9 +780,9 @@ class Kinetica(VectorStore):
         cls: Type[Kinetica],
         documents: List[Document],
         embedding: Embeddings,
-        db: GPUdb,
+        db: GPUdb = None,
         metadatas: Optional[List[dict]] = None,
-        dimensions: int = None,
+        dimensions: int = Dimension.OPENAI,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
@@ -765,17 +796,27 @@ class Kinetica(VectorStore):
             texts (List[str]): A list of texts for which the embeddings are generated
             embedding (Embeddings): List of embeddings
             db (GPUdb): a GPUdb instance
-            metadatas (Optional[List[dict]], optional): List of dicts, JSON describing the texts/documents. Defaults to None.
-            dimensions (int, optional): Dimension for the vector data, if not passed a default will be used. Defaults to Dimension.OPENAI.
-            collection_name (str, optional): Kinetica schema name. Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
-            distance_strategy (DistanceStrategy, optional): Distance strategy e.g., l2, cosine etc.. Defaults to DEFAULT_DISTANCE_STRATEGY.
-            ids (Optional[List[str]], optional): A list of UUIDs for each text/document. Defaults to None.
-            pre_delete_collection (bool, optional): Indicates whether the Kinetica schema is to be deleted or not. Defaults to False.
+            metadatas (Optional[List[dict]], optional): List of dicts, JSON describing
+                        the texts/documents. Defaults to None.
+            dimensions (int, optional): Dimension for the vector data, if not passed
+                        a default will be used. Defaults to Dimension.OPENAI.
+            collection_name (str, optional): Kinetica schema name.
+                        Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
+            distance_strategy (DistanceStrategy, optional): Distance strategy
+                        e.g., l2, cosine etc.. Defaults to DEFAULT_DISTANCE_STRATEGY.
+            ids (Optional[List[str]], optional): A list of UUIDs for each text/document.
+                        Defaults to None.
+            pre_delete_collection (bool, optional): Indicates whether the Kinetica
+                        schema is to be deleted or not. Defaults to False.
 
         Returns:
             Kinetica: a `Kinetica` instance
         """
-        dimensions = Dimension.OPENAI if dimensions is None or type(dimensions) != int or dimensions <= 0 else dimensions
+        dimensions = (
+            Dimension.OPENAI
+            if dimensions is None or not isinstance(dimensions, int) or dimensions <= 0
+            else dimensions
+        )
 
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
