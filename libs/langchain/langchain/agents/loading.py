@@ -5,12 +5,12 @@ from pathlib import Path
 from typing import Any, List, Optional, Union
 
 import yaml
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain.agents.agent import BaseMultiActionAgent, BaseSingleActionAgent
 from langchain.agents.tools import Tool
 from langchain.agents.types import AGENT_TO_CLASS
 from langchain.chains.loading import load_chain, load_chain_from_config
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities.loading import try_load_from_hub
 
 logger = logging.getLogger(__file__)
@@ -42,7 +42,7 @@ def load_agent_from_config(
         config: Config dict to load agent from.
         llm: Language model to use as the agent.
         tools: List of tools this agent has access to.
-        **kwargs: Additional key word arguments passed to the agent executor.
+        **kwargs: Additional keyword arguments passed to the agent executor.
 
     Returns:
         An agent executor.
@@ -92,7 +92,7 @@ def load_agent(
 
     Args:
         path: Path to the agent file.
-        **kwargs: Additional key word arguments passed to the agent executor.
+        **kwargs: Additional keyword arguments passed to the agent executor.
 
     Returns:
         An agent executor.

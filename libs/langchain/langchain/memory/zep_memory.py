@@ -7,7 +7,7 @@ from langchain.memory.chat_message_histories import ZepChatMessageHistory
 
 
 class ZepMemory(ConversationBufferMemory):
-    """Persist your chain history to the Zep Memory Server.
+    """Persist your chain history to the Zep MemoryStore.
 
     The number of messages returned by Zep and when the Zep server summarizes chat
     histories is configurable. See the Zep documentation for more details.
@@ -36,11 +36,11 @@ class ZepMemory(ConversationBufferMemory):
     in the call to `self.memory.save_context`.
 
 
-    About Zep
+    Zep - Fast, scalable building blocks for LLM Apps
     =========
-    Zep provides long-term conversation storage for LLM apps. The server stores,
-    summarizes, embeds, indexes, and enriches conversational AI chat
-    histories, and exposes them via simple, low-latency APIs.
+    Zep is an open source platform for productionizing LLM apps. Go from a prototype
+    built in LangChain or LlamaIndex, or a custom app, to production in minutes without
+    rewriting code.
 
     For server installation instructions and more, see:
     https://docs.getzep.com/deployment/quickstart/

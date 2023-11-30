@@ -23,10 +23,10 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -75,7 +75,7 @@ class Qdrant(VectorStore):
         .. code-block:: python
 
             from qdrant_client import QdrantClient
-            from langchain import Qdrant
+            from langchain.vectorstores import Qdrant
 
             client = QdrantClient()
             collection_name = "MyCollection"
@@ -1293,7 +1293,7 @@ class Qdrant(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Qdrant
+                from langchain.vectorstores import Qdrant
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
@@ -1469,7 +1469,7 @@ class Qdrant(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Qdrant
+                from langchain.vectorstores import Qdrant
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
@@ -1592,9 +1592,7 @@ class Qdrant(VectorStore):
                         f"If you want to recreate the collection, set `force_recreate` "
                         f"parameter to `True`."
                     )
-                current_vector_config = current_vector_config.get(
-                    vector_name
-                )  # type: ignore[assignment]
+                current_vector_config = current_vector_config.get(vector_name)  # type: ignore[assignment]
             elif isinstance(current_vector_config, dict) and vector_name is None:
                 raise QdrantException(
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
@@ -1758,9 +1756,7 @@ class Qdrant(VectorStore):
                         f"If you want to recreate the collection, set `force_recreate` "
                         f"parameter to `True`."
                     )
-                current_vector_config = current_vector_config.get(
-                    vector_name
-                )  # type: ignore[assignment]
+                current_vector_config = current_vector_config.get(vector_name)  # type: ignore[assignment]
             elif isinstance(current_vector_config, dict) and vector_name is None:
                 raise QdrantException(
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
@@ -1840,6 +1836,11 @@ class Qdrant(VectorStore):
             vector_name=vector_name,
         )
         return qdrant
+
+    @staticmethod
+    def _cosine_relevance_score_fn(distance: float) -> float:
+        """Normalize the distance to a score on a scale [0, 1]."""
+        return (distance + 1.0) / 2.0
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """

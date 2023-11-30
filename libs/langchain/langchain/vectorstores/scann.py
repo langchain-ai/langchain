@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
 from langchain.docstore.base import AddableMixin, Docstore
-from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy
 
 
@@ -382,7 +382,7 @@ class ScaNN(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import ScaNN
+                from langchain.vectorstores import ScaNN
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 scann = ScaNN.from_texts(texts, embeddings)
@@ -418,7 +418,7 @@ class ScaNN(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import ScaNN
+                from langchain.vectorstores import ScaNN
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)

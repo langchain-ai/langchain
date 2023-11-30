@@ -133,7 +133,6 @@ def test_create_action_payload_with_params() -> None:
     assert payload["test"] == "test"
 
 
-@pytest.mark.asyncio
 async def test_apreview(mocker) -> None:  # type: ignore[no-untyped-def]
     """Test that the action payload with params is being created correctly."""
     tool = ZapierNLARunAction(
@@ -162,7 +161,6 @@ async def test_apreview(mocker) -> None:  # type: ignore[no-untyped-def]
     )
 
 
-@pytest.mark.asyncio
 async def test_arun(mocker) -> None:  # type: ignore[no-untyped-def]
     """Test that the action payload with params is being created correctly."""
     tool = ZapierNLARunAction(
@@ -187,7 +185,6 @@ async def test_arun(mocker) -> None:  # type: ignore[no-untyped-def]
     )
 
 
-@pytest.mark.asyncio
 async def test_alist(mocker) -> None:  # type: ignore[no-untyped-def]
     """Test that the action payload with params is being created correctly."""
     tool = ZapierNLARunAction(
@@ -228,7 +225,9 @@ def test_list_raises_401_invalid_api_key() -> None:
     mock_response = MagicMock()
     mock_response.status_code = 401
     mock_response.raise_for_status.side_effect = requests.HTTPError(
-        "401 Client Error: Unauthorized for url: https://nla.zapier.com/api/v1/exposed/"
+        "401 Client Error: Unauthorized for url: "
+        "https://nla.zapier.com/api/v1/exposed/",
+        response=mock_response,
     )
     mock_session = MagicMock()
     mock_session.get.return_value = mock_response
@@ -250,7 +249,9 @@ def test_list_raises_401_invalid_access_token() -> None:
     mock_response = MagicMock()
     mock_response.status_code = 401
     mock_response.raise_for_status.side_effect = requests.HTTPError(
-        "401 Client Error: Unauthorized for url: https://nla.zapier.com/api/v1/exposed/"
+        "401 Client Error: Unauthorized for url: "
+        "https://nla.zapier.com/api/v1/exposed/",
+        response=mock_response,
     )
     mock_session = MagicMock()
     mock_session.get.return_value = mock_response
@@ -272,7 +273,8 @@ def test_list_raises_other_error() -> None:
     mock_response = MagicMock()
     mock_response.status_code = 404
     mock_response.raise_for_status.side_effect = requests.HTTPError(
-        "404 Client Error: Not found for url"
+        "404 Client Error: Not found for url",
+        response=mock_response,
     )
     mock_session = MagicMock()
     mock_session.get.return_value = mock_response

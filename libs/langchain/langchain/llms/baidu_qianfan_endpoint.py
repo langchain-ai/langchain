@@ -10,13 +10,14 @@ from typing import (
     Optional,
 )
 
+from langchain_core.outputs import GenerationChunk
+from langchain_core.pydantic_v1 import Field, root_validator
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ class QianfanLLMEndpoint(LLM):
 
             from langchain.llms import QianfanLLMEndpoint
             qianfan_model = QianfanLLMEndpoint(model="ERNIE-Bot",
-                endpoint="your_endpoint", ak="your_ak", sk="your_sk")
+                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
     """
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -72,7 +73,7 @@ class QianfanLLMEndpoint(LLM):
     """
 
     @root_validator()
-    def validate_enviroment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = get_from_dict_or_env(
             values,
             "qianfan_ak",
@@ -96,7 +97,7 @@ class QianfanLLMEndpoint(LLM):
 
             values["client"] = qianfan.Completion(**params)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "qianfan package not found, please install it with "
                 "`pip install qianfan`"
             )
@@ -116,8 +117,10 @@ class QianfanLLMEndpoint(LLM):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
+        """Get the default parameters for calling Qianfan API."""
         normal_params = {
+            "model": self.model,
+            "endpoint": self.endpoint,
             "stream": self.streaming,
             "request_timeout": self.request_timeout,
             "top_p": self.top_p,
@@ -132,6 +135,8 @@ class QianfanLLMEndpoint(LLM):
         prompt: str,
         **kwargs: Any,
     ) -> dict:
+        if "streaming" in kwargs:
+            kwargs["stream"] = kwargs.pop("streaming")
         return {
             **{"prompt": prompt, "model": self.model},
             **self._default_params,
@@ -191,8 +196,7 @@ class QianfanLLMEndpoint(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
-        params = self._convert_prompt_msg_params(prompt, **kwargs)
-
+        params = self._convert_prompt_msg_params(prompt, **{**kwargs, "stream": True})
         for res in self.client.do(**params):
             if res:
                 chunk = GenerationChunk(text=res["result"])
@@ -207,7 +211,7 @@ class QianfanLLMEndpoint(LLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        params = self._convert_prompt_msg_params(prompt, **kwargs)
+        params = self._convert_prompt_msg_params(prompt, **{**kwargs, "stream": True})
         async for res in await self.client.ado(**params):
             if res:
                 chunk = GenerationChunk(text=res["result"])

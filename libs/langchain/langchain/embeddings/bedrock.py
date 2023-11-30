@@ -4,8 +4,8 @@ import os
 from functools import partial
 from typing import Any, Dict, List, Optional
 
-from langchain.embeddings.base import Embeddings
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
 
 class BedrockEmbeddings(BaseModel, Embeddings):
@@ -30,7 +30,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             
             region_name ="us-east-1"
             credentials_profile_name = "default"
-            model_id = "amazon.titan-e1t-medium"
+            model_id = "amazon.titan-embed-text-v1"
 
             be = BedrockEmbeddings(
                 credentials_profile_name=credentials_profile_name,
@@ -54,12 +54,12 @@ class BedrockEmbeddings(BaseModel, Embeddings):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    model_id: str = "amazon.titan-e1t-medium"
-    """Id of the model to call, e.g., amazon.titan-e1t-medium, this is
+    model_id: str = "amazon.titan-embed-text-v1"
+    """Id of the model to call, e.g., amazon.titan-embed-text-v1, this is
     equivalent to the modelId property in the list-foundation-models api"""
 
     model_kwargs: Optional[Dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     endpoint_url: Optional[str] = None
     """Needed if you don't want to default to us-east-1 endpoint"""
@@ -92,7 +92,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             if values["endpoint_url"]:
                 client_params["endpoint_url"] = values["endpoint_url"]
 
-            values["client"] = session.client("bedrock", **client_params)
+            values["client"] = session.client("bedrock-runtime", **client_params)
 
         except ImportError:
             raise ModuleNotFoundError(
@@ -112,20 +112,36 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         """Call out to Bedrock embedding endpoint."""
         # replace newlines, which can negatively affect performance.
         text = text.replace(os.linesep, " ")
-        _model_kwargs = self.model_kwargs or {}
 
-        input_body = {**_model_kwargs, "inputText": text}
+        # format input body for provider
+        provider = self.model_id.split(".")[0]
+        _model_kwargs = self.model_kwargs or {}
+        input_body = {**_model_kwargs}
+        if provider == "cohere":
+            if "input_type" not in input_body.keys():
+                input_body["input_type"] = "search_document"
+            input_body["texts"] = [text]
+        else:
+            # includes common provider == "amazon"
+            input_body["inputText"] = text
         body = json.dumps(input_body)
 
         try:
+            # invoke bedrock API
             response = self.client.invoke_model(
                 body=body,
                 modelId=self.model_id,
                 accept="application/json",
                 contentType="application/json",
             )
+
+            # format output based on provider
             response_body = json.loads(response.get("body").read())
-            return response_body.get("embedding")
+            if provider == "cohere":
+                return response_body.get("embeddings")[0]
+            else:
+                # includes common provider == "amazon"
+                return response_body.get("embedding")
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 

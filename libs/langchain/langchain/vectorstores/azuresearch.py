@@ -17,17 +17,17 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import BaseRetriever
 from langchain.utils import get_from_env
-from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
 
@@ -77,7 +77,7 @@ def _get_search_client(
 ) -> SearchClient:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
-    from azure.identity import DefaultAzureCredential
+    from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
@@ -93,6 +93,9 @@ def _get_search_client(
     default_fields = default_fields or []
     if key is None:
         credential = DefaultAzureCredential()
+    elif key.upper() == "INTERACTIVE":
+        credential = InteractiveBrowserCredential()
+        credential.get_token("https://search.azure.com/.default")
     else:
         credential = AzureKeyCredential(key)
     index_client: SearchIndexClient = SearchIndexClient(
@@ -113,12 +116,15 @@ def _get_search_client(
                 - set(fields_types.items())
             }
             if len(missing_fields) > 0:
-                fmt_err = lambda x: (  # noqa: E731
-                    f"{x} current type: '{fields_types.get(x, 'MISSING')}'. It has to "
-                    f"be '{mandatory_fields.get(x)}' or you can point to a different "
-                    f"'{mandatory_fields.get(x)}' field name by using the env variable "
-                    f"'AZURESEARCH_FIELDS_{x.upper()}'"
-                )
+                # Helper for formatting field information for each missing field.
+                def fmt_err(x: str) -> str:
+                    return (
+                        f"{x} current type: '{fields_types.get(x, 'MISSING')}'. "
+                        f"It has to be '{mandatory_fields.get(x)}' or you can point "
+                        f"to a different '{mandatory_fields.get(x)}' field name by "
+                        f"using the env variable 'AZURESEARCH_FIELDS_{x.upper()}'"
+                    )
+
                 error = "\n".join([fmt_err(x) for x in missing_fields])
                 raise ValueError(
                     f"You need to specify at least the following fields "
@@ -378,15 +384,18 @@ class AzureSearch(VectorStore):
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
         )
         # Convert results to Document objects
         docs = [
             (
                 Document(
-                    page_content=result[FIELDS_CONTENT],
-                    metadata=json.loads(result[FIELDS_METADATA]),
+                    page_content=result.pop(FIELDS_CONTENT),
+                    metadata=json.loads(result[FIELDS_METADATA])
+                    if FIELDS_METADATA in result
+                    else {
+                        k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR
+                    },
                 ),
                 float(result["@search.score"]),
             )
@@ -435,7 +444,6 @@ class AzureSearch(VectorStore):
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             top=k,
         )
@@ -443,8 +451,12 @@ class AzureSearch(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result[FIELDS_CONTENT],
-                    metadata=json.loads(result[FIELDS_METADATA]),
+                    page_content=result.pop(FIELDS_CONTENT),
+                    metadata=json.loads(result[FIELDS_METADATA])
+                    if FIELDS_METADATA in result
+                    else {
+                        k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR
+                    },
                 ),
                 float(result["@search.score"]),
             )
@@ -465,14 +477,32 @@ class AzureSearch(VectorStore):
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
-        docs_and_scores = self.semantic_hybrid_search_with_score(
+        docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
             query, k=k, filters=kwargs.get("filters", None)
         )
-        return [doc for doc, _ in docs_and_scores]
+        return [doc for doc, _, _ in docs_and_scores]
 
     def semantic_hybrid_search_with_score(
-        self, query: str, k: int = 4, filters: Optional[str] = None
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
+        """
+        Returns the most similar indexed documents to the query text.
+
+        Args:
+            query (str): The query text for which to find similar documents.
+            k (int): The number of documents to return. Default is 4.
+
+        Returns:
+            List[Document]: A list of documents that are most similar to the query text.
+        """
+        docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
+            query, k=k, filters=kwargs.get("filters", None)
+        )
+        return [(doc, score) for doc, score, _ in docs_and_scores]
+
+    def semantic_hybrid_search_with_score_and_rerank(
+        self, query: str, k: int = 4, filters: Optional[str] = None
+    ) -> List[Tuple[Document, float, float]]:
         """Return docs most similar to query with an hybrid query.
 
         Args:
@@ -495,7 +525,6 @@ class AzureSearch(VectorStore):
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
-            select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             query_type="semantic",
             query_language=self.semantic_query_language,
@@ -516,9 +545,17 @@ class AzureSearch(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result["content"],
+                    page_content=result.pop(FIELDS_CONTENT),
                     metadata={
-                        **json.loads(result["metadata"]),
+                        **(
+                            json.loads(result[FIELDS_METADATA])
+                            if FIELDS_METADATA in result
+                            else {
+                                k: v
+                                for k, v in result.items()
+                                if k != FIELDS_CONTENT_VECTOR
+                            }
+                        ),
                         **{
                             "captions": {
                                 "text": result.get("@search.captions", [{}])[0].text,
@@ -535,6 +572,7 @@ class AzureSearch(VectorStore):
                     },
                 ),
                 float(result["@search.score"]),
+                float(result["@search.reranker_score"]),
             )
             for result in results
         ]
@@ -568,7 +606,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     vectorstore: AzureSearch
     """Azure Search instance used to find similar documents."""
     search_type: str = "hybrid"
-    """Type of search to perform. Options are "similarity", "hybrid", 
+    """Type of search to perform. Options are "similarity", "hybrid",
     "semantic_hybrid"."""
     k: int = 4
     """Number of documents to return."""
@@ -590,15 +628,15 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
         query: str,
-        *,
         run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         if self.search_type == "similarity":
-            docs = self.vectorstore.vector_search(query, k=self.k)
+            docs = self.vectorstore.vector_search(query, k=self.k, **kwargs)
         elif self.search_type == "hybrid":
-            docs = self.vectorstore.hybrid_search(query, k=self.k)
+            docs = self.vectorstore.hybrid_search(query, k=self.k, **kwargs)
         elif self.search_type == "semantic_hybrid":
-            docs = self.vectorstore.semantic_hybrid_search(query, k=self.k)
+            docs = self.vectorstore.semantic_hybrid_search(query, k=self.k, **kwargs)
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs

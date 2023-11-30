@@ -1,37 +1,51 @@
-from __future__ import annotations
+from langchain_core.runnables.utils import (
+    Addable,
+    AddableDict,
+    AnyConfigurableField,
+    ConfigurableField,
+    ConfigurableFieldMultiOption,
+    ConfigurableFieldSingleOption,
+    ConfigurableFieldSpec,
+    GetLambdaSource,
+    Input,
+    IsFunctionArgDict,
+    IsLocalDict,
+    Output,
+    SupportsAdd,
+    aadd,
+    accepts_config,
+    accepts_run_manager,
+    add,
+    gated_coro,
+    gather_with_concurrency,
+    get_function_first_arg_dict_keys,
+    get_lambda_source,
+    get_unique_config_specs,
+    indent_lines_after_first,
+)
 
-import asyncio
-from inspect import signature
-from typing import Any, Callable, Coroutine, TypeVar, Union
-
-Input = TypeVar("Input")
-# Output type should implement __concat__, as eg str, list, dict do
-Output = TypeVar("Output")
-
-
-async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
-    async with semaphore:
-        return await coro
-
-
-async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> list:
-    if n is None:
-        return await asyncio.gather(*coros)
-
-    semaphore = asyncio.Semaphore(n)
-
-    return await asyncio.gather(*(gated_coro(semaphore, c) for c in coros))
-
-
-def accepts_run_manager(callable: Callable[..., Any]) -> bool:
-    try:
-        return signature(callable).parameters.get("run_manager") is not None
-    except ValueError:
-        return False
-
-
-def accepts_config(callable: Callable[..., Any]) -> bool:
-    try:
-        return signature(callable).parameters.get("config") is not None
-    except ValueError:
-        return False
+__all__ = [
+    "accepts_run_manager",
+    "accepts_config",
+    "IsLocalDict",
+    "IsFunctionArgDict",
+    "GetLambdaSource",
+    "get_function_first_arg_dict_keys",
+    "get_lambda_source",
+    "indent_lines_after_first",
+    "AddableDict",
+    "SupportsAdd",
+    "add",
+    "ConfigurableField",
+    "ConfigurableFieldSingleOption",
+    "ConfigurableFieldMultiOption",
+    "ConfigurableFieldSpec",
+    "get_unique_config_specs",
+    "aadd",
+    "gated_coro",
+    "gather_with_concurrency",
+    "Input",
+    "Output",
+    "Addable",
+    "AnyConfigurableField",
+]

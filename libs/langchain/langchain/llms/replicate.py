@@ -3,10 +3,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
+from langchain_core.outputs import GenerationChunk
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Extra, Field, root_validator
-from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -23,7 +24,7 @@ class Replicate(LLM):
     You can find your token here: https://replicate.com/account
 
     The model param is required, but any other model parameters can also
-    be passed in with the format input={model_param: value, ...}
+    be passed in with the format model_kwargs={model_param: value, ...}
 
     Example:
         .. code-block:: python
@@ -35,13 +36,12 @@ class Replicate(LLM):
                     "stability-ai/stable-diffusion: "
                     "27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
                 ),
-                input={"image_dimensions": "512x512"}
+                model_kwargs={"image_dimensions": "512x512"}
             )
     """
 
     model: str
-    input: Dict[str, Any] = Field(default_factory=dict)
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict, alias="input")
     replicate_api_token: Optional[str] = None
     prompt_key: Optional[str] = None
     version_obj: Any = Field(default=None, exclude=True)
@@ -59,14 +59,15 @@ class Replicate(LLM):
     class Config:
         """Configuration for this pydantic config."""
 
+        allow_population_by_field_name = True
         extra = Extra.forbid
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"replicate_api_token": "REPLICATE_API_TOKEN"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     @root_validator(pre=True)
@@ -74,7 +75,12 @@ class Replicate(LLM):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = {field.alias for field in cls.__fields__.values()}
 
-        extra = values.get("model_kwargs", {})
+        input = values.pop("input", {})
+        if input:
+            logger.warning(
+                "Init param `input` is deprecated, please use `model_kwargs` instead."
+            )
+        extra = {**values.pop("model_kwargs", {}), **input}
         for field_name in list(values):
             if field_name not in all_required_field_names:
                 if field_name in extra:
@@ -91,7 +97,7 @@ class Replicate(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         replicate_api_token = get_from_dict_or_env(
-            values, "REPLICATE_API_TOKEN", "REPLICATE_API_TOKEN"
+            values, "replicate_api_token", "REPLICATE_API_TOKEN"
         )
         values["replicate_api_token"] = replicate_api_token
         return values
@@ -131,7 +137,10 @@ class Replicate(LLM):
             prediction.wait()
             if prediction.status == "failed":
                 raise RuntimeError(prediction.error)
-            completion = prediction.output
+            if isinstance(prediction.output, str):
+                completion = prediction.output
+            else:
+                completion = "".join(prediction.output)
         assert completion is not None
         stop_conditions = stop or self.stop
         for s in stop_conditions:
@@ -199,7 +208,11 @@ class Replicate(LLM):
 
             self.prompt_key = input_properties[0][0]
 
-        input_: Dict = {self.prompt_key: prompt, **self.input, **kwargs}
+        input_: Dict = {
+            self.prompt_key: prompt,
+            **self.model_kwargs,
+            **kwargs,
+        }
         return replicate_python.predictions.create(
             version=self.version_obj, input=input_
         )

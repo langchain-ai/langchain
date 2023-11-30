@@ -6,8 +6,8 @@ from typing import List
 from urllib.parse import urlparse
 
 import requests
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
@@ -65,7 +65,7 @@ class Docx2txtLoader(BaseLoader, ABC):
 
 
 class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
-    """Load `Microsof Word` file using `Unstructured`.
+    """Load `Microsoft Word` file using `Unstructured`.
 
     Works with both .docx and .doc files.
     You can run the loader in one of two modes: "single" and "elements".

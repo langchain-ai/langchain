@@ -9,10 +9,17 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, List, Sequence, Union
 
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    BaseSettings,
+    Field,
+    FilePath,
+    SecretStr,
+)
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders.file_system import FileSystemBlobLoader
 from langchain.document_loaders.blob_loaders.schema import Blob
-from langchain.pydantic_v1 import BaseModel, BaseSettings, Field, FilePath, SecretStr
 
 if TYPE_CHECKING:
     from O365 import Account
@@ -44,6 +51,7 @@ class _FileType(str, Enum):
 
 
 def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
+    """Fetch the mime types for the specified file types."""
     mime_types_mapping = {}
     for file_type in file_types:
         if file_type.value == "doc":
@@ -58,6 +66,8 @@ def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
 
 
 class O365BaseLoader(BaseLoader, BaseModel):
+    """Base class for all loaders that uses O365 Package"""
+
     settings: _O365Settings = Field(default_factory=_O365Settings)
     """Settings for the Office365 API client."""
     auth_with_token: bool = False

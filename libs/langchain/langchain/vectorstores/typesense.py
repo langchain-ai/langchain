@@ -3,10 +3,11 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.utils import get_from_env
-from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
     from typesense.client import Client

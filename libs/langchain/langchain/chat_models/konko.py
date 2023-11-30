@@ -16,16 +16,16 @@ from typing import (
 )
 
 import requests
+from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.openai import ChatOpenAI, _convert_delta_to_message_chunk
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.messages import AIMessageChunk, BaseMessage
-from langchain.schema.output import ChatGenerationChunk
+from langchain.chat_models.base import BaseChatModel, generate_from_stream
+from langchain.chat_models.openai import _convert_delta_to_message_chunk
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_API_BASE = "https://api.konko.ai/v1"
@@ -34,7 +34,7 @@ DEFAULT_MODEL = "meta-llama/Llama-2-13b-chat-hf"
 logger = logging.getLogger(__name__)
 
 
-class ChatKonko(ChatOpenAI):
+class ChatKonko(BaseChatModel):
     """`ChatKonko` Chat large language models API.
 
     To use, you should have the ``konko`` python package installed, and the
@@ -54,8 +54,9 @@ class ChatKonko(ChatOpenAI):
     def lc_secrets(self) -> Dict[str, str]:
         return {"konko_api_key": "KONKO_API_KEY", "openai_api_key": "OPENAI_API_KEY"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     client: Any = None  #: :meta private:
@@ -210,9 +211,10 @@ class ChatKonko(ChatOpenAI):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content, chunk=chunk)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     def _generate(
         self,
@@ -224,16 +226,10 @@ class ChatKonko(ChatOpenAI):
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
-            generation: Optional[ChatGenerationChunk] = None
-            for chunk in self._stream(
-                messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            ):
-                if generation is None:
-                    generation = chunk
-                else:
-                    generation += chunk
-            assert generation is not None
-            return ChatResult(generations=[generation])
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}

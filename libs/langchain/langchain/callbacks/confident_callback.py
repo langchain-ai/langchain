@@ -4,7 +4,8 @@ import warnings
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.outputs import LLMResult
 
 
 class DeepEvalCallbackHandler(BaseCallbackHandler):
@@ -128,9 +129,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
                         callbacks."""
                     )
 
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when LLM outputs an error."""
         pass
 
@@ -144,9 +143,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
         """Do nothing when chain ends."""
         pass
 
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when LLM chain outputs an error."""
         pass
 
@@ -173,9 +170,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
         """Do nothing when tool ends."""
         pass
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing when tool outputs an error."""
         pass
 

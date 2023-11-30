@@ -5,14 +5,14 @@ import zipfile
 from typing import Sequence
 
 import pytest
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
-from langchain import schema
 from langchain.chat_loaders import telegram, utils
 
 
 def _assert_messages_are_equal(
-    actual_messages: Sequence[schema.BaseMessage],
-    expected_messages: Sequence[schema.BaseMessage],
+    actual_messages: Sequence[BaseMessage],
+    expected_messages: Sequence[BaseMessage],
 ) -> None:
     assert len(actual_messages) == len(expected_messages)
     for actual, expected in zip(actual_messages, expected_messages):
@@ -47,21 +47,21 @@ def _check_telegram_chat_loader(path: str) -> None:
         assert len(session["messages"]) > 0
         assert session["messages"][0].content == "i refuse to converse with you"
         expected_content = [
-            schema.HumanMessage(
+            HumanMessage(
                 content="i refuse to converse with you",
                 additional_kwargs={
                     "sender": "Jimmeny Marvelton",
                     "events": [{"message_time": "23.08.2023 13:11:23 UTC-08:00"}],
                 },
             ),
-            schema.AIMessage(
+            AIMessage(
                 content="Hi nemesis",
                 additional_kwargs={
                     "sender": "Batman & Robin",
                     "events": [{"message_time": "23.08.2023 13:13:20 UTC-08:00"}],
                 },
             ),
-            schema.HumanMessage(
+            HumanMessage(
                 content="we meet again\n\nyou will not trick me this time",
                 additional_kwargs={
                     "sender": "Jimmeny Marvelton",

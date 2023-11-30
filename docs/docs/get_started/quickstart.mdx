@@ -1,0 +1,399 @@
+# Quickstart
+
+In this quickstart we'll show you how to:
+- Get setup with LangChain, LangSmith and LangServe
+- Use the most basic and common components of LangChain: prompt templates, models, and output parsers
+- Use LangChain Expression Language, the protocol that LangChain is built on and which facilitates component chaining
+- Build a simple application with LangChain
+- Trace your application with LangSmith
+- Serve your application with LangServe
+
+That's a fair amount to cover! Let's dive in.
+
+## Setup
+### Installation
+
+To install LangChain run:
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from "@theme/CodeBlock";
+
+<Tabs>
+  <TabItem value="pip" label="Pip" default>
+    <CodeBlock language="bash">pip install langchain</CodeBlock>
+  </TabItem>
+  <TabItem value="conda" label="Conda">
+    <CodeBlock language="bash">conda install langchain -c conda-forge</CodeBlock>
+  </TabItem>
+</Tabs>
+
+
+For more details, see our [Installation guide](/docs/get_started/installation).
+
+### Environment
+
+Using LangChain will usually require integrations with one or more model providers, data stores, APIs, etc. For this example, we'll use OpenAI's model APIs.
+
+First we'll need to install their Python package:
+
+```bash
+pip install openai
+```
+
+Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
+
+```bash
+export OPENAI_API_KEY="..."
+```
+
+If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
+
+```python
+from langchain.chat_models import ChatOpenAI
+
+llm = ChatOpenAI(openai_api_key="...")
+```
+
+### LangSmith
+
+Many of the applications you build with LangChain will contain multiple steps with multiple invocations of LLM calls.
+As these applications get more and more complex, it becomes crucial to be able to inspect what exactly is going on inside your chain or agent.
+The best way to do this is with [LangSmith](https://smith.langchain.com).
+
+Note that LangSmith is not needed, but it is helpful.
+If you do want to use LangSmith, after you sign up at the link above, make sure to set your environment variables to start logging traces:
+
+```shell
+export LANGCHAIN_TRACING_V2="true"
+export LANGCHAIN_API_KEY=...
+```
+
+### LangServe
+
+LangServe helps developers deploy LangChain chains as a REST API. You do not need to use LangServe to use LangChain, but in this guide we'll show how you can deploy your app with LangServe.
+
+Install with:
+```bash
+pip install "langserve[all]"
+```
+
+## Building with LangChain
+
+LangChain provides many modules that can be used to build language model applications.
+Modules can be used as standalones in simple applications and they can be composed for more complex use cases.
+Composition is powered by **LangChain Expression Language** (LCEL), which defines a unified `Runnable` interface that many modules implement, making it possible to seamlessly chain components.
+
+The simplest and most common chain contains three things:
+- LLM/Chat Model: The language model is the core reasoning engine here. In order to work with LangChain, you need to understand the different types of language models and how to work with them.
+- Prompt Template: This provides instructions to the language model. This controls what the language model outputs, so understanding how to construct prompts and different prompting strategies is crucial.
+- Output Parser: These translate the raw response from the language model to a more workable format, making it easy to use the output downstream.
+
+In this guide we'll cover those three components individually, and then go over how to combine them.
+Understanding these concepts will set you up well for being able to use and customize LangChain applications.
+Most LangChain applications allow you to configure the model and/or the prompt, so knowing how to take advantage of this will be a big enabler.
+
+### LLM / Chat Model
+
+There are two types of language models:
+
+- `LLM`: underlying model takes a string as input and returns a string
+- `ChatModel`: underlying model takes a list of messages as input and returns a message
+
+Strings are simple, but what exactly are messages? The base message interface is defined by `BaseMessage`, which has two required attributes:
+
+- `content`: The content of the message. Usually a string.
+- `role`: The entity from which the `BaseMessage` is coming.
+
+LangChain provides several objects to easily distinguish between different roles:
+
+- `HumanMessage`: A `BaseMessage` coming from a human/user.
+- `AIMessage`: A `BaseMessage` coming from an AI/assistant.
+- `SystemMessage`: A `BaseMessage` coming from the system.
+- `FunctionMessage` / `ToolMessage`: A `BaseMessage` containing the output of a function or tool call.
+
+If none of those roles sound right, there is also a `ChatMessage` class where you can specify the role manually.
+
+LangChain provides a common interface that's shared by both `LLM`s and `ChatModel`s.
+However it's useful to understand the difference in order to most effectively construct prompts for a given language model.
+
+The simplest way to call an `LLM` or `ChatModel` is using `.invoke()`, the universal synchronous call method for all LangChain Expression Language (LCEL) objects:
+- `LLM.invoke`: Takes in a string, returns a string.
+- `ChatModel.invoke`: Takes in a list of `BaseMessage`, returns a `BaseMessage`.
+
+The input types for these methods are actually more general than this, but for simplicity here we can assume LLMs only take strings and Chat models only takes lists of messages.
+Check out the "Go deeper" section below to learn more about model invocation.
+
+Let's see how to work with these different types of models and these different types of inputs.
+First, let's import an LLM and a ChatModel.
+
+```python
+from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
+
+llm = OpenAI()
+chat_model = ChatOpenAI()
+```
+
+`LLM` and `ChatModel` objects are effectively configuration objects.
+You can initialize them with parameters like `temperature` and others, and pass them around.
+
+```python
+from langchain.schema import HumanMessage
+
+text = "What would be a good company name for a company that makes colorful socks?"
+messages = [HumanMessage(content=text)]
+
+llm.invoke(text)
+# >> Feetful of Fun
+
+chat_model.invoke(messages)
+# >> AIMessage(content="Socks O'Color")
+```
+
+<details> <summary>Go deeper</summary>
+
+`LLM.invoke` and `ChatModel.invoke` actually both support as input any of `Union[str, List[BaseMessage], PromptValue]`.
+`PromptValue` is an object that defines it's own custom logic for returning it's inputs either as a string or as messages.
+`LLM`s have logic for coercing any of these into a string, and `ChatModel`s have logic for coercing any of these to messages.
+The fact that `LLM` and `ChatModel` accept the same inputs means that you can directly swap them for one another in most chains without breaking anything,
+though it's of course important to think about how inputs are being coerced and how that may affect model performance.
+To dive deeper on models head to the [Language models](/docs/modules/model_io/models) section.
+
+</details>
+
+### Prompt templates
+
+Most LLM applications do not pass user input directly into an LLM. Usually they will add the user input to a larger piece of text, called a prompt template, that provides additional context on the specific task at hand.
+
+In the previous example, the text we passed to the model contained instructions to generate a company name. For our application, it would be great if the user only had to provide the description of a company/product, without having to worry about giving the model instructions.
+
+PromptTemplates help with exactly this!
+They bundle up all the logic for going from user input into a fully formatted prompt.
+This can start off very simple - for example, a prompt to produce the above string would just be:
+
+```python
+from langchain.prompts import PromptTemplate
+
+prompt = PromptTemplate.from_template("What is a good name for a company that makes {product}?")
+prompt.format(product="colorful socks")
+```
+
+```python
+What is a good name for a company that makes colorful socks?
+```
+
+However, the advantages of using these over raw string formatting are several.
+You can "partial" out variables - e.g. you can format only some of the variables at a time.
+You can compose them together, easily combining different templates into a single prompt.
+For explanations of these functionalities, see the [section on prompts](/docs/modules/model_io/prompts) for more detail.
+
+`PromptTemplate`s can also be used to produce a list of messages.
+In this case, the prompt not only contains information about the content, but also each message (its role, its position in the list, etc.).
+Here, what happens most often is a `ChatPromptTemplate` is a list of `ChatMessageTemplates`.
+Each `ChatMessageTemplate` contains instructions for how to format that `ChatMessage` - its role, and then also its content.
+Let's take a look at this below:
+
+```python
+from langchain.prompts.chat import ChatPromptTemplate
+
+template = "You are a helpful assistant that translates {input_language} to {output_language}."
+human_template = "{text}"
+
+chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", template),
+    ("human", human_template),
+])
+
+chat_prompt.format_messages(input_language="English", output_language="French", text="I love programming.")
+```
+
+```pycon
+[
+    SystemMessage(content="You are a helpful assistant that translates English to French.", additional_kwargs={}),
+    HumanMessage(content="I love programming.")
+]
+```
+
+
+ChatPromptTemplates can also be constructed in other ways - see the [section on prompts](/docs/modules/model_io/prompts) for more detail.
+
+### Output parsers
+
+`OutputParsers` convert the raw output of a language model into a format that can be used downstream.
+There are few main types of `OutputParser`s, including:
+
+- Convert text from `LLM` into structured information (e.g. JSON)
+- Convert a `ChatMessage` into just a string
+- Convert the extra information returned from a call besides the message (like OpenAI function invocation) into a string.
+
+For full information on this, see the [section on output parsers](/docs/modules/model_io/output_parsers).
+
+In this getting started guide, we will write our own output parser - one that converts a comma separated list into a list.
+
+```python
+from langchain.schema import BaseOutputParser
+
+class CommaSeparatedListOutputParser(BaseOutputParser):
+    """Parse the output of an LLM call to a comma-separated list."""
+
+
+    def parse(self, text: str):
+        """Parse the output of an LLM call."""
+        return text.strip().split(", ")
+
+CommaSeparatedListOutputParser().parse("hi, bye")
+# >> ['hi', 'bye']
+```
+
+### Composing with LCEL
+
+We can now combine all these into one chain.
+This chain will take input variables, pass those to a prompt template to create a prompt, pass the prompt to a language model, and then pass the output through an (optional) output parser.
+This is a convenient way to bundle up a modular piece of logic.
+Let's see it in action!
+
+```python
+from typing import List
+
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema import BaseOutputParser
+
+class CommaSeparatedListOutputParser(BaseOutputParser[List[str]]):
+    """Parse the output of an LLM call to a comma-separated list."""
+
+
+    def parse(self, text: str) -> List[str]:
+        """Parse the output of an LLM call."""
+        return text.strip().split(", ")
+
+template = """You are a helpful assistant who generates comma separated lists.
+A user will pass in a category, and you should generate 5 objects in that category in a comma separated list.
+ONLY return a comma separated list, and nothing more."""
+human_template = "{text}"
+
+chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", template),
+    ("human", human_template),
+])
+chain = chat_prompt | ChatOpenAI() | CommaSeparatedListOutputParser()
+chain.invoke({"text": "colors"})
+# >> ['red', 'blue', 'green', 'yellow', 'orange']
+```
+
+Note that we are using the `|` syntax to join these components together.
+This `|` syntax is powered by the LangChain Expression Language (LCEL) and relies on the universal `Runnable` interface that all of these objects implement.
+To learn more about LCEL, read the documentation [here](/docs/expression_language).
+
+## Tracing with LangSmith
+
+Assuming we've set our environment variables as shown in the beginning, all of the model and chain calls we've been making will have been automatically logged to LangSmith.
+Once there, we can use LangSmith to debug and annotate our application traces, then turn them into datasets for evaluating future iterations of the application.
+
+Check out what the trace for the above chain would look like:
+https://smith.langchain.com/public/09370280-4330-4eb4-a7e8-c91817f6aa13/r
+
+For more on LangSmith [head here](/docs/langsmith/).
+
+## Serving with LangServe
+
+Now that we've built an application, we need to serve it. That's where LangServe comes in.
+LangServe helps developers deploy LCEL chains as a REST API.
+The library is integrated with FastAPI and uses pydantic for data validation.
+
+### Server
+
+To create a server for our application we'll make a `serve.py` file with three things:
+1. The definition of our chain (same as above)
+2. Our FastAPI app
+3. A definition of a route from which to serve the chain, which is done with `langserve.add_routes`
+
+```python
+#!/usr/bin/env python
+from typing import List
+
+from fastapi import FastAPI
+from langchain.prompts import ChatPromptTemplate
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import BaseOutputParser
+from langserve import add_routes
+
+# 1. Chain definition
+
+class CommaSeparatedListOutputParser(BaseOutputParser[List[str]]):
+    """Parse the output of an LLM call to a comma-separated list."""
+
+
+    def parse(self, text: str) -> List[str]:
+        """Parse the output of an LLM call."""
+        return text.strip().split(", ")
+
+template = """You are a helpful assistant who generates comma separated lists.
+A user will pass in a category, and you should generate 5 objects in that category in a comma separated list.
+ONLY return a comma separated list, and nothing more."""
+human_template = "{text}"
+
+chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", template),
+    ("human", human_template),
+])
+category_chain = chat_prompt | ChatOpenAI() | CommaSeparatedListOutputParser()
+
+# 2. App definition
+app = FastAPI(
+  title="LangChain Server",
+  version="1.0",
+  description="A simple api server using Langchain's Runnable interfaces",
+)
+
+# 3. Adding chain route
+add_routes(
+    app,
+    category_chain,
+    path="/category_chain",
+)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="localhost", port=8000)
+```
+
+And that's it! If we execute this file:
+```bash
+python serve.py
+```
+we should see our chain being served at localhost:8000.
+
+### Playground
+
+Every LangServe service comes with a simple built-in UI for configuring and invoking the application with streaming output and visibility into intermediate steps.
+Head to http://localhost:8000/category_chain/playground/ to try it out!
+
+### Client
+
+Now let's set up a client for programmatically interacting with our service. We can easily do this with the `langserve.RemoteRunnable`.
+Using this, we can interact with the served chain as if it were running client-side.
+
+```python
+from langserve import RemoteRunnable
+
+remote_chain = RemoteRunnable("http://localhost:8000/category_chain/")
+remote_chain.invoke({"text": "colors"})
+# >> ['red', 'blue', 'green', 'yellow', 'orange']
+```
+
+To learn more about the many other features of LangServe [head here](/docs/langserve).
+
+## Next steps
+
+We've touched on how to build an application with LangChain, how to trace it with LangSmith, and how to serve it with LangServe.
+There are a lot more features in all three of these than we can cover here.
+To continue on your journey:
+
+- Read up on [LangChain Expression Language (LCEL)](/docs/expression_language) to learn how to chain these components together
+- [Dive deeper](/docs/modules/model_io) into LLMs, prompts, and output parsers and learn the other [key components](/docs/modules)
+- Explore common [end-to-end use cases](/docs/use_cases/qa_structured/sql) and [template applications](/docs/templates)
+- [Read up on LangSmith](/docs/langsmith/), the platform for debugging, testing, monitoring and more
+- Learn more about serving your applications with [LangServe](/docs/langserve)

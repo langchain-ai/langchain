@@ -1,13 +1,7 @@
 import json
 from typing import Any, Iterator, List, Optional
 
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
-from langchain.llms.ollama import _OllamaCommon
-from langchain.schema import ChatResult
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -15,7 +9,13 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+
+from langchain.callbacks.manager import (
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
+from langchain.llms.ollama import _OllamaCommon
 
 
 def _stream_response_to_chat_generation_chunk(
@@ -47,8 +47,9 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         """Return type of chat model."""
         return "ollama-chat"
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     def _format_message_as_text(self, message: BaseMessage) -> str:

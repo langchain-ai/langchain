@@ -1,10 +1,12 @@
 import json
 from typing import List
 
-from langchain.schema import (
-    BaseChatMessageHistory,
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import (
+    BaseMessage,
+    message_to_dict,
+    messages_from_dict,
 )
-from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
 
 
 class XataChatMessageHistory(BaseChatMessageHistory):
@@ -56,7 +58,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
                     {"name": "role", "type": "string"},
                     {"name": "content", "type": "text"},
                     {"name": "name", "type": "string"},
-                    {"name": "additionalKwargs", "type": "text"},
+                    {"name": "additionalKwargs", "type": "json"},
                 ]
             },
         )
@@ -65,7 +67,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the Xata table"""
-        msg = _message_to_dict(message)
+        msg = message_to_dict(message)
         r = self._client.records().insert(
             self._table_name,
             {
@@ -101,7 +103,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
                         "content": m["content"],
                         "role": m.get("role"),
                         "name": m.get("name"),
-                        "additionalKwargs": json.loads(m["additionalKwargs"]),
+                        "additional_kwargs": json.loads(m["additionalKwargs"]),
                     },
                 }
                 for m in r["records"]

@@ -18,7 +18,17 @@ from langchain.utilities.gitlab import GitLabAPIWrapper
 
 
 class GitLabToolkit(BaseToolkit):
-    """GitLab Toolkit."""
+    """GitLab Toolkit.
+
+    *Security Note*: This toolkit contains tools that can read and modify
+        the state of a service; e.g., by creating, deleting, or updating,
+        reading underlying data.
+
+        For example, this toolkit can be used to create issues, pull requests,
+        and comments on GitLab.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     tools: List[BaseTool] = []
 

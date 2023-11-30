@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 import requests
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 NOTION_BASE_URL = "https://api.notion.com/v1"
@@ -120,6 +120,24 @@ class NotionDBLoader(BaseLoader):
                     if prop_data["people"]
                     else []
                 )
+            elif prop_type == "date":
+                value = prop_data["date"] if prop_data["date"] else None
+            elif prop_type == "last_edited_time":
+                value = (
+                    prop_data["last_edited_time"]
+                    if prop_data["last_edited_time"]
+                    else None
+                )
+            elif prop_type == "created_time":
+                value = prop_data["created_time"] if prop_data["created_time"] else None
+            elif prop_type == "checkbox":
+                value = prop_data["checkbox"]
+            elif prop_type == "email":
+                value = prop_data["email"]
+            elif prop_type == "number":
+                value = prop_data["number"]
+            elif prop_type == "select":
+                value = prop_data["select"]["name"] if prop_data["select"] else None
             else:
                 value = None
 

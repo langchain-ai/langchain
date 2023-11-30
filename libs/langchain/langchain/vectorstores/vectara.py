@@ -7,11 +7,10 @@ from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
-
-from langchain.embeddings.base import Embeddings
-from langchain.pydantic_v1 import Field
-from langchain.schema import Document
-from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import Field
+from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,8 @@ class Vectara(VectorStore):
         vectara_customer_id: Optional[str] = None,
         vectara_corpus_id: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
-        vectara_api_timeout: int = 60,
+        vectara_api_timeout: int = 120,
+        source: str = "langchain",
     ):
         """Initialize with Vectara API."""
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
@@ -59,6 +59,8 @@ class Vectara(VectorStore):
             )
         else:
             logger.debug(f"Using corpus id {self._vectara_corpus_id}")
+        self._source = source
+
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("http://", adapter)
@@ -74,6 +76,7 @@ class Vectara(VectorStore):
             "x-api-key": self._vectara_api_key,
             "customer-id": self._vectara_customer_id,
             "Content-Type": "application/json",
+            "X-Source": self._source,
         }
 
     def _delete_doc(self, doc_id: str) -> bool:
@@ -308,7 +311,6 @@ class Vectara(VectorStore):
             return []
 
         result = response.json()
-
         if score_threshold:
             responses = [
                 r
@@ -388,7 +390,7 @@ class Vectara(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Vectara
+                from langchain.vectorstores import Vectara
                 vectara = Vectara.from_texts(
                     texts,
                     vectara_customer_id=customer_id,
@@ -420,7 +422,7 @@ class Vectara(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Vectara
+                from langchain.vectorstores import Vectara
                 vectara = Vectara.from_files(
                     files_list,
                     vectara_customer_id=customer_id,
@@ -437,7 +439,7 @@ class Vectara(VectorStore):
     def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
-        return VectaraRetriever(vectorstore=self, **kwargs, tags=tags)
+        return VectaraRetriever(vectorstore=self, search_kwargs=kwargs, tags=tags)
 
 
 class VectaraRetriever(VectorStoreRetriever):
@@ -447,12 +449,13 @@ class VectaraRetriever(VectorStoreRetriever):
     """Vectara vectorstore."""
     search_kwargs: dict = Field(
         default_factory=lambda: {
-            "lambda_val": 0.025,
+            "lambda_val": 0.0,
             "k": 5,
             "filter": "",
             "n_sentence_context": "2",
         }
     )
+
     """Search params.
         k: Number of Documents to return. Defaults to 5.
         lambda_val: lexical match parameter for hybrid search.

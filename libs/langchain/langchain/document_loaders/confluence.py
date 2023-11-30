@@ -4,6 +4,7 @@ from io import BytesIO
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import requests
+from langchain_core.documents import Document
 from tenacity import (
     before_sleep_log,
     retry,
@@ -11,7 +12,6 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
@@ -541,26 +541,33 @@ class ConfluenceLoader(BaseLoader):
             media_type = attachment["metadata"]["mediaType"]
             absolute_url = self.base_url + attachment["_links"]["download"]
             title = attachment["title"]
-            if media_type == "application/pdf":
-                text = title + self.process_pdf(absolute_url, ocr_languages)
-            elif (
-                media_type == "image/png"
-                or media_type == "image/jpg"
-                or media_type == "image/jpeg"
-            ):
-                text = title + self.process_image(absolute_url, ocr_languages)
-            elif (
-                media_type == "application/vnd.openxmlformats-officedocument"
-                ".wordprocessingml.document"
-            ):
-                text = title + self.process_doc(absolute_url)
-            elif media_type == "application/vnd.ms-excel":
-                text = title + self.process_xls(absolute_url)
-            elif media_type == "image/svg+xml":
-                text = title + self.process_svg(absolute_url, ocr_languages)
-            else:
-                continue
-            texts.append(text)
+            try:
+                if media_type == "application/pdf":
+                    text = title + self.process_pdf(absolute_url, ocr_languages)
+                elif (
+                    media_type == "image/png"
+                    or media_type == "image/jpg"
+                    or media_type == "image/jpeg"
+                ):
+                    text = title + self.process_image(absolute_url, ocr_languages)
+                elif (
+                    media_type == "application/vnd.openxmlformats-officedocument"
+                    ".wordprocessingml.document"
+                ):
+                    text = title + self.process_doc(absolute_url)
+                elif media_type == "application/vnd.ms-excel":
+                    text = title + self.process_xls(absolute_url)
+                elif media_type == "image/svg+xml":
+                    text = title + self.process_svg(absolute_url, ocr_languages)
+                else:
+                    continue
+                texts.append(text)
+            except requests.HTTPError as e:
+                if e.response.status_code == 404:
+                    print(f"Attachment not found at {absolute_url}")
+                    continue
+                else:
+                    raise
 
         return texts
 

@@ -1,10 +1,11 @@
 from typing import List, Optional, TypedDict, Union
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.runnables import Runnable, RunnableParallel
+
 from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.output_parser import NoOpOutputParser
-from langchain.schema.prompt_template import BasePromptTemplate
-from langchain.schema.runnable import RunnableMap, RunnableSequence
 from langchain.utilities.sql_database import SQLDatabase
 
 
@@ -30,8 +31,23 @@ def create_sql_query_chain(
     db: SQLDatabase,
     prompt: Optional[BasePromptTemplate] = None,
     k: int = 5,
-) -> RunnableSequence[Union[SQLInput, SQLInputWithTables], str]:
+) -> Runnable[Union[SQLInput, SQLInputWithTables], str]:
     """Create a chain that generates SQL queries.
+
+    *Security Note*: This chain generates SQL queries for the given database.
+
+        The SQLDatabase class provides a get_table_info method that can be used
+        to get column information as well as sample data from the table.
+
+        To mitigate risk of leaking sensitive data, limit permissions
+        to read and scope to the tables that are needed.
+
+        Optionally, use the SQLInputWithTables input type to specify which tables
+        are allowed to be accessed.
+
+        Control access to who can submit requests to this chain.
+
+        See https://python.langchain.com/docs/security for more information.
 
     Args:
         llm: The language model to use
@@ -60,9 +76,9 @@ def create_sql_query_chain(
     if "dialect" in prompt_to_use.input_variables:
         inputs["dialect"] = lambda _: (db.dialect, prompt_to_use)
     return (
-        RunnableMap(inputs)
+        RunnableParallel(inputs)
         | prompt_to_use
         | llm.bind(stop=["\nSQLResult:"])
-        | NoOpOutputParser()
+        | StrOutputParser()
         | _strip
     )

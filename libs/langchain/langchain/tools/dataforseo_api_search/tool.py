@@ -2,11 +2,12 @@
 
 from typing import Optional
 
+from langchain_core.pydantic_v1 import Field
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
 from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 
@@ -43,7 +44,7 @@ class DataForSeoAPISearchResults(BaseTool):
     """Tool that queries the DataForSeo Google Search API
     and get back json."""
 
-    name: str = "DataForSeo Results JSON"
+    name: str = "DataForSeo-Results-JSON"
     description: str = (
         "A comprehensive Google Search API provided by DataForSeo."
         "This tool is useful for obtaining real-time data on current events "

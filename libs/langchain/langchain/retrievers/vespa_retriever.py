@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union
+
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.schema import BaseRetriever, Document
-
-if TYPE_CHECKING:
-    from vespa.application import Vespa
 
 
 class VespaRetriever(BaseRetriever):
     """`Vespa` retriever."""
 
-    app: Vespa
+    app: Any
     """Vespa application to query."""
     body: Dict
     """Body of the query."""

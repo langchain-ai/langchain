@@ -83,7 +83,9 @@ class SmartLLMChain(Chain):
     class Config:
         extra = Extra.forbid
 
-    @root_validator
+    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
+    #       and causes mypy type-checking failures (hence the `type: ignore`)
+    @root_validator  # type: ignore[call-overload]
     @classmethod
     def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Ensure we have an LLM for each step."""
@@ -225,7 +227,7 @@ class SmartLLMChain(Chain):
                 (
                     HumanMessagePromptTemplate,
                     "You are a resolved tasked with 1) finding which of "
-                    f"the {self.n_ideas} anwer options the researcher thought was  "
+                    f"the {self.n_ideas} answer options the researcher thought was  "
                     "best,2) improving that answer and 3) printing the answer in full. "
                     "Don't output anything for step 1 or 2, only the full answer in 3. "
                     "Let's work this out in a step by step way to be sure we have "

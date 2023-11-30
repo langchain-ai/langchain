@@ -1,7 +1,7 @@
 import pytest
+from langchain_core.documents import Document
 from pytest_mock import MockerFixture
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.github import GitHubIssuesLoader
 
 
@@ -9,6 +9,21 @@ def test_initialization() -> None:
     loader = GitHubIssuesLoader(repo="repo", access_token="access_token")
     assert loader.repo == "repo"
     assert loader.access_token == "access_token"
+    assert loader.headers == {
+        "Accept": "application/vnd.github+json",
+        "Authorization": "Bearer access_token",
+    }
+
+
+def test_initialization_ghe() -> None:
+    loader = GitHubIssuesLoader(
+        repo="repo",
+        access_token="access_token",
+        github_api_url="https://github.example.com/api/v3",
+    )
+    assert loader.repo == "repo"
+    assert loader.access_token == "access_token"
+    assert loader.github_api_url == "https://github.example.com/api/v3"
     assert loader.headers == {
         "Accept": "application/vnd.github+json",
         "Authorization": "Bearer access_token",

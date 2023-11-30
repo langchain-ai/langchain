@@ -1,8 +1,9 @@
 from typing import Any, Dict, List, Mapping, Optional
 
+from langchain_core.pydantic_v1 import Field
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Field
 
 
 class Predibase(LLM):
@@ -25,7 +26,7 @@ class Predibase(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         try:
             from predibase import PredibaseClient

@@ -5,12 +5,23 @@ from typing import List
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
+from langchain.tools.multion.close_session import MultionCloseSession
 from langchain.tools.multion.create_session import MultionCreateSession
 from langchain.tools.multion.update_session import MultionUpdateSession
 
 
 class MultionToolkit(BaseToolkit):
-    """Toolkit for interacting with the Browser Agent"""
+    """Toolkit for interacting with the Browser Agent.
+
+    **Security Note**: This toolkit contains tools that interact with the
+        user's browser via the multion API which grants an agent
+        access to the user's browser.
+
+        Please review the documentation for the multion API to understand
+        the security implications of using this toolkit.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     class Config:
         """Pydantic config."""
@@ -19,4 +30,4 @@ class MultionToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        return [MultionCreateSession(), MultionUpdateSession()]
+        return [MultionCreateSession(), MultionUpdateSession(), MultionCloseSession()]

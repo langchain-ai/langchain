@@ -6,7 +6,7 @@ from typing import Type
 from unittest import mock
 
 import pytest
-from langchain import OpenAI
+from langchain.llms import OpenAI
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
 
@@ -39,14 +39,14 @@ from langchain_experimental.cpal.templates.univariate.narrative import (
 from langchain_experimental.cpal.templates.univariate.query import (
     template as query_template,
 )
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from tests.unit_tests.fake_llm import FakeLLM
 
 
 class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
     """Unit Test the CPAL chain and its component chains on math word problems.
 
     These tests can't run in the standard unit test directory because of
-    this issue, https://github.com/hwchase17/langchain/issues/7451
+    this issue, https://github.com/langchain-ai/langchain/issues/7451
 
     """
 
@@ -398,7 +398,7 @@ class TestCPALChain_MathWordProblems(unittest.TestCase):
         """
         Test CPAL chain against the first example in the PAL chain notebook doc:
 
-        https://github.com/hwchase17/langchain/blob/master/docs/extras/modules/chains/additional/pal.ipynb
+        https://github.com/langchain-ai/langchain/blob/master/docs/extras/modules/chains/additional/pal.ipynb
         """
 
         narrative_input = (

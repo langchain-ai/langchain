@@ -6,11 +6,11 @@ import warnings
 from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.utils.iter import batch_iterate
+from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.utils.iter import batch_iterate
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -129,7 +129,7 @@ class Pinecone(VectorStore):
 
         # For loops to avoid memory issues and optimize when using HTTP based embeddings
         # The first loop runs the embeddings, it benefits when using OpenAI embeddings
-        # The second loops runs the pinecone upsert asynchoronously.
+        # The second loops runs the pinecone upsert asynchronously.
         for i in range(0, len(texts), embedding_chunk_size):
             chunk_texts = texts[i : i + embedding_chunk_size]
             chunk_ids = ids[i : i + embedding_chunk_size]
@@ -249,6 +249,11 @@ class Pinecone(VectorStore):
                 "Unknown distance strategy, must be cosine, max_inner_product "
                 "(dot product), or euclidean"
             )
+
+    @staticmethod
+    def _cosine_relevance_score_fn(score: float) -> float:
+        """Pinecone returns cosine similarity scores between [-1,1]"""
+        return (score + 1) / 2
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -396,7 +401,7 @@ class Pinecone(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Pinecone
+                from langchain.vectorstores import Pinecone
                 from langchain.embeddings import OpenAIEmbeddings
                 import pinecone
 

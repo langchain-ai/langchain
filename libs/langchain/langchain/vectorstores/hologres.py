@@ -5,10 +5,11 @@ import logging
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 
 ADA_TOKEN_COUNT = 1536
 _LANGCHAIN_DEFAULT_TABLE_NAME = "langchain_pg_embedding"
@@ -403,7 +404,7 @@ class Hologres(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import Hologres
+                from langchain.vectorstores import Hologres
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
@@ -435,7 +436,7 @@ class Hologres(VectorStore):
         **kwargs: Any,
     ) -> Hologres:
         """
-        Get intsance of an existing Hologres store.This method will
+        Get instance of an existing Hologres store.This method will
         return the instance of the store without inserting any new
         embeddings
         """

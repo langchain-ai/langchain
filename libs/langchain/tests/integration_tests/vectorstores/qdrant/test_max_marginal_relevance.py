@@ -1,9 +1,8 @@
 from typing import Optional
 
 import pytest
-from qdrant_client import models
+from langchain_core.documents import Document
 
-from langchain.schema import Document
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -21,6 +20,8 @@ def test_qdrant_max_marginal_relevance_search(
     vector_name: Optional[str],
 ) -> None:
     """Test end to end construction and MRR search."""
+    from qdrant_client import models
+
     filter = models.Filter(
         must=[
             models.FieldCondition(

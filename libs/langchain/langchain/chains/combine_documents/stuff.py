@@ -2,15 +2,16 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
+from langchain_core.documents import Document
+from langchain_core.prompts import BasePromptTemplate, format_document
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
+
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
 )
 from langchain.chains.llm import LLMChain
-from langchain.docstore.document import Document
-from langchain.prompts.prompt import PromptTemplate
-from langchain.pydantic_v1 import Extra, Field, root_validator
-from langchain.schema import BasePromptTemplate, format_document
 
 
 def _get_default_document_prompt() -> PromptTemplate:
@@ -30,7 +31,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         .. code-block:: python
 
             from langchain.chains import StuffDocumentsChain, LLMChain
-            from langchain.prompts import PromptTemplate
+            from langchain_core.prompts import PromptTemplate
             from langchain.llms import OpenAI
 
             # This controls how each document will be formatted. Specifically,
@@ -150,7 +151,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         """
         inputs = self._get_inputs(docs, **kwargs)
         prompt = self.llm_chain.prompt.format(**inputs)
-        return self.llm_chain.llm.get_num_tokens(prompt)
+        return self.llm_chain._get_num_tokens(prompt)
 
     def combine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any

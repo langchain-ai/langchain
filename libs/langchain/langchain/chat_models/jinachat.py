@@ -12,9 +12,26 @@ from typing import (
     Mapping,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    ChatMessageChunk,
+    FunctionMessage,
+    HumanMessage,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_pydantic_field_names
 from tenacity import (
     before_sleep_log,
     retry,
@@ -27,27 +44,12 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatMessage,
-    ChatResult,
-    FunctionMessage,
-    HumanMessage,
-    SystemMessage,
+from langchain.chat_models.base import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
 )
-from langchain.schema.messages import (
-    AIMessageChunk,
-    BaseMessageChunk,
-    ChatMessageChunk,
-    HumanMessageChunk,
-    SystemMessageChunk,
-)
-from langchain.schema.output import ChatGenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +89,7 @@ async def acompletion_with_retry(llm: JinaChat, **kwargs: Any) -> Any:
 
 
 def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
@@ -160,8 +162,9 @@ class JinaChat(BaseChatModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"jinachat_api_key": "JINACHAT_API_KEY"}
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
         return True
 
     client: Any  #: :meta private:
@@ -169,7 +172,7 @@ class JinaChat(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    jinachat_api_key: Optional[str] = None
+    jinachat_api_key: Optional[SecretStr] = None
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
@@ -215,8 +218,8 @@ class JinaChat(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["jinachat_api_key"] = get_from_dict_or_env(
-            values, "jinachat_api_key", "JINACHAT_API_KEY"
+        values["jinachat_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "jinachat_api_key", "JINACHAT_API_KEY")
         )
         try:
             import openai
@@ -319,16 +322,10 @@ class JinaChat(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            generation: Optional[ChatGenerationChunk] = None
-            for chunk in self._stream(
+            stream_iter = self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            ):
-                if generation is None:
-                    generation = chunk
-                else:
-                    generation += chunk
-            assert generation is not None
-            return ChatResult(generations=[generation])
+            )
+            return generate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
@@ -384,16 +381,10 @@ class JinaChat(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            generation: Optional[ChatGenerationChunk] = None
-            async for chunk in self._astream(
+            stream_iter = self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            ):
-                if generation is None:
-                    generation = chunk
-                else:
-                    generation += chunk
-            assert generation is not None
-            return ChatResult(generations=[generation])
+            )
+            return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
@@ -404,7 +395,8 @@ class JinaChat(BaseChatModel):
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
         jinachat_creds: Dict[str, Any] = {
-            "api_key": self.jinachat_api_key,
+            "api_key": self.jinachat_api_key
+            and self.jinachat_api_key.get_secret_value(),
             "api_base": "https://api.chat.jina.ai/v1",
             "model": "jinachat",
         }
