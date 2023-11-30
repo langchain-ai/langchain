@@ -57,6 +57,7 @@ class ErnieBotChat(BaseChatModel):
             
     Deprecated Note:
     Please use `QianfanChatEndpoint` instead of this class. `QianfanChatEndpoint` is a more suitable choice for production.
+    Always test your code after changing to `QianfanChatEndpoint`.
 
     Example of `QianfanChatEndpoint`:
         .. code-block:: python
