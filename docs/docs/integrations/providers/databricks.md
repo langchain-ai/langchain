@@ -32,7 +32,7 @@ The notebook [Wrap Databricks endpoints as LLMs](/docs/integrations/llms/databri
 Databricks External Models
 --------------------------
 
-[Databricks External Models](generative-ai/external-models/index.html) is designed to streamline the usage and management of various large language model (LLM) providers, such as OpenAI and Anthropic, within an organization. It offers a high-level interface that simplifies the interaction with these services by providing a unified endpoint to handle specific LLM related requests. The following example creates an endpoint that serves OpenAI's GPT-4 and generates a chat response from it:
+[Databricks External Models](https://docs.databricks.com/generative-ai/external-models/index.html) is designed to streamline the usage and management of various large language model (LLM) providers, such as OpenAI and Anthropic, within an organization. It offers a high-level interface that simplifies the interaction with these services by providing a unified endpoint to handle specific LLM related requests. The following example creates an endpoint that serves OpenAI's GPT-4 and generates a chat response from it:
 
 ```python
 from langchain.chat_models import ChatDatabricks
@@ -68,7 +68,7 @@ print(chat([HumanMessage(content="hello")]))
 Databricks Foundation Model APIs
 --------------------------------
 
-[Databricks Foundation Model APIs](https://docs.databricks.com/en/machine-learning/foundation-models/index.html) which allow you to access and query state-of-the-art open source models from a dedicated serving endpoint. With Foundation Model APIs, developers can quickly and easily build applications that leverage a high-quality generative AI model without maintaining their own model deployment. The following example uses the `databricks-bge-large-en` endpoint to embed text:
+[Databricks Foundation Model APIs](https://docs.databricks.com/machine-learning/foundation-models/index.html) which allow you to access and query state-of-the-art open source models from a dedicated serving endpoint. With Foundation Model APIs, developers can quickly and easily build applications that leverage a high-quality generative AI model without maintaining their own model deployment. The following example uses the `databricks-bge-large-en` endpoint to embed text:
 
 ```python
 from langchain.llms import DatabricksEmbeddings
