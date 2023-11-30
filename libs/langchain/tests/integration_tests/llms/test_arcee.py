@@ -45,4 +45,10 @@ class TestApiConfigSecurity(unittest.TestCase):
         print(self.arcee_without_env_var.arcee_api_key, end="")
         captured = self.capsys.readouterr()
 
-        assert captured.out == "**********"
+        self.assertEquals("**********", captured.out)
+
+    def test_api_key_masked_when_passed_from_env(self) -> None:
+        print(self.arcee_with_env_var.arcee_api_key, end="")
+        captured = self.capsys.readouterr()
+
+        self.assertEquals("**********", captured.out)
