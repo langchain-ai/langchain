@@ -793,13 +793,13 @@ class ElasticsearchStore(VectorStore):
 
         docs_and_scores = []
         for hit in response["hits"]["hits"]:
+            if "metadata" not in hit["_source"]:
+                hit["_source"]["metadata"] = {}
             for field in fields:
                 if field in hit["_source"] and field not in [
                     "metadata",
                     self.query_field,
                 ]:
-                    if "metadata" not in hit["_source"]:
-                        hit["_source"]["metadata"] = {}
                     hit["_source"]["metadata"][field] = hit["_source"][field]
 
             docs_and_scores.append(
