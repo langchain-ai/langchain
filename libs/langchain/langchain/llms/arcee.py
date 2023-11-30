@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.pydantic_v1 import Extra, root_validator, SecretStr
 
@@ -30,7 +30,7 @@ class Arcee(LLM):
     _client: Optional[ArceeWrapper] = None  #: :meta private:
     """Arcee _client."""
 
-    arcee_api_key: Optional[str, SecretStr]
+    arcee_api_key: Union[Optional[str], SecretStr]
     """Arcee API Key"""
 
     model: str
