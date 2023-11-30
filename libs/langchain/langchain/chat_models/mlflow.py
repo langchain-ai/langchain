@@ -19,8 +19,6 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Extra,
     Field,
     PrivateAttr,
     root_validator,
@@ -28,17 +26,6 @@ from langchain_core.pydantic_v1 import (
 from langchain_core.utils import get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
-
-
-# Ignoring type because below is valid pydantic code
-# Unexpected keyword argument "extra" for "__init_subclass__" of "object"  [call-arg]
-class ChatParams(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
-    """Parameters for the `Mlflow` LLM."""
-
-    temperature: float = 0.0
-    n: int = 1
-    stop: Optional[List[str]] = None
-    max_tokens: Optional[int] = None
 
 
 class ChatMlflow(BaseChatModel):
@@ -63,8 +50,6 @@ class ChatMlflow(BaseChatModel):
     """The endpoint to use."""
     target_uri: str
     """The target URI to use."""
-    params: Optional[ChatParams] = None
-    """Extra parameters such as `temperature`."""
     temperature: float = 0.0
     """The sampling temperature."""
     n: int = 1
@@ -131,9 +116,12 @@ class ChatMlflow(BaseChatModel):
         params: Dict[str, Any] = {
             "target_uri": self.target_uri,
             "endpoint": self.endpoint,
+            "temperature": self.temperature,
+            "n": self.n,
+            "stop": self.stop,
+            "max_tokens": self.max_tokens,
+            **self.extra_params,
         }
-        if self.params:
-            params["params"] = self.params.dict()
         return params
 
     def _generate(
@@ -148,7 +136,11 @@ class ChatMlflow(BaseChatModel):
         ]
         data: Dict[str, Any] = {
             "messages": message_dicts,
-            **(self.params.dict() if self.params else {}),
+            "temperature": self.temperature,
+            "n": self.n,
+            "stop": stop or self.stop,
+            "max_tokens": self.max_tokens,
+            **self.extra_params,
         }
 
         resp = self._client.predict(endpoint=self.endpoint, inputs=data)
