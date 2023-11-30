@@ -188,12 +188,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             return generate_from_stream(stream_iter)
 
         question = _get_question(messages)
-        chat, params = self._start_chat(
+        chat, params, msg_params = self._start_chat(
             messages=messages, stop=stop, stream=False, **kwargs
         )
-        msg_params = {}
-        if "candidate_count" in params:
-            msg_params["candidate_count"] = params.pop("candidate_count")
         response = chat.send_message(question.content, **msg_params)
         generations = [
             ChatGeneration(message=AIMessage(content=r.text))
@@ -232,10 +229,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             return await agenerate_from_stream(stream_iter)
 
         question = _get_question(messages)
-        chat, params = self._start_chat(messages=messages, stop=stop, **kwargs)
-        msg_params = {}
-        if "candidate_count" in params:
-            msg_params["candidate_count"] = params.pop("candidate_count")
+        chat, params, msg_params = self._start_chat(
+            messages=messages, stop=stop, stream=False, **kwargs
+        )
         response = await chat.send_message_async(question.content, **msg_params)
         generations = [
             ChatGeneration(message=AIMessage(content=r.text))
@@ -251,7 +247,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         question = _get_question(messages)
-        chat, params = self._start_chat(messages=messages, stop=stop, **kwargs)
+        chat, params, _ = self._start_chat(
+            messages=messages, stop=stop, stream=True, **kwargs
+        )
         responses = chat.send_message_streaming(question.content, **params)
         for response in responses:
             if run_manager:
@@ -266,7 +264,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         question = _get_question(messages)
-        chat, params = self._start_chat(messages=messages, stop=stop, **kwargs)
+        chat, params, _ = self._start_chat(
+            messages=messages, stop=stop, stream=True, **kwargs
+        )
         responses = chat.send_message_streaming_async(question.content, **params)
         async for response in responses:
             if run_manager:
@@ -276,18 +276,31 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     def _start_chat(
         self,
         messages: List[BaseMessage],
+        stream: bool,
         stop: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> Tuple[Union[ChatSession, CodeChatSession], dict]:
+    ) -> Tuple[Union[ChatSession, CodeChatSession], dict, dict]:
         history = _parse_chat_history(messages[:-1])
-        params = self._prepare_params(stop=stop, **kwargs)
+        params = self._prepare_params(stop=stop, stream=stream, **kwargs)
+        msg_params = {}
         examples = kwargs.get("examples", None)
         if examples:
             params["examples"] = _parse_examples(examples)
 
+        if not stream:
+            msg_params["candidate_count"] = params.pop("candidate_count")
+
         if not self.is_codey_model:
-            return self.client.start_chat(
-                context=history.context, message_history=history.history, **kwargs
+            return (
+                self.client.start_chat(
+                    context=history.context, message_history=history.history, **params
+                ),
+                params,
+                msg_params,
             )
         else:
-            return self.client.start_chat(message_history=history.history, **kwargs)
+            return (
+                self.client.start_chat(message_history=history.history, **params),
+                params,
+                msg_params,
+            )
