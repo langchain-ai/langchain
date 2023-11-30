@@ -30,13 +30,18 @@ nbdoc = "^0.0.82"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"
+gigachain-core = { path = "libs/core/", develop = true }
+gigachain = { path = "libs/langchain/", develop = true }
+gigachain-experimental = { path = "libs/experimental/", develop = true }
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
-
+gigachain-core = { path = "libs/core/", develop = true }
+gigachain = { path = "libs/langchain/", develop = true }
+gigachain-experimental = { path = "libs/experimental/", develop = true }
 
 [tool.poetry.group.test.dependencies]
 

@@ -505,6 +505,10 @@
       "destination": "/docs/integrations/vectorstores/faiss_async"
     },
     {
+      "source": "/docs/integrations/vectorstores/matchingengine",
+      "destination": "/docs/integrations/vectorstores/google_vertex_ai_vector_search"
+    },
+    {
       "source": "/docs/integrations/cerebriumai",
       "destination": "/docs/integrations/providers/cerebriumai"
     },

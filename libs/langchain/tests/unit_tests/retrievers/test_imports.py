@@ -2,6 +2,7 @@ from langchain.retrievers import __all__
 
 EXPECTED_ALL = [
     "AmazonKendraRetriever",
+    "AmazonKnowledgeBasesRetriever",
     "ArceeRetriever",
     "ArxivRetriever",
     "AzureCognitiveSearchRetriever",
