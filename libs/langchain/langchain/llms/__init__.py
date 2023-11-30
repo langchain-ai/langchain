@@ -504,6 +504,12 @@ def _import_yandex_gpt() -> Any:
     return YandexGPT
 
 
+def _import_volcengine_maas() -> Any:
+    from langchain.llms.volcengine_maas import VolcEngineMaasLLM
+
+    return VolcEngineMaasLLM
+
+
 def _import_dstack() -> Any:
     from langchain.llms.dstack import Dstack
 
@@ -671,6 +677,8 @@ def __getattr__(name: str) -> Any:
         return _import_xinference()
     elif name == "YandexGPT":
         return _import_yandex_gpt()
+    elif name == "VolcEngineMaasLLM":
+        return _import_volcengine_maas()
     elif name == "Dstack":
         return _import_dstack()
     elif name == "type_to_cls_dict":
@@ -763,6 +771,7 @@ __all__ = [
     "JavelinAIGateway",
     "QianfanLLMEndpoint",
     "YandexGPT",
+    "VolcEngineMaasLLM",
     "Dstack",
 ]
 
@@ -843,5 +852,6 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "javelin-ai-gateway": _import_javelin_ai_gateway,
         "qianfan_endpoint": _import_baidu_qianfan_endpoint,
         "yandex_gpt": _import_yandex_gpt,
+        "VolcEngineMaasLLM": _import_volcengine_maas(),
         "dstack_service": _import_dstack,
     }
