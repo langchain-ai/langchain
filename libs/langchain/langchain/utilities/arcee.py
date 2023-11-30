@@ -168,7 +168,9 @@ class ArceeWrapper:
     def _make_request_headers(self, headers: Optional[Dict] = None) -> Dict:
         headers = headers or {}
         internal_headers = {
-            "X-Token": self.arcee_api_key if isinstance(self.arcee_api_key, str) else self.arcee_api_key.get_secret_value(),
+            "X-Token": self.arcee_api_key
+            if isinstance(self.arcee_api_key, str)
+            else self.arcee_api_key.get_secret_value(),
             "Content-Type": "application/json",
         }
         headers.update(internal_headers)
