@@ -204,14 +204,19 @@ class BaseConversationalRetrievalChain(Chain):
         else:
             docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
 
-        new_inputs = inputs.copy()
-        if self.rephrase_question:
-            new_inputs["question"] = new_question
-        new_inputs["chat_history"] = chat_history_str
-        answer = await self.combine_docs_chain.arun(
-            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
-        )
-        output: Dict[str, Any] = {self.output_key: answer}
+        output: Dict[str, Any] = {}
+        if self.response_if_no_docs_found is not None and len(docs) == 0:
+            output[self.output_key] = self.response_if_no_docs_found
+        else:
+            new_inputs = inputs.copy()
+            if self.rephrase_question:
+                new_inputs["question"] = new_question
+            new_inputs["chat_history"] = chat_history_str
+            answer = await self.combine_docs_chain.arun(
+                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+            )
+            output[self.output_key] = answer
+
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
