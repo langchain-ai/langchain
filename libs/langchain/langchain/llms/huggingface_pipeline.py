@@ -300,12 +300,9 @@ class HuggingFacePipeline(BaseLLM):
         # Start the generation in a separate thread
         thread = Thread(target=self.pipeline.model.generate, kwargs=generation_kwargs)
         thread.start()
-        generated_text = ""
         # Iterate over the streamer to yield chunks
         for new_text in streamer:
-            print(new_text)
             chunk = GenerationChunk(text=new_text)
-            print(f"IMPORTANT {chunk.text}")
             yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
