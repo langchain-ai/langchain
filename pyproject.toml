@@ -68,7 +68,7 @@ extend-include = ["*.ipynb"]
 ]
 
 [tool.setuptools]
-packages = []
+py-modules = []
 
 # These files were failing the listed rules at the time ruff was adopted for notebooks.
 # Don't require them to change at once, though we should look into them eventually.
