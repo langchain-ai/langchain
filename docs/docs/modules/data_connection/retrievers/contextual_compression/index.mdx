@@ -227,6 +227,51 @@ pretty_print_docs(compressed_docs)
 
 </CodeOutputBlock>
 
+### `ListRerank`
+
+`ListRerank` uses [zero-shot listwise document reranking](https://arxiv.org/pdf/2305.02156.pdf) and functions similarly to `LLMChainFilter` as a robust but more expensive option.
+
+
+```python
+from langchain.retrievers.document_compressors import ListRerank
+
+_filter = LLMChainFilter.from_llm(llm, top_n=1)
+compression_retriever = ContextualCompressionRetriever(base_compressor=_filter, base_retriever=retriever)
+
+compressed_docs = compression_retriever.get_relevant_documents("What did the president say about Ketanji Jackson Brown")
+pretty_print_docs(compressed_docs)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    Document 1:
+
+    Tonight. I call on the Senate to: Pass the Freedom to Vote Act. Pass the John Lewis Voting Rights Act. And while you’re at it, pass the Disclose Act so Americans can know who is funding our elections.
+
+    Tonight, I’d like to honor someone who has dedicated his life to serve this country: Justice Stephen Breyer—an Army veteran, Constitutional scholar, and retiring Justice of the United States Supreme Court. Justice Breyer, thank you for your service.
+
+    One of the most serious constitutional responsibilities a President has is nominating someone to serve on the United States Supreme Court.
+
+    And I did that 4 days ago, when I nominated Circuit Court of Appeals Judge Ketanji Brown Jackson. One of our nation’s top legal minds, who will continue Justice Breyer’s legacy of excellence.
+```
+
+</CodeOutputBlock>
+
+Similar to `CohereRerank`, `ListRerank` will add a relevant score to the document metadata:
+
+```python
+print(compressed_docs[0].metadata["relevance_score"])
+```
+
+<CodeOutputBlock lang="python">
+
+```
+0.99
+```
+
+</CodeOutputBlock>
+
 # Stringing compressors and document transformers together
 Using the `DocumentCompressorPipeline` we can also easily combine multiple compressors in sequence. Along with compressors we can add `BaseDocumentTransformer`s to our pipeline, which don't perform any contextual compression but simply perform some transformation on a set of documents. For example `TextSplitter`s can be used as document transformers to split documents into smaller pieces, and the `EmbeddingsRedundantFilter` can be used to filter out redundant documents based on embedding similarity between documents.
 
