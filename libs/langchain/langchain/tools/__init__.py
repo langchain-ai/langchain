@@ -1024,6 +1024,7 @@ __all__ = [
     "ShellTool",
     "SlackGetChannel",
     "SlackGetMessage",
+    "SlackScheduleMessage",
     "SlackSendMessage",
     "SleepTool",
     "StdInInquireTool",
