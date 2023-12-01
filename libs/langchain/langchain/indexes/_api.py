@@ -303,14 +303,18 @@ def index(
         # Filter out documents that already exist in the record store.
         uids = []
         docs_to_index = []
+        docs_to_update = []
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
-                # Must be updated to refresh timestamp.
-                record_manager.update([hashed_doc.uid], time_at_least=index_start_dt)
-                num_skipped += 1
+                docs_to_update.append(hashed_doc.uid)
                 continue
             uids.append(hashed_doc.uid)
             docs_to_index.append(hashed_doc.to_document())
+
+        # Update refresh timestamp
+        if docs_to_update:
+            record_manager.update(docs_to_update, time_at_least=index_start_dt)
+            num_skipped += len(docs_to_update)
 
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
