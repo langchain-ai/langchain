@@ -26,7 +26,6 @@ toml = "^0.10.2"
 myst-nb = "^0.17.1"
 linkchecker = "^10.2.1"
 sphinx-copybutton = "^0.5.1"
-nbdoc = "^0.0.82"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"
