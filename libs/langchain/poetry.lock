@@ -4236,7 +4236,7 @@ tests = ["pandas (>=1.4)", "pytest", "pytest-asyncio", "pytest-mock"]
 
 [[package]]
 name = "langchain-core"
-version = "0.0.7"
+version = "0.0.8"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -11448,4 +11448,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f92f6c4a796be4d7897cc5cf6a746c93eb0accf50f0c2867084ff2dad7c787aa"
+content-hash = "20041f6228e201d2ebc881c62e7505259c029c20c1171f057cc67e4cf5691850"
