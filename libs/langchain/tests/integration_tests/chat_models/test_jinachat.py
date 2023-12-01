@@ -1,18 +1,50 @@
 """Test JinaChat wrapper."""
 
+from typing import cast
 
 import pytest
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.pydantic_v1 import SecretStr
+from pytest import CaptureFixture, MonkeyPatch
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.jinachat import JinaChat
-from langchain.schema import (
-    BaseMessage,
-    ChatGeneration,
-    HumanMessage,
-    LLMResult,
-    SystemMessage,
-)
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+
+
+def test_jinachat_api_key_is_secret_string() -> None:
+    llm = JinaChat(jinachat_api_key="secret-api-key")
+    assert isinstance(llm.jinachat_api_key, SecretStr)
+
+
+def test_jinachat_api_key_masked_when_passed_from_env(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+) -> None:
+    """Test initialization with an API key provided via an env variable"""
+    monkeypatch.setenv("JINACHAT_API_KEY", "secret-api-key")
+    llm = JinaChat()
+    print(llm.jinachat_api_key, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_jinachat_api_key_masked_when_passed_via_constructor(
+    capsys: CaptureFixture,
+) -> None:
+    """Test initialization with an API key provided via the initializer"""
+    llm = JinaChat(jinachat_api_key="secret-api-key")
+    print(llm.jinachat_api_key, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_uses_actual_secret_value_from_secretstr() -> None:
+    """Test that actual secret is retrieved using `.get_secret_value()`."""
+    llm = JinaChat(jinachat_api_key="secret-api-key")
+    assert cast(SecretStr, llm.jinachat_api_key).get_secret_value() == "secret-api-key"
 
 
 def test_jinachat() -> None:
@@ -66,7 +98,6 @@ def test_jinachat_streaming() -> None:
     assert isinstance(response, BaseMessage)
 
 
-@pytest.mark.asyncio
 async def test_async_jinachat() -> None:
     """Test async generation."""
     chat = JinaChat(max_tokens=102)
@@ -82,7 +113,6 @@ async def test_async_jinachat() -> None:
             assert generation.text == generation.message.content
 
 
-@pytest.mark.asyncio
 async def test_async_jinachat_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

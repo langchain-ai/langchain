@@ -3,9 +3,8 @@ import os
 from datetime import datetime, timedelta
 from typing import List
 
-import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.timescalevector import TimescaleVector
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
@@ -64,7 +63,6 @@ def test_timescalevector_from_documents() -> None:
     assert output == [Document(page_content="foo", metadata={"a": "b"})]
 
 
-@pytest.mark.asyncio
 async def test_timescalevector_afrom_documents() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -96,7 +94,6 @@ def test_timescalevector_embeddings() -> None:
     assert output == [Document(page_content="foo")]
 
 
-@pytest.mark.asyncio
 async def test_timescalevector_aembeddings() -> None:
     """Test end to end construction with embeddings and search."""
     texts = ["foo", "bar", "baz"]
@@ -145,7 +142,6 @@ def test_timescalevector_with_metadatas_with_scores() -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
-@pytest.mark.asyncio
 async def test_timescalevector_awith_metadatas_with_scores() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -254,7 +250,6 @@ def test_timescalevector_relevance_score() -> None:
     ]
 
 
-@pytest.mark.asyncio
 async def test_timescalevector_relevance_score_async() -> None:
     """Test to make sure the relevance score is scaled to 0-1."""
     texts = ["foo", "bar", "baz"]

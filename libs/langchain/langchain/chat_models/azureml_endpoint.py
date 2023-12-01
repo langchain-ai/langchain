@@ -1,17 +1,19 @@
 import json
 from typing import Any, Dict, List, Optional, cast
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import SimpleChatModel
-from langchain.llms.azureml_endpoint import AzureMLEndpointClient, ContentFormatterBase
-from langchain.pydantic_v1 import validator
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.pydantic_v1 import SecretStr, validator
+from langchain_core.utils import convert_to_secret_str
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.chat_models.base import SimpleChatModel
+from langchain.llms.azureml_endpoint import AzureMLEndpointClient, ContentFormatterBase
 from langchain.utils import get_from_dict_or_env
 
 
@@ -94,7 +96,7 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
     """URL of pre-existing Endpoint. Should be passed to constructor or specified as 
         env var `AZUREML_ENDPOINT_URL`."""
 
-    endpoint_api_key: str = ""
+    endpoint_api_key: SecretStr = convert_to_secret_str("")
     """Authentication Key for Endpoint. Should be passed to constructor or specified as
         env var `AZUREML_ENDPOINT_API_KEY`."""
 
@@ -112,13 +114,15 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
     @classmethod
     def validate_client(cls, field_value: Any, values: Dict) -> AzureMLEndpointClient:
         """Validate that api key and python package exist in environment."""
-        endpoint_key = get_from_dict_or_env(
-            values, "endpoint_api_key", "AZUREML_ENDPOINT_API_KEY"
+        values["endpoint_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "endpoint_api_key", "AZUREML_ENDPOINT_API_KEY")
         )
         endpoint_url = get_from_dict_or_env(
             values, "endpoint_url", "AZUREML_ENDPOINT_URL"
         )
-        http_client = AzureMLEndpointClient(endpoint_url, endpoint_key)
+        http_client = AzureMLEndpointClient(
+            endpoint_url, values["endpoint_api_key"].get_secret_value()
+        )
         return http_client
 
     @property

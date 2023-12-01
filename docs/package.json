@@ -23,6 +23,7 @@
     "@docusaurus/preset-classic": "^3.0.0",
     "@docusaurus/remark-plugin-npm2yarn": "^2.4.0",
     "@mdx-js/react": "^3",
+    "@docusaurus/theme-mermaid": "2.4.0",
     "@mendable/search": "^0.0.160",
     "clsx": "^1.2.1",
     "json-loader": "^0.5.7",

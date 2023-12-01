@@ -16,17 +16,16 @@ from typing import (
 )
 
 import requests
+from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel, _generate_from_stream
+from langchain.chat_models.base import BaseChatModel, generate_from_stream
 from langchain.chat_models.openai import _convert_delta_to_message_chunk
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.messages import AIMessageChunk, BaseMessage
-from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_API_BASE = "https://api.konko.ai/v1"
@@ -230,7 +229,7 @@ class ChatKonko(BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
