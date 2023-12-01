@@ -49,7 +49,7 @@ class BaseOCILLM(LLM):
 class OCIModelDeploymentLLM(BaseOCILLM):
     """Base class for LLM deployed on OCI Data Science Model Deployment."""
 
-    endpoint: str
+    endpoint: str = ""
     """The uri of the endpoint from the deployed Model Deployment model."""
 
     best_of: int = 1
@@ -69,8 +69,9 @@ class OCIModelDeploymentLLM(BaseOCILLM):
                 "Could not import ads python package. "
                 "Please install it with `pip install oracle_ads`."
             ) from ex
-        cls.auth = values.get("auth", ads.common.auth.default_signer())
-        cls.endpoint = get_from_dict_or_env(
+        if not values.get("auth", None):
+            values["auth"] = ads.common.auth.default_signer()
+        values["endpoint"] = get_from_dict_or_env(
             values,
             "endpoint",
             "OCI_LLM_ENDPOINT",
@@ -183,15 +184,18 @@ class OCIModelDeploymentLLM(BaseOCILLM):
         request_kwargs = {"json": data}
         request_kwargs["headers"] = header
         timeout = kwargs.pop("timeout", DEFAULT_TIME_OUT)
+        signer = self.auth.get("signer")
 
         attempts = 0
         while attempts < 2:
-            request_kwargs["auth"] = self.auth.get("signer")
+            request_kwargs["auth"] = signer
+            print(signer)
             response = requests.post(
                 endpoint, timeout=timeout, **request_kwargs, **kwargs
             )
             if response.status_code == 401:
-                self._refresh_signer()
+                self._refresh_signer(signer)
+                print(f"refreshed: {signer}")
                 attempts += 1
                 continue
             break
@@ -211,11 +215,9 @@ class OCIModelDeploymentLLM(BaseOCILLM):
 
         return response_json
 
-    def _refresh_signer(self):
-        if self.auth.get("signer", None) and hasattr(
-            self.auth["signer"], "refresh_security_token"
-        ):
-            self.auth.get("signer").refresh_security_token()
+    def _refresh_signer(self, signer):
+        if hasattr(signer, "refresh_security_token"):
+            signer.refresh_security_token()
 
 
 class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
