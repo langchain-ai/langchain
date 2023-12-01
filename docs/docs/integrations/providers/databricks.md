@@ -77,5 +77,5 @@ print(embeddings.embed_query("hello")[:3])
 Databricks as an LLM provider
 -----------------------------
 
-The notebook [Wrap Databricks endpoints as LLMs](/docs/integrations/llms/databricks) illustrates the method to serve a custom model (e.g., Mistral) as a Databricks endpoint.
+The notebook [Wrap Databricks endpoints as LLMs](/docs/integrations/llms/databricks) illustrates the method to serve a custom model registered by MLflow as a Databricks endpoint.
 It supports two types of endpoints: the serving endpoint, which is recommended for both production and development, and the cluster driver proxy app, which is recommended for interactive development. 
