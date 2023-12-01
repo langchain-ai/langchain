@@ -1,6 +1,8 @@
+import React from "react";
+
 export function ColumnContainer({children}) {
     return (
-        <div style={{ clear: "both" }}>
+        <div style={{ display: "flex", flexWrap: "wrap" }}>
             {children}
         </div>
     )
@@ -8,7 +10,7 @@ export function ColumnContainer({children}) {
 
 export function Column({children}) {
     return (
-        <div style={{ width: "50%", float: "left", clear: "left", padding: "1%" }}>
+        <div style={{ flex: "1 1 50%", padding: "1%" }}>
             {children}
         </div>
     )
