@@ -19,7 +19,7 @@ class StarCoder(LLM):
     model_id: str = "bigcode/starcoder"
     device: Optional[str] = "cpu"
     n_predict: Optional[int] = 256
-    max_tokens: int = 8192
+    max_tokens: int = 8196
     batch_size: int = 4
     client: Any = None  #: :meta private:
 
@@ -46,11 +46,11 @@ class StarCoder(LLM):
         cls,
         model_id: str = "bigcode/starcoder",
         device: Optional[str] = "cpu",
-        max_tokens: int = 8192,
+        max_tokens: int = 8196,
         n_predict: int = 256,
         batch_size: int = 4,
         **kwargs: Any,
-    ) -> "StarCoderLLM":
+    ) -> "StarCoder":
         try:
             from transformers import (
                 AutoModelForCausalLM,
@@ -70,8 +70,9 @@ class StarCoder(LLM):
             task="text-generation",
             model=model,
             tokenizer=tokenizer,
-            device=0 if device == "gpu" else -1,
+            device=0 if device == "gpu" else -1 
         )
+
 
         return cls(
             client=pipeline,
@@ -94,10 +95,10 @@ class StarCoder(LLM):
             text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
 
         params = {**self._default_params(), **kwargs}
-        generated_tokens = self.client.some_method(
-            prompt,
-            max_length=params["max_tokens"],
-            num_return_sequences=params["n_predict"],
+        generated_tokens = self.client(
+            prompt, 
+            max_length=params["max_tokens"], 
+            num_return_sequences=params["n_predict"]
         )
 
         text = ""

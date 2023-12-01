@@ -437,6 +437,10 @@ def _import_self_hosted_hugging_face() -> Any:
 
     return SelfHostedHuggingFaceLLM
 
+def _import_starcoder() -> Any:
+    from langchain.llms.starcoder import StarCoder
+    
+    return StarCoder
 
 def _import_stochasticai() -> Any:
     from langchain.llms.stochasticai import StochasticAI
@@ -663,6 +667,8 @@ def __getattr__(name: str) -> Any:
         return _import_self_hosted()
     elif name == "SelfHostedHuggingFaceLLM":
         return _import_self_hosted_hugging_face()
+    elif name == "StarCoder":
+        return _import_starcoder()
     elif name == "StochasticAI":
         return _import_stochasticai()
     elif name == "Nebula":
@@ -769,6 +775,7 @@ __all__ = [
     "SagemakerEndpoint",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
+    "StarCoder"
     "StochasticAI",
     "TitanTakeoff",
     "TitanTakeoffPro",
@@ -850,6 +857,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "sagemaker_endpoint": _import_sagemaker_endpoint,
         "self_hosted": _import_self_hosted,
         "self_hosted_hugging_face": _import_self_hosted_hugging_face,
+        "starcoder": _import_starcoder,
         "stochasticai": _import_stochasticai,
         "together": _import_together,
         "tongyi": _import_tongyi,
