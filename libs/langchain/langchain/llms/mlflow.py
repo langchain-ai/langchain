@@ -106,13 +106,12 @@ class Mlflow(LLM):
             "prompt": prompt,
             "temperature": self.temperature,
             "n": self.n,
-            "stop": self.stop or self.stop,
             "max_tokens": self.max_tokens,
             **self.extra_params,
             **kwargs,
         }
-        if "stop" in data and not data["stop"]:
-            del data["stop"]
+        if s := self.stop or stop:
+            data["stop"] = s
         resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return resp["choices"][0]["text"]
 

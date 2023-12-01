@@ -454,15 +454,15 @@ class Databricks(LLM):
 
         # TODO: support callbacks
 
-        request = {"prompt": prompt, "stop": stop}
+        request = {"prompt": prompt}
         if self._client.llm:
             request.update(self._llm_params)
             request.update(self.model_kwargs or self.extra_params)
         else:
             request.update(self.model_kwargs or self.extra_params)
         request.update(kwargs)
-        if "stop" in request and not request["stop"]:
-            del request["stop"]
+        if s := self.stop or stop:
+            request["stop"] = s
 
         if self.transform_input_fn:
             request = self.transform_input_fn(**request)
