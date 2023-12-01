@@ -186,6 +186,10 @@ const config = {
                 label: "Templates",
               },
               {
+                label: "Templates Hub",
+                href: "https://templates.langchain.com",
+              },
+              {
                 to: "/docs/community",
                 label: "Community",
               },
