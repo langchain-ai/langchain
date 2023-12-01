@@ -2,10 +2,20 @@
 from __future__ import annotations
 
 import logging
+import sys
 import traceback
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from tenacity import RetryCallState
@@ -51,8 +61,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Get the stacktrace of the parent error."""
         msg = repr(error)
         try:
-            return (msg + "\n\n".join(traceback.format_exception(error))).strip()
+            if sys.version_info < (3, 10):
+                tb = traceback.format_exception(
+                    error.__class__, error, error.__traceback__
+                )
+            else:
+                tb = traceback.format_exception(error)
+            return msg + "\n\n".join(tb).strip()
         except:  # noqa: E722
+            breakpoint()
             return msg
 
     def _start_trace(self, run: Run) -> None:
