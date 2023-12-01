@@ -67,7 +67,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 )
             else:
                 tb = traceback.format_exception(error)
-            return msg + "\n\n".join(tb).strip()
+            return (msg + "\n\n".join(tb)).strip()
         except:  # noqa: E722
             return msg
 
