@@ -142,7 +142,7 @@ class SQLDatabaseChain(Chain):
                 )  # output: sql generation (no checker)
                 intermediate_steps.append({"sql_cmd": sql_cmd})  # input: sql exec
                 if SQL_QUERY in sql_cmd:
-                    sql_cmd = sql_cmd.split(SQL_QUERY)[1]
+                    sql_cmd = sql_cmd.split(SQL_QUERY)[1].strip()
                 result = self.database.run(sql_cmd)
                 intermediate_steps.append(str(result))  # output: sql exec
             else:
