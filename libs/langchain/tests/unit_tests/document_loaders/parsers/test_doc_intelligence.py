@@ -9,7 +9,7 @@ from langchain.document_loaders.parsers import DocumentIntelligenceParser
 @pytest.mark.requires("azure.ai", "azure.ai.documentintelligence")
 @patch("azure.ai.documentintelligence.DocumentIntelligenceClient")
 @patch("azure.core.credentials.AzureKeyCredential")
-def test_docai_parser_valid_processor_name(mock_credential, mock_client) -> None:
+def test_doc_intelligence(mock_credential, mock_client) -> None:
     endpoint = "endpoint"
     key = "key"
 
@@ -21,5 +21,5 @@ def test_docai_parser_valid_processor_name(mock_credential, mock_client) -> None
         headers={"x-ms-useragent": "langchain-parser/1.0.0"},
     )
     assert parser.client == mock_client()
-    assert parser.api_model == "prebuilt-document"
+    assert parser.api_model == "prebuilt-layout"
     assert parser.mode == "markdown"
