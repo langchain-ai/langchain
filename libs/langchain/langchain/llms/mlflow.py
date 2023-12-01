@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
-from langchain_core.pydantic_v1 import BaseModel, Extra, PrivateAttr
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, PrivateAttr
 
 
 # Ignoring type because below is valid pydantic code
@@ -41,7 +41,17 @@ class Mlflow(LLM):
     """The endpoint to use."""
     target_uri: str
     """The target URI to use."""
-    params: Optional[Params] = None
+    temperature: float = 0.0
+    """The sampling temperature."""
+    n: int = 1
+    """The number of completion choices to generate."""
+    stop: Optional[List[str]] = None
+    """The stop sequence."""
+    max_tokens: Optional[int] = None
+    """The maximum number of tokens to generate."""
+    extra_params: Dict[str, Any] = Field(default_factory=dict)
+    """Any extra parameters to pass to the endpoint."""
+
     """Extra parameters such as `temperature`."""
     _client: Any = PrivateAttr()
 
@@ -71,13 +81,15 @@ class Mlflow(LLM):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        params: Dict[str, Any] = {
+        return {
             "target_uri": self.target_uri,
             "endpoint": self.endpoint,
+            "temperature": self.temperature,
+            "n": self.n,
+            "stop": self.stop,
+            "max_tokens": self.max_tokens,
+            "extra_params": self.extra_params,
         }
-        if self.params:
-            params["params"] = self.params.dict()
-        return params
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -92,10 +104,15 @@ class Mlflow(LLM):
     ) -> str:
         data: Dict[str, Any] = {
             "prompt": prompt,
-            **(self.params.dict() if self.params else {}),
+            "temperature": self.temperature,
+            "n": self.n,
+            "stop": self.stop or self.stop,
+            "max_tokens": self.max_tokens,
+            **self.extra_params,
+            **kwargs,
         }
-        if s := (stop or (self.params.stop if self.params else None)):
-            data["stop"] = s
+        if "stop" in data and not data["stop"]:
+            del data["stop"]
         resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return resp["choices"][0]["text"]
 
