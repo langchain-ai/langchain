@@ -184,18 +184,15 @@ class OCIModelDeploymentLLM(BaseOCILLM):
         request_kwargs = {"json": data}
         request_kwargs["headers"] = header
         timeout = kwargs.pop("timeout", DEFAULT_TIME_OUT)
-        signer = self.auth.get("signer")
 
         attempts = 0
         while attempts < 2:
-            request_kwargs["auth"] = signer
-            print(signer)
+            request_kwargs["auth"] = self.auth.get("signer")
             response = requests.post(
                 endpoint, timeout=timeout, **request_kwargs, **kwargs
             )
             if response.status_code == 401:
-                self._refresh_signer(signer)
-                print(f"refreshed: {signer}")
+                self._refresh_signer()
                 attempts += 1
                 continue
             break
@@ -215,9 +212,11 @@ class OCIModelDeploymentLLM(BaseOCILLM):
 
         return response_json
 
-    def _refresh_signer(self, signer):
-        if hasattr(signer, "refresh_security_token"):
-            signer.refresh_security_token()
+    def _refresh_signer(self):
+        if self.auth.get("signer", None) and hasattr(
+            self.auth["signer"], "refresh_security_token"
+        ):
+            self.auth["signer"].refresh_security_token()
 
 
 class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
