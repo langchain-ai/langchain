@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import traceback
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
@@ -44,6 +45,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
     @abstractmethod
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
+
+    @staticmethod
+    def _get_stacktrace(error: BaseException) -> str:
+        """Get the stacktrace of the parent error."""
+        msg = repr(error)
+        try:
+            return (msg + "\n\n".join(traceback.format_exception(error))).strip()
+        except:  # noqa: E722
+            return msg
 
     def _start_trace(self, run: Run) -> None:
         """Start a trace for a run."""
@@ -232,7 +242,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or llm_run.run_type != "llm":
             raise TracerException(f"No LLM Run found to be traced for {run_id}")
-        llm_run.error = repr(error)
+        llm_run.error = self._get_stacktrace(error)
         llm_run.end_time = datetime.utcnow()
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
         self._end_trace(llm_run)
@@ -318,7 +328,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if chain_run is None:
             raise TracerException(f"No chain Run found to be traced for {run_id}")
 
-        chain_run.error = repr(error)
+        chain_run.error = self._get_stacktrace(error)
         chain_run.end_time = datetime.utcnow()
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
@@ -393,7 +403,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if tool_run is None or tool_run.run_type != "tool":
             raise TracerException(f"No tool Run found to be traced for {run_id}")
 
-        tool_run.error = repr(error)
+        tool_run.error = self._get_stacktrace(error)
         tool_run.end_time = datetime.utcnow()
         tool_run.events.append({"name": "error", "time": tool_run.end_time})
         self._end_trace(tool_run)
@@ -451,7 +461,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if retrieval_run is None or retrieval_run.run_type != "retriever":
             raise TracerException(f"No retriever Run found to be traced for {run_id}")
 
-        retrieval_run.error = repr(error)
+        retrieval_run.error = self._get_stacktrace(error)
         retrieval_run.end_time = datetime.utcnow()
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
         self._end_trace(retrieval_run)
