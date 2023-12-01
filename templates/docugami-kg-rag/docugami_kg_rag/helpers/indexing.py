@@ -3,21 +3,19 @@ import pickle
 from pathlib import Path
 from typing import Dict, List
 
-import pinecone
 from langchain.document_loaders import DocugamiLoader
 from langchain.schema import Document
 from langchain.storage.in_memory import InMemoryStore
-from langchain.vectorstores.pinecone import Pinecone
+from langchain.vectorstores import Chroma
 
 from docugami_kg_rag.config import (
+    CHROMA_DIRECTORY,
     EMBEDDINGS,
-    EMBEDDINGS_DIMENSIONS,
     INCLUDE_XML_TAGS,
     INDEXING_LOCAL_STATE_PATH,
     MAX_CHUNK_TEXT_LENGTH,
     MIN_CHUNK_TEXT_LENGTH,
     PARENT_HIERARCHY_LEVELS,
-    PINECONE_INDEX,
     SUB_CHUNK_TABLES,
     LocalIndexState,
 )
@@ -71,35 +69,20 @@ def update_local_index(docset_id: str, name: str, parents_by_id: Dict[str, Docum
         pickle.dump(state, file)
 
 
-def populate_pinecode_index(
-    index_name: str, chunks: List[Document], force: bool = False
-):
-    # Populate pinecone with the given chunks
-
-    if index_name in pinecone.list_indexes():
-        if force:
-            pinecone.delete_index(name=index_name)
-        else:
-            print(
-                f"Reusing existing index {index_name} (use --force option to recreate)"
-            )
-            return
-
+def populate_chroma_index(docset_id: str, chunks: List[Document]):
     # Create index if it does not exist
-    print(f"Creating pinecone index {index_name}...")
-    pinecone.create_index(name=index_name, dimension=EMBEDDINGS_DIMENSIONS)
+    print(f"Creating index for {docset_id}...")
 
-    print(f"Done creating pinecone index {index_name}, now embedding...")
-    Pinecone.from_documents(
-        documents=chunks,
-        embedding=EMBEDDINGS,
-        index_name=index_name,
+    # Reset the collection
+    chroma = Chroma.from_documents(
+        chunks, EMBEDDINGS, persist_directory=CHROMA_DIRECTORY
     )
+    chroma.persist()
 
-    print(f"Done embedding documents to pinecode index {index_name}!")
+    print(f"Done embedding documents to chroma collection {docset_id}!")
 
 
-def index_docset(docset_id: str, name: str, force: bool = False):
+def index_docset(docset_id: str, name: str):
     # Indexes the given docset
 
     print(f"Indexing {name} (ID: {docset_id})")
@@ -131,8 +114,5 @@ def index_docset(docset_id: str, name: str, force: bool = False):
             # child chunk
             children_by_id[chunk_id] = chunk
 
-    docset_pinecone_index_name = f"{PINECONE_INDEX}-{docset_id}"
-    populate_pinecode_index(
-        docset_pinecone_index_name, list(children_by_id.values()), force
-    )
+    populate_chroma_index(docset_id, list(children_by_id.values()))
     update_local_index(docset_id, name, parents_by_id)

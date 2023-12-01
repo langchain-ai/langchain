@@ -12,31 +12,25 @@ from langchain.storage.in_memory import InMemoryStore
 LLM = ChatOpenAI(temperature=0, model="gpt-4-1106-preview")
 
 EMBEDDINGS = OpenAIEmbeddings(model="text-embedding-ada-002")
-EMBEDDINGS_DIMENSIONS = 1536  # known size of text-embedding-ada-002 embeddings
 
 DOCUGAMI_API_KEY = os.environ.get("DOCUGAMI_API_KEY")
 if not DOCUGAMI_API_KEY:
     raise Exception("Please set the DOCUGAMI_API_KEY environment variable")
 
-PINECONE_INDEX = os.environ.get("PINECONE_INDEX")
-if not PINECONE_INDEX:
-    raise Exception("Please set the PINECONE_INDEX environment variable")
-
-PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
-if not PINECONE_API_KEY:
-    raise Exception("Missing `PINECONE_API_KEY` environment variable.")
-
-PINECONE_ENVIRONMENT = os.environ.get("PINECONE_ENVIRONMENT")
-if not PINECONE_ENVIRONMENT:
-    raise Exception("Missing `PINECONE_ENVIRONMENT` environment variable.")
+CHROMA_DIRECTORY = "/tmp/chroma_db"
+os.makedirs(Path(CHROMA_DIRECTORY).parent, exist_ok=True)
 
 INDEXING_LOCAL_STATE_PATH = os.environ.get(
-    "INDEXING_LOCAL_STATE_PATH", "temp/indexing_local_state.pkl"
+    "INDEXING_LOCAL_STATE_PATH", "/tmp/indexing_local_state.pkl"
 )
+os.makedirs(Path(INDEXING_LOCAL_STATE_PATH).parent, exist_ok=True)
+
 INDEXING_LOCAL_REPORT_DBS_ROOT = os.environ.get(
-    "INDEXING_LOCAL_REPORT_DBS_ROOT", "temp/report_dbs"
+    "INDEXING_LOCAL_REPORT_DBS_ROOT", "/tmp/report_dbs"
 )
-LOCAL_LLM_CACHE_DB_FILE = os.environ.get("LOCAL_LLM_CACHE", "temp/.langchain.db")
+os.makedirs(Path(INDEXING_LOCAL_REPORT_DBS_ROOT).parent, exist_ok=True)
+
+LOCAL_LLM_CACHE_DB_FILE = os.environ.get("LOCAL_LLM_CACHE", "/tmp/.langchain.db")
 os.makedirs(Path(LOCAL_LLM_CACHE_DB_FILE).parent, exist_ok=True)
 set_llm_cache(SQLiteCache(database_path=LOCAL_LLM_CACHE_DB_FILE))
 

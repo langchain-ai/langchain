@@ -1,17 +1,16 @@
 import re
 from typing import List, Optional
 
-import pinecone
 from langchain.agents.agent_toolkits import create_retriever_tool
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import Document, StrOutputParser
 from langchain.tools.base import BaseTool
-from langchain.vectorstores.pinecone import Pinecone
+from langchain.vectorstores import Chroma
 
 from docugami_kg_rag.config import (
+    CHROMA_DIRECTORY,
     EMBEDDINGS,
     LLM,
-    PINECONE_INDEX,
     RETRIEVER_K,
     SMALL_FRAGMENT_MAX_TEXT_LENGTH,
     LocalIndexState,
@@ -79,13 +78,10 @@ def get_retrieval_tool_for_docset(
 ) -> Optional[BaseTool]:
     # Chunks are in the vector store, and full documents are in the store inside the local state
 
-    docset_pinecone_index_name = f"{PINECONE_INDEX}-{docset_id}"
-    if docset_pinecone_index_name not in pinecone.list_indexes():
-        return None
-
-    chunk_vectorstore = Pinecone.from_existing_index(
-        docset_pinecone_index_name, EMBEDDINGS
+    chunk_vectorstore = Chroma(
+        persist_directory=CHROMA_DIRECTORY, embedding_function=EMBEDDINGS
     )
+
     retriever = FusedSummaryRetriever(
         vectorstore=chunk_vectorstore,
         summarystore=docset_state.doc_summaries_by_id,
