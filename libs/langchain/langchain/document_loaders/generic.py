@@ -163,7 +163,7 @@ class GenericLoader(BaseLoader):
                     blob_parser = cls.get_parser(**(parser_kwargs or {}))
                 except NotImplementedError:
                     # if not then use the global registry.
-                    blob_parser = get_parser(**(parser_kwargs or {}))
+                    blob_parser = get_parser(parser)
             else:
                 blob_parser = get_parser(parser)
         else:
