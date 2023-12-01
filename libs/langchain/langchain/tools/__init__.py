@@ -558,6 +558,12 @@ def _import_slack_get_message() -> Any:
     return SlackGetMessage
 
 
+def _import_slack_schedule_message() -> Any:
+    from langchain.tools.slack.schedule_message import SlackScheduleMessage
+
+    return SlackScheduleMessage
+
+
 def _import_slack_send_message() -> Any:
     from langchain.tools.slack.send_message import SlackSendMessage
 
@@ -871,6 +877,8 @@ def __getattr__(name: str) -> Any:
         return _import_slack_get_channel
     elif name == "SlackGetMessage":
         return _import_slack_get_message
+    elif name == "SlackScheduleMessage":
+        return _import_slack_schedule_message
     elif name == "SlackSendMessage":
         return _import_slack_send_message
     elif name == "SleepTool":

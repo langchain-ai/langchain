@@ -36,3 +36,7 @@ def login() -> WebClient:
             "Error: The SLACK_BOT_TOKEN or SLACK_USER_TOKEN \
             environment variable have not been set."
         )
+
+
+UTC_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
+"""UTC format for datetime objects."""

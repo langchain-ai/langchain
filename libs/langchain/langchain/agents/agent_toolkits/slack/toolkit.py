@@ -7,6 +7,7 @@ from langchain.pydantic_v1 import Field
 from langchain.tools import BaseTool
 from langchain.tools.slack.get_channel import SlackGetChannel
 from langchain.tools.slack.get_message import SlackGetMessage
+from langchain.tools.slack.schedule_message import SlackScheduleMessage
 from langchain.tools.slack.send_message import SlackSendMessage
 from langchain.tools.slack.utils import login
 
@@ -26,4 +27,9 @@ class SlackToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        return [SlackGetChannel(), SlackGetMessage(), SlackSendMessage()]
+        return [
+            SlackGetChannel(),
+            SlackGetMessage(),
+            SlackScheduleMessage(),
+            SlackSendMessage(),
+        ]

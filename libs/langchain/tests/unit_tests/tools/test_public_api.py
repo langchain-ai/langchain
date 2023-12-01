@@ -96,6 +96,7 @@ _EXPECTED = [
     "ShellTool",
     "SlackGetChannel",
     "SlackGetMessage",
+    "SlackScheduleMessage",
     "SlackSendMessage",
     "SleepTool",
     "StdInInquireTool",
