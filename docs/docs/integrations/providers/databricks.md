@@ -79,8 +79,3 @@ Databricks as an LLM provider
 
 The notebook [Wrap Databricks endpoints as LLMs](/docs/integrations/llms/databricks) illustrates the method to serve a custom model (e.g., Mistral) as a Databricks endpoint.
 It supports two types of endpoints: the serving endpoint, which is recommended for both production and development, and the cluster driver proxy app, which is recommended for interactive development. 
-
-Databricks Dolly
-----------------
-
-Databricks’ Dolly is an instruction-following large language model trained on the Databricks machine learning platform that is licensed for commercial use. The model is available on Hugging Face Hub as databricks/dolly-v2-12b. See the notebook [Hugging Face Hub](/docs/integrations/llms/huggingface_hub) for instructions to access it through the Hugging Face Hub integration with LangChain. 
