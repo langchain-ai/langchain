@@ -9,7 +9,7 @@ from langchain_core.messages import (
     BaseMessage,
     ChatMessage,
     HumanMessage,
-    SystemMessage
+    SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import root_validator
@@ -28,7 +28,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
-    elif isinstance(message,SystemMessage):
+    elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     else:
         raise ValueError(f"Got unknown type {message}")
@@ -108,7 +108,7 @@ class ErnieBotChat(BaseChatModel):
     def _chat(self, payload: object) -> dict:
         base_url = f"{self.ernie_api_base}/rpc/2.0/ai_custom/v1/wenxinworkshop/chat"
         model_paths = {
-            "ChatGLM2-6B-32K":"chatglm2_6b_32k",
+            "ChatGLM2-6B-32K": "chatglm2_6b_32k",
             "ERNIE-Bot-turbo": "eb-instant",
             "ERNIE-Bot": "completions",
             "ERNIE-Bot-8K": "ernie_bot_8k",
