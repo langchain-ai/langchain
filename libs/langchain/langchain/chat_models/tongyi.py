@@ -261,7 +261,7 @@ class ChatTongyi(BaseChatModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
+        """Get the default parameters for calling Tongyi Qwen API."""
         return {
             "model": self.model_name,
             "top_p": self.top_p,
@@ -385,7 +385,7 @@ class ChatTongyi(BaseChatModel):
         return message_dicts, params
 
     def _client_params(self) -> Dict[str, Any]:
-        """Get the parameters used for the openai client."""
+        """Get the parameters used for the Tongyi Qwen client."""
         creds: Dict[str, Any] = {
             "api_key": self.dashscope_api_key,
         }
