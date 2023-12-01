@@ -12,6 +12,7 @@ from typing import Any, Dict, Iterator, List, MutableSequence, Optional
 
 import google.ai.generativelanguage as genai
 from google.api_core import client_options as client_options_lib
+from google.api_core import exceptions as gapi_exception
 from google.api_core import gapic_v1
 from google.protobuf import timestamp_pb2
 
