@@ -9,6 +9,7 @@ import pytest
 
 from langchain.tools.amadeus.base import AmadeusBaseTool
 from langchain.tools.base import BaseTool
+from langchain.tools.imdb.base import IMDbBaseTool
 from langchain.tools.gmail.base import GmailBaseTool
 from langchain.tools.office365.base import O365BaseTool
 from langchain.tools.playwright.base import BaseBrowserTool
@@ -18,6 +19,7 @@ def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
     to_skip = {
         AmadeusBaseTool,
         BaseBrowserTool,
+        IMDbBaseTool,
         GmailBaseTool,
         O365BaseTool,
     }  # Abstract but not recognized
