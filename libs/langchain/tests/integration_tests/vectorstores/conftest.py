@@ -2,7 +2,7 @@ import os
 from typing import Generator, List, Union
 
 import pytest
-from langchain_core.documents import Document
+from langchain.schema import Document
 from vcr.request import Request
 
 from langchain.document_loaders import TextLoader
