@@ -1055,7 +1055,7 @@ def _collect_test_results(
     )
 
 
-def _is_jupyter_environment():
+def _is_jupyter_environment() -> bool:
     try:
         from IPython import get_ipython
 
@@ -1065,16 +1065,17 @@ def _is_jupyter_environment():
         return False
 
 
-def _display_aggregate_results(aggregate_results: pd.DataFrame):
-    print("\n Eval quantiles:")
+def _display_aggregate_results(aggregate_results: pd.DataFrame) -> None:
     if _is_jupyter_environment():
-        from IPython.display import display
+        from IPython.display import HTML, display
 
+        display(HTML("<h3>Experiment Results:</h3>"))
         display(aggregate_results)
     else:
         formatted_string = aggregate_results.to_string(
             float_format=lambda x: f"{x:.2f}", justify="right"
         )
+        print("\n Experiment Results:")
         print(formatted_string)
 
 
