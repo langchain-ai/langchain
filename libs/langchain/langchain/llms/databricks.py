@@ -388,7 +388,7 @@ class Databricks(LLM):
     def __init__(self, **data: Any):
         super().__init__(**data)
         if self.model_kwargs is not None and self.extra_params is not None:
-            raise ValueError("Cannot set both extra_params and params.")
+            raise ValueError("Cannot set both extra_params and extra_params.")
         elif self.model_kwargs is not None:
             warnings.warn(
                 "model_kwargs is deprecated. Please use extra_params instead.",
