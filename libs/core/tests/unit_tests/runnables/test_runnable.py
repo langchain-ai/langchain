@@ -630,13 +630,14 @@ def test_lambda_schemas() -> None:
     }
 
     second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
-    assert RunnableLambda(
-        second_lambda,  # type: ignore[arg-type]
-    ).input_schema.schema() == {
-        "title": "RunnableLambdaInput",
-        "type": "object",
-        "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
-    }
+    assert (
+        RunnableLambda(second_lambda).input_schema.schema()  # type: ignore[arg-type]
+        == {
+            "title": "RunnableLambdaInput",
+            "type": "object",
+            "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
+        }
+    )
 
     def get_value(input):  # type: ignore[no-untyped-def]
         return input["variable_name"]
