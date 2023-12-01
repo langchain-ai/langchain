@@ -19,11 +19,11 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,md,mdx}\""
   },
   "dependencies": {
-    "@docusaurus/core": "^3.0.0",
-    "@docusaurus/preset-classic": "^3.0.0",
-    "@docusaurus/remark-plugin-npm2yarn": "^2.4.0",
+    "@docusaurus/core": "^3.0.1",
+    "@docusaurus/preset-classic": "^3.0.1",
+    "@docusaurus/remark-plugin-npm2yarn": "^3.0.1",
+    "@docusaurus/theme-mermaid": "^3.0.1",
     "@mdx-js/react": "^3",
-    "@docusaurus/theme-mermaid": "2.4.0",
     "@mendable/search": "^0.0.160",
     "clsx": "^1.2.1",
     "json-loader": "^0.5.7",
