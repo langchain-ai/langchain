@@ -151,7 +151,9 @@ chat_model.invoke(messages)
 # >> AIMessage(content="Socks O'Color")
 ```
 
-<details> <summary>Go deeper</summary>
+<details>
+
+<summary>Go deeper</summary>
 
 `LLM.invoke` and `ChatModel.invoke` actually both support as input any of `Union[str, List[BaseMessage], PromptValue]`.
 `PromptValue` is an object that defines it's own custom logic for returning it's inputs either as a string or as messages.

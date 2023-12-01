@@ -58,7 +58,9 @@ set_debug(True)
 agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?")
 ```
 
-<details> <summary>Console output</summary>
+<details> 
+
+<summary>Console output</summary>
 
 <CodeOutputBlock lang="python">
 
@@ -250,13 +252,13 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     {
       "question": "52*365",
       "stop": [
-        "```output"
+        "\`\`\`output"
       ]
     }
     [llm/start] [1:RunTypeEnum.chain:AgentExecutor > 10:RunTypeEnum.tool:Calculator > 11:RunTypeEnum.chain:LLMMathChain > 12:RunTypeEnum.chain:LLMChain > 13:RunTypeEnum.llm:ChatOpenAI] Entering LLM run with input:
     {
       "prompts": [
-        "Human: Translate a math problem into a expression that can be executed using Python's numexpr library. Use the output of running this code to answer the question.\n\nQuestion: ${Question with math problem.}\n```text\n${single line mathematical expression that solves the problem}\n```\n...numexpr.evaluate(text)...\n```output\n${Output of running the code}\n```\nAnswer: ${Answer}\n\nBegin.\n\nQuestion: What is 37593 * 67?\n```text\n37593 * 67\n```\n...numexpr.evaluate(\"37593 * 67\")...\n```output\n2518731\n```\nAnswer: 2518731\n\nQuestion: 37593^(1/5)\n```text\n37593**(1/5)\n```\n...numexpr.evaluate(\"37593**(1/5)\")...\n```output\n8.222831614237718\n```\nAnswer: 8.222831614237718\n\nQuestion: 52*365"
+        "Human: Translate a math problem into a expression that can be executed using Python's numexpr library. Use the output of running this code to answer the question.\n\nQuestion: ${Question with math problem.}\n\`\`\`text\n${single line mathematical expression that solves the problem}\n\`\`\`\n...numexpr.evaluate(text)...\n\`\`\`output\n${Output of running the code}\n\`\`\`\nAnswer: ${Answer}\n\nBegin.\n\nQuestion: What is 37593 * 67?\n\`\`\`text\n37593 * 67\n\`\`\`\n...numexpr.evaluate(\"37593 * 67\")...\n\`\`\`output\n2518731\n\`\`\`\nAnswer: 2518731\n\nQuestion: 37593^(1/5)\n\`\`\`text\n37593**(1/5)\n\`\`\`\n...numexpr.evaluate(\"37593**(1/5)\")...\n\`\`\`output\n8.222831614237718\n\`\`\`\nAnswer: 8.222831614237718\n\nQuestion: 52*365"
       ]
     }
     [llm/end] [1:RunTypeEnum.chain:AgentExecutor > 10:RunTypeEnum.tool:Calculator > 11:RunTypeEnum.chain:LLMMathChain > 12:RunTypeEnum.chain:LLMChain > 13:RunTypeEnum.llm:ChatOpenAI] [2.89s] Exiting LLM run with output:
@@ -264,7 +266,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
       "generations": [
         [
           {
-            "text": "```text\n52*365\n```\n...numexpr.evaluate(\"52*365\")...\n",
+            "text": "\`\`\`text\n52*365\n\`\`\`\n...numexpr.evaluate(\"52*365\")...\n",
             "generation_info": {
               "finish_reason": "stop"
             },
@@ -278,7 +280,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
                 "AIMessage"
               ],
               "kwargs": {
-                "content": "```text\n52*365\n```\n...numexpr.evaluate(\"52*365\")...\n",
+                "content": "\`\`\`text\n52*365\n\`\`\`\n...numexpr.evaluate(\"52*365\")...\n",
                 "additional_kwargs": {}
               }
             }
@@ -297,7 +299,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     }
     [chain/end] [1:RunTypeEnum.chain:AgentExecutor > 10:RunTypeEnum.tool:Calculator > 11:RunTypeEnum.chain:LLMMathChain > 12:RunTypeEnum.chain:LLMChain] [2.89s] Exiting Chain run with output:
     {
-      "text": "```text\n52*365\n```\n...numexpr.evaluate(\"52*365\")...\n"
+      "text": "\`\`\`text\n52*365\n\`\`\`\n...numexpr.evaluate(\"52*365\")...\n"
     }
     [chain/end] [1:RunTypeEnum.chain:AgentExecutor > 10:RunTypeEnum.tool:Calculator > 11:RunTypeEnum.chain:LLMMathChain] [2.90s] Exiting Chain run with output:
     {
@@ -388,9 +390,8 @@ set_verbose(True)
 
 agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?")
 ```
-
-<details> <summary>Console output</summary>
-
+<details>
+<summary>Console output</summary>
 <CodeOutputBlock lang="python">
 
 ```
@@ -507,44 +508,44 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     Translate a math problem into a expression that can be executed using Python's numexpr library. Use the output of running this code to answer the question.
     
     Question: ${Question with math problem.}
-    ```text
+    \`\`\`text
     ${single line mathematical expression that solves the problem}
-    ```
+    \`\`\`
     ...numexpr.evaluate(text)...
-    ```output
+    \`\`\`output
     ${Output of running the code}
-    ```
+    \`\`\`
     Answer: ${Answer}
     
     Begin.
     
     Question: What is 37593 * 67?
-    ```text
+    \`\`\`text
     37593 * 67
-    ```
+    \`\`\`
     ...numexpr.evaluate("37593 * 67")...
-    ```output
+    \`\`\`output
     2518731
-    ```
+    \`\`\`
     Answer: 2518731
     
     Question: 37593^(1/5)
-    ```text
+    \`\`\`text
     37593**(1/5)
-    ```
+    \`\`\`
     ...numexpr.evaluate("37593**(1/5)")...
-    ```output
+    \`\`\`output
     8.222831614237718
-    ```
+    \`\`\`
     Answer: 8.222831614237718
     
     Question: (2023 - 1970) * 365
     
     
     > Finished chain.
-    ```text
+    \`\`\`text
     (2023 - 1970) * 365
-    ```
+    \`\`\`
     ...numexpr.evaluate("(2023 - 1970) * 365")...
     
     Answer: 19345
@@ -619,38 +620,40 @@ agent = initialize_agent(
 agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?")
 ```
 
-<details> <summary>Console output</summary>
+<details> 
 
-<CodeOutputBlock lang="python">
+  <summary>Console output</summary>
 
-```
-    > Entering new AgentExecutor chain...
-    First, I need to find out who directed the film Oppenheimer in 2023 and their birth date. Then, I can calculate their age in years and days.
-    Action: duckduckgo_search
-    Action Input: "Director of 2023 film Oppenheimer"
-    Observation: Oppenheimer: Directed by Christopher Nolan. With Cillian Murphy, Emily Blunt, Robert Downey Jr., Alden Ehrenreich. The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb. In Christopher Nolan's new film, "Oppenheimer," Cillian Murphy stars as J. Robert Oppenheimer, the American physicist who oversaw the Manhattan Project in Los Alamos, N.M. Universal Pictures... J Robert Oppenheimer was the director of the secret Los Alamos Laboratory. It was established under US president Franklin D Roosevelt as part of the Manhattan Project to build the first atomic bomb. He oversaw the first atomic bomb detonation in the New Mexico desert in July 1945, code-named "Trinity". A Review of Christopher Nolan's new film 'Oppenheimer' , the story of the man who fathered the Atomic Bomb. Cillian Murphy leads an all star cast ... Release Date: July 21, 2023. Director ... For his new film, "Oppenheimer," starring Cillian Murphy and Emily Blunt, director Christopher Nolan set out to build an entire 1940s western town.
-    Thought:The director of the 2023 film Oppenheimer is Christopher Nolan. Now I need to find out his birth date to calculate his age.
-    Action: duckduckgo_search
-    Action Input: "Christopher Nolan birth date"
-    Observation: July 30, 1970 (age 52) London England Notable Works: "Dunkirk" "Tenet" "The Prestige" See all related content → Recent News Jul. 13, 2023, 11:11 AM ET (AP) Cillian Murphy, playing Oppenheimer, finally gets to lead a Christopher Nolan film Christopher Edward Nolan CBE (born 30 July 1970) is a British and American filmmaker. Known for his Hollywood blockbusters with complex storytelling, Nolan is considered a leading filmmaker of the 21st century. His films have grossed $5 billion worldwide. The recipient of many accolades, he has been nominated for five Academy Awards, five BAFTA Awards and six Golden Globe Awards. Christopher Nolan is currently 52 according to his birthdate July 30, 1970 Sun Sign Leo Born Place Westminster, London, England, United Kingdom Residence Los Angeles, California, United States Nationality Education Chris attended Haileybury and Imperial Service College, in Hertford Heath, Hertfordshire. Christopher Nolan's next movie will study the man who developed the atomic bomb, J. Robert Oppenheimer. Here's the release date, plot, trailers & more. Date of Birth: 30 July 1970 . ... Christopher Nolan is a British-American film director, producer, and screenwriter. His films have grossed more than US$5 billion worldwide, and have garnered 11 Academy Awards from 36 nominations. ...
-    Thought:Christopher Nolan was born on July 30, 1970. Now I can calculate his age in years and then in days.
-    Action: Calculator
-    Action Input: {"operation": "subtract", "operands": [2023, 1970]}
-    Observation: Answer: 53
-    Thought:Christopher Nolan is 53 years old in 2023. Now I need to calculate his age in days.
-    Action: Calculator
-    Action Input: {"operation": "multiply", "operands": [53, 365]}
-    Observation: Answer: 19345
-    Thought:I now know the final answer
-    Final Answer: The director of the 2023 film Oppenheimer is Christopher Nolan. He is 53 years old in 2023, which is approximately 19345 days.
-    
-    > Finished chain.
+  <CodeOutputBlock lang="python">
+
+  ```
+      > Entering new AgentExecutor chain...
+      First, I need to find out who directed the film Oppenheimer in 2023 and their birth date. Then, I can calculate their age in years and days.
+      Action: duckduckgo_search
+      Action Input: "Director of 2023 film Oppenheimer"
+      Observation: Oppenheimer: Directed by Christopher Nolan. With Cillian Murphy, Emily Blunt, Robert Downey Jr., Alden Ehrenreich. The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb. In Christopher Nolan's new film, "Oppenheimer," Cillian Murphy stars as J. Robert Oppenheimer, the American physicist who oversaw the Manhattan Project in Los Alamos, N.M. Universal Pictures... J Robert Oppenheimer was the director of the secret Los Alamos Laboratory. It was established under US president Franklin D Roosevelt as part of the Manhattan Project to build the first atomic bomb. He oversaw the first atomic bomb detonation in the New Mexico desert in July 1945, code-named "Trinity". A Review of Christopher Nolan's new film 'Oppenheimer' , the story of the man who fathered the Atomic Bomb. Cillian Murphy leads an all star cast ... Release Date: July 21, 2023. Director ... For his new film, "Oppenheimer," starring Cillian Murphy and Emily Blunt, director Christopher Nolan set out to build an entire 1940s western town.
+      Thought:The director of the 2023 film Oppenheimer is Christopher Nolan. Now I need to find out his birth date to calculate his age.
+      Action: duckduckgo_search
+      Action Input: "Christopher Nolan birth date"
+      Observation: July 30, 1970 (age 52) London England Notable Works: "Dunkirk" "Tenet" "The Prestige" See all related content → Recent News Jul. 13, 2023, 11:11 AM ET (AP) Cillian Murphy, playing Oppenheimer, finally gets to lead a Christopher Nolan film Christopher Edward Nolan CBE (born 30 July 1970) is a British and American filmmaker. Known for his Hollywood blockbusters with complex storytelling, Nolan is considered a leading filmmaker of the 21st century. His films have grossed $5 billion worldwide. The recipient of many accolades, he has been nominated for five Academy Awards, five BAFTA Awards and six Golden Globe Awards. Christopher Nolan is currently 52 according to his birthdate July 30, 1970 Sun Sign Leo Born Place Westminster, London, England, United Kingdom Residence Los Angeles, California, United States Nationality Education Chris attended Haileybury and Imperial Service College, in Hertford Heath, Hertfordshire. Christopher Nolan's next movie will study the man who developed the atomic bomb, J. Robert Oppenheimer. Here's the release date, plot, trailers & more. Date of Birth: 30 July 1970 . ... Christopher Nolan is a British-American film director, producer, and screenwriter. His films have grossed more than US$5 billion worldwide, and have garnered 11 Academy Awards from 36 nominations. ...
+      Thought:Christopher Nolan was born on July 30, 1970. Now I can calculate his age in years and then in days.
+      Action: Calculator
+      Action Input: {"operation": "subtract", "operands": [2023, 1970]}
+      Observation: Answer: 53
+      Thought:Christopher Nolan is 53 years old in 2023. Now I need to calculate his age in days.
+      Action: Calculator
+      Action Input: {"operation": "multiply", "operands": [53, 365]}
+      Observation: Answer: 19345
+      Thought:I now know the final answer
+      Final Answer: The director of the 2023 film Oppenheimer is Christopher Nolan. He is 53 years old in 2023, which is approximately 19345 days.
+      
+      > Finished chain.
 
 
-    'The director of the 2023 film Oppenheimer is Christopher Nolan. He is 53 years old in 2023, which is approximately 19345 days.'
-```
+      'The director of the 2023 film Oppenheimer is Christopher Nolan. He is 53 years old in 2023, which is approximately 19345 days.'
+  ```
 
-</CodeOutputBlock>
+  </CodeOutputBlock>
 
 </details>
 
