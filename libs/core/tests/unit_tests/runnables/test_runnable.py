@@ -693,8 +693,8 @@ def test_lambda_schemas() -> None:
         }
 
     assert (
-        RunnableLambda(aget_values_typed).input_schema.schema()
-        == {  # type: ignore[arg-type]
+        RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
+        == {
             "title": "RunnableLambdaInput",
             "$ref": "#/definitions/InputType",
             "definitions": {
