@@ -421,11 +421,11 @@ class Databricks(LLM):
             "cluster_driver_port": self.cluster_driver_port,
             "databricks_uri": self.databricks_uri,
             "model_kwargs": self.model_kwargs,
-            "params": self.params,
             "temperature": self.temperature,
             "n": self.n,
             "stop": self.stop,
             "max_tokens": self.max_tokens,
+            "extra_params": self.extra_params,
             # TODO: Support saving transform_input_fn and transform_output_fn
             # "transform_input_fn": self.transform_input_fn,
             # "transform_output_fn": self.transform_output_fn,
