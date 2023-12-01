@@ -6,10 +6,10 @@ from langchain.tools.imdb.base import IMDbBaseTool
 from langchain.tools.imdb.utils import people_to_dicts
 
 
-class IMDBCastOfMovie(IMDbBaseTool):
+class IMDbCastOfMovie(IMDbBaseTool):
     """Tool to find cast of a movie given its name."""
 
-    name: str = "CastOfMovie"
+    name: str = "imdb_cast_of_movie"
     description: str = (
         "Use this tool to retrieve a list of cast members for a movie, given "
         "its IMBD movie ID."

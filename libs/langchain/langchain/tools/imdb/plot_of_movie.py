@@ -5,10 +5,10 @@ from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.imdb.base import IMDbBaseTool
 
 
-class IMDBPlotOfMovie(IMDbBaseTool):
+class IMDbPlotOfMovie(IMDbBaseTool):
     """Tool to find plot of a movie given its name."""
 
-    name: str = "PlotOfMovie"
+    name: str = "imdb_plot_of_movie"
     description: str = """Use this tool to retrieve a summary of the plot of a movie, 
         given its IMDB movie ID."""
 

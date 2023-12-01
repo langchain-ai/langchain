@@ -295,9 +295,9 @@ def _import_ifttt() -> Any:
 
 
 def _import_imdb_CastOfMovieTool() -> Any:
-    from langchain.tools.imdb.cast_of_movie import IMDBCastOfMovie
+    from langchain.tools.imdb.cast_of_movie import IMDbCastOfMovie
 
-    return IMDBCastOfMovie
+    return IMDbCastOfMovie
 
 
 def _import_imdb_GetMovieCrewTool() -> Any:
@@ -325,9 +325,9 @@ def _import_imdb_GetPersonMoviesTool() -> Any:
 
 
 def _import_imdb_PlotOfMovieTool() -> Any:
-    from langchain.tools.imdb.plot_of_movie import IMDBPlotOfMovie
+    from langchain.tools.imdb.plot_of_movie import IMDbPlotOfMovie
 
-    return IMDBPlotOfMovie
+    return IMDbPlotOfMovie
 
 
 def _import_imdb_PopularMoviesTool() -> Any:
@@ -340,6 +340,12 @@ def _import_imdb_SearchMovieTool() -> Any:
     from langchain.tools.imdb.search_movie import IMDbSearchMovie
 
     return IMDbSearchMovie
+
+
+def _import_imdb_SearchMovieKeywordTool() -> Any:
+    from langchain.tools.imdb.search_keyword import IMDbSearchMovieKeyword
+
+    return IMDbSearchMovieKeyword
 
 
 def _import_imdb_SearchPersonTool() -> Any:
@@ -815,7 +821,7 @@ def __getattr__(name: str) -> Any:
         return _import_human_tool()
     elif name == "IFTTTWebhook":
         return _import_ifttt()
-    elif name == "IMDBCastOfMovie":
+    elif name == "IMDbCastOfMovie":
         return _import_imdb_CastOfMovieTool()
     elif name == "IMDbGetMovieCrew":
         return _import_imdb_GetMovieCrewTool()
@@ -827,10 +833,12 @@ def __getattr__(name: str) -> Any:
         return _import_imdb_GetPersonMoviesTool()
     elif name == "IMDbPopularMovies":
         return _import_imdb_PopularMoviesTool()
-    elif name == "IMDBPlotOfMovie":
+    elif name == "IMDbPlotOfMovie":
         return _import_imdb_PlotOfMovieTool()
     elif name == "IMDbSearchMovie":
         return _import_imdb_SearchMovieTool()
+    elif name == "IMDbSearchMovieKeyword":
+        return _import_imdb_SearchMovieKeywordTool()
     elif name == "IMDbSearchPerson":
         return _import_imdb_SearchPersonTool()
     elif name == "StdInInquireTool":
@@ -1014,15 +1022,16 @@ __all__ = [
     "GoogleSerperRun",
     "HumanInputRun",
     "IFTTTWebhook",
-    "IMDBCastOfMovie",
+    "IMDbCastOfMovie",
     "IMDbGetMovieCrew",
     "IMDbGetMovieInfo",
     "IMDbGetPersonBio",
     "IMDbGetPersonMovies",
     "IMDbPopularMovies",
-    "IMDBPlotOfMovie",
+    "IMDbPlotOfMovie",
     "IMDbSearchMovie",
     "IMDbSearchPerson",
+    "IMDbSearchMovieKeyword",
     "InfoPowerBITool",
     "InfoSQLDatabaseTool",
     "InfoSparkSQLTool",
