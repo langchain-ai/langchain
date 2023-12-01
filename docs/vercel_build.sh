@@ -28,7 +28,7 @@ if ! version_compare $openssl_version $required_openssl_version && ! version_com
 # which are defaults on Amazon Linux 2 (which Vercel uses for builds)
     yum -y update
     yum remove openssl-devel -y
-    yum install gcc bzip2-devel libffi-devel zlib-devel wget tar -y
+    yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip -y
     yum install openssl11 -y
     yum install openssl11-devel -y
 
@@ -42,6 +42,12 @@ if ! version_compare $openssl_version $required_openssl_version && ! version_com
     cd ..
 fi
 
+# install quarto
+wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-arm64.tar.gz
+tar -xvzf quarto-1.3.450-linux-arm64.tar.gz
+export PATH=$PATH:/quarto-1.3.450/bin/
+
+
 python3.11 -m venv .venv
 source .venv/bin/activate
 python3.11 -m pip install --upgrade pip
@@ -53,5 +59,5 @@ python3.11 scripts/copy_templates.py
 cp ../cookbook/README.md src/pages/cookbook.mdx
 cp ../.github/CONTRIBUTING.md docs/contributing.md
 wget https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
-nbdoc_build --srcdir docs --pause 0
+quarto render docs/
 python3.11 scripts/generate_api_reference_links.py

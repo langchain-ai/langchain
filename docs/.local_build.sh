@@ -12,7 +12,7 @@ mkdir -p ../_dist
 rsync -ruv . ../_dist
 cd ../_dist
 poetry run python scripts/model_feat_table.py
-poetry run nbdoc_build --srcdir docs --pause 0
+quarto render docs/
 cp ../cookbook/README.md src/pages/cookbook.mdx
 cp ../.github/CONTRIBUTING.md docs/contributing.md
 mkdir -p docs/templates
