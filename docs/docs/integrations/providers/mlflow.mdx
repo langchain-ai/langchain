@@ -21,9 +21,9 @@ export OPENAI_API_KEY=...
 Create a configuration file:
 
 ```yaml
-routes:
+endpoints:
   - name: completions
-    route_type: llm/v1/completions
+    endpoint_type: llm/v1/completions
     model:
       provider: openai
       name: text-davinci-003
@@ -31,7 +31,7 @@ routes:
         openai_api_key: $OPENAI_API_KEY
 
   - name: embeddings
-    route_type: llm/v1/embeddings
+    endpoint_type: llm/v1/embeddings
     model:
       provider: openai
       name: text-embedding-ada-002
@@ -47,13 +47,11 @@ mlflow deployments start-server --config-path /path/to/config.yaml
 
 ## Example provided by `MLflow`
 
->The `mlflow.langchain` module provides an API for logging and loading `LangChain` models. 
-> This module exports multivariate LangChain models in the langchain flavor and univariate LangChain 
+>The `mlflow.langchain` module provides an API for logging and loading `LangChain` models.
+> This module exports multivariate LangChain models in the langchain flavor and univariate LangChain
 > models in the pyfunc flavor.
- 
+
 See the [API documentation and examples](https://www.mlflow.org/docs/latest/python_api/mlflow.langchain).
-
-
 
 ## Completions Example
 
