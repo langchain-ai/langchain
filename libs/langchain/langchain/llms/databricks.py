@@ -145,8 +145,11 @@ class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
             values["api_url"] = api_url
         return values
 
-    def post(self, request: Any, transform: Optional[Callable[..., str]] = None) -> Any:
-        return self._post(self.api_url, request)
+    def post(
+        self, request: Any, transform_output_fn: Optional[Callable[..., str]] = None
+    ) -> Any:
+        resp = self._post(self.api_url, request)
+        return transform_output_fn(resp) if transform_output_fn else resp
 
 
 def get_repl_context() -> Any:
@@ -464,9 +467,4 @@ class Databricks(LLM):
         if self.transform_input_fn:
             request = self.transform_input_fn(**request)
 
-        response = self._client.post(request)
-
-        if self.transform_output_fn:
-            response = self.transform_output_fn(response)
-
-        return response
+        return self._client.post(request, transform_output_fn=self.transform_output_fn)
