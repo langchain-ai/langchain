@@ -1,8 +1,11 @@
 """Test Hugging Face Chat Wrapper."""
+from importlib import import_module
 
 
 def test_import_class():
-    try:
-        from langchain.chat_models import HuggingFaceChatWrapper
-    except ImportError:
-        assert False, "Failed to import HuggingFaceChatWrapper"
+    """Test that the class can be imported."""
+    module_name = "langchain.chat_models.huggingface_chat_wrapper"
+    class_name = "HuggingFaceChatWrapper"
+
+    module = import_module(module_name)
+    assert hasattr(module, class_name)
