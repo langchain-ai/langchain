@@ -3,16 +3,17 @@
 from typing import Any, List
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.tools.steam.prompt import (
-    STEAM_GET_GAMES_DETAILS,
-    STEAM_GET_RECOMMENDED_GAMES,
-)
 
 
 class SteamWebAPIWrapper(BaseModel):
     """Wrapper for Steam API."""
 
     steam: Any  # for python-steam-api
+
+    from langchain.tools.steam.prompt import (
+        STEAM_GET_GAMES_DETAILS,
+        STEAM_GET_RECOMMENDED_GAMES,
+    )
 
     # operations: a list of dictionaries, each representing a specific operation that
     # can be performed with the API
@@ -90,7 +91,8 @@ class SteamWebAPIWrapper(BaseModel):
         info_partOne = self.parse_to_str(info_partOne_dict)
         id = str(info_partOne_dict.get("id"))
         info_dict = self.steam.apps.get_app_details(id)
-        detailed_description = info_dict.get(id).get("data").get("detailed_description")
+        data = info_dict.get(id).get("data")
+        detailed_description = data.get("detailed_description")
 
         # detailed_description contains <li> <br> some other html tags, so we need to
         # remove them
@@ -121,10 +123,10 @@ class SteamWebAPIWrapper(BaseModel):
         except ImportError:
             raise ImportError("steamspypi library is not installed.")
         users_games = self.get_users_games(steam_id)
-        result = {}
+        result = {}  # type: ignore
         most_popular_genre = ""
         most_popular_genre_count = 0
-        for game in users_games["games"]:
+        for game in users_games["games"]:  # type: ignore
             appid = game["appid"]
             data_request = {"request": "appdetails", "appid": appid}
             genreStore = steamspypi.download(data_request)
@@ -146,7 +148,7 @@ class SteamWebAPIWrapper(BaseModel):
         sorted_data = sorted(
             data.values(), key=lambda x: x.get("average_forever", 0), reverse=True
         )
-        owned_games = [game["appid"] for game in users_games["games"]]
+        owned_games = [game["appid"] for game in users_games["games"]]  # type: ignore
         remaining_games = [
             game for game in sorted_data if game["appid"] not in owned_games
         ]
