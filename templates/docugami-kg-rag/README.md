@@ -16,22 +16,21 @@ You need to set some required environment variables before using your new app ba
 export OPENAI_API_KEY=...
 export DOCUGAMI_API_KEY=...
 ```
+### Process Documents in Docugami (before you use this template)
 
-## Usage
-
-### Docugami
-
-Documents must be processed in Docugami to use this template. Here's what you need to get started:
+Before you use this template, you must have some documents already processed in Docugami. Here's what you need to get started:
 
 1. Create a [Docugami workspace](https://app.docugami.com/) (free trials available)
 2. Create an access token via the Developer Playground for your workspace. [Detailed instructions](https://help.docugami.com/home/docugami-api).
 3. Add your documents to Docugami for processing. There are two ways to do this:
-    - Use the simple Docugami web experience. [Detailed instructions](https://help.docugami.com/home/adding-documents).
-    - Use the Docugami API, specifically the [documents](https://api-docs.docugami.com/#tag/documents/operation/upload-document) endpoint. Code samples are available for python and JavaScript or you can use the [docugami](https://pypi.org/project/docugami/) python library.
+    - Upload via the simple Docugami web experience. [Detailed instructions](https://help.docugami.com/home/adding-documents).
+    - Upload via the Docugami API, specifically the [documents](https://api-docs.docugami.com/#tag/documents/operation/upload-document) endpoint. Code samples are available for python and JavaScript or you can use the [docugami](https://pypi.org/project/docugami/) python library.
 
-Once your documents are in Docugami, they are processed and organized into sets of similar documents, e.g. NDAs, Lease Agreements, and Service Agreements. Docugami is not limited to any particular types of documents, and the clusters created depend on your particular documents. You can [change the docset assignments](https://help.docugami.com/home/working-with-the-doc-sets-view) later if you wish. You can monitor file status in the simple Docugami webapp, or use a [webhook](https://api-docs.docugami.com/#tag/webhooks) to be informed when your documents are done processing.
+Once your documents are in Docugami, they are processed and organized into sets of similar documents, e.g. NDAs, Lease Agreements, and Service Agreements. Docugami is not limited to any particular types of documents, and the clusters created depend on your particular documents. You can [change the docset assignments](https://help.docugami.com/home/working-with-the-doc-sets-view) later if you wish. You can monitor file status in the simple Docugami webapp, or use a [webhook](https://api-docs.docugami.com/#tag/webhooks) to be informed when your documents are done processing. The [Docugami RAG over XML Knowledge Graphs (KG-RAG) Cookbook](https://github.com/langchain-ai/langchain/blob/master/cookbook/docugami_xml_kg_rag.ipynb) has end to end code to upload docs and wait for them to be processed, if you are interested. 
 
 Once your documents are finished processing, you can index them in the following step.
+
+## Usage
 
 ### Indexing
 
