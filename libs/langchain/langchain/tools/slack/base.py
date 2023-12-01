@@ -1,7 +1,6 @@
 """Base class for Slack tools."""
 from __future__ import annotations
 
-from abc import ABC
 from typing import TYPE_CHECKING
 
 from langchain.pydantic_v1 import Field
@@ -12,7 +11,7 @@ if TYPE_CHECKING:
     from slack_sdk import WebClient
 
 
-class SlackBaseTool(BaseTool, ABC):
+class SlackBaseTool(BaseTool):
     """Base class for Slack tools."""
 
     client: WebClient = Field(default_factory=login)
