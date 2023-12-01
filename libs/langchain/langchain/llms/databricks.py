@@ -334,10 +334,10 @@ class Databricks(LLM):
         params = {
             "temperature": self.temperature,
             "n": self.n,
+            "stop": self.stop,
             "max_tokens": self.max_tokens,
+            **(self.model_kwargs or self.extra_params),
         }
-        if self.stop:
-            params["stop"] = self.stop
         return params
 
     @validator("cluster_id", always=True)
