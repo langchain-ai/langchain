@@ -157,9 +157,13 @@ class GenericLoader(BaseLoader):
             show_progress=show_progress,
         )
         if isinstance(parser, str):
-            if parser == "default" and cls.get_parser != GenericLoader.get_parser:
-                # There is an implementation of get_parser on the class, use it.
-                blob_parser = cls.get_parser(**(parser_kwargs or {}))
+            if parser == "default":
+                try:
+                    # If there is an implementation of get_parser on the class, use it.
+                    blob_parser = cls.get_parser(**(parser_kwargs or {}))
+                except NotImplementedError:
+                    # if not then use the global registry.
+                    blob_parser = get_parser(**(parser_kwargs or {}))
             else:
                 blob_parser = get_parser(parser)
         else:
