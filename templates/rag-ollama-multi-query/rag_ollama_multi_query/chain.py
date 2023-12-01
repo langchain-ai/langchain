@@ -1,4 +1,3 @@
-
 from typing import List
 
 from langchain.chains import LLMChain
@@ -29,10 +28,12 @@ vectorstore = Chroma.from_documents(
     embedding=OpenAIEmbeddings(),
 )
 
+
 # Output parser will split the LLM result into a list of queries
 class LineList(BaseModel):
     # "lines" is the key (attribute name) of the parsed output
     lines: List[str] = Field(description="Lines of text")
+
 
 class LineListOutputParser(PydanticOutputParser):
     def __init__(self) -> None:
@@ -41,6 +42,7 @@ class LineListOutputParser(PydanticOutputParser):
     def parse(self, text: str) -> LineList:
         lines = text.strip().split("\n")
         return LineList(lines=lines)
+
 
 output_parser = LineListOutputParser()
 
@@ -82,8 +84,10 @@ chain = (
     | StrOutputParser()
 )
 
+
 # Add typing for input
 class Question(BaseModel):
     __root__: str
+
 
 chain = chain.with_types(input_type=Question)
