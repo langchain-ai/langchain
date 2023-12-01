@@ -160,7 +160,13 @@ const config = {
             label: "Integrations",
           },
           {
-            href: "https://api.python.langchain.com",
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "guides",
+            label: "Guides",
+          },
+          {
+            href: "https://api.python.langchain.com/en/stable/api_reference.html",
             label: "API",
             position: "left",
           },
@@ -169,6 +175,11 @@ const config = {
             label: "More",
             position: "left",
             items: [
+              {
+                type: "docSidebar",
+                sidebarId: "templates",
+                label: "Templates",
+              },
               {
                 to: "/docs/community",
                 label: "Community",
@@ -182,8 +193,16 @@ const config = {
                 label: "Dependents",
               },
               {
+                label: "Integrations Hub",
+                href: "https://integrations.langchain.com/",
+              },
+              {
                 to: "/docs/additional_resources/tutorials",
                 label: "Tutorials"
+              },
+              {
+                label: "Cookbooks",
+                href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
               {
                 to: "/docs/additional_resources/youtube",
@@ -194,30 +213,39 @@ const config = {
           },
           {
             type: "dropdown",
-            label: "Also by LangChain",
+            label: "🦜️🔗",
             position: "right",
             items: [
               {
-                href: "https://chat.langchain.com",
-                label: "Chat our docs",
-              },
-              {
                 href: "https://smith.langchain.com",
                 label: "LangSmith",
+              },
+              {
+                href: "https://docs.smith.langchain.com/",
+                label: "LangSmith Docs",
+              },
+              {
+                href: "https://github.com/langchain-ai/langserve",
+                label: "LangServe GitHub",
+              },
+              {
+                href: "https://github.com/langchain-ai/langchain/tree/master/templates",
+                label: "Templates GitHub",
               },
               {
                 href: "https://smith.langchain.com/hub",
                 label: "LangChain Hub",
               },
               {
-                href: "https://github.com/langchain-ai/langserve",
-                label: "LangServe",
-              },
-              {
-                href: "https://js.langchain.com/docs",
-                label: "JS/TS",
+                href: "https://js.langchain.com",
+                label: "JS/TS Docs",
               },
             ]
+          },
+          {
+            href: "https://chat.langchain.com",
+            label: "Chat",
+            position: "right",
           },
           // Please keep GitHub link to the right for consistency.
           {

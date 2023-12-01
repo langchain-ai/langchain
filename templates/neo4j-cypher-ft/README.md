@@ -9,6 +9,8 @@ The package utilizes a full-text index for efficient mapping of text values to d
 
 In the provided example, the full-text index is used to map names of people and movies from the user's query to corresponding database entries.
 
+![Workflow diagram](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-ft/static/workflow.png)
+
 ## Environment Setup
 
 The following environment variables need to be set:
@@ -29,7 +31,7 @@ This script will populate the database with sample movie data and create a full-
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:

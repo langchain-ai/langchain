@@ -3,12 +3,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from langchain.schema import (
-    BaseChatMessageHistory,
-)
-from langchain.schema.messages import (
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import (
     BaseMessage,
-    _message_to_dict,
+    message_to_dict,
     messages_from_dict,
     messages_to_dict,
 )
@@ -53,7 +51,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         kms_key_id: Optional[str] = None,
     ):
         if boto3_session:
-            client = boto3_session.resource("dynamodb")
+            client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
         else:
             try:
                 import boto3
@@ -132,7 +130,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             ) from e
 
         messages = messages_to_dict(self.messages)
-        _message = _message_to_dict(message)
+        _message = message_to_dict(message)
         messages.append(_message)
 
         try:

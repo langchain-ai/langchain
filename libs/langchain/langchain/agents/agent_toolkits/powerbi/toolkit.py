@@ -1,18 +1,19 @@
 """Toolkit for interacting with a Power BI dataset."""
 from typing import List, Optional, Union
 
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.chains.llm import LLMChain
-from langchain.chat_models.base import BaseChatModel
-from langchain.prompts import PromptTemplate
-from langchain.prompts.chat import (
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.pydantic_v1 import Field
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.pydantic_v1 import Field
+
+from langchain.agents.agent_toolkits.base import BaseToolkit
+from langchain.callbacks.base import BaseCallbackManager
+from langchain.chains.llm import LLMChain
+from langchain.chat_models.base import BaseChatModel
 from langchain.tools import BaseTool
 from langchain.tools.powerbi.prompt import (
     QUESTION_TO_QUERY_BASE,

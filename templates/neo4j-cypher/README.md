@@ -5,6 +5,8 @@ This template allows you to interact with a Neo4j graph database in natural lang
 
 It transforms a natural language question into a Cypher query (used to fetch data from Neo4j databases), executes the query, and provides a natural language response based on the query results.
 
+[![Workflow diagram](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher/static/workflow.png)](https://medium.com/neo4j/langchain-cypher-search-tips-tricks-f7c9e9abca4d)
+
 ## Environment Setup
 
 Define the following environment variables:
@@ -36,19 +38,19 @@ This script will populate the database with sample movie data.
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package neo4j_cypher
+langchain app new my-app --package neo4j-cypher
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add neo4j_cypher
+langchain app add neo4j-cypher
 ```
 
 And add the following code to your `server.py` file:
@@ -86,5 +88,5 @@ We can access the template from code with:
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/neo4j_cypher")
+runnable = RemoteRunnable("http://localhost:8000/neo4j-cypher")
 ```

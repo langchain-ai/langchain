@@ -2,8 +2,8 @@
 from copy import deepcopy
 from typing import Iterable, Iterator, List
 
-from langchain.schema.chat import ChatSession
-from langchain.schema.messages import AIMessage, BaseMessage
+from langchain_core.chat_sessions import ChatSession
+from langchain_core.messages import AIMessage, BaseMessage
 
 
 def merge_chat_runs_in_session(
@@ -21,6 +21,11 @@ def merge_chat_runs_in_session(
     """
     messages: List[BaseMessage] = []
     for message in chat_session["messages"]:
+        if not isinstance(message.content, str):
+            raise ValueError(
+                "Chat Loaders only support messages with content type string, "
+                f"got {message.content}"
+            )
         if not messages:
             messages.append(deepcopy(message))
         elif (
@@ -29,6 +34,11 @@ def merge_chat_runs_in_session(
             and messages[-1].additional_kwargs["sender"]
             == message.additional_kwargs.get("sender")
         ):
+            if not isinstance(messages[-1].content, str):
+                raise ValueError(
+                    "Chat Loaders only support messages with content type string, "
+                    f"got {messages[-1].content}"
+                )
             messages[-1].content = (
                 messages[-1].content + delimiter + message.content
             ).strip()

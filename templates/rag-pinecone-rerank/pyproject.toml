@@ -10,14 +10,23 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.325"
-openai = ">=0.28.1"
+openai = "<2"
 tiktoken = ">=0.5.1"
 pinecone-client = ">=2.2.4"
 cohere = ">=4.32"
 
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+
 [tool.langserve]
 export_module = "rag_pinecone_rerank"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["OpenAI", "Pinecone", "Cohere"]
+tags = ["vectordbs","post-processing"]
 
 [build-system]
 requires = [
