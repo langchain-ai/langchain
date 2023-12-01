@@ -397,10 +397,18 @@ select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
+  "D",
 ]
 exclude = [
   "tests/integration_tests/examples/non-utf8-encoding.py",
 ]
+	
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = [ "D" ]
+
 
 [tool.mypy]
 ignore_missing_imports = "True"

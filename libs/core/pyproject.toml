@@ -43,12 +43,21 @@ pytest-asyncio = "^0.21.1"
 optional = true
 dependencies = {}
 
+
 [tool.ruff]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
+  "D",
 ]
+	
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = [ "D" ]
+
 
 [tool.mypy]
 disallow_untyped_defs = "True"
