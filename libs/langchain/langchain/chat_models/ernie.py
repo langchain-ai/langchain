@@ -107,6 +107,7 @@ class ErnieBotChat(BaseChatModel):
     def _chat(self, payload: object) -> dict:
         base_url = f"{self.ernie_api_base}/rpc/2.0/ai_custom/v1/wenxinworkshop/chat"
         model_paths = {
+            "ChatGLM2-6B-32K":"chatglm2_6b_32k",
             "ERNIE-Bot-turbo": "eb-instant",
             "ERNIE-Bot": "completions",
             "ERNIE-Bot-8K": "ernie_bot_8k",
