@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import inspect
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Dict,
@@ -31,6 +34,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    message_chunk_to_message,
 )
 from langchain_core.outputs import (
     ChatGeneration,
@@ -39,9 +43,11 @@ from langchain_core.outputs import (
     LLMResult,
     RunInfo,
 )
-from langchain_core.prompts import ChatPromptValue, PromptValue, StringPromptValue
+from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.runnables import RunnableConfig
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
 
 
 def _get_verbosity() -> bool:
@@ -50,7 +56,7 @@ def _get_verbosity() -> bool:
     return get_verbose()
 
 
-def _generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
+def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     generation: Optional[ChatGenerationChunk] = None
     for chunk in stream:
         if generation is None:
@@ -58,10 +64,17 @@ def _generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
         else:
             generation += chunk
     assert generation is not None
-    return ChatResult(generations=[generation])
+    return ChatResult(
+        generations=[
+            ChatGeneration(
+                message=message_chunk_to_message(generation.message),
+                generation_info=generation.generation_info,
+            )
+        ]
+    )
 
 
-async def _agenerate_from_stream(
+async def agenerate_from_stream(
     stream: AsyncIterator[ChatGenerationChunk],
 ) -> ChatResult:
     generation: Optional[ChatGenerationChunk] = None
@@ -71,7 +84,14 @@ async def _agenerate_from_stream(
         else:
             generation += chunk
     assert generation is not None
-    return ChatResult(generations=[generation])
+    return ChatResult(
+        generations=[
+            ChatGeneration(
+                message=message_chunk_to_message(generation.message),
+                generation_info=generation.generation_info,
+            )
+        ]
+    )
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
@@ -201,6 +221,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
             try:
                 generation: Optional[ChatGenerationChunk] = None
@@ -254,6 +275,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
             try:
                 generation: Optional[ChatGenerationChunk] = None
@@ -329,6 +351,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             invocation_params=params,
             options=options,
             name=run_name,
+            batch_size=len(messages),
         )
         results = []
         for i, m in enumerate(messages):
@@ -391,6 +414,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             invocation_params=params,
             options=options,
             name=run_name,
+            batch_size=len(messages),
         )
 
         results = await asyncio.gather(

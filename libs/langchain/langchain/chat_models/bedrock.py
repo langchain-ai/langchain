@@ -28,7 +28,7 @@ class ChatPromptAdapter:
     ) -> str:
         if provider == "anthropic":
             prompt = convert_messages_to_prompt_anthropic(messages=messages)
-        if provider == "meta":
+        elif provider == "meta":
             prompt = convert_messages_to_prompt_llama(messages=messages)
         else:
             raise NotImplementedError(
@@ -53,8 +53,6 @@ class BedrockChat(BaseChatModel, BedrockBase):
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
-
-        print(self.region_name)
 
         if self.region_name:
             attributes["region_name"] = self.region_name

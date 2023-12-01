@@ -3,15 +3,31 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    Union,
+)
 
 import yaml
 
-from langchain_core.documents import Document
-from langchain_core.output_parsers import BaseOutputParser
-from langchain_core.prompts.value import PromptValue
+from langchain_core.output_parsers.base import BaseOutputParser
+from langchain_core.prompt_values import (
+    ChatPromptValueConcrete,
+    PromptValue,
+    StringPromptValue,
+)
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
+
+if TYPE_CHECKING:
+    from langchain_core.documents import Document
 
 
 class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
@@ -40,9 +56,6 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
 
     @property
     def OutputType(self) -> Any:
-        from langchain_core.prompts.chat import ChatPromptValueConcrete
-        from langchain_core.prompts.string import StringPromptValue
-
         return Union[StringPromptValue, ChatPromptValueConcrete]
 
     def get_input_schema(
@@ -54,13 +67,27 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
             **{k: (self.input_types.get(k, str), None) for k in self.input_variables},
         )
 
+    def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
+        try:
+            input_dict = {key: inner_input[key] for key in self.input_variables}
+        except TypeError as e:
+            raise TypeError(
+                f"Expected mapping type as input to {self.__class__.__name__}. "
+                f"Received {type(inner_input)}."
+            ) from e
+        except KeyError as e:
+            raise KeyError(
+                f"Input to {self.__class__.__name__} is missing variable {e}. "
+                f" Expected: {self.input_variables}"
+                f" Received: {list(inner_input.keys())}"
+            ) from e
+        return self.format_prompt(**input_dict)
+
     def invoke(
         self, input: Dict, config: Optional[RunnableConfig] = None
     ) -> PromptValue:
         return self._call_with_config(
-            lambda inner_input: self.format_prompt(
-                **{key: inner_input[key] for key in self.input_variables}
-            ),
+            self._format_prompt_with_error_handling,
             input,
             config,
             run_type="prompt",

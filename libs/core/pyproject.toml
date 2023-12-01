@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-core"
-version = "0.0.2"
+version = "0.0.8"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -51,7 +51,6 @@ select = [
 ]
 
 [tool.mypy]
-ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
 exclude = ["notebooks", "examples", "example_data", "langchain_core/pydantic"]
 

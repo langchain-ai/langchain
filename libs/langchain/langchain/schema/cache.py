@@ -1,3 +1,3 @@
-from langchain_core.caches import BaseCache
+from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 
-__all__ = ["BaseCache"]
+__all__ = ["BaseCache", "RETURN_VAL_TYPE"]

@@ -23,7 +23,6 @@ from typing_extensions import TypedDict
 from langchain_core.callbacks.manager import (
     Callbacks,
     atrace_as_chain_group,
-    collect_runs,
     trace_as_chain_group,
 )
 from langchain_core.documents import Document
@@ -39,18 +38,18 @@ from langchain_core.output_parsers import (
     CommaSeparatedListOutputParser,
     StrOutputParser,
 )
+from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.prompts import (
     ChatPromptTemplate,
-    ChatPromptValue,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     PromptTemplate,
-    StringPromptValue,
     SystemMessagePromptTemplate,
 )
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
+    AddableDict,
     ConfigurableField,
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
@@ -75,6 +74,7 @@ from langchain_core.tracers import (
     RunLog,
     RunLogPatch,
 )
+from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.chat_model import FakeListChatModel
 from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 
@@ -1021,6 +1021,118 @@ def test_configurable_alts_factory() -> None:
     assert fake_llm.with_config(configurable={"llm": "chat"}).invoke("...") == "b"
 
 
+def test_configurable_fields_prefix_keys() -> None:
+    fake_chat = FakeListChatModel(responses=["b"]).configurable_fields(
+        responses=ConfigurableFieldMultiOption(
+            id="responses",
+            name="Chat Responses",
+            options={
+                "hello": "A good morning to you!",
+                "bye": "See you later!",
+                "helpful": "How can I help you?",
+            },
+            default=["hello", "bye"],
+        ),
+        # (sleep is a configurable field in FakeListChatModel)
+        sleep=ConfigurableField(
+            id="chat_sleep",
+            is_shared=True,
+        ),
+    )
+    fake_llm = (
+        FakeListLLM(responses=["a"])
+        .configurable_fields(
+            responses=ConfigurableField(
+                id="responses",
+                name="LLM Responses",
+                description="A list of fake responses for this LLM",
+            )
+        )
+        .configurable_alternatives(
+            ConfigurableField(id="llm", name="LLM"),
+            chat=fake_chat | StrOutputParser(),
+            prefix_keys=True,
+        )
+    )
+    prompt = PromptTemplate.from_template("Hello, {name}!").configurable_fields(
+        template=ConfigurableFieldSingleOption(
+            id="prompt_template",
+            name="Prompt Template",
+            description="The prompt template for this chain",
+            options={
+                "hello": "Hello, {name}!",
+                "good_morning": "A very good morning to you, {name}!",
+            },
+            default="hello",
+        )
+    )
+
+    chain = prompt | fake_llm
+
+    assert chain.config_schema().schema() == {
+        "title": "RunnableSequenceConfig",
+        "type": "object",
+        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
+        "definitions": {
+            "LLM": {
+                "title": "LLM",
+                "description": "An enumeration.",
+                "enum": ["chat", "default"],
+                "type": "string",
+            },
+            "Chat_Responses": {
+                "title": "Chat Responses",
+                "description": "An enumeration.",
+                "enum": ["hello", "bye", "helpful"],
+                "type": "string",
+            },
+            "Prompt_Template": {
+                "title": "Prompt Template",
+                "description": "An enumeration.",
+                "enum": ["hello", "good_morning"],
+                "type": "string",
+            },
+            "Configurable": {
+                "title": "Configurable",
+                "type": "object",
+                "properties": {
+                    "prompt_template": {
+                        "title": "Prompt Template",
+                        "description": "The prompt template for this chain",
+                        "default": "hello",
+                        "allOf": [{"$ref": "#/definitions/Prompt_Template"}],
+                    },
+                    "llm": {
+                        "title": "LLM",
+                        "default": "default",
+                        "allOf": [{"$ref": "#/definitions/LLM"}],
+                    },
+                    # not prefixed because marked as shared
+                    "chat_sleep": {
+                        "title": "Chat Sleep",
+                        "type": "number",
+                    },
+                    # prefixed for "chat" option
+                    "llm==chat/responses": {
+                        "title": "Chat Responses",
+                        "default": ["hello", "bye"],
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/Chat_Responses"},
+                    },
+                    # prefixed for "default" option
+                    "llm==default/responses": {
+                        "title": "LLM Responses",
+                        "description": "A list of fake responses for this LLM",
+                        "default": ["a"],
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                },
+            },
+        },
+    }
+
+
 def test_configurable_fields_example() -> None:
     fake_chat = FakeListChatModel(responses=["b"]).configurable_fields(
         responses=ConfigurableFieldMultiOption(
@@ -1431,6 +1543,7 @@ async def test_prompt() -> None:
 
     assert stream_log[1:] == [
         RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": expected},
             {
                 "op": "replace",
                 "path": "/final_output",
@@ -1440,9 +1553,8 @@ async def test_prompt() -> None:
                         HumanMessage(content="What is your name?"),
                     ]
                 ),
-            }
+            },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
     ]
 
     stream_log_state = [
@@ -1501,6 +1613,7 @@ async def test_prompt() -> None:
 
     assert stream_log_nested[1:] == [
         RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": expected},
             {
                 "op": "replace",
                 "path": "/final_output",
@@ -1510,9 +1623,8 @@ async def test_prompt() -> None:
                         HumanMessage(content="What is your name?"),
                     ]
                 ),
-            }
+            },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
     ]
 
 
@@ -1996,9 +2108,9 @@ async def test_prompt_with_llm(
                 "value": "2023-01-01T00:00:00.000",
             },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": "foo"}),
         RunLogPatch(
-            {"op": "replace", "path": "/final_output", "value": {"output": "foo"}}
+            {"op": "add", "path": "/streamed_output/-", "value": "foo"},
+            {"op": "replace", "path": "/final_output", "value": "foo"},
         ),
     ]
 
@@ -2043,6 +2155,71 @@ async def test_stream_log_retriever() -> None:
     ]
 
 
+@freeze_time("2023-01-01")
+async def test_stream_log_lists() -> None:
+    async def list_producer(input: AsyncIterator[Any]) -> AsyncIterator[AddableDict]:
+        for i in range(4):
+            yield AddableDict(alist=[str(i)])
+
+    chain: Runnable = RunnableGenerator(list_producer)
+
+    stream_log = [
+        part async for part in chain.astream_log({"question": "What is your name?"})
+    ]
+
+    # remove ids from logs
+    for part in stream_log:
+        for op in part.ops:
+            if (
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
+            ):
+                del op["value"]["id"]
+
+    assert stream_log == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "",
+                "value": {"final_output": None, "logs": {}, "streamed_output": []},
+            }
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["0"]}},
+            {"op": "replace", "path": "/final_output", "value": {"alist": ["0"]}},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["1"]}},
+            {"op": "add", "path": "/final_output/alist/1", "value": "1"},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["2"]}},
+            {"op": "add", "path": "/final_output/alist/2", "value": "2"},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["3"]}},
+            {"op": "add", "path": "/final_output/alist/3", "value": "3"},
+        ),
+    ]
+
+    state = add(stream_log)
+
+    assert isinstance(state, RunLog)
+
+    assert state.state == {
+        "final_output": {"alist": ["0", "1", "2", "3"]},
+        "logs": {},
+        "streamed_output": [
+            {"alist": ["0"]},
+            {"alist": ["1"]},
+            {"alist": ["2"]},
+            {"alist": ["3"]},
+        ],
+    }
+
+
+@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm_and_async_lambda(
     mocker: MockerFixture, snapshot: SnapshotAssertion
@@ -3950,3 +4127,63 @@ def test_with_config_callbacks() -> None:
     # ConfigError: field "callbacks" not yet prepared so type is still a ForwardRef,
     # you might need to call RunnableConfig.update_forward_refs().
     assert isinstance(result, RunnableBinding)
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_on_returned_runnable() -> None:
+    """Verify that a runnable returned by a sync runnable in the async path will
+    be runthroughaasync path (issue #13407)"""
+
+    def idchain_sync(__input: dict) -> bool:
+        return False
+
+    async def idchain_async(__input: dict) -> bool:
+        return True
+
+    idchain = RunnableLambda(func=idchain_sync, afunc=idchain_async)
+
+    def func(__input: dict) -> Runnable:
+        return idchain
+
+    assert await RunnableLambda(func).ainvoke({})
+
+
+def test_invoke_stream_passthrough_assign_trace() -> None:
+    def idchain_sync(__input: dict) -> bool:
+        return False
+
+    chain = RunnablePassthrough.assign(urls=idchain_sync)
+
+    tracer = FakeTracer()
+    chain.invoke({"example": [1, 2, 3]}, dict(callbacks=[tracer]))
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+    tracer = FakeTracer()
+    for item in chain.stream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+        pass
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_astream_passthrough_assign_trace() -> None:
+    def idchain_sync(__input: dict) -> bool:
+        return False
+
+    chain = RunnablePassthrough.assign(urls=idchain_sync)
+
+    tracer = FakeTracer()
+    await chain.ainvoke({"example": [1, 2, 3]}, dict(callbacks=[tracer]))
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+    tracer = FakeTracer()
+    async for item in chain.astream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+        pass
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"

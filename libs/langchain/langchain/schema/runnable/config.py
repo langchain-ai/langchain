@@ -1,6 +1,7 @@
 from langchain_core.runnables.config import (
     EmptyDict,
     RunnableConfig,
+    acall_func_with_variable_args,
     call_func_with_variable_args,
     ensure_config,
     get_async_callback_manager_for_config,
@@ -18,6 +19,7 @@ __all__ = [
     "get_config_list",
     "patch_config",
     "merge_configs",
+    "acall_func_with_variable_args",
     "call_func_with_variable_args",
     "get_callback_manager_for_config",
     "get_async_callback_manager_for_config",

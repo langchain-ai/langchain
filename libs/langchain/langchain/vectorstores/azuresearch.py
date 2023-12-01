@@ -17,6 +17,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
@@ -26,7 +27,6 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.docstore.document import Document
 from langchain.utils import get_from_env
 
 logger = logging.getLogger()

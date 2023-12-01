@@ -4,6 +4,7 @@ import asyncio
 import functools
 from abc import ABC, abstractmethod
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Generic,
@@ -17,12 +18,11 @@ from typing import (
 from typing_extensions import get_args
 
 from langchain_core.messages import AnyMessage, BaseMessage
-from langchain_core.outputs import (
-    ChatGeneration,
-    Generation,
-)
-from langchain_core.prompts.value import PromptValue
+from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
+
+if TYPE_CHECKING:
+    from langchain_core.prompt_values import PromptValue
 
 T = TypeVar("T")
 

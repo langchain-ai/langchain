@@ -15,7 +15,7 @@ from typing import (
 )
 from uuid import UUID
 
-import jsonpatch
+import jsonpatch  # type: ignore[import]
 from anyio import create_memory_object_stream
 
 from langchain_core.load import load
@@ -59,7 +59,7 @@ class RunState(TypedDict):
     """List of output chunks streamed by Runnable.stream()"""
     final_output: Optional[Any]
     """Final output of the run, usually the result of aggregating (`+`) streamed_output.
-    Only available after the run has finished successfully."""
+    Updated throughout the run when supported by the Runnable."""
 
     logs: Dict[str, LogEntry]
     """Map of run names to sub-runs. If filters were supplied, this list will
@@ -151,9 +151,7 @@ class LogStreamCallbackHandler(BaseTracer):
 
         send_stream: Any
         receive_stream: Any
-        send_stream, receive_stream = create_memory_object_stream(
-            math.inf, item_type=RunLogPatch
-        )
+        send_stream, receive_stream = create_memory_object_stream(math.inf)
         self.lock = threading.Lock()
         self.send_stream = send_stream
         self.receive_stream = receive_stream
@@ -278,15 +276,6 @@ class LogStreamCallbackHandler(BaseTracer):
             )
         finally:
             if run.id == self.root_id:
-                self.send_stream.send_nowait(
-                    RunLogPatch(
-                        {
-                            "op": "replace",
-                            "path": "/final_output",
-                            "value": load(run.outputs),
-                        }
-                    )
-                )
                 if self.auto_close:
                     self.send_stream.close()
 
