@@ -454,7 +454,7 @@ class Databricks(LLM):
 
         # TODO: support callbacks
 
-        request = {"prompt": prompt}
+        request: Dict[str, Any] = {"prompt": prompt}
         if self._client.llm:
             request.update(self._llm_params)
             request.update(self.model_kwargs or self.extra_params)
