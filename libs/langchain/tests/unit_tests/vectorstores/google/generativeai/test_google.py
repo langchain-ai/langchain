@@ -125,7 +125,7 @@ def test_from_texts(
     # We will use a max requests per batch to be 2.
     # Then, we send 3 requests.
     # We expect to have 2 batches where the last batch has only 1 request.
-    genaix._MAX_REQUEST_PER_BATCH = 2
+    genaix._MAX_REQUEST_PER_CHUNK = 2
     mock_get_document.return_value = genai.Document(
         name="corpora/123/documents/456", display_name="My Document"
     )

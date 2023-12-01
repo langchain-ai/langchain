@@ -7,7 +7,6 @@ google.generativeai.
 import datetime
 import logging
 import re
-import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, MutableSequence, Optional
 
@@ -21,10 +20,10 @@ import langchain
 _logger = logging.getLogger(__name__)
 _DEFAULT_API_ENDPOINT = "autopush-generativelanguage.sandbox.googleapis.com"
 _USER_AGENT = f"langchain/{langchain.__version__}"
-_default_page_size = 20
-_default_text_service_model = "models/text-bison-001"
-_MAX_REQUEST_PER_BATCH = 100
-_name_regex = re.compile(r"^corpora/([^/]+?)(/documents/([^/]+?)(/chunks/([^/]+?))?)?$")
+_DEFAULT_PAGE_SIZE = 20
+_DEFAULT_GENERATE_SERVICE_MODEL = "models/aqa"
+_MAX_REQUEST_PER_CHUNK = 100
+_NAME_REGEX = re.compile(r"^corpora/([^/]+?)(/documents/([^/]+?)(/chunks/([^/]+?))?)?$")
 
 
 @dataclass
@@ -39,7 +38,7 @@ class EntityName:
 
     @classmethod
     def from_str(cls, encoded: str) -> "EntityName":
-        matched = _name_regex.match(encoded)
+        matched = _NAME_REGEX.match(encoded)
         if not matched:
             raise ValueError(f"Invalid entity name: {encoded}")
 
@@ -139,7 +138,7 @@ class Config:
 
     api_endpoint: str = _DEFAULT_API_ENDPOINT
     user_agent: str = _USER_AGENT
-    page_size: int = _default_page_size
+    page_size: int = _DEFAULT_PAGE_SIZE
 
 
 def set_defaults(config: Config) -> None:
@@ -147,12 +146,13 @@ def set_defaults(config: Config) -> None:
     global _config
     _config = config
     _set_default_retriever(build_semantic_retriever())
-    _set_default_text_service(build_text_service())
+    _set_default_generative_service(build_generative_service())
 
 
 _config = Config()
 
 
+# Retriever client.
 def build_semantic_retriever() -> genai.RetrieverServiceClient:
     return genai.RetrieverServiceClient(
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
@@ -170,8 +170,9 @@ def _set_default_retriever(retriever: genai.RetrieverServiceClient) -> None:
     _default_retriever = retriever
 
 
-def build_text_service() -> genai.TextServiceClient:
-    return genai.TextServiceClient(
+# GenerativeService client.
+def build_generative_service() -> genai.GenerativeServiceClient:
+    return genai.GenerativeServiceClient(
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
         client_options=client_options_lib.ClientOptions(
             api_endpoint=_config.api_endpoint
@@ -179,12 +180,17 @@ def build_text_service() -> genai.TextServiceClient:
     )
 
 
-_default_text_service: genai.TextServiceClient = build_text_service()
+_default_generative_service: genai.GenerativeServiceClient = build_generative_service()
 
 
-def _set_default_text_service(text_service: genai.TextServiceClient) -> None:
-    global _default_text_service
-    _default_text_service = text_service
+def _set_default_generative_service(
+    generative_service: genai.GenerativeServiceClient,
+) -> None:
+    global _default_generative_service
+    _default_generative_service = generative_service
+
+
+# Public functions.
 
 
 def list_corpora(
@@ -211,7 +217,11 @@ def get_corpus(
             genai.GetCorpusRequest(name=str(EntityName(corpus_id=corpus_id)))
         )
         return Corpus.from_corpus(corpus)
-    except Exception:
+    except Exception as e:
+        # If the corpus does not exist, the server returns a permission error.
+        if not isinstance(e, gapi_exception.PermissionDenied):
+            raise
+        _logger.warning(f"Corpus {corpus_id} not found: {e}")
         return None
 
 
@@ -262,7 +272,7 @@ def list_documents(
         client = _default_retriever
     for document in client.list_documents(
         genai.ListDocumentsRequest(
-            parent=str(EntityName(corpus_id=corpus_id)), page_size=_default_page_size
+            parent=str(EntityName(corpus_id=corpus_id)), page_size=_DEFAULT_PAGE_SIZE
         )
     ):
         yield Document.from_document(document)
@@ -283,7 +293,10 @@ def get_document(
             )
         )
         return Document.from_document(document)
-    except Exception:
+    except Exception as e:
+        if not isinstance(e, gapi_exception.NotFound):
+            raise
+        _logger.warning(f"Document {document_id} in corpus {corpus_id} not found: {e}")
         return None
 
 
@@ -370,7 +383,7 @@ def batch_create_chunk(
             )
         )
 
-        if len(batch_request.requests) >= _MAX_REQUEST_PER_BATCH:
+        if len(batch_request.requests) >= _MAX_REQUEST_PER_CHUNK:
             response = client.batch_create_chunks(batch_request)
             created_chunks.extend(list(response.chunks))
             # Prepare a new batch for next round.
@@ -453,48 +466,82 @@ def query_document(
 @dataclass
 class Passage:
     text: str
-    ids: List[str]
+    id: str
 
 
 @dataclass
-class TextAnswer:
+class GroundedAnswer:
     answer: str
     attributed_passages: List[Passage]
-    answerable_probability: float
+    answerable_probability: Optional[float]
 
 
-def generate_text_answer(
+@dataclass
+class GenerateAnswerError(Exception):
+    finish_reason: genai.Candidate.FinishReason
+    finish_message: str
+    safety_ratings: MutableSequence[genai.SafetyRating]
+
+    def __str__(self) -> str:
+        return (
+            f"finish_reason: {self.finish_reason.name} "
+            f"finish_message: {self.finish_message} "
+            f"safety ratings: {self.safety_ratings}"
+        )
+
+
+def generate_answer(
     *,
     prompt: str,
     passages: List[str],
-    answer_style: genai.AnswerStyle,
-    client: Optional[genai.TextServiceClient] = None,
-) -> TextAnswer:
+    answer_style: int = genai.GenerateAnswerRequest.AnswerStyle.ABSTRACTIVE,
+    safety_settings: List[genai.SafetySetting] = [],
+    temperature: Optional[float] = None,
+    client: Optional[genai.GenerativeServiceClient] = None,
+) -> GroundedAnswer:
     if client is None:
-        client = _default_text_service
-    response = client.generate_text_answer(
-        genai.GenerateTextAnswerRequest(
-            question=genai.TextPrompt(text=prompt),
-            model=_default_text_service_model,
+        client = _default_generative_service
+    # TODO: Consider passing in the corpus ID instead of the actual
+    # passages.
+    response = client.generate_answer(
+        genai.GenerateAnswerRequest(
+            contents=[
+                genai.Content(parts=[genai.Part(text=prompt)]),
+            ],
+            model=_DEFAULT_GENERATE_SERVICE_MODEL,
             answer_style=answer_style,
-            grounding_source=genai.GroundingSource(
-                passages=genai.InlinePassages(
-                    passages=[
-                        genai.InlinePassage(
-                            text=chunk,
-                            id=str(uuid.uuid4()),
-                        )
-                        for chunk in passages
-                    ]
-                )
+            safety_settings=safety_settings,
+            temperature=temperature,
+            inline_passages=genai.GroundingPassages(
+                passages=[
+                    genai.GroundingPassage(
+                        # IDs here takes alphanumeric only. No dashes allowed.
+                        id=str(index),
+                        content=genai.Content(parts=[genai.Part(text=chunk)]),
+                    )
+                    for index, chunk in enumerate(passages)
+                ]
             ),
         )
     )
-    return TextAnswer(
-        answer=response.answer.output,
+
+    if response.answer.finish_reason != genai.Candidate.FinishReason.STOP:
+        raise GenerateAnswerError(
+            finish_reason=response.answer.finish_reason,
+            finish_message=response.answer.finish_message,
+            safety_ratings=response.answer.safety_ratings,
+        )
+
+    assert len(response.answer.content.parts) == 1
+    return GroundedAnswer(
+        answer=response.answer.content.parts[0].text,
         attributed_passages=[
-            Passage(text=passage.text, ids=list(passage.passage_ids))
-            for passage in response.attributed_passages
+            Passage(
+                text=passage.content.parts[0].text,
+                id=passage.source_id.grounding_passage.passage_id,
+            )
+            for passage in response.answer.grounding_attributions
+            if len(passage.content.parts) > 0
         ],
         answerable_probability=response.answerable_probability,
     )
