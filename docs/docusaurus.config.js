@@ -230,6 +230,10 @@ const config = {
                 label: "LangSmith Docs",
               },
               {
+                href: "https://github.com/langchain-ai/opengpts",
+                label: "OpenGPTs GitHub",
+              },
+              {
                 href: "https://github.com/langchain-ai/langserve",
                 label: "LangServe GitHub",
               },
