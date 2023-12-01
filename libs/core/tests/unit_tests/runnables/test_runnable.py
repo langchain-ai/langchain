@@ -3938,7 +3938,7 @@ def test_runnable_branch_invoke_callbacks() -> None:
         branch.invoke(1000, config={"callbacks": [tracer]})
 
     assert len(tracer.runs) == 2
-    assert "ValueError('x is too large')" in tracer.runs[1].error
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
     assert tracer.runs[1].outputs is None
 
 
@@ -3965,7 +3965,7 @@ async def test_runnable_branch_ainvoke_callbacks() -> None:
         await branch.ainvoke(1000, config={"callbacks": [tracer]})
 
     assert len(tracer.runs) == 2
-    assert "ValueError('x is too large')" in tracer.runs[1].error
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
     assert tracer.runs[1].outputs is None
 
 

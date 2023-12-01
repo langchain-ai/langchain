@@ -69,7 +69,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 tb = traceback.format_exception(error)
             return msg + "\n\n".join(tb).strip()
         except:  # noqa: E722
-            breakpoint()
             return msg
 
     def _start_trace(self, run: Run) -> None:

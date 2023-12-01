@@ -329,7 +329,13 @@ def test_tracer_llm_run_on_error() -> None:
 
     tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
     tracer.on_llm_error(exception, run_id=uuid)
-    assert tracer.runs == [compare_run]
+    assert len(tracer.runs) == 1
+    received = tracer.runs[0].dict()
+    received_err = received.pop("error")
+    expected = compare_run.dict()
+    expected_err = expected.pop("error")
+    assert received == expected
+    assert expected_err in received_err
 
 
 @freeze_time("2023-01-01")
