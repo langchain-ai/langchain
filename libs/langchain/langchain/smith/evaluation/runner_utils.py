@@ -14,7 +14,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Sequence,
     Tuple,
     Union,
     cast,
@@ -77,7 +76,7 @@ class TestResult(dict):
     """A dictionary of the results of a single test run."""
 
     def get_aggregate_feedback(
-        self, quantiles: Optional[Sequence[float]] = None
+        self,
     ) -> pd.DataFrame:
         """Return quantiles for the feedback scores.
 
@@ -88,7 +87,14 @@ class TestResult(dict):
             A DataFrame containing the quantiles for each feedback key.
         """
         df = self.to_dataframe()
-        to_drop = {"input", "output", "reference"}.intersection(df.columns)
+        # Drop all things starting with inputs., outputs., and reference
+        to_drop = [
+            col
+            for col in df.columns
+            if col.startswith("inputs.")
+            or col.startswith("outputs.")
+            or col.startswith("reference")
+        ]
         return df.describe(include="all").drop(to_drop, axis=1)
 
     def to_dataframe(self) -> pd.DataFrame:
@@ -118,7 +124,12 @@ class TestResult(dict):
                 **output,
             }
             if "reference" in result:
-                r["reference"] = result["reference"]
+                if isinstance(result["reference"], dict):
+                    r.update(
+                        {f"reference.{k}": v for k, v in result["reference"].items()}
+                    )
+                else:
+                    r["reference"] = result["reference"]
             r.update(
                 {
                     **{f"feedback.{f.key}": f.score for f in feedback},
@@ -910,6 +921,7 @@ def _prepare_eval_run(
 ) -> Tuple[MCF, str, Dataset, List[Example]]:
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
+
     try:
         project_extra: dict = {"metadata": project_metadata} if project_metadata else {}
         if tags:
@@ -933,9 +945,10 @@ run_on_dataset(
             f"Test project {project_name} already exists. Please use a different name:"
             f"\n\n{example_msg}"
         )
+    comparison_url = dataset.url + f"/compare?selectedSessions={project.id}"
     print(
         f"View the evaluation results for project '{project_name}'"
-        f" at:\n{project.url}?eval=true\n\n"
+        f" at:\n{comparison_url}\n\n"
         f"View all tests for Dataset {dataset_name} at:\n{dataset.url}",
         flush=True,
     )
@@ -1040,6 +1053,30 @@ def _collect_test_results(
         project_name=project_name,
         results=results,
     )
+
+
+def _is_jupyter_environment() -> bool:
+    try:
+        from IPython import get_ipython
+
+        res = get_ipython()
+        return get_ipython() is not None and "zmqshell" in str(type(res))
+    except ImportError:
+        return False
+
+
+def _display_aggregate_results(aggregate_results: pd.DataFrame) -> None:
+    if _is_jupyter_environment():
+        from IPython.display import HTML, display
+
+        display(HTML("<h3>Experiment Results:</h3>"))
+        display(aggregate_results)
+    else:
+        formatted_string = aggregate_results.to_string(
+            float_format=lambda x: f"{x:.2f}", justify="right"
+        )
+        print("\n Experiment Results:")
+        print(formatted_string)
 
 
 _INPUT_MAPPER_DEP_WARNING = (
@@ -1182,8 +1219,7 @@ def run_on_dataset(
     if verbose:
         try:
             agg_feedback = results.get_aggregate_feedback()
-            print("\n Eval quantiles:")
-            print(agg_feedback)
+            _display_aggregate_results(agg_feedback)
         except Exception as e:
             logger.debug(f"Failed to print aggregate feedback: {repr(e)}")
     return results
