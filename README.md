@@ -105,6 +105,6 @@ As an open-source project in a rapidly developing field, we are extremely open t
 
 For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).
 
-## 🌟 Contributor Wall of Fame
+## 🌟 Contributors
 
-[![langchain contributors](https://contrib.rocks/image?repo=langchain-ai/langchain)](https://github.com/langchain-ai/langchain/graphs/contributors)
+[![langchain contributors](https://contrib.rocks/image?repo=langchain-ai/langchain&max=2000)](https://github.com/langchain-ai/langchain/graphs/contributors)
