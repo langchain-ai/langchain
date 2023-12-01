@@ -1,8 +1,11 @@
 import os
+import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import requests
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import LLM
 from langchain_core.pydantic_v1 import (
     BaseModel,
     Extra,
@@ -11,9 +14,6 @@ from langchain_core.pydantic_v1 import (
     root_validator,
     validator,
 )
-
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
 
 __all__ = ["Databricks"]
 
@@ -24,17 +24,35 @@ class _DatabricksClientBase(BaseModel, ABC):
     api_url: str
     api_token: str
 
-    def post_raw(self, request: Any) -> Any:
+    def request(self, method: str, url: str, request: Any) -> Any:
         headers = {"Authorization": f"Bearer {self.api_token}"}
-        response = requests.post(self.api_url, headers=headers, json=request)
+        response = requests.request(
+            method=method, url=url, headers=headers, json=request
+        )
         # TODO: error handling and automatic retries
         if not response.ok:
             raise ValueError(f"HTTP {response.status_code} error: {response.text}")
         return response.json()
 
+    def _get(self, url: str) -> Any:
+        return self.request("GET", url, None)
+
+    def _post(self, url: str, request: Any) -> Any:
+        return self.request("POST", url, request)
+
     @abstractmethod
-    def post(self, request: Any) -> Any:
+    def post(
+        self, request: Any, transform_output_fn: Optional[Callable[..., str]] = None
+    ) -> Any:
         ...
+
+
+def _transform_completions(response: Dict[str, Any]) -> str:
+    return response["choices"][0]["text"]
+
+
+def _transform_chat(response: Dict[str, Any]) -> str:
+    return response["choices"][0]["message"]["content"]
 
 
 class _DatabricksServingEndpointClient(_DatabricksClientBase):
@@ -42,6 +60,30 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
 
     host: str
     endpoint_name: str
+    databricks_uri: str
+    client: Any = None
+    external_or_foundation: bool = False
+    task: Optional[str] = None
+
+    def __init__(self, **data: Any):
+        super().__init__(**data)
+
+        try:
+            from mlflow.deployments import get_deploy_client
+
+            self.client = get_deploy_client(self.databricks_uri)
+        except ImportError as e:
+            raise ImportError(
+                "Failed to create the client. "
+                "Please install mlflow with `pip install mlflow`."
+            ) from e
+
+        endpoint = self.client.get_endpoint(self.endpoint_name)
+        self.external_or_foundation = endpoint.get("endpoint_type", "").lower() in (
+            "external_model",
+            "foundation_model_api",
+        )
+        self.task = endpoint.get("task")
 
     @root_validator(pre=True)
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -52,14 +94,30 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             values["api_url"] = api_url
         return values
 
-    def post(self, request: Any) -> Any:
-        # See https://docs.databricks.com/machine-learning/model-serving/score-model-serving-endpoints.html
-        wrapped_request = {"dataframe_records": [request]}
-        response = self.post_raw(wrapped_request)["predictions"]
-        # For a single-record query, the result is not a list.
-        if isinstance(response, list):
-            response = response[0]
-        return response
+    def post(
+        self, request: Any, transform_output_fn: Optional[Callable[..., str]] = None
+    ) -> Any:
+        if self.external_or_foundation:
+            resp = self.client.predict(endpoint=self.endpoint_name, inputs=request)
+            if transform_output_fn:
+                return transform_output_fn(resp)
+
+            if self.task == "llm/v1/chat":
+                return _transform_chat(resp)
+            elif self.task == "llm/v1/completions":
+                return _transform_completions(resp)
+
+            return resp
+        else:
+            # See https://docs.databricks.com/machine-learning/model-serving/score-model-serving-endpoints.html
+            wrapped_request = {"dataframe_records": [request]}
+            response = self.client.predict(
+                endpoint=self.endpoint_name, inputs=wrapped_request
+            )
+            preds = response["predictions"]
+            # For a single-record query, the result is not a list.
+            pred = preds[0] if isinstance(preds, list) else preds
+            return transform_output_fn(pred) if transform_output_fn else pred
 
 
 class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
@@ -79,8 +137,8 @@ class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
             values["api_url"] = api_url
         return values
 
-    def post(self, request: Any) -> Any:
-        return self.post_raw(request)
+    def post(self, request: Any, transform: Optional[Callable[..., str]] = None) -> Any:
+        return self._post(self.api_url, request)
 
 
 def get_repl_context() -> Any:
@@ -137,16 +195,19 @@ def get_default_api_token() -> str:
 
 
 class Databricks(LLM):
+
     """Databricks serving endpoint or a cluster driver proxy app for LLM.
 
     It supports two endpoint types:
 
     * **Serving endpoint** (recommended for both production and development).
-      We assume that an LLM was registered and deployed to a serving endpoint.
+      We assume that an LLM was deployed to a serving endpoint.
       To wrap it as an LLM you must have "Can Query" permission to the endpoint.
       Set ``endpoint_name`` accordingly and do not set ``cluster_id`` and
       ``cluster_driver_port``.
-      The expected model signature is:
+
+      If the underlying model is a model registered by MLflow, the expected model
+      signature is:
 
       * inputs::
 
@@ -154,6 +215,10 @@ class Databricks(LLM):
            {"name": "stop", "type": "list[string]"}]
 
       * outputs: ``[{"type": "string"}]``
+
+      If the underlying model is an external or foundation model, the response from the
+      endpoint is automatically transformed to the expected format unless
+      ``transform_output_fn`` is provided.
 
     * **Cluster driver proxy app** (recommended for interactive development).
       One can load an LLM on a Databricks interactive cluster and start a local HTTP
@@ -220,8 +285,13 @@ class Databricks(LLM):
     We recommend the server using a port number between ``[3000, 8000]``.
     """
 
-    model_kwargs: Optional[Dict[str, Any]] = None
+    params: Optional[Dict[str, Any]] = None
     """Extra parameters to pass to the endpoint."""
+
+    model_kwargs: Optional[Dict[str, Any]] = None
+    """
+    Deprecated. Please use ``params`` instead. Extra parameters to pass to the endpoint.
+    """
 
     transform_input_fn: Optional[Callable] = None
     """A function that transforms ``{prompt, stop, **kwargs}`` into a JSON-compatible
@@ -232,6 +302,9 @@ class Databricks(LLM):
     transform_output_fn: Optional[Callable[..., str]] = None
     """A function that transforms the output from the endpoint to the generated text.
     """
+
+    databricks_uri: str = "databricks"
+    """The databricks URI. Only used when using a serving endpoint."""
 
     _client: _DatabricksClientBase = PrivateAttr()
 
@@ -283,11 +356,19 @@ class Databricks(LLM):
 
     def __init__(self, **data: Any):
         super().__init__(**data)
+        if self.model_kwargs is not None and self.params is not None:
+            raise ValueError("Cannot set both model_kwargs and params.")
+        elif self.model_kwargs is not None:
+            warnings.warn(
+                "model_kwargs is deprecated. Please use params instead.",
+                DeprecationWarning,
+            )
         if self.endpoint_name:
             self._client = _DatabricksServingEndpointClient(
                 host=self.host,
                 api_token=self.api_token,
                 endpoint_name=self.endpoint_name,
+                databricks_uri=self.databricks_uri,
             )
         elif self.cluster_id and self.cluster_driver_port:
             self._client = _DatabricksClusterDriverProxyClient(
@@ -300,6 +381,31 @@ class Databricks(LLM):
             raise ValueError(
                 "Must specify either endpoint_name or cluster_id/cluster_driver_port."
             )
+
+    @property
+    def _params(self) -> Optional[Dict[str, Any]]:
+        return self.model_kwargs or self.params
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Return default params."""
+        return {
+            "host": self.host,
+            # "api_token": self.api_token,  # Never save the token
+            "endpoint_name": self.endpoint_name,
+            "cluster_id": self.cluster_id,
+            "cluster_driver_port": self.cluster_driver_port,
+            "databricks_uri": self.databricks_uri,
+            "model_kwargs": self.model_kwargs,
+            "params": self.params,
+            # TODO: Support saving transform_input_fn and transform_output_fn
+            # "transform_input_fn": self.transform_input_fn,
+            # "transform_output_fn": self.transform_output_fn,
+        }
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        return self._default_params
 
     @property
     def _llm_type(self) -> str:
@@ -319,8 +425,8 @@ class Databricks(LLM):
 
         request = {"prompt": prompt, "stop": stop}
         request.update(kwargs)
-        if self.model_kwargs:
-            request.update(self.model_kwargs)
+        if self._params:
+            request.update(self._params)
 
         if self.transform_input_fn:
             request = self.transform_input_fn(**request)
