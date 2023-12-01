@@ -11,6 +11,7 @@ EXPECTED_ALL = [
     "MarkdownListOutputParser",
     "NumberedListOutputParser",
     "OutputFixingParser",
+    "PandasDataFrameOutputParser",
     "PydanticOutputParser",
     "RegexDictParser",
     "RegexParser",

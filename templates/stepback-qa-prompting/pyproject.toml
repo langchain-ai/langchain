@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "stepback-qa-prompting"
 version = "0.0.1"
-description = ""
+description = "Use Step-Back prompting to improve retrieval"
 authors = []
 readme = "README.md"
 
@@ -9,7 +9,7 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.325"
 duckduckgo-search = "^3.9.3"
-openai = "^0.28.1"
+openai = "<2"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"
@@ -17,6 +17,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "stepback_qa_prompting.chain"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["OpenAI"]
+tags = ["paper"]
 
 [build-system]
 requires = [

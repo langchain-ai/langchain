@@ -4,12 +4,13 @@ from typing import List, Optional
 
 import aiohttp
 import requests
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
 
 
 class ChatGPTPluginRetriever(BaseRetriever):

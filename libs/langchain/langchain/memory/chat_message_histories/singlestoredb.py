@@ -6,10 +6,12 @@ from typing import (
     List,
 )
 
-from langchain.schema import (
-    BaseChatMessageHistory,
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import (
+    BaseMessage,
+    message_to_dict,
+    messages_from_dict,
 )
-from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
 
 logger = logging.getLogger(__name__)
 
@@ -248,7 +250,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
                         self.session_id_field,
                         self.message_field,
                     ),
-                    (self.session_id, json.dumps(_message_to_dict(message))),
+                    (self.session_id, json.dumps(message_to_dict(message))),
                 )
             finally:
                 cur.close()

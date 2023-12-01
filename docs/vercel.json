@@ -1,6 +1,38 @@
 {
   "redirects": [
     {
+      "source": "/docs/use_cases/question_answering/analyze_document",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/qa_citations",
+      "destination": "/cookbook"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/chat_vector_db",
+      "destination": "/docs/use_cases/question_answering/"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/in_memory_question_answering",
+      "destination": "/docs/use_cases/question_answering/"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/multi_retrieval_qa_router",
+      "destination": "/docs/use_cases/question_answering/"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/multiple_retrieval",
+      "destination": "/docs/use_cases/question_answering/"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/vector_db_qa",
+      "destination": "/docs/use_cases/question_answering/"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/vector_db_text_generation",
+      "destination": "/docs/use_cases/question_answering/"
+    },
+    {
       "source": "/docs/modules/agents/toolkits(/?)",
       "destination": "/docs/modules/agents/tools/toolkits"
     },
@@ -170,7 +202,7 @@
     },
     {
       "source": "/docs/use_cases/question_answering/how_to/chat_vector_db",
-      "destination": "/docs/use_cases/question_answering/chat_vector_db"
+      "destination": "/docs/use_cases/question_answering/"
     },
     {
       "source": "/docs/use_cases/code_understanding",
@@ -202,7 +234,7 @@
     },
     {
       "source": "/docs/use_cases/question_answering/how_to/qa_citations",
-      "destination": "/docs/use_cases/question_answering/qa_citations"
+      "destination": "/cookbook"
     },
     {
       "source": "/docs/use_cases/question_answering/how_to/question_answering",
@@ -461,8 +493,20 @@
       "destination": "/docs/integrations/providers/astradb"
     },
     {
+      "source": "/docs/integrations/vectorstores/vectorstores/semadb",
+      "destination": "/docs/integrations/vectorstores/semadb"
+    },
+    {
       "source": "/docs/integrations/vectorstores/cassandra",
       "destination": "/docs/integrations/vectorstores/astradb"
+    },
+    {
+      "source": "/docs/integrations/vectorstores/async_faiss",
+      "destination": "/docs/integrations/vectorstores/faiss_async"
+    },
+    {
+      "source": "/docs/integrations/vectorstores/matchingengine",
+      "destination": "/docs/integrations/vectorstores/google_vertex_ai_vector_search"
     },
     {
       "source": "/docs/integrations/cerebriumai",
@@ -2881,6 +2925,10 @@
       "destination": "/docs/integrations/memory/cassandra_chat_message_history"
     },
     {
+      "source": "/docs/guides/adapters/openai",
+      "destination": "/docs/integrations/adapters/openai"
+    },
+    {
       "source": "/docs/modules/memory/integrations/cassandra_chat_message_history",
       "destination": "/docs/integrations/memory/cassandra_chat_message_history"
     },
@@ -3686,11 +3734,11 @@
     },
     {
       "source": "/docs/modules/chains/additional/analyze_document",
-      "destination": "/docs/use_cases/question_answering/analyze_document"
+      "destination": "/cookbook"
     },
     {
       "source": "/docs/modules/chains/popular/chat_vector_db",
-      "destination": "/docs/use_cases/question_answering/chat_vector_db"
+      "destination": "/docs/use_cases/question_answering/"
     },
     {
       "source": "/docs/modules/chains/additional/multi_retrieval_qa_router",
@@ -3830,7 +3878,7 @@
     },
     {
       "source": "/docs/modules/chains/additional/qa_citations",
-      "destination": "/docs/use_cases/question_answering/qa_citations"
+      "destination": "/cookbook"
     },
     {
       "source": "/docs/modules/chains/additional/vector_db_text_generation",
