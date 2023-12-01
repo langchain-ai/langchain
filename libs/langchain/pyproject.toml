@@ -390,6 +390,7 @@ extended_testing = [
  "databricks-vectorsearch",
  "dgml-utils",
  "cohere",
+ "cinemagoer",
 ]
 
 [tool.ruff]
