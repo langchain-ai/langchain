@@ -58,12 +58,14 @@ from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
 from langchain.tools.sleep.tool import SleepTool
 from langchain.tools.stackexchange.tool import StackExchangeTool
+from langchain.tools.merriam_webster.tool import MerriamWebsterQueryRun
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchResults
 from langchain.tools.memorize.tool import Memorize
+from langchain.tools.reddit_search.tool import RedditSearchRun
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.golden_query import GoldenQueryAPIWrapper
 from langchain.utilities.pubmed import PubMedAPIWrapper
@@ -84,10 +86,12 @@ from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.stackexchange import StackExchangeAPIWrapper
 from langchain.utilities.twilio import TwilioAPIWrapper
+from langchain.utilities.merriam_webster import MerriamWebsterAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
+from langchain.utilities.reddit_search import RedditSearchAPIWrapper
 
 
 def _get_python_repl() -> BaseTool:
@@ -228,6 +232,10 @@ def _get_wolfram_alpha(**kwargs: Any) -> BaseTool:
 
 def _get_google_search(**kwargs: Any) -> BaseTool:
     return GoogleSearchRun(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
+
+
+def _get_merriam_webster(**kwargs: Any) -> BaseTool:
+    return MerriamWebsterQueryRun(api_wrapper=MerriamWebsterAPIWrapper(**kwargs))
 
 
 def _get_wikipedia(**kwargs: Any) -> BaseTool:
@@ -374,6 +382,10 @@ def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
     return GoogleCloudTextToSpeechTool(**kwargs)
 
 
+def _get_reddit_search(**kwargs: Any) -> BaseTool:
+    return RedditSearchRun(api_wrapper=RedditSearchAPIWrapper(**kwargs))
+
+
 _EXTRA_LLM_TOOLS: Dict[
     str,
     Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],
@@ -428,6 +440,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "dalle-image-generator": (_get_dalle_image_generator, ["openai_api_key"]),
     "twilio": (_get_twilio, ["account_sid", "auth_token", "from_number"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
+    "merriam-webster": (_get_merriam_webster, ["merriam_webster_api_key"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
     "arxiv": (
         _get_arxiv,
@@ -454,6 +467,10 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
     "google_cloud_texttospeech": (_get_google_cloud_texttospeech, []),
+    "reddit_search": (
+        _get_reddit_search,
+        ["reddit_client_id", "reddit_client_secret", "reddit_user_agent"],
+    ),
 }
 
 
