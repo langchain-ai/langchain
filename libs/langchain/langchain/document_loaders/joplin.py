@@ -3,7 +3,7 @@ import urllib
 from datetime import datetime
 from typing import Iterator, List, Optional
 
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.document_loaders.base import BaseLoader
 from langchain.utils import get_from_env

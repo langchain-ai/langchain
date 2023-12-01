@@ -1,14 +1,14 @@
 import json
 from typing import Any, Dict, List, Optional, cast
 
-from langchain_core.pydantic_v1 import SecretStr, validator
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.pydantic_v1 import SecretStr, validator
 from langchain_core.utils import convert_to_secret_str
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun

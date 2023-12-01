@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, Optional, Sequence
 
+from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.schema import Document
 
 from langchain.callbacks.manager import Callbacks
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
@@ -53,7 +53,7 @@ class CohereRerank(BaseDocumentCompressor):
         cohere_api_key = get_from_dict_or_env(
             values, "cohere_api_key", "COHERE_API_KEY"
         )
-        client_name = values["user_agent"]
+        client_name = values.get("user_agent", "langchain")
         values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
         return values
 

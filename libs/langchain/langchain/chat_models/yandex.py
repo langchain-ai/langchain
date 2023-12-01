@@ -2,14 +2,13 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-from langchain_core.schema import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
-    ChatGeneration,
-    ChatResult,
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.outputs import ChatGeneration, ChatResult
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

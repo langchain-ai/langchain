@@ -3,14 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -19,7 +12,14 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, root_validator
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -117,7 +117,7 @@ class QianfanChatEndpoint(BaseChatModel):
     """Endpoint of the Qianfan LLM, required if custom model used."""
 
     @root_validator()
-    def validate_enviroment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = get_from_dict_or_env(
             values,
             "qianfan_ak",
@@ -233,11 +233,12 @@ class QianfanChatEndpoint(BaseChatModel):
         if self.streaming:
             completion = ""
             token_usage = {}
-            chat_generation_info = {}
+            chat_generation_info: Dict = {}
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
-                    chunk.generation_info if chunk.generation_info 
-                    is not None else chat_generation_info
+                    chunk.generation_info
+                    if chunk.generation_info is not None
+                    else chat_generation_info
                 )
                 completion += chunk.text
             lc_msg = AIMessage(content=completion, additional_kwargs={})
@@ -247,7 +248,10 @@ class QianfanChatEndpoint(BaseChatModel):
             )
             return ChatResult(
                 generations=[gen],
-                llm_output={"token_usage": chat_generation_info.get("usage", {}), "model_name": self.model},
+                llm_output={
+                    "token_usage": chat_generation_info.get("usage", {}),
+                    "model_name": self.model,
+                },
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
         response_payload = self.client.do(**params)
@@ -273,11 +277,12 @@ class QianfanChatEndpoint(BaseChatModel):
         if self.streaming:
             completion = ""
             token_usage = {}
-            chat_generation_info = {}
+            chat_generation_info: Dict = {}
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
-                    chunk.generation_info if chunk.generation_info 
-                    is not None else chat_generation_info
+                    chunk.generation_info
+                    if chunk.generation_info is not None
+                    else chat_generation_info
                 )
                 completion += chunk.text
 
@@ -288,7 +293,10 @@ class QianfanChatEndpoint(BaseChatModel):
             )
             return ChatResult(
                 generations=[gen],
-                llm_output={"token_usage": chat_generation_info.get("usage", {}), "model_name": self.model},
+                llm_output={
+                    "token_usage": chat_generation_info.get("usage", {}),
+                    "model_name": self.model,
+                },
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
         response_payload = await self.client.ado(**params)
