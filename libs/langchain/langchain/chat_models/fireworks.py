@@ -135,6 +135,7 @@ class ChatFireworks(BaseChatModel):
             "model": self.model,
             "messages": message_dicts,
             **self.model_kwargs,
+            **kwargs,
         }
         response = completion_with_retry(
             self,
@@ -157,6 +158,7 @@ class ChatFireworks(BaseChatModel):
             "model": self.model,
             "messages": message_dicts,
             **self.model_kwargs,
+            **kwargs,
         }
         response = await acompletion_with_retry(
             self, self.use_retry, run_manager=run_manager, stop=stop, **params
@@ -200,6 +202,7 @@ class ChatFireworks(BaseChatModel):
             "messages": message_dicts,
             "stream": True,
             **self.model_kwargs,
+            **kwargs,
         }
         for chunk in completion_with_retry(
             self, self.use_retry, run_manager=run_manager, stop=stop, **params
@@ -230,6 +233,7 @@ class ChatFireworks(BaseChatModel):
             "messages": message_dicts,
             "stream": True,
             **self.model_kwargs,
+            **kwargs,
         }
         async for chunk in await acompletion_with_retry_streaming(
             self, self.use_retry, run_manager=run_manager, stop=stop, **params
@@ -272,6 +276,7 @@ def completion_with_retry(
 
     @conditional_decorator(use_retry, retry_decorator)
     def _completion_with_retry(**kwargs: Any) -> Any:
+        breakpoint()
         return fireworks.client.ChatCompletion.create(
             **kwargs,
         )
