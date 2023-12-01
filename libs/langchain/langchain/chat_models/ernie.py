@@ -9,6 +9,7 @@ from langchain_core.messages import (
     BaseMessage,
     ChatMessage,
     HumanMessage,
+    SystemMessage
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import root_validator
