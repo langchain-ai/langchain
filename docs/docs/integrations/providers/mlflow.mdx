@@ -65,10 +65,6 @@ from langchain.llms import Mlflow
 llm = Mlflow(
     target_uri="http://127.0.0.1:5000",
     endpoint="completions",
-    params={
-        "temperature": 0.0,
-        "top_p": 0.1,
-    },
 )
 
 llm_chain = LLMChain(
@@ -111,9 +107,6 @@ from langchain.schema import HumanMessage, SystemMessage
 chat = ChatMlflow(
     target_uri="http://127.0.0.1:5000",
     endpoint="chat",
-    params={
-        "temperature": 0.1
-    }
 )
 
 messages = [
