@@ -332,6 +332,7 @@ extended_testing = [
  "bibtexparser",
  "cassio",
  "chardet",
+ "dashscope",
  "google-cloud-documentai",
  "esprima",
  "jq",
