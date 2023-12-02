@@ -182,7 +182,8 @@ def _convert_delta_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)
     else:
         return default_class(content=content)
-    
+
+
 def _to_secret(value: Union[str, SecretStr]) -> SecretStr:
     """Convert a string or SecretStr to a SecretStr."""
     if isinstance(value, SecretStr):
@@ -207,11 +208,13 @@ class ChatTongyi(BaseChatModel):
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"dashscope_api_key": "DASHSCOPE_API_KEY"}
-    
+
     @property
     def dashscope_api_key(self) -> SecretStr:
-        dashscope_api_key = self.lc_secrets['dashscope_api_key']
-        return _to_secret(get_from_dict_or_env(self.__dict__, "dashscope_api_key", dashscope_api_key))
+        dashscope_api_key = self.lc_secrets["dashscope_api_key"]
+        return _to_secret(
+            get_from_dict_or_env(self.__dict__, "dashscope_api_key", dashscope_api_key)
+        )
 
     @property
     def lc_serializable(self) -> bool:
