@@ -11,7 +11,7 @@ yum install openssl11 -y
 yum install openssl11-devel -y
 
 # install quarto
-wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz
+wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz
 tar -xvzf quarto-1.3.450-linux-amd64.tar.gz
 export PATH=$PATH:$(pwd)/quarto-1.3.450/bin/
 
@@ -26,6 +26,6 @@ cp ../templates/docs/INDEX.md docs/templates/index.md
 python3.8 scripts/copy_templates.py
 cp ../cookbook/README.md src/pages/cookbook.mdx
 cp ../.github/CONTRIBUTING.md docs/contributing.md
-wget https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
+wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
 quarto render docs/
 python3.8 scripts/generate_api_reference_links.py
