@@ -11,6 +11,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    Union,
 )
 
 from langchain_core.messages import (
@@ -33,7 +34,7 @@ from langchain_core.outputs import (
     ChatResult,
     GenerationChunk,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     RetryCallState,
