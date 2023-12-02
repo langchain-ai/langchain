@@ -3,28 +3,6 @@
 
 from __future__ import annotations
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForLLMRun,
-    CallbackManager,
-)
-from langchain.pydantic_v1 import BaseModel, Field, root_validator
-from langchain.schema.messages import BaseMessage, ChatMessageChunk
-from langchain.schema.output import ChatGenerationChunk, GenerationChunk
-from langchain.utils import get_from_dict_or_env
-
-try:
-    ## if running as part of package
-    from .base import LLM
-
-    STANDALONE = False
-except Exception:
-    ## if running as standalone file
-    from langchain.chat_models.base import SimpleChatModel
-    from langchain.llms.base import LLM
-
-    STANDALONE = True
-
 import asyncio
 import json
 import logging
@@ -47,6 +25,18 @@ import aiohttp
 import requests
 from requests.models import Response
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForLLMRun,
+    CallbackManager,
+)
+from langchain.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain.schema.messages import BaseMessage, ChatMessageChunk
+from langchain.schema.output import ChatGenerationChunk, GenerationChunk
+from langchain.utils import get_from_dict_or_env
+
+from .base import LLM
+
 logger = logging.getLogger(__name__)
 
 
@@ -65,10 +55,18 @@ class ClientModel(BaseModel):
         named_args = dict({k: v for k, v in zip(getattr(self, "arg_keys", []), args)})
         named_args = {**named_args, **kwargs}
         out = self.copy(update=named_args)
+        out.validate(dict(out._iter(to_dict=False, by_alias=False, exclude_unset=True)))
         for k, v in self.__dict__.items():
             if isinstance(v, ClientModel):
                 setattr(out, k, v.subscope(*args, **kwargs))
         out.saved_parent = self
+        return out
+
+    def dict(self, *args: Sequence, **kwargs: Any) -> dict:
+        """Handle saved_parent bleeding into dict"""
+        out = super().dict(*args, **kwargs)
+        if "saved_parent" in out:
+            out.pop("saved_parent")
         return out
 
     def get(self, key: str) -> Any:
@@ -87,6 +85,22 @@ class ClientModel(BaseModel):
                 if other_sub is not None:
                     v.transfer_state(other_sub)
 
+    @staticmethod
+    def desecretize(v: Any) -> Any:
+        """Desecretize a collection of values"""
+        recurse = ClientModel.desecretize
+        if isinstance(v, SecretStr):
+            return v.get_secret_value()
+        if isinstance(v, str):
+            return v
+        if isinstance(v, dict):
+            return {k: recurse(v) for k, v in v.items()}
+        if isinstance(v, list):
+            return [recurse(subv) for subv in v]
+        if isinstance(v, tuple):
+            return tuple(recurse(subv) for subv in v)
+        return v
+
     def __enter__(self) -> ClientModel:
         return self
 
@@ -103,7 +117,6 @@ class NVCRModel(ClientModel):
     Direct abstraction over NGC-recommended streaming/non-streaming Python solutions.
 
     NOTE: AI Playground does not currently support raw text continuation.
-    TODO: Add support for raw text continuation for arbitrary (non-AIP) nvcf functions.
     """
 
     ## Core defaults. These probably should not be changed
@@ -113,7 +126,7 @@ class NVCRModel(ClientModel):
     get_asession_fn: Callable = Field(aiohttp.ClientSession)
 
     ## Populated on construction/validation
-    nvapi_key: Optional[str]
+    nvapi_key: Optional[SecretStr]
     is_staging: Optional[bool]
     available_models: Optional[Dict[str, str]]
 
@@ -130,18 +143,18 @@ class NVCRModel(ClientModel):
     )
 
     ## Status Tracking Variables. Updated Progressively
-    last_inputs: Optional[dict] = None
-    last_response: Optional[Any] = None
-    last_msg: dict = {}
-    state_vars: Sequence[str] = ["last_inputs", "last_response", "last_msg"]
-
-    @property
-    def last_inputs_safe(self) -> dict:
-        if self.last_inputs is None:
-            return {}
-        out = self.last_inputs.copy()
-        out["headers"]["Authorization"] = "Bearer nvapi-[REDACTED]"
-        return out
+    last_inputs: Optional[dict] = Field(None)
+    last_response: Optional[Any] = Field(None)
+    last_msg: dict = Field({})
+    available_functions: List[dict] = Field([{}])
+    state_vars: Sequence[str] = Field(
+        [
+            "last_inputs",
+            "last_response",
+            "last_msg",
+            "available_functions",
+        ]
+    )
 
     @root_validator()
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -152,8 +165,9 @@ class NVCRModel(ClientModel):
         values["is_staging"] = "nvapi-stg-" in values["nvapi_key"]
         for header in values["headers"].values():
             if "{nvapi_key}" in header["Authorization"]:
-                header["Authorization"] = header["Authorization"].format(
-                    nvapi_key=values["nvapi_key"]
+                nvapi_key = ClientModel.desecretize(values["nvapi_key"])
+                header["Authorization"] = SecretStr(
+                    header["Authorization"].format(nvapi_key=nvapi_key),
                 )
         if isinstance(values["stop"], str):
             values["stop"] = [values["stop"]]
@@ -184,35 +198,36 @@ class NVCRModel(ClientModel):
         """Method for posting to the AI Playground API."""
         self.last_inputs = dict(
             url=invoke_url,
-            headers=self.headers["call"].copy(),
+            headers=self.headers["call"],
             json=payload,
             stream=False,
         )
         session = self.get_session_fn()
-        self.last_response = session.post(**self.last_inputs)
+        self.last_response = session.post(**ClientModel.desecretize(self.last_inputs))
+        self._try_raise(self.last_response)
         return self.last_response, session
 
     def _get(self, invoke_url: str, payload: dict = {}) -> Tuple[Response, Any]:
         """Method for getting from the AI Playground API."""
         self.last_inputs = dict(
             url=invoke_url,
-            headers=self.headers["call"].copy(),
+            headers=self.headers["call"],
             json=payload,
             stream=False,
         )
         session = self.get_session_fn()
-        self.last_response = session.get(**self.last_inputs)
+        self.last_response = session.get(**ClientModel.desecretize(self.last_inputs))
+        self._try_raise(self.last_response)
         return self.last_response, session
 
     def _wait(self, response: Response, session: Any) -> Response:
         """Wait for a response from API after an initial response is made."""
-        response.raise_for_status()
         i = 1
         while response.status_code == 202:
             request_id = response.headers.get("NVCF-REQID", "")
             response = session.get(
                 self.fetch_url_format + request_id,
-                headers=self.headers["call"].copy(),
+                headers=ClientModel.desecretize(self.headers["call"]),
             )
             if response.status_code == 202:
                 try:
@@ -221,9 +236,28 @@ class NVCRModel(ClientModel):
                     body = str(response)
                 if i > self.max_tries:
                     raise ValueError(f"Failed to get response with {i} tries: {body}")
-            response.raise_for_status()
-            i += 1
+        self._try_raise(response)
         return response
+
+    def _try_raise(self, response: Response) -> None:
+        """Try to raise an error from a response"""
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            try:
+                rd = response.json()
+            except json.JSONDecodeError:
+                rd = response.__dict__
+                rd = rd.get("_content", rd)
+                if isinstance(rd, bytes):
+                    rd = rd.decode("utf-8")[5:]  ## lop of data: prefix
+                try:
+                    rd = json.loads(rd)
+                except Exception:
+                    rd = {"detail": rd}
+            title = f"[{rd.get('status', '###')}] {rd.get('title', 'Unknown Error')}"
+            body = f"{rd.get('detail', rd.get('type', rd))}"
+            raise Exception(f"{title}\n{body}") from e
 
     ####################################################################################
     ## Simple query interface to show the set of model options
@@ -254,7 +288,9 @@ class NVCRModel(ClientModel):
     def get_available_models(self) -> dict:
         """Get a dictionary of available models from the AI Playground API."""
         invoke_url = self._stagify("https://api.nvcf.nvidia.com/v2/nvcf/functions")
-        return {v["name"]: v["id"] for v in self.query(invoke_url)["functions"]}
+        self.available_functions = self.query(invoke_url)["functions"]
+        live_fns = [v for v in self.available_functions if v.get("status") == "ACTIVE"]
+        return {v["name"]: v["id"] for v in live_fns}
 
     def _get_invoke_url(
         self, model_name: Optional[str] = None, invoke_url: Optional[str] = None
@@ -267,9 +303,9 @@ class NVCRModel(ClientModel):
             if model_name in available_models:
                 invoke_url = available_models.get(model_name)
             else:
-                for k, v in available_models.items():
-                    if model_name in k:
-                        invoke_url = v
+                for key in sorted(available_models.keys()):
+                    if model_name in key:
+                        invoke_url = available_models[key]
                         break
         if not invoke_url:
             raise ValueError(f"Unknown model name {model_name} specified")
@@ -354,12 +390,14 @@ class NVCRModel(ClientModel):
             payload = {**payload, "stream": True}
         self.last_inputs = dict(
             url=invoke_url,
-            headers=self.headers["stream"].copy(),
+            headers=self.headers["stream"],
             json=payload,
             stream=True,
         )
-        response = self.get_session_fn().post(**self.last_inputs)
+        raw_inputs = ClientModel.desecretize(self.last_inputs)
+        response = self.get_session_fn().post(**raw_inputs)
         self.last_response = response
+        self._try_raise(response)
         call = self.copy()
 
         def out_gen() -> Generator[dict, Any, Any]:
@@ -371,7 +409,7 @@ class NVCRModel(ClientModel):
                     yield msg
                     if final_line:
                         break
-                response.raise_for_status()
+                self._try_raise(response)
 
         return (r for r in out_gen())
 
@@ -389,11 +427,13 @@ class NVCRModel(ClientModel):
             payload = {**payload, "stream": True}
         self.last_inputs = dict(
             url=invoke_url,
-            headers=self.headers["stream"].copy(),
+            headers=self.headers["stream"],
             json=payload,
         )
         async with self.get_asession_fn() as session:
-            async with session.post(**self.last_inputs) as self.last_response:
+            raw_inputs = ClientModel.desecretize(self.last_inputs)
+            async with session.post(**raw_inputs) as self.last_response:
+                self._try_raise(self.last_response)
                 async for line in self.last_response.content.iter_any():
                     if line and line.strip() != b"data: [DONE]":
                         line = line.decode("utf-8")
@@ -401,7 +441,6 @@ class NVCRModel(ClientModel):
                         yield msg
                         if final_line:
                             break
-                self.last_response.raise_for_status()
 
 
 class NVAIPlayClient(ClientModel):
@@ -412,8 +451,7 @@ class NVAIPlayClient(ClientModel):
 
     client: NVCRModel = Field(NVCRModel)
 
-    model_name: str = Field("llama2_13b")
-    model: Optional[str] = Field(None)
+    model: str = Field("llama")
     labels: dict = Field({})
 
     temperature: float = Field(0.2, le=1.0, gt=0.0)
@@ -425,8 +463,15 @@ class NVAIPlayClient(ClientModel):
     stop: Union[Sequence[str], str] = Field([])
 
     gen_keys: Sequence[str] = Field(["temperature", "top_p", "max_tokens", "streaming"])
-    arg_keys: Sequence[str] = Field(["inputs", "labels", "stop"])
-    valid_roles: Sequence[str] = Field(["user", "system", "assistant", "context"])
+    arg_keys: Sequence[str] = Field(["inputs", "stop"])
+    valid_roles: Sequence[str] = Field(["user", "system", "assistant"])
+
+    class LabelModel(ClientModel):
+        creativity: int = Field(0, ge=0, le=9)
+        complexity: int = Field(0, ge=0, le=9)
+        verbosity: int = Field(0, ge=0, le=9)
+
+    ####################################################################################
 
     def __init__(self, *args: Sequence, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -434,10 +479,8 @@ class NVAIPlayClient(ClientModel):
     @root_validator()
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["client"] = values["client"](**values)
-        model_name = values.get("model")
-        model_name = model_name if model_name else values["model_name"]
-        values["model_name"] = model_name
-        values["model"] = model_name
+        if values.get("labels"):
+            values["labels"] = cls.LabelModel(**values["labels"]).dict()
         return values
 
     @classmethod
@@ -449,35 +492,34 @@ class NVAIPlayClient(ClientModel):
         """List the available models that can be invoked"""
         return list(getattr(self.client, "available_models", {}).keys())
 
-    # ## Default Call Behavior. Great for standalone use, but not for LangChain
-    # def __call__(self, *args: Sequence, **kwargs: Any):
-    #     '''
-    #     Calls the AI Playground API with the given arguments.
-    #     Directs to `generate` or `stream` depending on the `stream` argument.
-    #     '''
-    #     stream = kwargs.get('stream', kwargs.get('streaming', self.streaming))
-    #     out_fn = self.get_stream if stream else self.get_generation
-    #     return out_fn(*args, **kwargs)
+    def get_model_details(self, model: Optional[str] = None) -> dict:
+        """Get more meta-details about a model retrieved by a given name"""
+        if model is None:
+            model = self.model
+        model_key = self.client._get_invoke_url(model).split("/")[-1]
+        known_fns = self.client.available_functions
+        fn_spec = [f for f in known_fns if f.get("id") == model_key][0]
+        return fn_spec
 
     def get_generation(self, *args: Sequence, **kwargs: Any) -> dict:
         """Call to client generate method with call scope"""
         with self.subscope(*args, **kwargs) as call:
             payload = call.get_payload(stream=False)
-            out = call.client.get_req_generation(call.model_name, payload=payload)
+            out = call.client.get_req_generation(call.model, payload=payload)
         return out
 
     def get_stream(self, *args: Sequence, **kwargs: Any) -> Iterator:
         """Call to client stream method with call scope"""
         with self.subscope(*args, **kwargs) as call:
             payload = call.get_payload(stream=True)
-            out = call.client.get_req_stream(call.model_name, payload=payload)
+            out = call.client.get_req_stream(call.model, payload=payload)
         return out
 
     def get_astream(self, *args: Sequence, **kwargs: Any) -> AsyncIterator:
         """Call to client astream method with call scope"""
         with self.subscope(*args, **kwargs) as call:
             payload = call.get_payload(stream=True)
-            out = call.client.get_req_astream(call.model_name, payload=payload)
+            out = call.client.get_req_astream(call.model, payload=payload)
         return out
 
     def get_payload(self, *args: Sequence, **kwargs: Any) -> dict:
@@ -535,17 +577,16 @@ class NVAIPlayBaseModel(NVAIPlayClient):
         **kwargs: Any,
     ) -> str:
         """hook for LLM/SimpleChatModel. Allows for easy standard/streaming calls"""
-        inputs = self.custom_preprocess(messages)
-        labels = kwargs.get("labels", self.labels)
-        if kwargs.get("streaming", self.streaming) or stop:
+        kwargs["labels"] = kwargs.get("labels", self.labels)
+        kwargs["stop"] = stop if stop else getattr(self.client, "stop")
+        if kwargs.get("streaming", self.streaming) or kwargs["stop"]:
             buffer = ""
-            for chunk in self._stream(
-                messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            ):
+            for chunk in self._stream(messages, run_manager=run_manager, **kwargs):
                 buffer += chunk if isinstance(chunk, str) else chunk.text
             responses = {"content": buffer}
         else:
-            responses = self.get_generation(inputs, labels=labels, stop=stop, **kwargs)
+            inputs = self.custom_preprocess(messages)
+            responses = self.get_generation(inputs, **kwargs)
         outputs = self.custom_postprocess(responses)
         return outputs
 
@@ -566,16 +607,14 @@ class NVAIPlayBaseModel(NVAIPlayClient):
     ) -> Iterator[Union[GenerationChunk, ChatGenerationChunk]]:
         """Allows streaming to model!"""
         inputs = self.custom_preprocess(messages)
-        labels = kwargs.get("labels", self.labels)
-        if not stop:
-            stop = getattr(self.client, "stop")
-        for response in self.get_stream(inputs, labels=labels, stop=stop, **kwargs):
+        kwargs["labels"] = kwargs.get("labels", self.labels)
+        kwargs["stop"] = stop if stop else getattr(self.client, "stop")
+        for response in self.get_stream(inputs, **kwargs):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
-                if isinstance(
-                    run_manager, (AsyncCallbackManager, AsyncCallbackManagerForLLMRun)
-                ):
+                async_mtypes = (AsyncCallbackManager, AsyncCallbackManagerForLLMRun)
+                if isinstance(run_manager, async_mtypes):
                     ## Edge case from LLM/SimpleChatModel default async methods
                     asyncio.run(run_manager.on_llm_new_token(chunk.text, chunk=chunk))
                 else:
@@ -589,25 +628,29 @@ class NVAIPlayBaseModel(NVAIPlayClient):
         **kwargs: Any,
     ) -> AsyncIterator[Union[GenerationChunk, ChatGenerationChunk]]:
         inputs = self.custom_preprocess(messages)
-        labels = kwargs.get("labels", self.labels)
-        if not stop:
-            stop = getattr(self.client, "stop")
-        async for response in self.get_astream(
-            inputs, labels=labels, stop=stop, **kwargs
-        ):
+        kwargs["labels"] = kwargs.get("labels", self.labels)
+        kwargs["stop"] = stop if stop else getattr(self.client, "stop")
+        async for response in self.get_astream(inputs, **kwargs):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     def custom_preprocess(self, msgs: Union[str, Sequence]) -> List[Dict[str, str]]:
-        if isinstance(msgs, str):
-            msgs = re.split("///ROLE ", msgs.strip())
-            if msgs[0] == "":
-                msgs = msgs[1:]
-        elif not hasattr(msgs, "__iter__") or isinstance(msgs, BaseMessage):
-            msgs = [msgs]
-        out = [self.preprocess_msg(m) for m in msgs]
+        is_one = isinstance(msgs, (str, BaseMessage))
+        is_list = not is_one and hasattr(msgs, "__iter__")
+        is_solo = is_list and len(msgs) == 1 and isinstance(msgs[0], (str, BaseMessage))
+        msg_list: Sequence[Any] = []
+        if is_one or is_solo:
+            msg_val: Union[str, BaseMessage] = msgs if not is_list else msgs[0]
+            msg_str: str = getattr(msg_val, "content", msg_val)
+            msg_list = re.split("///ROLE ", msg_str.strip())
+            msg_list = [m for m in msg_list if m.strip()]
+        elif not is_list:
+            msg_list = [msgs]
+        elif is_list:
+            msg_list = msgs
+        out = [self.preprocess_msg(m) for m in msg_list]
         return out
 
     def preprocess_msg(
@@ -618,11 +661,14 @@ class NVAIPlayBaseModel(NVAIPlayClient):
             msg_split = re.split("SYS: |USER: |AGENT: |CONTEXT:", msg)
             if len(msg_split) == 1:
                 return {"role": "user", "content": msg}
-            else:
-                role_convert = {"AGENT": "assistant", "SYS": "system"}
-                role, content = msg.split(": ")[:2]
-                role = role_convert.get(role, "user")
-                return {"role": role, "content": content}
+            role_convert = {
+                "agent": "assistant",
+                "sys": "system",
+                "context": "context",
+            }
+            role, _, content = msg.partition(": ")
+            role = role_convert.get(role.strip().lower(), "user")
+            return {"role": role, "content": content}
         ## Support for tuple inputs
         if type(msg) in (list, tuple):
             return {"role": msg[0], "content": msg[1]}
@@ -650,64 +696,65 @@ class NVAIPlayBaseModel(NVAIPlayClient):
         return str(msg)
 
 
-################################################################################
+####################################################################################
+
+
+class GeneralBase(NVAIPlayBaseModel):
+    model: str = Field("llama2_13b")
+
+
+class CodeBase(NVAIPlayBaseModel):
+    model: str = Field("llama2_code_13b")
+
+
+class InstructBase(NVAIPlayBaseModel):
+    model: str = Field("mistral")
+
+
+class SteerBase(NVAIPlayBaseModel):
+    model: str = Field("steerlm")
+    arg_keys: Sequence[str] = Field(["inputs", "labels", "stop"])
+    labels: dict = Field({"creativity": 0, "complexity": 9, "verbosity": 9})
+
+
+class ContextBase(NVAIPlayBaseModel):
+    model: str = Field("_qa_")
+    valid_roles: Sequence[str] = Field(["user", "context"])
+    max_tokens: int = Field(512, ge=32, le=512)
+
+
+class ImageBase(NVAIPlayBaseModel):
+    model: str = Field("image")
+    arg_keys: Sequence[str] = Field(["inputs", "labels", "stop"])
+    labels: dict = Field({"creativity": 0, "complexity": 9, "verbosity": 9})
+
+
+####################################################################################
 
 
 class NVAIPlayLLM(NVAIPlayBaseModel, LLM):
     pass
 
 
-if STANDALONE:
-
-    class NVAIPlayChat(NVAIPlayBaseModel, SimpleChatModel):
-        pass
+class GeneralLLM(GeneralBase, LLM):
+    pass
 
 
-################################################################################
+class CodeLLM(CodeBase, LLM):
+    pass
 
 
-class LlamaLLM(NVAIPlayLLM):
-    model_name: str = Field("llama2_13b")
+class InstructLLM(InstructBase, LLM):
+    pass
 
 
-class MistralLLM(NVAIPlayLLM):
-    model_name: str = Field("mistral")
+class SteerLLM(SteerBase, LLM):
+    pass
 
 
-class SteerLM(NVAIPlayLLM):
-    model_name: str = Field("gpt_steerlm_8b")
-    labels: dict = Field(
-        {
-            "creativity": 5,
-            "helpfulness": 5,
-            "humor": 5,
-            "quality": 5,
-        }
-    )
+class ContextLLM(ContextBase, LLM):
+    pass
 
 
-class NemotronQA(NVAIPlayLLM):
-    model_name: str = Field("gpt_qa_8b")
-
-
-if STANDALONE:
-
-    class LlamaChat(NVAIPlayChat):
-        model_name: str = Field("llama2_13b")
-
-    class MistralChat(NVAIPlayChat):
-        model_name: str = Field("mistral")
-
-    class SteerLMChat(NVAIPlayChat):
-        model_name: str = Field("gpt_steerlm_8b")
-        labels: dict = Field(
-            {
-                "creativity": 5,
-                "helpfulness": 5,
-                "humor": 5,
-                "quality": 5,
-            }
-        )
-
-    class NemotronQAChat(NVAIPlayChat):
-        model_name: str = Field("gpt_qa_8b")
+class ImageLLM(ImageBase, LLM):
+    pass

@@ -11,7 +11,7 @@
 ```python
 # Imports and Authentication
 from langchain.llms import NVAIPlayLLM
-from langchain.llms.nv_aiplay import LlamaLLM, NVCRModel
+from langchain.llms.nv_aiplay import GeneralLLM, NVCRModel
 import getpass, os
 
 # Authentication with NVAPI Key
@@ -25,13 +25,9 @@ else:
 
 ## Using NVIDIA AI Playground Models
 
-A selection of NVIDIA AI Playground models are supported directly in LangChain with familiar APIs. Lower than that, the `NVCRModel` class provides a lightweight low-assumptions interface for sending requests directly to the NVCF endpoints.
+A selection of NVIDIA AI Playground models are supported directly in LangChain with familiar APIs. Lower than that, the `NVCRModel` class provides a lightweight low-assumptions interface for sending requests directly to the NVCF endpoints. 
 
-**The following selection of models have strong support in LangChain:**
-- [`Llama-2 13B`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/llama2-13b)/[`Llama-2 70B`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/llama2-70b)
-- [`CodeLlama-13B`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/codellama-13b)/[`CodeLlama-34B`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/codellama-34b)
-- [`Mistral 7B Instruct`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/mistral-7b-instruct)
-- [`NVIDIA Retrieval QA Embedding`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/nvolve-29k)
+The active models which are supported can be found [in NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/). In addition, a selection of models can be retrieved from `langchain.<llms/chat_models>.nv_aiplay` which pull in default model options based on their use cases. 
 
 Additional models will be supported as APIs become more stable and must-have model support can be implemented as necessary by leaning on `NVCRModel`'s request specification and general abstraction.
 

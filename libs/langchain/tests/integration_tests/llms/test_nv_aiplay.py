@@ -5,19 +5,25 @@ from typing import Generator
 import pytest
 
 from langchain.chains import LLMChain
-from langchain.llms.nv_aiplay import LlamaLLM, MistralLLM, NemotronQA, SteerLM
+from langchain.llms.nv_aiplay import (
+    CodeLLM,
+    ContextLLM,
+    GeneralLLM,
+    InstructLLM,
+    SteerLLM,
+)
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.schema import LLMResult
 
 
 @pytest.fixture
-def llm() -> LlamaLLM:
-    return LlamaLLM(model_kwargs={"temperature": 0, "max_tokens": 512})
+def llm() -> GeneralLLM:
+    return GeneralLLM(model_kwargs={"temperature": 0, "max_tokens": 512})
 
 
 @pytest.mark.scheduled
-def test_aiplay_call(llm: LlamaLLM) -> None:
+def test_aiplay_call(llm: GeneralLLM) -> None:
     """Test valid call to aiplay."""
     output = llm("How is the weather in New York today?")
     assert isinstance(output, str)
@@ -33,7 +39,7 @@ def test_aiplay_in_chain() -> None:
         )
     )
     chat_prompt_template = ChatPromptTemplate.from_messages([human_message_prompt])
-    chat = LlamaLLM()
+    chat = GeneralLLM()
     chain = LLMChain(llm=chat, prompt=chat_prompt_template)
     output = chain.run("football helmets")
     assert isinstance(output, str)
@@ -42,23 +48,23 @@ def test_aiplay_in_chain() -> None:
 @pytest.mark.scheduled
 def test_aiplay_model_param() -> None:
     """Tests model parameters for LlamaLLM"""
-    llm = LlamaLLM(model_name="mistral")
-    assert llm.model_name == "mistral"
-    llm = LlamaLLM(model="mistral")
-    assert llm.model_name == "mistral"
+    llm = GeneralLLM()
+    assert "llama" in llm.model
+    llm = GeneralLLM(model="mistral")
+    assert llm.model == "mistral"
 
 
 @pytest.mark.scheduled
-def test_aiplay_invoke(llm: LlamaLLM) -> None:
+def test_aiplay_invoke(llm: GeneralLLM) -> None:
     """Tests completion with invoke"""
     output = llm.invoke("How is the weather in New York today?", stop=[","])
     assert isinstance(output, str)
-    assert output[-1] == ","
+    assert output[-1] == ",", f"Output should end with a comma: {output}"
 
 
 @pytest.mark.scheduled
 @pytest.mark.asyncio
-async def test_aiplay_ainvoke(llm: LlamaLLM) -> None:
+async def test_aiplay_ainvoke(llm: GeneralLLM) -> None:
     """Tests completion with invoke"""
     output = await llm.ainvoke("How is the weather in New York today?", stop=[","])
     assert isinstance(output, str)
@@ -66,9 +72,8 @@ async def test_aiplay_ainvoke(llm: LlamaLLM) -> None:
 
 
 @pytest.mark.scheduled
-def test_aiplay_batch(llm: LlamaLLM) -> None:
+def test_aiplay_batch(llm: InstructLLM) -> None:
     """Tests completion with invoke"""
-    llm = MistralLLM()
     output = llm.batch(
         [
             "Give me some example usages of commas",
@@ -86,7 +91,7 @@ def test_aiplay_batch(llm: LlamaLLM) -> None:
 
 @pytest.mark.scheduled
 @pytest.mark.asyncio
-async def test_aiplay_abatch(llm: LlamaLLM) -> None:
+async def test_aiplay_abatch(llm: InstructLLM) -> None:
     """Tests completion with invoke"""
     output = await llm.abatch(
         [
@@ -105,7 +110,7 @@ async def test_aiplay_abatch(llm: LlamaLLM) -> None:
 
 @pytest.mark.scheduled
 def test_aiplay_multiple_prompts(
-    llm: LlamaLLM,
+    llm: CodeLLM,
 ) -> None:
     """Test completion with multiple prompts."""
     output = llm.generate(["How is the weather in New York today?", "I'm pickle rick"])
@@ -115,7 +120,7 @@ def test_aiplay_multiple_prompts(
 
 
 @pytest.mark.scheduled
-def test_aiplay_streaming(llm: LlamaLLM) -> None:
+def test_aiplay_streaming(llm: CodeLLM) -> None:
     """Test stream completion."""
     generator = llm.stream("Who's the best quarterback in the NFL?")
     assert isinstance(generator, Generator)
@@ -125,7 +130,7 @@ def test_aiplay_streaming(llm: LlamaLLM) -> None:
 
 
 @pytest.mark.scheduled
-def test_aiplay_streaming_stop_words(llm: LlamaLLM) -> None:
+def test_aiplay_streaming_stop_words(llm: CodeLLM) -> None:
     """Test stream completion with stop words."""
     generator = llm.stream("Who's the best quarterback in the NFL?", stop=[","])
     assert isinstance(generator, Generator)
@@ -139,7 +144,7 @@ def test_aiplay_streaming_stop_words(llm: LlamaLLM) -> None:
 
 @pytest.mark.scheduled
 @pytest.mark.asyncio
-async def test_aiplay_streaming_async(llm: LlamaLLM) -> None:
+async def test_aiplay_streaming_async(llm: GeneralLLM) -> None:
     """Test stream completion."""
 
     last_token = ""
@@ -153,7 +158,7 @@ async def test_aiplay_streaming_async(llm: LlamaLLM) -> None:
 
 @pytest.mark.scheduled
 @pytest.mark.asyncio
-async def test_aiplay_async_agenerate(llm: LlamaLLM) -> None:
+async def test_aiplay_async_agenerate(llm: GeneralLLM) -> None:
     """Test async."""
     output = await llm.agenerate(["What is the best city to live in California?"])
     assert isinstance(output, LLMResult)
@@ -161,7 +166,7 @@ async def test_aiplay_async_agenerate(llm: LlamaLLM) -> None:
 
 @pytest.mark.scheduled
 @pytest.mark.asyncio
-async def test_aiplay_multiple_prompts_async_agenerate(llm: LlamaLLM) -> None:
+async def test_aiplay_multiple_prompts_async_agenerate(llm: GeneralLLM) -> None:
     output = await llm.agenerate(
         ["How is the weather in New York today?", "I'm pickle rick"]
     )
@@ -171,25 +176,25 @@ async def test_aiplay_multiple_prompts_async_agenerate(llm: LlamaLLM) -> None:
 
 
 @pytest.mark.scheduled
-def test_aiplay_steerlm(llm: LlamaLLM) -> None:
+def test_aiplay_steerlm() -> None:
     """Test completion with multiple prompts."""
-    llm2 = SteerLM()
-    output = llm2.generate(["How is the weather in New York today?", "I'm pickle rick"])
+    llm = SteerLLM()
+    output = llm.generate(["How is the weather in New York today?", "I'm pickle rick"])
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations, list)
     assert len(output.generations) == 2
 
 
 @pytest.mark.scheduled
-def test_aiplay_nemotron_qa(llm: LlamaLLM) -> None:
+def test_aiplay_nemotron_qa() -> None:
     """Test completion with multiple prompts."""
-    llm2 = NemotronQA()
-    output = llm2.generate(
+    llm = ContextLLM()
+    output = llm.generate(
         [
             """
-        ///ROLE USER: How is the weather in New York today?
         ///ROLE CONTEXT: There is extreme heat in New York today, and some extreme 
         cold in the south. The east is underwater. There is panic everywhere.
+        ///ROLE USER: How is the weather in New York today?
     """
         ]
     )

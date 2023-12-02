@@ -1,9 +1,9 @@
-"""Test LlamaChat wrapper."""
+"""Test NVAIPlay Chat wrapper."""
 
 import pytest
 
 from langchain.callbacks.manager import CallbackManager
-from langchain.chat_models.nv_aiplay import LlamaChat, NVAIPlayChat
+from langchain.chat_models.nv_aiplay import GeneralChat, NVAIPlayChat
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
@@ -11,7 +11,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 @pytest.mark.scheduled
 def test_chat_aiplay() -> None:
     """Test NVAIPlayChat wrapper."""
-    chat = LlamaChat(
+    chat = GeneralChat(
         temperature=0.7,
     )
     message = HumanMessage(content="Hello")
@@ -21,14 +21,14 @@ def test_chat_aiplay() -> None:
 
 
 def test_chat_aiplay_model() -> None:
-    """Test LlamaChat wrapper handles model_name."""
-    chat = NVAIPlayChat(model_name="mistral")
-    assert chat.model_name == "mistral"
+    """Test GeneralChat wrapper handles model."""
+    chat = NVAIPlayChat(model="mistral")
+    assert chat.model == "mistral"
 
 
 def test_chat_aiplay_system_message() -> None:
-    """Test LlamaChat wrapper with system message."""
-    chat = LlamaChat(max_tokens=36)
+    """Test GeneralChat wrapper with system message."""
+    chat = GeneralChat(max_tokens=36)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat([system_message, human_message])
@@ -59,7 +59,7 @@ def test_chat_aiplay_streaming() -> None:
 @pytest.mark.scheduled
 def test_aiplay_streaming() -> None:
     """Test streaming tokens from aiplay."""
-    llm = LlamaChat(max_tokens=36)
+    llm = GeneralChat(max_tokens=36)
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -69,7 +69,7 @@ def test_aiplay_streaming() -> None:
 @pytest.mark.asyncio
 async def test_aiplay_astream() -> None:
     """Test streaming tokens from aiplay."""
-    llm = LlamaChat(max_tokens=35)
+    llm = GeneralChat(max_tokens=35)
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -78,8 +78,8 @@ async def test_aiplay_astream() -> None:
 @pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_aiplay_abatch() -> None:
-    """Test streaming tokens from LlamaChat."""
-    llm = LlamaChat(max_tokens=36)
+    """Test streaming tokens from GeneralChat."""
+    llm = GeneralChat(max_tokens=36)
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -89,8 +89,8 @@ async def test_aiplay_abatch() -> None:
 @pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_aiplay_abatch_tags() -> None:
-    """Test batch tokens from LlamaChat."""
-    llm = LlamaChat(max_tokens=55)
+    """Test batch tokens from GeneralChat."""
+    llm = GeneralChat(max_tokens=55)
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -101,8 +101,8 @@ async def test_aiplay_abatch_tags() -> None:
 
 @pytest.mark.scheduled
 def test_aiplay_batch() -> None:
-    """Test batch tokens from LlamaChat."""
-    llm = LlamaChat(max_tokens=60)
+    """Test batch tokens from GeneralChat."""
+    llm = GeneralChat(max_tokens=60)
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -112,8 +112,8 @@ def test_aiplay_batch() -> None:
 @pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_aiplay_ainvoke() -> None:
-    """Test invoke tokens from LlamaChat."""
-    llm = LlamaChat(max_tokens=60)
+    """Test invoke tokens from GeneralChat."""
+    llm = GeneralChat(max_tokens=60)
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -121,8 +121,8 @@ async def test_aiplay_ainvoke() -> None:
 
 @pytest.mark.scheduled
 def test_aiplay_invoke() -> None:
-    """Test invoke tokens from LlamaChat."""
-    llm = LlamaChat(max_tokens=60)
+    """Test invoke tokens from GeneralChat."""
+    llm = GeneralChat(max_tokens=60)
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)

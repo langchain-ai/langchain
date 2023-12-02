@@ -15,17 +15,12 @@ class NVAIPlayEmbeddings(ClientModel, Embeddings):
     """NVIDIA's AI Playground NVOLVE Question-Answer Asymmetric Model."""
 
     client: NVCRModel = Field(NVCRModel)
-    model_name: str = Field("nvolveqa")
-    model: Optional[str] = Field(None)
+    model: str = Field("nvolveqa")
     max_length: int = Field(2048, ge=1, le=2048)
 
     @root_validator()
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["client"] = values["client"](**values)
-        model_name = values.get("model")
-        model_name = model_name if model_name else values["model_name"]
-        values["model_name"] = model_name
-        values["model"] = model_name
         return values
 
     def _embed(self, text: str, model_type: Literal["passage", "query"]) -> List[float]:
@@ -33,7 +28,7 @@ class NVAIPlayEmbeddings(ClientModel, Embeddings):
         if len(text) > self.max_length:
             text = text[: self.max_length]
         output = self.client.get_req_generation(
-            model_name=self.model_name,
+            model_name=self.model,
             payload={
                 "input": text,
                 "model": model_type,
@@ -49,19 +44,6 @@ class NVAIPlayEmbeddings(ClientModel, Embeddings):
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Input pathway for document embeddings."""
         return [self._embed(text, model_type="passage") for text in texts]
-
-    # async def aembed_query(self, text: str) -> List[float]:
-    #     """Asynchronous Embed query text."""
-    #     return await asyncio.get_running_loop().run_in_executor(
-    #         None, self.embed_query, text
-    #     )
-
-    ## Implemented in Embeddings core class
-    # async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-    #     """Asynchronous Embed search docs."""
-    #     return await asyncio.get_running_loop().run_in_executor(
-    #         None, self.embed_documents, texts
-    #     )
 
     async def aembed_batch_query(self, texts: List[str]) -> List[List[float]]:
         """Embed query text with Asynchronous Batching."""
