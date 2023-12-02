@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pwd
+
 version_compare() {
     local v1=(${1//./ })
     local v2=(${2//./ })
