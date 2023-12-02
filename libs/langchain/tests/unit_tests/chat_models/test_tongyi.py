@@ -13,3 +13,24 @@ from langchain.chat_models.tongyi import ChatTongyi
 def test_api_key_is_secret_value() -> None:
     llm = ChatTongyi(dashscope_api_key="secret-api-key")
     assert isinstance(llm.dashscope_api_key, SecretStr)
+
+@pytest.mark.requires("dashscope")
+def test_api_key_is_secret_pass_by_constructor(
+    capsys: CaptureFixture,
+) -> None:
+    llm = ChatTongyi(dashscope_api_key="secret-api-key")
+    print(llm.dashscope_api_key, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+    
+@pytest.mark.requires("dashscope")
+def test_api_key_is_secret_pass_by_end(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+) -> None:
+    monkeypatch.setenv("DASHSCOPE_API_KEY", "secret-api-key")
+    llm = ChatTongyi()
+    print(llm.dashscope_api_key, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
