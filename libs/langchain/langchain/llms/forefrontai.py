@@ -41,7 +41,7 @@ class ForefrontAI(LLM):
     repetition_penalty: int = 1
     """Penalizes repeated tokens according to frequency."""
 
-    forefrontai_api_key: SecretStr = None
+    forefrontai_api_key: SecretStr
 
     base_url: Optional[str] = None
     """Base url to use, if None decides based on model name."""
@@ -51,7 +51,7 @@ class ForefrontAI(LLM):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["forefrontai_api_key"] = convert_to_secret_str(
