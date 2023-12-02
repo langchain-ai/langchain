@@ -1,8 +1,7 @@
 """Chat Model Components Derived from ChatModel/NVAIPlay"""
 
+from langchain.chat_models.base import SimpleChatModel
 from langchain.llms import nv_aiplay
-
-from .base import SimpleChatModel
 
 
 class NVAIPlayChat(nv_aiplay.NVAIPlayBaseModel, SimpleChatModel):

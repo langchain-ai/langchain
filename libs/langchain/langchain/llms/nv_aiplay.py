@@ -30,12 +30,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManager,
 )
+from langchain.llms.base import LLM
 from langchain.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain.schema.messages import BaseMessage, ChatMessageChunk
 from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 from langchain.utils import get_from_dict_or_env
-
-from .base import LLM
 
 logger = logging.getLogger(__name__)
 
