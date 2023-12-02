@@ -461,8 +461,8 @@ class Databricks(LLM):
         else:
             request.update(self.model_kwargs or self.extra_params)
         request.update(kwargs)
-        if s := self.stop or stop:
-            request["stop"] = s
+        if stop := self.stop or stop:
+            request["stop"] = stop
 
         if self.transform_input_fn:
             request = self.transform_input_fn(**request)

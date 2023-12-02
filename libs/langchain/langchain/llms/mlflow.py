@@ -110,8 +110,8 @@ class Mlflow(LLM):
             **self.extra_params,
             **kwargs,
         }
-        if s := self.stop or stop:
-            data["stop"] = s
+        if stop := self.stop or stop:
+            data["stop"] = stop
         resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return resp["choices"][0]["text"]
 

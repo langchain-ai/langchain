@@ -120,8 +120,8 @@ class ChatMlflow(BaseChatModel):
             **self.extra_params,
             **kwargs,
         }
-        if s := self.stop or stop:
-            data["stop"] = s
+        if stop := self.stop or stop:
+            data["stop"] = stop
         resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return ChatMlflow._create_chat_result(resp)
 
