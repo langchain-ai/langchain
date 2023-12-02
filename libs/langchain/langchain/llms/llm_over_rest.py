@@ -1,29 +1,77 @@
 from __future__ import annotations
 
-import json
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
-import requests
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 
-from langchain.llms.base import LLM
-from langchain.llms.utils import enforce_stop_tokens
+from langchain.llms.base import LLM, create_base_retry_decorator
+from langchain.pydantic_v1 import Field, root_validator
 
 
-def _get_generated_text(resp: Dict[str, Any]) -> str:
-    if "generated_text" in resp.keys():
-        return str(resp["generated_text"])
-    else:
-        raise ValueError('JSON response does not have "generated_keys" parameter')
+def _create_retry_decorator(
+    retries: int,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
+    import aiohttp
+    import requests
+
+    errors = [requests.exceptions.RequestException, aiohttp.ClientError]
+    try:
+        import httpx
+
+        errors.append(httpx.RequestError)
+    except ImportError:
+        pass
+    return create_base_retry_decorator(
+        error_types=errors, max_retries=retries, run_manager=run_manager
+    )
+
+
+def completion_with_retry(
+    llm: LLMOverREST,
+    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    json_body: Optional[Dict[str, Any]] = None,
+) -> Any:
+    retry_decorator = _create_retry_decorator(llm.retries, run_manager)
+
+    @retry_decorator
+    def _completion_with_retry() -> Any:
+        return llm.http_call(json_body=json_body or {})
+
+    return _completion_with_retry()
+
+
+def _default_json_body_creator(
+    prompt: str,
+    stop: Optional[List[str]] = None,
+    model_kwargs: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    json_body: Dict[str, Any] = {"prompt": prompt}
+    if stop:
+        json_body["stop"] = stop
+    if model_kwargs:
+        json_body.update(model_kwargs)
+    return json_body
 
 
 class LLMOverREST(LLM):
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
+    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+    use_httpx: bool = False  #: :meta private:
+
     api_endpoint: str
     """The REST API endpoint from where the LLM will be served."""
     method: str = "POST"
     """The HTTP Method to use."""
     headers: Optional[Dict[str, str]] = None
     """A key-value map for all the request headers."""
+    retries: int = 0
+    """Number of retries to make in case the REST call fails"""
     proxies: Optional[Dict[str, str]] = None
     """Dictionary containing the protocol to the proxy server configuration."""
     ssl_verify: Union[bool, str] = True
@@ -38,12 +86,30 @@ class LLMOverREST(LLM):
     model_kwargs: Dict[str, Any] = {}
     """Set of model parameters to be sent as part of the JSON body of the request. 
     This dict will be json-ified and appended to the request body."""
-    generated_text_key: str = "generated_text"
+    json_body_creator: Callable[
+        [str, Optional[List[str]], Dict[str, Any]], Dict[str, Any]
+    ] = _default_json_body_creator
     """A key in the JSON response that corresponds to the generated text from the LLM. 
     This is used to extract the generated text and apply the stop sequence on it. 
     If this is ``None``, the ``stop`` parameter in the LLM call will not be honored. 
     Note: currently, it does not support nested keys and expect the keys to be 
     available at the root level of the response JSON"""
+
+    @root_validator
+    def validate_client(cls, values: Dict) -> Dict:
+        if not values.get("client"):
+            try:
+                import httpx
+
+                values["client"] = httpx.Client
+                values["use_httpx"] = True
+            except ImportError:
+                import requests
+
+                values["client"] = requests.Session
+                values["use_httpx"] = False
+
+        return values
 
     def _call(
         self,
@@ -52,47 +118,20 @@ class LLMOverREST(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        json_body = {"prompt": prompt}
-        json_body.update(self.model_kwargs)
-
-        if len(stop) > 0 and len(self.generated_text_key) == 0:
+        if stop is not None and len(stop) > 0 and len(self.generated_text_key) == 0:
             raise ValueError(
                 "``stop`` argument cannot be honored if "
                 "``self.generated_text_key`` is None"
             )
+        json_body = self.json_body_creator(prompt, stop, self.model_kwargs)
 
-        with requests.Session() as session:  # type: requests.Session
-            try:
-                response = session.request(
-                    method=self.method,
-                    url=self.api_endpoint,
-                    headers=self.headers,
-                    json=json_body,
-                    proxies=self.proxies,
-                    verify=self.ssl_verify,
-                    cert=self.client_cert,
-                )
-            except requests.exceptions.RequestException as e:
-                raise ValueError(f"Error in invoking the REST API: {e}")
-
-            if not response.ok:
-                raise ValueError(
-                    f"Error response from the API: "
-                    f"{response.status_code}: {response.text}"
-                )
-
-            final_resp: str = ""
-            if self.generated_text_key is not None:
-                try:
-                    resp_json = response.json()
-                    gen_text = resp_json.get(self.generated_text_key)
-                    if stop is not None and gen_text is not None:
-                        gen_text = enforce_stop_tokens(gen_text, stop)
-                        resp_json[self.generated_text_key] = gen_text
-                        final_resp = json.dumps(resp_json)
-                except requests.exceptions.JSONDecodeError as e:
-                    raise ValueError(f"Error in parsing the response JSON: {e}")
-            return final_resp if len(final_resp) > 0 else response.text
+        try:
+            response_text = completion_with_retry(
+                llm=self, run_manager=run_manager, json_body=json_body
+            )
+        except BaseException as e:
+            raise ValueError(f"Error faced during HTTP call: {e}")
+        return response_text
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -105,3 +144,42 @@ class LLMOverREST(LLM):
     @property
     def _llm_type(self) -> str:
         return "llm_over_rest"
+
+    def http_call(self, json_body: Dict[str, str]) -> str:
+        resp = (
+            self._call_via_httpx(json_body)
+            if self.use_httpx
+            else self._call_via_requests(json_body)
+        )
+        return resp
+
+    def _call_via_requests(self, json_body: Dict[str, Any]) -> str:
+        import requests
+
+        with self.client() as session:  # type: requests.Session
+            response: requests.Response = session.request(
+                method=self.method,
+                url=self.api_endpoint,
+                headers=self.headers,
+                json=json_body,
+                proxies=self.proxies,
+                verify=self.ssl_verify,
+                cert=self.client_cert,
+            )
+            response.raise_for_status()
+            return response.text
+
+    def _call_via_httpx(self, json_body: Dict[str, Any]) -> str:
+        import httpx
+
+        with self.client(
+            verify=self.ssl_verify, cert=self.client_cert, proxies=self.proxies
+        ) as client:  # type: httpx.Client
+            response: httpx.Response = client.request(
+                method=self.method,
+                url=self.api_endpoint,
+                json=json_body,
+                headers=self.headers,
+            )
+            response.raise_for_status()
+            return response.text
