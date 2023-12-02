@@ -31,6 +31,9 @@
     "process": "^0.11.10",
     "react": "^18",
     "react-dom": "^18",
+    "remark-gfm": "^4.0.0",
+    "remark-heading-id": "^1.0.1",
+    "remark-inline-links": "^7.0.0",
     "typescript": "^5.1.3",
     "webpack": "^5.75.0"
   },

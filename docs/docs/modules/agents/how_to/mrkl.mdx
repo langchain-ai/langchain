@@ -65,9 +65,9 @@ mrkl.run("Who is Leo DiCaprio's girlfriend? What is her current age raised to th
 
     > Entering new LLMMathChain chain...
     21^0.43
-    ```text
+    \`\`\`text
     21**0.43
-    ```
+    \`\`\`
     ...numexpr.evaluate("21**0.43")...
 
     Answer: 3.7030049853137306
@@ -173,29 +173,29 @@ mrkl.run("Who is Leo DiCaprio's girlfriend? What is her current age raised to th
     > Entering new AgentExecutor chain...
     Thought: The first question requires a search, while the second question requires a calculator.
     Action:
-    ```
+    \`\`\`
     {
       "action": "Search",
       "action_input": "Leo DiCaprio girlfriend"
     }
-    ```
+    \`\`\`
 
     Observation: Gigi Hadid: 2022 Leo and Gigi were first linked back in September 2022, when a source told Us Weekly that Leo had his “sights set" on her (alarming way to put it, but okay).
     Thought:For the second question, I need to calculate the age raised to the 0.43 power. I will use the calculator tool.
     Action:
-    ```
+    \`\`\`
     {
       "action": "Calculator",
       "action_input": "((2022-1995)^0.43)"
     }
-    ```
+    \`\`\`
 
 
     > Entering new LLMMathChain chain...
     ((2022-1995)^0.43)
-    ```text
+    \`\`\`text
     (2022-1995)**0.43
-    ```
+    \`\`\`
     ...numexpr.evaluate("(2022-1995)**0.43")...
 
     Answer: 4.125593352125936
@@ -225,22 +225,22 @@ mrkl.run("What is the full name of the artist who recently released an album cal
     Question: What is the full name of the artist who recently released an album called 'The Storm Before the Calm' and are they in the FooBar database? If so, what albums of theirs are in the FooBar database?
     Thought: I should use the Search tool to find the answer to the first part of the question and then use the FooBar DB tool to find the answer to the second part.
     Action:
-    ```
+    \`\`\`
     {
       "action": "Search",
       "action_input": "Who recently released an album called 'The Storm Before the Calm'"
     }
-    ```
+    \`\`\`
 
     Observation: Alanis Morissette
     Thought:Now that I know the artist's name, I can use the FooBar DB tool to find out if they are in the database and what albums of theirs are in it.
     Action:
-    ```
+    \`\`\`
     {
       "action": "FooBar DB",
       "action_input": "What albums does Alanis Morissette have in the database?"
     }
-    ```
+    \`\`\`
 
 
     > Entering new SQLDatabaseChain chain...

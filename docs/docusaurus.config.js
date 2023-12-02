@@ -29,6 +29,9 @@ const config = {
   themes: ["@docusaurus/theme-mermaid"],
   markdown: {
     mermaid: true,
+    preprocessor: ({filePath, fileContent}) => {
+      return fileContent.replaceAll(/<([^>@]*@[^@])>/g, '$1').replaceAll(/<([^:>]:\/\/[^>]*)>/g, '$1')
+    }
   },
 
   plugins: [
@@ -105,7 +108,7 @@ const config = {
           },
         },
         pages: {
-          remarkPlugins: [require("@docusaurus/remark-plugin-npm2yarn")],
+          remarkPlugins: [require("@docusaurus/remark-plugin-npm2yarn"), require('remark-heading-id'), require('remark-inline-links')],
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
