@@ -276,7 +276,6 @@ def completion_with_retry(
 
     @conditional_decorator(use_retry, retry_decorator)
     def _completion_with_retry(**kwargs: Any) -> Any:
-        breakpoint()
         return fireworks.client.ChatCompletion.create(
             **kwargs,
         )
