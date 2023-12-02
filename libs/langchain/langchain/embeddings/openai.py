@@ -523,7 +523,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
-                average_embedded = embed_with_retry(
+                average_embedded = await async_embed_with_retry(
                     self,
                     input="",
                     **self._invocation_params,
