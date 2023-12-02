@@ -22,4 +22,3 @@ cp ../cookbook/README.md src/pages/cookbook.mdx
 cp ../.github/CONTRIBUTING.md docs/contributing.md
 wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
 quarto render docs/
-python3.8 scripts/generate_api_reference_links.py
