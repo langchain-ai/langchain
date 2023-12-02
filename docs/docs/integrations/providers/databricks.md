@@ -41,3 +41,9 @@ Databricks Dolly
 ----------------
 
 Databricks’ Dolly is an instruction-following large language model trained on the Databricks machine learning platform that is licensed for commercial use. The model is available on Hugging Face Hub as databricks/dolly-v2-12b. See the notebook [Hugging Face Hub](/docs/integrations/llms/huggingface_hub) for instructions to access it through the Hugging Face Hub integration with LangChain. 
+
+
+Databricks Vector Search
+------------------------
+
+Databricks Vector Search is a serverless similarity search engine that allows you to store a vector representation of your data, including metadata, in a vector database. With Vector Search, you can create auto-updating vector search indexes from Delta tables managed by Unity Catalog and query them with a simple API to return the most similar vectors. See the notebook [Databricks Vector Search](/docs/docs/integrations/vectorstores/databricks_vector_search.ipynb) for instructions to use it with LangChain.
