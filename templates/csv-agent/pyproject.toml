@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "csv-agent"
 version = "0.0.1"
-description = ""
+description = "Analyze csv data with Pandas and OpenAI"
 authors = []
 readme = "README.md"
 
@@ -23,6 +23,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "csv_agent"
 export_attr = "agent_executor"
+
+[tool.templates-hub]
+use-case = "question-answering"
+author = "LangChain"
+integrations = ["OpenAI", "Pandas"]
+tags = ["data", "agents"]
 
 [build-system]
 requires = [

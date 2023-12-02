@@ -4,18 +4,17 @@ import threading
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.pydantic_v1 import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatMessage,
-    ChatResult,
-    HumanMessage,
-)
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -54,6 +53,20 @@ class ErnieBotChat(BaseChatModel):
 
             from langchain.chat_models import ErnieBotChat
             chat = ErnieBotChat(model_name='ERNIE-Bot')
+
+
+    Deprecated Note:
+    Please use `QianfanChatEndpoint` instead of this class.
+    `QianfanChatEndpoint` is a more suitable choice for production.
+
+    Always test your code after changing to `QianfanChatEndpoint`.
+
+    Example of `QianfanChatEndpoint`:
+        .. code-block:: python
+
+            from langchain.chat_models import QianfanChatEndpoint
+            qianfan_chat = QianfanChatEndpoint(model="ERNIE-Bot",
+                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
 
     """
 
@@ -108,6 +121,7 @@ class ErnieBotChat(BaseChatModel):
         model_paths = {
             "ERNIE-Bot-turbo": "eb-instant",
             "ERNIE-Bot": "completions",
+            "ERNIE-Bot-8K": "ernie_bot_8k",
             "ERNIE-Bot-4": "completions_pro",
             "BLOOMZ-7B": "bloomz_7b1",
             "Llama-2-7b-chat": "llama_2_7b",

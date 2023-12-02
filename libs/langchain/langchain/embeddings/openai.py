@@ -20,6 +20,9 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.utils import get_pydantic_field_names
 from packaging.version import Version, parse
 from tenacity import (
     AsyncRetrying,
@@ -30,9 +33,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain.schema.embeddings import Embeddings
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -522,7 +523,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         for i in range(len(texts)):
             _result = results[i]
             if len(_result) == 0:
-                average_embedded = embed_with_retry(
+                average_embedded = await async_embed_with_retry(
                     self,
                     input="",
                     **self._invocation_params,

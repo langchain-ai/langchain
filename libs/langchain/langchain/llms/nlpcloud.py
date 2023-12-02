@@ -1,9 +1,10 @@
 from typing import Any, Dict, List, Mapping, Optional
 
+from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class NLPCloud(LLM):
@@ -49,7 +50,7 @@ class NLPCloud(LLM):
     num_return_sequences: int = 1
     """How many completions to generate for each prompt."""
 
-    nlpcloud_api_key: Optional[str] = None
+    nlpcloud_api_key: Optional[SecretStr] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -59,15 +60,15 @@ class NLPCloud(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        nlpcloud_api_key = get_from_dict_or_env(
-            values, "nlpcloud_api_key", "NLPCLOUD_API_KEY"
+        values["nlpcloud_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "nlpcloud_api_key", "NLPCLOUD_API_KEY")
         )
         try:
             import nlpcloud
 
             values["client"] = nlpcloud.Client(
                 values["model_name"],
-                nlpcloud_api_key,
+                values["nlpcloud_api_key"].get_secret_value(),
                 gpu=values["gpu"],
                 lang=values["lang"],
             )

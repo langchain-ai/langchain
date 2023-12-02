@@ -23,7 +23,7 @@ It's essential that we maintain great documentation and testing. If you:
   - Update any affected example notebooks and documentation. These live in `docs`.
   - Update unit and integration tests when relevant.
 - Add a feature
-  - Add a demo notebook in `docs/modules`.
+  - Add a demo notebook in `docs/docs/`.
   - Add unit and integration tests.
 
 We are a small, progress-oriented team. If there's something you'd like to add or change, opening a pull request is the
@@ -213,6 +213,10 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 ## Working with Optional Dependencies
 
 Langchain relies heavily on optional dependencies to keep the Langchain package lightweight.
+
+You only need to add a new dependency if a **unit test** relies on the package.
+If your package is only required for **integration tests**, then you can skip these
+steps and leave all pyproject.toml and poetry.lock files alone.
 
 If you're adding a new dependency to Langchain, assume that it will be an optional dependency, and
 that most users won't have it installed.
