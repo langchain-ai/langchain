@@ -1573,6 +1573,10 @@
       "destination": "/docs/modules/chains/how_to/serialization"
     },
     {
+      "source": "/docs/integrations/document_loaders/pdf-amazonTextractPDFLoader",
+      "destination": "/docs/integrations/document_loaders/amazon_textract"
+    },
+    {
       "source": "/en/latest/modules/indexes/document_loaders/examples/acreom.html",
       "destination": "/docs/integrations/document_loaders/acreom"
     },
@@ -3611,6 +3615,10 @@
     {
       "source": "/en/latest/modules/indexes/retrievers/examples/:path*",
       "destination": "/docs/integrations/retrievers/:path*"
+    },
+    {
+      "source": "/docs/integrations/retrievers/bedrock",
+      "destination": "/docs/integrations/retrievers/amazon_bedrock_knowledge_bases"
     },
     {
       "source": "/docs/modules/data_connection/retrievers/integrations/:path*",
