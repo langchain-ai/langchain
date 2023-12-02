@@ -51,7 +51,7 @@ class ForefrontAI(LLM):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["forefrontai_api_key"] = convert_to_secret_str(
