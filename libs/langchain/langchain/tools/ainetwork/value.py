@@ -2,12 +2,15 @@ import builtins
 import json
 from typing import Optional, Type, Union
 
+from langchain_core.pydantic_v1 import BaseModel, Field
+
 from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.ainetwork.base import AINBaseTool, OperationType
 
 
 class ValueSchema(BaseModel):
+    """Schema for value operations."""
+
     type: OperationType = Field(...)
     path: str = Field(..., description="Blockchain reference path")
     value: Optional[Union[int, str, float, dict]] = Field(
@@ -16,6 +19,8 @@ class ValueSchema(BaseModel):
 
 
 class AINValueOps(AINBaseTool):
+    """Tool for value operations."""
+
     name: str = "AINvalueOps"
     description: str = """
 Covers the read and write value for the AINetwork Blockchain database.

@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Generator, Iterator
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob, FileSystemBlobLoader
 from langchain.document_loaders.generic import GenericLoader
-from langchain.schema import Document
 
 
 @pytest.fixture

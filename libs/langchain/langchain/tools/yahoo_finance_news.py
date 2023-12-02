@@ -1,11 +1,11 @@
 from typing import Iterable, Optional
 
+from langchain_core.documents import Document
 from requests.exceptions import HTTPError, ReadTimeout
 from urllib3.exceptions import ConnectionError
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.document_loaders.web_base import WebBaseLoader
-from langchain.schema import Document
 from langchain.tools.base import BaseTool
 
 
@@ -50,7 +50,7 @@ class YahooFinanceNewsTool(BaseTool):
                 return f"No news found for company that searched with {query} ticker."
         if not links:
             return f"No news found for company that searched with {query} ticker."
-        loader = WebBaseLoader(links)
+        loader = WebBaseLoader(web_paths=links)
         docs = loader.load()
         result = self._format_results(docs, query)
         if not result:

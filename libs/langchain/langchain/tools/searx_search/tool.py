@@ -1,12 +1,14 @@
 """Tool for the SearxNG search API."""
 from typing import Optional
 
+from langchain_core.pydantic_v1 import Extra
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.pydantic_v1 import Extra
-from langchain.tools.base import BaseTool, Field
+from langchain.pydantic_v1 import Field
+from langchain.tools.base import BaseTool
 from langchain.utilities.searx_search import SearxSearchWrapper
 
 
@@ -42,7 +44,7 @@ class SearxSearchRun(BaseTool):
 class SearxSearchResults(BaseTool):
     """Tool that queries a Searx instance and gets back json."""
 
-    name: str = "Searx Search Results"
+    name: str = "Searx-Search-Results"
     description: str = (
         "A meta search engine."
         "Useful for when you need to answer questions about current events."

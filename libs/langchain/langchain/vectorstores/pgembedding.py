@@ -7,12 +7,18 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 import sqlalchemy
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import JSON, UUID
-from sqlalchemy.orm import Session, declarative_base, relationship
+from sqlalchemy.orm import Session, relationship
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
+
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 
 Base = declarative_base()  # type: Any
 
@@ -396,7 +402,7 @@ class PGEmbedding(VectorStore):
                     page_content=result.EmbeddingStore.document,
                     metadata=result.EmbeddingStore.cmetadata,
                 ),
-                result.distance if self.embedding_function is not None else None,
+                result.distance if self.embedding_function is not None else 0.0,
             )
             for result in results
         ]

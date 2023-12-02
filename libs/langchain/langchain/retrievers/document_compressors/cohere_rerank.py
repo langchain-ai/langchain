@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, Optional, Sequence
 
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Extra, root_validator
+
 from langchain.callbacks.manager import Callbacks
-from langchain.pydantic_v1 import Extra, root_validator
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
-from langchain.schema import Document
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -29,6 +30,10 @@ class CohereRerank(BaseDocumentCompressor):
     model: str = "rerank-english-v2.0"
     """Model to use for reranking."""
 
+    cohere_api_key: Optional[str] = None
+    user_agent: str = "langchain"
+    """Identifier for the application making the request."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -38,18 +43,18 @@ class CohereRerank(BaseDocumentCompressor):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        cohere_api_key = get_from_dict_or_env(
-            values, "cohere_api_key", "COHERE_API_KEY"
-        )
         try:
             import cohere
-
-            values["client"] = cohere.Client(cohere_api_key)
         except ImportError:
             raise ImportError(
                 "Could not import cohere python package. "
                 "Please install it with `pip install cohere`."
             )
+        cohere_api_key = get_from_dict_or_env(
+            values, "cohere_api_key", "COHERE_API_KEY"
+        )
+        client_name = values.get("user_agent", "langchain")
+        values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
         return values
 
     def compress_documents(
@@ -82,11 +87,3 @@ class CohereRerank(BaseDocumentCompressor):
             doc.metadata["relevance_score"] = r.relevance_score
             final_results.append(doc)
         return final_results
-
-    async def acompress_documents(
-        self,
-        documents: Sequence[Document],
-        query: str,
-        callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
-        raise NotImplementedError()

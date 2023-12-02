@@ -5,12 +5,13 @@ from typing import Any, Dict, Iterator, List, Optional, Union
 from unittest import mock
 
 import pytest
+from freezegun import freeze_time
+from langchain_core.language_models import BaseLanguageModel
 from langsmith.client import Client
 from langsmith.schemas import Dataset, Example
 
 from langchain.chains.base import Chain
 from langchain.chains.transform import TransformChain
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.smith.evaluation.runner_utils import (
     InputFormatError,
     _get_messages,
@@ -238,7 +239,7 @@ def test_run_chat_model_all_formats(inputs: Dict[str, Any]) -> None:
     _run_llm(llm, inputs, mock.MagicMock())
 
 
-@pytest.mark.asyncio
+@freeze_time("2023-01-01")
 async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     dataset = Dataset(
         id=uuid.uuid4(),
@@ -247,6 +248,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         owner_id="owner",
         created_at=_CREATED_AT,
         tenant_id=_TENANT_ID,
+        _host_url="http://localhost:1984",
     )
     uuids = [
         "0c193153-2309-4704-9a47-17aee4fb25c8",
@@ -318,9 +320,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     ), mock.patch.object(Client, "list_examples", new=mock_list_examples), mock.patch(
         "langchain.smith.evaluation.runner_utils._arun_llm_or_chain",
         new=mock_arun_chain,
-    ), mock.patch.object(
-        Client, "create_project", new=mock_create_project
-    ):
+    ), mock.patch.object(Client, "create_project", new=mock_create_project):
         client = Client(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
         chain.input_keys = ["foothing"]
@@ -331,15 +331,20 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             project_name="test_project",
             client=client,
         )
-
         expected = {
             str(example.id): {
                 "output": {
                     "result": f"Result for example {uuid.UUID(str(example.id))}"
                 },
                 "input": {"input": example.inputs["input"]},
-                "reference": {"output": example.outputs["output"]},
+                "reference": {
+                    "output": example.outputs["output"]
+                    if example.outputs is not None
+                    else None
+                },
                 "feedback": [],
+                # No run since we mock the call to the llm above
+                "execution_time": None,
             }
             for example in examples
         }

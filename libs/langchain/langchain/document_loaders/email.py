@@ -1,7 +1,8 @@
 import os
 from typing import Any, List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredFileLoader,
@@ -107,6 +108,7 @@ class OutlookMessageLoader(BaseLoader):
             Document(
                 page_content=msg.body,
                 metadata={
+                    "source": self.file_path,
                     "subject": msg.subject,
                     "sender": msg.sender,
                     "date": msg.date,

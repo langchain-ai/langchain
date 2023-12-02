@@ -5,18 +5,16 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.messages import BaseMessage, ChatMessage
+from langchain_core.outputs import Generation, LLMResult
+
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    BaseMessage,
-    ChatMessage,
-    Generation,
-    LLMResult,
-)
 
 
 class LabelStudioMode(Enum):
+    """Label Studio mode enumerator."""
+
     PROMPT = "prompt"
     CHAT = "chat"
 
@@ -24,6 +22,13 @@ class LabelStudioMode(Enum):
 def get_default_label_configs(
     mode: Union[str, LabelStudioMode]
 ) -> Tuple[str, LabelStudioMode]:
+    """Get default Label Studio configs for the given mode.
+
+    Parameters:
+        mode: Label Studio mode ("prompt" or "chat")
+
+    Returns: Tuple of Label Studio config and mode
+    """
     _default_label_configs = {
         LabelStudioMode.PROMPT.value: """
 <View>

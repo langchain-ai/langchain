@@ -3,13 +3,13 @@
 import json
 from typing import Any, Dict, Optional
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.vectorstores import VectorStore
+
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.chains import RetrievalQA, RetrievalQAWithSourcesChain
 from langchain.llms.openai import OpenAI
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
-from langchain.vectorstores.base import VectorStore
 
 
 class BaseVectorStoreTool(BaseModel):
@@ -19,9 +19,7 @@ class BaseVectorStoreTool(BaseModel):
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
 
     class Config(BaseTool.Config):
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+        pass
 
 
 def _create_description_from_template(values: Dict[str, Any]) -> Dict[str, Any]:
@@ -48,6 +46,8 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        from langchain.chains.retrieval_qa.base import RetrievalQA
+
         chain = RetrievalQA.from_chain_type(
             self.llm, retriever=self.vectorstore.as_retriever()
         )
@@ -78,6 +78,11 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+
+        from langchain.chains.qa_with_sources.retrieval import (
+            RetrievalQAWithSourcesChain,
+        )
+
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             self.llm, retriever=self.vectorstore.as_retriever()
         )

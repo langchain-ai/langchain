@@ -2,8 +2,20 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast
 
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatResult,
+)
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -17,18 +29,6 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import BaseModel, root_validator
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-)
-from langchain.schema.messages import (
-    AIMessage,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
-)
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -114,7 +114,7 @@ def _messages_to_prompt_dict(
         if isinstance(input_message, SystemMessage):
             if index != 0:
                 raise ChatGooglePalmError("System message must be first input message.")
-            context = input_message.content
+            context = cast(str, input_message.content)
         elif isinstance(input_message, HumanMessage) and input_message.example:
             if messages:
                 raise ChatGooglePalmError(
@@ -247,6 +247,14 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     n: int = 1
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"google_api_key": "GOOGLE_API_KEY"}
+
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

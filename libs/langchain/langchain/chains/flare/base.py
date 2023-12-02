@@ -5,6 +5,11 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.outputs import Generation
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Field
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
@@ -16,10 +21,7 @@ from langchain.chains.flare.prompts import (
     FinishedOutputParser,
 )
 from langchain.chains.llm import LLMChain
-from langchain.llms import OpenAI
-from langchain.pydantic_v1 import Field
-from langchain.schema import BasePromptTemplate, BaseRetriever, Generation
-from langchain.schema.language_model import BaseLanguageModel
+from langchain.llms.openai import OpenAI
 
 
 class _ResponseChain(LLMChain):

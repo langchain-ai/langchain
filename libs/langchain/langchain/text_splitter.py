@@ -8,7 +8,7 @@
     BaseDocumentTransformer --> TextSplitter --> <name>TextSplitter  # Example: CharacterTextSplitter
                                                  RecursiveCharacterTextSplitter -->  <name>TextSplitter
 
-Note: **MarkdownHeaderTextSplitter** does not derive from TextSplitter.
+Note: **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive from TextSplitter.
 
 
 **Main helpers:**
@@ -21,12 +21,16 @@ Note: **MarkdownHeaderTextSplitter** does not derive from TextSplitter.
 
 from __future__ import annotations
 
+import asyncio
 import copy
 import logging
+import pathlib
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
+from io import BytesIO, StringIO
 from typing import (
     AbstractSet,
     Any,
@@ -46,15 +50,17 @@ from typing import (
     cast,
 )
 
-from langchain.docstore.document import Document
-from langchain.schema import BaseDocumentTransformer
+import requests
+from langchain_core.documents import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
 
 TS = TypeVar("TS", bound="TextSplitter")
 
 
-def _make_spacy_pipeline_for_splitting(pipeline: str) -> Any:  # avoid importing spacy
+def _make_spacy_pipeline_for_splitting(
+    pipeline: str, *, max_length: int = 1_000_000
+) -> Any:  # avoid importing spacy
     try:
         import spacy
     except ImportError:
@@ -68,6 +74,7 @@ def _make_spacy_pipeline_for_splitting(pipeline: str) -> Any:  # avoid importing
         sentencizer.add_pipe("sentencizer")
     else:
         sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])
+        sentencizer.max_length = max_length
     return sentencizer
 
 
@@ -280,7 +287,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         """Asynchronously transform a sequence of documents by splitting them."""
-        raise NotImplementedError
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self.transform_documents, **kwargs), documents
+        )
 
 
 class CharacterTextSplitter(TextSplitter):
@@ -382,16 +391,36 @@ class MarkdownHeaderTextSplitter:
         header_stack: List[HeaderType] = []
         initial_metadata: Dict[str, str] = {}
 
+        in_code_block = False
+        opening_fence = ""
+
         for line in lines:
             stripped_line = line.strip()
+
+            if not in_code_block:
+                # Exclude inline code spans
+                if stripped_line.startswith("```") and stripped_line.count("```") == 1:
+                    in_code_block = True
+                    opening_fence = "```"
+                elif stripped_line.startswith("~~~"):
+                    in_code_block = True
+                    opening_fence = "~~~"
+            else:
+                if stripped_line.startswith(opening_fence):
+                    in_code_block = False
+                    opening_fence = ""
+
+            if in_code_block:
+                current_content.append(stripped_line)
+                continue
+
             # Check each line against each of the header types (e.g., #, ##)
             for sep, name in self.headers_to_split_on:
                 # Check if line starts with a header that we intend to split on
                 if stripped_line.startswith(sep) and (
                     # Header with no text OR header is followed by space
                     # Both are valid conditions that sep is being used a header
-                    len(stripped_line) == len(sep)
-                    or stripped_line[len(sep)] == " "
+                    len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
                 ):
                     # Ensure we are tracking the header as metadata
                     if name is not None:
@@ -463,14 +492,173 @@ class MarkdownHeaderTextSplitter:
             ]
 
 
+class ElementType(TypedDict):
+    """Element type as typed dict."""
+
+    url: str
+    xpath: str
+    content: str
+    metadata: Dict[str, str]
+
+
+class HTMLHeaderTextSplitter:
+    """
+    Splitting HTML files based on specified headers.
+    Requires lxml package.
+    """
+
+    def __init__(
+        self,
+        headers_to_split_on: List[Tuple[str, str]],
+        return_each_element: bool = False,
+    ):
+        """Create a new HTMLHeaderTextSplitter.
+
+        Args:
+            headers_to_split_on: list of tuples of headers we want to track mapped to
+                (arbitrary) keys for metadata. Allowed header values: h1, h2, h3, h4,
+                h5, h6 e.g. [("h1", "Header 1"), ("h2", "Header 2)].
+            return_each_element: Return each element w/ associated headers.
+        """
+        # Output element-by-element or aggregated into chunks w/ common headers
+        self.return_each_element = return_each_element
+        self.headers_to_split_on = sorted(headers_to_split_on)
+
+    def aggregate_elements_to_chunks(
+        self, elements: List[ElementType]
+    ) -> List[Document]:
+        """Combine elements with common metadata into chunks
+
+        Args:
+            elements: HTML element content with associated identifying info and metadata
+        """
+        aggregated_chunks: List[ElementType] = []
+
+        for element in elements:
+            if (
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] == element["metadata"]
+            ):
+                # If the last element in the aggregated list
+                # has the same metadata as the current element,
+                # append the current content to the last element's content
+                aggregated_chunks[-1]["content"] += "  \n" + element["content"]
+            else:
+                # Otherwise, append the current element to the aggregated list
+                aggregated_chunks.append(element)
+
+        return [
+            Document(page_content=chunk["content"], metadata=chunk["metadata"])
+            for chunk in aggregated_chunks
+        ]
+
+    def split_text_from_url(self, url: str) -> List[Document]:
+        """Split HTML from web URL
+
+        Args:
+            url: web URL
+        """
+        r = requests.get(url)
+        return self.split_text_from_file(BytesIO(r.content))
+
+    def split_text(self, text: str) -> List[Document]:
+        """Split HTML text string
+
+        Args:
+            text: HTML text
+        """
+        return self.split_text_from_file(StringIO(text))
+
+    def split_text_from_file(self, file: Any) -> List[Document]:
+        """Split HTML file
+
+        Args:
+            file: HTML file
+        """
+        try:
+            from lxml import etree
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import lxml, please install with `pip install lxml`."
+            ) from e
+        # use lxml library to parse html document and return xml ElementTree
+        parser = etree.HTMLParser()
+        tree = etree.parse(file, parser)
+
+        # document transformation for "structure-aware" chunking is handled with xsl.
+        # see comments in html_chunks_with_headers.xslt for more detailed information.
+        xslt_path = (
+            pathlib.Path(__file__).parent
+            / "document_transformers/xsl/html_chunks_with_headers.xslt"
+        )
+        xslt_tree = etree.parse(xslt_path)
+        transform = etree.XSLT(xslt_tree)
+        result = transform(tree)
+        result_dom = etree.fromstring(str(result))
+
+        # create filter and mapping for header metadata
+        header_filter = [header[0] for header in self.headers_to_split_on]
+        header_mapping = dict(self.headers_to_split_on)
+
+        # map xhtml namespace prefix
+        ns_map = {"h": "http://www.w3.org/1999/xhtml"}
+
+        # build list of elements from DOM
+        elements = []
+        for element in result_dom.findall("*//*", ns_map):
+            if element.findall("*[@class='headers']") or element.findall(
+                "*[@class='chunk']"
+            ):
+                elements.append(
+                    ElementType(
+                        url=file,
+                        xpath="".join(
+                            [
+                                node.text
+                                for node in element.findall("*[@class='xpath']", ns_map)
+                            ]
+                        ),
+                        content="".join(
+                            [
+                                node.text
+                                for node in element.findall("*[@class='chunk']", ns_map)
+                            ]
+                        ),
+                        metadata={
+                            # Add text of specified headers to metadata using header
+                            # mapping.
+                            header_mapping[node.tag]: node.text
+                            for node in filter(
+                                lambda x: x.tag in header_filter,
+                                element.findall("*[@class='headers']/*", ns_map),
+                            )
+                        },
+                    )
+                )
+
+        if not self.return_each_element:
+            return self.aggregate_elements_to_chunks(elements)
+        else:
+            return [
+                Document(page_content=chunk["content"], metadata=chunk["metadata"])
+                for chunk in elements
+            ]
+
+
 # should be in newer Python versions (3.10+)
 # @dataclass(frozen=True, kw_only=True, slots=True)
 @dataclass(frozen=True)
 class Tokenizer:
+    """Tokenizer data class."""
+
     chunk_overlap: int
+    """Overlap in tokens between chunks"""
     tokens_per_chunk: int
-    decode: Callable[[list[int]], str]
+    """Maximum number of tokens per chunk"""
+    decode: Callable[[List[int]], str]
+    """ Function to decode a list of token ids to a string"""
     encode: Callable[[str], List[int]]
+    """ Function to encode a string to a list of token ids"""
 
 
 def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
@@ -614,7 +802,9 @@ class Language(str, Enum):
     CPP = "cpp"
     GO = "go"
     JAVA = "java"
+    KOTLIN = "kotlin"
     JS = "js"
+    TS = "ts"
     PHP = "php"
     PROTO = "proto"
     PYTHON = "python"
@@ -628,6 +818,7 @@ class Language(str, Enum):
     HTML = "html"
     SOL = "sol"
     CSHARP = "csharp"
+    COBOL = "cobol"
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
@@ -761,6 +952,32 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.KOTLIN:
+            return [
+                # Split along class definitions
+                "\nclass ",
+                # Split along method definitions
+                "\npublic ",
+                "\nprotected ",
+                "\nprivate ",
+                "\ninternal ",
+                "\ncompanion ",
+                "\nfun ",
+                "\nval ",
+                "\nvar ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nwhen ",
+                "\ncase ",
+                "\nelse ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         elif language == Language.JS:
             return [
                 # Split along function definitions
@@ -769,6 +986,32 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nlet ",
                 "\nvar ",
                 "\nclass ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                "\ncase ",
+                "\ndefault ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.TS:
+            return [
+                "\nenum ",
+                "\ninterface ",
+                "\nnamespace ",
+                "\ntype ",
+                # Split along class definitions
+                "\nclass ",
+                # Split along function definitions
+                "\nfunction ",
+                "\nconst ",
+                "\nlet ",
+                "\nvar ",
                 # Split along control flow statements
                 "\nif ",
                 "\nfor ",
@@ -1070,6 +1313,38 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.COBOL:
+            return [
+                # Split along divisions
+                "\nIDENTIFICATION DIVISION.",
+                "\nENVIRONMENT DIVISION.",
+                "\nDATA DIVISION.",
+                "\nPROCEDURE DIVISION.",
+                # Split along sections within DATA DIVISION
+                "\nWORKING-STORAGE SECTION.",
+                "\nLINKAGE SECTION.",
+                "\nFILE SECTION.",
+                # Split along sections within PROCEDURE DIVISION
+                "\nINPUT-OUTPUT SECTION.",
+                # Split along paragraphs and common statements
+                "\nOPEN ",
+                "\nCLOSE ",
+                "\nREAD ",
+                "\nWRITE ",
+                "\nIF ",
+                "\nELSE ",
+                "\nMOVE ",
+                "\nPERFORM ",
+                "\nUNTIL ",
+                "\nVARYING ",
+                "\nACCEPT ",
+                "\nDISPLAY ",
+                "\nSTOP RUN.",
+                # Split by the normal type of lines
+                "\n",
+                " ",
+                "",
+            ]
 
         else:
             raise ValueError(
@@ -1108,16 +1383,24 @@ class SpacyTextSplitter(TextSplitter):
     """Splitting text using Spacy package.
 
 
-    Per default, Spacy's `en_core_web_sm` model is used. For a faster, but
+    Per default, Spacy's `en_core_web_sm` model is used and
+    its default max_length is 1000000 (it is the length of maximum character
+    this model takes which can be increased for large files). For a faster, but
     potentially less accurate splitting, you can use `pipeline='sentencizer'`.
     """
 
     def __init__(
-        self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
+        self,
+        separator: str = "\n\n",
+        pipeline: str = "en_core_web_sm",
+        max_length: int = 1_000_000,
+        **kwargs: Any,
     ) -> None:
         """Initialize the spacy text splitter."""
         super().__init__(**kwargs)
-        self._tokenizer = _make_spacy_pipeline_for_splitting(pipeline)
+        self._tokenizer = _make_spacy_pipeline_for_splitting(
+            pipeline, max_length=max_length
+        )
         self._separator = separator
 
     def split_text(self, text: str) -> List[str]:

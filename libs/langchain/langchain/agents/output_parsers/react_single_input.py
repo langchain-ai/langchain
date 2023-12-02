@@ -1,9 +1,11 @@
 import re
 from typing import Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
+
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE = (
@@ -60,6 +62,7 @@ class ReActSingleInputOutputParser(AgentOutputParser):
             action = action_match.group(1).strip()
             action_input = action_match.group(2)
             tool_input = action_input.strip(" ")
+            tool_input = tool_input.strip('"')
 
             return AgentAction(action, tool_input, text)
 

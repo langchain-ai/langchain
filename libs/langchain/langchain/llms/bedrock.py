@@ -1,12 +1,65 @@
 import json
+import warnings
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Mapping, Optional
+
+from langchain_core.outputs import GenerationChunk
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.output import GenerationChunk
+from langchain.utilities.anthropic import (
+    get_num_tokens_anthropic,
+    get_token_ids_anthropic,
+)
+from langchain.utils import get_from_dict_or_env
+
+HUMAN_PROMPT = "\n\nHuman:"
+ASSISTANT_PROMPT = "\n\nAssistant:"
+ALTERNATION_ERROR = (
+    "Error: Prompt must alternate between '\n\nHuman:' and '\n\nAssistant:'."
+)
+
+
+def _add_newlines_before_ha(input_text: str) -> str:
+    new_text = input_text
+    for word in ["Human:", "Assistant:"]:
+        new_text = new_text.replace(word, "\n\n" + word)
+        for i in range(2):
+            new_text = new_text.replace("\n\n\n" + word, "\n\n" + word)
+    return new_text
+
+
+def _human_assistant_format(input_text: str) -> str:
+    if input_text.count("Human:") == 0 or (
+        input_text.find("Human:") > input_text.find("Assistant:")
+        and "Assistant:" in input_text
+    ):
+        input_text = HUMAN_PROMPT + " " + input_text  # SILENT CORRECTION
+    if input_text.count("Assistant:") == 0:
+        input_text = input_text + ASSISTANT_PROMPT  # SILENT CORRECTION
+    if input_text[: len("Human:")] == "Human:":
+        input_text = "\n\n" + input_text
+    input_text = _add_newlines_before_ha(input_text)
+    count = 0
+    # track alternation
+    for i in range(len(input_text)):
+        if input_text[i : i + len(HUMAN_PROMPT)] == HUMAN_PROMPT:
+            if count % 2 == 0:
+                count += 1
+            else:
+                warnings.warn(ALTERNATION_ERROR + f" Received {input_text}")
+        if input_text[i : i + len(ASSISTANT_PROMPT)] == ASSISTANT_PROMPT:
+            if count % 2 == 1:
+                count += 1
+            else:
+                warnings.warn(ALTERNATION_ERROR + f" Received {input_text}")
+
+    if count % 2 == 1:  # Only saw Human, no Assistant
+        input_text = input_text + ASSISTANT_PROMPT  # SILENT CORRECTION
+
+    return input_text
 
 
 class LLMInputOutputAdapter:
@@ -19,6 +72,8 @@ class LLMInputOutputAdapter:
     provider_to_output_key_map = {
         "anthropic": "completion",
         "amazon": "outputText",
+        "cohere": "text",
+        "meta": "generation",
     }
 
     @classmethod
@@ -26,7 +81,9 @@ class LLMInputOutputAdapter:
         cls, provider: str, prompt: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
-        if provider == "anthropic" or provider == "ai21":
+        if provider == "anthropic":
+            input_body["prompt"] = _human_assistant_format(prompt)
+        elif provider in ("ai21", "cohere", "meta"):
             input_body["prompt"] = prompt
         elif provider == "amazon":
             input_body = dict()
@@ -50,6 +107,10 @@ class LLMInputOutputAdapter:
 
         if provider == "ai21":
             return response_body.get("completions")[0].get("data").get("text")
+        elif provider == "cohere":
+            return response_body.get("generations")[0].get("text")
+        elif provider == "meta":
+            return response_body.get("generation")
         else:
             return response_body.get("results")[0].get("outputText")
 
@@ -71,6 +132,12 @@ class LLMInputOutputAdapter:
             chunk = event.get("chunk")
             if chunk:
                 chunk_obj = json.loads(chunk.get("bytes").decode())
+                if provider == "cohere" and (
+                    chunk_obj["is_finished"]
+                    or chunk_obj[cls.provider_to_output_key_map[provider]]
+                    == "<EOS_TOKEN>"
+                ):
+                    return
 
                 # chunk obj format varies with provider
                 yield GenerationChunk(
@@ -79,14 +146,16 @@ class LLMInputOutputAdapter:
 
 
 class BedrockBase(BaseModel, ABC):
-    client: Any  #: :meta private:
+    """Base class for Bedrock models."""
+
+    client: Any = Field(exclude=True)  #: :meta private:
 
     region_name: Optional[str] = None
     """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
     or region specified in ~/.aws/config in case it is not provided here.
     """
 
-    credentials_profile_name: Optional[str] = None
+    credentials_profile_name: Optional[str] = Field(default=None, exclude=True)
     """The name of the profile in the ~/.aws/credentials or ~/.aws/config files, which
     has either access keys or role information specified.
     If not specified, the default credential profile or, if on an EC2 instance,
@@ -95,11 +164,11 @@ class BedrockBase(BaseModel, ABC):
     """
 
     model_id: str
-    """Id of the model to call, e.g., amazon.titan-tg1-large, this is
+    """Id of the model to call, e.g., amazon.titan-text-express-v1, this is
     equivalent to the modelId property in the list-foundation-models api"""
 
     model_kwargs: Optional[Dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     endpoint_url: Optional[str] = None
     """Needed if you don't want to default to us-east-1 endpoint"""
@@ -111,6 +180,7 @@ class BedrockBase(BaseModel, ABC):
         "anthropic": "stop_sequences",
         "amazon": "stopSequences",
         "ai21": "stop_sequences",
+        "cohere": "stop_sequences",
     }
 
     @root_validator()
@@ -130,13 +200,20 @@ class BedrockBase(BaseModel, ABC):
                 # use default credentials
                 session = boto3.Session()
 
+            values["region_name"] = get_from_dict_or_env(
+                values,
+                "region_name",
+                "AWS_DEFAULT_REGION",
+                default=session.region_name,
+            )
+
             client_params = {}
             if values["region_name"]:
                 client_params["region_name"] = values["region_name"]
             if values["endpoint_url"]:
                 client_params["endpoint_url"] = values["endpoint_url"]
 
-            values["client"] = session.client("bedrock", **client_params)
+            values["client"] = session.client("bedrock-runtime", **client_params)
 
         except ImportError:
             raise ModuleNotFoundError(
@@ -162,6 +239,10 @@ class BedrockBase(BaseModel, ABC):
 
     def _get_provider(self) -> str:
         return self.model_id.split(".")[0]
+
+    @property
+    def _model_is_anthropic(self) -> bool:
+        return self._get_provider() == "anthropic"
 
     def _prepare_input_and_invoke(
         self,
@@ -211,9 +292,10 @@ class BedrockBase(BaseModel, ABC):
 
             # stop sequence from _generate() overrides
             # stop sequences in the class attribute
-            _model_kwargs[
-                self.provider_stop_sequence_key_name_map.get(provider),
-            ] = stop
+            _model_kwargs[self.provider_stop_sequence_key_name_map.get(provider)] = stop
+
+        if provider == "cohere":
+            _model_kwargs["stream"] = True
 
         params = {**_model_kwargs, **kwargs}
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
@@ -258,8 +340,8 @@ class Bedrock(LLM, BedrockBase):
             from bedrock_langchain.bedrock_llm import BedrockLLM
 
             llm = BedrockLLM(
-                credentials_profile_name="default", 
-                model_id="amazon.titan-tg1-large",
+                credentials_profile_name="default",
+                model_id="amazon.titan-text-express-v1",
                 streaming=True
             )
 
@@ -269,6 +351,20 @@ class Bedrock(LLM, BedrockBase):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "amazon_bedrock"
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        if self.region_name:
+            attributes["region_name"] = self.region_name
+
+        return attributes
 
     class Config:
         """Configuration for this pydantic object."""
@@ -333,3 +429,15 @@ class Bedrock(LLM, BedrockBase):
             return completion
 
         return self._prepare_input_and_invoke(prompt=prompt, stop=stop, **kwargs)
+
+    def get_num_tokens(self, text: str) -> int:
+        if self._model_is_anthropic:
+            return get_num_tokens_anthropic(text)
+        else:
+            return super().get_num_tokens(text)
+
+    def get_token_ids(self, text: str) -> List[int]:
+        if self._model_is_anthropic:
+            return get_token_ids_anthropic(text)
+        else:
+            return super().get_token_ids(text)

@@ -1,6 +1,14 @@
 """SQL agent."""
 from typing import Any, Dict, List, Optional, Sequence
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import AIMessage, SystemMessage
+from langchain_core.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+)
+
 from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.agent_toolkits.sql.prompt import (
     SQL_FUNCTIONS_SUFFIX,
@@ -14,13 +22,6 @@ from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-)
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import AIMessage, SystemMessage
 from langchain.tools import BaseTool
 
 
@@ -40,7 +41,7 @@ def create_sql_agent(
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     extra_tools: Sequence[BaseTool] = (),
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct an SQL agent from an LLM and tools."""
     tools = toolkit.get_tools() + list(extra_tools)

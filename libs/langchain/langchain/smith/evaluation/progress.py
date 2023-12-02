@@ -3,9 +3,10 @@ import threading
 from typing import Any, Dict, Optional, Sequence
 from uuid import UUID
 
+from langchain_core.documents import Document
+from langchain_core.outputs import LLMResult
+
 from langchain.callbacks import base as base_callbacks
-from langchain.schema.document import Document
-from langchain.schema.output import LLMResult
 
 
 class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
@@ -37,9 +38,31 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         spaces = " " * (self.ncols - len(arrow))
         print(f"\r[{arrow + spaces}] {self.counter}/{self.total}", end="")
 
+    def on_chain_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if parent_run_id is None:
+            self.increment()
+
     def on_chain_end(
         self,
         outputs: Dict[str, Any],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if parent_run_id is None:
+            self.increment()
+
+    def on_retriever_error(
+        self,
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -59,9 +82,31 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         if parent_run_id is None:
             self.increment()
 
+    def on_llm_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if parent_run_id is None:
+            self.increment()
+
     def on_llm_end(
         self,
         response: LLMResult,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if parent_run_id is None:
+            self.increment()
+
+    def on_tool_error(
+        self,
+        error: BaseException,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,

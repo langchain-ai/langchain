@@ -1,6 +1,7 @@
 from typing import List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.azure_blob_storage_file import (
     AzureBlobStorageFileLoader,
 )
@@ -36,7 +37,9 @@ class AzureBlobStorageContainerLoader(BaseLoader):
         blob_list = container.list_blobs(name_starts_with=self.prefix)
         for blob in blob_list:
             loader = AzureBlobStorageFileLoader(
-                self.conn_str, self.container, blob.name  # type: ignore
+                self.conn_str,
+                self.container,
+                blob.name,  # type: ignore
             )
             docs.extend(loader.load())
         return docs

@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
+from langchain_core.pydantic_v1 import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 INSTRUCTION_KEY = "### Instruction:"
@@ -53,7 +53,7 @@ class MosaicML(LLM):
     inject_instruction_format: bool = False
     """Whether to inject the instruction format into the prompt."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
     retry_sleep: float = 1.0
     """How long to try sleeping for if a rate limit is encountered"""
 

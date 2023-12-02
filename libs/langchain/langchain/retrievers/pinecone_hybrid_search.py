@@ -3,10 +3,12 @@
 import hashlib
 from typing import Any, Dict, List, Optional
 
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.retrievers import BaseRetriever
+
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.schema import BaseRetriever, Document
-from langchain.schema.embeddings import Embeddings
 
 
 def hash_text(text: str) -> str:
@@ -144,7 +146,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
                 BaseSparseEncoder,  # noqa:F401
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import pinecone_text python package. "
                 "Please install it with `pip install pinecone_text`."
             )

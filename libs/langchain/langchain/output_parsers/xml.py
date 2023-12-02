@@ -2,8 +2,9 @@ import re
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
 
+from langchain_core.output_parsers import BaseOutputParser
+
 from langchain.output_parsers.format_instructions import XML_FORMAT_INSTRUCTIONS
-from langchain.schema import BaseOutputParser
 
 
 class XMLOutputParser(BaseOutputParser):
@@ -22,6 +23,8 @@ class XMLOutputParser(BaseOutputParser):
         encoding_match = self.encoding_matcher.search(text)
         if encoding_match:
             text = encoding_match.group(2)
+
+        text = text.strip()
         if (text.startswith("<") or text.startswith("\n<")) and (
             text.endswith(">") or text.endswith(">\n")
         ):

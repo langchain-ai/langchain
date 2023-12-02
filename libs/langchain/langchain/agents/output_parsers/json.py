@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-import json
 import logging
-import re
 from typing import Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
+
 from langchain.agents.agent import AgentOutputParser
-from langchain.schema import AgentAction, AgentFinish, OutputParserException
+from langchain.output_parsers.json import parse_json_markdown
 
 logger = logging.getLogger(__name__)
 
 
 class JSONAgentOutputParser(AgentOutputParser):
-    """Parses tool invocations and final answers in XML format.
+    """Parses tool invocations and final answers in JSON format.
 
     Expects output to be in one of two formats.
 
@@ -39,25 +40,19 @@ class JSONAgentOutputParser(AgentOutputParser):
     ```
     """
 
-    pattern = re.compile(r"```(?:json)?\n(.*?)```", re.DOTALL)
-
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
-            action_match = self.pattern.search(text)
-            if action_match is not None:
-                response = json.loads(action_match.group(1).strip(), strict=False)
-                if isinstance(response, list):
-                    # gpt turbo frequently ignores the directive to emit a single action
-                    logger.warning("Got multiple action responses: %s", response)
-                    response = response[0]
-                if response["action"] == "Final Answer":
-                    return AgentFinish({"output": response["action_input"]}, text)
-                else:
-                    return AgentAction(
-                        response["action"], response.get("action_input", {}), text
-                    )
+            response = parse_json_markdown(text)
+            if isinstance(response, list):
+                # gpt turbo frequently ignores the directive to emit a single action
+                logger.warning("Got multiple action responses: %s", response)
+                response = response[0]
+            if response["action"] == "Final Answer":
+                return AgentFinish({"output": response["action_input"]}, text)
             else:
-                return AgentFinish({"output": text}, text)
+                return AgentAction(
+                    response["action"], response.get("action_input", {}), text
+                )
         except Exception as e:
             raise OutputParserException(f"Could not parse LLM output: {text}") from e
 

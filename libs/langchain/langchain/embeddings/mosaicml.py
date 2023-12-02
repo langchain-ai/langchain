@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import requests
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 
@@ -64,7 +64,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
     def _embed(
         self, input: List[Tuple[str, str]], is_retry: bool = False
     ) -> List[List[float]]:
-        payload = {"input_strings": input}
+        payload = {"inputs": input}
 
         # HTTP headers for authorization
         headers = {

@@ -3,17 +3,19 @@ name: libs/langchain CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
     paths:
-      - '.github/actions/poetry_setup/action.yml'
-      - '.github/tools/**'
-      - '.github/workflows/_lint.yml'
-      - '.github/workflows/_test.yml'
-      - '.github/workflows/_pydantic_compatibility.yml'
-      - '.github/workflows/langchain_ci.yml'
-      - 'libs/langchain/**'
-  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
+      - ".github/actions/poetry_setup/action.yml"
+      - ".github/tools/**"
+      - ".github/workflows/_lint.yml"
+      - ".github/workflows/_test.yml"
+      - ".github/workflows/_pydantic_compatibility.yml"
+      - ".github/workflows/langchain_ci.yml"
+      - "libs/*"
+      - "libs/langchain/**"
+      - "libs/core/**"
+  workflow_dispatch: # Allows to trigger the workflow manually in GitHub UI
 
 # If another push to the same PR or branch happens while this workflow is still running,
 # cancel the earlier run in favor of the next run.
@@ -26,27 +28,30 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  POETRY_VERSION: "1.5.1"
+  POETRY_VERSION: "1.6.1"
   WORKDIR: "libs/langchain"
 
 jobs:
   lint:
-    uses:
-      ./.github/workflows/_lint.yml
+    uses: ./.github/workflows/_lint.yml
     with:
       working-directory: libs/langchain
     secrets: inherit
 
   test:
-    uses:
-      ./.github/workflows/_test.yml
+    uses: ./.github/workflows/_test.yml
+    with:
+      working-directory: libs/langchain
+    secrets: inherit
+
+  compile-integration-tests:
+    uses: ./.github/workflows/_compile_integration_test.yml
     with:
       working-directory: libs/langchain
     secrets: inherit
 
   pydantic-compatibility:
-    uses:
-      ./.github/workflows/_pydantic_compatibility.yml
+    uses: ./.github/workflows/_pydantic_compatibility.yml
     with:
       working-directory: libs/langchain
     secrets: inherit
@@ -65,7 +70,7 @@ jobs:
           - "3.11"
     name: Python ${{ matrix.python-version }} extended tests
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
@@ -80,6 +85,11 @@ jobs:
         run: |
           echo "Running extended tests, installing dependencies with poetry..."
           poetry install -E extended_testing
+
+      - name: Install langchain core editable
+        shell: bash
+        run: |
+          poetry run pip install -e ../core
 
       - name: Run extended tests
         run: make extended_tests

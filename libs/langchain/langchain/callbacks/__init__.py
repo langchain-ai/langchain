@@ -7,6 +7,8 @@
     BaseCallbackHandler --> <name>CallbackHandler  # Example: AimCallbackHandler
 """
 
+from langchain_core.tracers.langchain import LangChainTracer
+
 from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.argilla_callback import ArgillaCallbackHandler
 from langchain.callbacks.arize_callback import ArizeCallbackHandler
@@ -38,7 +40,7 @@ from langchain.callbacks.streaming_stdout_final_only import (
     FinalStreamingStdOutCallbackHandler,
 )
 from langchain.callbacks.streamlit import LLMThoughtLabeler, StreamlitCallbackHandler
-from langchain.callbacks.tracers.langchain import LangChainTracer
+from langchain.callbacks.trubrics_callback import TrubricsCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 
@@ -74,4 +76,5 @@ __all__ = [
     "FlyteCallbackHandler",
     "SageMakerCallbackHandler",
     "LabelStudioCallbackHandler",
+    "TrubricsCallbackHandler",
 ]

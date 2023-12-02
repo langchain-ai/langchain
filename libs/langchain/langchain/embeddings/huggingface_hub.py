@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.embeddings import Embeddings
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_REPO_ID = "sentence-transformers/all-mpnet-base-v2"
@@ -33,7 +34,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     task: Optional[str] = "feature-extraction"
     """Task to call the model with."""
     model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+    """Keyword arguments to pass to the model."""
 
     huggingfacehub_api_token: Optional[str] = None
 

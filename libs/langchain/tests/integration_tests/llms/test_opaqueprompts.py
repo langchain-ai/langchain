@@ -1,11 +1,12 @@
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnableParallel
+
 import langchain.utilities.opaqueprompts as op
 from langchain.chains.llm import LLMChain
 from langchain.llms import OpenAI
 from langchain.llms.opaqueprompts import OpaquePrompts
 from langchain.memory import ConversationBufferWindowMemory
-from langchain.prompts import PromptTemplate
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableMap
 
 prompt_template = """
 As an AI assistant, you will answer questions according to given context.
@@ -64,14 +65,12 @@ def test_opaqueprompts_functions() -> None:
     llm = OpenAI()
     pg_chain = (
         op.sanitize
-        | RunnableMap(
-            {
-                "response": (lambda x: x["sanitized_input"])  # type: ignore
-                | prompt
-                | llm
-                | StrOutputParser(),
-                "secure_context": lambda x: x["secure_context"],
-            }
+        | RunnableParallel(
+            secure_context=lambda x: x["secure_context"],  # type: ignore
+            response=(lambda x: x["sanitized_input"])  # type: ignore
+            | prompt
+            | llm
+            | StrOutputParser(),
         )
         | (lambda x: op.desanitize(x["response"], x["secure_context"]))
     )

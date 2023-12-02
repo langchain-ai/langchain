@@ -3,7 +3,8 @@ import collections
 from abc import ABC, abstractmethod
 from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Union
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 
@@ -253,10 +254,7 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
     ):
         """Initialize with file path."""
 
-        if isinstance(file_path, str):
-            validate_unstructured_version(min_unstructured_version="0.6.2")
-        else:
-            validate_unstructured_version(min_unstructured_version="0.6.3")
+        validate_unstructured_version(min_unstructured_version="0.10.15")
 
         self.url = url
         self.api_key = api_key

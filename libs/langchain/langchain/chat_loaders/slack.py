@@ -5,8 +5,10 @@ import zipfile
 from pathlib import Path
 from typing import Dict, Iterator, List, Union
 
-from langchain.chat_loaders.base import BaseChatLoader, ChatSession
-from langchain.schema import AIMessage, HumanMessage
+from langchain_core.chat_sessions import ChatSession
+from langchain_core.messages import AIMessage, HumanMessage
+
+from langchain.chat_loaders.base import BaseChatLoader
 
 logger = logging.getLogger(__name__)
 

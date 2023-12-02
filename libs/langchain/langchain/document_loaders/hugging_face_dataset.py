@@ -1,6 +1,8 @@
+import json
 from typing import Iterator, List, Mapping, Optional, Sequence, Union
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 
@@ -75,7 +77,7 @@ class HuggingFaceDatasetLoader(BaseLoader):
 
         yield from (
             Document(
-                page_content=row.pop(self.page_content_column),
+                page_content=self.parse_obj(row.pop(self.page_content_column)),
                 metadata=row,
             )
             for key in dataset.keys()
@@ -85,3 +87,8 @@ class HuggingFaceDatasetLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
         return list(self.lazy_load())
+
+    def parse_obj(self, page_content: Union[str, object]) -> str:
+        if isinstance(page_content, object):
+            return json.dumps(page_content)
+        return page_content

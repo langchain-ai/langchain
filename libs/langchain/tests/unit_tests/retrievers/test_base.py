@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 
 import pytest
+from langchain_core.retrievers import BaseRetriever, Document
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -59,7 +59,6 @@ def test_fake_retriever_v1_upgrade(fake_retriever_v1: BaseRetriever) -> None:
     assert callbacks.retriever_errors == 0
 
 
-@pytest.mark.asyncio
 async def test_fake_retriever_v1_upgrade_async(
     fake_retriever_v1: BaseRetriever,
 ) -> None:
@@ -122,7 +121,6 @@ def test_fake_retriever_v1_with_kwargs_upgrade(
     assert callbacks.retriever_errors == 0
 
 
-@pytest.mark.asyncio
 async def test_fake_retriever_v1_with_kwargs_upgrade_async(
     fake_retriever_v1_with_kwargs: BaseRetriever,
 ) -> None:
@@ -145,7 +143,10 @@ class FakeRetrieverV2(BaseRetriever):
     throw_error: bool = False
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun | None
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
     ) -> List[Document]:
         assert isinstance(self, FakeRetrieverV2)
         assert run_manager is not None
@@ -157,7 +158,10 @@ class FakeRetrieverV2(BaseRetriever):
         ]
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun | None
+        self,
+        query: str,
+        *,
+        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
     ) -> List[Document]:
         assert isinstance(self, FakeRetrieverV2)
         assert run_manager is not None
@@ -196,7 +200,6 @@ def test_fake_retriever_v2(
     assert callbacks.retriever_errors == 1
 
 
-@pytest.mark.asyncio
 async def test_fake_retriever_v2_async(
     fake_retriever_v2: BaseRetriever, fake_erroring_retriever_v2: BaseRetriever
 ) -> None:

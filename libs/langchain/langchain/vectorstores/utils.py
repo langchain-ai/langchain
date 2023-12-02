@@ -4,8 +4,8 @@ from enum import Enum
 from typing import List, Tuple, Type
 
 import numpy as np
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.utils.math import cosine_similarity
 
 
@@ -57,7 +57,7 @@ def maximal_marginal_relevance(
 def filter_complex_metadata(
     documents: List[Document],
     *,
-    allowed_types: Tuple[Type, ...] = (str, bool, int, float)
+    allowed_types: Tuple[Type, ...] = (str, bool, int, float),
 ) -> List[Document]:
     """Filter out metadata types that are not supported for a vector store."""
     updated_documents = []

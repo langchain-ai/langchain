@@ -3,8 +3,8 @@ import os
 from typing import Any, Dict, List, Optional
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.redis import (
     Redis,
     RedisFilter,
@@ -141,7 +141,8 @@ def test_custom_keys(texts: List[str]) -> None:
     docsearch, keys_out = Redis.from_texts_return_keys(
         texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, keys=keys_in
     )
-    assert keys_in == keys_out
+    # it will append the index key prefix to all keys
+    assert keys_out == [docsearch.key_prefix + ":" + key for key in keys_in]
     assert drop(docsearch.index_name)
 
 
@@ -154,11 +155,13 @@ def test_custom_keys_from_docs(texts: List[str]) -> None:
     )
     client = docsearch.client
     # test keys are correct
-    assert client.hget("test_key_1", "content")
+    assert client.hget(docsearch.key_prefix + ":" + "test_key_1", "content")
     # test metadata is stored
-    assert client.hget("test_key_1", "a") == bytes("b", "utf-8")
+    assert client.hget(docsearch.key_prefix + ":" + "test_key_1", "a") == bytes(
+        "b", "utf-8"
+    )
     # test all keys are stored
-    assert client.hget("test_key_2", "content")
+    assert client.hget(docsearch.key_prefix + ":" + "test_key_2", "content")
     assert drop(docsearch.index_name)
 
 
@@ -365,7 +368,10 @@ def test_max_marginal_relevance_search(texts: List[str]) -> None:
     assert mmr_output[1].page_content == texts[1]
 
     mmr_output = docsearch.max_marginal_relevance_search(
-        texts[0], k=2, fetch_k=3, lambda_mult=0.1  # more diversity
+        texts[0],
+        k=2,
+        fetch_k=3,
+        lambda_mult=0.1,  # more diversity
     )
     assert len(mmr_output) == 2
     assert mmr_output[0].page_content == texts[0]

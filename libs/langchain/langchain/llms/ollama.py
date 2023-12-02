@@ -2,13 +2,12 @@ import json
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import requests
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.outputs import GenerationChunk, LLMResult
+from langchain_core.pydantic_v1 import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
-from langchain.pydantic_v1 import Extra
-from langchain.schema import LLMResult
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.output import GenerationChunk
 
 
 def _stream_response_to_generation_chunk(
@@ -29,71 +28,84 @@ class _OllamaCommon(BaseLanguageModel):
     model: str = "llama2"
     """Model name to use."""
 
-    mirostat: Optional[int]
+    mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
     (default: 0, 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0)"""
 
-    mirostat_eta: Optional[float]
+    mirostat_eta: Optional[float] = None
     """Influences how quickly the algorithm responds to feedback
     from the generated text. A lower learning rate will result in
     slower adjustments, while a higher learning rate will make
     the algorithm more responsive. (Default: 0.1)"""
 
-    mirostat_tau: Optional[float]
+    mirostat_tau: Optional[float] = None
     """Controls the balance between coherence and diversity
     of the output. A lower value will result in more focused and
     coherent text. (Default: 5.0)"""
 
-    num_ctx: Optional[int]
+    num_ctx: Optional[int] = None
     """Sets the size of the context window used to generate the
     next token. (Default: 2048)	"""
 
-    num_gpu: Optional[int]
+    num_gpu: Optional[int] = None
     """The number of GPUs to use. On macOS it defaults to 1 to
     enable metal support, 0 to disable."""
 
-    num_thread: Optional[int]
+    num_thread: Optional[int] = None
     """Sets the number of threads to use during computation.
     By default, Ollama will detect this for optimal performance.
     It is recommended to set this value to the number of physical
     CPU cores your system has (as opposed to the logical number of cores)."""
 
-    repeat_last_n: Optional[int]
+    repeat_last_n: Optional[int] = None
     """Sets how far back for the model to look back to prevent
     repetition. (Default: 64, 0 = disabled, -1 = num_ctx)"""
 
-    repeat_penalty: Optional[float]
+    repeat_penalty: Optional[float] = None
     """Sets how strongly to penalize repetitions. A higher value (e.g., 1.5)
     will penalize repetitions more strongly, while a lower value (e.g., 0.9)
     will be more lenient. (Default: 1.1)"""
 
-    temperature: Optional[float]
+    temperature: Optional[float] = None
     """The temperature of the model. Increasing the temperature will
     make the model answer more creatively. (Default: 0.8)"""
 
-    stop: Optional[List[str]]
+    stop: Optional[List[str]] = None
     """Sets the stop tokens to use."""
 
-    tfs_z: Optional[float]
+    tfs_z: Optional[float] = None
     """Tail free sampling is used to reduce the impact of less probable
     tokens from the output. A higher value (e.g., 2.0) will reduce the
     impact more, while a value of 1.0 disables this setting. (default: 1)"""
 
-    top_k: Optional[int]
+    top_k: Optional[int] = None
     """Reduces the probability of generating nonsense. A higher value (e.g. 100)
     will give more diverse answers, while a lower value (e.g. 10)
     will be more conservative. (Default: 40)"""
 
-    top_p: Optional[int]
+    top_p: Optional[int] = None
     """Works together with top-k. A higher value (e.g., 0.95) will lead
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
+
+    system: Optional[str] = None
+    """system prompt (overrides what is defined in the Modelfile)"""
+
+    template: Optional[str] = None
+    """full prompt or prompt template (overrides what is defined in the Modelfile)"""
+
+    format: Optional[str] = None
+    """Specify the format of the output (e.g., json)"""
+
+    timeout: Optional[int] = None
+    """Timeout for the request stream"""
 
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
         return {
             "model": self.model,
+            "format": self.format,
             "options": {
                 "mirostat": self.mirostat,
                 "mirostat_eta": self.mirostat_eta,
@@ -109,12 +121,14 @@ class _OllamaCommon(BaseLanguageModel):
                 "top_k": self.top_k,
                 "top_p": self.top_p,
             },
+            "system": self.system,
+            "template": self.template,
         }
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
+        return {**{"model": self.model, "format": self.format}, **self._default_params}
 
     def _create_stream(
         self,
@@ -128,12 +142,27 @@ class _OllamaCommon(BaseLanguageModel):
             stop = self.stop
         elif stop is None:
             stop = []
-        params = {**self._default_params, "stop": stop, **kwargs}
+
+        params = self._default_params
+
+        if "model" in kwargs:
+            params["model"] = kwargs["model"]
+
+        if "options" in kwargs:
+            params["options"] = kwargs["options"]
+        else:
+            params["options"] = {
+                **params["options"],
+                "stop": stop,
+                **kwargs,
+            }
+
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
             headers={"Content-Type": "application/json"},
             json={"prompt": prompt, **params},
             stream=True,
+            timeout=self.timeout,
         )
         response.encoding = "utf-8"
         if response.status_code != 200:

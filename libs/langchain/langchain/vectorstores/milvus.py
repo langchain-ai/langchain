@@ -5,10 +5,10 @@ from typing import Any, Iterable, List, Optional, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
@@ -193,7 +193,7 @@ class Milvus(VectorStore):
             given_address = address
         else:
             given_address = None
-            logger.debug("Missing standard address type for reuse atttempt")
+            logger.debug("Missing standard address type for reuse attempt")
 
         # User defaults to empty string when getting connection info
         if user is not None:

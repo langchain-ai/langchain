@@ -15,8 +15,8 @@ from typing import (
 )
 
 import requests
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.utils.html import extract_sub_links
 
@@ -49,7 +49,36 @@ def _metadata_extractor(raw_html: str, url: str) -> dict:
 
 
 class RecursiveUrlLoader(BaseLoader):
-    """Load all child links from a URL page."""
+    """Load all child links from a URL page.
+
+    **Security Note**: This loader is a crawler that will start crawling
+        at a given URL and then expand to crawl child links recursively.
+
+        Web crawlers should generally NOT be deployed with network access
+        to any internal servers.
+
+        Control access to who can submit crawling requests and what network access
+        the crawler has.
+
+        While crawling, the crawler may encounter malicious URLs that would lead to a
+        server-side request forgery (SSRF) attack.
+
+        To mitigate risks, the crawler by default will only load URLs from the same
+        domain as the start URL (controlled via prevent_outside named argument).
+
+        This will mitigate the risk of SSRF attacks, but will not eliminate it.
+
+        For example, if crawling a host which hosts several sites:
+
+        https://some_host/alice_site/
+        https://some_host/bob_site/
+
+        A malicious URL on Alice's site could cause the crawler to make a malicious
+        GET request to an endpoint on Bob's site. Both sites are hosted on the
+        same host, so such a request would not be prevented by default.
+
+        See https://python.langchain.com/docs/security
+    """
 
     def __init__(
         self,
@@ -60,11 +89,13 @@ class RecursiveUrlLoader(BaseLoader):
         metadata_extractor: Optional[Callable[[str, str], str]] = None,
         exclude_dirs: Optional[Sequence[str]] = (),
         timeout: Optional[int] = 10,
-        prevent_outside: Optional[bool] = True,
+        prevent_outside: bool = True,
         link_regex: Union[str, re.Pattern, None] = None,
         headers: Optional[dict] = None,
+        check_response_status: bool = False,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
+
         Args:
             url: The URL to crawl.
             max_depth: The max depth of the recursive loading.
@@ -84,6 +115,8 @@ class RecursiveUrlLoader(BaseLoader):
             prevent_outside: If True, prevent loading from urls which are not children
                 of the root url.
             link_regex: Regex for extracting sub-links from the raw html of a web page.
+            check_response_status: If True, check HTTP response status and skip
+                URLs with error responses (400-599).
         """
 
         self.url = url
@@ -96,11 +129,19 @@ class RecursiveUrlLoader(BaseLoader):
             else _metadata_extractor
         )
         self.exclude_dirs = exclude_dirs if exclude_dirs is not None else ()
+
+        if any(url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs):
+            raise ValueError(
+                f"Base url is included in exclude_dirs. Received base_url: {url} and "
+                f"exclude_dirs: {self.exclude_dirs}"
+            )
+
         self.timeout = timeout
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
         self.link_regex = link_regex
         self._lock = asyncio.Lock() if self.use_async else None
         self.headers = headers
+        self.check_response_status = check_response_status
 
     def _get_child_links_recursive(
         self, url: str, visited: Set[str], *, depth: int = 0
@@ -115,16 +156,18 @@ class RecursiveUrlLoader(BaseLoader):
 
         if depth >= self.max_depth:
             return
-        # Exclude the links that start with any of the excluded directories
-        if any(url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs):
-            return
 
         # Get all links that can be accessed from the current URL
         visited.add(url)
         try:
             response = requests.get(url, timeout=self.timeout, headers=self.headers)
-        except Exception:
-            logger.warning(f"Unable to load from {url}")
+            if self.check_response_status and 400 <= response.status_code <= 599:
+                raise ValueError(f"Received HTTP status {response.status_code}")
+        except Exception as e:
+            logger.warning(
+                f"Unable to load from {url}. Received error {e} of type "
+                f"{e.__class__.__name__}"
+            )
             return
         content = self.extractor(response.text)
         if content:
@@ -136,9 +179,11 @@ class RecursiveUrlLoader(BaseLoader):
         # Store the visited links and recursively visit the children
         sub_links = extract_sub_links(
             response.text,
-            self.url,
+            url,
+            base_url=self.url,
             pattern=self.link_regex,
             prevent_outside=self.prevent_outside,
+            exclude_prefixes=self.exclude_dirs,
         )
         for link in sub_links:
             # Check all unvisited links
@@ -172,28 +217,32 @@ class RecursiveUrlLoader(BaseLoader):
         if depth >= self.max_depth:
             return []
 
-        # Exclude the root and parent from a list
-        # Exclude the links that start with any of the excluded directories
-        if any(url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs):
-            return []
         # Disable SSL verification because websites may have invalid SSL certificates,
         # but won't cause any security issues for us.
         close_session = session is None
-        session = session or aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(ssl=False),
-            timeout=aiohttp.ClientTimeout(total=self.timeout),
-            headers=self.headers,
+        session = (
+            session
+            if session is not None
+            else aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(ssl=False),
+                timeout=aiohttp.ClientTimeout(total=self.timeout),
+                headers=self.headers,
+            )
         )
         async with self._lock:  # type: ignore
             visited.add(url)
         try:
             async with session.get(url) as response:
                 text = await response.text()
+                if self.check_response_status and 400 <= response.status <= 599:
+                    raise ValueError(f"Received HTTP status {response.status}")
         except (aiohttp.client_exceptions.InvalidURL, Exception) as e:
             logger.warning(
                 f"Unable to load {url}. Received error {e} of type "
                 f"{e.__class__.__name__}"
             )
+            if close_session:
+                await session.close()
             return []
         results = []
         content = self.extractor(text)
@@ -207,9 +256,11 @@ class RecursiveUrlLoader(BaseLoader):
         if depth < self.max_depth - 1:
             sub_links = extract_sub_links(
                 text,
-                self.url,
+                url,
+                base_url=self.url,
                 pattern=self.link_regex,
                 prevent_outside=self.prevent_outside,
+                exclude_prefixes=self.exclude_dirs,
             )
 
             # Recursively call the function to get the children of the children

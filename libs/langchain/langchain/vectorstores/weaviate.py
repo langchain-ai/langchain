@@ -15,10 +15,10 @@ from typing import (
 from uuid import uuid4
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -150,7 +150,7 @@ class Weaviate(VectorStore):
                         data_properties[key] = _json_serializable(val)
 
                 # Allow for ids (consistent w/ other methods)
-                # # Or uuids (backwards compatble w/ existing arg)
+                # # Or uuids (backwards compatible w/ existing arg)
                 # If the UUID of one of the objects already exists
                 # then the existing object will be replaced by the new object.
                 _id = get_valid_uuid(uuid4())
@@ -164,6 +164,7 @@ class Weaviate(VectorStore):
                     class_name=self._index_name,
                     uuid=_id,
                     vector=embeddings[i] if embeddings else None,
+                    tenant=kwargs.get("tenant"),
                 )
                 ids.append(_id)
         return ids
@@ -209,6 +210,8 @@ class Weaviate(VectorStore):
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         if kwargs.get("where_filter"):
             query_obj = query_obj.with_where(kwargs.get("where_filter"))
+        if kwargs.get("tenant"):
+            query_obj = query_obj.with_tenant(kwargs.get("tenant"))
         if kwargs.get("additional"):
             query_obj = query_obj.with_additional(kwargs.get("additional"))
         result = query_obj.with_near_text(content).with_limit(k).do()
@@ -228,6 +231,8 @@ class Weaviate(VectorStore):
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         if kwargs.get("where_filter"):
             query_obj = query_obj.with_where(kwargs.get("where_filter"))
+        if kwargs.get("tenant"):
+            query_obj = query_obj.with_tenant(kwargs.get("tenant"))
         if kwargs.get("additional"):
             query_obj = query_obj.with_additional(kwargs.get("additional"))
         result = query_obj.with_near_vector(vector).with_limit(k).do()
@@ -304,6 +309,8 @@ class Weaviate(VectorStore):
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         if kwargs.get("where_filter"):
             query_obj = query_obj.with_where(kwargs.get("where_filter"))
+        if kwargs.get("tenant"):
+            query_obj = query_obj.with_tenant(kwargs.get("tenant"))
         results = (
             query_obj.with_additional("vector")
             .with_near_vector(vector)
@@ -343,6 +350,8 @@ class Weaviate(VectorStore):
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         if kwargs.get("where_filter"):
             query_obj = query_obj.with_where(kwargs.get("where_filter"))
+        if kwargs.get("tenant"):
+            query_obj = query_obj.with_tenant(kwargs.get("tenant"))
 
         embedded_query = self._embedding.embed_query(query)
         if not self._by_text:
@@ -453,11 +462,18 @@ class Weaviate(VectorStore):
         index_name = index_name or f"LangChain_{uuid4().hex}"
         schema = _default_schema(index_name)
         # check whether the index already exists
-        if not client.schema.contains(schema):
+        if not client.schema.exists(index_name):
             client.schema.create_class(schema)
 
         embeddings = embedding.embed_documents(texts) if embedding else None
         attributes = list(metadatas[0].keys()) if metadatas else None
+
+        # If the UUID of one of the objects already exists
+        # then the existing object will be replaced by the new object.
+        if "uuids" in kwargs:
+            uuids = kwargs.pop("uuids")
+        else:
+            uuids = [get_valid_uuid(uuid4()) for _ in range(len(texts))]
 
         with client.batch as batch:
             for i, text in enumerate(texts):
@@ -468,12 +484,7 @@ class Weaviate(VectorStore):
                     for key in metadatas[i].keys():
                         data_properties[key] = metadatas[i][key]
 
-                # If the UUID of one of the objects already exists
-                # then the existing objectwill be replaced by the new object.
-                if "uuids" in kwargs:
-                    _id = kwargs["uuids"][i]
-                else:
-                    _id = get_valid_uuid(uuid4())
+                _id = uuids[i]
 
                 # if an embedding strategy is not provided, we let
                 # weaviate create the embedding. Note that this will only

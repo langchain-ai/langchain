@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
 
+from langchain_core.pydantic_v1 import BaseModel, Extra
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import BaseModel, Extra
 
 
 # Ignoring type because below is valid pydantic code
@@ -21,8 +22,7 @@ class Params(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
 
 
 class JavelinAIGateway(LLM):
-    """
-    Wrapper around completions LLMs in the Javelin AI Gateway.
+    """Javelin AI Gateway LLMs.
 
     To use, you should have the ``javelin_sdk`` python package installed.
     For more information, see https://docs.getjavelin.io

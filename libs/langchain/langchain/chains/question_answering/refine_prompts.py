@@ -1,12 +1,12 @@
 # flake8: noqa
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.prompts.chat import (
+from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 DEFAULT_REFINE_PROMPT_TMPL = (
     "The original question is as follows: {question}\n"
@@ -33,7 +33,7 @@ refine_template = (
     "If the context isn't useful, return the original answer."
 )
 CHAT_REFINE_PROMPT = ChatPromptTemplate.from_messages(
-    [("human", "{question}"), ("ai", "{existing_answer}"), ("human", "refine_template")]
+    [("human", "{question}"), ("ai", "{existing_answer}"), ("human", refine_template)]
 )
 REFINE_PROMPT_SELECTOR = ConditionalPromptSelector(
     default_prompt=DEFAULT_REFINE_PROMPT,

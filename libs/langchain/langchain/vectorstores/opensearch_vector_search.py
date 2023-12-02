@@ -5,11 +5,11 @@ import warnings
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
-from langchain.schema import Document
-from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
-from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 IMPORT_OPENSEARCH_PY_ERROR = (
@@ -306,13 +306,6 @@ def _default_painless_scripting_query(
     }
 
 
-def _get_kwargs_value(kwargs: Any, key: str, default_value: Any) -> Any:
-    """Get the value of the key if present. Else get the default_value."""
-    if key in kwargs:
-        return kwargs.get(key)
-    return default_value
-
-
 class OpenSearchVectorSearch(VectorStore):
     """`Amazon OpenSearch Vector Engine` vector store.
 
@@ -338,13 +331,55 @@ class OpenSearchVectorSearch(VectorStore):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index_name = index_name
-        http_auth = _get_kwargs_value(kwargs, "http_auth", None)
+        http_auth = kwargs.get("http_auth")
         self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
+        self.engine = kwargs.get("engine")
 
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
+
+    def __add(
+        self,
+        texts: Iterable[str],
+        embeddings: List[List[float]],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        bulk_size: int = 500,
+        **kwargs: Any,
+    ) -> List[str]:
+        _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
+        index_name = kwargs.get("index_name", self.index_name)
+        text_field = kwargs.get("text_field", "text")
+        dim = len(embeddings[0])
+        engine = kwargs.get("engine", "nmslib")
+        space_type = kwargs.get("space_type", "l2")
+        ef_search = kwargs.get("ef_search", 512)
+        ef_construction = kwargs.get("ef_construction", 512)
+        m = kwargs.get("m", 16)
+        vector_field = kwargs.get("vector_field", "vector_field")
+        max_chunk_bytes = kwargs.get("max_chunk_bytes", 1 * 1024 * 1024)
+
+        _validate_aoss_with_engines(self.is_aoss, engine)
+
+        mapping = _default_text_mapping(
+            dim, engine, space_type, ef_search, ef_construction, m, vector_field
+        )
+
+        return _bulk_ingest_embeddings(
+            self.client,
+            index_name,
+            embeddings,
+            texts,
+            metadatas=metadatas,
+            ids=ids,
+            vector_field=vector_field,
+            text_field=text_field,
+            mapping=mapping,
+            max_chunk_bytes=max_chunk_bytes,
+            is_aoss=self.is_aoss,
+        )
 
     def add_texts(
         self,
@@ -373,35 +408,50 @@ class OpenSearchVectorSearch(VectorStore):
             to "text".
         """
         embeddings = self.embedding_function.embed_documents(list(texts))
-        _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
-        text_field = _get_kwargs_value(kwargs, "text_field", "text")
-        dim = len(embeddings[0])
-        engine = _get_kwargs_value(kwargs, "engine", "nmslib")
-        space_type = _get_kwargs_value(kwargs, "space_type", "l2")
-        ef_search = _get_kwargs_value(kwargs, "ef_search", 512)
-        ef_construction = _get_kwargs_value(kwargs, "ef_construction", 512)
-        m = _get_kwargs_value(kwargs, "m", 16)
-        vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
-        max_chunk_bytes = _get_kwargs_value(kwargs, "max_chunk_bytes", 1 * 1024 * 1024)
-
-        _validate_aoss_with_engines(self.is_aoss, engine)
-
-        mapping = _default_text_mapping(
-            dim, engine, space_type, ef_search, ef_construction, m, vector_field
-        )
-
-        return _bulk_ingest_embeddings(
-            self.client,
-            self.index_name,
-            embeddings,
+        return self.__add(
             texts,
+            embeddings,
             metadatas=metadatas,
             ids=ids,
-            vector_field=vector_field,
-            text_field=text_field,
-            mapping=mapping,
-            max_chunk_bytes=max_chunk_bytes,
-            is_aoss=self.is_aoss,
+            bulk_size=bulk_size,
+            kwargs=kwargs,
+        )
+
+    def add_embeddings(
+        self,
+        text_embeddings: Iterable[Tuple[str, List[float]]],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        bulk_size: int = 500,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add the given texts and embeddings to the vectorstore.
+
+        Args:
+            text_embeddings: Iterable pairs of string and embedding to
+                add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
+            bulk_size: Bulk API request count; Default: 500
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
+        """
+        texts, embeddings = zip(*text_embeddings)
+        return self.__add(
+            list(texts),
+            list(embeddings),
+            metadatas=metadatas,
+            ids=ids,
+            bulk_size=bulk_size,
+            kwargs=kwargs,
         )
 
     def similarity_search(
@@ -485,8 +535,8 @@ class OpenSearchVectorSearch(VectorStore):
             same as `similarity_search`
         """
 
-        text_field = _get_kwargs_value(kwargs, "text_field", "text")
-        metadata_field = _get_kwargs_value(kwargs, "metadata_field", "metadata")
+        text_field = kwargs.get("text_field", "text")
+        metadata_field = kwargs.get("metadata_field", "metadata")
 
         hits = self._raw_similarity_search_with_score(query=query, k=k, **kwargs)
 
@@ -524,8 +574,10 @@ class OpenSearchVectorSearch(VectorStore):
             same as `similarity_search`
         """
         embedding = self.embedding_function.embed_query(query)
-        search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
-        vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
+        search_type = kwargs.get("search_type", "approximate_search")
+        vector_field = kwargs.get("vector_field", "vector_field")
+        index_name = kwargs.get("index_name", self.index_name)
+        filter = kwargs.get("filter", {})
 
         if (
             self.is_aoss
@@ -538,11 +590,11 @@ class OpenSearchVectorSearch(VectorStore):
             )
 
         if search_type == "approximate_search":
-            boolean_filter = _get_kwargs_value(kwargs, "boolean_filter", {})
-            subquery_clause = _get_kwargs_value(kwargs, "subquery_clause", "must")
-            efficient_filter = _get_kwargs_value(kwargs, "efficient_filter", {})
+            boolean_filter = kwargs.get("boolean_filter", {})
+            subquery_clause = kwargs.get("subquery_clause", "must")
+            efficient_filter = kwargs.get("efficient_filter", {})
             # `lucene_filter` is deprecated, added for Backwards Compatibility
-            lucene_filter = _get_kwargs_value(kwargs, "lucene_filter", {})
+            lucene_filter = kwargs.get("lucene_filter", {})
 
             if boolean_filter != {} and efficient_filter != {}:
                 raise ValueError(
@@ -561,6 +613,17 @@ class OpenSearchVectorSearch(VectorStore):
                     "Both `lucene_filter` and `boolean_filter` are provided which "
                     "is invalid. `lucene_filter` is deprecated"
                 )
+
+            if (
+                efficient_filter == {}
+                and boolean_filter == {}
+                and lucene_filter == {}
+                and filter != {}
+            ):
+                if self.engine in ["faiss", "lucene"]:
+                    efficient_filter = filter
+                else:
+                    boolean_filter = filter
 
             if boolean_filter != {}:
                 search_query = _approximate_search_query_with_boolean_filter(
@@ -587,21 +650,21 @@ class OpenSearchVectorSearch(VectorStore):
                     embedding, k=k, vector_field=vector_field
                 )
         elif search_type == SCRIPT_SCORING_SEARCH:
-            space_type = _get_kwargs_value(kwargs, "space_type", "l2")
-            pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
+            space_type = kwargs.get("space_type", "l2")
+            pre_filter = kwargs.get("pre_filter", MATCH_ALL_QUERY)
             search_query = _default_script_query(
                 embedding, k, space_type, pre_filter, vector_field
             )
         elif search_type == PAINLESS_SCRIPTING_SEARCH:
-            space_type = _get_kwargs_value(kwargs, "space_type", "l2Squared")
-            pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
+            space_type = kwargs.get("space_type", "l2Squared")
+            pre_filter = kwargs.get("pre_filter", MATCH_ALL_QUERY)
             search_query = _default_painless_scripting_query(
                 embedding, k, space_type, pre_filter, vector_field
             )
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
 
-        response = self.client.search(index=self.index_name, body=search_query)
+        response = self.client.search(index=index_name, body=search_query)
 
         return [hit for hit in response["hits"]["hits"]]
 
@@ -631,9 +694,9 @@ class OpenSearchVectorSearch(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
 
-        vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
-        text_field = _get_kwargs_value(kwargs, "text_field", "text")
-        metadata_field = _get_kwargs_value(kwargs, "metadata_field", "metadata")
+        vector_field = kwargs.get("vector_field", "vector_field")
+        text_field = kwargs.get("text_field", "text")
+        metadata_field = kwargs.get("metadata_field", "metadata")
 
         # Get embedding of the user query
         embedding = self.embedding_function.embed_query(query)
@@ -663,9 +726,10 @@ class OpenSearchVectorSearch(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         bulk_size: int = 500,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
-        """Construct OpenSearchVectorSearch wrapper from raw documents.
+        """Construct OpenSearchVectorSearch wrapper from raw texts.
 
         Example:
             .. code-block:: python
@@ -676,6 +740,74 @@ class OpenSearchVectorSearch(VectorStore):
                 opensearch_vector_search = OpenSearchVectorSearch.from_texts(
                     texts,
                     embeddings,
+                    opensearch_url="http://localhost:9200"
+                )
+
+        OpenSearch by default supports Approximate Search powered by nmslib, faiss
+        and lucene engines recommended for large datasets. Also supports brute force
+        search through Script Scoring and Painless Scripting.
+
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
+
+        Optional Keyword Args for Approximate Search:
+            engine: "nmslib", "faiss", "lucene"; default: "nmslib"
+
+            space_type: "l2", "l1", "cosinesimil", "linf", "innerproduct"; default: "l2"
+
+            ef_search: Size of the dynamic list used during k-NN searches. Higher values
+            lead to more accurate but slower searches; default: 512
+
+            ef_construction: Size of the dynamic list used during k-NN graph creation.
+            Higher values lead to more accurate graph but slower indexing speed;
+            default: 512
+
+            m: Number of bidirectional links created for each new element. Large impact
+            on memory consumption. Between 2 and 100; default: 16
+
+        Keyword Args for Script Scoring or Painless Scripting:
+            is_appx_search: False
+
+        """
+        embeddings = embedding.embed_documents(texts)
+        return cls.from_embeddings(
+            embeddings,
+            texts,
+            embedding,
+            metadatas=metadatas,
+            bulk_size=bulk_size,
+            ids=ids,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_embeddings(
+        cls,
+        embeddings: List[List[float]],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        bulk_size: int = 500,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> OpenSearchVectorSearch:
+        """Construct OpenSearchVectorSearch wrapper from pre-vectorized embeddings.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.vectorstores import OpenSearchVectorSearch
+                from langchain.embeddings import OpenAIEmbeddings
+                embedder = OpenAIEmbeddings()
+                embeddings = embedder.embed_documents(["foo", "bar"])
+                opensearch_vector_search = OpenSearchVectorSearch.from_embeddings(
+                    embeddings,
+                    texts,
+                    embedder,
                     opensearch_url="http://localhost:9200"
                 )
 
@@ -728,7 +860,6 @@ class OpenSearchVectorSearch(VectorStore):
             "max_chunk_bytes",
             "is_aoss",
         ]
-        embeddings = embedding.embed_documents(texts)
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
         # Get the index name from either from kwargs or ENV Variable
@@ -736,12 +867,13 @@ class OpenSearchVectorSearch(VectorStore):
         index_name = get_from_dict_or_env(
             kwargs, "index_name", "OPENSEARCH_INDEX_NAME", default=uuid.uuid4().hex
         )
-        is_appx_search = _get_kwargs_value(kwargs, "is_appx_search", True)
-        vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
-        text_field = _get_kwargs_value(kwargs, "text_field", "text")
-        max_chunk_bytes = _get_kwargs_value(kwargs, "max_chunk_bytes", 1 * 1024 * 1024)
-        http_auth = _get_kwargs_value(kwargs, "http_auth", None)
+        is_appx_search = kwargs.get("is_appx_search", True)
+        vector_field = kwargs.get("vector_field", "vector_field")
+        text_field = kwargs.get("text_field", "text")
+        max_chunk_bytes = kwargs.get("max_chunk_bytes", 1 * 1024 * 1024)
+        http_auth = kwargs.get("http_auth")
         is_aoss = _is_aoss_enabled(http_auth=http_auth)
+        engine = None
 
         if is_aoss and not is_appx_search:
             raise ValueError(
@@ -750,11 +882,11 @@ class OpenSearchVectorSearch(VectorStore):
             )
 
         if is_appx_search:
-            engine = _get_kwargs_value(kwargs, "engine", "nmslib")
-            space_type = _get_kwargs_value(kwargs, "space_type", "l2")
-            ef_search = _get_kwargs_value(kwargs, "ef_search", 512)
-            ef_construction = _get_kwargs_value(kwargs, "ef_construction", 512)
-            m = _get_kwargs_value(kwargs, "m", 16)
+            engine = kwargs.get("engine", "nmslib")
+            space_type = kwargs.get("space_type", "l2")
+            ef_search = kwargs.get("ef_search", 512)
+            ef_construction = kwargs.get("ef_construction", 512)
+            m = kwargs.get("m", 16)
 
             _validate_aoss_with_engines(is_aoss, engine)
 
@@ -771,6 +903,7 @@ class OpenSearchVectorSearch(VectorStore):
             index_name,
             embeddings,
             texts,
+            ids=ids,
             metadatas=metadatas,
             vector_field=vector_field,
             text_field=text_field,
@@ -778,4 +911,5 @@ class OpenSearchVectorSearch(VectorStore):
             max_chunk_bytes=max_chunk_bytes,
             is_aoss=is_aoss,
         )
+        kwargs["engine"] = engine
         return cls(opensearch_url, index_name, embedding, **kwargs)

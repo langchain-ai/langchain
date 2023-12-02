@@ -11,3 +11,11 @@ class TestWebBaseLoader:
         url = "https://www.example.com"
         loader = WebBaseLoader(url, header_template=header_template)
         assert loader.session.headers["User-Agent"] == user_specified_user_agent
+
+    def test_web_path_parameter(self) -> None:
+        web_base_loader = WebBaseLoader(web_paths=["https://www.example.com"])
+        assert web_base_loader.web_paths == ["https://www.example.com"]
+        web_base_loader = WebBaseLoader(web_path=["https://www.example.com"])
+        assert web_base_loader.web_paths == ["https://www.example.com"]
+        web_base_loader = WebBaseLoader(web_path="https://www.example.com")
+        assert web_base_loader.web_paths == ["https://www.example.com"]
