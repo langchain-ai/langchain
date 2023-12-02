@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pwd
+echo $(pwd)
 exit
 
 version_compare() {
