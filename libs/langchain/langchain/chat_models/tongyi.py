@@ -185,7 +185,7 @@ def _convert_delta_to_message_chunk(
 
 
 def _to_secret(value: Union[str, SecretStr]) -> SecretStr:
-    """Convert a string or SecretStr to a SecretStr."""
+    """Convert a string to a SecretStr."""
     if isinstance(value, SecretStr):
         return value
     return SecretStr(value)
@@ -255,7 +255,9 @@ class ChatTongyi(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        get_from_dict_or_env(values, "dashscope_api_key", "DASHSCOPE_API_KEY")
+        values['dashscope_api_key'] = _to_secret(
+            get_from_dict_or_env(values, "dashscope_api_key", "DASHSCOPE_API_KEY")
+        )
         try:
             import dashscope
         except ImportError:
