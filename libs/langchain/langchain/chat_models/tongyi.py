@@ -210,13 +210,6 @@ class ChatTongyi(BaseChatModel):
         return {"dashscope_api_key": "DASHSCOPE_API_KEY"}
 
     @property
-    def dashscope_api_key(self) -> SecretStr:
-        env_var_name = self.lc_secrets["dashscope_api_key"]
-        return _to_secret(
-            get_from_dict_or_env(self.__dict__, "dashscope_api_key", env_var_name)
-        )
-
-    @property
     def lc_serializable(self) -> bool:
         return True
 
@@ -229,7 +222,7 @@ class ChatTongyi(BaseChatModel):
     top_p: float = 0.8
     """Total probability mass of tokens to consider at each step."""
 
-    dashscope_api_key: Optional[str] = None
+    dashscope_api_key: Optional[SecretStr] = None
     """Dashscope api key provide by alicloud."""
 
     n: int = 1
@@ -255,7 +248,7 @@ class ChatTongyi(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values['dashscope_api_key'] = _to_secret(
+        values["dashscope_api_key"] = _to_secret(
             get_from_dict_or_env(values, "dashscope_api_key", "DASHSCOPE_API_KEY")
         )
         try:
