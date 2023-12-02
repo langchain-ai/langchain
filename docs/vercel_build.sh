@@ -28,36 +28,27 @@ if ! version_compare $openssl_version $required_openssl_version && ! version_com
 # which are defaults on Amazon Linux 2 (which Vercel uses for builds)
     yum -y update
     yum remove openssl-devel -y
-    yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip -y
+    yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip python38 -y
     yum install openssl11 -y
     yum install openssl11-devel -y
-
-    wget https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tgz
-    tar xzf Python-3.11.4.tgz
-    cd Python-3.11.4
-    ./configure
-    make altinstall
-    echo "Python Version"
-    python3.11 --version
-    cd ..
 fi
 
 # install quarto
-wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-arm64.tar.gz
-tar -xvzf quarto-1.3.450-linux-arm64.tar.gz
+wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz
+tar -xvzf quarto-1.3.450-linux-amd64.tar.gz
 export PATH=$PATH:$(pwd)/quarto-1.3.450/bin/
 
 
-python3.11 -m venv .venv
+python3.8 -m venv .venv
 source .venv/bin/activate
-python3.11 -m pip install --upgrade pip
-python3.11 -m pip install -r vercel_requirements.txt
-python3.11 scripts/model_feat_table.py
+python3.8 -m pip install --upgrade pip
+python3.8 -m pip install -r vercel_requirements.txt
+python3.8 scripts/model_feat_table.py
 mkdir docs/templates
 cp ../templates/docs/INDEX.md docs/templates/index.md
-python3.11 scripts/copy_templates.py
+python3.8 scripts/copy_templates.py
 cp ../cookbook/README.md src/pages/cookbook.mdx
 cp ../.github/CONTRIBUTING.md docs/contributing.md
 wget https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
 quarto render docs/
-python3.11 scripts/generate_api_reference_links.py
+python3.8 scripts/generate_api_reference_links.py
