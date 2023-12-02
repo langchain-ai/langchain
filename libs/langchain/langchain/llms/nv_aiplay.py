@@ -723,7 +723,7 @@ class ContextBase(NVAIPlayBaseModel):
 
 
 class ImageBase(NVAIPlayBaseModel):
-    model: str = Field("image")
+    model: str = Field("neva")
     arg_keys: Sequence[str] = Field(["inputs", "labels", "stop"])
     labels: dict = Field({"creativity": 0, "complexity": 9, "verbosity": 9})
 
