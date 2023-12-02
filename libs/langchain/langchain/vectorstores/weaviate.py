@@ -472,7 +472,8 @@ class Weaviate(VectorStore):
             client.schema.create_class(schema)
 
         if tenant is not None:
-            if not client.schema.get_class_tenants(index_name):
+            tenants = [t.name for t in client.schema.get_class_tenants(index_name)]
+            if tenants not in tenants:
                 client.schema.add_class_tenants(index_name, [Tenant(tenant)])
 
         embeddings = embedding.embed_documents(texts) if embedding else None
