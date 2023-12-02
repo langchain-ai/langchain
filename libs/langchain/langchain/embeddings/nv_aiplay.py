@@ -1,7 +1,7 @@
 """Chat Model Components Derived from ChatModel/NVAIPlay"""
 
 import asyncio
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal
 
 from langchain.llms.nv_aiplay import ClientModel, NVCRModel
 from langchain.pydantic_v1 import Field, root_validator
