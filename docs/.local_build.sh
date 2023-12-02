@@ -12,12 +12,12 @@ mkdir -p ../_dist
 rsync -ruv --exclude ./node_modules . ../_dist
 cd ../_dist
 poetry run python scripts/model_feat_table.py
-quarto render docs/
 cp ../cookbook/README.md src/pages/cookbook.mdx
 cp ../.github/CONTRIBUTING.md docs/contributing.md
 mkdir -p docs/templates
 cp ../templates/docs/INDEX.md docs/templates/index.md
 wget https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
-poetry run python scripts/generate_api_reference_links.py
-yarn install
-yarn start
+
+yarn
+
+quarto preview docs
