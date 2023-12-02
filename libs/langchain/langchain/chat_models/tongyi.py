@@ -210,7 +210,7 @@ class ChatTongyi(BaseChatModel):
     
     @property
     def dashscope_api_key(self) -> SecretStr:
-        dashscope_api_key = self.lc_secrets['dashcone_api_key']
+        dashscope_api_key = self.lc_secrets['dashscope_api_key']
         return _to_secret(get_from_dict_or_env(self.__dict__, "dashscope_api_key", dashscope_api_key))
 
     @property
