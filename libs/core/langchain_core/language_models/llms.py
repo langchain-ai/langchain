@@ -455,7 +455,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             except BaseException as e:
                 await run_manager.on_llm_error(
                     e,
-                    resonse=LLMResult(generations=[[generation]] if generation else []),
+                    response=LLMResult(generations=[[generation]] if generation else []),
                 )
                 raise e
             else:
