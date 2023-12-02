@@ -1,20 +1,22 @@
-
-import os, re, io
 import base64
-from PIL import Image
+import io
+import os
+
 import pypdfium2 as pdfium
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.messages import HumanMessage
-from langchain.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema.document import Document
+from langchain.schema.messages import HumanMessage
 from langchain.schema.output_parser import StrOutputParser
-from langchain_experimental.open_clip import OpenCLIPEmbeddings
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
+from langchain.vectorstores import Chroma
+from langchain_experimental.open_clip import OpenCLIPEmbeddings
+from PIL import Image
+
 
 def get_images_from_pdf(pdf_path):
     """
-    Extract images from each page of a PDF document and save them as JPEG files.
+    Extract images from each page of a PDF document and save as JPEG files.
 
     :param pdf_path: A string representing the path to the PDF file.
     """
@@ -26,9 +28,10 @@ def get_images_from_pdf(pdf_path):
         pil_image = bitmap.to_pil()
         pil_image.save(f"docs/img_{page_number + 1}.jpg", format="JPEG")
 
+
 def resize_base64_image(base64_string, size=(128, 128)):
     """
-    Resize an image encoded as a Base64 string to a new size and return a new Base64 string.
+    Resize an image encoded as a Base64 string.
 
     :param base64_string: A Base64 encoded string of the image to be resized.
     :param size: A tuple representing the new size (width, height) for the image.
@@ -41,27 +44,29 @@ def resize_base64_image(base64_string, size=(128, 128)):
     resized_img.save(buffered, format=img.format)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
+
 def get_resized_images(docs):
     """
-    Resize images from base64-encoded strings to a specific size and return a list of resized images.
+    Resize images from base64-encoded strings.
 
-    :param docs: A list of base64-encoded strings representing the images to be resized.
-    :return: A dictionary with a key "images" containing a list of resized base64-encoded strings.
+    :param docs: A list of base64-encoded image to be resized.
+    :return: Dict containing a list of resized base64-encoded strings.
     """
     b64_images = []
     for doc in docs:
         if isinstance(doc, Document):
             doc = doc.page_content
-        resized_image = resize_base64_image(doc, size=(1280,720))
+        resized_image = resize_base64_image(doc, size=(1280, 720))
         b64_images.append(resized_image)
     return {"images": b64_images}
 
+
 def img_prompt_func(data_dict, num_images=2):
     """
-    Create a list of human-readable messages combining image URLs and a text prompt for analysis.
+    GPT-4V prompt for image analysis.
 
-    :param data_dict: A dictionary containing the context with images and a user-provided question.
-    :param num_images: An integer specifying the number of images to include in the prompt.
+    :param data_dict: A dict with images and a user-provided question.
+    :param num_images: Number of images to include in the prompt.
     :return: A list containing message objects for each image and the text prompt.
     """
     messages = []
@@ -84,10 +89,10 @@ def img_prompt_func(data_dict, num_images=2):
     messages.append(text_message)
     return [HumanMessage(content=messages)]
 
+
 def multi_modal_rag_chain(retriever):
     """
-    Define a RAG (Retrieval-Augmented Generation) chain that takes a retriever function,
-    processes images, and applies a model to generate a response.
+    Multi-modal RAG chain,
 
     :param retriever: A function that retrieves the necessary context for the model.
     :return: A chain of functions representing the multi-modal RAG process.
@@ -108,7 +113,8 @@ def multi_modal_rag_chain(retriever):
 
     return chain
 
-# Input 
+
+# Input
 path = "docs/DDOG_Q3_earnings_deck.pdf"
 pil_images = get_images_from_pdf(path)
 
@@ -118,7 +124,7 @@ vectorstore_mmembd = Chroma(
     embedding_function=OpenCLIPEmbeddings(),
 )
 
-# Get image URIs 
+# Get image URIs
 directory_path = "docs/"
 image_uris = sorted(
     [
@@ -137,8 +143,10 @@ retriever_mmembd = vectorstore_mmembd.as_retriever()
 # Create RAG chain
 chain = multi_modal_rag_chain(retriever_mmembd)
 
+
 # Add typing for input
 class Question(BaseModel):
     __root__: str
+
 
 chain = chain.with_types(input_type=Question)
