@@ -4,8 +4,8 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from langchain_core.documents import Document
 
-from langchain.document_loaders import Blob
 from langchain.document_loaders.base import BaseBlobParser
+from langchain.document_loaders.blob_loaders import Blob
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -302,31 +302,63 @@ class YandexSTTParser(BaseBlobParser):
 
 
 class AzureSpeechServiceParser(BaseBlobParser):
-    """Loads an Audio with azure.cognitiveservices.speech."""
+    """
+    This AzureSpeechServiceParser class make use of the Microsoft Azure Cognitive Speech
+    service's transcription module to convert an audio file to text.
+
+    You can find official transcribe sdk documents with this link:
+    https://learn.microsoft.com/en-us/python/api/azure-cognitiveservices-speech/azure.cognitiveservices.speech.transcription?view=azure-python
+    You can find official transcribe sdk samples with this link:
+    https://github.com/Azure-Samples/cognitive-services-speech-sdk/blob/2e39515446ec261bf9fd8d42902147c51c5f72cd/samples/python/console/transcription_sample.py
+    """
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the parser.
 
         Args:
             kwargs: Keyword arguments to pass to ``speechsdk.SpeechConfig(()``
+
+        kwargs:
+            key: The Azure Cognitive Speech service authentication token
+
+            region: The Azure Cognitive Speech service locate region,
+            you need this argument or the endpoint argument
+
+            endpoint: The Azure Cognitive Speech service endpoint with wss protocol,
+            this would be useful when a programmer uses the Azure cloud other
+            than the Azure Global Cloud like Azure China, Azure German
+
+            log_path: pass when transaction job log is required
+
+            polling_interval_seconds: pass a transcribe job's polling interval seconds
+
+            speech_recognition_language: pass a transcribe job's target source languages
+
+            auto_detect_languages: pass a list of potential source languages,
+            for source language auto detection in recognition.
         """
 
         self.key = get_from_dict_or_env(kwargs, "key", "AZURE_SPEECH_SERVICE_KEY")
-
-        self.endpoint: Optional[str] = get_from_dict_or_env(
-            kwargs, "endpoint", "AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT", ""
-        )
-        self.endpoint = None if self.endpoint == "" else self.endpoint
 
         self.region: Optional[str] = get_from_dict_or_env(
             kwargs, "region", "AZURE_SPEECH_SERVICE_REGION", ""
         )
         self.region = None if self.region == "" else self.region
 
+        self.endpoint: Optional[str] = get_from_dict_or_env(
+            kwargs, "endpoint", "AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT", ""
+        )
+        self.endpoint = None if self.endpoint == "" else self.endpoint
+
         self.log_path: Optional[str] = get_from_dict_or_env(
             kwargs, "log_path", "AZURE_SPEECH_SERVICE_LOG_PATH", ""
         )
         self.log_path = None if self.log_path == "" else self.log_path
+
+        temp: str = get_from_dict_or_env(
+            kwargs, "polling_interval_seconds", "AZURE_SPEECH_SERVICE_POLLING_INTERVAL_SECONDS", ""
+        )
+        self.polling_interval_seconds = 0.5 if temp == "" else float(temp)
 
         srl = "speech_recognition_language"
         self.speech_recognition_language = kwargs[srl] if srl in kwargs else None
@@ -337,7 +369,10 @@ class AzureSpeechServiceParser(BaseBlobParser):
         self.raw_json_list: List[dict] = []
         self.document_list: List[Document] = []
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+    def lazy_parse(
+        self,
+            blob: Blob
+    ) -> Iterator[Document]:
         """Lazily parse the blob."""
         import json
 
@@ -475,7 +510,7 @@ class AzureSpeechServiceParser(BaseBlobParser):
 
             # Waits for completion.
             while not transcribing_stop:
-                time.sleep(0.5)
+                time.sleep(self.polling_interval_seconds)
 
             conversation_transcriber.stop_transcribing_async()
             return iter(self.document_list)

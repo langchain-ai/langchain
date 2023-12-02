@@ -1,24 +1,23 @@
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Union
+from typing import Any, List
 
-from langchain.document_loaders.blob_loaders import FileSystemBlobLoader
-from langchain.document_loaders.generic import GenericLoader
+from langchain_core.documents import Document
+
+from langchain.document_loaders import Blob
+from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.parsers.audio import AzureSpeechServiceParser
 
 
-class AzureSpeechServiceLoader(GenericLoader):
-    @classmethod
-    def from_path(
-        cls, path: Union[str, Path], **kwargs: Any
-    ) -> AzureSpeechServiceLoader:
-        path = path if isinstance(path, Path) else Path(path)
-        if path.is_file():
-            loader_params: dict = {"glob": path.name}
-            path = path.parent
-        else:
-            loader_params = {}
-        loader = FileSystemBlobLoader(path, **loader_params)
-        parser = AzureSpeechServiceParser(**kwargs)
-        return cls(loader, parser)
+class AzureSpeechServiceLoader(BaseLoader):
+    def load(self) -> List[Document]:
+        blob = Blob.from_path(self.file_path)
+        return self.parser.parse(blob)
+
+    def __init__(self, file_path: str, **kwargs: Any) -> None:
+        """
+        Args:
+            file_path: The path to the audio file.
+        """
+        self.file_path = file_path
+        self.parser = AzureSpeechServiceParser(**kwargs)
