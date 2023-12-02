@@ -1,6 +1,7 @@
 #!/bin/bash
 
 pwd
+exit
 
 version_compare() {
     local v1=(${1//./ })
