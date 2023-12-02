@@ -1049,6 +1049,10 @@
       "destination": "/docs/modules/agents/how_to/custom_agent"
     },
     {
+      "source": "/docs/integrations/toolkits/vectorstore",
+      "destination": "/docs/modules/agents/how_to/vectorstore"
+    },
+    {
       "source": "/en/latest/modules/agents/agents/custom_agent_with_tool_retrieval.html",
       "destination": "/docs/modules/agents/how_to/custom_agent_with_tool_retrieval"
     },
