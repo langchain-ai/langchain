@@ -1,37 +1,14 @@
 #!/bin/bash
 
-version_compare() {
-    local v1=(${1//./ })
-    local v2=(${2//./ })
-    for i in {0..2}; do
-        if (( ${v1[i]} < ${v2[i]} )); then
-            return 1
-        fi
-    done
-    return 0
-}
-
-openssl_version=$(openssl version | awk '{print $2}')
-required_openssl_version="1.1.1"
-
-python_version=$(python3 --version 2>&1 | awk '{print $2}')
-required_python_version="3.10"
-
-echo "OpenSSL Version"
-echo $openssl_version
-echo "Python Version"
-echo $python_version
-# If openssl version is less than 1.1.1 AND python version is less than 3.10
-if ! version_compare $openssl_version $required_openssl_version && ! version_compare $python_version $required_python_version; then
 ### See: https://github.com/urllib3/urllib3/issues/2168
 # Requests lib breaks for old SSL versions,
 # which are defaults on Amazon Linux 2 (which Vercel uses for builds)
-    yum -y update
-    yum remove openssl-devel -y
-    yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip python38 -y
-    yum install openssl11 -y
-    yum install openssl11-devel -y
-fi
+yum -y update
+yum remove openssl-devel -y
+yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip -y
+amazon-linux-extras install python3.8 -y
+yum install openssl11 -y
+yum install openssl11-devel -y
 
 # install quarto
 wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz
