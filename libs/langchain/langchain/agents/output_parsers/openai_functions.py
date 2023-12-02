@@ -61,6 +61,10 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
             # Open AI does not support passing in a JSON array as an argument.
             if "__arg1" in _tool_input:
                 tool_input = _tool_input["__arg1"]
+                # replace other keys in the '__arg1' string value of '_tool_input' with their corresponding values
+                for key in _tool_input:
+                    if key != '__arg1':
+                        tool_input = tool_input.replace(key, _tool_input[key])
             else:
                 tool_input = _tool_input
 
