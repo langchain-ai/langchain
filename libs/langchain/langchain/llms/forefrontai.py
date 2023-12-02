@@ -41,7 +41,7 @@ class ForefrontAI(LLM):
     repetition_penalty: int = 1
     """Penalizes repeated tokens according to frequency."""
 
-    forefrontai_api_key: SecretStr = None
+    forefrontai_api_key: SecretStr
 
     base_url: Optional[str] = None
     """Base url to use, if None decides based on model name."""
