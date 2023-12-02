@@ -182,6 +182,12 @@ def _convert_delta_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)
     else:
         return default_class(content=content)
+    
+def _to_secret_str(value: Union[str, SecretStr]) -> SecretStr:
+    """Convert a string or SecretStr to a SecretStr."""
+    if isinstance(value, SecretStr):
+        return value
+    return SecretStr(value)
 
 
 class ChatTongyi(BaseChatModel):
