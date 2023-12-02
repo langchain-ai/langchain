@@ -1,8 +1,5 @@
 #!/bin/bash
 
-echo $(pwd)
-exit
-
 version_compare() {
     local v1=(${1//./ })
     local v2=(${2//./ })
@@ -48,7 +45,7 @@ fi
 # install quarto
 wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-arm64.tar.gz
 tar -xvzf quarto-1.3.450-linux-arm64.tar.gz
-export PATH=$PATH:/quarto-1.3.450/bin/
+export PATH=$PATH:$(pwd)/quarto-1.3.450/bin/
 
 
 python3.11 -m venv .venv
