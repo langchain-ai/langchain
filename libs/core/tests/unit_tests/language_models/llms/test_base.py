@@ -1,5 +1,13 @@
+import pytest
+
+from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.fake.llm import FakeListLLM
+from tests.unit_tests.fake.callbacks import (
+    BaseFakeCallbackHandler,
+    FakeAsyncCallbackHandler,
+    FakeCallbackHandler,
+)
+from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 
 
 def test_batch() -> None:
@@ -75,3 +83,33 @@ async def test_async_batch_size() -> None:
             pass
         assert len(cb.traced_runs) == 1
         assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
+
+
+async def test_stream_error_callback() -> None:
+    message = "test"
+
+    def eval_response(callback: BaseFakeCallbackHandler, i: int) -> None:
+        assert callback.errors == 1
+        assert len(callback.errors_args) == 1
+        llm_result: LLMResult = callback.errors_args[0]["kwargs"]["response"]
+        if i == 0:
+            assert llm_result.generations == []
+        else:
+            assert llm_result.generations[0][0].text == message[:i]
+
+    for i in range(0, 2):
+        llm = FakeStreamingListLLM(
+            responses=[message],
+            ith_chunk_error=i,
+        )
+        with pytest.raises(Exception):
+            cb_async = FakeAsyncCallbackHandler()
+            async for _ in llm.astream("Dummy message", callbacks=[cb_async]):
+                pass
+            eval_response(cb_async, i)
+
+            cb_sync = FakeCallbackHandler()
+            for _ in llm.stream("Dumy message", callbacks=[cb_sync]):
+                pass
+
+            eval_response(cb_sync, i)

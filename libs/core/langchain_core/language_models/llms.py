@@ -384,8 +384,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 name=config.get("run_name"),
                 batch_size=1,
             )
+            generation: Optional[GenerationChunk] = None
             try:
-                generation: Optional[GenerationChunk] = None
                 for chunk in self._stream(
                     prompt, stop=stop, run_manager=run_manager, **kwargs
                 ):
@@ -396,7 +396,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         generation += chunk
                 assert generation is not None
             except BaseException as e:
-                run_manager.on_llm_error(e)
+                run_manager.on_llm_error(
+                    e,
+                    response=LLMResult(
+                        generations=[[generation]] if generation else []
+                    ),
+                )
                 raise e
             else:
                 run_manager.on_llm_end(LLMResult(generations=[[generation]]))
@@ -436,8 +441,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 name=config.get("run_name"),
                 batch_size=1,
             )
+            generation: Optional[GenerationChunk] = None
             try:
-                generation: Optional[GenerationChunk] = None
                 async for chunk in self._astream(
                     prompt, stop=stop, run_manager=run_manager, **kwargs
                 ):
@@ -448,7 +453,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         generation += chunk
                 assert generation is not None
             except BaseException as e:
-                await run_manager.on_llm_error(e)
+                await run_manager.on_llm_error(
+                    e,
+                    resonse=LLMResult(generations=[[generation]] if generation else []),
+                )
                 raise e
             else:
                 await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
@@ -539,7 +547,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
         except BaseException as e:
             for run_manager in run_managers:
-                run_manager.on_llm_error(e)
+                run_manager.on_llm_error(e, response=LLMResult(generations=[]))
             raise e
         flattened_outputs = output.flatten()
         for manager, flattened_output in zip(run_managers, flattened_outputs):
@@ -707,7 +715,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
         except BaseException as e:
             await asyncio.gather(
-                *[run_manager.on_llm_error(e) for run_manager in run_managers]
+                *[
+                    run_manager.on_llm_error(e, response=LLMResult(generations=[]))
+                    for run_manager in run_managers
+                ]
             )
             raise e
         flattened_outputs = output.flatten()
