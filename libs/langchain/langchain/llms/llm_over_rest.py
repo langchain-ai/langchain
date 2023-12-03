@@ -72,6 +72,8 @@ class LLMOverREST(LLM):
     """A key-value map for all the request headers."""
     retries: int = 0
     """Number of retries to make in case the REST call fails"""
+    timeout: float = 300.0
+    """Timeout in seconds for the call to go through"""
     proxies: Optional[Dict[str, str]] = None
     """Dictionary containing the protocol to the proxy server configuration."""
     ssl_verify: Union[bool, str] = True
@@ -162,6 +164,7 @@ class LLMOverREST(LLM):
                 url=self.api_endpoint,
                 headers=self.headers,
                 json=json_body,
+                timeout=self.timeout,
                 proxies=self.proxies,
                 verify=self.ssl_verify,
                 cert=self.client_cert,
@@ -180,6 +183,7 @@ class LLMOverREST(LLM):
                 url=self.api_endpoint,
                 json=json_body,
                 headers=self.headers,
+                timeout=self.timeout,
             )
             response.raise_for_status()
             return response.text
