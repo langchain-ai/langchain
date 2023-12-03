@@ -4,12 +4,11 @@ import json
 import logging
 import os
 from hashlib import md5
-from typing import Any, Iterable, List, Optional, Tuple, Type
+from typing import Any, Iterable, List, Optional, Tuple, Type, Union
 
 import requests
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
 from dataclasses import dataclass
@@ -315,14 +314,16 @@ class Vectara(VectorStore):
             query: Text to look up documents similar to.
             config: VectaraQueryConfig object
         Returns:
-            List of Documents most similar to the query and score for each along with summary if enabled
+            List of Documents most similar to the query and score for 
+            each along with summary if enabled
         """
         data = {
             "query": [
                 {
                     "query": query,
                     "start": 0,
-                    "numResults": config.mmrConfig.mmr_k if config.mmrConfig.is_enabled else k,
+                    "numResults": 
+                        config.mmrConfig.mmr_k if config.mmrConfig.is_enabled else k,
                     "contextConfig": {
                         "sentencesBefore": config.n_sentence_context,
                         "sentencesAfter": config.n_sentence_context,
@@ -476,7 +477,8 @@ class Vectara(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         config = VectaraQueryConfig(**kwargs)
-        config.mmrConfig = MMRConfig(is_enabled=True, mmr_k=fetch_k, diversity_bias=1-lambda_mult)
+        config.mmrConfig = MMRConfig(is_enabled=True, mmr_k=fetch_k, 
+                                     diversity_bias=1-lambda_mult)
         docs_and_scores, _ = self.vectara_query(query, k, config)
         return [doc for doc, _ in docs_and_scores]
 
@@ -551,12 +553,13 @@ class VectaraRetriever(VectorStoreRetriever):
     vectorstore: Vectara
     config: VectaraQueryConfig
 
-    def get_relevant_documents(
+    def _get_relevant_documents(
         self,
         query: str,
         k: int = 10,
-    ) -> List[Document]:
-        docs_and_scores, summary = self.vectorstore.vectara_query(query, k, config=self.config)
+    ) -> Union[List[Document], Tuple[List[Document], str]]:
+        docs_and_scores, summary = self.vectorstore.vectara_query(query, k, 
+                                                                  config=self.config)
         if self.config.summaryConfig.is_enabled:
             return [doc for doc, _ in docs_and_scores], summary
         else:

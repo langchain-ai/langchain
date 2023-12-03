@@ -159,25 +159,30 @@ def test_vectara_mmr() -> None:
     # start with some initial texts, added with add_texts
     texts = [
         '''
-        The way Grounded Generation with Vectara works is we only use valid responses from your data relative to the search query. 
+        The way Grounded Generation with Vectara works is we only use valid responses 
+        from your data relative to the search query. 
         This dramatically reduces hallucinations in Vectara's responses. 
-        You can try it out on your own on our newly launched AskNews demo to experience Grounded Generation, 
-        or register an account to ground generative summaries on your own data.
+        You can try it out on your own on our newly launched AskNews demo to experience 
+        Grounded Generation, or register an account to ground generative summaries on 
+        your own data.
         ''',
         '''
         Generative AI promises to revolutionize how you can benefit from your data, 
-        but you need it to provide dependable information without the risk of data leakage. 
-        This is why today we're adding a fundamental capability to our platform to make generative AI safer to use. 
-        It enables you to ask your data questions and get reliable, accurate answers by retrieving and summarizing only the relevant information. 
-        We call it “Grounded Generation”. 
+        but you need it to provide dependable information without the risk of data 
+        leakage. This is why today we're adding a fundamental capability to our 
+        platform to make generative AI safer to use. It enables you to ask your 
+        data questions and get reliable, accurate answers by retrieving and 
+        summarizing only the relevant information. We call it “Grounded Generation”. 
         ''',
         '''
-        We are incredibly excited to share another feature with this launch: Hybrid Search! 
-        Neural LLM systems are excellent at understanding the context and meaning of end-user queries, 
-        but they can still underperform when matching exact product SKUs, unusual names of people or companies, 
-        barcodes, and other text which identifies entities rather than conveying semantics. 
-        We're bridging this gap by introducing a lexical configuration that matches exact keywords, supports Boolean operators, 
-        and executes phrase searches, and incorporates the results into our neural search results.
+        We are incredibly excited to share another feature with this launch: 
+        Hybrid Search! Neural LLM systems are excellent at understanding the context 
+        and meaning of end-user queries, but they can still underperform when matching 
+        exact product SKUs, unusual names of people or companies, barcodes, and other 
+        text which identifies entities rather than conveying semantics. We're bridging 
+        this gap by introducing a lexical configuration that matches exact keywords, 
+        supports Boolean operators, and executes phrase searches, and incorporates 
+        the results into our neural search results.
         '''
     ]
 
@@ -196,7 +201,8 @@ def test_vectara_mmr() -> None:
     )
     assert len(output1) == 2
     assert "Generative AI promises to revolutionize how" in output1[0].page_content
-    assert "This is why today we're adding a fundamental capability" in output1[1].page_content
+    assert "This is why today we're adding a fundamental capability" \
+            in output1[1].page_content
 
     output2 = docsearch.max_marginal_relevance_search(
         "generative AI", 
@@ -205,7 +211,8 @@ def test_vectara_mmr() -> None:
     )
     assert len(output2) == 2
     assert "Generative AI promises to revolutionize how" in output2[0].page_content
-    assert "Neural LLM systems are excellent at understanding the context" in output2[1].page_content
+    assert "Neural LLM systems are excellent at understanding the context" \
+            in output2[1].page_content
 
     # delete the docs from the corpus
     for doc_id in doc_ids:
