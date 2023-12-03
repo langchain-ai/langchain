@@ -551,23 +551,13 @@ class VectaraRetriever(VectorStoreRetriever):
     vectorstore: Vectara
     config: VectaraQueryConfig
 
-    def _get_relevant_documents(
+    def get_relevant_documents(
         self,
         query: str,
         k: int = 10,
     ) -> List[Document]:
-        docs_and_scores, _ = self.vectorstore.vectara_query(query, k, config=self.config)
-        return [doc for doc, _ in docs_and_scores]
-
-    def get_relevant_documents_and_summary(
-        self,
-        query: str,
-        summary: SummaryConfig,
-        k: int = 10,
-    ):
-        config: VectaraQueryConfig = self.config.deepcopy()
-        if k:
-            config.k = k
-        config.summaryConfig = summary
-        docs, summary_text = self.vectorstore.vectara_query(query, k, config=config)
-        return docs, summary_text
+        docs_and_scores, summary = self.vectorstore.vectara_query(query, k, config=self.config)
+        if self.config.summaryConfig.is_enabled:
+            return [doc for doc, _ in docs_and_scores], summary
+        else:
+            return [doc for doc, _ in docs_and_scores]
