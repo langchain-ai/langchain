@@ -19,15 +19,12 @@ You can select different options (see results [here](https://github.com/mlfounda
 
 The first time you run the app, it will automatically download the multimodal embedding model.
 
-By default, LangChain will use an embedding model with strong performance (uses ~5GB memory):
-```
-model_name = "ViT-H-14"
-checkpoint = "laion2b_s32b_b79k"
-```
+By default, LangChain will use an embedding model with strong performance, `ViT-H-14`.
 
 You can choose alternative models and re-build `langchain/libs/experimental`:
 ```
-/Users/rlm/miniforge3/envs/llama2/bin/pip install -e .
+embedding_function=OpenCLIPEmbeddings(model_name="ViT-H-14",
+                                        checkpoint="laion2b_s32b_b79k"),
 ```
 
 ## LLM
