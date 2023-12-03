@@ -85,7 +85,7 @@ def stream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
 
     return _stream_generate_with_retry(**kwargs)
 
-def _to_secret_str(value: Union[str, SecretStr]) -> SecretStr:
+def _to_secret(value: Union[str, SecretStr]) -> SecretStr:
     "Convert a string to a SecretStr."
     if isinstance(value, str):
         return SecretStr(value)
@@ -123,7 +123,7 @@ class Tongyi(LLM):
     top_p: float = 0.8
     """Total probability mass of tokens to consider at each step."""
 
-    dashscope_api_key: Optional[str] = None
+    dashscope_api_key: Optional[SecretStr] = None
     """Dashscope api key provide by alicloud."""
 
     n: int = 1
@@ -146,7 +146,9 @@ class Tongyi(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        get_from_dict_or_env(values, "dashscope_api_key", "DASHSCOPE_API_KEY")
+        values["dashscope_api_key"] = _to_secret(
+            get_from_dict_or_env(values, "dashscope_api_key", "DASHSCOPE_API_KEY")
+        )
         try:
             import dashscope
         except ImportError:
