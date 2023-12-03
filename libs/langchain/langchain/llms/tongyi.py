@@ -85,6 +85,7 @@ def stream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
 
     return _stream_generate_with_retry(**kwargs)
 
+
 def _to_secret(value: Union[str, SecretStr]) -> SecretStr:
     "Convert a string to a SecretStr."
     if isinstance(value, str):
@@ -115,7 +116,7 @@ class Tongyi(LLM):
         return True
 
     client: Any  #: :meta private:
-    model_name: str = "qwen-plus-v1"
+    model_name: str = "qwen-plus"
 
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -172,6 +173,9 @@ class Tongyi(LLM):
         """Get the default parameters for calling OpenAI API."""
         normal_params = {
             "top_p": self.top_p,
+            "api_key": self.dashscope_api_key.get_secret_value()
+            if self.dashscope_api_key
+            else None,
         }
 
         return {**normal_params, **self.model_kwargs}
