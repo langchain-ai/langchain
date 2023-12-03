@@ -167,9 +167,7 @@ class Tongyi(LLM):
         """Get the default parameters for calling OpenAI API."""
         normal_params = {
             "top_p": self.top_p,
-            "api_key": cast(SecretStr, self.dashscope_api_key).get_secret_value()
-            if self.dashscope_api_key
-            else None,
+            "api_key": cast(SecretStr, self.dashscope_api_key).get_secret_value(),
         }
 
         return {**normal_params, **self.model_kwargs}
