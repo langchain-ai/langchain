@@ -17,7 +17,7 @@ from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.document_loaders import AsyncHtmlLoader
 from langchain.document_transformers import Html2TextTransformer
 from langchain.llms import LlamaCpp
-from langchain.llms.base import BaseLLM
+from langchain_core.language_models.llms import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.utilities import GoogleSearchAPIWrapper

@@ -3,7 +3,7 @@ from typing import List, Type
 import langchain.tools
 from langchain.tools import _DEPRECATED_TOOLS
 from langchain.tools import __all__ as tools_all
-from langchain.tools.base import BaseTool, StructuredTool
+from langchain_core.tools import BaseTool, StructuredTool
 
 _EXCLUDE = {
     BaseTool,

@@ -6,7 +6,7 @@ from langchain_core.documents import Document
 
 from langchain.agents.load_tools import load_tools
 from langchain.tools import ArxivQueryRun
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 from langchain.utilities import ArxivAPIWrapper
 
 

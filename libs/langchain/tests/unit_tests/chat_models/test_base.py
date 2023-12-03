@@ -1,4 +1,4 @@
-from langchain.chat_models.base import __all__
+from langchain_core.language_models.chat_models import __all__
 
 EXPECTED_ALL = [
     "BaseChatModel",

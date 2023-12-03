@@ -1,4 +1,4 @@
-from langchain.tools.base import __all__
+from langchain_core.tools import __all__
 
 EXPECTED_ALL = [
     "BaseTool",

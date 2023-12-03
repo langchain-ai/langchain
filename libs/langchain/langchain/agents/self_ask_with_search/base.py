@@ -11,7 +11,7 @@ from langchain.agents.self_ask_with_search.output_parser import SelfAskOutputPar
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 

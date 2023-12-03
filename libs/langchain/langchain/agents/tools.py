@@ -5,7 +5,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.tools.base import BaseTool, Tool, tool
+from langchain_core.tools import BaseTool, Tool, tool
 
 
 class InvalidTool(BaseTool):

@@ -8,7 +8,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import SimpleChatModel
+from langchain_core.language_models.chat_models import SimpleChatModel
 
 
 class FakeChatModel(SimpleChatModel):

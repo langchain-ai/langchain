@@ -11,7 +11,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.hyde.prompts import PROMPT_MAP
-from langchain.llms.base import BaseLLM
+from langchain_core.language_models.llms import BaseLLM
 
 
 class FakeEmbeddings(Embeddings):

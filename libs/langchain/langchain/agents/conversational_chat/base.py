@@ -26,7 +26,7 @@ from langchain.agents.conversational_chat.prompt import (
 from langchain.agents.utils import validate_tools_single_input
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 
 
 class ConversationalChatAgent(Agent):

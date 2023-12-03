@@ -14,7 +14,7 @@ from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
 from langchain.docstore.base import Docstore
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 
 
 class ReActDocstoreAgent(Agent):

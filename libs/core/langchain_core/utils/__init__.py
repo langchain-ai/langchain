@@ -22,6 +22,7 @@ from langchain_core.utils.utils import (
     raise_for_status_with_text,
     xor_args,
 )
+from langchain_core.utils.env import get_from_dict_or_env, get_from_env
 
 __all__ = [
     "StrictFormatter",
@@ -39,4 +40,6 @@ __all__ = [
     "xor_args",
     "try_load_from_hub",
     "build_extra_kwargs",
+    "get_from_dict_or_env",
+    "get_from_env",
 ]

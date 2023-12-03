@@ -47,7 +47,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 
 logger = logging.getLogger(__name__)

@@ -12,7 +12,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
+from langchain_core.language_models.llms import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
 
 logger = logging.getLogger(__name__)

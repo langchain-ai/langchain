@@ -10,7 +10,7 @@ from langchain_core.outputs import Generation, LLMResult
 
 from langchain.cache import InMemoryCache, SQLAlchemyCache
 from langchain.globals import get_llm_cache, set_llm_cache
-from langchain.llms.base import __all__
+from langchain_core.language_models.llms import __all__
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 EXPECTED_ALL = [

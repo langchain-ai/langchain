@@ -57,7 +57,7 @@ from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.outputs import ChatGeneration, Generation
 
-from langchain.llms.base import LLM, get_prompts
+from langchain_core.language_models.llms import LLM, get_prompts
 from langchain.utils import get_from_env
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 

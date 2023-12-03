@@ -13,7 +13,7 @@ from langchain.evaluation.agents.trajectory_eval_chain import (
     TrajectoryEvalChain,
     TrajectoryOutputParser,
 )
-from langchain.tools.base import tool
+from langchain_core.tools import tool
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 
 

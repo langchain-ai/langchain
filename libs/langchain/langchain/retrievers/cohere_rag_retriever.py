@@ -11,7 +11,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.chat_models.base import BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage

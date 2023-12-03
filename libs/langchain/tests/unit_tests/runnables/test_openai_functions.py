@@ -6,7 +6,7 @@ from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain.runnables.openai_functions import OpenAIFunctionsRouter
 
 

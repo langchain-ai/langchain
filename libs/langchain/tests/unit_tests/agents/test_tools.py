@@ -14,7 +14,7 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.react.base import ReActDocstoreAgent, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
 from langchain.agents.tools import Tool, tool
-from langchain.tools.base import ToolException
+from langchain_core.tools import ToolException
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

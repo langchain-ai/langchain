@@ -7,7 +7,7 @@ from langchain_core.agents import AgentAction, AgentStep
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain_core.language_models.llms import LLM
 from langchain.schema.messages import AIMessage, HumanMessage
 from langchain.schema.runnable.utils import add
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler

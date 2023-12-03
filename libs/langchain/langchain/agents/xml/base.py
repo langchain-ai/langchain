@@ -8,7 +8,7 @@ from langchain.agents.output_parsers.xml import XMLAgentOutputParser
 from langchain.agents.xml.prompt import agent_instructions
 from langchain.callbacks.base import Callbacks
 from langchain.chains.llm import LLMChain
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 
 
 class XMLAgent(BaseSingleActionAgent):
