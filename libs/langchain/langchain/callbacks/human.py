@@ -14,7 +14,7 @@ def _default_approve(_input: str) -> bool:
     return resp.lower() in ("yes", "y")
 
 
-async def _default_async_approve(_input: str) -> bool:
+async def _adefault_approve(_input: str) -> bool:
     msg = (
         "Do you approve of the following input? "
         "Anything except 'Y'/'Yes' (case-insensitive) will be treated as a no."
@@ -39,7 +39,7 @@ class HumanApprovalCallbackHandler(BaseCallbackHandler):
 
     def __init__(
         self,
-        approve: Callable[[str], bool] = _default_approve,
+        approve: Callable[[Any], bool] = _default_approve,
         should_check: Callable[[Dict[str, Any]], bool] = _default_true,
     ):
         self._approve = approve
@@ -67,7 +67,7 @@ class AsyncHumanApprovalCallbackHandler(AsyncCallbackHandler):
 
     def __init__(
         self,
-        approve: Callable[[str], Awaitable[bool]] = _default_async_approve,
+        approve: Callable[[Any], Awaitable[bool]] = _adefault_approve,
         should_check: Callable[[Dict[str, Any]], bool] = _default_true,
     ):
         self._approve = approve
