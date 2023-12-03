@@ -186,10 +186,6 @@ const config = {
                 label: "Templates",
               },
               {
-                label: "Templates Hub",
-                href: "https://templates.langchain.com",
-              },
-              {
                 to: "/docs/community",
                 label: "Community",
               },
@@ -240,6 +236,10 @@ const config = {
               {
                 href: "https://github.com/langchain-ai/langchain/tree/master/templates",
                 label: "Templates GitHub",
+              },
+              {
+                label: "Templates Hub",
+                href: "https://templates.langchain.com",
               },
               {
                 href: "https://smith.langchain.com/hub",
