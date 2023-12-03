@@ -1,13 +1,14 @@
+import warnings
 from enum import Enum
 from typing import List
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore
 from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.storage._lc_store import create_kv_docstore
 
 
 class SearchType(str, Enum):
@@ -27,11 +28,39 @@ class MultiVectorRetriever(BaseRetriever):
     and their embedding vectors"""
     docstore: BaseStore[str, Document]
     """The storage layer for the parent documents"""
-    id_key: str = "doc_id"
-    search_kwargs: dict = Field(default_factory=dict)
+    id_key: str
+    search_kwargs: dict
     """Keyword arguments to pass to the search function."""
-    search_type: SearchType = SearchType.similarity
+    search_type: SearchType
     """Type of search to perform (similarity / mmr)"""
+
+    def __init__(
+        self,
+        *,
+        vectorstore: VectorStore,
+        docstore: BaseStore[str, Document] = None,
+        base_store: BaseStore[str, bytes] = None,
+        id_key: str = "doc_id",
+        search_kwargs: dict = {},
+        search_type: SearchType = SearchType.similarity,
+    ):
+        if base_store is not None:
+            docstore = create_kv_docstore(base_store)
+        elif docstore is not None:
+            warnings.warn(
+                "Initialization with a docstore parameter is deprecated."
+                " Use the more generic `base_store` instead."
+            )
+        else:
+            raise Exception("You must pass a `base_store` parameter.")
+
+        super().__init__(
+            vectorstore=vectorstore,
+            docstore=docstore,
+            id_key=id_key,
+            search_kwargs=search_kwargs,
+            search_type=search_type,
+        )
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
