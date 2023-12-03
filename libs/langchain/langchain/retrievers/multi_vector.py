@@ -1,6 +1,6 @@
 import warnings
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
@@ -38,8 +38,8 @@ class MultiVectorRetriever(BaseRetriever):
         self,
         *,
         vectorstore: VectorStore,
-        docstore: BaseStore[str, Document] = None,
-        base_store: BaseStore[str, bytes] = None,
+        docstore: Optional[BaseStore[str, Document]] = None,
+        base_store: Optional[BaseStore[str, bytes]] = None,
         id_key: str = "doc_id",
         search_kwargs: dict = {},
         search_type: SearchType = SearchType.similarity,
