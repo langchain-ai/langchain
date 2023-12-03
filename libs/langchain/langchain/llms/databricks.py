@@ -46,6 +46,10 @@ class _DatabricksClientBase(BaseModel, ABC):
     ) -> Any:
         ...
 
+    @property
+    def llm(self) -> bool:
+        return False
+
 
 def _transform_completions(response: Dict[str, Any]) -> str:
     return response["choices"][0]["text"]
@@ -84,6 +88,10 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             "foundation_model_api",
         )
         self.task = endpoint.get("task")
+
+    @property
+    def llm(self) -> bool:
+        return self.task in ("llm/v1/chat", "llm/v1/completions")
 
     @root_validator(pre=True)
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -137,8 +145,11 @@ class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
             values["api_url"] = api_url
         return values
 
-    def post(self, request: Any, transform: Optional[Callable[..., str]] = None) -> Any:
-        return self._post(self.api_url, request)
+    def post(
+        self, request: Any, transform_output_fn: Optional[Callable[..., str]] = None
+    ) -> Any:
+        resp = self._post(self.api_url, request)
+        return transform_output_fn(resp) if transform_output_fn else resp
 
 
 def get_repl_context() -> Any:
@@ -285,12 +296,10 @@ class Databricks(LLM):
     We recommend the server using a port number between ``[3000, 8000]``.
     """
 
-    params: Optional[Dict[str, Any]] = None
-    """Extra parameters to pass to the endpoint."""
-
     model_kwargs: Optional[Dict[str, Any]] = None
     """
-    Deprecated. Please use ``params`` instead. Extra parameters to pass to the endpoint.
+    Deprecated. Please use ``extra_params`` instead. Extra parameters to pass to
+    the endpoint.
     """
 
     transform_input_fn: Optional[Callable] = None
@@ -306,11 +315,33 @@ class Databricks(LLM):
     databricks_uri: str = "databricks"
     """The databricks URI. Only used when using a serving endpoint."""
 
+    temperature: float = 0.0
+    """The sampling temperature."""
+    n: int = 1
+    """The number of completion choices to generate."""
+    stop: Optional[List[str]] = None
+    """The stop sequence."""
+    max_tokens: Optional[int] = None
+    """The maximum number of tokens to generate."""
+    extra_params: Dict[str, Any] = Field(default_factory=dict)
+    """Any extra parameters to pass to the endpoint."""
+
     _client: _DatabricksClientBase = PrivateAttr()
 
     class Config:
         extra = Extra.forbid
         underscore_attrs_are_private = True
+
+    @property
+    def _llm_params(self) -> Dict[str, Any]:
+        params = {
+            "temperature": self.temperature,
+            "n": self.n,
+            "stop": self.stop,
+            "max_tokens": self.max_tokens,
+            **(self.model_kwargs or self.extra_params),
+        }
+        return params
 
     @validator("cluster_id", always=True)
     def set_cluster_id(cls, v: Any, values: Dict[str, Any]) -> Optional[str]:
@@ -356,11 +387,11 @@ class Databricks(LLM):
 
     def __init__(self, **data: Any):
         super().__init__(**data)
-        if self.model_kwargs is not None and self.params is not None:
-            raise ValueError("Cannot set both model_kwargs and params.")
+        if self.model_kwargs is not None and self.extra_params is not None:
+            raise ValueError("Cannot set both extra_params and extra_params.")
         elif self.model_kwargs is not None:
             warnings.warn(
-                "model_kwargs is deprecated. Please use params instead.",
+                "model_kwargs is deprecated. Please use extra_params instead.",
                 DeprecationWarning,
             )
         if self.endpoint_name:
@@ -383,10 +414,6 @@ class Databricks(LLM):
             )
 
     @property
-    def _params(self) -> Optional[Dict[str, Any]]:
-        return self.model_kwargs or self.params
-
-    @property
     def _default_params(self) -> Dict[str, Any]:
         """Return default params."""
         return {
@@ -397,7 +424,11 @@ class Databricks(LLM):
             "cluster_driver_port": self.cluster_driver_port,
             "databricks_uri": self.databricks_uri,
             "model_kwargs": self.model_kwargs,
-            "params": self.params,
+            "temperature": self.temperature,
+            "n": self.n,
+            "stop": self.stop,
+            "max_tokens": self.max_tokens,
+            "extra_params": self.extra_params,
             # TODO: Support saving transform_input_fn and transform_output_fn
             # "transform_input_fn": self.transform_input_fn,
             # "transform_output_fn": self.transform_output_fn,
@@ -423,17 +454,17 @@ class Databricks(LLM):
 
         # TODO: support callbacks
 
-        request = {"prompt": prompt, "stop": stop}
+        request: Dict[str, Any] = {"prompt": prompt}
+        if self._client.llm:
+            request.update(self._llm_params)
+            request.update(self.model_kwargs or self.extra_params)
+        else:
+            request.update(self.model_kwargs or self.extra_params)
         request.update(kwargs)
-        if self._params:
-            request.update(self._params)
+        if stop := self.stop or stop:
+            request["stop"] = stop
 
         if self.transform_input_fn:
             request = self.transform_input_fn(**request)
 
-        response = self._client.post(request)
-
-        if self.transform_output_fn:
-            response = self.transform_output_fn(response)
-
-        return response
+        return self._client.post(request, transform_output_fn=self.transform_output_fn)
