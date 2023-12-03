@@ -160,8 +160,10 @@ class TestAstraDB:
             api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
-        assert v_store.similarity_search("Ho", k=1)[0].page_content == "Ho"
-        v_store.delete_collection()
+        try:
+            assert v_store.similarity_search("Ho", k=1)[0].page_content == "Ho"
+        finally:
+            v_store.delete_collection()
 
         # from_texts
         v_store_2 = AstraDB.from_documents(
@@ -175,9 +177,10 @@ class TestAstraDB:
             api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
-        assert v_store_2.similarity_search("Hoi", k=1)[0].page_content == "Hoi"
-        # manual collection delete
-        v_store_2.delete_collection()
+        try:
+            assert v_store_2.similarity_search("Hoi", k=1)[0].page_content == "Hoi"
+        finally:
+            v_store_2.delete_collection()
 
     def test_astradb_vectorstore_crud(self, store_someemb: AstraDB) -> None:
         """Basic add/delete/update behaviour."""
@@ -355,10 +358,11 @@ class TestAstraDB:
 
     def test_astradb_vectorstore_drop(self) -> None:
         """behaviour of 'delete_collection'."""
+        collection_name = "lc_test_d"
         emb = SomeEmbeddings(dimension=2)
         v_store = AstraDB(
             embedding=emb,
-            collection_name="lc_test_d",
+            collection_name=collection_name,
             token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
             api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
@@ -368,7 +372,7 @@ class TestAstraDB:
         # another instance pointing to the same collection on DB
         v_store_kenny = AstraDB(
             embedding=emb,
-            collection_name="lc_test_d",
+            collection_name=collection_name,
             token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
             api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
@@ -392,23 +396,25 @@ class TestAstraDB:
             bulk_insert_overwrite_concurrency=7,
             bulk_delete_concurrency=19,
         )
-        # add_texts
-        N = 50
-        texts = [str(i + 1 / 7.0) for i in range(N)]
-        ids = ["doc_%i" % i for i in range(N)]
-        v_store.add_texts(texts=texts, ids=ids)
-        v_store.add_texts(
-            texts=texts,
-            ids=ids,
-            batch_size=19,
-            batch_concurrency=7,
-            overwrite_concurrency=13,
-        )
-        #
-        _ = v_store.delete(ids[: N // 2])
-        _ = v_store.delete(ids[N // 2 :], concurrency=23)
-        #
-        v_store.delete_collection()
+        try:
+            # add_texts
+            N = 50
+            texts = [str(i + 1 / 7.0) for i in range(N)]
+            ids = ["doc_%i" % i for i in range(N)]
+            v_store.add_texts(texts=texts, ids=ids)
+            v_store.add_texts(
+                texts=texts,
+                ids=ids,
+                batch_size=19,
+                batch_concurrency=7,
+                overwrite_concurrency=13,
+            )
+            #
+            _ = v_store.delete(ids[: N // 2])
+            _ = v_store.delete(ids[N // 2 :], concurrency=23)
+            #
+        finally:
+            v_store.delete_collection()
 
     def test_astradb_vectorstore_metrics(self) -> None:
         """
@@ -440,17 +446,20 @@ class TestAstraDB:
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
             metric="cosine",
         )
-        vstore_cos.add_texts(
-            texts=texts,
-            ids=ids,
-        )
-        _, _, id_from_cos = vstore_cos.similarity_search_with_score_id(
-            query_text,
-            k=1,
-        )[0]
-        assert id_from_cos == "scaled"
-        vstore_cos.delete_collection()
+        try:
+            vstore_cos.add_texts(
+                texts=texts,
+                ids=ids,
+            )
+            _, _, id_from_cos = vstore_cos.similarity_search_with_score_id(
+                query_text,
+                k=1,
+            )[0]
+            assert id_from_cos == "scaled"
+        finally:
+            vstore_cos.delete_collection()
         # creation, population, query - euclidean
+
         vstore_euc = AstraDB(
             embedding=emb,
             collection_name="lc_test_m_e",
@@ -459,13 +468,15 @@ class TestAstraDB:
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
             metric="euclidean",
         )
-        vstore_euc.add_texts(
-            texts=texts,
-            ids=ids,
-        )
-        _, _, id_from_euc = vstore_euc.similarity_search_with_score_id(
-            query_text,
-            k=1,
-        )[0]
-        assert id_from_euc == "rotated"
-        vstore_euc.delete_collection()
+        try:
+            vstore_euc.add_texts(
+                texts=texts,
+                ids=ids,
+            )
+            _, _, id_from_euc = vstore_euc.similarity_search_with_score_id(
+                query_text,
+                k=1,
+            )[0]
+            assert id_from_euc == "rotated"
+        finally:
+            vstore_euc.delete_collection()
