@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -84,6 +84,12 @@ def stream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
         return stream_resps
 
     return _stream_generate_with_retry(**kwargs)
+
+def _to_secret_str(value: Union[str, SecretStr]) -> SecretStr:
+    "Convert a string to a SecretStr."
+    if isinstance(value, str):
+        return SecretStr(value)
+    return value
 
 
 class Tongyi(LLM):
