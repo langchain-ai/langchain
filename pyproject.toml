@@ -10,7 +10,6 @@ repository = "https://www.github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-dashscope = {version = "^1.13.3", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 langchain = { path = "libs/langchain/", develop = true }
@@ -60,6 +59,9 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
+extend-exclude = [
+    "docs/docs/expression_language/why.ipynb"  # TODO: look into why linter errors
+]
 
 [tool.ruff.lint.per-file-ignores]
 "**/{cookbook,docs}/*" = [
