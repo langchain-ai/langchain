@@ -285,13 +285,11 @@ class HuggingFacePipeline(BaseLLM):
         tok = self.pipeline.tokenizer
         inputs = tok([prompt], return_tensors="pt")
         inputs = inputs.to('cuda')
-        if "max_length" in self.pipeline._forward_params:
-            max_new_tokens = self.pipeline._forward_params["max_length"]
-        else:
-            max_new_tokens = 20
-
         
-        generation_kwargs = dict(inputs, streamer=streamer, max_new_tokens=max_new_tokens )
+        generation_kwargs = dict(
+            inputs, 
+            **self.pipeline._forward_params
+            )
         self.pipeline.model.to('cuda')
 
         # Start the generation in a separate thread
