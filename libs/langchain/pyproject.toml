@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.339rc1"
+version = "0.0.345"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,7 +12,7 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.0.4"
+langchain-core = ">=0.0.9,<0.1"
 pydantic = ">=1,<3"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
@@ -144,7 +144,11 @@ google-cloud-documentai = {version = "^2.20.1", optional = true}
 fireworks-ai = {version = "^0.6.0", optional = true, python = ">=3.9,<4.0"}
 javelin-sdk = {version = "^0.1.8", optional = true}
 hologres-vector = {version = "^0.0.6", optional = true}
-
+praw = {version = "^7.7.1", optional = true}
+msal = {version = "^1.25.0", optional = true}
+databricks-vectorsearch = {version = "^0.21", optional = true}
+dgml-utils = {version = "^0.3.0", optional = true}
+datasets = {version = "^2.15.0", optional = true}
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
@@ -164,7 +168,7 @@ pytest-mock  = "^3.10.0"
 pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
-
+langchain-core = {path = "../core", develop = true}
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -313,6 +317,7 @@ all = [
     "librosa",
     "python-arango",
     "hologres-vector",
+    "dgml-utils",
 ]
 
 cli = [
@@ -330,6 +335,7 @@ extended_testing = [
  "bibtexparser",
  "cassio",
  "chardet",
+ "datasets",
  "google-cloud-documentai",
  "esprima",
  "jq",
@@ -343,6 +349,7 @@ extended_testing = [
  "atlassian-python-api",
  "mwparserfromhell",
  "mwxml",
+ "msal",
  "pandas",
  "telethon",
  "psychicapi",
@@ -382,6 +389,10 @@ extended_testing = [
  "fireworks-ai",
  "javelin-sdk",
  "hologres-vector",
+ "praw",
+ "databricks-vectorsearch",
+ "dgml-utils",
+ "cohere",
 ]
 
 [tool.ruff]
