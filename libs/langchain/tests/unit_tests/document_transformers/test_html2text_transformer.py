@@ -9,7 +9,7 @@ from langchain.document_transformers import Html2TextTransformer
 def test_transform_empty_html() -> None:
     html2text_transformer = Html2TextTransformer()
     empty_html = "<html></html>"
-    documents = [Document(page_content=empty_html, metadata={"test": "test", "hello": "hello"})]
+    documents = [Document(page_content=empty_html)]
     docs_transformed = html2text_transformer.transform_documents(documents)
     assert docs_transformed[0].page_content == "\n\n"
 
