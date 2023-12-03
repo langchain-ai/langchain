@@ -876,5 +876,5 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "javelin-ai-gateway": _import_javelin_ai_gateway,
         "qianfan_endpoint": _import_baidu_qianfan_endpoint,
         "yandex_gpt": _import_yandex_gpt,
-        "VolcEngineMaasLLM": _import_volcengine_maas(),
+        "VolcEngineMaasLLM": _import_volcengine_maas,
     }

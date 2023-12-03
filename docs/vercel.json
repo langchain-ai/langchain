@@ -305,6 +305,10 @@
       "destination": "/docs/integrations/platforms/aws"
     },
     {
+      "source":  "/docs/integrations/providers/huggingface",
+      "destination": "/docs/integrations/platforms/huggingface"
+    },
+    {
       "source":  "/docs/integrations/providers/azure_blob_storage",
       "destination": "/docs/integrations/platforms/microsoft"
     },
@@ -487,6 +491,10 @@
     {
       "source": "/docs/integrations/providers/cassandra",
       "destination": "/docs/integrations/providers/astradb"
+    },
+    {
+      "source": "/docs/integrations/providers/providers/semadb",
+      "destination": "/docs/integrations/providers/semadb"
     },
     {
       "source": "/docs/integrations/vectorstores/vectorstores/semadb",
