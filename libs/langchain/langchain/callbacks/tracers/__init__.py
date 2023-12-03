@@ -9,10 +9,13 @@ from langchain_core.tracers.stdout import (
 
 from langchain.callbacks.tracers.wandb import WandbTracer
 
+from .logging import LoggingCallbackHandler
+
 __all__ = [
+    "ConsoleCallbackHandler",
+    "FunctionCallbackHandler",
+    "LoggingCallbackHandler",
     "LangChainTracer",
     "LangChainTracerV1",
-    "FunctionCallbackHandler",
-    "ConsoleCallbackHandler",
     "WandbTracer",
 ]
