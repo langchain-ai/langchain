@@ -120,13 +120,7 @@ class LLMOverREST(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        if stop is not None and len(stop) > 0 and len(self.generated_text_key) == 0:
-            raise ValueError(
-                "``stop`` argument cannot be honored if "
-                "``self.generated_text_key`` is None"
-            )
         json_body = self.json_body_creator(prompt, stop, self.model_kwargs)
-
         try:
             response_text = completion_with_retry(
                 llm=self, run_manager=run_manager, json_body=json_body
