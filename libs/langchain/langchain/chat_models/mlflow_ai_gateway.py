@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import warnings
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -59,6 +60,11 @@ class ChatMLflowAIGateway(BaseChatModel):
     """
 
     def __init__(self, **kwargs: Any):
+        warnings.warn(
+            "`ChatMLflowAIGateway` is deprecated. Use `ChatMlflow` or "
+            "`ChatDatabricks` instead.",
+            DeprecationWarning,
+        )
         try:
             import mlflow.gateway
         except ImportError as e:

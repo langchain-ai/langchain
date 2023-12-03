@@ -11,7 +11,7 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import (
     RunnableBranch,
     RunnableLambda,
-    RunnableMap,
+    RunnableParallel,
     RunnablePassthrough,
 )
 from langchain.vectorstores import Pinecone
@@ -108,7 +108,7 @@ _search_query = RunnableBranch(
     RunnableLambda(itemgetter("question")),
 )
 
-_inputs = RunnableMap(
+_inputs = RunnableParallel(
     {
         "question": lambda x: x["question"],
         "chat_history": lambda x: _format_chat_history(x["chat_history"]),

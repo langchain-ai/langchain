@@ -3,10 +3,10 @@ import warnings
 from typing import Any, Dict, Iterator, List, Optional
 
 import requests
+from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
 from typing_extensions import NotRequired, TypedDict
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser, BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.text_splitter import TextSplitter
