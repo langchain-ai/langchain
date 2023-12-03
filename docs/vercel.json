@@ -3617,10 +3617,6 @@
       "destination": "/docs/integrations/retrievers/:path*"
     },
     {
-      "source": "/docs/integrations/retrievers/bedrock",
-      "destination": "/docs/integrations/retrievers/amazon_bedrock_knowledge_bases"
-    },
-    {
       "source": "/docs/modules/data_connection/retrievers/integrations/:path*",
       "destination": "/docs/integrations/retrievers/:path*"
     },
