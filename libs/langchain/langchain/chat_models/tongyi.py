@@ -397,7 +397,9 @@ class ChatTongyi(BaseChatModel):
     def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
         creds: Dict[str, Any] = {
-            "api_key": self.dashscope_api_key.get_secret_value(),
+            "api_key": self.dashscope_api_key.get_secret_value()
+            if self.dashscope_api_key
+            else None
         }
         return {**self._default_params, **creds}
 
