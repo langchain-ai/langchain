@@ -11,7 +11,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
-    Union,
+    cast,
 )
 
 from langchain_core.messages import (
@@ -35,6 +35,7 @@ from langchain_core.outputs import (
     GenerationChunk,
 )
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
 from requests.exceptions import HTTPError
 from tenacity import (
     RetryCallState,
@@ -184,13 +185,6 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-def _to_secret(value: Union[str, SecretStr]) -> SecretStr:
-    """Convert a string to a SecretStr."""
-    if isinstance(value, SecretStr):
-        return value
-    return SecretStr(value)
-
-
 class ChatTongyi(BaseChatModel):
     """Alibaba Tongyi Qwen chat models API.
 
@@ -248,7 +242,7 @@ class ChatTongyi(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["dashscope_api_key"] = _to_secret(
+        values["dashscope_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "dashscope_api_key", "DASHSCOPE_API_KEY")
         )
         try:
@@ -397,9 +391,7 @@ class ChatTongyi(BaseChatModel):
     def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
         creds: Dict[str, Any] = {
-            "api_key": self.dashscope_api_key.get_secret_value()
-            if self.dashscope_api_key
-            else None
+            "api_key": cast(SecretStr, self.dashscope_api_key).get_secret_value()
         }
         return {**self._default_params, **creds}
 

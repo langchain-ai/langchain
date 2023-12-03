@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, cast
 
 from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -86,13 +87,6 @@ def stream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
     return _stream_generate_with_retry(**kwargs)
 
 
-def _to_secret(value: Union[str, SecretStr]) -> SecretStr:
-    "Convert a string to a SecretStr."
-    if isinstance(value, str):
-        return SecretStr(value)
-    return value
-
-
 class Tongyi(LLM):
     """Tongyi Qwen large language models.
 
@@ -147,7 +141,7 @@ class Tongyi(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["dashscope_api_key"] = _to_secret(
+        values["dashscope_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "dashscope_api_key", "DASHSCOPE_API_KEY")
         )
         try:
@@ -173,7 +167,7 @@ class Tongyi(LLM):
         """Get the default parameters for calling OpenAI API."""
         normal_params = {
             "top_p": self.top_p,
-            "api_key": self.dashscope_api_key.get_secret_value()
+            "api_key": cast(SecretStr, self.dashscope_api_key).get_secret_value()
             if self.dashscope_api_key
             else None,
         }
