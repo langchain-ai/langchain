@@ -1,13 +1,13 @@
 from typing import List, Optional
 
 import pytest
-from fake_embeddings import (
-    FakeEmbeddings,
-    fake_texts,
-)
 
 from langchain.docstore.document import Document
 from langchain.vectorstores import Yellowbrick
+from tests.integration_tests.vectorstores.fake_embeddings import (
+    FakeEmbeddings,
+    fake_texts,
+)
 
 YELLOWBRICK_URL = "postgres://username:password@host:port/database"
 YELLOWBRICK_TABLE = "test_table"
