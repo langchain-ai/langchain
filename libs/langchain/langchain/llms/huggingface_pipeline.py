@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import importlib
 import logging
-from typing import Any, List, Mapping, Optional, Iterator, AsyncIterator
+from typing import Any, AsyncIterator, List, Mapping, Optional
 
-from langchain_core.outputs import Generation, LLMResult, GenerationChunk
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Extra
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms.base import BaseLLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -81,7 +85,7 @@ class HuggingFacePipeline(BaseLLM):
             from transformers import (
                 AutoModelForCausalLM,
                 AutoModelForSeq2SeqLM,
-                AutoTokenizer
+                AutoTokenizer,
             )
             from transformers import pipeline as hf_pipeline
 
@@ -252,8 +256,9 @@ class HuggingFacePipeline(BaseLLM):
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         try:
-            from transformers import TextIteratorStreamer
             from threading import Thread
+
+            from transformers import TextIteratorStreamer
 
         except ImportError:
             raise ImportError(
@@ -280,7 +285,7 @@ class HuggingFacePipeline(BaseLLM):
                 "Could not get TextIteratorStreamer from pipeline. "
                 "Please check your pipeline."
             ) from e
-        
+
         # Prepare the inputs for the model
         tok = self.pipeline.tokenizer
         inputs = tok([prompt], return_tensors="pt")
