@@ -305,6 +305,10 @@
       "destination": "/docs/integrations/platforms/aws"
     },
     {
+      "source":  "/docs/integrations/providers/huggingface",
+      "destination": "/docs/integrations/platforms/huggingface"
+    },
+    {
       "source":  "/docs/integrations/providers/azure_blob_storage",
       "destination": "/docs/integrations/platforms/microsoft"
     },
