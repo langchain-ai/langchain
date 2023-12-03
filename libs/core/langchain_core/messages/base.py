@@ -86,7 +86,7 @@ class BaseMessageChunk(BaseMessage):
         for k, v in right.items():
             if k not in merged:
                 merged[k] = v
-            elif merged[k] is None:
+            elif merged[k] is None and v:
                 merged[k] = v
             elif type(merged[k]) != type(v):
                 raise ValueError(

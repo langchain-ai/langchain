@@ -32,6 +32,8 @@ if TYPE_CHECKING:
         PredictionServiceAsyncClient,
         PredictionServiceClient,
     )
+    from google.cloud.aiplatform.models import Prediction
+    from google.protobuf.struct_pb2 import Value
     from vertexai.language_models._language_models import (
         TextGenerationResponse,
         _LanguageModel,
@@ -157,6 +159,7 @@ class _VertexAIBase(BaseModel):
 
 class _VertexAICommon(_VertexAIBase):
     client: "_LanguageModel" = None  #: :meta private:
+    client_preview: "_LanguageModel" = None  #: :meta private:
     model_name: str
     "Underlying model name."
     temperature: float = 0.0
@@ -193,19 +196,19 @@ class _VertexAICommon(_VertexAIBase):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        if self.is_codey_model:
-            return {
-                "temperature": self.temperature,
-                "max_output_tokens": self.max_output_tokens,
-            }
-        else:
-            return {
-                "temperature": self.temperature,
-                "max_output_tokens": self.max_output_tokens,
-                "top_k": self.top_k,
-                "top_p": self.top_p,
-                "candidate_count": self.n,
-            }
+        params = {
+            "temperature": self.temperature,
+            "max_output_tokens": self.max_output_tokens,
+            "candidate_count": self.n,
+        }
+        if not self.is_codey_model:
+            params.update(
+                {
+                    "top_k": self.top_k,
+                    "top_p": self.top_p,
+                }
+            )
+        return params
 
     @classmethod
     def _try_init_vertexai(cls, values: Dict) -> None:
@@ -248,24 +251,33 @@ class VertexAI(_VertexAICommon, BaseLLM):
         tuned_model_name = values.get("tuned_model_name")
         model_name = values["model_name"]
         try:
-            if not is_codey_model(model_name):
-                from vertexai.preview.language_models import TextGenerationModel
+            from vertexai.language_models import (
+                CodeGenerationModel,
+                TextGenerationModel,
+            )
+            from vertexai.preview.language_models import (
+                CodeGenerationModel as PreviewCodeGenerationModel,
+            )
+            from vertexai.preview.language_models import (
+                TextGenerationModel as PreviewTextGenerationModel,
+            )
 
-                if tuned_model_name:
-                    values["client"] = TextGenerationModel.get_tuned_model(
-                        tuned_model_name
-                    )
-                else:
-                    values["client"] = TextGenerationModel.from_pretrained(model_name)
+            if is_codey_model(model_name):
+                model_cls = CodeGenerationModel
+                preview_model_cls = PreviewCodeGenerationModel
             else:
-                from vertexai.preview.language_models import CodeGenerationModel
+                model_cls = TextGenerationModel
+                preview_model_cls = PreviewTextGenerationModel
 
-                if tuned_model_name:
-                    values["client"] = CodeGenerationModel.get_tuned_model(
-                        tuned_model_name
-                    )
-                else:
-                    values["client"] = CodeGenerationModel.from_pretrained(model_name)
+            if tuned_model_name:
+                values["client"] = model_cls.get_tuned_model(tuned_model_name)
+                values["client_preview"] = preview_model_cls.get_tuned_model(
+                    tuned_model_name
+                )
+            else:
+                values["client"] = model_cls.from_pretrained(model_name)
+                values["client_preview"] = preview_model_cls.from_pretrained(model_name)
+
         except ImportError:
             raise_vertex_import_error()
 
@@ -285,12 +297,9 @@ class VertexAI(_VertexAICommon, BaseLLM):
             The integer number of tokens in the text.
         """
         try:
-            result = self.client.count_tokens([text])
+            result = self.client_preview.count_tokens([text])
         except AttributeError:
-            raise NotImplementedError(
-                "Your google-cloud-aiplatform version didn't implement count_tokens."
-                "Please, install it with pip install google-cloud-aiplatform>=1.35.0"
-            )
+            raise_vertex_import_error()
 
         return result.total_tokens
 
@@ -317,12 +326,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 res = completion_with_retry(
                     self, prompt, run_manager=run_manager, **params
                 )
-                if self.is_codey_model:
-                    generations.append([_response_to_generation(res)])
-                else:
-                    generations.append(
-                        [_response_to_generation(r) for r in res.candidates]
-                    )
+                generations.append([_response_to_generation(r) for r in res.candidates])
         return LLMResult(generations=generations)
 
     async def _agenerate(
@@ -370,9 +374,11 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     endpoint_id: str
     "A name of an endpoint where the model has been deployed."
     allowed_model_args: Optional[List[str]] = None
-    """Allowed optional args to be passed to the model."""
+    "Allowed optional args to be passed to the model."
     prompt_arg: str = "prompt"
-    result_arg: str = "generated_text"
+    result_arg: Optional[str] = "generated_text"
+    "Set result_arg to None if output of the model is expected to be a string."
+    "Otherwise, if it's a dict, provided an argument that contains the result."
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -386,7 +392,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         except ImportError:
             raise_vertex_import_error()
 
-        if values["project"] is None:
+        if not values["project"]:
             raise ValueError(
                 "A GCP project should be provided to run inference on Model Garden!"
             )
@@ -404,8 +410,41 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         return values
 
     @property
+    def endpoint_path(self) -> str:
+        return self.client.endpoint_path(
+            project=self.project,
+            location=self.location,
+            endpoint=self.endpoint_id,
+        )
+
+    @property
     def _llm_type(self) -> str:
         return "vertexai_model_garden"
+
+    def _prepare_request(self, prompts: List[str], **kwargs: Any) -> List["Value"]:
+        try:
+            from google.protobuf import json_format
+            from google.protobuf.struct_pb2 import Value
+        except ImportError:
+            raise ImportError(
+                "protobuf package not found, please install it with"
+                " `pip install protobuf`"
+            )
+        instances = []
+        for prompt in prompts:
+            if self.allowed_model_args:
+                instance = {
+                    k: v for k, v in kwargs.items() if k in self.allowed_model_args
+                }
+            else:
+                instance = {}
+            instance[self.prompt_arg] = prompt
+            instances.append(instance)
+
+        predict_instances = [
+            json_format.ParseDict(instance_dict, Value()) for instance_dict in instances
+        ]
+        return predict_instances
 
     def _generate(
         self,
@@ -415,40 +454,42 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        try:
-            from google.protobuf import json_format
-            from google.protobuf.struct_pb2 import Value
-        except ImportError:
-            raise ImportError(
-                "protobuf package not found, please install it with"
-                " `pip install protobuf`"
-            )
+        instances = self._prepare_request(prompts, **kwargs)
+        response = self.client.predict(endpoint=self.endpoint_path, instances=instances)
+        return self._parse_response(response)
 
-        instances = []
-        for prompt in prompts:
-            if self.allowed_model_args:
-                instance = {
-                    k: v for k, v in kwargs.items() if k in self.allowed_model_args
-                }
-            else:
-                instance = {}
-            instance[self.prompt_arg] = prompt
-            instances.append(instance)
-
-        predict_instances = [
-            json_format.ParseDict(instance_dict, Value()) for instance_dict in instances
-        ]
-
-        endpoint = self.client.endpoint_path(
-            project=self.project, location=self.location, endpoint=self.endpoint_id
-        )
-        response = self.client.predict(endpoint=endpoint, instances=predict_instances)
+    def _parse_response(self, predictions: "Prediction") -> LLMResult:
         generations: List[List[Generation]] = []
-        for result in response.predictions:
+        for result in predictions.predictions:
             generations.append(
-                [Generation(text=prediction[self.result_arg]) for prediction in result]
+                [
+                    Generation(text=self._parse_prediction(prediction))
+                    for prediction in result
+                ]
             )
         return LLMResult(generations=generations)
+
+    def _parse_prediction(self, prediction: Any) -> str:
+        if isinstance(prediction, str):
+            return prediction
+
+        if self.result_arg:
+            try:
+                return prediction[self.result_arg]
+            except KeyError:
+                if isinstance(prediction, str):
+                    error_desc = (
+                        "Provided non-None `result_arg` (result_arg="
+                        f"{self.result_arg}). But got prediction of type "
+                        f"{type(prediction)} instead of dict. Most probably, you"
+                        "need to set `result_arg=None` during VertexAIModelGarden "
+                        "initialization."
+                    )
+                    raise ValueError(error_desc)
+                else:
+                    raise ValueError(f"{self.result_arg} key not found in prediction!")
+
+        return prediction
 
     async def _agenerate(
         self,
@@ -458,39 +499,8 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        try:
-            from google.protobuf import json_format
-            from google.protobuf.struct_pb2 import Value
-        except ImportError:
-            raise ImportError(
-                "protobuf package not found, please install it with"
-                " `pip install protobuf`"
-            )
-
-        instances = []
-        for prompt in prompts:
-            if self.allowed_model_args:
-                instance = {
-                    k: v for k, v in kwargs.items() if k in self.allowed_model_args
-                }
-            else:
-                instance = {}
-            instance[self.prompt_arg] = prompt
-            instances.append(instance)
-
-        predict_instances = [
-            json_format.ParseDict(instance_dict, Value()) for instance_dict in instances
-        ]
-
-        endpoint = self.async_client.endpoint_path(
-            project=self.project, location=self.location, endpoint=self.endpoint_id
-        )
+        instances = self._prepare_request(prompts, **kwargs)
         response = await self.async_client.predict(
-            endpoint=endpoint, instances=predict_instances
+            endpoint=self.endpoint_path, instances=instances
         )
-        generations: List[List[Generation]] = []
-        for result in response.predictions:
-            generations.append(
-                [Generation(text=prediction[self.result_arg]) for prediction in result]
-            )
-        return LLMResult(generations=generations)
+        return self._parse_response(response)
