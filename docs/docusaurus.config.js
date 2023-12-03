@@ -238,6 +238,10 @@ const config = {
                 label: "Templates GitHub",
               },
               {
+                label: "Templates Hub",
+                href: "https://templates.langchain.com",
+              },
+              {
                 href: "https://smith.langchain.com/hub",
                 label: "LangChain Hub",
               },
