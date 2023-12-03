@@ -493,6 +493,10 @@
       "destination": "/docs/integrations/providers/astradb"
     },
     {
+      "source": "/docs/integrations/providers/providers/semadb",
+      "destination": "/docs/integrations/providers/semadb"
+    },
+    {
       "source": "/docs/integrations/vectorstores/vectorstores/semadb",
       "destination": "/docs/integrations/vectorstores/semadb"
     },
