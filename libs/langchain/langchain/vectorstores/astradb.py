@@ -118,7 +118,7 @@ class AstraDB(VectorStore):
       (specifically, how often a write is an update of an existing id).
       Remember you can pass concurrency settings to individual calls to
       add_texts and add_documents as well.
-      """
+    """
 
     @staticmethod
     def _filter_to_metadata(filter_dict: Optional[Dict[str, str]]) -> Dict[str, Any]:
