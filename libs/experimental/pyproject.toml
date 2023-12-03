@@ -10,6 +10,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
+langchain-core = ">=0.0.7,<0.1"
 langchain = ">=0.0.342,<0.1"
 presidio-anonymizer = {version = "^2.2.33", optional = true}
 presidio-analyzer = {version = "^2.2.33", optional = true}

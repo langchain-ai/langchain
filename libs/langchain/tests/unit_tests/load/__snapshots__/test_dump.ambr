@@ -57,6 +57,9 @@
   }
   '''
 # ---
+# name: test_person_with_kwargs
+  '{"lc":1,"type":"constructor","id":["tests","unit_tests","load","test_dump","Person"],"kwargs":{"secret":{"lc":1,"type":"secret","id":["SECRET"]},"you_can_see_me":"hello"}}'
+# ---
 # name: test_serialize_llmchain
   '''
   {

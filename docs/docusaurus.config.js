@@ -26,6 +26,11 @@ const config = {
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "throw",
 
+  themes: ["@docusaurus/theme-mermaid"],
+  markdown: {
+    mermaid: true,
+  },
+
   plugins: [
     () => ({
       name: "custom-webpack-config",
