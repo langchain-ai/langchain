@@ -43,8 +43,7 @@ class Html2TextTransformer(BaseDocumentTransformer):
 
         for d in documents:
             new_document = Document(
-                page_content=h.handle(d.page_content),
-                metadata={**d.metadata}
+                page_content=h.handle(d.page_content), metadata={**d.metadata}
             )
             new_documents.append(new_document)
         return new_documents

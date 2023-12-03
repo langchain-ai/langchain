@@ -81,19 +81,20 @@ def test_ignore_links() -> None:
         "First paragraph with an [example](http://example.com)\n\n"
     )
 
-    html2text_transformer_with_ignore_links = Html2TextTransformer(ignore_links=True)
-    docs_transformed = html2text_transformer_with_ignore_links.transform_documents(documents)
+    html2text_transformer = Html2TextTransformer(ignore_links=True)
+    docs_transformed = html2text_transformer.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "# First heading.\n\n"
-        "First paragraph with an example\n\n"
+        "# First heading.\n\n" "First paragraph with an example\n\n"
     )
+
 
 @pytest.mark.requires("html2text")
 def test_ignore_images() -> None:
     html2text_transformer = Html2TextTransformer(ignore_images=False)
     multiple_tags_html = (
         "<h1>First heading.</h1>"
-        "<p>First paragraph with an <img src='example.jpg' alt='Example image' width='500' height='600'></p>"
+        "<p>First paragraph with an "
+        "<img src='example.jpg' alt='Example image' width='500' height='600'></p>"
     )
     documents = [Document(page_content=multiple_tags_html)]
 
@@ -106,7 +107,5 @@ def test_ignore_images() -> None:
     html2text_transformer = Html2TextTransformer(ignore_images=True)
     docs_transformed = html2text_transformer.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "# First heading.\n\n"
-        "First paragraph with an\n\n"
+        "# First heading.\n\n" "First paragraph with an\n\n"
     )
-
