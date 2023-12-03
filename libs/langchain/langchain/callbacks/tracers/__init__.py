@@ -9,7 +9,7 @@ from langchain_core.tracers.stdout import (
 
 from langchain.callbacks.tracers.wandb import WandbTracer
 
-from .logging import LoggingCallbackHandler
+from langchain.callbacks.tracers.logging import LoggingCallbackHandler
 
 __all__ = [
     "ConsoleCallbackHandler",
