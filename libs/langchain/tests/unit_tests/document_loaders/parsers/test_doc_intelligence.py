@@ -6,7 +6,7 @@ import pytest
 from langchain.document_loaders.parsers import DocumentIntelligenceParser
 
 
-@pytest.mark.requires("azure.ai", "azure.ai.documentintelligence")
+@pytest.mark.requires("azure", "azure.ai", "azure.ai.documentintelligence")
 @patch("azure.ai.documentintelligence.DocumentIntelligenceClient")
 @patch("azure.core.credentials.AzureKeyCredential")
 def test_doc_intelligence(mock_credential, mock_client) -> None:
