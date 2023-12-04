@@ -103,7 +103,7 @@ def multi_modal_rag_chain(retriever):
 # Load chroma
 vectorstore_mmembd = Chroma(
     collection_name="multi-modal-rag",
-    persist_directory=Path(__file__).parent / "chroma_db_multi_modal",
+    persist_directory=str(Path(__file__).parent / "chroma_db_multi_modal"),
     embedding_function=OpenCLIPEmbeddings(
         model_name="ViT-H-14", checkpoint="laion2b_s32b_b79k"
     ),

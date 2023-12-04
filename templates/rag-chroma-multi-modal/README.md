@@ -14,7 +14,7 @@ Supply a slide deck as pdf in the `/docs` directory.
 Create your vectorstore with: 
 
 ```
-python rag_chroma_mutli_modal/ingest.py
+python rag_chroma_multi_modal/ingest.py
 ```
 
 ## Embeddings
