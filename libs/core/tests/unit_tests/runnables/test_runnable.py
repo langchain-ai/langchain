@@ -4187,3 +4187,51 @@ async def test_ainvoke_astream_passthrough_assign_trace() -> None:
 
     assert tracer.runs[0].name == "RunnableAssign"
     assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+
+async def test_astream_log_copying_data() -> None:
+    """Test a astream log."""
+
+    def _get_run_log(run_log_patches: Sequence[RunLogPatch]) -> RunLog:
+        """Get run log"""
+        run_log = RunLog(state=None)  # type: ignore
+        for log_patch in run_log_patches:
+            run_log = run_log + log_patch
+        return run_log
+
+    def add_one(x: int) -> int:
+        """Add one."""
+        return x + 1
+
+    chain = RunnableLambda(add_one)
+    chunks = []
+    final_output = None
+    async for chunk in chain.astream_log(1):
+        chunks.append(chunk)
+        if final_output is None:
+            final_output = chunk
+        else:
+            final_output = final_output + chunk
+
+    run_log = _get_run_log(chunks)
+    state = run_log.state.copy()
+    state.pop("id")
+    assert state == {
+        "final_output": 2,
+        "logs": {},
+        "streamed_output": [2],
+    }
+
+
+def test_foo():
+    import jsonpatch
+
+    a = {"a": "a"}
+    b = {"b": "b", "a": "a"}
+    c = {"b": "b", "a": "a", "c": {"1": "1"}}
+
+    state = {}
+
+    for op in jsonpatch.JsonPatch.from_diff({"a": 5}, {"a": 5, "c": c}):
+        raise ValueError(op)
+        raise ValueError(f'{id(c)} {id(op["value"])}')
