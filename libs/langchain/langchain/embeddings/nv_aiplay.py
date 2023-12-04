@@ -45,7 +45,7 @@ class NVAIPlayEmbeddings(ClientModel, Embeddings):
         """Input pathway for document embeddings."""
         return [self._embed(text, model_type="passage") for text in texts]
 
-    async def aembed_batch_query(
+    async def aembed_batch_queries(
         self,
         texts: List[str],
         max_concurrency: int = 10,
