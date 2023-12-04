@@ -521,6 +521,7 @@ class Weaviate(VectorStore):
             embedding=embedding,
             attributes=attributes,
             relevance_score_fn=relevance_score_fn,
+            by_text=by_text,
             **kwargs,
         )
 
