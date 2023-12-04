@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-from os import PathLike
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import requests
@@ -375,7 +374,7 @@ class GitHubAPIWrapper(BaseModel):
             "opened_by": str(opened_by),
         }
 
-    def list_pull_request_files(self, pr_number: int) -> Dict[str, Any]:
+    def list_pull_request_files(self, pr_number: int) -> List[Dict[str, Any]]:
         """Fetches the full text of all files in a PR. Truncates after first 3k tokens.
         # TODO: Enhancement to summarize files with ctags if they're getting long.
 
@@ -593,7 +592,7 @@ class GitHubAPIWrapper(BaseModel):
         except Exception as e:
             return "Unable to make file due to error:\n" + str(e)
 
-    def read_file(self, file_path: PathLike) -> str:
+    def read_file(self, file_path: str) -> str:
         """
         Read a file from this agent's branch, defined by self.active_branch,
         which supports PR branches.
@@ -638,7 +637,7 @@ class GitHubAPIWrapper(BaseModel):
                 "Please create a new branch and try again."
             )
         try:
-            file_path: PathLike[str] = file_query.split("\n")[0]
+            file_path: str = file_query.split("\n")[0]
             old_file_contents = (
                 file_query.split("OLD <<<<")[1].split(">>>> OLD")[0].strip()
             )
