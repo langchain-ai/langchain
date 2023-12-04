@@ -1,5 +1,5 @@
 import time
-from typing import Any, Callable, List
+from typing import Any, Callable, List, cast
 
 from langchain.prompts.chat import (
     BaseChatPromptTemplate,
@@ -68,9 +68,9 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):  # type: ignore[misc]
         time_prompt = SystemMessage(
             content=f"The current time and date is {time.strftime('%c')}"
         )
-        used_tokens = self.token_counter(base_prompt.content) + self.token_counter(
-            time_prompt.content
-        )
+        used_tokens = self.token_counter(
+            cast(str, base_prompt.content)
+        ) + self.token_counter(cast(str, time_prompt.content))
         memory: VectorStoreRetriever = kwargs["memory"]
         previous_messages = kwargs["messages"]
         relevant_docs = memory.get_relevant_documents(str(previous_messages[-10:]))
@@ -88,7 +88,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):  # type: ignore[misc]
             f"from your past:\n{relevant_memory}\n\n"
         )
         memory_message = SystemMessage(content=content_format)
-        used_tokens += self.token_counter(memory_message.content)
+        used_tokens += self.token_counter(cast(str, memory_message.content))
         historical_messages: List[BaseMessage] = []
         for message in previous_messages[-10:][::-1]:
             message_tokens = self.token_counter(message.content)

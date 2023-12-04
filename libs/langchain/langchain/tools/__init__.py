@@ -338,6 +338,12 @@ def _import_metaphor_search() -> Any:
     return MetaphorSearchResults
 
 
+def _import_nasa_tool() -> Any:
+    from langchain.tools.nasa.tool import NasaAction
+
+    return NasaAction
+
+
 def _import_office365_create_draft_message() -> Any:
     from langchain.tools.office365.create_draft_message import O365CreateDraftMessage
 
@@ -534,6 +540,12 @@ def _import_requests_tool_RequestsPutTool() -> Any:
     return RequestsPutTool
 
 
+def _import_steam_webapi_tool() -> Any:
+    from langchain.tools.steam.tool import SteamWebAPIQueryRun
+
+    return SteamWebAPIQueryRun
+
+
 def _import_scenexplain_tool() -> Any:
     from langchain.tools.scenexplain.tool import SceneXplainTool
 
@@ -556,6 +568,30 @@ def _import_shell_tool() -> Any:
     from langchain.tools.shell.tool import ShellTool
 
     return ShellTool
+
+
+def _import_slack_get_channel() -> Any:
+    from langchain.tools.slack.get_channel import SlackGetChannel
+
+    return SlackGetChannel
+
+
+def _import_slack_get_message() -> Any:
+    from langchain.tools.slack.get_message import SlackGetMessage
+
+    return SlackGetMessage
+
+
+def _import_slack_schedule_message() -> Any:
+    from langchain.tools.slack.schedule_message import SlackScheduleMessage
+
+    return SlackScheduleMessage
+
+
+def _import_slack_send_message() -> Any:
+    from langchain.tools.slack.send_message import SlackSendMessage
+
+    return SlackSendMessage
 
 
 def _import_sleep_tool() -> Any:
@@ -801,6 +837,8 @@ def __getattr__(name: str) -> Any:
         return _import_merriam_webster_tool()
     elif name == "MetaphorSearchResults":
         return _import_metaphor_search()
+    elif name == "NasaAction":
+        return _import_nasa_tool()
     elif name == "O365CreateDraftMessage":
         return _import_office365_create_draft_message()
     elif name == "O365SearchEvents":
@@ -863,6 +901,8 @@ def __getattr__(name: str) -> Any:
         return _import_requests_tool_RequestsPostTool()
     elif name == "RequestsPutTool":
         return _import_requests_tool_RequestsPutTool()
+    elif name == "SteamWebAPIQueryRun":
+        return _import_steam_webapi_tool()
     elif name == "SceneXplainTool":
         return _import_scenexplain_tool()
     elif name == "SearxSearchResults":
@@ -871,6 +911,14 @@ def __getattr__(name: str) -> Any:
         return _import_searx_search_tool_SearxSearchRun()
     elif name == "ShellTool":
         return _import_shell_tool()
+    elif name == "SlackGetChannel":
+        return _import_slack_get_channel
+    elif name == "SlackGetMessage":
+        return _import_slack_get_message
+    elif name == "SlackScheduleMessage":
+        return _import_slack_schedule_message
+    elif name == "SlackSendMessage":
+        return _import_slack_send_message
     elif name == "SleepTool":
         return _import_sleep_tool()
     elif name == "BaseSparkSQLTool":
@@ -990,6 +1038,7 @@ __all__ = [
     "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
     "MoveFileTool",
+    "NasaAction",
     "NavigateBackTool",
     "NavigateTool",
     "O365CreateDraftMessage",
@@ -1012,10 +1061,15 @@ __all__ = [
     "RequestsPatchTool",
     "RequestsPostTool",
     "RequestsPutTool",
+    "SteamWebAPIQueryRun",
     "SceneXplainTool",
     "SearxSearchResults",
     "SearxSearchRun",
     "ShellTool",
+    "SlackGetChannel",
+    "SlackGetMessage",
+    "SlackScheduleMessage",
+    "SlackSendMessage",
     "SleepTool",
     "StdInInquireTool",
     "StackExchangeTool",

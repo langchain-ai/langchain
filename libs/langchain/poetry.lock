@@ -1663,6 +1663,40 @@ test = ["pytest"]
 typing = ["mypy (>=0.990)"]
 
 [[package]]
+name = "couchbase"
+version = "4.1.9"
+description = "Python Client for Couchbase"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "couchbase-4.1.9-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:f36f65d5ea66ebebe8f9055feb44c72b60b64b8c466ee177c7eaf6d97b71b41a"},
+    {file = "couchbase-4.1.9-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:b750cb641a44084137444e86ba2cf596e713dceaaa8dcd4a09c370ddd5e3bca2"},
+    {file = "couchbase-4.1.9-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:371f4c5e00965d6579e98cd6e49eb8543e3aeabb64d9ac41dae5b85c831faed4"},
+    {file = "couchbase-4.1.9-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:cfe53bfa29d72d5fa921554408ff7fada301e4641b652f2551060ebd3d1cc096"},
+    {file = "couchbase-4.1.9-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:d675d0d862eae34ebedd09e4f40e26ac0092ea0dca93520616cd68d195a1fb3a"},
+    {file = "couchbase-4.1.9-cp310-cp310-win_amd64.whl", hash = "sha256:c8adc08a70cbe5e1b1e0e45ebbb4ea5879b3f1aba64d09770d6e35a760201609"},
+    {file = "couchbase-4.1.9-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:8f3e16fedb2dd79dba81df5eb1fb6e493ee720ef12be5a2699ac540955775647"},
+    {file = "couchbase-4.1.9-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:8bb93e17304499fb9b6972efe8a75ea156a097eed983b4802a478ad6cef500b3"},
+    {file = "couchbase-4.1.9-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:85da68da9efd5ed35d031a5725744ee36653f940ad16c252d9927f481581366c"},
+    {file = "couchbase-4.1.9-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:e04f014a8990c89195689af4d332028a6769b45221d861778c079e9f67184e6e"},
+    {file = "couchbase-4.1.9-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:50db238605620ca1a2f4ed36f7820a2d61323a8a425986fd3caf1d9be4eb7f46"},
+    {file = "couchbase-4.1.9-cp311-cp311-win_amd64.whl", hash = "sha256:ba9312755c88d39d86cae7ba11c15a6255d8afe5c552bbc1e2f6b66c880bd08e"},
+    {file = "couchbase-4.1.9-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:17bdf8db3721e4f7c54b7e50db16fa6c65733d45cfd6c3bf50cd80a7f1672ea8"},
+    {file = "couchbase-4.1.9-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:a2fb14336b78843691a9f007fbbd0c33959ea4ae4e323112614673601772fb84"},
+    {file = "couchbase-4.1.9-cp38-cp38-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:3af36a4b25f948a4dd1a349ba5ddfa87a228cbdfbb8228a5045e187849392857"},
+    {file = "couchbase-4.1.9-cp38-cp38-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:f1a6d03fb4fc76aedeede7a55f957936863256b654ce38f05a508925cbd1c713"},
+    {file = "couchbase-4.1.9-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:454c46c9fb6e485f1aba53f64a4b794e2146db480ccd32eaa80b2bba0f53895e"},
+    {file = "couchbase-4.1.9-cp38-cp38-win_amd64.whl", hash = "sha256:4c35c2ef600677121b95540c8e78bb43ce5d18cafd49036ea256643ed00ac042"},
+    {file = "couchbase-4.1.9-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:40bebe809042efceae95fba8d2a1f0bfecd144c090cf638d8283e038ffea6f19"},
+    {file = "couchbase-4.1.9-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:f9e956b6580baf4365c4a1b4e22622dc0948447f5ce106d24ed59532302b164f"},
+    {file = "couchbase-4.1.9-cp39-cp39-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:150916388ee2813d242de014fb3ad5e259103e5cd0f1ce600280cc1c11732980"},
+    {file = "couchbase-4.1.9-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:bf2d1fc8fe22f6e3e4b5e41c7fc367a3a4537dd272a26859f01796724d2ae977"},
+    {file = "couchbase-4.1.9-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:9d9ffbb6897a3e68193a8611032230e5d520ae07ae74923305acf8670eb5281b"},
+    {file = "couchbase-4.1.9-cp39-cp39-win_amd64.whl", hash = "sha256:b11ff93f4b5da9437fdfb384943dfbf0dac054394d30d21b5e50852dc1d27d2a"},
+    {file = "couchbase-4.1.9.tar.gz", hash = "sha256:ee476c5e5b420610e5f4ce778b8c6c7a513f9f4dd4b57fe25000e94ad6eefb9e"},
+]
+
+[[package]]
 name = "coverage"
 version = "7.3.2"
 description = "Code coverage measurement for Python"
@@ -3282,6 +3316,22 @@ files = [
 numpy = "*"
 
 [[package]]
+name = "hologres-vector"
+version = "0.0.6"
+description = ""
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "hologres_vector-0.0.6-py3-none-any.whl", hash = "sha256:c506eaafd9ae8c529955605fae71856e95191a64dde144d0a25b06536e6544a4"},
+    {file = "hologres_vector-0.0.6.tar.gz", hash = "sha256:13251b74bcb9ef2af61cc39c6f155e16452e03891c2f0a07f708f0157baf7b08"},
+]
+
+[package.dependencies]
+psycopg2-binary = "*"
+typing = "*"
+uuid = "*"
+
+[[package]]
 name = "hpack"
 version = "4.0.0"
 description = "Pure-Python HPACK header compression"
@@ -4236,7 +4286,7 @@ tests = ["pandas (>=1.4)", "pytest", "pytest-asyncio", "pytest-mock"]
 
 [[package]]
 name = "langchain-core"
-version = "0.0.8"
+version = "0.0.9"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -10453,6 +10503,17 @@ files = [
 ]
 
 [[package]]
+name = "typing"
+version = "3.7.4.3"
+description = "Type Hints for Python"
+optional = true
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+files = [
+    {file = "typing-3.7.4.3-py2-none-any.whl", hash = "sha256:283d868f5071ab9ad873e5e52268d611e851c870a2ba354193026f2dfb29d8b5"},
+    {file = "typing-3.7.4.3.tar.gz", hash = "sha256:1187fb9c82fd670d10aa07bbb6cfcfe4bdda42d6fab8d5134f04e8c4d0b71cc9"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.8.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -10582,6 +10643,16 @@ files = [
 brotli = ["brotli (==1.0.9)", "brotli (>=1.0.9)", "brotlicffi (>=0.8.0)", "brotlipy (>=0.6.0)"]
 secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress", "pyOpenSSL (>=0.14)", "urllib3-secure-extra"]
 socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
+
+[[package]]
+name = "uuid"
+version = "1.30"
+description = "UUID object and generation functions (Python 2.3 or higher)"
+optional = true
+python-versions = "*"
+files = [
+    {file = "uuid-1.30.tar.gz", hash = "sha256:1f87cc004ac5120466f36c5beae48b4c48cc411968eed0eaecd3da82aa96193f"},
+]
 
 [[package]]
 name = "validators"
@@ -11431,14 +11502,14 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "amadeus", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-textanalytics", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "dgml-utils", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jinja2", "jq", "lancedb", "langkit", "lark", "librosa", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "python-arango", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["O365", "aleph-alpha-client", "amadeus", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-textanalytics", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "dgml-utils", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "hologres-vector", "html2text", "huggingface_hub", "jinja2", "jq", "lancedb", "langkit", "lark", "librosa", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "python-arango", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-ai-formrecognizer", "azure-ai-textanalytics", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "azure-search-documents", "openai"]
 clarifai = ["clarifai"]
 cli = ["typer"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "dashvector", "databricks-vectorsearch", "datasets", "dgml-utils", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "html2text", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-pydantic", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict"]
+extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "couchbase", "dashvector", "databricks-vectorsearch", "datasets", "dgml-utils", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "hologres-vector", "html2text", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-pydantic", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -11448,4 +11519,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "20041f6228e201d2ebc881c62e7505259c029c20c1171f057cc67e4cf5691850"
+content-hash = "f4791327aca4bf3db1b46731d987347b537e638a1be85b2a6a771e52f95d3f29"
