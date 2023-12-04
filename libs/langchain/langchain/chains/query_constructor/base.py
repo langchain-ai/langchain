@@ -116,7 +116,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
 
 
 class VirtualColumnParser(
-    RunnableSerializable[FilterDirective, Optional[FilterDirective]]
+    RunnableSerializable[StructuredQuery, StructuredQuery]
 ):
     """Virtual Column Parser which is compatible with LCEL"""
 
