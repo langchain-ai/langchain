@@ -18,7 +18,6 @@ class CohereEmbeddings(BaseModel, Embeddings):
             from langchain.embeddings import CohereEmbeddings
             cohere = CohereEmbeddings(
                 model="embed-english-light-v3.0",
-                input_type="search_document",
                 cohere_api_key="my-api-key"
             )
     """
@@ -29,23 +28,6 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """Cohere async client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
-    input_type: Optional[str] = None
-    """
-    This applies to embed v3 models only.
-
-    input_type="search_document": Use this for texts (documents) you want to
-    store in your vector database
-    input_type="search_query": Use this for search queries to find the most
-    relevant documents in your vector database
-    input_type="classification": Use this if you use the embeddings as an input
-    for a classification system
-    input_type="clustering": Use this if you use the embeddings for text
-    clustering
-
-    Using these input types ensures the highest possible quality for the
-    respective tasks. If you want to use the embeddings for multiple use
-    cases, we recommend using input_type="search_document".
-    """
 
     truncate: Optional[str] = None
     """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
@@ -96,8 +78,30 @@ class CohereEmbeddings(BaseModel, Embeddings):
             )
         return values
 
+    def embed(
+        self, texts: List[str], *, input_type: Optional[str] = None
+    ) -> List[List[float]]:
+        embeddings = self.client.embed(
+            model=self.model,
+            texts=texts,
+            input_type=input_type,
+            truncate=self.truncate,
+        ).embeddings
+        return [list(map(float, e)) for e in embeddings]
+
+    async def aembed(
+        self, texts: List[str], *, input_type: Optional[str] = None
+    ) -> List[List[float]]:
+        embeddings = await self.async_client.embed(
+            model=self.model,
+            texts=texts,
+            input_type=input_type,
+            truncate=self.truncate,
+        ).embeddings
+        return [list(map(float, e)) for e in embeddings]
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Call out to Cohere's embedding endpoint.
+        """Embed a list of document texts.
 
         Args:
             texts: The list of texts to embed.
@@ -105,13 +109,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = self.client.embed(
-            model=self.model,
-            texts=texts,
-            input_type=self.input_type or "search_document",
-            truncate=self.truncate,
-        ).embeddings
-        return [list(map(float, e)) for e in embeddings]
+        return self.embed(texts, input_type="search_document")
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Async call out to Cohere's embedding endpoint.
@@ -122,13 +120,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = await self.async_client.embed(
-            model=self.model,
-            texts=texts,
-            input_type=self.input_type or "search_document",
-            truncate=self.truncate,
-        )
-        return [list(map(float, e)) for e in embeddings.embeddings]
+        return await self.aembed(texts, input_type="search_document")
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to Cohere's embedding endpoint.
@@ -139,13 +131,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embeddings = self.client.embed(
-            model=self.model,
-            texts=[text],
-            input_type=self.input_type or "search_query",
-            truncate=self.truncate,
-        ).embeddings
-        return [list(map(float, e)) for e in embeddings][0]
+        return self.embed([text], input_type="search_query")[0]
 
     async def aembed_query(self, text: str) -> List[float]:
         """Async call out to Cohere's embedding endpoint.
@@ -156,10 +142,4 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embeddings = await self.async_client.embed(
-            model=self.model,
-            texts=[text],
-            input_type=self.input_type or "search_query",
-            truncate=self.truncate,
-        )
-        return [list(map(float, e)) for e in embeddings.embeddings][0]
+        return (await self.aembed([text], input_type="search_query"))[0]
