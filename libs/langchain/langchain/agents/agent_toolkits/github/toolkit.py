@@ -1,9 +1,11 @@
 """GitHub Toolkit."""
 from typing import Dict, List
 
+from langchain_core.pydantic_v1 import BaseModel
+
 from langchain.agents.agent_toolkits.base import BaseToolkit
+from langchain.pydantic_v1 import Field
 from langchain.tools import BaseTool
-from langchain.tools.github.tool import GitHubAction
 from langchain.tools.github.prompt import (
     COMMENT_ON_ISSUE_PROMPT,
     CREATE_BRANCH_PROMPT,
@@ -26,43 +28,112 @@ from langchain.tools.github.prompt import (
     SET_ACTIVE_BRANCH_PROMPT,
     UPDATE_FILE_PROMPT,
 )
+from langchain.tools.github.tool import GitHubAction
 from langchain.utilities.github import GitHubAPIWrapper
-from langchain.pydantic_v1 import Field
-from pydantic import BaseModel
-
 
 
 class NoInput(BaseModel):
     no_input: str = Field("", description="No input required, e.g. `` (empty string).")
+
+
 class GetIssue(BaseModel):
     issue_number: int = Field(0, description="Issue number as an integer, e.g. `42`")
+
+
 class CommentOnIssue(BaseModel):
     input: str = Field(..., description="Follow the required formatting.")
+
+
 class GetPR(BaseModel):
     pr_number: int = Field(0, description="The PR number as an integer, e.g. `12`")
+
+
 class CreatePR(BaseModel):
     formatted_pr: str = Field(..., description="Follow the required formatting.")
+
+
 class CreateFile(BaseModel):
     formatted_file: str = Field(..., description="Follow the required formatting.")
+
+
 class ReadFile(BaseModel):
-    formatted_filepath: str = Field(..., description="The full file path of the file you would like to read where the path must NOT start with a slash, e.g. `some_dir/my_file.py`.")
+    formatted_filepath: str = Field(
+        ...,
+        description=(
+            "The full file path of the file you would like to read where the "
+            "path must NOT start with a slash, e.g. `some_dir/my_file.py`."
+        ),
+    )
+
+
 class UpdateFile(BaseModel):
-    formatted_file_update: str = Field(..., description="Strictly follow the provided rules.")
+    formatted_file_update: str = Field(
+        ..., description="Strictly follow the provided rules."
+    )
+
+
 class DeleteFile(BaseModel):
-    formatted_filepath: str = Field(..., description="The full file path of the file you would like to delete where the path must NOT start with a slash, e.g. `some_dir/my_file.py`. Only input a string, not the param name.")
+    formatted_filepath: str = Field(
+        ...,
+        description=(
+            "The full file path of the file you would like to delete"
+            " where the path must NOT start with a slash, e.g."
+            " `some_dir/my_file.py`. Only input a string,"
+            " not the param name."
+        ),
+    )
+
+
 class DirectoryPath(BaseModel):
-    input: str = Field("", description="The path of the directory, e.g. `some_dir/inner_dir`. Only input a string, do not include the parameter name.")
+    input: str = Field(
+        "",
+        description=(
+            "The path of the directory, e.g. `some_dir/inner_dir`."
+            " Only input a string, do not include the parameter name."
+        ),
+    )
+
+
 class BranchName(BaseModel):
-    branch_name: str = Field(..., description="The name of the branch, e.g. `my_branch`.")
+    branch_name: str = Field(
+        ..., description="The name of the branch, e.g. `my_branch`."
+    )
+
+
 class SearchCode(BaseModel):
-    search_query: str = Field(..., description="A keyword-focused natural language search query for code, e.g. `MyFunctionName()`.")
+    search_query: str = Field(
+        ...,
+        description=(
+            "A keyword-focused natural language search"
+            "query for code, e.g. `MyFunctionName()`."
+        ),
+    )
+
+
 class CreateReviewRequest(BaseModel):
-    username: str = Field(..., description="GitHub username of the user being requested, e.g. `my_username`.")
+    username: str = Field(
+        ...,
+        description="GitHub username of the user being requested, e.g. `my_username`.",
+    )
+
+
 class SearchIssuesAndPRs(BaseModel):
-    search_query: str = Field(..., description="Natural language search query, e.g. `My issue title or topic`.")
+    search_query: str = Field(
+        ...,
+        description="Natural language search query, e.g. `My issue title or topic`.",
+    )
+
 
 class GitHubToolkit(BaseToolkit):
-    """GitHub Toolkit."""
+    """GitHub Toolkit.
+
+    *Security Note*: This toolkit contains tools that can read and modify
+        the state of a service; e.g., by creating, deleting, or updating,
+        reading underlying data.
+
+        For example, this toolkit can be used to create issues, pull requests,
+        and comments on GitHub.
+    """
 
     tools: List[BaseTool] = []
 
@@ -204,7 +275,7 @@ class GitHubToolkit(BaseToolkit):
                 description=action["description"],
                 mode=action["mode"],
                 api_wrapper=github_api_wrapper,
-                args_schema=action.get("args_schema", None), 
+                args_schema=action.get("args_schema", None),
             )
             for action in operations
         ]

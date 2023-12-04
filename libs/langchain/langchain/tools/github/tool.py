@@ -9,12 +9,12 @@ To use this tool, you must first set as environment variables:
 """
 from typing import Optional, Type
 
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.github import GitHubAPIWrapper
-from pydantic import BaseModel
+
 
 class GitHubAction(BaseTool):
     """Tool for interacting with the GitHub API."""
@@ -27,7 +27,7 @@ class GitHubAction(BaseTool):
 
     def _run(
         self,
-        instructions: Optional[str],
+        instructions: Optional[str] = "",
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the GitHub API to run an operation."""

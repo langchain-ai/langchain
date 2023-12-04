@@ -14,37 +14,38 @@ from langchain.prompts.chat import (
 )
 
 if TYPE_CHECKING:
-    from github.Issue import Issue
-    from langchain.chat_models.base import BaseChatModel
+    from github.Repository import Repository
 
 
-def generate_branch_name(issue: Issue, llm: BaseChatModel=None):
+def generate_branch_name(issue: Issue, llm: BaseChatModel = None) -> str:
     """
-    Helper functions. Use `generate_branch_name()` to generate a meaningful 
-    branch name that the Agent will use to commit it's new code against. 
+    Helper functions. Use `generate_branch_name()` to generate a meaningful
+    branch name that the Agent will use to commit it's new code against.
     Later, it can use this branch to open a pull request.
     """
-    if not llm: 
+    if not llm:
         llm = ChatOpenAI(temperature=0, model="gpt-4")
 
-    system_template = "You are a helpful assistant that writes clear and concise" \
-                      "GitHub branch names for new pull requests."
+    system_template = (
+        "You are a helpful assistant that writes clear and concise"
+        "GitHub branch names for new pull requests."
+    )
     system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
     example_issue = {
         "title": "Implement an Integral function in C",
-        "body": "This function should take as input a mathematical function " \
-              "and the limits of integration and return the integral value.",
+        "body": "This function should take as input a mathematical function "
+        "and the limits of integration and return the integral value.",
     }
 
     prompt = HumanMessagePromptTemplate.from_template(
-        "Given this issue, please return a single string that would be a suitable " \
-        "branch name on which to implement this feature request. Use common software " \
-        "development best practices to name the branch.\n" \
-        "Follow this formatting exactly:" \
-        "Issue: {example_issue}" \
-        "Branch name: `add_integral_in_c`\n\n" \
-        "Issue: {issue}" \
-        "Branch name: `" 
+        "Given this issue, please return a single string that would be a suitable "
+        "branch name on which to implement this feature request. Use common software "
+        "development best practices to name the branch.\n"
+        "Follow this formatting exactly:"
+        f"Issue: {example_issue}"
+        "Branch name: `add_integral_in_c`\n\n"
+        f"Issue: {issue}"
+        "Branch name: `"
     )
 
     # Combine into a Chat conversation
@@ -59,7 +60,7 @@ def generate_branch_name(issue: Issue, llm: BaseChatModel=None):
     )
 
 
-def _sanitize_branch_name(text):
+def _sanitize_branch_name(text: str) -> str:
     """
     # Remove non-alphanumeric characters, use underscores.
     Example:
@@ -70,13 +71,13 @@ def _sanitize_branch_name(text):
         str: cleaned_text
     """
     cleaned_words = [
-        "".join(c for c in word if c.isalnum()
-                or c in ["_", "-"]) for word in text.split()
+        "".join(c for c in word if c.isalnum() or c in ["_", "-"])
+        for word in text.split()
     ]
     return "_".join(cleaned_words)
 
 
-def _ensure_unique_branch_name(repo, proposed_branch_name):
+def _ensure_unique_branch_name(repo: Repository, proposed_branch_name: str) -> str:
     # Attempt to create the branch, appending _v{i} if the name already exists
     i = 0
     new_branch_name = proposed_branch_name
@@ -98,7 +99,8 @@ def _ensure_unique_branch_name(repo, proposed_branch_name):
                 print(f"Failed to create branch. Error: {e}")
                 raise Exception(
                     "Unable to create branch name from "
-                    f"proposed_branch_name: {proposed_branch_name}")
+                    f"proposed_branch_name: {proposed_branch_name}"
+                )
     raise Exception(
         f"Unable to create branch. At least 1000 branches exist with"
         f"named derived from proposed_branch_name: `{proposed_branch_name}`"

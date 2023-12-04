@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import requests
 import tiktoken
-
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -79,9 +79,12 @@ class GitHubAPIWrapper(BaseModel):
             "GITHUB_BASE_BRANCH",
             default=repo.default_branch,
         )
-        
+
         active_branch = get_from_dict_or_env(
-            values, "active_branch", "ACTIVE_BRANCH", default=repo.default_branch,
+            values,
+            "active_branch",
+            "ACTIVE_BRANCH",
+            default=repo.default_branch,
         )
 
         values["github"] = g
@@ -199,7 +202,7 @@ class GitHubAPIWrapper(BaseModel):
             return str(e)
 
     def set_active_branch(self, branch_name: str) -> str:
-        """Equivalent to `git checkout branch_name` for this Agent. 
+        """Equivalent to `git checkout branch_name` for this Agent.
         Clones formatting from Github.
 
         Returns an Error (as a string) if branch doesn't exist.
@@ -211,8 +214,10 @@ class GitHubAPIWrapper(BaseModel):
             self.active_branch = branch_name
             return f"Switched to branch `{branch_name}`"
         else:
-            return (f"Error {branch_name} does not exist,"
-            f"in repo with current branches: {str(curr_branches)}")
+            return (
+                f"Error {branch_name} does not exist,"
+                f"in repo with current branches: {str(curr_branches)}"
+            )
 
     def list_branches_in_repo(self) -> str:
         """
@@ -236,7 +241,7 @@ class GitHubAPIWrapper(BaseModel):
         except Exception as e:
             return str(e)
 
-    def create_branch(self, proposed_branch_name):
+    def create_branch(self, proposed_branch_name: str) -> str:
         """
         Create a new branch, and set it as the active bot branch.
         Equivalent to `git switch -c proposed_branch_name`
@@ -247,6 +252,7 @@ class GitHubAPIWrapper(BaseModel):
             str: A plaintext success message.
         """
         from github import GithubException
+
         i = 0
         new_branch_name = proposed_branch_name
         base_branch = self.github_repo_instance.get_branch(
@@ -258,8 +264,10 @@ class GitHubAPIWrapper(BaseModel):
                     ref=f"refs/heads/{new_branch_name}", sha=base_branch.commit.sha
                 )
                 self.active_branch = new_branch_name
-                return (f"Branch '{new_branch_name}' "
-            "created successfully, and set as current active branch.")
+                return (
+                    f"Branch '{new_branch_name}' "
+                    "created successfully, and set as current active branch."
+                )
             except GithubException as e:
                 if e.status == 422 and "Reference already exists" in e.data["message"]:
                     i += 1
@@ -271,13 +279,15 @@ class GitHubAPIWrapper(BaseModel):
                         "Unable to create branch name from proposed_branch_name: "
                         f"{proposed_branch_name}"
                     )
-        return ("Unable to create branch. "
-                "At least 1000 branches exist with named derived from "
-                f"proposed_branch_name: `{proposed_branch_name}`")
+        return (
+            "Unable to create branch. "
+            "At least 1000 branches exist with named derived from "
+            f"proposed_branch_name: `{proposed_branch_name}`"
+        )
 
     def list_files_in_bot_branch(self) -> str:
         """
-        Fetches all files in the active branch of the repo, 
+        Fetches all files in the active branch of the repo,
         the branch the bot uses to make changes.
 
         Returns:
@@ -296,8 +306,10 @@ class GitHubAPIWrapper(BaseModel):
 
             if files:
                 files_str = "\n".join(files)
-                return (f"Found {len(files)} files in branch `{self.active_branch}`:\n"
-                        f"{files_str}")
+                return (
+                    f"Found {len(files)} files in branch `{self.active_branch}`:\n"
+                    f"{files_str}"
+                )
             else:
                 return f"No files found in branch: `{self.active_branch}`"
         except Exception as e:
@@ -314,6 +326,7 @@ class GitHubAPIWrapper(BaseModel):
             List[dict]: List of files with their paths and names.
         """
         from github import GithubException
+
         files = []
         try:
             contents = self.github_repo_instance.get_contents(
@@ -327,7 +340,7 @@ class GitHubAPIWrapper(BaseModel):
                 files.extend(self.get_files_from_directory(content.path))
             else:
                 files.append(content.path)
-        return files
+        return str(files)
 
     def get_issue(self, issue_number: int) -> Dict[str, Any]:
         """
@@ -336,7 +349,7 @@ class GitHubAPIWrapper(BaseModel):
             issue_number(int): The number for the github issue
         Returns:
             dict: A dictionary containing the issue's title,
-            body, comments as a string, and the username of the user 
+            body, comments as a string, and the username of the user
             who opened the issue
         """
         issue = self.github_repo_instance.get_issue(number=issue_number)
@@ -390,9 +403,7 @@ class GitHubAPIWrapper(BaseModel):
                             "download_url"
                         ]
                     else:
-                        print(
-                            f"Failed to download file: {file.contents_url}, skipping"
-                        )
+                        print(f"Failed to download file: {file.contents_url}, skipping")
                         continue
 
                     file_content_response = requests.get(download_url)
@@ -428,14 +439,14 @@ class GitHubAPIWrapper(BaseModel):
 
     def get_pull_request(self, pr_number: int) -> Dict[str, Any]:
         """
-        Fetches a specific pull request and its first 10 comments, 
+        Fetches a specific pull request and its first 10 comments,
         limited by max_tokens.
 
         Parameters:
             pr_number(int): The number for the Github pull
             max_tokens(int): The maximum number of tokens in the response
         Returns:
-            dict: A dictionary containing the pull's title, body, 
+            dict: A dictionary containing the pull's title, body,
             and comments as a string
         """
         max_tokens = 2_000
@@ -452,12 +463,12 @@ class GitHubAPIWrapper(BaseModel):
                 data_dict[key] = value
                 total_tokens += tokens  # Now this will modify the outer variable
 
-        response_dict = {}
+        response_dict: Dict[str, str] = {}
         add_to_dict(response_dict, "title", pull.title)
         add_to_dict(response_dict, "number", str(pr_number))
         add_to_dict(response_dict, "body", pull.body)
 
-        comments: List[dict] = []
+        comments: List[str] = []
         page = 0
         while len(comments) <= 10:
             comments_page = pull.get_issue_comments().get_page(page)
@@ -472,7 +483,7 @@ class GitHubAPIWrapper(BaseModel):
             page += 1
         add_to_dict(response_dict, "comments", str(comments))
 
-        commits: List[dict] = []
+        commits: List[str] = []
         page = 0
         while len(commits) <= 10:
             commits_page = pull.get_commits().get_page(page)
@@ -548,9 +559,11 @@ class GitHubAPIWrapper(BaseModel):
             str: A success or failure message
         """
         if self.active_branch == self.github_base_branch:
-            return("You're attempting to commit to the directly to the" 
-            f"{self.github_base_branch} branch, which is protected. "
-            "Please create a new branch and try again.")
+            return (
+                "You're attempting to commit to the directly to the"
+                f"{self.github_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
 
         file_path = file_query.split("\n")[0]
         file_contents = file_query[len(file_path) + 2 :]
@@ -561,9 +574,11 @@ class GitHubAPIWrapper(BaseModel):
                     file_path, ref=self.active_branch
                 )
                 if file:
-                    return (f"File already exists at `{file_path}` "
-                            f"on branch `{self.active_branch}`. You must use "
-                            "`update_file` to modify it.")
+                    return (
+                        f"File already exists at `{file_path}` "
+                        f"on branch `{self.active_branch}`. You must use "
+                        "`update_file` to modify it."
+                    )
             except Exception:
                 # expected behavior, file shouldn't exist yet
                 pass
@@ -593,8 +608,10 @@ class GitHubAPIWrapper(BaseModel):
             )
             return file.decoded_content.decode("utf-8")
         except Exception as e:
-            return (f"File not found `{file_path}` on branch"
-                    f"`{self.active_branch}`. Error: {str(e)}")
+            return (
+                f"File not found `{file_path}` on branch"
+                f"`{self.active_branch}`. Error: {str(e)}"
+            )
 
     def update_file(self, file_query: str) -> str:
         """
@@ -615,11 +632,13 @@ class GitHubAPIWrapper(BaseModel):
             A success or failure message
         """
         if self.active_branch == self.github_base_branch:
-            return("You're attempting to commit to the directly"
-            f"to the {self.github_base_branch} branch, which is protected. "
-            "Please create a new branch and try again.")
+            return (
+                "You're attempting to commit to the directly"
+                f"to the {self.github_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
         try:
-            file_path = file_query.split("\n")[0]
+            file_path: PathLike[str] = file_query.split("\n")[0]
             old_file_contents = (
                 file_query.split("OLD <<<<")[1].split(">>>> OLD")[0].strip()
             )
@@ -641,14 +660,14 @@ class GitHubAPIWrapper(BaseModel):
 
             self.github_repo_instance.update_file(
                 path=file_path,
-                message="Update " + file_path,
+                message="Update " + str(file_path),
                 content=updated_file_content,
                 branch=self.active_branch,
                 sha=self.github_repo_instance.get_contents(
                     file_path, ref=self.active_branch
                 ).sha,
             )
-            return "Updated file " + file_path
+            return "Updated file " + str(file_path)
         except Exception as e:
             return "Unable to update file due to error:\n" + str(e)
 
@@ -661,9 +680,11 @@ class GitHubAPIWrapper(BaseModel):
             str: Success or failure message
         """
         if self.active_branch == self.github_base_branch:
-            return("You're attempting to commit to the directly"
-            f"to the {self.github_base_branch} branch, which is protected. "
-            "Please create a new branch and try again.")
+            return (
+                "You're attempting to commit to the directly"
+                f"to the {self.github_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
         try:
             self.github_repo_instance.delete_file(
                 path=file_path,
@@ -707,12 +728,13 @@ class GitHubAPIWrapper(BaseModel):
         Returns:
             str: A string containing, at most, the top 5 search results
         """
-        search_result = self.github.search_code(query=query, 
-                                                repo=self.github_repository)
+        search_result = self.github.search_code(
+            query=query, repo=self.github_repository
+        )
         if search_result.totalCount == 0:
             return "0 results found."
         max_results = min(5, search_result.totalCount)
-        results = [f'Showing top {max_results} of {search_result.totalCount} results:']
+        results = [f"Showing top {max_results} of {search_result.totalCount} results:"]
         count = 0
         for code in search_result:
             if count >= max_results:
@@ -721,14 +743,16 @@ class GitHubAPIWrapper(BaseModel):
             file_content = self.github_repo_instance.get_contents(
                 code.path, ref=self.active_branch
             ).decoded_content.decode()
-            results.append(f"Filepath: `{code.path}`\nFile contents: "
-            f"{file_content}\n<END OF FILE>")
+            results.append(
+                f"Filepath: `{code.path}`\nFile contents: "
+                f"{file_content}\n<END OF FILE>"
+            )
             count += 1
         return "\n".join(results)
 
     def create_review_request(self, reviewer_username: str) -> str:
         """
-        Creates a review request on *THE* open pull request 
+        Creates a review request on *THE* open pull request
         that matches the current active_branch.
 
         Parameters:
@@ -745,13 +769,17 @@ class GitHubAPIWrapper(BaseModel):
             (pr for pr in pull_requests if pr.head.ref == self.active_branch), None
         )
         if pr is None:
-            return ("No open pull request found for the "
-                    f"current branch `{self.active_branch}`")
+            return (
+                "No open pull request found for the "
+                f"current branch `{self.active_branch}`"
+            )
 
         try:
             pr.create_review_request(reviewers=[reviewer_username])
-            return (f"Review request created for user {reviewer_username} "
-                    f"on PR #{pr.number}")
+            return (
+                f"Review request created for user {reviewer_username} "
+                f"on PR #{pr.number}"
+            )
         except Exception as e:
             return f"Failed to create a review request with error {e}"
 
