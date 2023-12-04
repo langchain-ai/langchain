@@ -46,19 +46,14 @@ class MultiVectorRetriever(BaseRetriever):
     ):
         if base_store is not None:
             docstore = create_kv_docstore(base_store)
-        elif docstore is not None:
-            warnings.warn(
-                "Initialization with a docstore parameter is deprecated."
-                " Use the more generic `base_store` instead."
-            )
-        else:
+        elif docstore is None:
             raise Exception("You must pass a `base_store` parameter.")
 
         super().__init__(
             vectorstore=vectorstore,
             docstore=docstore,
             id_key=id_key,
-            search_kwargs=search_kwargs,
+            search_kwargs=search_kwargs if search_kwargs is not None else {},
             search_type=search_type,
         )
 
