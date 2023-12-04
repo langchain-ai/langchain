@@ -26,6 +26,11 @@ const config = {
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "throw",
 
+  themes: ["@docusaurus/theme-mermaid"],
+  markdown: {
+    mermaid: true,
+  },
+
   plugins: [
     () => ({
       name: "custom-webpack-config",
@@ -231,6 +236,10 @@ const config = {
               {
                 href: "https://github.com/langchain-ai/langchain/tree/master/templates",
                 label: "Templates GitHub",
+              },
+              {
+                label: "Templates Hub",
+                href: "https://templates.langchain.com",
               },
               {
                 href: "https://smith.langchain.com/hub",
