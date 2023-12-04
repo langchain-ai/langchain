@@ -12,7 +12,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Type,
 )
 
 from langchain_core.callbacks import AsyncCallbackManagerForLLMRun
@@ -98,10 +97,10 @@ async def astream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
         def __init__(self, _llm: Tongyi, **_kwargs: Any):
             self.generator = stream_generate_with_retry(_llm, **_kwargs)
 
-        def __aiter__(self):
+        def __aiter__(self) -> AsyncIterator[Any]:
             return self
 
-        async def __anext__(self):
+        async def __anext__(self) -> Any:
             value = await asyncio.get_running_loop().run_in_executor(
                 None, self._safe_next
             )
@@ -110,7 +109,7 @@ async def astream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
             else:
                 raise StopAsyncIteration
 
-        def _safe_next(self):
+        def _safe_next(self) -> Any:
             try:
                 return next(self.generator)
             except StopIteration:
@@ -222,17 +221,20 @@ class Tongyi(BaseLLM):
                 else:
                     generation += chunk
             assert generation is not None
-            generations.append([generation])
+            generations.append([self._chunk_to_generation(generation)])
         else:
             params: Dict[str, Any] = self._invocation_params(stop=stop, **kwargs)
             for prompt in prompts:
-                completion = generate_with_retry(
-                    self,
-                    prompt=prompt,
-                    **params,
+                completion = generate_with_retry(self, prompt=prompt, **params)
+                generations.append(
+                    [Generation(**self._generation_from_qwen_resp(completion))]
                 )
-                generations.append([self._generation_from_qwen_resp(completion)])
-        return LLMResult(generations=generations)
+        return LLMResult(
+            generations=generations,
+            llm_output={
+                "model_name": self.model_name,
+            },
+        )
 
     async def _agenerate(
         self,
@@ -252,7 +254,7 @@ class Tongyi(BaseLLM):
                 else:
                     generation += chunk
             assert generation is not None
-            generations.append([generation])
+            generations.append([self._chunk_to_generation(generation)])
         else:
             params: Dict[str, Any] = self._invocation_params(stop=stop, **kwargs)
             for prompt in prompts:
@@ -262,8 +264,15 @@ class Tongyi(BaseLLM):
                         generate_with_retry, **{"llm": self, "prompt": prompt, **params}
                     ),
                 )
-                generations.append([self._generation_from_qwen_resp(completion)])
-        return LLMResult(generations=generations)
+                generations.append(
+                    [Generation(**self._generation_from_qwen_resp(completion))]
+                )
+        return LLMResult(
+            generations=generations,
+            llm_output={
+                "model_name": self.model_name,
+            },
+        )
 
     def _stream(
         self,
@@ -276,9 +285,7 @@ class Tongyi(BaseLLM):
             stop=stop, stream=True, **kwargs
         )
         for stream_resp in stream_generate_with_retry(self, prompt=prompt, **params):
-            chunk = self._generation_from_qwen_resp(
-                stream_resp, target_class=GenerationChunk
-            )
+            chunk = GenerationChunk(**self._generation_from_qwen_resp(stream_resp))
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
@@ -300,9 +307,7 @@ class Tongyi(BaseLLM):
         async for stream_resp in astream_generate_with_retry(
             self, prompt=prompt, **params
         ):
-            chunk = self._generation_from_qwen_resp(
-                stream_resp, target_class=GenerationChunk
-            )
+            chunk = GenerationChunk(**self._generation_from_qwen_resp(stream_resp))
             yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(
@@ -323,14 +328,19 @@ class Tongyi(BaseLLM):
         return params
 
     @staticmethod
-    def _generation_from_qwen_resp(
-        resp: Any, target_class: Type[Generation | GenerationChunk] = Generation
-    ) -> Generation | GenerationChunk:
-        return target_class(
+    def _generation_from_qwen_resp(resp: Any) -> Dict[str, Any]:
+        return dict(
             text=resp["output"]["text"],
             generation_info=dict(
                 finish_reason=resp["output"]["finish_reason"],
                 request_id=resp["request_id"],
                 token_usage=dict(resp["usage"]),
             ),
+        )
+
+    @staticmethod
+    def _chunk_to_generation(chunk: GenerationChunk) -> Generation:
+        return Generation(
+            text=chunk.text,
+            generation_info=chunk.generation_info,
         )
