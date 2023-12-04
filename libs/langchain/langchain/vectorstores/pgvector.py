@@ -434,16 +434,22 @@ class PGVector(VectorStore):
 
             if filter is not None:
                 filter_clauses = []
+                IN, NIN = "in", "nin"
                 for key, value in filter.items():
-                    IN = "in"
-                    if isinstance(value, dict) and IN in map(str.lower, value):
+                    if isinstance(value, dict):
                         value_case_insensitive = {
                             k.lower(): v for k, v in value.items()
                         }
-                        filter_by_metadata = self.EmbeddingStore.cmetadata[
-                            key
-                        ].astext.in_(value_case_insensitive[IN])
-                        filter_clauses.append(filter_by_metadata)
+                        if IN in map(str.lower, value):
+                            filter_by_metadata = self.EmbeddingStore.cmetadata[
+                                key
+                            ].astext.in_(value_case_insensitive[IN])
+                        elif NIN in map(str.lower, value):
+                            filter_by_metadata = self.EmbeddingStore.cmetadata[
+                                key
+                            ].astext.not_in(value_case_insensitive[NIN])
+                        if filter_by_metadata is not None:
+                            filter_clauses.append(filter_by_metadata)
                     else:
                         filter_by_metadata = self.EmbeddingStore.cmetadata[
                             key
