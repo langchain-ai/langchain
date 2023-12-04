@@ -41,7 +41,7 @@ class MultiVectorRetriever(BaseRetriever):
         docstore: Optional[BaseStore[str, Document]] = None,
         base_store: Optional[BaseStore[str, bytes]] = None,
         id_key: str = "doc_id",
-        search_kwargs: dict = {},
+        search_kwargs: Optional[dict] = None,
         search_type: SearchType = SearchType.similarity,
     ):
         if base_store is not None:
