@@ -66,7 +66,11 @@ class GitLabAPIWrapper(BaseModel):
                 "Please install it with `pip install python-gitlab`"
             )
 
-        g = gitlab.Gitlab(url=gitlab_url, private_token=gitlab_personal_access_token,keep_base_url=True)
+        g = gitlab.Gitlab(
+            url=gitlab_url,
+            private_token=gitlab_personal_access_token,
+            keep_base_url=True,
+        )
 
         g.auth()
 
