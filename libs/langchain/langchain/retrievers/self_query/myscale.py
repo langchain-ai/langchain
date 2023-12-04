@@ -1,5 +1,5 @@
 import re
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -76,7 +76,7 @@ class MyScaleTranslator(Visitor):
         Comparator.LIKE: _DEFAULT_COMPOSER("ILIKE"),
     }
 
-    def __init__(self, metadata_key: str = "metadata") -> None:
+    def __init__(self, metadata_key: Optional[str] = "metadata") -> None:
         super().__init__()
         self.metadata_key = metadata_key
 
@@ -87,18 +87,23 @@ class MyScaleTranslator(Visitor):
         return self.map_dict[func](*args)
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
-        regex = r"\((.*?)\)"
-        matched = re.search(r"\(\w+\)", comparison.attribute)
+        virtual_mapped = True
+        if self.metadata_key and self.metadata_key not in comparison.attribute:
+            regex = r"\((.*?)\)"
+            matched = re.search(r"\(\w+\)", comparison.attribute)
 
-        # If arbitrary function is applied to an attribute
-        if matched:
-            attr = re.sub(
-                regex,
-                f"({self.metadata_key}.{matched.group(0)[1:-1]})",
-                comparison.attribute,
-            )
+            # If arbitrary function is applied to an attribute
+            if matched:
+                attr = re.sub(
+                    regex,
+                    f"({self.metadata_key}.{matched.group(0)[1:-1]})",
+                    comparison.attribute,
+                )
+            else:
+                attr = f"{self.metadata_key}.{comparison.attribute}"
+            virtual_mapped = False
         else:
-            attr = f"{self.metadata_key}.{comparison.attribute}"
+            attr = comparison.attribute
         value = comparison.value
         comp = comparison.comparator
 
@@ -106,7 +111,8 @@ class MyScaleTranslator(Visitor):
 
         # convert timestamp for datetime objects
         if isinstance(value, dict) and value.get("type") == "date":
-            attr = f"parseDateTime32BestEffort({attr})"
+            if not virtual_mapped:
+                attr = f"parseDateTime32BestEffort({attr})"
             value = f"parseDateTime32BestEffort('{value['date']}')"
 
         # string pattern match

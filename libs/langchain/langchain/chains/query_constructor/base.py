@@ -166,9 +166,11 @@ class VirtualColumnParser(
             return filter
 
     def invoke(
-        self, filter: FilterDirective, config: Optional[RunnableConfig] = None
-    ) -> Optional[FilterDirective]:
-        return self._traverse_query(filter, config=config)
+        self, inputs: StructuredQuery, config: Optional[RunnableConfig] = None
+    ) -> StructuredQuery:
+        if inputs.filter:
+            inputs.filter = self._traverse_query(inputs.filter, config=config)
+        return inputs
 
 
 def fix_filter_directive(
@@ -355,6 +357,16 @@ def load_query_constructor_chain(
     Returns:
         A LLMChain that can be used to construct queries.
     """
+
+    class _StructuredQueryVirtualColParser(BaseOutputParser[StructuredQuery]):
+        struct_query_parser: StructuredQueryOutputParser
+        virt_col_parser: VirtualColumnParser
+
+        def parse(self, text: str) -> StructuredQuery:
+            query = self.struct_query_parser.parse(text)
+            query = self.virt_col_parser.invoke(query)
+            return query
+
     prompt = get_query_constructor_prompt(
         document_contents,
         attribute_info,
@@ -367,12 +379,16 @@ def load_query_constructor_chain(
     allowed_attributes = []
     for ainfo in attribute_info:
         allowed_attributes.append(
-            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+            str(ainfo.name) if isinstance(ainfo, AttributeInfo) else str(ainfo["name"])
         )
-    output_parser = StructuredQueryOutputParser.from_components(
+    struct_query_parser = StructuredQueryOutputParser.from_components(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,
         allowed_attributes=allowed_attributes,
+    )
+    virt_col_parser = VirtualColumnParser(attributes=attribute_info)
+    output_parser = _StructuredQueryVirtualColParser(
+        struct_query_parser=struct_query_parser, virt_col_parser=virt_col_parser
     )
     # For backwards compatibility.
     prompt.output_parser = output_parser
