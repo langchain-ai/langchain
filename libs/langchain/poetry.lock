@@ -1891,26 +1891,25 @@ typing-inspect = ">=0.4.0,<1"
 
 [[package]]
 name = "datasets"
-version = "2.15.0"
+version = "2.14.6"
 description = "HuggingFace community-driven open-source library of datasets"
 optional = true
 python-versions = ">=3.8.0"
 files = [
-    {file = "datasets-2.15.0-py3-none-any.whl", hash = "sha256:6d658d23811393dfc982d026082e1650bdaaae28f6a86e651966cb072229a228"},
-    {file = "datasets-2.15.0.tar.gz", hash = "sha256:a26d059370bd7503bd60e9337977199a13117a83f72fb61eda7e66f0c4d50b2b"},
+    {file = "datasets-2.14.6-py3-none-any.whl", hash = "sha256:4de857ffce21cfc847236745c69f102e33cd1f0fa8398e7be9964525fd4cd5db"},
+    {file = "datasets-2.14.6.tar.gz", hash = "sha256:97ebbace8ec7af11434a87d1215379927f8fee2beab2c4a674003756ecfe920c"},
 ]
 
 [package.dependencies]
 aiohttp = "*"
 dill = ">=0.3.0,<0.3.8"
 fsspec = {version = ">=2023.1.0,<=2023.10.0", extras = ["http"]}
-huggingface-hub = ">=0.18.0"
+huggingface-hub = ">=0.14.0,<1.0.0"
 multiprocess = "*"
 numpy = ">=1.17"
 packaging = "*"
 pandas = "*"
 pyarrow = ">=8.0.0"
-pyarrow-hotfix = "*"
 pyyaml = ">=5.1"
 requests = ">=2.19.0"
 tqdm = ">=4.62.1"
@@ -1920,15 +1919,15 @@ xxhash = "*"
 apache-beam = ["apache-beam (>=2.26.0,<2.44.0)"]
 audio = ["librosa", "soundfile (>=0.12.1)"]
 benchmarks = ["tensorflow (==2.12.0)", "torch (==2.0.1)", "transformers (==4.30.1)"]
-dev = ["Pillow (>=6.2.1)", "absl-py", "apache-beam (>=2.26.0,<2.44.0)", "black (>=23.1,<24.0)", "elasticsearch (<8.0.0)", "faiss-cpu (>=1.6.4)", "jax (>=0.3.14)", "jaxlib (>=0.3.14)", "joblib (<1.3.0)", "joblibspark", "librosa", "lz4", "py7zr", "pyspark (>=3.4)", "pytest", "pytest-datadir", "pytest-xdist", "pyyaml (>=5.3.1)", "rarfile (>=4.0)", "ruff (>=0.0.241)", "s3fs", "s3fs (>=2021.11.1)", "soundfile (>=0.12.1)", "sqlalchemy (<2.0.0)", "tensorflow (>=2.2.0,!=2.6.0,!=2.6.1)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1)", "tensorflow-macos", "tiktoken", "torch", "transformers", "typing-extensions (>=4.6.1)", "zstandard"]
+dev = ["Pillow (>=6.2.1)", "absl-py", "apache-beam (>=2.26.0,<2.44.0)", "black (>=23.1,<24.0)", "elasticsearch (<8.0.0)", "faiss-cpu (>=1.6.4)", "joblib (<1.3.0)", "joblibspark", "librosa", "lz4", "py7zr", "pyspark (>=3.4)", "pytest", "pytest-datadir", "pytest-xdist", "pyyaml (>=5.3.1)", "rarfile (>=4.0)", "ruff (>=0.0.241)", "s3fs", "s3fs (>=2021.11.1)", "soundfile (>=0.12.1)", "sqlalchemy (<2.0.0)", "tensorflow (>=2.2.0,!=2.6.0,!=2.6.1)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1)", "tensorflow-macos", "tiktoken", "torch", "transformers", "zstandard"]
 docs = ["s3fs", "tensorflow (>=2.2.0,!=2.6.0,!=2.6.1)", "tensorflow-macos", "torch", "transformers"]
-jax = ["jax (>=0.3.14)", "jaxlib (>=0.3.14)"]
+jax = ["jax (>=0.2.8,!=0.3.2,<=0.3.25)", "jaxlib (>=0.1.65,<=0.3.25)"]
 metrics-tests = ["Werkzeug (>=1.0.1)", "accelerate", "bert-score (>=0.3.6)", "jiwer", "langdetect", "mauve-text", "nltk", "requests-file (>=1.5.1)", "rouge-score", "sacrebleu", "sacremoses", "scikit-learn", "scipy", "sentencepiece", "seqeval", "six (>=1.15.0,<1.16.0)", "spacy (>=3.0.0)", "texttable (>=1.6.3)", "tldextract", "tldextract (>=3.1.0)", "toml (>=0.10.1)", "typer (<0.5.0)"]
 quality = ["black (>=23.1,<24.0)", "pyyaml (>=5.3.1)", "ruff (>=0.0.241)"]
 s3 = ["s3fs"]
 tensorflow = ["tensorflow (>=2.2.0,!=2.6.0,!=2.6.1)", "tensorflow-macos"]
 tensorflow-gpu = ["tensorflow-gpu (>=2.2.0,!=2.6.0,!=2.6.1)"]
-tests = ["Pillow (>=6.2.1)", "absl-py", "apache-beam (>=2.26.0,<2.44.0)", "elasticsearch (<8.0.0)", "faiss-cpu (>=1.6.4)", "jax (>=0.3.14)", "jaxlib (>=0.3.14)", "joblib (<1.3.0)", "joblibspark", "librosa", "lz4", "py7zr", "pyspark (>=3.4)", "pytest", "pytest-datadir", "pytest-xdist", "rarfile (>=4.0)", "s3fs (>=2021.11.1)", "soundfile (>=0.12.1)", "sqlalchemy (<2.0.0)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1)", "tensorflow-macos", "tiktoken", "torch", "transformers", "typing-extensions (>=4.6.1)", "zstandard"]
+tests = ["Pillow (>=6.2.1)", "absl-py", "apache-beam (>=2.26.0,<2.44.0)", "elasticsearch (<8.0.0)", "faiss-cpu (>=1.6.4)", "joblib (<1.3.0)", "joblibspark", "librosa", "lz4", "py7zr", "pyspark (>=3.4)", "pytest", "pytest-datadir", "pytest-xdist", "rarfile (>=4.0)", "s3fs (>=2021.11.1)", "soundfile (>=0.12.1)", "sqlalchemy (<2.0.0)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1)", "tensorflow-macos", "tiktoken", "torch", "transformers", "zstandard"]
 torch = ["torch"]
 vision = ["Pillow (>=6.2.1)"]
 
@@ -2007,6 +2006,55 @@ medical = ["nibabel", "pydicom"]
 point-cloud = ["laspy"]
 video = ["av (>=8.1.0)"]
 visualizer = ["IPython", "flask"]
+
+[[package]]
+name = "deepsparse-nightly"
+version = "1.6.0.20231201"
+description = "An inference runtime offering GPU-class performance on CPUs and APIs to integrate ML into your application"
+optional = true
+python-versions = ">=3.8, <3.12"
+files = [
+    {file = "deepsparse-nightly-1.6.0.20231201.tar.gz", hash = "sha256:b551f5ce1f8e7cae0635288baa25c84d57386a41d358c01162d052934a1f0c1b"},
+    {file = "deepsparse_nightly-1.6.0.20231201-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d87fd27a2e6686c4c84b6377651fc17cbe8975fe7ab40d0abdec9b7a73fb4e00"},
+    {file = "deepsparse_nightly-1.6.0.20231201-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5662f2a9e120a1f0dd1af8ba2f10c097bb6b1bf90e35136eb8b6b52e3fc7d024"},
+    {file = "deepsparse_nightly-1.6.0.20231201-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:05077cc071b6d630df627b1ef7516f80d56cbcd8214afe0c8d251cb2f2483437"},
+    {file = "deepsparse_nightly-1.6.0.20231201-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:05cd68df68fefcbb027b095ca929afd0f100dc658ae11e003f80e4a83928e921"},
+    {file = "deepsparse_nightly-1.6.0.20231201-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6f4f2c8ae9ff8da100179978ff4a014708fdab054543ea071d1bf64fcc2b5c38"},
+    {file = "deepsparse_nightly-1.6.0.20231201-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b0a7532743e313b61a00c4ebc5b4c310fcc5ef7c6e8f3a9de687ef8e2398ae60"},
+    {file = "deepsparse_nightly-1.6.0.20231201-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:98e20a05b9e551122844d4a58540df00674b527e5d34f4cd6277c5c63038b58f"},
+    {file = "deepsparse_nightly-1.6.0.20231201-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4e68308249fecee70c7328f820a9e2173b053ce32553191f915e8892c4125bba"},
+]
+
+[package.dependencies]
+click = ">=7.1.2,<8.0.0 || >8.0.0"
+datasets = {version = "<=2.14.6", optional = true, markers = "extra == \"llm\""}
+numpy = ">=1.16.3"
+onnx = ">=1.5.0,<1.15.0"
+protobuf = ">=3.12.2"
+pydantic = ">=1.8.2,<2.0.0"
+requests = ">=2.0.0"
+scikit-learn = {version = "*", optional = true, markers = "extra == \"llm\""}
+seqeval = {version = "*", optional = true, markers = "extra == \"llm\""}
+sparsezoo-nightly = ">=1.6.0,<1.7.0"
+tqdm = ">=4.0.0"
+transformers = {version = "<4.35", optional = true, markers = "extra == \"llm\""}
+
+[package.extras]
+clip = ["open-clip-torch (==2.20.0)", "scipy (>=1.8,<1.10)", "transformers (<4.35)"]
+dev = ["Pillow (>=8.3.2)", "beautifulsoup4 (>=4.9.3)", "black (==22.12.0)", "flake8 (>=3.8.3)", "flaky (>=3.7.0,<3.8.0)", "flask (>=1.0.0)", "flask-cors (>=3.0.0)", "isort (>=5.7.0)", "ndjson (>=0.3.1)", "onnxruntime (>=1.7.0)", "pytest (>=6.0.0)", "wheel (>=0.36.2)"]
+docs = ["m2r2 (>=0.2.7,<0.3.0)", "mistune (==0.8.4)", "myst-parser (>=0.14.0,<0.15.0)", "rinohtype (>=0.4.2)", "sphinx (>=3.4.0)", "sphinx-copybutton (>=0.3.0)", "sphinx-markdown-tables (>=0.0.15)", "sphinx-multiversion (==0.2.4)", "sphinx-rtd-theme"]
+haystack = ["SPARQLWrapper", "aiorwlock (>=1.3.0,<2)", "azure-ai-formrecognizer (>=3.2.0b2)", "azure-core (<1.23)", "beautifulsoup4", "beir", "black[jupyter]", "coverage", "dill", "elastic-apm", "elasticsearch (>=7.7,<=7.10)", "faiss-cpu (==1.7.2)", "grpcio (==1.43.0)", "importlib-metadata", "jsonschema", "jupytercontrib", "langdetect", "markdown", "mkdocs", "mlflow", "mmh3", "more-itertools", "mypy", "networkx", "nltk", "onnxruntime", "onnxruntime-tools", "pandas", "pdf2image (==1.14.0)", "pillow", "pinecone-client", "posthog", "psutil", "psycopg2-binary", "pydantic", "pylint", "pymilvus (<2.0.0)", "pytesseract (==0.3.7)", "pytest", "python-docx", "python-magic", "python-multipart", "quantulum3", "rapidfuzz", "ray", "requests", "requests-cache", "responses", "scikit-learn (>=1.0.0)", "scipy (>=1.3.2)", "selenium", "sentence-transformers (>=2.2.0)", "seqeval", "sqlalchemy (>=1.4.2,<2)", "sqlalchemy-utils", "tika", "torch (>=1.12.1)", "tox", "tqdm", "typing-extensions", "watchdog", "weaviate-client (==3.3.3)", "webdriver-manager"]
+image-classification = ["opencv-python (<=4.6.0.66)", "torchvision (>=0.3.0,<0.17)"]
+llm = ["datasets (<=2.14.6)", "scikit-learn", "seqeval", "transformers (<4.35)"]
+onnxruntime = ["onnxruntime (>=1.7.0)"]
+openpifpaf = ["opencv-python (<=4.6.0.66)", "openpifpaf (==0.13.11)", "pycocotools (>=2.0.6)", "scipy (==1.10.1)"]
+sentence-transformers = ["optimum-deepsparse", "torch (>=1.7.0,<2.2)"]
+server = ["anyio (<4.0.0)", "fastapi (>=0.70.0,<0.87.0)", "prometheus-client (>=0.14.1)", "psutil (>=5.9.4)", "python-multipart (>=0.0.5)", "requests (>=2.26.0)", "uvicorn (>=0.15.0)"]
+torch = ["torch (>=1.7.0,<2.2)"]
+transformers = ["datasets (<=2.14.6)", "scikit-learn", "seqeval", "transformers (<4.35)"]
+yolo = ["opencv-python (<=4.6.0.66)", "torchvision (>=0.3.0,<0.17)"]
+yolov5 = ["opencv-python (<=4.6.0.66)", "torchvision (>=0.3.0,<0.17)"]
+yolov8 = ["opencv-python (<=4.6.0.66)", "torchvision (>=0.3.0,<0.17)", "ultralytics (==8.0.124)"]
 
 [[package]]
 name = "defusedxml"
@@ -2707,6 +2755,24 @@ files = [
     {file = "gast-0.4.0-py3-none-any.whl", hash = "sha256:b7adcdd5adbebf1adf17378da5ba3f543684dbec47b1cda1f3997e573cd542c4"},
     {file = "gast-0.4.0.tar.gz", hash = "sha256:40feb7b8b8434785585ab224d1568b857edb18297e5a3047f1ba012bc83b42c1"},
 ]
+
+[[package]]
+name = "geocoder"
+version = "1.38.1"
+description = "Geocoder is a simple and consistent geocoding library."
+optional = true
+python-versions = "*"
+files = [
+    {file = "geocoder-1.38.1-py2.py3-none-any.whl", hash = "sha256:a733e1dfbce3f4e1a526cac03aadcedb8ed1239cf55bd7f3a23c60075121a834"},
+    {file = "geocoder-1.38.1.tar.gz", hash = "sha256:c9925374c961577d0aee403b09e6f8ea1971d913f011f00ca70c76beaf7a77e7"},
+]
+
+[package.dependencies]
+click = "*"
+future = "*"
+ratelim = "*"
+requests = "*"
+six = "*"
 
 [[package]]
 name = "geojson"
@@ -5920,6 +5986,44 @@ signals = ["blinker (>=1.4.0)"]
 signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
+name = "onnx"
+version = "1.12.0"
+description = "Open Neural Network Exchange"
+optional = true
+python-versions = "*"
+files = [
+    {file = "onnx-1.12.0-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:bdbd2578424c70836f4d0f9dda16c21868ddb07cc8192f9e8a176908b43d694b"},
+    {file = "onnx-1.12.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:213e73610173f6b2e99f99a4b0636f80b379c417312079d603806e48ada4ca8b"},
+    {file = "onnx-1.12.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9fd2f4e23078df197bb76a59b9cd8f5a43a6ad2edc035edb3ecfb9042093e05a"},
+    {file = "onnx-1.12.0-cp310-cp310-win32.whl", hash = "sha256:23781594bb8b7ee985de1005b3c601648d5b0568a81e01365c48f91d1f5648e4"},
+    {file = "onnx-1.12.0-cp310-cp310-win_amd64.whl", hash = "sha256:81a3555fd67be2518bf86096299b48fb9154652596219890abfe90bd43a9ec13"},
+    {file = "onnx-1.12.0-cp37-cp37m-macosx_10_12_x86_64.whl", hash = "sha256:5578b93dc6c918cec4dee7fb7d9dd3b09d338301ee64ca8b4f28bc217ed42dca"},
+    {file = "onnx-1.12.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c11162ffc487167da140f1112f49c4f82d815824f06e58bc3095407699f05863"},
+    {file = "onnx-1.12.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:341c7016e23273e9ffa9b6e301eee95b8c37d0f04df7cedbdb169d2c39524c96"},
+    {file = "onnx-1.12.0-cp37-cp37m-win32.whl", hash = "sha256:3c6e6bcffc3f5c1e148df3837dc667fa4c51999788c1b76b0b8fbba607e02da8"},
+    {file = "onnx-1.12.0-cp37-cp37m-win_amd64.whl", hash = "sha256:8a7aa61aea339bd28f310f4af4f52ce6c4b876386228760b16308efd58f95059"},
+    {file = "onnx-1.12.0-cp38-cp38-macosx_10_12_x86_64.whl", hash = "sha256:56ceb7e094c43882b723cfaa107d85ad673cfdf91faeb28d7dcadacca4f43a07"},
+    {file = "onnx-1.12.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b3629e8258db15d4e2c9b7f1be91a3186719dd94661c218c6f5fde3cc7de3d4d"},
+    {file = "onnx-1.12.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2d9a7db54e75529160337232282a4816cc50667dc7dc34be178fd6f6b79d4705"},
+    {file = "onnx-1.12.0-cp38-cp38-win32.whl", hash = "sha256:fea5156a03398fe0e23248042d8651c1eaac5f6637d4dd683b4c1f1320b9f7b4"},
+    {file = "onnx-1.12.0-cp38-cp38-win_amd64.whl", hash = "sha256:f66d2996e65f490a57b3ae952e4e9189b53cc9fe3f75e601d50d4db2dc1b1cd9"},
+    {file = "onnx-1.12.0-cp39-cp39-macosx_10_12_x86_64.whl", hash = "sha256:c39a7a0352c856f1df30dccf527eb6cb4909052e5eaf6fa2772a637324c526aa"},
+    {file = "onnx-1.12.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fab13feb4d94342aae6d357d480f2e47d41b9f4e584367542b21ca6defda9e0a"},
+    {file = "onnx-1.12.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c7a9b3ea02c30efc1d2662337e280266aca491a8e86be0d8a657f874b7cccd1e"},
+    {file = "onnx-1.12.0-cp39-cp39-win32.whl", hash = "sha256:f8800f28c746ab06e51ef8449fd1215621f4ddba91be3ffc264658937d38a2af"},
+    {file = "onnx-1.12.0-cp39-cp39-win_amd64.whl", hash = "sha256:af90427ca04c6b7b8107c2021e1273227a3ef1a7a01f3073039cae7855a59833"},
+    {file = "onnx-1.12.0.tar.gz", hash = "sha256:13b3e77d27523b9dbf4f30dfc9c959455859d5e34e921c44f712d69b8369eff9"},
+]
+
+[package.dependencies]
+numpy = ">=1.16.6"
+protobuf = ">=3.12.2,<=3.20.1"
+typing-extensions = ">=3.6.2.1"
+
+[package.extras]
+lint = ["clang-format (==13.0.0)", "flake8", "mypy (==0.782)", "types-protobuf (==3.18.4)"]
+
+[[package]]
 name = "onnxruntime"
 version = "1.16.1"
 description = "ONNX Runtime is a runtime accelerator for Machine Learning models"
@@ -6880,6 +6984,20 @@ files = [
 ]
 
 [[package]]
+name = "py-machineid"
+version = "0.4.6"
+description = "Get the unique machine ID of any host (without admin privileges)"
+optional = true
+python-versions = "*"
+files = [
+    {file = "py-machineid-0.4.6.tar.gz", hash = "sha256:d3d9cd85aae31d2f172f27833e5fd17dffd2cf7c4918390ec06300702d02cd8e"},
+    {file = "py_machineid-0.4.6-py3-none-any.whl", hash = "sha256:5f92d8be8a68632b29d1297853f92b50347504e5b41022abe9de9ee5f75fae9e"},
+]
+
+[package.dependencies]
+winregistry = {version = "*", markers = "sys_platform == \"win32\""}
+
+[[package]]
 name = "py-trello"
 version = "0.19.0"
 description = "Python wrapper around the Trello API"
@@ -6963,17 +7081,6 @@ files = [
 
 [package.dependencies]
 numpy = ">=1.16.6"
-
-[[package]]
-name = "pyarrow-hotfix"
-version = "0.6"
-description = ""
-optional = true
-python-versions = ">=3.5"
-files = [
-    {file = "pyarrow_hotfix-0.6-py3-none-any.whl", hash = "sha256:dcc9ae2d220dff0083be6a9aa8e0cdee5182ad358d4931fce825c545e5c89178"},
-    {file = "pyarrow_hotfix-0.6.tar.gz", hash = "sha256:79d3e030f7ff890d408a100ac16d6f00b14d44a502d7897cd9fc3e3a534e9945"},
-]
 
 [[package]]
 name = "pyasn1"
@@ -8339,6 +8446,20 @@ Shapely = ">=1.7.1"
 six = ">=1.15.0"
 
 [[package]]
+name = "ratelim"
+version = "0.1.6"
+description = "Makes it easy to respect rate limits."
+optional = true
+python-versions = "*"
+files = [
+    {file = "ratelim-0.1.6-py2.py3-none-any.whl", hash = "sha256:e1a7dd39e6b552b7cc7f52169cd66cdb826a1a30198e355d7016012987c9ad08"},
+    {file = "ratelim-0.1.6.tar.gz", hash = "sha256:826d32177e11f9a12831901c9fda6679fd5bbea3605910820167088f5acbb11d"},
+]
+
+[package.dependencies]
+decorator = "*"
+
+[[package]]
 name = "ratelimiter"
 version = "1.2.0.post0"
 description = "Simple python rate limiting object"
@@ -9158,6 +9279,20 @@ files = [
 ]
 
 [[package]]
+name = "seqeval"
+version = "1.2.2"
+description = "Testing framework for sequence labeling"
+optional = true
+python-versions = "*"
+files = [
+    {file = "seqeval-1.2.2.tar.gz", hash = "sha256:f28e97c3ab96d6fcd32b648f6438ff2e09cfba87f05939da9b3970713ec56e6f"},
+]
+
+[package.dependencies]
+numpy = ">=1.14.0"
+scikit-learn = ">=0.21.3"
+
+[[package]]
 name = "setuptools"
 version = "67.8.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
@@ -9395,6 +9530,34 @@ numpy = "*"
 [package.extras]
 docs = ["linkify-it-py", "myst-parser", "sphinx", "sphinx-book-theme"]
 test = ["pytest"]
+
+[[package]]
+name = "sparsezoo-nightly"
+version = "1.6.0.20231201"
+description = "Neural network model repository for highly sparse and sparse-quantized models with matching sparsification recipes"
+optional = true
+python-versions = ">=3.8.0"
+files = [
+    {file = "sparsezoo_nightly-1.6.0.20231201-py3-none-any.whl", hash = "sha256:392f1ae7d4d9900756c31161de145796f093c8b226ab0232b73c939c644a6324"},
+]
+
+[package.dependencies]
+click = ">=7.1.2,<8.0.0 || >8.0.0"
+geocoder = ">=1.38.0"
+numpy = ">=1.0.0"
+onnx = ">=1.5.0,<1.15.0"
+pandas = ">1.3"
+protobuf = ">=3.12.2"
+py-machineid = ">=0.3.0"
+pydantic = ">=1.8.2,<2.0.0"
+pyyaml = ">=5.1.0"
+requests = ">=2.0.0"
+tqdm = ">=4.0.0"
+
+[package.extras]
+dev = ["beautifulsoup4 (==4.9.3)", "black (==22.12.0)", "flake8 (>=3.8.3)", "flaky (>=3.7.0)", "isort (>=5.7.0)", "matplotlib (>=3.0.0)", "onnxruntime (>=1.0.0)", "pytest (>=6.0.0)", "wheel (>=0.36.2)"]
+docs = ["m2r2 (>=0.2.7,<0.3.0)", "mistune (==0.8.4)", "myst-parser (>=0.14.0,<0.15.0)", "rinohtype (>=0.4.2)", "sphinx (>=3.4.0)", "sphinx-copybutton (>=0.3.0)", "sphinx-markdown-tables (>=0.0.15)", "sphinx-multiversion (==0.2.4)", "sphinx-rtd-theme"]
+nb = ["ipywidgets (>=7.0.0)", "jupyter (>=1.0.0)"]
 
 [[package]]
 name = "sqlalchemy"
@@ -11056,6 +11219,17 @@ files = [
 dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 
 [[package]]
+name = "winregistry"
+version = "1.1.1"
+description = "Library aimed at working with Windows registry"
+optional = true
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "winregistry-1.1.1-py3-none-any.whl", hash = "sha256:ad4be5a488838266b4bf826712d640db3daadd1f97ba46820f834a98868b3bc1"},
+    {file = "winregistry-1.1.1.tar.gz", hash = "sha256:942fecad3751c1b78b9e6b0a520266903c3023f104668ce1bdbf381ec993ad8b"},
+]
+
+[[package]]
 name = "wolframalpha"
 version = "5.0.0"
 description = "Wolfram|Alpha 2.0 API client"
@@ -11509,7 +11683,7 @@ cli = ["typer"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "couchbase", "dashvector", "databricks-vectorsearch", "datasets", "dgml-utils", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "hologres-vector", "html2text", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-pydantic", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict"]
+extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "couchbase", "dashvector", "databricks-vectorsearch", "datasets", "deepsparse-nightly", "dgml-utils", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "hologres-vector", "html2text", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openai", "openapi-pydantic", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -11519,4 +11693,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f4791327aca4bf3db1b46731d987347b537e638a1be85b2a6a771e52f95d3f29"
+content-hash = "22f6e3c372ae813f1d833ea1b87cc53acd74cce5f3ee749e8f2d7a8c8bb1fc3e"
