@@ -45,13 +45,33 @@ class NVAIPlayEmbeddings(ClientModel, Embeddings):
         """Input pathway for document embeddings."""
         return [self._embed(text, model_type="passage") for text in texts]
 
-    async def aembed_batch_query(self, texts: List[str]) -> List[List[float]]:
-        """Embed query text with Asynchronous Batching."""
-        queries = [self.aembed_query(text) for text in texts]
-        return await asyncio.gather(*queries)
+    async def aembed_batch_query(
+        self,
+        texts: List[str],
+        max_concurrency: int = 10,
+    ) -> List[List[float]]:
+        """Embed search docs with Asynchronous Batching and Concurrency Control."""
+        semaphore = asyncio.Semaphore(max_concurrency)
+        
+        async def embed_with_semaphore(text: str) -> asyncio.Coroutine:
+            async with semaphore:
+                return await self.aembed_query(text)
+        
+        tasks = [embed_with_semaphore(text) for text in texts]
+        return await asyncio.gather(*tasks)
 
-    async def aembed_batch_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed search docs with Asynchronous Batching."""
-        passages = [self.aembed_documents([text]) for text in texts]
-        outs = await asyncio.gather(*passages)
+    async def aembed_batch_documents(
+        self,
+        texts: List[str],
+        max_concurrency: int = 10,
+    ) -> List[List[float]]:
+        """Embed search docs with Asynchronous Batching and Concurrency Control."""
+        semaphore = asyncio.Semaphore(max_concurrency)
+        
+        async def embed_with_semaphore(text: str) -> asyncio.Coroutine:
+            async with semaphore:
+                return await self.aembed_documents([text])
+        
+        tasks = [embed_with_semaphore(text) for text in texts]
+        outs = await asyncio.gather(*tasks)
         return [out[0] for out in outs]
