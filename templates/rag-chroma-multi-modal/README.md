@@ -11,6 +11,12 @@ This template performs multi-modal RAG using Chroma with multi-modal OpenCLIP em
 
 Supply a slide deck as pdf in the `/docs` directory. 
 
+Create your vectorstore with: 
+
+```
+python rag_chroma_mutli_modal/ingest.py
+```
+
 ## Embeddings
 
 This template will use [OpenCLIP](https://github.com/mlfoundations/open_clip) multi-modal embeddings.
