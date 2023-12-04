@@ -21,7 +21,7 @@ pypdfium2 = ">=4.20.0"
 langchain-cli = ">=0.0.15"
 
 [tool.langserve]
-export_module = "rag_chroma_mutli_modal"
+export_module = "rag_chroma_multi_modal"
 export_attr = "chain"
 
 [tool.templates-hub]
