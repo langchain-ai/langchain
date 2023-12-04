@@ -505,10 +505,12 @@ class Weaviate(VectorStore):
                     "uuid": _id,
                     "data_object": data_properties,
                     "class_name": index_name,
-                    "tenant": tenant,
                 }
                 if embeddings is not None:
                     params["vector"] = embeddings[i]
+
+                if tenant is not None:
+                    params["tenant"] = tenant
 
                 batch.add_data_object(**params)
 
