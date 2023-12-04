@@ -1,8 +1,9 @@
 from typing import Any, Callable, Iterator, List, Mapping, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+from langchain_core.utils.utils import guard_import
+
 from langchain.document_loaders.base import BaseLoader
-from langchain.utils.utils import guard_import
 
 RecordHandler = Callable[[Any, Optional[str]], Document]
 

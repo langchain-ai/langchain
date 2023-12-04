@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-experimental"
-version = "0.0.41"
+version = "0.0.43"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -10,7 +10,8 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.308"
+langchain-core = ">=0.0.7,<0.1"
+langchain = ">=0.0.342,<0.1"
 presidio-anonymizer = {version = "^2.2.33", optional = true}
 presidio-analyzer = {version = "^2.2.33", optional = true}
 faker = {version = "^19.3.1", optional = true}
@@ -34,6 +35,9 @@ setuptools = "^67.6.1"
 # dependencies used for running tests (e.g., pytest, freezegun, response).
 # Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
+pytest-asyncio = "^0.20.3"
+langchain = {path = "../langchain", develop = true}
+langchain-core = {path = "../core", develop = true}
 
 
 [tool.poetry.group.test_integration]
@@ -91,3 +95,4 @@ markers = [
   "asyncio: mark tests as requiring asyncio",
   "compile: mark placeholder test used to compile integration tests without running them",
 ]
+asyncio_mode = "auto"
