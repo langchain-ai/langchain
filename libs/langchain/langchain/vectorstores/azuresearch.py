@@ -39,10 +39,11 @@ if TYPE_CHECKING:
         SearchField,
         VectorSearch,
     )
+
     try:
         from azure.search.documents.indexes.models import SemanticSearch
     except ImportError:
-        from azure.search.documents.indexes.models import SemanticSettings # <11.4.0
+        from azure.search.documents.indexes.models import SemanticSettings  # <11.4.0
 
 # Allow overriding field names for Azure Search
 FIELDS_ID = get_from_env(
@@ -93,17 +94,19 @@ def _get_search_client(
     # class names changed for versions >= 11.4.0
     try:
         from azure.search.documents.indexes.models import (
-            HnswAlgorithmConfiguration, #HnswVectorSearchAlgorithmConfiguration outdated
-            SemanticPrioritizedFields,  #PrioritizedFields outdated
-            SemanticSearch,             #SemanticSettings outdated
+            HnswAlgorithmConfiguration,  # HnswVectorSearchAlgorithmConfiguration is old
+            SemanticPrioritizedFields,  # PrioritizedFields outdated
+            SemanticSearch,  # SemanticSettings outdated
         )
+
         NEW_VERSION = True
     except ImportError:
         from azure.search.documents.indexes.models import (
-            HnswVectorSearchAlgorithmConfiguration, 
+            HnswVectorSearchAlgorithmConfiguration,
             PrioritizedFields,
             SemanticSettings,
         )
+
         NEW_VERSION = False
 
     default_fields = default_fields or []
@@ -151,11 +154,11 @@ def _get_search_client(
             fields = default_fields
         # Vector search configuration
         if vector_search is None:
-            
-            if NEW_VERSION: 
-                # >= 11.4.0: VectorSearch(algorithm_configuration) --> VectorSearch(algorithms)
+            if NEW_VERSION:
+                # >= 11.4.0:
+                #   VectorSearch(algorithm_configuration) --> VectorSearch(algorithms)
                 # HnswVectorSearchAlgorithmConfiguration --> HnswAlgorithmConfiguration
-                vector_search = VectorSearch(    
+                vector_search = VectorSearch(
                     algorithms=[
                         HnswAlgorithmConfiguration(
                             name="default",
@@ -169,8 +172,8 @@ def _get_search_client(
                         )
                     ]
                 )
-            else: # < 11.4.0
-                vector_search = VectorSearch(    
+            else:  # < 11.4.0
+                vector_search = VectorSearch(
                     algorithm_configurations=[
                         HnswVectorSearchAlgorithmConfiguration(
                             name="default",
@@ -187,10 +190,10 @@ def _get_search_client(
 
         # Create the semantic settings with the configuration
         if semantic_settings is None and semantic_configuration_name is not None:
-
             if NEW_VERSION:
-                # <=11.4.0: SemanticSettings --> SemanticSearch 
-                # PrioritizedFields(prioritized_content_fields) --> SemanticPrioritizedFields(content_fields)
+                # <=11.4.0: SemanticSettings --> SemanticSearch
+                # PrioritizedFields(prioritized_content_fields)
+                #   --> SemanticPrioritizedFields(content_fields)
                 semantic_settings = SemanticSearch(
                     configurations=[
                         SemanticConfiguration(
@@ -203,7 +206,7 @@ def _get_search_client(
                         )
                     ]
                 )
-            else: # < 11.4.0
+            else:  # < 11.4.0
                 semantic_settings = SemanticSettings(
                     configurations=[
                         SemanticConfiguration(
