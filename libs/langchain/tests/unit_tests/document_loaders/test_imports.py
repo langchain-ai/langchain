@@ -41,6 +41,7 @@ EXPECTED_ALL = [
     "CollegeConfidentialLoader",
     "ConcurrentLoader",
     "ConfluenceLoader",
+    "CouchbaseLoader",
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
