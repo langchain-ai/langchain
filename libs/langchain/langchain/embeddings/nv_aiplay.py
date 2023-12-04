@@ -50,7 +50,7 @@ class NVAIPlayEmbeddings(ClientModel, Embeddings):
         texts: List[str],
         max_concurrency: int = 10,
     ) -> List[List[float]]:
-        """Embed search docs with Asynchronous Batching and Concurrency Control."""
+        """Embed search queries with Asynchronous Batching and Concurrency Control."""
         semaphore = asyncio.Semaphore(max_concurrency)
         
         async def embed_with_semaphore(text: str) -> asyncio.Coroutine:
