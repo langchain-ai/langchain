@@ -162,7 +162,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             agent_decision = self.plan(
                 intermediate_steps, with_functions=False, **kwargs
             )
-            if type(agent_decision) == AgentFinish:
+            if isinstance(agent_decision, AgentFinish):
                 return agent_decision
             else:
                 raise ValueError(
