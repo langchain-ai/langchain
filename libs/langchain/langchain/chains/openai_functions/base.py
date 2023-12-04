@@ -75,7 +75,7 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
         arg = None
         for line in args_block.split("\n")[1:]:
             if ":" in line:
-                arg, desc = line.split(":")
+                arg, desc = line.split(":", maxsplit=1)
                 arg_descriptions[arg.strip()] = desc.strip()
             elif arg:
                 arg_descriptions[arg.strip()] += " " + line.strip()

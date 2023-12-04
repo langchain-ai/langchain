@@ -159,6 +159,7 @@ class _VertexAIBase(BaseModel):
 
 class _VertexAICommon(_VertexAIBase):
     client: "_LanguageModel" = None  #: :meta private:
+    client_preview: "_LanguageModel" = None  #: :meta private:
     model_name: str
     "Underlying model name."
     temperature: float = 0.0
@@ -406,12 +407,15 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         values["async_client"] = PredictionServiceAsyncClient(
             client_options=client_options, client_info=client_info
         )
-        values["endpoint_path"] = values["client"].endpoint_path(
-            project=values["project"],
-            location=values["location"],
-            endpoint=values["endpoint_id"],
-        )
         return values
+
+    @property
+    def endpoint_path(self) -> str:
+        return self.client.endpoint_path(
+            project=self.project,
+            location=self.location,
+            endpoint=self.endpoint_id,
+        )
 
     @property
     def _llm_type(self) -> str:
