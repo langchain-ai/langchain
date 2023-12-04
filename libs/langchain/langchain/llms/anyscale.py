@@ -1,4 +1,5 @@
 """Wrapper around Anyscale Endpoint"""
+import os
 from typing import (
     Any,
     AsyncIterator,
@@ -9,9 +10,9 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    cast,
 )
 
+import requests
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
@@ -26,6 +27,10 @@ from langchain.llms.openai import (
     completion_with_retry,
 )
 from langchain.utils import get_from_dict_or_env
+from langchain.utils.openai import is_openai_v1
+
+DEFAULT_BASE_URL = "https://api.endpoints.anyscale.com/v1"
+DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
 
 def update_token_usage(
@@ -65,16 +70,14 @@ def create_llm_result(
 class Anyscale(BaseOpenAI):
     """Anyscale large language models.
 
-    To use, you should have the environment variable ``ANYSCALE_API_BASE`` and
-    ``ANYSCALE_API_KEY``set with your Anyscale Endpoint, or pass it as a named
-    parameter to the constructor.
+    To use, you should have the environment variable ``ANYSCALE_API_KEY``set with your
+    Anyscale Endpoint, or pass it as a named parameter to the constructor.
+    To use with Anyscale Private Endpoint, please also set ``ANYSCALE_BASE_URL``.
 
     Example:
         .. code-block:: python
             from langchain.llms import Anyscale
-            anyscalellm = Anyscale(anyscale_api_base="ANYSCALE_API_BASE",
-                                   anyscale_api_key="ANYSCALE_API_KEY",
-                                   model_name="meta-llama/Llama-2-7b-chat-hf")
+            anyscalellm = Anyscale(anyscale_api_key="ANYSCALE_API_KEY")
             # To leverage Ray for parallel processing
             @ray.remote(num_cpus=1)
             def send_query(llm, text):
@@ -85,26 +88,90 @@ class Anyscale(BaseOpenAI):
     """
 
     """Key word arguments to pass to the model."""
-    anyscale_api_base: Optional[str] = None
-    anyscale_api_key: Optional[SecretStr] = None
+    anyscale_base_url: str = Field(default=DEFAULT_BASE_URL)
+    anyscale_api_key: SecretStr
+    model_name: str = Field(default=DEFAULT_MODEL)
 
     prefix_messages: List = Field(default_factory=list)
+
+    @staticmethod
+    def get_available_models(
+        anyscale_api_key: str = None,
+        anyscale_base_url: str = DEFAULT_BASE_URL,
+    ) -> Set[str]:
+        """Get available models from Anyscale API."""
+        try:
+            anyscale_api_key = anyscale_api_key or os.environ["ANYSCALE_API_KEY"]
+        except KeyError as e:
+            raise ValueError(
+                "Anyscale API key must be passed as keyword argument or "
+                "set in environment variable ANYSCALE_API_KEY.",
+            ) from e
+
+        models_url = f"{anyscale_base_url}/models"
+        models_response = requests.get(
+            models_url,
+            headers={
+                "Authorization": f"Bearer {anyscale_api_key}",
+            },
+        )
+
+        if models_response.status_code != 200:
+            raise ValueError(
+                f"Error getting models from {models_url}: "
+                f"{models_response.status_code}",
+            )
+
+        return {model["id"] for model in models_response.json()["data"]}
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["anyscale_api_base"] = get_from_dict_or_env(
-            values, "anyscale_api_base", "ANYSCALE_API_BASE"
+        values["anyscale_base_url"] = get_from_dict_or_env(
+            values,
+            "anyscale_base_url",
+            "ANYSCALE_BASE_URL",
+            default=DEFAULT_BASE_URL,
         )
         values["anyscale_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "anyscale_api_key", "ANYSCALE_API_KEY")
         )
+        values["model_name"] = get_from_dict_or_env(
+            values,
+            "model_name",
+            "MODEL_NAME",
+            default=DEFAULT_MODEL,
+        )
+        model_name = values["model_name"]
+        available_models = cls.get_available_models(
+            values["anyscale_api_key"].get_secret_value(),
+            values["anyscale_base_url"],
+        )
+
+        if model_name not in available_models:
+            raise ValueError(
+                f"Model name {model_name} not found in available models: "
+                f"{available_models}.",
+            )
 
         try:
             import openai
 
-            ## Always create ChatComplete client, replacing the legacy Complete client
-            values["client"] = openai.ChatCompletion
+            if is_openai_v1():
+                client_params = {
+                    "api_key": values["anyscale_api_key"].get_secret_value(),
+                    "base_url": values["anyscale_base_url"],
+                    # To do: future support
+                    # "organization": values["openai_organization"],
+                    # "timeout": values["request_timeout"],
+                    # "max_retries": values["max_retries"],
+                    # "default_headers": values["default_headers"],
+                    # "default_query": values["default_query"],
+                    # "http_client": values["http_client"],
+                }
+                values["client"] = openai.OpenAI(**client_params).chat.completions
+            else:
+                values["client"] = openai.ChatCompletion
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -129,10 +196,16 @@ class Anyscale(BaseOpenAI):
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
         openai_creds: Dict[str, Any] = {
-            "api_key": cast(SecretStr, self.anyscale_api_key).get_secret_value(),
-            "api_base": self.anyscale_api_base,
+            "model": self.model_name,
         }
-        return {**openai_creds, **{"model": self.model_name}, **super()._default_params}
+        if not is_openai_v1():
+            openai_creds.update(
+                {
+                    "api_key": self.anyscale_api_key.get_secret_value(),
+                    "api_base": self.anyscale_base_url,
+                }
+            )
+        return {**openai_creds, **super()._invocation_params}
 
     @property
     def _llm_type(self) -> str:
@@ -169,11 +242,14 @@ class Anyscale(BaseOpenAI):
         for stream_resp in completion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
+            if not isinstance(stream_resp, dict):
+                stream_resp = stream_resp.dict()
             token = stream_resp["choices"][0]["delta"].get("content", "")
-            chunk = GenerationChunk(text=token)
-            yield chunk
-            if run_manager:
-                run_manager.on_llm_new_token(token, chunk=chunk)
+            if token:
+                chunk = GenerationChunk(text=token)
+                yield chunk
+                if run_manager:
+                    run_manager.on_llm_new_token(token, chunk=chunk)
 
     async def _astream(
         self,
@@ -187,11 +263,14 @@ class Anyscale(BaseOpenAI):
         async for stream_resp in await acompletion_with_retry(
             self, messages=messages, run_manager=run_manager, **params
         ):
+            if not isinstance(stream_resp, dict):
+                stream_resp = stream_resp.dict()
             token = stream_resp["choices"][0]["delta"].get("content", "")
-            chunk = GenerationChunk(text=token)
-            yield chunk
-            if run_manager:
-                await run_manager.on_llm_new_token(token, chunk=chunk)
+            if token:
+                chunk = GenerationChunk(text=token)
+                yield chunk
+                if run_manager:
+                    await run_manager.on_llm_new_token(token, chunk=chunk)
 
     def _generate(
         self,
@@ -230,6 +309,8 @@ class Anyscale(BaseOpenAI):
                 response = completion_with_retry(
                     self, messages=messages, run_manager=run_manager, **params
                 )
+                if not isinstance(response, dict):
+                    response = response.dict()
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
         return create_llm_result(choices, prompts, token_usage, self.model_name)
@@ -271,6 +352,8 @@ class Anyscale(BaseOpenAI):
                 response = await acompletion_with_retry(
                     self, messages=messages, run_manager=run_manager, **params
                 )
+                if not isinstance(response, dict):
+                    response = response.dict()
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
         return create_llm_result(choices, prompts, token_usage, self.model_name)
