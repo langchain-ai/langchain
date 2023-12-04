@@ -449,8 +449,8 @@ class Weaviate(VectorStore):
         """
 
         try:
-            from weaviate.util import get_valid_uuid
             from weaviate import Tenant
+            from weaviate.util import get_valid_uuid
         except ImportError as e:
             raise ImportError(
                 "Could not import weaviate python  package. "
