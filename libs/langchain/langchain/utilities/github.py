@@ -182,7 +182,7 @@ class GitHubAPIWrapper(BaseModel):
         Returns:
             str: A plaintext report containing the paths and names of the files.
         """
-        files = []
+        files: List[str] = []
         try:
             contents = self.github_repo_instance.get_contents(
                 "", ref=self.github_base_branch
@@ -293,7 +293,7 @@ class GitHubAPIWrapper(BaseModel):
         Returns:
             str: A plaintext list containing the the filepaths in the branch.
         """
-        files = []
+        files: List[str] = []
         try:
             contents = self.github_repo_instance.get_contents(
                 "", ref=self.active_branch
