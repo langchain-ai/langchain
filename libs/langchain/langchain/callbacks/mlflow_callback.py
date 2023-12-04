@@ -160,7 +160,7 @@ class MlflowLogger:
             rname = "".join(random.choices(string.ascii_uppercase + string.digits, k=7))
             name = name.replace("%", rname)
         with self.mlflow.start_run(
-                experiment_id=self.mlf_expid, run_name=name, tags=tags, nested=nested
+            experiment_id=self.mlf_expid, run_name=name, tags=tags, nested=nested
         ) as run:
             self.run = run
 
