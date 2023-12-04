@@ -133,11 +133,8 @@ class GitHubToolkit(BaseToolkit):
 
         For example, this toolkit can be used to create issues, pull requests,
         and comments on GitHub.
-<<<<<<< HEAD
-=======
 
         See [Security](https://python.langchain.com/docs/security) for more information.
->>>>>>> 06f3c5040 (Fix lint errors locally, thanks for the tip @efriis)
     """
 
     tools: List[BaseTool] = []
