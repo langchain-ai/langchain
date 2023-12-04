@@ -1,5 +1,5 @@
 """Tests for the Google Cloud DocAI parser."""
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -9,7 +9,7 @@ from langchain.document_loaders.parsers import DocumentIntelligenceParser
 @pytest.mark.requires("azure", "azure.ai", "azure.ai.documentintelligence")
 @patch("azure.ai.documentintelligence.DocumentIntelligenceClient")
 @patch("azure.core.credentials.AzureKeyCredential")
-def test_doc_intelligence(mock_credential, mock_client) -> None:
+def test_doc_intelligence(mock_credential: MagicMock, mock_client: MagicMock) -> None:
     endpoint = "endpoint"
     key = "key"
 
