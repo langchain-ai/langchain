@@ -68,6 +68,7 @@ EXPECTED_ALL = [
     "ListSparkSQLTool",
     "MetaphorSearchResults",
     "MoveFileTool",
+    "NasaAction",
     "NavigateBackTool",
     "NavigateTool",
     "O365CreateDraftMessage",
