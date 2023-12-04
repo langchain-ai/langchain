@@ -398,6 +398,12 @@ def _import_metaphor_search() -> Any:
     return MetaphorSearchResults
 
 
+def _import_nasa_tool() -> Any:
+    from langchain.tools.nasa.tool import NasaAction
+
+    return NasaAction
+
+
 def _import_office365_create_draft_message() -> Any:
     from langchain.tools.office365.create_draft_message import O365CreateDraftMessage
 
@@ -592,6 +598,12 @@ def _import_requests_tool_RequestsPutTool() -> Any:
     from langchain.tools.requests.tool import RequestsPutTool
 
     return RequestsPutTool
+
+
+def _import_steam_webapi_tool() -> Any:
+    from langchain.tools.steam.tool import SteamWebAPIQueryRun
+
+    return SteamWebAPIQueryRun
 
 
 def _import_scenexplain_tool() -> Any:
@@ -905,6 +917,8 @@ def __getattr__(name: str) -> Any:
         return _import_merriam_webster_tool()
     elif name == "MetaphorSearchResults":
         return _import_metaphor_search()
+    elif name == "NasaAction":
+        return _import_nasa_tool()
     elif name == "O365CreateDraftMessage":
         return _import_office365_create_draft_message()
     elif name == "O365SearchEvents":
@@ -967,6 +981,8 @@ def __getattr__(name: str) -> Any:
         return _import_requests_tool_RequestsPostTool()
     elif name == "RequestsPutTool":
         return _import_requests_tool_RequestsPutTool()
+    elif name == "SteamWebAPIQueryRun":
+        return _import_steam_webapi_tool()
     elif name == "SceneXplainTool":
         return _import_scenexplain_tool()
     elif name == "SearxSearchResults":
@@ -1112,6 +1128,7 @@ __all__ = [
     "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
     "MoveFileTool",
+    "NasaAction",
     "NavigateBackTool",
     "NavigateTool",
     "O365CreateDraftMessage",
@@ -1134,6 +1151,7 @@ __all__ = [
     "RequestsPatchTool",
     "RequestsPostTool",
     "RequestsPutTool",
+    "SteamWebAPIQueryRun",
     "SceneXplainTool",
     "SearxSearchResults",
     "SearxSearchRun",
