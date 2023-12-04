@@ -64,7 +64,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
             raise ValueError("Please provide a model_id.")
 
         try:
-            from clarifai.auth.helper import ClarifaiAuthHelper
+            from clarifai.client.auth.helper import ClarifaiAuthHelper
             from clarifai.client import create_stub
         except ImportError:
             raise ImportError(
