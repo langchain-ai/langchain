@@ -115,9 +115,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         return cls(ast_parse=ast_parse)
 
 
-class VirtualColumnParser(
-    RunnableSerializable[StructuredQuery, StructuredQuery]
-):
+class VirtualColumnParser(RunnableSerializable[StructuredQuery, StructuredQuery]):
     """Virtual Column Parser which is compatible with LCEL"""
 
     attributes: Sequence[Union[AttributeInfo, dict]]
