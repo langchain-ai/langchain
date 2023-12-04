@@ -8,9 +8,8 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
     model: Any
     preprocess: Any
     tokenizer: Any
-    # Select model 
-    # See: https://github.com/mlfoundations/open_clip
-    model_name: str =  "ViT-H-14"
+    # Select model: https://github.com/mlfoundations/open_clip
+    model_name: str = "ViT-H-14"
     checkpoint: str = "laion2b_s32b_b79k"
 
     @root_validator()
@@ -19,9 +18,9 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
         try:
             import open_clip
 
-            # Use values from the dictionary, which fall back to class defaults if not provided
-            model_name = values.get('model_name', cls.__fields__['model_name'].default)
-            checkpoint = values.get('checkpoint', cls.__fields__['checkpoint'].default)
+            # Fall back to class defaults if not provided
+            model_name = values.get("model_name", cls.__fields__["model_name"].default)
+            checkpoint = values.get("checkpoint", cls.__fields__["checkpoint"].default)
 
             # Load model
             model, _, preprocess = open_clip.create_model_and_transforms(
