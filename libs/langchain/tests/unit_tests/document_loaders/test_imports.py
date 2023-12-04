@@ -52,8 +52,6 @@ EXPECTED_ALL = [
     "Docx2txtLoader",
     "DropboxLoader",
     "DuckDBLoader",
-    "EmbaasBlobLoader",
-    "EmbaasLoader",
     "EtherscanLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
