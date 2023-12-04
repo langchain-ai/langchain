@@ -13,37 +13,62 @@ from langchain_anthropic.chat_models import (
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
 
-def test_anthropic_model_name_param() -> None:
+def test_model_name_param() -> None:
     llm = ChatAnthropic(model_name="foo")
     assert llm.model == "foo"
 
 
-def test_anthropic_model_param() -> None:
+def test_model_param() -> None:
     llm = ChatAnthropic(model="foo")
     assert llm.model == "foo"
 
 
-def test_anthropic_model_kwargs() -> None:
+def test_model_kwargs() -> None:
     llm = ChatAnthropic(model_kwargs={"foo": "bar"})
     assert llm.model_kwargs == {"foo": "bar"}
 
 
-def test_anthropic_invalid_model_kwargs() -> None:
+def test_invalid_model_kwargs() -> None:
     with pytest.raises(ValueError):
         ChatAnthropic(model_kwargs={"max_tokens_to_sample": 5})
 
 
-def test_anthropic_incorrect_field() -> None:
+def test_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
         llm = ChatAnthropic(foo="bar")
     assert llm.model_kwargs == {"foo": "bar"}
 
 
-def test_anthropic_initialization() -> None:
+def test_initialization() -> None:
     """Test anthropic initialization."""
-    # Verify that chat anthropic can be initialized using a secret key provided
-    # as a parameter rather than an environment variable.
-    ChatAnthropic(model="test", anthropic_api_key="test")
+    # No params.
+    ChatAnthropic()
+
+    # All params.
+    ChatAnthropic(
+        model="test",
+        max_tokens_to_sample=1000,
+        temperature=0.2,
+        top_k=2,
+        top_p=0.9,
+        default_request_timeout=123,
+        anthropic_api_url="foobar.com",
+        anthropic_api_key="test",
+        model_kwargs={"fake_param": 2},
+    )
+
+    # Alias params
+    ChatAnthropic(
+        model_name="test",
+        timeout=123,
+        base_url="foobar.com",
+        api_key="test",
+    )
+
+
+def test_get_num_tokens() -> None:
+    chat = ChatAnthropic(model="test", anthropic_api_key="test")
+    assert chat.get_num_tokens("Hello claude") > 0
 
 
 @pytest.mark.parametrize(

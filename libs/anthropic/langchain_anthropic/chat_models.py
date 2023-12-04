@@ -1,3 +1,4 @@
+"""Anthropic chat models."""
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
 
 from langchain_core.callbacks import (
@@ -80,9 +81,13 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
     Example:
         .. code-block:: python
 
-            import anthropic
-            from langchain.chat_models import ChatAnthropic
-            model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(
+                model="claude-2",
+                anthropic_api_key="<my-api-key>",
+                max_tokens_to_sample=1024,
+            )
     """
 
     class Config:
@@ -106,11 +111,13 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         return True
 
     def _convert_messages_to_prompt(self, messages: List[BaseMessage]) -> str:
-        """Format a list of messages into a full prompt for the Anthropic model
+        """Format a list of messages into a full prompt for the Anthropic model.
+
         Args:
             messages (List[BaseMessage]): List of BaseMessage to combine.
+
         Returns:
-            str: Combined string with necessary HUMAN_PROMPT and AI_PROMPT tags.
+            String with necessary HUMAN_PROMPT and AI_PROMPT tags.
         """
         prompt_params = {}
         if self.HUMAN_PROMPT:
@@ -120,6 +127,14 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         return convert_messages_to_prompt_anthropic(messages=messages, **prompt_params)
 
     def convert_prompt(self, prompt: PromptValue) -> str:
+        """Format a PromptValue into a string prompt for the Anthropic model.
+
+        Args:
+            prompt (PromptValue): The prompt to convert.
+
+        Returns:
+            String with necessary HUMAN_PROMPT and AI_PROMPT tags.
+        """
         return self._convert_messages_to_prompt(prompt.to_messages())
 
     def _stream(
@@ -216,6 +231,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
-        if not self.count_tokens:
-            raise NameError("Please ensure the anthropic package is loaded")
-        return self.count_tokens(text)
+        if self.count_tokens is not None:
+            return self.count_tokens(text)
+        else:
+            return self.client.count_tokens(text)
