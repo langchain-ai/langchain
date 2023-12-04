@@ -808,6 +808,8 @@ __all__ = [
     "Tongyi",
     "VLLM",
     "VLLMOpenAI",
+    "VertexAI",
+    "VertexAIModelGarden",
     "WatsonxLLM",
     "Writer",
     "Xinference",

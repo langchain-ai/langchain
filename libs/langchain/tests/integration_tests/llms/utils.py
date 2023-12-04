@@ -14,7 +14,7 @@ def assert_llm_equality(
     # all other values being the same, so just assess all other fields
     # Exclude contains fields name which can be session based.
     for field in llm.__fields__.keys():
-        if field != "client" and field != "pipeline" and not field in exclude:
+        if field != "client" and field != "pipeline" and field not in exclude:
             val = getattr(llm, field)
             new_val = getattr(loaded_llm, field)
             assert new_val == val
