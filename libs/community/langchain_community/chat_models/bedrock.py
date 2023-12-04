@@ -117,12 +117,16 @@ class BedrockChat(BaseChatModel, BedrockBase):
             if stop:
                 params["stop_sequences"] = stop
 
-            completion = self._prepare_input_and_invoke(
-                prompt=prompt, stop=stop, run_manager=run_manager, **params
+            llm_result = self._prepare_input_and_invoke(
+                prompt=[prompt], stop=stop, run_manager=run_manager, **params
             )
+            completion = llm_result.generations[0][0].text
+            llm_output = llm_result.llm_output
 
         message = AIMessage(content=completion)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        return ChatResult(
+            generations=[ChatGeneration(message=message)], llm_output=llm_output,
+        )
 
     def get_num_tokens(self, text: str) -> int:
         if self._model_is_anthropic:

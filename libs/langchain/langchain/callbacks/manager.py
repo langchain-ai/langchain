@@ -3,6 +3,7 @@ from __future__ import annotations
 from langchain_community.callbacks.manager import (
     get_openai_callback,
     wandb_tracing_enabled,
+    get_bedrock_token_count_callback,
 )
 from langchain_core.callbacks.manager import (
     AsyncCallbackManager,
@@ -64,4 +65,5 @@ __all__ = [
     "env_var_is_set",
     "get_openai_callback",
     "wandb_tracing_enabled",
+    "get_bedrock_token_count_callback",
 ]
