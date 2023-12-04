@@ -4189,8 +4189,21 @@ async def test_ainvoke_astream_passthrough_assign_trace() -> None:
     assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
 
 
-async def test_astream_log_copying_data() -> None:
-    """Test a astream log."""
+async def test_astream_log_deep_copies() -> None:
+    """Verify that deep copies are used when using jsonpatch in astream log.
+
+    jsonpatch re-uses objects in its API; e.g.,
+
+    import jsonpatch
+    obj1 = { "a": 1 }
+    value = { "b": 2 }
+    obj2 = { "a": 1, "value": value }
+
+    ops = list(jsonpatch.JsonPatch.from_diff(obj1, obj2))
+    assert id(ops[0]['value']) == id(value)
+
+    This can create unexpected consequences for downstream code.
+    """
 
     def _get_run_log(run_log_patches: Sequence[RunLogPatch]) -> RunLog:
         """Get run log"""
@@ -4221,17 +4234,3 @@ async def test_astream_log_copying_data() -> None:
         "logs": {},
         "streamed_output": [2],
     }
-
-
-def test_foo():
-    import jsonpatch
-
-    a = {"a": "a"}
-    b = {"b": "b", "a": "a"}
-    c = {"b": "b", "a": "a", "c": {"1": "1"}}
-
-    state = {}
-
-    for op in jsonpatch.JsonPatch.from_diff({"a": 5}, {"a": 5, "c": c}):
-        raise ValueError(op)
-        raise ValueError(f'{id(c)} {id(op["value"])}')
