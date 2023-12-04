@@ -105,6 +105,7 @@ _EXPECTED = [
     "StackExchangeTool",
     "SteamshipImageGenerationTool",
     "StructuredTool",
+    "SteamWebAPIQueryRun",
     "Tool",
     "VectorStoreQATool",
     "VectorStoreQAWithSourcesTool",
