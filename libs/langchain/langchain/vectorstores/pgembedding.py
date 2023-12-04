@@ -14,10 +14,10 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
 from langchain.utils import get_from_dict_or_env
 
 Base = declarative_base()  # type: Any

@@ -71,8 +71,8 @@ class Clarifai(LLM):
             raise ValueError("Please provide a model_id.")
 
         try:
-            from clarifai.auth.helper import ClarifaiAuthHelper
             from clarifai.client import create_stub
+            from clarifai.client.auth.helper import ClarifaiAuthHelper
         except ImportError:
             raise ImportError(
                 "Could not import clarifai python package. "
