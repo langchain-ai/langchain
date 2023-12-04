@@ -47,6 +47,7 @@ from langchain.agents.agent_toolkits.spark_sql.base import create_spark_sql_agen
 from langchain.agents.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
 from langchain.agents.agent_toolkits.sql.base import create_sql_agent
 from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
+from langchain.agents.agent_toolkits.steam.toolkit import SteamToolkit
 from langchain.agents.agent_toolkits.vectorstore.base import (
     create_vectorstore_agent,
     create_vectorstore_router_agent,
@@ -98,6 +99,7 @@ __all__ = [
     "PlayWrightBrowserToolkit",
     "PowerBIToolkit",
     "SlackToolkit",
+    "SteamToolkit",
     "SQLDatabaseToolkit",
     "SparkSQLToolkit",
     "VectorStoreInfo",
