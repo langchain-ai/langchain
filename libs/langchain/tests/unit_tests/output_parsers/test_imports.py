@@ -11,6 +11,7 @@ EXPECTED_ALL = [
     "MarkdownListOutputParser",
     "NumberedListOutputParser",
     "OutputFixingParser",
+    "PandasDataFrameOutputParser",
     "PydanticOutputParser",
     "RegexDictParser",
     "RegexParser",
@@ -19,6 +20,9 @@ EXPECTED_ALL = [
     "RetryWithErrorOutputParser",
     "StructuredOutputParser",
     "XMLOutputParser",
+    "JsonOutputToolsParser",
+    "PydanticToolsParser",
+    "JsonOutputKeyToolsParser",
 ]
 
 

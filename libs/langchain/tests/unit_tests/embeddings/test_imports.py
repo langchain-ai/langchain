@@ -2,17 +2,22 @@ from langchain.embeddings import __all__
 
 EXPECTED_ALL = [
     "OpenAIEmbeddings",
+    "AzureOpenAIEmbeddings",
     "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
+    "DatabricksEmbeddings",
     "ElasticsearchEmbeddings",
+    "FastEmbedEmbeddings",
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
+    "InfinityEmbeddings",
     "GradientEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
     "HuggingFaceHubEmbeddings",
     "MlflowAIGatewayEmbeddings",
+    "MlflowEmbeddings",
     "ModelScopeEmbeddings",
     "TensorflowHubEmbeddings",
     "SagemakerEndpointEmbeddings",
@@ -48,7 +53,6 @@ EXPECTED_ALL = [
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
-    "OpenCLIPEmbeddings",
 ]
 
 

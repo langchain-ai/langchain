@@ -6,6 +6,13 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import VectorStore
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -17,11 +24,6 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
-from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import Extra, Field, root_validator
-from langchain.schema import BaseRetriever, Document
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.vectorstore import VectorStore
 
 
 class BaseRetrievalQA(Chain):
@@ -198,7 +200,7 @@ class RetrievalQA(BaseRetrievalQA):
             from langchain.llms import OpenAI
             from langchain.chains import RetrievalQA
             from langchain.vectorstores import FAISS
-            from langchain.schema.vectorstore import VectorStoreRetriever
+            from langchain_core.vectorstores import VectorStoreRetriever
             retriever = VectorStoreRetriever(vectorstore=FAISS(...))
             retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)
 

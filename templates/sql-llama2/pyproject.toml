@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "sql-llama2"
 version = "0.1.0"
-description = ""
+description = "QA with a SQL database using natural language and LLaMA2-13b"
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]
@@ -18,6 +18,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "sql_llama2"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "sql"
+author = "LangChain"
+integrations = ["Replicate"]
+tags = ["sql"]
 
 [build-system]
 requires = [

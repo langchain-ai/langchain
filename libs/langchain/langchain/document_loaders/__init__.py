@@ -34,6 +34,9 @@ from langchain.document_loaders.arxiv import ArxivLoader
 from langchain.document_loaders.assemblyai import AssemblyAIAudioTranscriptLoader
 from langchain.document_loaders.async_html import AsyncHtmlLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
+from langchain.document_loaders.azure_ai_data import (
+    AzureAIDataLoader,
+)
 from langchain.document_loaders.azure_blob_storage_container import (
     AzureBlobStorageContainerLoader,
 )
@@ -67,6 +70,7 @@ from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
 from langchain.document_loaders.docugami import DocugamiLoader
+from langchain.document_loaders.docusaurus import DocusaurusLoader
 from langchain.document_loaders.dropbox import DropboxLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
@@ -225,6 +229,7 @@ __all__ = [
     "ArxivLoader",
     "AssemblyAIAudioTranscriptLoader",
     "AsyncHtmlLoader",
+    "AzureAIDataLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
@@ -250,6 +255,7 @@ __all__ = [
     "DirectoryLoader",
     "DiscordChatLoader",
     "DocugamiLoader",
+    "DocusaurusLoader",
     "Docx2txtLoader",
     "DropboxLoader",
     "DuckDBLoader",
