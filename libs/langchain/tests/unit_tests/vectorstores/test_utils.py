@@ -1,7 +1,7 @@
 """Test vector store utility functions."""
 import numpy as np
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.utils import (
     filter_complex_metadata,
     maximal_marginal_relevance,

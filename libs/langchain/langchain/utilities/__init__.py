@@ -68,16 +68,40 @@ def _import_golden_query() -> Any:
     return GoldenQueryAPIWrapper
 
 
+def _import_google_lens() -> Any:
+    from langchain.utilities.google_lens import GoogleLensAPIWrapper
+
+    return GoogleLensAPIWrapper
+
+
 def _import_google_places_api() -> Any:
     from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
 
     return GooglePlacesAPIWrapper
 
 
+def _import_google_jobs() -> Any:
+    from langchain.utilities.google_jobs import GoogleJobsAPIWrapper
+
+    return GoogleJobsAPIWrapper
+
+
 def _import_google_scholar() -> Any:
     from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
 
     return GoogleScholarAPIWrapper
+
+
+def _import_google_trends() -> Any:
+    from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
+
+    return GoogleTrendsAPIWrapper
+
+
+def _import_google_finance() -> Any:
+    from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
+
+    return GoogleFinanceAPIWrapper
 
 
 def _import_google_search() -> Any:
@@ -110,6 +134,12 @@ def _import_max_compute() -> Any:
     return MaxComputeAPIWrapper
 
 
+def _import_merriam_webster() -> Any:
+    from langchain.utilities.merriam_webster import MerriamWebsterAPIWrapper
+
+    return MerriamWebsterAPIWrapper
+
+
 def _import_metaphor_search() -> Any:
     from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 
@@ -120,6 +150,12 @@ def _import_openweathermap() -> Any:
     from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 
     return OpenWeatherMapAPIWrapper
+
+
+def _import_outline() -> Any:
+    from langchain.utilities.outline import OutlineAPIWrapper
+
+    return OutlineAPIWrapper
 
 
 def _import_portkey() -> Any:
@@ -182,6 +218,12 @@ def _import_sql_database() -> Any:
     return SQLDatabase
 
 
+def _import_stackexchange() -> Any:
+    from langchain.utilities.stackexchange import StackExchangeAPIWrapper
+
+    return StackExchangeAPIWrapper
+
+
 def _import_tensorflow_datasets() -> Any:
     from langchain.utilities.tensorflow_datasets import TensorflowDatasets
 
@@ -237,10 +279,18 @@ def __getattr__(name: str) -> Any:
         return _import_brave_search()
     elif name == "DuckDuckGoSearchAPIWrapper":
         return _import_duckduckgo_search()
+    elif name == "GoogleLensAPIWrapper":
+        return _import_google_lens()
     elif name == "GoldenQueryAPIWrapper":
         return _import_golden_query()
+    elif name == "GoogleJobsAPIWrapper":
+        return _import_google_jobs()
     elif name == "GoogleScholarAPIWrapper":
         return _import_google_scholar()
+    elif name == "GoogleFinanceAPIWrapper":
+        return _import_google_finance()
+    elif name == "GoogleTrendsAPIWrapper":
+        return _import_google_trends()
     elif name == "GooglePlacesAPIWrapper":
         return _import_google_places_api()
     elif name == "GoogleSearchAPIWrapper":
@@ -253,10 +303,14 @@ def __getattr__(name: str) -> Any:
         return _import_jira()
     elif name == "MaxComputeAPIWrapper":
         return _import_max_compute()
+    elif name == "MerriamWebsterAPIWrapper":
+        return _import_merriam_webster()
     elif name == "MetaphorSearchAPIWrapper":
         return _import_metaphor_search()
     elif name == "OpenWeatherMapAPIWrapper":
         return _import_openweathermap()
+    elif name == "OutlineAPIWrapper":
+        return _import_outline()
     elif name == "Portkey":
         return _import_portkey()
     elif name == "PowerBIDataset":
@@ -275,6 +329,8 @@ def __getattr__(name: str) -> Any:
         return _import_serpapi()
     elif name == "SparkSQL":
         return _import_spark_sql()
+    elif name == "StackExchangeAPIWrapper":
+        return _import_stackexchange()
     elif name == "SQLDatabase":
         return _import_sql_database()
     elif name == "TensorflowDatasets":
@@ -303,16 +359,22 @@ __all__ = [
     "BraveSearchWrapper",
     "DuckDuckGoSearchAPIWrapper",
     "GoldenQueryAPIWrapper",
+    "GoogleFinanceAPIWrapper",
+    "GoogleLensAPIWrapper",
+    "GoogleJobsAPIWrapper",
     "GooglePlacesAPIWrapper",
     "GoogleScholarAPIWrapper",
+    "GoogleTrendsAPIWrapper",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
     "GraphQLAPIWrapper",
     "JiraAPIWrapper",
     "LambdaWrapper",
     "MaxComputeAPIWrapper",
+    "MerriamWebsterAPIWrapper",
     "MetaphorSearchAPIWrapper",
     "OpenWeatherMapAPIWrapper",
+    "OutlineAPIWrapper",
     "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",
@@ -325,6 +387,7 @@ __all__ = [
     "SearxSearchWrapper",
     "SerpAPIWrapper",
     "SparkSQL",
+    "StackExchangeAPIWrapper",
     "TensorflowDatasets",
     "TextRequestsWrapper",
     "TwilioAPIWrapper",
