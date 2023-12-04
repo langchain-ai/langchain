@@ -315,7 +315,7 @@ class GitHubAPIWrapper(BaseModel):
         except Exception as e:
             return f"Error: {e}"
 
-    def get_files_from_directory(self, directory_path: str) -> List[dict]:
+    def get_files_from_directory(self, directory_path: str) -> str:
         """
         Recursively fetches files from a directory in the repo.
 
@@ -323,11 +323,11 @@ class GitHubAPIWrapper(BaseModel):
             directory_path (str): Path to the directory
 
         Returns:
-            List[dict]: List of files with their paths and names.
+            str: List of file paths, or an error message.
         """
         from github import GithubException
 
-        files = []
+        files: List[str] = []
         try:
             contents = self.github_repo_instance.get_contents(
                 directory_path, ref=self.active_branch
