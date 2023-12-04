@@ -60,7 +60,7 @@ class FakeListLLM(LLM):
 class FakeStreamingListLLM(FakeListLLM):
     """Fake streaming list LLM for testing purposes."""
 
-    ith_chunk_error: Optional[int] = None
+    error_on_chunk_number: Optional[int] = None
 
     def stream(
         self,
@@ -75,7 +75,10 @@ class FakeStreamingListLLM(FakeListLLM):
             if self.sleep is not None:
                 time.sleep(self.sleep)
 
-            if self.ith_chunk_error is not None and i_c == self.ith_chunk_error:
+            if (
+                self.error_on_chunk_number is not None
+                and i_c == self.error_on_chunk_number
+            ):
                 raise Exception("Fake error")
             yield c
 
@@ -92,6 +95,9 @@ class FakeStreamingListLLM(FakeListLLM):
             if self.sleep is not None:
                 await asyncio.sleep(self.sleep)
 
-            if self.ith_chunk_error is not None and i_c == self.ith_chunk_error:
+            if (
+                self.error_on_chunk_number is not None
+                and i_c == self.error_on_chunk_number
+            ):
                 raise Exception("Fake error")
             yield c

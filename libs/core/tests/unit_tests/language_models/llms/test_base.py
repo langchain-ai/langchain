@@ -100,7 +100,7 @@ async def test_stream_error_callback() -> None:
     for i in range(0, 2):
         llm = FakeStreamingListLLM(
             responses=[message],
-            ith_chunk_error=i,
+            error_on_chunk_number=i,
         )
         with pytest.raises(Exception):
             cb_async = FakeAsyncCallbackHandler()

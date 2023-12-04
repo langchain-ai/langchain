@@ -45,7 +45,7 @@ class FakeListChatModel(SimpleChatModel):
     responses: List
     sleep: Optional[float] = None
     i: int = 0
-    ith_chunk_error: Optional[int] = None
+    error_on_chunk_number: Optional[int] = None
 
     @property
     def _llm_type(self) -> str:
@@ -81,7 +81,10 @@ class FakeListChatModel(SimpleChatModel):
         for i_c, c in enumerate(response):
             if self.sleep is not None:
                 time.sleep(self.sleep)
-            if self.ith_chunk_error is not None and i_c == self.ith_chunk_error:
+            if (
+                self.error_on_chunk_number is not None
+                and i_c == self.error_on_chunk_number
+            ):
                 raise Exception("Fake error")
 
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
@@ -101,7 +104,10 @@ class FakeListChatModel(SimpleChatModel):
         for i_c, c in enumerate(response):
             if self.sleep is not None:
                 await asyncio.sleep(self.sleep)
-            if self.ith_chunk_error is not None and i_c == self.ith_chunk_error:
+            if (
+                self.error_on_chunk_number is not None
+                and i_c == self.error_on_chunk_number
+            ):
                 raise Exception("Fake error")
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
