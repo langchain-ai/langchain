@@ -338,6 +338,12 @@ def _import_metaphor_search() -> Any:
     return MetaphorSearchResults
 
 
+def _import_nasa_tool() -> Any:
+    from langchain.tools.nasa.tool import NasaAction
+
+    return NasaAction
+
+
 def _import_office365_create_draft_message() -> Any:
     from langchain.tools.office365.create_draft_message import O365CreateDraftMessage
 
@@ -831,6 +837,8 @@ def __getattr__(name: str) -> Any:
         return _import_merriam_webster_tool()
     elif name == "MetaphorSearchResults":
         return _import_metaphor_search()
+    elif name == "NasaAction":
+        return _import_nasa_tool()
     elif name == "O365CreateDraftMessage":
         return _import_office365_create_draft_message()
     elif name == "O365SearchEvents":
@@ -1030,6 +1038,7 @@ __all__ = [
     "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
     "MoveFileTool",
+    "NasaAction",
     "NavigateBackTool",
     "NavigateTool",
     "O365CreateDraftMessage",

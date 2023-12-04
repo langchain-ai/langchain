@@ -70,6 +70,7 @@ _EXPECTED = [
     "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
     "MoveFileTool",
+    "NasaAction",
     "NavigateBackTool",
     "NavigateTool",
     "O365CreateDraftMessage",
