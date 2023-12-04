@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Optional
 
 from github import GithubException
 from github.Issue import Issue
+from langchain_core.output_parsers import StrOutputParser
 
 from langchain.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
-from langchain.output_parsers import StrOutputParser
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
