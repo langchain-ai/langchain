@@ -17,7 +17,6 @@ class BaseVectorStoreTool(BaseModel):
 
     vectorstore: VectorStore = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
-    retriever_kwargs: Dict[str, Any] = Field()
 
     class Config(BaseTool.Config):
         pass
@@ -50,7 +49,7 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
         from langchain.chains.retrieval_qa.base import RetrievalQA
 
         chain = RetrievalQA.from_chain_type(
-            self.llm, retriever=self.vectorstore.as_retriever(**self.retriever_kwargs)
+            self.llm, retriever=self.vectorstore.as_retriever()
         )
         return chain.run(
             query, callbacks=run_manager.get_child() if run_manager else None
