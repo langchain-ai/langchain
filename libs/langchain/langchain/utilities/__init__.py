@@ -218,6 +218,12 @@ def _import_sql_database() -> Any:
     return SQLDatabase
 
 
+def _import_steam_webapi() -> Any:
+    from langchain.utilities.steam import SteamWebAPIWrapper
+
+    return SteamWebAPIWrapper
+
+
 def _import_stackexchange() -> Any:
     from langchain.utilities.stackexchange import StackExchangeAPIWrapper
 
@@ -327,6 +333,8 @@ def __getattr__(name: str) -> Any:
         return _import_stackexchange()
     elif name == "SQLDatabase":
         return _import_sql_database()
+    elif name == "SteamWebAPIWrapper":
+        return _import_steam_webapi()
     elif name == "TensorflowDatasets":
         return _import_tensorflow_datasets()
     elif name == "TwilioAPIWrapper":
@@ -373,6 +381,7 @@ __all__ = [
     "PythonREPL",
     "Requests",
     "RequestsWrapper",
+    "SteamWebAPIWrapper",
     "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearchApiAPIWrapper",

@@ -101,6 +101,7 @@ EXPECTED_ALL = [
     "SleepTool",
     "StackExchangeTool",
     "StdInInquireTool",
+    "SteamWebAPIQueryRun",
     "SteamshipImageGenerationTool",
     "StructuredTool",
     "Tool",
