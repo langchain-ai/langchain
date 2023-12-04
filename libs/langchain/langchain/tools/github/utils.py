@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from github import GithubException
 from github.Issue import Issue
 
 from langchain.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
+from langchain.output_parsers import StrOutputParser
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
     from github.Repository import Repository
 
 
-def generate_branch_name(issue: Issue, llm: BaseChatModel = None) -> str:
+def generate_branch_name(issue: Issue, llm: Optional[BaseChatModel] = None) -> str:
     """
     Helper functions. Use `generate_branch_name()` to generate a meaningful
     branch name that the Agent will use to commit it's new code against.
@@ -50,11 +51,10 @@ def generate_branch_name(issue: Issue, llm: BaseChatModel = None) -> str:
 
     # Combine into a Chat conversation
     chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, prompt])
-    formatted_messages = chat_prompt.format_messages(
-        issue=str(issue), example_issue=str(example_issue)
-    )
 
-    output = llm(formatted_messages)
+    chain = chat_prompt | llm | StrOutputParser()
+
+    output = chain.invoke({"issue": str(issue), "example_issue": str(example_issue)})
     return _ensure_unique_branch_name(
         issue.repository, _sanitize_branch_name(output.content)
     )
