@@ -33,7 +33,7 @@ class BaseOCILLM(LLM):
     k: int = 0
     """Number of most likely tokens to consider at each step."""
 
-    p: int = 0.75
+    p: float = 0.75
     """Total probability mass of tokens to consider at each step."""
 
     stop: Optional[List[str]] = None
@@ -91,7 +91,7 @@ class OCIModelDeploymentLLM(BaseOCILLM):
             **self._default_params,
         }
 
-    def _construct_json_body(self, prompt, params):
+    def _construct_json_body(self, prompt: str, params: dict) -> dict:
         """Constructs the request body as a dictionary (JSON)."""
         raise NotImplementedError
 
@@ -110,7 +110,7 @@ class OCIModelDeploymentLLM(BaseOCILLM):
 
         return {**params, **kwargs}
 
-    def _process_response(self, response_json: dict):
+    def _process_response(self, response_json: dict) -> str:
         raise NotImplementedError
 
     def _call(
@@ -152,9 +152,9 @@ class OCIModelDeploymentLLM(BaseOCILLM):
 
     def send_request(
         self,
-        data,
+        data: Any,
         endpoint: str,
-        header: dict = None,
+        header: dict = {},
         **kwargs,
     ) -> Dict:
         """Sends request to the oci data science model deployment endpoint.
@@ -212,7 +212,7 @@ class OCIModelDeploymentLLM(BaseOCILLM):
 
         return response_json
 
-    def _refresh_signer(self):
+    def _refresh_signer(self) -> None:
         if self.auth.get("signer", None) and hasattr(
             self.auth["signer"], "refresh_security_token"
         ):
@@ -275,13 +275,13 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
             "watermark": self.watermark,
         }
 
-    def _construct_json_body(self, prompt, params):
+    def _construct_json_body(self, prompt: str, params: dict) -> dict:
         return {
             "inputs": prompt,
             "parameters": params,
         }
 
-    def _process_response(self, response_json: dict):
+    def _process_response(self, response_json: dict) -> str:
         return str(response_json.get("generated_text", response_json)) + "\n"
 
 
@@ -359,11 +359,11 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
             "use_beam_search": self.use_beam_search,
         }
 
-    def _construct_json_body(self, prompt, params):
+    def _construct_json_body(self, prompt: str, params: dict) -> dict:
         return {
             "prompt": prompt,
             **params,
         }
 
-    def _process_response(self, response_json: dict):
+    def _process_response(self, response_json: dict) -> str:
         return response_json["choices"][0]["text"]

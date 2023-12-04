@@ -1,7 +1,6 @@
 """Test OCIModelDeploymentVLLM Endpoint."""
 
 import pytest
-from tests.integration_tests.llms.utils import assert_llm_equality
 
 from langchain.llms.oci_data_science_model_deployment_endpoint import (
     OCIModelDeploymentTGI,
@@ -9,10 +8,12 @@ from langchain.llms.oci_data_science_model_deployment_endpoint import (
 )
 from langchain.load import dumpd, dumps
 from langchain.load.load import load, loads
+from tests.integration_tests.llms.utils import assert_llm_equality
 
 
 @pytest.mark.skip(
-    "This test requires an inference endpoint. Tested with OCI Data Science Model Deployment endpoints."
+    "This test requires an inference endpoint. Tested with "
+    "OCI Data Science Model Deployment endpoints."
 )
 def test_call_vllm() -> None:
     """Test valid call to oci model deployment endpoint."""
@@ -23,7 +24,8 @@ def test_call_vllm() -> None:
 
 
 @pytest.mark.skip(
-    "This test requires an inference endpoint. Tested with OCI Data Science Model Deployment endpoints."
+    "This test requires an inference endpoint. Tested with "
+    "OCI Data Science Model Deployment endpoints."
 )
 def test_call_tgi() -> None:
     """Test valid call to oci model deployment endpoint."""
@@ -35,7 +37,7 @@ def test_call_tgi() -> None:
 
 @pytest.mark.requires("oracle-ads")
 def test_dumpd_load_tgi() -> None:
-    """Test serialization/deserialization (dumpd/load) an OCIModelDeploymentTGI LLM."""
+    """Test dumpd/load an OCIModelDeploymentTGI LLM."""
     llm = OCIModelDeploymentTGI(
         endpoint="https://<MD_OCID>/predict",
         temperature=0.75,
@@ -48,7 +50,7 @@ def test_dumpd_load_tgi() -> None:
 
 @pytest.mark.requires("oracle-ads")
 def test_dumps_loads_vllm() -> None:
-    """Test serialization/deserialization (dumps/loads) an OCIModelDeploymentVLLM LLM."""
+    """Test dumps/loads an OCIModelDeploymentVLLM LLM."""
     llm = OCIModelDeploymentVLLM(
         endpoint="https://<MD_OCID>/predict",
         model="mymodel",
