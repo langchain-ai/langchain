@@ -1,8 +1,6 @@
 import base64
 import io
-import os
 from pathlib import Path
-
 
 from langchain.chat_models import ChatOpenAI
 from langchain.pydantic_v1 import BaseModel

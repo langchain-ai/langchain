@@ -22,11 +22,14 @@ def get_images_from_pdf(pdf_path, img_dump_path):
         pil_image.save(f"{img_dump_path}/img_{page_number + 1}.jpg", format="JPEG")
 
 
+# Load PDF
 doc_path = Path(__file__).parent / "docs/DDOG_Q3_earnings_deck.pdf"
 img_dump_path = Path(__file__).parent / "docs/"
 rel_doc_path = doc_path.relative_to(Path.cwd())
 rel_img_dump_path = img_dump_path.relative_to(Path.cwd())
 pil_images = get_images_from_pdf(rel_doc_path, rel_img_dump_path)
+vectorstore = Path(__file__).parent / "chroma_db_multi_modal"
+re_vectorstore_path = vectorstore.relative_to(Path.cwd())
 
 # Create chroma
 vectorstore_mmembd = Chroma(

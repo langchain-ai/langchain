@@ -14,6 +14,7 @@ Supply a slide deck as pdf in the `/docs` directory.
 Create your vectorstore with: 
 
 ```
+poetry install
 python rag_chroma_multi_modal/ingest.py
 ```
 
@@ -27,10 +28,15 @@ The first time you run the app, it will automatically download the multimodal em
 
 By default, LangChain will use an embedding model with strong performance, `ViT-H-14`.
 
-You can choose alternative models and re-build `langchain/libs/experimental`:
+You can choose alternative `OpenCLIPEmbeddings` models in `rag_chroma_mutli_modal/ingest.py`:
 ```
-embedding_function=OpenCLIPEmbeddings(model_name="ViT-H-14",
-                                        checkpoint="laion2b_s32b_b79k"),
+vectorstore_mmembd = Chroma(
+    collection_name="multi-modal-rag",
+    persist_directory=str(re_vectorstore_path),
+    embedding_function=OpenCLIPEmbeddings(
+        model_name="ViT-H-14", checkpoint="laion2b_s32b_b79k"
+    ),
+)
 ```
 
 ## LLM
