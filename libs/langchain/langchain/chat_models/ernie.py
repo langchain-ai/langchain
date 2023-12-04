@@ -54,6 +54,20 @@ class ErnieBotChat(BaseChatModel):
             from langchain.chat_models import ErnieBotChat
             chat = ErnieBotChat(model_name='ERNIE-Bot')
 
+
+    Deprecated Note:
+    Please use `QianfanChatEndpoint` instead of this class.
+    `QianfanChatEndpoint` is a more suitable choice for production.
+
+    Always test your code after changing to `QianfanChatEndpoint`.
+
+    Example of `QianfanChatEndpoint`:
+        .. code-block:: python
+
+            from langchain.chat_models import QianfanChatEndpoint
+            qianfan_chat = QianfanChatEndpoint(model="ERNIE-Bot",
+                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
+
     """
 
     ernie_api_base: Optional[str] = None
@@ -107,6 +121,7 @@ class ErnieBotChat(BaseChatModel):
         model_paths = {
             "ERNIE-Bot-turbo": "eb-instant",
             "ERNIE-Bot": "completions",
+            "ERNIE-Bot-8K": "ernie_bot_8k",
             "ERNIE-Bot-4": "completions_pro",
             "BLOOMZ-7B": "bloomz_7b1",
             "Llama-2-7b-chat": "llama_2_7b",
