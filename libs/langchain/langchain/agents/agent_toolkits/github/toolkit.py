@@ -35,31 +35,31 @@ from pydantic import BaseModel
 class NoInput(BaseModel):
     no_input: str = Field("", description="No input required, e.g. `` (empty string).")
 class GetIssue(BaseModel):
-    issue_number: int = Field(0, description="Issue number as an integer, e.g. `1`")
+    issue_number: int = Field(0, description="Issue number as an integer, e.g. `42`")
 class CommentOnIssue(BaseModel):
-    formatted_comment: str = Field("", description="Follow the required formatting.")
+    input: str = Field(..., description="Follow the required formatting.")
 class GetPR(BaseModel):
-    pr_number: int = Field(0, description="The PR number as an integer, e.g. `1`")
+    pr_number: int = Field(0, description="The PR number as an integer, e.g. `12`")
 class CreatePR(BaseModel):
-    formatted_pr: str = Field("", description="Follow the required formatting.")
+    formatted_pr: str = Field(..., description="Follow the required formatting.")
 class CreateFile(BaseModel):
-    formatted_file: str = Field("", description="Follow the required formatting.")
+    formatted_file: str = Field(..., description="Follow the required formatting.")
 class ReadFile(BaseModel):
-    formatted_filepath: str = Field("", description="The full file path of the file you would like to read where the path must NOT start with a slash, e.g. `some_dir/my_file.py`.")
+    formatted_filepath: str = Field(..., description="The full file path of the file you would like to read where the path must NOT start with a slash, e.g. `some_dir/my_file.py`.")
 class UpdateFile(BaseModel):
-    formatted_file_update: str = Field("", description="Strictly follow the provided rules.")
+    formatted_file_update: str = Field(..., description="Strictly follow the provided rules.")
 class DeleteFile(BaseModel):
-    formatted_filepath: str = Field("", description="The full file path of the file you would like to delete where the path must NOT start with a slash, e.g. `some_dir/my_file.py`.")
+    formatted_filepath: str = Field(..., description="The full file path of the file you would like to delete where the path must NOT start with a slash, e.g. `some_dir/my_file.py`. Only input a string, not the param name.")
 class DirectoryPath(BaseModel):
-    directory_path: str = Field("", description="The path of the directory, e.g. `some_dir/inner_dir`.")
+    input: str = Field("", description="The path of the directory, e.g. `some_dir/inner_dir`. Only input a string, do not include the parameter name.")
 class BranchName(BaseModel):
-    branch_name: str = Field("", description="The name of the branch, e.g. `my_branch`.")
+    branch_name: str = Field(..., description="The name of the branch, e.g. `my_branch`.")
 class SearchCode(BaseModel):
-    search_query: str = Field("", description="A keyword-focused natural language search query for code, e.g. `MyFunctionName()`.")
+    search_query: str = Field(..., description="A keyword-focused natural language search query for code, e.g. `MyFunctionName()`.")
 class CreateReviewRequest(BaseModel):
-    username: str = Field("", description="GitHub username of the user being requested, e.g. `my_username`.")
+    username: str = Field(..., description="GitHub username of the user being requested, e.g. `my_username`.")
 class SearchIssuesAndPRs(BaseModel):
-    search_query: str = Field("", description="Natural language search query, e.g. `My issue title or topic`.")
+    search_query: str = Field(..., description="Natural language search query, e.g. `My issue title or topic`.")
 
 class GitHubToolkit(BaseToolkit):
     """GitHub Toolkit."""
@@ -145,13 +145,13 @@ class GitHubToolkit(BaseToolkit):
             },
             {
                 "mode": "list_files_in_main_branch",
-                "name": "Overview of existing files in Main branch (no input)",
+                "name": "Overview of existing files in Main branch",
                 "description": OVERVIEW_EXISTING_FILES_IN_MAIN,
                 "args_schema": NoInput,
             },
             {
                 "mode": "list_files_in_bot_branch",
-                "name": "Overview of files in your current working branch",
+                "name": "Overview of files in current working branch",
                 "description": OVERVIEW_EXISTING_FILES_BOT_BRANCH,
                 "args_schema": NoInput,
             },

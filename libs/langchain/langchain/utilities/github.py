@@ -12,7 +12,6 @@ from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
-    from github import GithubException
     from github.Issue import Issue
     from github.PullRequest import PullRequest
 
@@ -57,7 +56,7 @@ class GitHubAPIWrapper(BaseModel):
 
         try:
             # interpret the key as a file path
-            # fallback to interpreting as they key itself
+            # fallback to interpreting as the key itself
             with open(github_app_private_key, "r") as f:
                 private_key = f.read()
         except Exception:
@@ -247,6 +246,7 @@ class GitHubAPIWrapper(BaseModel):
         Returns:
             str: A plaintext success message.
         """
+        from github import GithubException
         i = 0
         new_branch_name = proposed_branch_name
         base_branch = self.github_repo_instance.get_branch(
@@ -313,10 +313,15 @@ class GitHubAPIWrapper(BaseModel):
         Returns:
             List[dict]: List of files with their paths and names.
         """
+        from github import GithubException
         files = []
-        contents = self.github_repo_instance.get_contents(
-            directory_path, ref=self.active_branch
-        )
+        try:
+            contents = self.github_repo_instance.get_contents(
+                directory_path, ref=self.active_branch
+            )
+        except GithubException as e:
+            return f"Error: status code {e.status}, {e.message}"
+
         for content in contents:
             if content.type == "dir":
                 files.extend(self.get_files_from_directory(content.path))
