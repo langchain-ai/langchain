@@ -50,15 +50,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         return [t.name for t in self.tools]
 
     @root_validator
-    def validate_llm(cls, values: dict) -> dict:
-        if not (
-            hasattr(values["llm"], "supports_oai_functions")
-            and values["llm"].supports_oai_functions
-        ):
-            raise ValueError("Only supported with ChatOpenAI models.")
-        return values
-
-    @root_validator
     def validate_prompt(cls, values: dict) -> dict:
         prompt: BasePromptTemplate = values["prompt"]
         if "agent_scratchpad" not in prompt.input_variables:
@@ -224,8 +215,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools."""
-        if not (hasattr(llm, "supports_oai_functions") and llm.supports_oai_functions):
-            raise ValueError("Only supported with ChatOpenAI models.")
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message,
