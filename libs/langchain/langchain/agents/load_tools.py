@@ -49,6 +49,7 @@ from langchain.tools.requests.tool import (
     RequestsPutTool,
 )
 from langchain.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
+from langchain.tools.file_management.read import ReadFileTool
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
@@ -349,6 +350,9 @@ def _get_memorize(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
 def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
     return GoogleCloudTextToSpeechTool(**kwargs)
 
+def _file_managent_tool(**kwargs: Any) -> BaseTool:
+    return ReadFileTool(**kwargs)
+
 
 _EXTRA_LLM_TOOLS: Dict[
     str,
@@ -417,6 +421,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
     "google_cloud_texttospeech": (_get_google_cloud_texttospeech, []),
+    "read_file": (_file_managent_tool, []),
 }
 
 
