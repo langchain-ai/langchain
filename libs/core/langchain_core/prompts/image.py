@@ -61,8 +61,16 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         url = kwargs.get("url") or formatted.get("url")
         path = kwargs.get("path") or formatted.get("path")
         detail = kwargs.get("detail") or formatted.get("detail")
-
-        output: ImageURL = {"url": url or image_to_data_url(path)}
+        if not url and not path:
+            raise ValueError("Must provide either url or path.")
+        if not url:
+            if not isinstance(path, str):
+                raise ValueError("path must be a string.")
+            url = image_to_data_url(path)
+        if not isinstance(url, str):
+            raise ValueError("url must be a string.")
+        output: ImageURL = {"url": url}
         if detail:
-            output["detail"] = detail
+            # Don't check literal values here: let the API check them
+            output["detail"] = detail  # type: ignore[typeddict-item]
         return output

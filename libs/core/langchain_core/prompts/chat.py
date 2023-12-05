@@ -461,8 +461,7 @@ MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTempla
 
 MessageLikeRepresentation = Union[
     MessageLike,
-    Tuple[str, str],
-    Tuple[Type, str],
+    Tuple[Union[str, Type], Union[str, List[dict], List[object]]],
     str,
 ]
 
@@ -851,7 +850,9 @@ def _convert_to_message(
         if isinstance(message_type_str, str):
             _message = _create_template_from_message_type(message_type_str, template)
         else:
-            _message = message_type_str(prompt=PromptTemplate.from_template(template))
+            _message = message_type_str(
+                prompt=PromptTemplate.from_template(cast(str, template))
+            )
     else:
         raise NotImplementedError(f"Unsupported message type: {type(message)}")
 
