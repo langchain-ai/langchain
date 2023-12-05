@@ -1,3 +1,4 @@
+import json
 import sys
 
 ALL_DIRS = {
@@ -23,4 +24,4 @@ if __name__ == "__main__":
             dirs_to_run.add(f"libs/partners/{partner_dir}")
         else:
             pass
-    print(str(list(dirs_to_run)).replace("'", '"'))
+    print(json.dumps(list(dirs_to_run)))
