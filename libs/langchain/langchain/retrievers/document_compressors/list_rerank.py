@@ -58,13 +58,13 @@ class ListRerank(BaseDocumentCompressor):
     Source: https://arxiv.org/pdf/2305.02156.pdf
     """
 
-    top_n: int = 3
-    """Number of documents to return."""
-
     llm_chain: LLMChain
     """LLM wrapper to use for filtering documents."""
 
-    get_input: Callable[[str, Document], dict] = default_get_input
+    top_n: int = 3
+    """Number of documents to return."""
+
+    get_input: Callable[[str, Sequence[Document]], dict] = default_get_input
     """Callable for constructing the chain input from the query and Documents."""
 
     fallback: bool = False
