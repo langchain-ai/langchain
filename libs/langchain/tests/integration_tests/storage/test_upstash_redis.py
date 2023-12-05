@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from langchain.storage.upstash_redis import UpstashRedisStore
+from langchain.storage.upstash_redis import UpstashRedisByteStore
 
 if TYPE_CHECKING:
     from upstash_redis import Redis
@@ -34,16 +34,16 @@ def redis_client() -> Redis:
 
 
 def test_mget(redis_client: Redis) -> None:
-    store = UpstashRedisStore(client=redis_client, ttl=None)
+    store = UpstashRedisByteStore(client=redis_client, ttl=None)
     keys = ["key1", "key2"]
     redis_client.mset({"key1": "value1", "key2": "value2"})
     result = store.mget(keys)
-    assert result == ["value1", "value2"]
+    assert result == [b"value1", b"value2"]
 
 
 def test_mset(redis_client: Redis) -> None:
-    store = UpstashRedisStore(client=redis_client, ttl=None)
-    key_value_pairs = [("key1", "value1"), ("key2", "value2")]
+    store = UpstashRedisByteStore(client=redis_client, ttl=None)
+    key_value_pairs = [("key1", b"value1"), ("key2", b"value2")]
     store.mset(key_value_pairs)
     result = redis_client.mget("key1", "key2")
     assert result == ["value1", "value2"]
@@ -51,7 +51,7 @@ def test_mset(redis_client: Redis) -> None:
 
 def test_mdelete(redis_client: Redis) -> None:
     """Test that deletion works as expected."""
-    store = UpstashRedisStore(client=redis_client, ttl=None)
+    store = UpstashRedisByteStore(client=redis_client, ttl=None)
     keys = ["key1", "key2"]
     redis_client.mset({"key1": "value1", "key2": "value2"})
     store.mdelete(keys)
@@ -60,7 +60,7 @@ def test_mdelete(redis_client: Redis) -> None:
 
 
 def test_yield_keys(redis_client: Redis) -> None:
-    store = UpstashRedisStore(client=redis_client, ttl=None)
+    store = UpstashRedisByteStore(client=redis_client, ttl=None)
     redis_client.mset({"key1": "value2", "key2": "value2"})
     assert sorted(store.yield_keys()) == ["key1", "key2"]
     assert sorted(store.yield_keys(prefix="key*")) == ["key1", "key2"]
@@ -68,8 +68,8 @@ def test_yield_keys(redis_client: Redis) -> None:
 
 
 def test_namespace(redis_client: Redis) -> None:
-    store = UpstashRedisStore(client=redis_client, ttl=None, namespace="meow")
-    key_value_pairs = [("key1", "value1"), ("key2", "value2")]
+    store = UpstashRedisByteStore(client=redis_client, ttl=None, namespace="meow")
+    key_value_pairs = [("key1", b"value1"), ("key2", b"value2")]
     store.mset(key_value_pairs)
 
     cursor, all_keys = redis_client.scan(0)

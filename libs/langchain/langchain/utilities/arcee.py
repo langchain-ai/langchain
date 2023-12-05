@@ -100,7 +100,7 @@ class ArceeWrapper:
 
     def __init__(
         self,
-        arcee_api_key: Union[Optional[str], SecretStr],
+        arcee_api_key: Union[str, SecretStr, None],
         arcee_api_url: str,
         arcee_api_version: str,
         model_kwargs: Optional[Dict[str, Any]],
@@ -166,13 +166,17 @@ class ArceeWrapper:
 
     def _make_request_headers(self, headers: Optional[Dict] = None) -> Dict:
         headers = headers or {}
-        api_key = None
+        api_key = None # Fix here
         if isinstance(self.arcee_api_key, str):
             api_key = self.arcee_api_key
         elif isinstance(self.arcee_api_key, SecretStr):
             api_key = self.arcee_api_key.get_secret_value()
         internal_headers = {
+<<<<<<< HEAD
             "X-Token": api_key,
+=======
+            "X-Token": self.arcee_api_key.get_secret_value(),
+>>>>>>> master
             "Content-Type": "application/json",
         }
         headers.update(internal_headers)
