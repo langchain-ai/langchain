@@ -284,6 +284,18 @@ def _import_google_serper_tool_GoogleSerperRun() -> Any:
     return GoogleSerperRun
 
 
+def _import_searchapi_tool_SearchAPIResults() -> Any:
+    from langchain.tools.searchapi.tool import SearchAPIResults
+
+    return SearchAPIResults
+
+
+def _import_searchapi_tool_SearchAPIRun() -> Any:
+    from langchain.tools.searchapi.tool import SearchAPIRun
+
+    return SearchAPIRun
+
+
 def _import_graphql_tool() -> Any:
     from langchain.tools.graphql.tool import BaseGraphQLTool
 
@@ -819,6 +831,10 @@ def __getattr__(name: str) -> Any:
         return _import_google_serper_tool_GoogleSerperResults()
     elif name == "GoogleSerperRun":
         return _import_google_serper_tool_GoogleSerperRun()
+    elif name == "SearchAPIResults":
+        return _import_searchapi_tool_SearchAPIResults()
+    elif name == "SearchAPIRun":
+        return _import_searchapi_tool_SearchAPIRun()
     elif name == "BaseGraphQLTool":
         return _import_graphql_tool()
     elif name == "HumanInputRun":
@@ -1023,6 +1039,8 @@ __all__ = [
     "GoogleSearchRun",
     "GoogleSerperResults",
     "GoogleSerperRun",
+    "SearchAPIResults",
+    "SearchAPIRun",
     "HumanInputRun",
     "IFTTTWebhook",
     "InfoPowerBITool",

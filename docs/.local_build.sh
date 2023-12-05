@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")"; pwd)"
 cd "${SCRIPT_DIR}"
 
 mkdir -p ../_dist
-rsync -ruv . ../_dist
+rsync -ruv --exclude node_modules . ../_dist
 cd ../_dist
 poetry run python scripts/model_feat_table.py
 cp ../cookbook/README.md src/pages/cookbook.mdx
