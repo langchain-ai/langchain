@@ -26,6 +26,7 @@ export default function FooterWrapper(props) {
             backgroundColor: colorMode === "dark" ? "#4F956C" : "#1C1E21",
             color: "#FFFFFF",
           }}
+          cmdShortcutKey="J"
           botIcon={<div style={{ fontSize: "22px" }}>🦜️</div>}
           icon={<div style={{ fontSize: "32px" }}>🦜️</div>}
           isPinnable
