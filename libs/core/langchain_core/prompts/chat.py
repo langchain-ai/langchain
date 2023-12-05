@@ -117,8 +117,8 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         return [self.variable_name]
 
 
-_StringMessagePromptTemplateT = TypeVar(
-    "_StringMessagePromptTemplateT", bound="BaseStringMessagePromptTemplate"
+MessagePromptTemplateT = TypeVar(
+    "MessagePromptTemplateT", bound="BaseStringMessagePromptTemplate"
 )
 """Type variable for message prompt templates."""
 
@@ -133,11 +133,11 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     @classmethod
     def from_template(
-        cls: Type[_StringMessagePromptTemplateT],
+        cls: Type[MessagePromptTemplateT],
         template: str,
         template_format: str = "f-string",
         **kwargs: Any,
-    ) -> _StringMessagePromptTemplateT:
+    ) -> MessagePromptTemplateT:
         """Create a class from a string template.
 
         Args:
@@ -153,11 +153,11 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     @classmethod
     def from_template_file(
-        cls: Type[_StringMessagePromptTemplateT],
+        cls: Type[MessagePromptTemplateT],
         template_file: Union[str, Path],
         input_variables: List[str],
         **kwargs: Any,
-    ) -> _StringMessagePromptTemplateT:
+    ) -> MessagePromptTemplateT:
         """Create a class from a template file.
 
         Args:
