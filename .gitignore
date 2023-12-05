@@ -179,3 +179,4 @@ docs/docs/node_modules
 docs/docs/yarn.lock
 _dist
 docs/docs/templates
+docs/.inline_ipynb.json

@@ -15,10 +15,13 @@ source .venv/bin/activate
 python3.8 -m pip install --upgrade pip
 python3.8 -m pip install -r vercel_requirements.txt
 python3.8 scripts/model_feat_table.py
+python3.8 scripts/replace_inline_ipynb_filename.py
 mkdir docs/templates
 cp ../templates/docs/INDEX.md docs/templates/index.md
 python3.8 scripts/copy_templates.py
 cp ../cookbook/README.md src/pages/cookbook.mdx
 cp ../.github/CONTRIBUTING.md docs/contributing.md
 wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
+
 quarto render docs/
+python3.8 scripts/recover_inline_ipynb_filename.py

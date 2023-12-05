@@ -12,6 +12,7 @@ mkdir -p ../_dist
 rsync -ruv --exclude node_modules . ../_dist
 cd ../_dist
 poetry run python scripts/model_feat_table.py
+poetry run python scripts/replace_inline_ipynb_filename.py
 cp ../cookbook/README.md src/pages/cookbook.mdx
 cp ../.github/CONTRIBUTING.md docs/contributing.md
 mkdir -p docs/templates
