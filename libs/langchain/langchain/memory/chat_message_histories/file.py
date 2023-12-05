@@ -6,7 +6,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Callable, List, TypeVar, Union, Type
+from typing import Callable, List, Type, TypeVar, Union
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
