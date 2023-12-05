@@ -314,8 +314,9 @@ class Vectara(VectorStore):
             query: Text to look up documents similar to.
             config: VectaraQueryConfig object
         Returns:
-            List of Documents most similar to the query and score for 
-            each along with summary if enabled
+            A tuple with:
+            - List of Documents most similar to the query and their score
+            - summary if enabled
         """
         data = {
             "query": [
@@ -365,7 +366,7 @@ class Vectara(VectorStore):
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
             )
-            return []
+            return [], ""
 
         result = response.json()
 
@@ -419,13 +420,21 @@ class Vectara(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            any other querying variable in VectaraQueryConfig
-
+            any other querying variable in VectaraQueryConfig like:
+            - lambda_val: lexical match parameter for hybrid search.
+            - filter: filter string
+            - score_threshold: minimal score threshold for the result.
+            - n_sentence_context: number of sentences before/after the matching segment
+            - mmrConfig: optional configuration for MMR (see MMRConfig dataclass)
+            - summaryConfig: optional configuration for summary 
+              (see SummaryConfig dataclass)
         Returns:
             List of Documents most similar to the query and score for each.
         """
         config = VectaraQueryConfig(**kwargs)
-        docs, _ = self.vectara_query(query, k, config)
+        docs, summary = self.vectara_query(query, k, config)
+        if config.summaryConfig.is_enabled:
+            docs.append((Document(page_content=summary, metadata={'summary': True}), 0.0))
         return docs
 
     def similarity_search(
@@ -476,13 +485,9 @@ class Vectara(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        config = VectaraQueryConfig(**kwargs)
-        config.mmrConfig = MMRConfig(is_enabled=True, mmr_k=fetch_k, 
-                                     diversity_bias=1-lambda_mult)
-        docs_and_scores, _ = self.vectara_query(query, k, config)
-        return [doc for doc, _ in docs_and_scores]
-
-
+        kwargs['mmrConfig'] = MMRConfig(is_enabled=True, mmr_k=fetch_k, 
+                                        diversity_bias=1-lambda_mult)
+        return self.similarity_search(query, k, **kwargs)
 
     @classmethod
     def from_texts(
@@ -543,24 +548,5 @@ class Vectara(VectorStore):
         vectara.add_files(files, metadatas)
         return vectara
 
-    def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
-        return VectaraRetriever(vectorstore=self, config=kwargs)
-
-
-class VectaraRetriever(VectorStoreRetriever):
-    """Retriever class for `Vectara`."""
-
-    vectorstore: Vectara
-    config: VectaraQueryConfig
-
-    def _get_relevant_documents(
-        self,
-        query: str,
-        k: int = 10,
-    ) -> Union[List[Document], Tuple[List[Document], str]]:
-        docs_and_scores, summary = self.vectorstore.vectara_query(query, k, 
-                                                                  config=self.config)
-        if self.config.summaryConfig.is_enabled:
-            return [doc for doc, _ in docs_and_scores], summary
-        else:
-            return [doc for doc, _ in docs_and_scores]
+    def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
+        return super().as_retriever(**kwargs)
