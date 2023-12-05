@@ -6,7 +6,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Callable, List, TypeVar, Union
+from typing import Callable, List, TypeVar, Union, Type
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
@@ -79,7 +79,7 @@ class FileChatMessageHistory(BaseChatMessageHistory):
 
     @classmethod
     def create_session_factory(
-        cls, base_dir: Union[str, Path]
+        cls: Type[Self], base_dir: Union[str, Path]
     ) -> Callable[[str], Self]:
         """Create a session ID factory that creates session IDs from a base dir.
 
@@ -89,8 +89,7 @@ class FileChatMessageHistory(BaseChatMessageHistory):
         Returns:
             A session ID factory that creates session IDs from a base path.
         """
-        if not isinstance(base_dir, Path):
-            base_dir = Path(base_dir)
+        base_dir_ = Path(base_dir) if isinstance(base_dir, str) else base_dir
 
         def get_chat_history(session_id: str) -> Self:
             """Get a chat history from a session ID."""
@@ -101,7 +100,7 @@ class FileChatMessageHistory(BaseChatMessageHistory):
                     "hyphens, and underscores."
                 )
 
-            file_path = base_dir / f"{session_id}.json"
+            file_path = base_dir_ / f"{session_id}.json"
             return cls(file_path)
 
         return get_chat_history
