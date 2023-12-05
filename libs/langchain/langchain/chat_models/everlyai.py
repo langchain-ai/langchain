@@ -13,7 +13,7 @@ from langchain.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 if TYPE_CHECKING:
     import tiktoken
@@ -74,10 +74,12 @@ class ChatEverlyAI(ChatOpenAI):
     @root_validator(pre=True)
     def validate_environment_override(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values,
-            "everlyai_api_key",
-            "EVERLYAI_API_KEY",
+        values["openai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "everlyai_api_key",
+                "EVERLYAI_API_KEY",
+            )
         )
         values["openai_api_base"] = DEFAULT_API_BASE
 

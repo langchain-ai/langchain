@@ -102,10 +102,12 @@ class ChatAnyscale(ChatOpenAI):
     @root_validator(pre=True)
     def validate_environment_override(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values,
-            "anyscale_api_key",
-            "ANYSCALE_API_KEY",
+        values["openai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "anyscale_api_key",
+                "ANYSCALE_API_KEY",
+            )
         )
         values["anyscale_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
@@ -137,7 +139,7 @@ class ChatAnyscale(ChatOpenAI):
         try:
             if is_openai_v1():
                 client_params = {
-                    "api_key": values["openai_api_key"],
+                    "api_key": values["openai_api_key"].get_secret_value(),
                     "base_url": values["openai_api_base"],
                     # To do: future support
                     # "organization": values["openai_organization"],
@@ -163,7 +165,7 @@ class ChatAnyscale(ChatOpenAI):
         model_name = values["model_name"]
 
         available_models = cls.get_available_models(
-            values["openai_api_key"],
+            values["openai_api_key"].get_secret_value(),
             values["openai_api_base"],
         )
 

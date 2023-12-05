@@ -7,10 +7,10 @@ import warnings
 from typing import Any, Callable, Dict, Union
 
 from langchain_core.outputs import ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class AzureChatOpenAI(ChatOpenAI):
     """
     openai_api_version: str = Field(default="", alias="api_version")
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
-    openai_api_key: Union[str, None] = Field(default=None, alias="api_key")
+    openai_api_key: Union[SecretStr, None] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
     azure_ad_token: Union[str, None] = None
     """Your Azure Active Directory token.
@@ -110,6 +110,7 @@ class AzureChatOpenAI(ChatOpenAI):
             or os.getenv("AZURE_OPENAI_API_KEY")
             or os.getenv("OPENAI_API_KEY")
         )
+        values["openai_api_key"] = convert_to_secret_str(values["openai_api_key"])
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
         )
@@ -184,7 +185,7 @@ class AzureChatOpenAI(ChatOpenAI):
                 "api_version": values["openai_api_version"],
                 "azure_endpoint": values["azure_endpoint"],
                 "azure_deployment": values["deployment_name"],
-                "api_key": values["openai_api_key"],
+                "api_key": values["openai_api_key"].get_secret_value(),
                 "azure_ad_token": values["azure_ad_token"],
                 "azure_ad_token_provider": values["azure_ad_token_provider"],
                 "organization": values["openai_organization"],
