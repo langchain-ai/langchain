@@ -1,13 +1,13 @@
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Sequence
 
 from langchain_core.documents import Document
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.utils import get_from_dict_or_env
 from langchain.utils.openai import is_openai_v1
+from langchain.utils.env import get_from_value_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -317,74 +317,74 @@ class AzureSpeechServiceParser(BaseBlobParser):
     service's transcription module to convert an audio file to text.
 
     You can find official transcribe sdk documents with this link:
+
     https://learn.microsoft.com/en-us/python/api/azure-cognitiveservices-speech/azure.cognitiveservices.speech.transcription?view=azure-python
+
     You can find official transcribe sdk samples with this link:
     https://github.com/Azure-Samples/cognitive-services-speech-sdk/blob/2e39515446ec261bf9fd8d42902147c51c5f72cd/samples/python/console/transcription_sample.py
-    """
+    """  # noqa: E501
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        *,
+        api_key: Optional[str] = None,
+        region: Optional[str] = None,
+        endpoint: Optional[str] = None,
+        log_path: Optional[str] = None,
+        polling_interval_seconds: float = 0.5,
+        auto_detect_languages: Optional[bool] = None,
+        speech_recognition_language: Optional[Sequence[str]] = None,
+        speech_config_kwargs: Optional[dict] = None,
+    ) -> None:
         """Initialize the parser.
 
+        See ``speechsdk.SpeechConfig(()`` for more information about how these
+        parameters are used.
+
         Args:
-            kwargs: Keyword arguments to pass to ``speechsdk.SpeechConfig(()``
-
-        kwargs:
-            key: The Azure Cognitive Speech service authentication token
-
+            api_key: The Azure Cognitive Speech service authentication token
             region: The Azure Cognitive Speech service locate region,
-            you need this argument or the endpoint argument
-
+                you need this argument or the endpoint argument
             endpoint: The Azure Cognitive Speech service endpoint with wss protocol,
-            this would be useful when a programmer uses the Azure cloud other
-            than the Azure Global Cloud like Azure China, Azure German
-
+                this would be useful when a programmer uses the Azure cloud other
+                than the Azure Global Cloud like Azure China, Azure German
             log_path: pass when transaction job log is required
-
-            polling_interval_seconds: pass a transcribe job's polling interval seconds
-
-            speech_recognition_language: pass a transcribe job's target source languages
-
+            polling_interval_seconds: check transcribe job status at this frequency
             auto_detect_languages: pass a list of potential source languages,
-            for source language auto detection in recognition.
+                for source language auto-detection in recognition.
+            speech_recognition_language: pass a transcribe job's target source languages
         """
-
-        self.key = get_from_dict_or_env(kwargs, "key", "AZURE_SPEECH_SERVICE_KEY")
-
-        self.region: Optional[str] = get_from_dict_or_env(
-            kwargs, "region", "AZURE_SPEECH_SERVICE_REGION", ""
+        self.api_key = get_from_value_or_env(api_key, "AZURE_SPEECH_SERVICE_KEY")
+        self.log_path: Optional[str] = get_from_value_or_env(
+            log_path, "AZURE_SPEECH_SERVICE_LOG_PATH", allow_none=True
         )
-        self.region = None if self.region == "" else self.region
-
-        self.endpoint: Optional[str] = get_from_dict_or_env(
-            kwargs, "endpoint", "AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT", ""
+        region = get_from_value_or_env(
+            region, "AZURE_SPEECH_SERVICE_REGION", allow_none=True
         )
-        self.endpoint = None if self.endpoint == "" else self.endpoint
-
-        self.log_path: Optional[str] = get_from_dict_or_env(
-            kwargs, "log_path", "AZURE_SPEECH_SERVICE_LOG_PATH", ""
+        endpoint = get_from_value_or_env(
+            endpoint, "AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT", allow_none=True
         )
-        self.log_path = None if self.log_path == "" else self.log_path
 
-        temp: str = get_from_dict_or_env(
-            kwargs,
-            "polling_interval_seconds",
-            "AZURE_SPEECH_SERVICE_POLLING_INTERVAL_SECONDS",
-            "",
+        if not region and not endpoint:
+            raise ValueError(
+                "You need to provide either the region or the endpoint argument."
+            )
+
+        self.region = region
+        self.endpoint = endpoint
+        self.polling_interval_seconds = polling_interval_seconds
+        self.speech_recognition_language = speech_recognition_language
+        self.auto_detect_languages = auto_detect_languages
+        self.speech_config_kwargs = (
+            speech_config_kwargs if speech_config_kwargs is not None else {}
         )
-        self.polling_interval_seconds = 0.5 if temp == "" else float(temp)
-
-        srl = "speech_recognition_language"
-        self.speech_recognition_language = kwargs[srl] if srl in kwargs else None
-
-        adl = "auto_detect_languages"
-        self.auto_detect_languages = kwargs[adl] if adl in kwargs else None
-
-        self.raw_json_list: List[dict] = []
-        self.document_list: List[Document] = []
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
         import json
+
+        raw_json_list: List[dict] = []
+        document_list: List[Document] = []
 
         try:
             import azure.cognitiveservices.speech as speechsdk
@@ -441,8 +441,8 @@ class AzureSpeechServiceParser(BaseBlobParser):
                     },
                 )
                 print(f"TRANSCRIBED:{evt_dict}")
-                self.raw_json_list.append(evt_dict)
-                self.document_list.append(_doc)
+                raw_json_list.append(evt_dict)
+                document_list.append(_doc)
             elif evt.result.reason == speechsdk.ResultReason.NoMatch:
                 print(
                     "\tNOMATCH: Speech could not be TRANSCRIBED: {}".format(
@@ -459,10 +459,11 @@ class AzureSpeechServiceParser(BaseBlobParser):
         def recognize_from_file() -> Iterator[Document]:
             # Speech service speech config
             speech_config = speechsdk.SpeechConfig(
-                subscription=self.key,
+                subscription=self.api_key,
                 region=self.region,
                 endpoint=self.endpoint,
                 speech_recognition_language=self.speech_recognition_language,
+                **self.speech_config_kwargs,
             )
             speech_config.output_format = speechsdk.OutputFormat.Detailed
 
@@ -523,7 +524,7 @@ class AzureSpeechServiceParser(BaseBlobParser):
                 time.sleep(self.polling_interval_seconds)
 
             conversation_transcriber.stop_transcribing_async()
-            return iter(self.document_list)
+            return iter(document_list)
 
         try:
             return recognize_from_file()

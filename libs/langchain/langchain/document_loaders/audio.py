@@ -1,23 +1,35 @@
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
-from langchain_core.documents import Document
-
-from langchain.document_loaders import Blob
-from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.base import BaseBlobParser
+from langchain.document_loaders.generic import GenericLoader
 from langchain.document_loaders.parsers.audio import AzureSpeechServiceParser
 
 
-class AzureSpeechServiceLoader(BaseLoader):
-    def load(self) -> List[Document]:
-        blob = Blob.from_path(self.file_path)
-        return self.parser.parse(blob)
+class AzureSpeechServiceLoader(GenericLoader):
+    """Azure Speech Service Document Loader.
 
-    def __init__(self, file_path: str, **kwargs: Any) -> None:
-        """
-        Args:
-            file_path: The path to the audio file.
-        """
-        self.file_path = file_path
-        self.parser = AzureSpeechServiceParser(**kwargs)
+    A document loader that can load audio files from the local file system
+    and transcribe them using Azure Speech Service.
+
+    Examples:
+
+        .. code-block:: python
+
+            from langchain.document_loaders import AzureSpeechServiceLoader
+
+            loader = AzureSpeechServiceLoader.from_filesystem(
+                path="path/to/directory",
+                glob="**/[!.]*",
+                suffixes=[".wav"],
+                show_progress=True,
+            )
+
+            loader.lazy_load()
+    """
+
+    @staticmethod
+    def get_parser(**kwargs: Any) -> BaseBlobParser:
+        """Get a parser for Azure Speech Service."""
+        return AzureSpeechServiceParser(**kwargs)
