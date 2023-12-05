@@ -129,7 +129,6 @@ __all__ = [
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
     "BookendEmbeddings",
-    "OpenCLIPEmbeddings",
 ]
 
 
