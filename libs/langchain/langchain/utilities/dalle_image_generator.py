@@ -25,25 +25,6 @@ class DallEAPIWrapper(BaseModel):
     2. save your OPENAI_API_KEY in an environment variable
     """
 
-    @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"openai_api_key": "OPENAI_API_KEY"}
-
-    @property
-    def lc_attributes(self) -> Dict[str, Any]:
-        attributes: Dict[str, Any] = {}
-
-        if self.openai_organization:
-            attributes["openai_organization"] = self.openai_organization
-
-        if self.openai_api_base:
-            attributes["openai_api_base"] = self.openai_api_base
-
-        if self.openai_proxy:
-            attributes["openai_proxy"] = self.openai_proxy
-
-        return attributes
-
     client: Any  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="dall-e-2", alias="model")
