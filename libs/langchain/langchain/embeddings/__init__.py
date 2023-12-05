@@ -22,6 +22,7 @@ from langchain.embeddings.awa import AwaEmbeddings
 from langchain.embeddings.azure_openai import AzureOpenAIEmbeddings
 from langchain.embeddings.baidu_qianfan_endpoint import QianfanEmbeddingsEndpoint
 from langchain.embeddings.bedrock import BedrockEmbeddings
+from langchain.embeddings.bookend import BookendEmbeddings
 from langchain.embeddings.cache import CacheBackedEmbeddings
 from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
@@ -127,6 +128,8 @@ __all__ = [
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
+    "BookendEmbeddings",
+    "OpenCLIPEmbeddings",
 ]
 
 
