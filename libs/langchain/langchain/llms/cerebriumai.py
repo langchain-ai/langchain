@@ -15,8 +15,9 @@ logger = logging.getLogger(__name__)
 class CerebriumAI(LLM):
     """CerebriumAI large language models.
 
-    To use, you should have the ``cerebrium`` python package installed, and the
-    environment variable ``CEREBRIUMAI_API_KEY`` set with your API key.
+    To use, you should have the ``cerebrium`` python package installed.
+    You should also have the environment variable ``CEREBRIUMAI_API_KEY``
+    set with your API key or pass it as a named arguement in the constructor.
 
     Any parameters that are valid to be passed to the call can be passed
     in, even if not explicitly saved on this class.
@@ -25,7 +26,7 @@ class CerebriumAI(LLM):
         .. code-block:: python
 
             from langchain.llms import CerebriumAI
-            cerebrium = CerebriumAI(endpoint_url="")
+            cerebrium = CerebriumAI(endpoint_url="", cerebriumai_api_key="my-api-key")
 
     """
 
