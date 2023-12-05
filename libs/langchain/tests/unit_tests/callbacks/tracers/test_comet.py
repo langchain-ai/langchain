@@ -44,7 +44,7 @@ def test_comet_tracer__trace_chain_with_single_span__happyflow() -> None:
     # Parent run
     tracer.on_chain_start(
         {"name": "chain-input"},
-        ["chain-input-prompt"],
+        {"input": "chain-input-prompt"},
         parent_run_id=None,
         run_id=run_id_1,
     )
