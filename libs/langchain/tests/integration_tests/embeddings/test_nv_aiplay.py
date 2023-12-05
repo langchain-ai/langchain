@@ -52,6 +52,6 @@ async def test_nvai_play_embedding_async_queries() -> None:
     """Test NVAIPlay async embeddings for multiple queries."""
     queries = ["What's the weather like?", "Tell me a joke."]
     embedding = NVAIPlayEmbeddings()
-    output = await embedding.aembed_batch_query(queries)
+    output = await embedding.aembed_batch_queries(queries)
     assert len(output) == 2
     assert all(len(query) == 1024 for query in output)

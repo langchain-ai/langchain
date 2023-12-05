@@ -1,6 +1,7 @@
 """Chat Model Components Derived from ChatModel/NVAIPlay"""
 
 import asyncio
+from collections import abc
 from typing import Any, Dict, List, Literal
 
 from langchain.llms.nv_aiplay import ClientModel, NVCRModel
@@ -52,11 +53,11 @@ class NVAIPlayEmbeddings(ClientModel, Embeddings):
     ) -> List[List[float]]:
         """Embed search queries with Asynchronous Batching and Concurrency Control."""
         semaphore = asyncio.Semaphore(max_concurrency)
-        
-        async def embed_with_semaphore(text: str) -> asyncio.Coroutine:
+
+        async def embed_with_semaphore(text: str) -> abc.Coroutine:
             async with semaphore:
                 return await self.aembed_query(text)
-        
+
         tasks = [embed_with_semaphore(text) for text in texts]
         return await asyncio.gather(*tasks)
 
@@ -67,11 +68,11 @@ class NVAIPlayEmbeddings(ClientModel, Embeddings):
     ) -> List[List[float]]:
         """Embed search docs with Asynchronous Batching and Concurrency Control."""
         semaphore = asyncio.Semaphore(max_concurrency)
-        
-        async def embed_with_semaphore(text: str) -> asyncio.Coroutine:
+
+        async def embed_with_semaphore(text: str) -> abc.Coroutine:
             async with semaphore:
                 return await self.aembed_documents([text])
-        
+
         tasks = [embed_with_semaphore(text) for text in texts]
         outs = await asyncio.gather(*tasks)
         return [out[0] for out in outs]
