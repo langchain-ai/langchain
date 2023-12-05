@@ -61,7 +61,7 @@ class ChatAnyscale(ChatOpenAI):
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
-    anyscale_base_url: str = Field(default=DEFAULT_BASE_URL)
+    anyscale_api_base: str = Field(default=DEFAULT_BASE_URL)
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
     anyscale_proxy: Optional[str] = None
@@ -72,7 +72,7 @@ class ChatAnyscale(ChatOpenAI):
     @staticmethod
     def get_available_models(
         anyscale_api_key: Optional[str] = None,
-        anyscale_base_url: str = DEFAULT_BASE_URL,
+        anyscale_api_base: str = DEFAULT_BASE_URL,
     ) -> Set[str]:
         """Get available models from Anyscale API."""
         try:
@@ -83,7 +83,7 @@ class ChatAnyscale(ChatOpenAI):
                 "set in environment variable ANYSCALE_API_KEY.",
             ) from e
 
-        models_url = f"{anyscale_base_url}/models"
+        models_url = f"{anyscale_api_base}/models"
         models_response = requests.get(
             models_url,
             headers={
@@ -109,10 +109,10 @@ class ChatAnyscale(ChatOpenAI):
                 "ANYSCALE_API_KEY",
             )
         )
-        values["anyscale_base_url"] = get_from_dict_or_env(
+        values["anyscale_api_base"] = get_from_dict_or_env(
             values,
-            "anyscale_base_url",
-            "ANYSCALE_BASE_URL",
+            "anyscale_api_base",
+            "ANYSCALE_API_BASE",
             default=DEFAULT_BASE_URL,
         )
         values["openai_proxy"] = get_from_dict_or_env(
@@ -133,7 +133,7 @@ class ChatAnyscale(ChatOpenAI):
             if is_openai_v1():
                 client_params = {
                     "api_key": values["anyscale_api_key"].get_secret_value(),
-                    "base_url": values["anyscale_base_url"],
+                    "base_url": values["anyscale_api_base"],
                     # To do: future support
                     # "organization": values["openai_organization"],
                     # "timeout": values["request_timeout"],
@@ -159,7 +159,7 @@ class ChatAnyscale(ChatOpenAI):
 
         available_models = cls.get_available_models(
             values["anyscale_api_key"].get_secret_value(),
-            values["anyscale_base_url"],
+            values["anyscale_api_base"],
         )
 
         if model_name not in available_models:

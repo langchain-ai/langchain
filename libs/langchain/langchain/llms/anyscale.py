@@ -88,7 +88,7 @@ class Anyscale(BaseOpenAI):
     """
 
     """Key word arguments to pass to the model."""
-    anyscale_base_url: str = Field(default=DEFAULT_BASE_URL)
+    anyscale_api_base: str = Field(default=DEFAULT_BASE_URL)
     anyscale_api_key: SecretStr
     model_name: str = Field(default=DEFAULT_MODEL)
 
@@ -96,8 +96,8 @@ class Anyscale(BaseOpenAI):
 
     @staticmethod
     def get_available_models(
-        anyscale_api_key: str = None,
-        anyscale_base_url: str = DEFAULT_BASE_URL,
+        anyscale_api_key: str = "",
+        anyscale_api_base: str = DEFAULT_BASE_URL,
     ) -> Set[str]:
         """Get available models from Anyscale API."""
         try:
@@ -108,7 +108,7 @@ class Anyscale(BaseOpenAI):
                 "set in environment variable ANYSCALE_API_KEY.",
             ) from e
 
-        models_url = f"{anyscale_base_url}/models"
+        models_url = f"{anyscale_api_base}/models"
         models_response = requests.get(
             models_url,
             headers={
@@ -127,10 +127,10 @@ class Anyscale(BaseOpenAI):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["anyscale_base_url"] = get_from_dict_or_env(
+        values["anyscale_api_base"] = get_from_dict_or_env(
             values,
-            "anyscale_base_url",
-            "ANYSCALE_BASE_URL",
+            "anyscale_api_base",
+            "ANYSCALE_API_BASE",
             default=DEFAULT_BASE_URL,
         )
         values["anyscale_api_key"] = convert_to_secret_str(
@@ -145,7 +145,7 @@ class Anyscale(BaseOpenAI):
         model_name = values["model_name"]
         available_models = cls.get_available_models(
             values["anyscale_api_key"].get_secret_value(),
-            values["anyscale_base_url"],
+            values["anyscale_api_base"],
         )
 
         if model_name not in available_models:
@@ -160,7 +160,7 @@ class Anyscale(BaseOpenAI):
             if is_openai_v1():
                 client_params = {
                     "api_key": values["anyscale_api_key"].get_secret_value(),
-                    "base_url": values["anyscale_base_url"],
+                    "base_url": values["anyscale_api_base"],
                     # To do: future support
                     # "organization": values["openai_organization"],
                     # "timeout": values["request_timeout"],
@@ -202,7 +202,7 @@ class Anyscale(BaseOpenAI):
             openai_creds.update(
                 {
                     "api_key": self.anyscale_api_key.get_secret_value(),
-                    "api_base": self.anyscale_base_url,
+                    "api_base": self.anyscale_api_base,
                 }
             )
         return {**openai_creds, **super()._invocation_params}
