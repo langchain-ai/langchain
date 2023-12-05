@@ -11,10 +11,10 @@ from typing import (
     Optional,
 )
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.outputs import GenerationChunk
+from langchain_core.prompt_values import PromptValue
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.output import GenerationChunk
-from langchain_core.schema.prompt import PromptValue
 from langchain_core.utils import (
     check_package_version,
     get_pydantic_field_names,

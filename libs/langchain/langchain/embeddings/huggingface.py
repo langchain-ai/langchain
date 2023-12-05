@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 import requests
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field
-from langchain_core.schema.embeddings import Embeddings
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -279,9 +279,15 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
     """Your API key for the HuggingFace Inference API."""
     model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
     """The name of the model to use for text embeddings."""
+    api_url: Optional[str] = None
+    """Custom inference endpoint url. None for using default public url."""
 
     @property
     def _api_url(self) -> str:
+        return self.api_url or self._default_api_url
+
+    @property
+    def _default_api_url(self) -> str:
         return (
             "https://api-inference.huggingface.co"
             "/pipeline"

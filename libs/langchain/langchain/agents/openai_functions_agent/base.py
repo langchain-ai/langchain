@@ -1,6 +1,13 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import (
+    BaseMessage,
+    SystemMessage,
+)
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
@@ -8,16 +15,6 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
 )
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.schema import (
-    AgentAction,
-    AgentFinish,
-    BasePromptTemplate,
-)
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.messages import (
-    BaseMessage,
-    SystemMessage,
-)
 
 from langchain.agents import BaseSingleActionAgent
 from langchain.agents.format_scratchpad.openai_functions import (
@@ -165,7 +162,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             agent_decision = self.plan(
                 intermediate_steps, with_functions=False, **kwargs
             )
-            if type(agent_decision) == AgentFinish:
+            if isinstance(agent_decision, AgentFinish):
                 return agent_decision
             else:
                 raise ValueError(

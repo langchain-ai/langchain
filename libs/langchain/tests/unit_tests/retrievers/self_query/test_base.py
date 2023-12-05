@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Tuple, Union
 
 import pytest
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -130,7 +130,6 @@ def test__get_relevant_documents(fake_self_query_retriever: SelfQueryRetriever) 
     assert relevant_documents[0].metadata["foo"] == "bar"
 
 
-@pytest.mark.asyncio
 async def test__aget_relevant_documents(
     fake_self_query_retriever: SelfQueryRetriever,
 ) -> None:

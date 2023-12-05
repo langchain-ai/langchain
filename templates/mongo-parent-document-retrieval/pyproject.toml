@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "mongo-parent-document-retrieval"
 version = "0.0.1"
-description = ""
+description = "RAG using MongoDB and OpenAI"
 authors = []
 readme = "README.md"
 
@@ -21,6 +21,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "mongo_parent_document_retrieval"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["MongoDB", "OpenAI"]
+tags = ["vectordb"]
 
 [build-system]
 requires = ["poetry-core"]

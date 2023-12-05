@@ -6,9 +6,8 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.llm import LLM
+from langchain_core.language_models import LLM, LanguageModelInput
 from langchain_core.runnables import RunnableConfig
-from langchain_core.schema.language_model import LanguageModelInput
 
 
 class FakeListLLM(LLM):
@@ -61,6 +60,8 @@ class FakeListLLM(LLM):
 class FakeStreamingListLLM(FakeListLLM):
     """Fake streaming list LLM for testing purposes."""
 
+    error_on_chunk_number: Optional[int] = None
+
     def stream(
         self,
         input: LanguageModelInput,
@@ -70,9 +71,15 @@ class FakeStreamingListLLM(FakeListLLM):
         **kwargs: Any,
     ) -> Iterator[str]:
         result = self.invoke(input, config)
-        for c in result:
+        for i_c, c in enumerate(result):
             if self.sleep is not None:
                 time.sleep(self.sleep)
+
+            if (
+                self.error_on_chunk_number is not None
+                and i_c == self.error_on_chunk_number
+            ):
+                raise Exception("Fake error")
             yield c
 
     async def astream(
@@ -84,7 +91,13 @@ class FakeStreamingListLLM(FakeListLLM):
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         result = await self.ainvoke(input, config)
-        for c in result:
+        for i_c, c in enumerate(result):
             if self.sleep is not None:
                 await asyncio.sleep(self.sleep)
+
+            if (
+                self.error_on_chunk_number is not None
+                and i_c == self.error_on_chunk_number
+            ):
+                raise Exception("Fake error")
             yield c

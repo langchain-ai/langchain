@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
+from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.schema import Generation, LLMResult
 from tenacity import (
     before_sleep_log,
     retry,

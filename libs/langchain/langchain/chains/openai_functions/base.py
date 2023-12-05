@@ -13,14 +13,14 @@ from typing import (
     cast,
 )
 
+from langchain_core.output_parsers import (
+    BaseGenerationOutputParser,
+    BaseLLMOutputParser,
+    BaseOutputParser,
+)
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
-from langchain_core.schema import BaseLLMOutputParser
-from langchain_core.schema.output_parser import (
-    BaseGenerationOutputParser,
-    BaseOutputParser,
-)
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
@@ -75,7 +75,7 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
         arg = None
         for line in args_block.split("\n")[1:]:
             if ":" in line:
-                arg, desc = line.split(":")
+                arg, desc = line.split(":", maxsplit=1)
                 arg_descriptions[arg.strip()] = desc.strip()
             elif arg:
                 arg_descriptions[arg.strip()] += " " + line.strip()

@@ -1,6 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
 
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -8,8 +8,8 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.schema.prompt import PromptValue
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.prompt_values import PromptValue
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -17,8 +17,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import (
     BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
+    agenerate_from_stream,
+    generate_from_stream,
 )
 from langchain.llms.anthropic import _AnthropicCommon
 
@@ -171,7 +171,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
         prompt = self._convert_messages_to_prompt(
             messages,
         )
@@ -198,7 +198,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return await _agenerate_from_stream(stream_iter)
+            return await agenerate_from_stream(stream_iter)
         prompt = self._convert_messages_to_prompt(
             messages,
         )

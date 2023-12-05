@@ -1,8 +1,8 @@
 import logging
 from typing import Any, Dict, List, Optional
 
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.schema.embeddings import Embeddings
 
 from langchain.utils import get_from_dict_or_env
 
@@ -64,8 +64,8 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
             raise ValueError("Please provide a model_id.")
 
         try:
-            from clarifai.auth.helper import ClarifaiAuthHelper
             from clarifai.client import create_stub
+            from clarifai.client.auth.helper import ClarifaiAuthHelper
         except ImportError:
             raise ImportError(
                 "Could not import clarifai python package. "

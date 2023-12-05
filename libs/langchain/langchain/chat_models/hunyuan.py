@@ -8,29 +8,25 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 from urllib.parse import urlparse
 
 import requests
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.schema import (
+from langchain_core.messages import (
     AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatMessage,
-    ChatResult,
-    HumanMessage,
-)
-from langchain_core.schema.messages import (
     AIMessageChunk,
+    BaseMessage,
     BaseMessageChunk,
+    ChatMessage,
     ChatMessageChunk,
+    HumanMessage,
     HumanMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_pydantic_field_names,
 )
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import BaseChatModel, _generate_from_stream
+from langchain.chat_models.base import BaseChatModel, generate_from_stream
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -246,7 +242,7 @@ class ChatHunyuan(BaseChatModel):
             stream_iter = self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         res = self._chat(messages, **kwargs)
 

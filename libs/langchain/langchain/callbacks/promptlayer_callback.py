@@ -5,16 +5,16 @@ import datetime
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from langchain_core.schema import (
-    ChatGeneration,
-    LLMResult,
-)
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
     SystemMessage,
+)
+from langchain_core.outputs import (
+    ChatGeneration,
+    LLMResult,
 )
 
 from langchain.callbacks.base import BaseCallbackHandler

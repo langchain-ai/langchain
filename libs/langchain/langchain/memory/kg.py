@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Type, Union
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
-from langchain_core.schema import BasePromptTemplate
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.messages import BaseMessage, SystemMessage, get_buffer_string
 
 from langchain.chains.llm import LLMChain
 from langchain.graphs import NetworkxEntityGraph

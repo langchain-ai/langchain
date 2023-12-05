@@ -2,10 +2,9 @@ import json
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import requests
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.outputs import GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Extra
-from langchain_core.schema import LLMResult
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.output import GenerationChunk
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
@@ -95,11 +94,18 @@ class _OllamaCommon(BaseLanguageModel):
     template: Optional[str] = None
     """full prompt or prompt template (overrides what is defined in the Modelfile)"""
 
+    format: Optional[str] = None
+    """Specify the format of the output (e.g., json)"""
+
+    timeout: Optional[int] = None
+    """Timeout for the request stream"""
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
         return {
             "model": self.model,
+            "format": self.format,
             "options": {
                 "mirostat": self.mirostat,
                 "mirostat_eta": self.mirostat_eta,
@@ -122,7 +128,7 @@ class _OllamaCommon(BaseLanguageModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
+        return {**{"model": self.model, "format": self.format}, **self._default_params}
 
     def _create_stream(
         self,
@@ -156,6 +162,7 @@ class _OllamaCommon(BaseLanguageModel):
             headers={"Content-Type": "application/json"},
             json={"prompt": prompt, **params},
             stream=True,
+            timeout=self.timeout,
         )
         response.encoding = "utf-8"
         if response.status_code != 200:

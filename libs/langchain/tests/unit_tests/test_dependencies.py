@@ -74,6 +74,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         [
             "duckdb-engine",
             "freezegun",
+            "langchain-core",
             "lark",
             "pandas",
             "pytest",
@@ -92,7 +93,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
 def test_imports() -> None:
     """Test that you can import all top level things okay."""
-    from langchain_core.schema import BasePromptTemplate  # noqa: F401
+    from langchain_core.prompts import BasePromptTemplate  # noqa: F401
 
     from langchain.agents import OpenAIFunctionsAgent  # noqa: F401
     from langchain.callbacks import OpenAICallbackHandler  # noqa: F401
@@ -103,5 +104,8 @@ def test_imports() -> None:
     from langchain.llms import OpenAI  # noqa: F401
     from langchain.retrievers import VespaRetriever  # noqa: F401
     from langchain.tools import DuckDuckGoSearchResults  # noqa: F401
-    from langchain.utilities import SerpAPIWrapper  # noqa: F401
+    from langchain.utilities import (
+        SearchApiAPIWrapper,  # noqa: F401
+        SerpAPIWrapper,  # noqa: F401
+    )
     from langchain.vectorstores import FAISS  # noqa: F401

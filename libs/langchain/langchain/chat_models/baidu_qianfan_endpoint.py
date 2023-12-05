@@ -3,9 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, cast
 
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -14,7 +12,8 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -118,7 +117,7 @@ class QianfanChatEndpoint(BaseChatModel):
     """Endpoint of the Qianfan LLM, required if custom model used."""
 
     @root_validator()
-    def validate_enviroment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = get_from_dict_or_env(
             values,
             "qianfan_ak",

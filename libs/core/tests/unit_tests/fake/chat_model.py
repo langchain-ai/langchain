@@ -7,10 +7,9 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.chat_model import BaseChatModel, SimpleChatModel
-from langchain_core.schema import ChatResult
-from langchain_core.schema.messages import AIMessageChunk, BaseMessage
-from langchain_core.schema.output import ChatGeneration, ChatGenerationChunk
+from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
+from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 
 class FakeMessagesListChatModel(BaseChatModel):
@@ -46,6 +45,7 @@ class FakeListChatModel(SimpleChatModel):
     responses: List
     sleep: Optional[float] = None
     i: int = 0
+    error_on_chunk_number: Optional[int] = None
 
     @property
     def _llm_type(self) -> str:
@@ -78,9 +78,15 @@ class FakeListChatModel(SimpleChatModel):
             self.i += 1
         else:
             self.i = 0
-        for c in response:
+        for i_c, c in enumerate(response):
             if self.sleep is not None:
                 time.sleep(self.sleep)
+            if (
+                self.error_on_chunk_number is not None
+                and i_c == self.error_on_chunk_number
+            ):
+                raise Exception("Fake error")
+
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     async def _astream(
@@ -95,9 +101,14 @@ class FakeListChatModel(SimpleChatModel):
             self.i += 1
         else:
             self.i = 0
-        for c in response:
+        for i_c, c in enumerate(response):
             if self.sleep is not None:
                 await asyncio.sleep(self.sleep)
+            if (
+                self.error_on_chunk_number is not None
+                and i_c == self.error_on_chunk_number
+            ):
+                raise Exception("Fake error")
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     @property

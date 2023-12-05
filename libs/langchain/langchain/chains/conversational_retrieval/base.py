@@ -7,12 +7,14 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables.config import RunnableConfig
-from langchain_core.schema import BasePromptTemplate, BaseRetriever, Document
-from langchain_core.schema.language_model import BaseLanguageModel
-from langchain_core.schema.messages import BaseMessage
-from langchain_core.schema.vectorstore import VectorStore
+from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -202,14 +204,19 @@ class BaseConversationalRetrievalChain(Chain):
         else:
             docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
 
-        new_inputs = inputs.copy()
-        if self.rephrase_question:
-            new_inputs["question"] = new_question
-        new_inputs["chat_history"] = chat_history_str
-        answer = await self.combine_docs_chain.arun(
-            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
-        )
-        output: Dict[str, Any] = {self.output_key: answer}
+        output: Dict[str, Any] = {}
+        if self.response_if_no_docs_found is not None and len(docs) == 0:
+            output[self.output_key] = self.response_if_no_docs_found
+        else:
+            new_inputs = inputs.copy()
+            if self.rephrase_question:
+                new_inputs["question"] = new_question
+            new_inputs["chat_history"] = chat_history_str
+            answer = await self.combine_docs_chain.arun(
+                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+            )
+            output[self.output_key] = answer
+
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:

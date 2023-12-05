@@ -1,14 +1,10 @@
 import asyncio
 import logging
+import warnings
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra
-from langchain_core.schema import (
-    ChatGeneration,
-    ChatResult,
-)
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
@@ -16,6 +12,11 @@ from langchain_core.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatResult,
+)
+from langchain_core.pydantic_v1 import BaseModel, Extra
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -59,6 +60,11 @@ class ChatMLflowAIGateway(BaseChatModel):
     """
 
     def __init__(self, **kwargs: Any):
+        warnings.warn(
+            "`ChatMLflowAIGateway` is deprecated. Use `ChatMlflow` or "
+            "`ChatDatabricks` instead.",
+            DeprecationWarning,
+        )
         try:
             import mlflow.gateway
         except ImportError as e:

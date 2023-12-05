@@ -3,10 +3,8 @@ import os
 from typing import Any, Dict, List
 from uuid import UUID
 
-from langchain_core.schema import (
-    BaseMessage,
-    LLMResult,
-)
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import LLMResult
 
 from langchain.callbacks.base import BaseCallbackHandler
 

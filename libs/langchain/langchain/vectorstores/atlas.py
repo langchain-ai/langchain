@@ -5,10 +5,9 @@ import uuid
 from typing import Any, Iterable, List, Optional, Type
 
 import numpy as np
-from langchain_core.schema.embeddings import Embeddings
-from langchain_core.schema.vectorstore import VectorStore
-
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
 logger = logging.getLogger(__name__)
 

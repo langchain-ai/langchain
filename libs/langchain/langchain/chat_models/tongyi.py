@@ -13,9 +13,7 @@ from typing import (
     Type,
 )
 
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.schema import ChatGeneration, ChatResult
-from langchain_core.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -29,7 +27,13 @@ from langchain_core.schema.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain_core.schema.output import ChatGenerationChunk, GenerationChunk
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    ChatResult,
+    GenerationChunk,
+)
+from langchain_core.pydantic_v1 import Field, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     RetryCallState,
@@ -42,7 +46,7 @@ from tenacity import (
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import (
     BaseChatModel,
-    _generate_from_stream,
+    generate_from_stream,
 )
 from langchain.utils import get_from_dict_or_env
 
@@ -317,7 +321,7 @@ class ChatTongyi(BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         if not messages:
             raise ValueError("No messages provided.")

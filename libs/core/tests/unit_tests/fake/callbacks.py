@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
+from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.schema.messages import BaseMessage
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -14,6 +14,7 @@ class BaseFakeCallbackHandler(BaseModel):
     starts: int = 0
     ends: int = 0
     errors: int = 0
+    errors_args: List[Any] = []
     text: int = 0
     ignore_llm_: bool = False
     ignore_chain_: bool = False
@@ -52,8 +53,9 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
         self.llm_ends += 1
         self.ends += 1
 
-    def on_llm_error_common(self) -> None:
+    def on_llm_error_common(self, *args: Any, **kwargs: Any) -> None:
         self.errors += 1
+        self.errors_args.append({"args": args, "kwargs": kwargs})
 
     def on_llm_new_token_common(self) -> None:
         self.llm_streams += 1
@@ -160,7 +162,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
         *args: Any,
         **kwargs: Any,
     ) -> Any:
-        self.on_llm_error_common()
+        self.on_llm_error_common(*args, **kwargs)
 
     def on_retry(
         self,
@@ -322,7 +324,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        self.on_llm_error_common()
+        self.on_llm_error_common(*args, **kwargs)
 
     async def on_chain_start(
         self,
