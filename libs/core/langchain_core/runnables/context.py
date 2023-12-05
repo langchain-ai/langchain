@@ -102,15 +102,17 @@ def _config_with_context(
 
 
 def aconfig_with_context(
-    config: RunnableConfig, specs: List[ConfigurableFieldSpec]
+    config: RunnableConfig,
+    steps: List[Runnable],
 ) -> RunnableConfig:
-    return _config_with_context(config, specs, _asetter, _agetter, asyncio.Event)
+    return _config_with_context(config, steps, _asetter, _agetter, asyncio.Event)
 
 
 def config_with_context(
-    config: RunnableConfig, specs: List[ConfigurableFieldSpec]
+    config: RunnableConfig,
+    steps: List[Runnable],
 ) -> RunnableConfig:
-    return _config_with_context(config, specs, _setter, _getter, threading.Event)
+    return _config_with_context(config, steps, _setter, _getter, threading.Event)
 
 
 class ContextGet(RunnableSerializable):
