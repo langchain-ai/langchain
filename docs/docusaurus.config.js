@@ -19,7 +19,9 @@ const config = {
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
-
+  customFields: {
+    mendableAnonKey: "82842b36-3ea6-49b2-9fb8-52cfc4bde6bf", // client-side key, okay to be public
+  },
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "throw",
 
