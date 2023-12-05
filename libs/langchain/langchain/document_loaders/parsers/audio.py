@@ -1,13 +1,13 @@
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Sequence
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
 from langchain_core.documents import Document
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.utils.openai import is_openai_v1
 from langchain.utils.env import get_from_value_or_env
+from langchain.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
 
