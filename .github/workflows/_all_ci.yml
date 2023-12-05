@@ -38,7 +38,7 @@ jobs:
 
   compile-integration-tests:
     uses: ./.github/workflows/_compile_integration_test.yml
-    if: ${{ inputs.working-directory != "libs/core" }}
+    if: ${{ inputs.working-directory != 'libs/core' }}
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
@@ -58,7 +58,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-    if: ${{ inputs.working-directory == "libs/langchain" }}
+    if: ${{ inputs.working-directory == 'libs/langchain' }}
     name: Python ${{ matrix.python-version }} extended tests
     defaults:
       run:
