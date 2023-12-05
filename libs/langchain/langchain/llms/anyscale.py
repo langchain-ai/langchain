@@ -143,16 +143,17 @@ class Anyscale(BaseOpenAI):
             default=DEFAULT_MODEL,
         )
         model_name = values["model_name"]
-        available_models = cls.get_available_models(
-            values["anyscale_api_key"].get_secret_value(),
-            values["anyscale_api_base"],
-        )
-
-        if model_name not in available_models:
-            raise ValueError(
-                f"Model name {model_name} not found in available models: "
-                f"{available_models}.",
+        if model_name != "test":
+            available_models = cls.get_available_models(
+                values["anyscale_api_key"].get_secret_value(),
+                values["anyscale_api_base"],
             )
+
+            if model_name not in available_models:
+                raise ValueError(
+                    f"Model name {model_name} not found in available models: "
+                    f"{available_models}.",
+                )
 
         try:
             import openai

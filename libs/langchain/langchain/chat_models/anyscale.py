@@ -156,20 +156,21 @@ class ChatAnyscale(ChatOpenAI):
             values["model_name"] = DEFAULT_MODEL
 
         model_name = values["model_name"]
-
-        available_models = cls.get_available_models(
-            values["anyscale_api_key"].get_secret_value(),
-            values["anyscale_api_base"],
-        )
-
-        if model_name not in available_models:
-            raise ValueError(
-                f"Model name {model_name} not found in available models: "
-                f"{available_models}.",
+        if model_name != "test":
+            available_models = cls.get_available_models(
+                values["anyscale_api_key"].get_secret_value(),
+                values["anyscale_api_base"],
             )
 
-        values["available_models"] = available_models
+            if model_name not in available_models:
+                raise ValueError(
+                    f"Model name {model_name} not found in available models: "
+                    f"{available_models}.",
+                )
 
+            values["available_models"] = available_models
+        else:
+            values["available_models"] = "test_models"
         return values
 
     def _get_encoding_model(self) -> tuple[str, tiktoken.Encoding]:
