@@ -100,5 +100,4 @@ class CobolSegmenter(CodeSegmenter):
                     # after the last header
                     simplified_lines.append("* OMITTED CODE *")
                     omitted_code_added = True
-            # return "\n".join(simplified_lines)
-            return " "
+        return "\n".join(simplified_lines)
