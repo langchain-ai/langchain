@@ -291,20 +291,28 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                         vars = get_template_variables(img_template, "f-string")
                         if vars:
                             if len(vars) > 1:
-                                raise ValueError
-                            variable_name = vars[0]
-                            img_template = {}
+                                raise ValueError(
+                                    "Only one format variable allowed per image"
+                                    f" template.\nGot: {vars}"
+                                    f"\nFrom: {tmpl}"
+                                )
+                            input_variables = [vars[0]]
                         else:
-                            variable_name = None
-                            img_template = {"url": img_template}
+                            input_variables = None
+                        img_template = {"url": img_template}
                         img_template_obj = ImagePromptTemplate(
-                            variable_name=variable_name, template=img_template
+                            input_variables=input_variables, template=img_template
                         )
                     elif isinstance(img_template, dict):
                         img_template = dict(img_template)
-                        variable_name = img_template.pop("variable_name", None)
+                        if "url" in img_template:
+                            input_variables = get_template_variables(
+                                img_template["url"], "f-string"
+                            )
+                        else:
+                            input_variables = None
                         img_template_obj = ImagePromptTemplate(
-                            variable_name=variable_name, template=img_template
+                            input_variables=input_variables, template=img_template
                         )
                     else:
                         raise ValueError()

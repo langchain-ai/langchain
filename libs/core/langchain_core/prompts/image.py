@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
@@ -7,23 +7,22 @@ from langchain_core.utils.image import image_to_data_url
 
 
 class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
-    """An image prompt template for a language model."""
+    """An image prompt template for a multimodal model."""
 
-    variable_name: Union[str, None] = None
-    """Name of variable to use as messages."""
     template: dict = Field(default_factory=dict)
-    """"""
+    """Template for the prompt."""
 
     def __init__(self, **kwargs: Any) -> None:
-        if "variable_name" in kwargs:
-            # protected var names for formatting
-            if kwargs["variable_name"] in ("url", "path", "detail"):
-                raise ValueError("")
-            if "input_variables" not in kwargs:
-                kwargs["input_variables"] = (
-                    [kwargs["variable_name"]] if kwargs["variable_name"] else []
-                )
+        if "input_variables" not in kwargs:
+            kwargs["input_variables"] = []
 
+        overlap = set(kwargs["input_variables"]) & set(("url", "path", "detail"))
+        if overlap:
+            raise ValueError(
+                "input_variables for the image template cannot contain"
+                " any of 'url', 'path', or 'detail'."
+                f" Found: {overlap}"
+            )
         super().__init__(**kwargs)
 
     @property
@@ -53,13 +52,15 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
                 prompt.format(variable1="foo")
         """
-        var = kwargs.get(self.variable_name, {}) if self.variable_name else {}
-        if isinstance(var, str):
-            var = {"url": var}
-        var = {**self.template, **var}
-        url = kwargs.get("url") or var.get("url")
-        path = kwargs.get("path") or var.get("path")
-        detail = kwargs.get("detail") or var.get("detail")
+        formatted = {}
+        for k, v in self.template.items():
+            if isinstance(v, str):
+                formatted[k] = v.format(**kwargs)
+            else:
+                formatted[k] = v
+        url = kwargs.get("url") or formatted.get("url")
+        path = kwargs.get("path") or formatted.get("path")
+        detail = kwargs.get("detail") or formatted.get("detail")
 
         output: ImageURL = {"url": url or image_to_data_url(path)}
         if detail:

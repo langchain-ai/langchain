@@ -3,6 +3,9 @@ from typing import Any, List, Union
 
 import pytest
 
+from langchain_core._api.deprecation import (
+    LangChainPendingDeprecationWarning,
+)
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -242,14 +245,15 @@ def test_chat_valid_infer_variables() -> None:
 
 def test_chat_from_role_strings() -> None:
     """Test instantiation of chat template from role strings."""
-    template = ChatPromptTemplate.from_role_strings(
-        [
-            ("system", "You are a bot."),
-            ("assistant", "hello!"),
-            ("human", "{question}"),
-            ("other", "{quack}"),
-        ]
-    )
+    with pytest.warns(LangChainPendingDeprecationWarning):
+        template = ChatPromptTemplate.from_role_strings(
+            [
+                ("system", "You are a bot."),
+                ("assistant", "hello!"),
+                ("human", "{question}"),
+                ("other", "{quack}"),
+            ]
+        )
 
     messages = template.format_messages(question="How are you?", quack="duck")
     assert messages == [
@@ -360,3 +364,133 @@ def test_chat_message_partial() -> None:
     ]
     assert res == expected
     assert template2.format(input="hello") == get_buffer_string(expected)
+
+
+def test_chat_tmpl_from_messages_multipart_text():
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are an AI assistant named {name}."),
+            (
+                "human",
+                [
+                    {"type": "text", "text": "What's in this image?"},
+                    {"type": "text", "text": "Oh nvm"},
+                ],
+            ),
+        ]
+    )
+    messages = template.format_messages(name="R2D2")
+    expected = [
+        SystemMessage(content="You are an AI assistant named R2D2."),
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What's in this image?"},
+                {"type": "text", "text": "Oh nvm"},
+            ]
+        ),
+    ]
+    assert messages == expected
+
+
+def test_chat_tmpl_from_messages_multipart_text_with_template():
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are an AI assistant named {name}."),
+            (
+                "human",
+                [
+                    {"type": "text", "text": "What's in this {object_name}?"},
+                    {"type": "text", "text": "Oh nvm"},
+                ],
+            ),
+        ]
+    )
+    messages = template.format_messages(name="R2D2", object_name="image")
+    expected = [
+        SystemMessage(content="You are an AI assistant named R2D2."),
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What's in this image?"},
+                {"type": "text", "text": "Oh nvm"},
+            ]
+        ),
+    ]
+    assert messages == expected
+
+
+def test_chat_tmpl_from_messages_multipart_image():
+    base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
+    other_base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are an AI assistant named {name}."),
+            (
+                "human",
+                [
+                    {"type": "text", "text": "What's in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": "data:image/jpeg;base64,{my_image}",
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/jpeg;base64,{my_image}"},
+                    },
+                    {"type": "image_url", "image_url": "{my_other_image}"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "{my_other_image}", "detail": "medium"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "https://www.langchain.com/image.png"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/jpeg;base64,foobar"},
+                    },
+                ],
+            ),
+        ]
+    )
+    messages = template.format_messages(
+        name="R2D2", my_image=base64_image, my_other_image=other_base64_image
+    )
+    expected = [
+        SystemMessage(content="You are an AI assistant named R2D2."),
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{other_base64_image}"
+                    },
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"{other_base64_image}"},
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"{other_base64_image}",
+                        "detail": "medium",
+                    },
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "https://www.langchain.com/image.png"},
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/jpeg;base64,foobar"},
+                },
+            ]
+        ),
+    ]
+    assert messages == expected
