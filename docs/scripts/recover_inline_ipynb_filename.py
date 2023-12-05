@@ -1,7 +1,6 @@
 import json
 import pathlib
 
-
 here = pathlib.Path(__file__).parent.absolute()
 json_file = here.parent / ".inline_ipynb.json"
 
