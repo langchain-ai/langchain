@@ -26,7 +26,7 @@ You can select different options (see results [here](https://github.com/mlfounda
 
 The first time you run the app, it will automatically download the multimodal embedding model.
 
-By default, LangChain will use an embedding model with strong performance, `ViT-H-14`.
+By default, LangChain will use an embedding model with reasonably strong performance, `ViT-H-14`.
 
 You can choose alternative `OpenCLIPEmbeddings` models in `rag_chroma_multi_modal/ingest.py`:
 ```
