@@ -296,6 +296,23 @@ def test_runnable_context_seq_key_not_found() -> None:
         seq.invoke("foo")
 
 
+def test_runnable_context_seq_key_order() -> None:
+    seq: Runnable = {"bar": Context.getter("foo")} | Context.setter("foo")
+
+    with pytest.raises(ValueError):
+        seq.invoke("foo")
+
+
+def test_runnable_context_deadlock() -> None:
+    seq: Runnable = {
+        "bar": Context.setter("input") | Context.getter("foo"),
+        "foo": Context.setter("foo") | Context.getter("input"),
+    } | RunnablePassthrough()
+
+    with pytest.raises(ValueError):
+        seq.invoke("foo")
+
+
 def test_runnable_context_seq_key_circular_ref() -> None:
     seq: Runnable = {
         "bar": Context.setter(input=Context.getter("input"))

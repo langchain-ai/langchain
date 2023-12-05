@@ -70,21 +70,34 @@ def _config_with_context(
         for spec in step.config_specs
         if spec.id.startswith(CONTEXT_CONFIG_PREFIX)
     ]
-    grouped_by_key = groupby(
-        sorted(context_specs, key=lambda s: s[0].id),
-        key=lambda s: s[0].id.split("/")[1],
-    )
+    grouped_by_key = {
+        key: list(group)
+        for key, group in groupby(
+            sorted(context_specs, key=lambda s: s[0].id),
+            key=lambda s: s[0].id.split("/")[1],
+        )
+    }
+    deps_by_key = {
+        key: set(
+            dep.split("/")[1] for spec in group for dep in (spec[0].dependencies or [])
+        )
+        for key, group in grouped_by_key.items()
+    }
 
     values: Values = {}
     events: DefaultDict[str, Union[asyncio.Event, threading.Event]] = defaultdict(
         event_cls
     )
     context_funcs: Dict[str, Callable[[], Any]] = {}
-    for key, group in grouped_by_key:
-        lgroup = list(group)
-        getters = [s for s in lgroup if s[0].id.endswith(CONTEXT_CONFIG_SUFFIX_GET)]
-        setters = [s for s in lgroup if s[0].id.endswith(CONTEXT_CONFIG_SUFFIX_SET)]
+    for key, group in grouped_by_key.items():
+        getters = [s for s in group if s[0].id.endswith(CONTEXT_CONFIG_SUFFIX_GET)]
+        setters = [s for s in group if s[0].id.endswith(CONTEXT_CONFIG_SUFFIX_SET)]
 
+        for dep in deps_by_key[key]:
+            if key in deps_by_key[dep]:
+                raise ValueError(
+                    f"Deadlock detected between context keys {key} and {dep}"
+                )
         if len(getters) < 1:
             raise ValueError(f"Expected at least one getter for context key {key}")
         if len(setters) != 1:

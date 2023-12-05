@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
 from copy import deepcopy
 from functools import partial, wraps
-from itertools import tee
+from itertools import groupby, tee
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -22,6 +22,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -1401,9 +1402,41 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
-        return get_unique_config_specs(
-            spec for step in self.steps for spec in step.config_specs
+        from langchain_core.runnables.context import CONTEXT_CONFIG_PREFIX
+
+        # get all specs
+        all_specs = [
+            (spec, idx)
+            for idx, step in enumerate(self.steps)
+            for spec in step.config_specs
+        ]
+        # calculate context dependencies
+        specs_by_pos = groupby(
+            [tup for tup in all_specs if tup[0].id.startswith(CONTEXT_CONFIG_PREFIX)],
+            lambda x: x[1],
         )
+        next_deps: Set[str] = set()
+        deps_by_pos: Dict[int, Set[str]] = {}
+        for pos, specs in specs_by_pos:
+            deps_by_pos[pos] = next_deps
+            next_deps = next_deps | {spec[0].id for spec in specs}
+        # assign context dependencies
+        for pos, (spec, idx) in enumerate(all_specs):
+            if spec.id.startswith(CONTEXT_CONFIG_PREFIX):
+                all_specs[pos] = (
+                    ConfigurableFieldSpec(
+                        id=spec.id,
+                        annotation=spec.annotation,
+                        name=spec.name,
+                        default=spec.default,
+                        description=spec.description,
+                        is_shared=spec.is_shared,
+                        dependencies=list(deps_by_pos[idx]) + (spec.dependencies or []),
+                    ),
+                    idx,
+                )
+
+        return get_unique_config_specs(spec for spec, _ in all_specs)
 
     def __repr__(self) -> str:
         return "\n| ".join(
