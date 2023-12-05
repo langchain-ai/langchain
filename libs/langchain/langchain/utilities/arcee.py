@@ -96,11 +96,14 @@ class ArceeDocumentAdapter:
 
 
 class ArceeWrapper:
-    """Wrapper for Arcee API."""
+    """Wrapper for Arcee API.
+
+    For more details, see: https://www.arcee.ai/
+    """
 
     def __init__(
         self,
-        arcee_api_key: Union[str, SecretStr, None],
+        arcee_api_key: str,
         arcee_api_url: str,
         arcee_api_version: str,
         model_kwargs: Optional[Dict[str, Any]],
@@ -114,9 +117,12 @@ class ArceeWrapper:
             arcee_api_version: Version of Arcee API.
             model_kwargs: Keyword arguments for Arcee API.
             model_name: Name of an Arcee model.
-
         """
-        self.arcee_api_key = arcee_api_key
+        if not isinstance(arcee_api_key, (str,)):
+            raise TypeError(
+                f"arcee_api_key must be a string. Got {type(arcee_api_key)}"
+            )
+        self.arcee_api_key = SecretStr(arcee_api_key)
         self.model_kwargs = model_kwargs
         self.arcee_api_url = arcee_api_url
         self.arcee_api_version = arcee_api_version
@@ -166,17 +172,13 @@ class ArceeWrapper:
 
     def _make_request_headers(self, headers: Optional[Dict] = None) -> Dict:
         headers = headers or {}
-        api_key = None # Fix here
-        if isinstance(self.arcee_api_key, str):
-            api_key = self.arcee_api_key
-        elif isinstance(self.arcee_api_key, SecretStr):
-            api_key = self.arcee_api_key.get_secret_value()
+        if not isinstance(self.arcee_api_key, SecretStr):
+            raise TypeError(
+                f"arcee_api_key must be a SecretStr. Got {type(self.arcee_api_key)}"
+            )
+        api_key = self.arcee_api_key.get_secret_value()
         internal_headers = {
-<<<<<<< HEAD
             "X-Token": api_key,
-=======
-            "X-Token": self.arcee_api_key.get_secret_value(),
->>>>>>> master
             "Content-Type": "application/json",
         }
         headers.update(internal_headers)
