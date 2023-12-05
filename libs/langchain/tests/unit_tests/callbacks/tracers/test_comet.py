@@ -44,14 +44,14 @@ def test_comet_tracer__trace_chain_with_single_span__happyflow() -> None:
     # Parent run
     tracer.on_chain_start(
         {"name": "chain-input"},
-        ["chain-input-prompt"],
+        {"input": "chain-input-prompt"},
         parent_run_id=None,
         run_id=run_id_1,
     )
 
     # Check that chain was created
     chain_module_mock.Chain.assert_called_once_with(
-        inputs={"input": ["chain-input-prompt"]},
+        inputs={"input": "chain-input-prompt"},
         metadata=None,
         experiment_info="the-experiment-info",
     )
