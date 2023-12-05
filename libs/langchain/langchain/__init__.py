@@ -270,12 +270,6 @@ def __getattr__(name: str) -> Any:
         _warn_on_import(name, replacement="langchain.utilities.GoldenQueryAPIWrapper")
 
         return GoldenQueryAPIWrapper
-    elif name == "SearchApiAPIWrapper":
-        from langchain.utilities import SearchApiAPIWrapper
-
-        _warn_on_import(name, replacement="langchain.utilities.SearchApiAPIWrapper")
-
-        return SearchApiAPIWrapper
     elif name == "GoogleSearchAPIWrapper":
         from langchain.utilities import GoogleSearchAPIWrapper
 
@@ -384,7 +378,6 @@ __all__ = [
     "SerpAPIWrapper",
     "SerpAPIChain",
     "SearxSearchWrapper",
-    "SearchApiAPIWrapper",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
     "WolframAlphaAPIWrapper",
