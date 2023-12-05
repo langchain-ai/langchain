@@ -46,7 +46,6 @@ jobs:
     strategy:
       matrix:
         working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
-    secrets: inherit
     steps:
       - uses: ./.github/workflows/_all_ci.yml
         with:
