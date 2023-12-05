@@ -37,7 +37,7 @@ jobs:
             echo "Do something with this ${changed_file}."
           done
       - id: set-matrix
-        run: echo "::set-output name=dirs-to-run::$(python ../scripts/check_diff.py ${{ steps.files.outputs.all }})"
+        run: echo "dirs-to-run=$(python ../scripts/check_diff.py ${{ steps.files.outputs.all }})" >> $GITHUB_OUTPUT
     outputs:
       dirs-to-run: ${{ steps.set-matrix.outputs.dirs-to-run }}
   ci:
