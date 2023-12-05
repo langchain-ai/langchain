@@ -34,7 +34,7 @@ def _get_multi_prompt(
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
     extra_tools: Sequence[BaseTool] = (),
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
+) -> Tuple[BasePromptTemplate, List[BaseTool]]:
     num_dfs = len(dfs)
     if suffix is not None:
         suffix_to_use = suffix
@@ -80,7 +80,7 @@ def _get_single_prompt(
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
     extra_tools: Sequence[BaseTool] = (),
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
+) -> Tuple[BasePromptTemplate, List[BaseTool]]:
     if suffix is not None:
         suffix_to_use = suffix
         include_df_head = True
@@ -170,7 +170,7 @@ def _get_functions_single_prompt(
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
+) -> Tuple[BasePromptTemplate, List[BaseTool]]:
     if suffix is not None:
         suffix_to_use = suffix
         if include_df_in_prompt:
@@ -199,7 +199,7 @@ def _get_functions_multi_prompt(
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
+) -> Tuple[BasePromptTemplate, List[BaseTool]]:
     if suffix is not None:
         suffix_to_use = suffix
         if include_df_in_prompt:
@@ -237,7 +237,7 @@ def _get_functions_prompt_and_tools(
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
+) -> Tuple[BasePromptTemplate, List[BaseTool]]:
     try:
         import pandas as pd
 
