@@ -6,7 +6,7 @@ import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
 from copy import deepcopy
-from functools import partial
+from functools import partial, wraps
 from itertools import tee
 from operator import itemgetter
 from typing import (
@@ -2518,6 +2518,7 @@ class RunnableLambda(Runnable[Input, Output]):
             afunc = self.afunc
         else:
 
+            @wraps(self.func)
             async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
                 return await asyncio.get_running_loop().run_in_executor(
                     None, partial(self.func, **kwargs), *args
