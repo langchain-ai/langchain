@@ -60,6 +60,9 @@ jobs:
           - "3.11"
     if: ${{ inputs.working-directory }} == "libs/langchain"
     name: Python ${{ matrix.python-version }} extended tests
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
     steps:
       - uses: actions/checkout@v4
 
