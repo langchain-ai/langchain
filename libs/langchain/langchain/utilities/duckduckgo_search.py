@@ -38,7 +38,9 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             )
         return values
 
-    def _ddgs_text(self, query: str) -> List[Dict[str, str]]:
+    def _ddgs_text(
+        self, query: str, max_results: Optional[int] = None
+    ) -> List[Dict[str, str]]:
         """Run query through DuckDuckGo text search and return results."""
         from duckduckgo_search import DDGS
 
@@ -48,14 +50,16 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 region=self.region,
                 safesearch=self.safesearch,
                 timelimit=self.time,
-                max_results=self.max_results,
+                max_results=max_results or self.max_results,
                 backend=self.backend,
             )
             if ddgs_gen:
                 return [r for r in ddgs_gen]
         return []
 
-    def _ddgs_news(self, query: str) -> List[Dict[str, str]]:
+    def _ddgs_news(
+        self, query: str, max_results: Optional[int] = None
+    ) -> List[Dict[str, str]]:
         """Run query through DuckDuckGo news search and return results."""
         from duckduckgo_search import DDGS
 
@@ -65,7 +69,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 region=self.region,
                 safesearch=self.safesearch,
                 timelimit=self.time,
-                max_results=self.max_results,
+                max_results=max_results or self.max_results,
             )
             if ddgs_gen:
                 return [r for r in ddgs_gen]
@@ -84,12 +88,15 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             return "No good DuckDuckGo Search Result was found"
         return " ".join(r["body"] for r in results)
 
-    def results(self, query: str, max_results: int) -> List[Dict[str, str]]:
+    def results(
+        self, query: str, max_results: int, source: Optional[str] = None
+    ) -> List[Dict[str, str]]:
         """Run query through DuckDuckGo and return metadata.
 
         Args:
             query: The query to search for.
             max_results: The number of results to return.
+            source: The source to look from.
 
         Returns:
             A list of dictionaries with the following keys:
@@ -97,12 +104,13 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 title - The title of the result.
                 link - The link to the result.
         """
-        if self.source == "text":
+        source = source or self.source
+        if source == "text":
             results = [
                 {"snippet": r["body"], "title": r["title"], "link": r["href"]}
-                for r in self._ddgs_text(query)
+                for r in self._ddgs_text(query, max_results=max_results)
             ]
-        elif self.source == "news":
+        elif source == "news":
             results = [
                 {
                     "snippet": r["body"],
@@ -111,7 +119,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                     "date": r["date"],
                     "source": r["source"],
                 }
-                for r in self._ddgs_news(query)
+                for r in self._ddgs_news(query, max_results=max_results)
             ]
         else:
             results = []
