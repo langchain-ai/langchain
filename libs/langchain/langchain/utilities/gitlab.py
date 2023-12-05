@@ -16,6 +16,8 @@ class GitLabAPIWrapper(BaseModel):
     """Wrapper for GitLab API."""
 
     gitlab: Any  #: :meta private:
+    gitlab_url: Optional[str] = None
+    """The name of the GitLab URL."""
     gitlab_repo_instance: Any  #: :meta private:
     gitlab_repository: Optional[str] = None
     """The name of the GitLab repository, in the form {username}/{repo-name}."""
@@ -38,6 +40,10 @@ class GitLabAPIWrapper(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
+        gitlab_url= get_from_dict_or_env(
+            values, "gitlab_url", "GITLAB_URL", default="https://gitlab.com"
+        )
+
         gitlab_repository = get_from_dict_or_env(
             values, "gitlab_repository", "GITLAB_REPOSITORY"
         )
@@ -62,11 +68,12 @@ class GitLabAPIWrapper(BaseModel):
                 "Please install it with `pip install python-gitlab`"
             )
 
-        g = gitlab.Gitlab(private_token=gitlab_personal_access_token)
+        g = gitlab.Gitlab(url=gitlab_url,private_token=gitlab_personal_access_token)
 
         g.auth()
 
         values["gitlab"] = g
+        values["gitlab_url"] = gitlab_url
         values["gitlab_repo_instance"] = g.projects.get(gitlab_repository)
         values["gitlab_repository"] = gitlab_repository
         values["gitlab_personal_access_token"] = gitlab_personal_access_token
