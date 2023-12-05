@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 
@@ -27,7 +27,7 @@ class Arcee(LLM):
             response = arcee("AI-driven music therapy")
     """
 
-    _client: ArceeWrapper  #: :meta private:
+    _client: Optional[ArceeWrapper] = None  #: :meta private:
     """Arcee _client."""
 
     arcee_api_key: SecretStr
@@ -66,19 +66,27 @@ class Arcee(LLM):
         """Initializes private fields."""
 
         super().__init__(**data)
+        self._client = ArceeWrapper(
+            arcee_api_key=self.arcee_api_key.get_secret_value(),
+            arcee_api_url=self.arcee_api_url,
+            arcee_api_version=self.arcee_api_version,
+            model_kwargs=self.model_kwargs,
+            model_name=self.model,
+        )
+        self._client.validate_model_training_status()
 
     @root_validator(pre=True)  # Use pre=False to pick up defaults
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate Arcee environment variables."""
 
         # validate env vars
-        arcee_api_key = get_from_dict_or_env(
-            values,
-            "arcee_api_key",
-            "ARCEE_API_KEY",
+        values["arcee_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "arcee_api_key",
+                "ARCEE_API_KEY",
+            )
         )
-
-        values["arcee_api_key"] = convert_to_secret_str(arcee_api_key)
 
         values["arcee_api_url"] = get_from_dict_or_env(
             values,
@@ -113,17 +121,6 @@ class Arcee(LLM):
                     raise ValueError("`filters` must be a list")
                 for f in kw.get("filters"):
                     DALMFilter(**f)
-
-        client = ArceeWrapper(
-            arcee_api_key=arcee_api_key,
-            arcee_api_url=values["arcee_api_url"],
-            arcee_api_version=values["arcee_api_version"],
-            model_kwargs=values.get("model_kwargs"),
-            model_name=values["model"],
-        )
-
-        client.validate_model_training_status()
-        values["_client"] = client
         return values
 
     def _call(
