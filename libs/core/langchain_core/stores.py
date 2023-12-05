@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
 
 K = TypeVar("K")
-V = TypeVar("V")
+V = TypeVar("V", covariant=True)
 
 
 class BaseStore(Generic[K, V], ABC):
