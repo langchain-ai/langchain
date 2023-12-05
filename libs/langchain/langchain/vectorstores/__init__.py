@@ -188,6 +188,12 @@ def _import_hologres() -> Any:
     return Hologres
 
 
+def _import_jaguar() -> Any:
+    from langchain.vectorstores.jaguar import Jaguar
+
+    return Jaguar
+
+
 def _import_lancedb() -> Any:
     from langchain.vectorstores.lancedb import LanceDB
 
@@ -477,6 +483,8 @@ def __getattr__(name: str) -> Any:
         return _import_faiss()
     elif name == "Hologres":
         return _import_hologres()
+    elif name == "Jaguar":
+        return _import_jaguar()
     elif name == "LanceDB":
         return _import_lancedb()
     elif name == "LLMRails":
@@ -585,6 +593,7 @@ __all__ = [
     "Epsilla",
     "FAISS",
     "Hologres",
+    "Jaguar",
     "LanceDB",
     "LLMRails",
     "Marqo",

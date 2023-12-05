@@ -669,6 +669,10 @@
       "destination": "/docs/integrations/providers/imsdb"
     },
     {
+      "source": "/docs/integrations/jaguar",
+      "destination": "/docs/integrations/providers/jaguar"
+    },
+    {
       "source": "/docs/integrations/jina",
       "destination": "/docs/integrations/providers/jina"
     },
