@@ -1,7 +1,8 @@
 import random
 import string
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.pyspark_dataframe import PySparkDataFrameLoader
 
 

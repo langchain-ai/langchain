@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Union
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 
 
 class Docstore(ABC):
