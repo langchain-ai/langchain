@@ -25,7 +25,6 @@ from langchain.agents.output_parsers.openai_functions import (
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
-from langchain.chat_models.openai import ChatOpenAI
 from langchain.tools.base import BaseTool
 from langchain.tools.render import format_tool_to_openai_function
 
@@ -49,12 +48,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     def get_allowed_tools(self) -> List[str]:
         """Get allowed tools."""
         return [t.name for t in self.tools]
-
-    @root_validator
-    def validate_llm(cls, values: dict) -> dict:
-        if not isinstance(values["llm"], ChatOpenAI):
-            raise ValueError("Only supported with ChatOpenAI models.")
-        return values
 
     @root_validator
     def validate_prompt(cls, values: dict) -> dict:
@@ -162,7 +155,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             agent_decision = self.plan(
                 intermediate_steps, with_functions=False, **kwargs
             )
-            if type(agent_decision) == AgentFinish:
+            if isinstance(agent_decision, AgentFinish):
                 return agent_decision
             else:
                 raise ValueError(
@@ -222,8 +215,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools."""
-        if not isinstance(llm, ChatOpenAI):
-            raise ValueError("Only supported with ChatOpenAI models.")
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message,
