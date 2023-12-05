@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 from langchain_core.retrievers import BaseRetriever
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.docstore.document import Document
 from langchain.utilities.arcee import ArceeWrapper, DALMFilter
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class ArceeRetriever(BaseRetriever):
@@ -31,7 +31,7 @@ class ArceeRetriever(BaseRetriever):
     _client: Optional[ArceeWrapper] = None  #: :meta private:
     """Arcee client."""
 
-    arcee_api_key: str = ""
+    arcee_api_key: SecretStr
     """Arcee API Key"""
 
     model: str
@@ -75,10 +75,12 @@ class ArceeRetriever(BaseRetriever):
         """Validate Arcee environment variables."""
 
         # validate env vars
-        values["arcee_api_key"] = get_from_dict_or_env(
-            values,
-            "arcee_api_key",
-            "ARCEE_API_KEY",
+        values["arcee_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "arcee_api_key",
+                "ARCEE_API_KEY",
+            )
         )
 
         values["arcee_api_url"] = get_from_dict_or_env(

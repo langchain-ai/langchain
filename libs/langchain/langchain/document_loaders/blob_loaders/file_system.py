@@ -61,7 +61,8 @@ class FileSystemBlobLoader(BlobLoader):
         """Initialize with a path to directory and how to glob over it.
 
         Args:
-            path: Path to directory to load from
+            path: Path to directory to load from or path to file to load.
+                  If a path to a file is provided, glob/exclude/suffixes are ignored.
             glob: Glob pattern relative to the specified path
                   by default set to pick up all non-hidden files
             exclude: patterns to exclude from results, use glob syntax
@@ -75,6 +76,10 @@ class FileSystemBlobLoader(BlobLoader):
         Examples:
 
             .. code-block:: python
+                from langchain.document_loaders.blob_loaders import FileSystemBlobLoader
+
+                # Load a single file.
+                loader = FileSystemBlobLoader("/path/to/file.txt")
 
                 # Recursively load all text files in a directory.
                 loader = FileSystemBlobLoader("/path/to/directory", glob="**/*.txt")
@@ -118,6 +123,10 @@ class FileSystemBlobLoader(BlobLoader):
 
     def _yield_paths(self) -> Iterable[Path]:
         """Yield paths that match the requested pattern."""
+        if self.path.is_file():
+            yield self.path
+            return
+
         paths = self.path.glob(self.glob)
         for path in paths:
             if self.exclude:

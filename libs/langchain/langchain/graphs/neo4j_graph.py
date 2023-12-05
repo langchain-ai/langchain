@@ -127,14 +127,38 @@ class Neo4jGraph(GraphStore):
             "rel_props": {el["type"]: el["properties"] for el in rel_properties},
             "relationships": relationships,
         }
-        self.schema = f"""
-        Node properties are the following:
-        {node_properties}
-        Relationship properties are the following:
-        {rel_properties}
-        The relationships are the following:
-        {[f"(:{el['start']})-[:{el['type']}]->(:{el['end']})" for el in relationships]}
-        """
+
+        # Format node properties
+        formatted_node_props = []
+        for el in node_properties:
+            props_str = ", ".join(
+                [f"{prop['property']}: {prop['type']}" for prop in el["properties"]]
+            )
+            formatted_node_props.append(f"{el['labels']} {{{props_str}}}")
+
+        # Format relationship properties
+        formatted_rel_props = []
+        for el in rel_properties:
+            props_str = ", ".join(
+                [f"{prop['property']}: {prop['type']}" for prop in el["properties"]]
+            )
+            formatted_rel_props.append(f"{el['type']} {{{props_str}}}")
+
+        # Format relationships
+        formatted_rels = [
+            f"(:{el['start']})-[:{el['type']}]->(:{el['end']})" for el in relationships
+        ]
+
+        self.schema = "\n".join(
+            [
+                "Node properties are the following:",
+                ",".join(formatted_node_props),
+                "Relationship properties are the following:",
+                ",".join(formatted_rel_props),
+                "The relationships are the following:",
+                ",".join(formatted_rels),
+            ]
+        )
 
     def add_graph_documents(
         self, graph_documents: List[GraphDocument], include_source: bool = False
