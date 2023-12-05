@@ -23,4 +23,4 @@ if __name__ == "__main__":
             dirs_to_run.add(f"libs/partners/{partner_dir}")
         else:
             pass
-    print(list(dirs_to_run))
+    print(str(list(dirs_to_run)).replace("'", '"'))
