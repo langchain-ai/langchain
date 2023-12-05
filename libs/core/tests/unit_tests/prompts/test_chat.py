@@ -366,7 +366,7 @@ def test_chat_message_partial() -> None:
     assert template2.format(input="hello") == get_buffer_string(expected)
 
 
-def test_chat_tmpl_from_messages_multipart_text():
+def test_chat_tmpl_from_messages_multipart_text() -> None:
     template = ChatPromptTemplate.from_messages(
         [
             ("system", "You are an AI assistant named {name}."),
@@ -392,7 +392,7 @@ def test_chat_tmpl_from_messages_multipart_text():
     assert messages == expected
 
 
-def test_chat_tmpl_from_messages_multipart_text_with_template():
+def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
     template = ChatPromptTemplate.from_messages(
         [
             ("system", "You are an AI assistant named {name}."),
@@ -418,7 +418,7 @@ def test_chat_tmpl_from_messages_multipart_text_with_template():
     assert messages == expected
 
 
-def test_chat_tmpl_from_messages_multipart_image():
+def test_chat_tmpl_from_messages_multipart_image() -> None:
     base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
     other_base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
     template = ChatPromptTemplate.from_messages(
