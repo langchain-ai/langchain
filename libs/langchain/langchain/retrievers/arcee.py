@@ -61,7 +61,7 @@ class ArceeRetriever(BaseRetriever):
         super().__init__(**data)
 
         self._client = ArceeWrapper(
-            arcee_api_key=self.arcee_api_key,
+            arcee_api_key=self.arcee_api_key.get_secret_value(),
             arcee_api_url=self.arcee_api_url,
             arcee_api_version=self.arcee_api_version,
             model_kwargs=self.model_kwargs,
