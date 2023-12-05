@@ -16,6 +16,7 @@ EXPECTED_ALL = [
     "xor_args",
     "try_load_from_hub",
     "build_extra_kwargs",
+    "image",
 ]
 
 
