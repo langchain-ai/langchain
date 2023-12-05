@@ -16,6 +16,13 @@ def file_chat_message_history() -> Generator[FileChatMessageHistory, None, None]
         yield file_chat_message_history
 
 
+@pytest.fixture()
+def base_dir() -> Generator[Path, None, None]:
+    """Yield a temporary directory."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        yield Path(temp_dir)
+
+
 def test_add_messages(file_chat_message_history: FileChatMessageHistory) -> None:
     file_chat_message_history.add_user_message("Hello!")
     file_chat_message_history.add_ai_message("Hi there!")
@@ -69,3 +76,26 @@ def test_multiple_sessions(file_chat_message_history: FileChatMessageHistory) ->
     assert messages[2].content == "Tell me a joke."
     expected_content = "Why did the chicken cross the road? To get to the other side!"
     assert messages[3].content == expected_content
+
+
+def test_session_factory(base_dir: Path) -> None:
+    """Test that the session factory works as expected."""
+    message_history_factory = FileChatMessageHistory.create_factory(base_dir=base_dir)
+    session_1 = message_history_factory("session_1")
+    assert session_1.messages == []
+    session_1.add_message(HumanMessage(content="Hello!"))
+    assert session_1.messages == [HumanMessage(content="Hello!")]
+    session_2 = message_history_factory("session_2")
+    assert session_2.messages == []
+    session_2.add_message(HumanMessage(content="Goodbye!"))
+    session_2.add_message(HumanMessage(content="Meow!"))
+    assert session_2.messages == [
+        HumanMessage(content="Goodbye!"),
+        HumanMessage(content="Meow!"),
+    ]
+    # Make sure that session 1 is not affected
+    assert session_1.messages == [HumanMessage(content="Hello!")]
+    assert sorted(str(p.name) for p in base_dir.glob("*.json")) == [
+        "session_1.json",
+        "session_2.json",
+    ]
