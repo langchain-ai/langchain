@@ -152,17 +152,6 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         """
         self.add_message(AIMessage(content=message), metadata=metadata)
 
-    def add_system_message(
-        self, message: str, metadata: Optional[Dict[str, Any]] = None
-    ) -> None:
-        """Convenience method for adding a system message string to the store.
-
-        Args:
-            message: The string contents of a system message.
-            metadata: Optional metadata to attach to the message.
-        """
-        self.add_message(SystemMessage(content=message), metadata=metadata)
-
     def add_message(
         self, message: BaseMessage, metadata: Optional[Dict[str, Any]] = None
     ) -> None:

@@ -7,7 +7,6 @@ from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
-    SystemMessage,
     get_buffer_string,
 )
 
@@ -58,14 +57,6 @@ class BaseChatMessageHistory(ABC):
             message: The string contents of an AI message.
         """
         self.add_message(AIMessage(content=message))
-
-    def add_system_message(self, message: str) -> None:
-        """Convenience method for adding a system message string to the store.
-
-        Args:
-            message: The string contents of a system message.
-        """
-        self.add_message(SystemMessage(content=message))
 
     @abstractmethod
     def add_message(self, message: BaseMessage) -> None:
