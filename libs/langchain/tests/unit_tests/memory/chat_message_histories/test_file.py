@@ -80,7 +80,9 @@ def test_multiple_sessions(file_chat_message_history: FileChatMessageHistory) ->
 
 def test_session_factory(base_dir: Path) -> None:
     """Test that the session factory works as expected."""
-    message_history_factory = FileChatMessageHistory.create_factory(base_dir=base_dir)
+    message_history_factory = FileChatMessageHistory.create_session_factory(
+        base_dir=base_dir
+    )
     session_1 = message_history_factory("session_1")
     assert session_1.messages == []
     session_1.add_message(HumanMessage(content="Hello!"))
