@@ -448,6 +448,8 @@ class PGVector(VectorStore):
                             filter_by_metadata = self.EmbeddingStore.cmetadata[
                                 key
                             ].astext.not_in(value_case_insensitive[NIN])
+                        else:
+                            filter_by_metadata = None
                         if filter_by_metadata is not None:
                             filter_clauses.append(filter_by_metadata)
                     else:
