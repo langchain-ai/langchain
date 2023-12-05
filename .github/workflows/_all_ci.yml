@@ -1,21 +1,14 @@
 ---
-name: libs/langchain CI
+name: langchain CI
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-    paths:
-      - ".github/actions/poetry_setup/action.yml"
-      - ".github/tools/**"
-      - ".github/workflows/_lint.yml"
-      - ".github/workflows/_test.yml"
-      - ".github/workflows/_pydantic_compatibility.yml"
-      - ".github/workflows/langchain_ci.yml"
-      - "libs/*"
-      - "libs/langchain/**"
-      - "libs/core/**"
-  workflow_dispatch: # Allows to trigger the workflow manually in GitHub UI
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "From which folder this pipeline executes"
+
 
 # If another push to the same PR or branch happens while this workflow is still running,
 # cancel the earlier run in favor of the next run.
@@ -29,31 +22,31 @@ concurrency:
 
 env:
   POETRY_VERSION: "1.6.1"
-  WORKDIR: "libs/langchain"
+  WORKDIR: ${{ inputs.working-directory }}
 
 jobs:
   lint:
     uses: ./.github/workflows/_lint.yml
     with:
-      working-directory: libs/langchain
+      working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   test:
     uses: ./.github/workflows/_test.yml
     with:
-      working-directory: libs/langchain
+      working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   compile-integration-tests:
     uses: ./.github/workflows/_compile_integration_test.yml
     with:
-      working-directory: libs/langchain
+      working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   pydantic-compatibility:
     uses: ./.github/workflows/_pydantic_compatibility.yml
     with:
-      working-directory: libs/langchain
+      working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   extended-tests:
@@ -68,6 +61,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+    if: ${{ inputs.working-directory }} == "libs/langchain"
     name: Python ${{ matrix.python-version }} extended tests
     steps:
       - uses: actions/checkout@v4

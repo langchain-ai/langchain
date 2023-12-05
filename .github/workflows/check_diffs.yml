@@ -1,0 +1,55 @@
+---
+name: Check library diffs
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    paths:
+      - ".github/actions/**"
+      - ".github/tools/**"
+      - ".github/workflows/**"
+      - "libs/**"
+  workflow_dispatch: # Allows to trigger the workflow manually in GitHub UI
+
+# If another push to the same PR or branch happens while this workflow is still running,
+# cancel the earlier run in favor of the next run.
+#
+# There's no point in testing an outdated version of the code. GitHub only allows
+# a limited number of job runners to be active at the same time, so it's better to cancel
+# pointless jobs early so that more useful jobs can run sooner.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - id: files
+        uses: jitterbit/get-changed-files@v1
+      - run: |
+          for changed_file in ${{ steps.files.outputs.all }}; do
+            echo "Do something with this ${changed_file}."
+          done
+      - id: set-matrix
+        run: echo "::set-output name=dirs-to-run::$(python ../scripts/check_diff.py ${{ steps.files.outputs.all }})
+    outputs:
+      dirs-to-run: ${{ steps.set-matrix.outputs.dirs-to-run }}
+  ci:
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    strategy:
+      matrix:
+        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
+    steps:
+      - uses: ./.github/workflows/_all_ci.yml
+        with:
+          working-directory: ${{ matrix.working-directory }}
+        secrets: inherit
+
+
