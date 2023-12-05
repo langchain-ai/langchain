@@ -6,7 +6,7 @@ from langchain_core.schema.embeddings import Embeddings
 
 from langchain.utils import get_from_dict_or_env
 
-JINA_API_URL: str = 'https://api.jina.ai/v1/embeddings'
+JINA_API_URL: str = "https://api.jina.ai/v1/embeddings"
 
 
 class JinaEmbeddings(BaseModel, Embeddings):
@@ -20,9 +20,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
         try:
-            jina_api_key = get_from_dict_or_env(
-                values, "jina_api_key", "JINA_API_KEY"
-            )
+            jina_api_key = get_from_dict_or_env(values, "jina_api_key", "JINA_API_KEY")
         except ValueError as original_exc:
             try:
                 jina_api_key = get_from_dict_or_env(
@@ -31,7 +29,13 @@ class JinaEmbeddings(BaseModel, Embeddings):
             except ValueError:
                 raise original_exc
         session = requests.Session()
-        session.headers.update({"Authorization": f"Bearer {jina_api_key}", "Accept-Encoding": "identity", "Content-type": "application/json"})
+        session.headers.update(
+            {
+                "Authorization": f"Bearer {jina_api_key}",
+                "Accept-Encoding": "identity",
+                "Content-type": "application/json",
+            }
+        )
         values["session"] = session
         return values
 
