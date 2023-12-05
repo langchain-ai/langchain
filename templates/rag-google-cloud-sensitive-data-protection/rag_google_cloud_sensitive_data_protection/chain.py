@@ -7,7 +7,7 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema.messages import AIMessage, HumanMessage
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableLambda, RunnableMap
+from langchain.schema.runnable import RunnableLambda, RunnableParallel
 
 
 # Formatting for chat history
@@ -96,7 +96,7 @@ class ChatHistory(BaseModel):
     chat_history: List[Tuple[str, str]] = Field(..., extra={"widget": {"type": "chat"}})
 
 
-_inputs = RunnableMap(
+_inputs = RunnableParallel(
     {
         "question": RunnableLambda(
             lambda x: _deidentify_with_replace(
