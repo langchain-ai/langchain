@@ -1,6 +1,7 @@
 """Prompt schema definition."""
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
@@ -176,21 +177,30 @@ class PromptTemplate(StringPromptTemplate):
 
     @classmethod
     def from_file(
-        cls, template_file: Union[str, Path], input_variables: List[str], **kwargs: Any
+        cls,
+        template_file: Union[str, Path],
+        input_variables: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> PromptTemplate:
         """Load a prompt from a file.
 
         Args:
             template_file: The path to the file containing the prompt template.
-            input_variables: A list of variable names the final prompt template
-                will expect.
+            input_variables: [DEPRECATED] A list of variable names the final prompt
+                template will expect.
+
+        input_variables is ignored as from_file now delegates to from_template().
 
         Returns:
             The prompt loaded from the file.
         """
         with open(str(template_file), "r") as f:
             template = f.read()
-        return cls(input_variables=input_variables, template=template, **kwargs)
+        if input_variables:
+            warnings.warn(
+                "`input_variables' is deprecated and ignored.", DeprecationWarning
+            )
+        return cls.from_template(template=template, **kwargs)
 
     @classmethod
     def from_template(
