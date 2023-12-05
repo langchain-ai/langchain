@@ -1,11 +1,11 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.utilities.arcee import ArceeWrapper, DALMFilter
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class Arcee(LLM):
@@ -30,7 +30,7 @@ class Arcee(LLM):
     _client: Optional[ArceeWrapper] = None  #: :meta private:
     """Arcee _client."""
 
-    arcee_api_key: str = ""
+    arcee_api_key: Optional[SecretStr] = None
     """Arcee API Key"""
 
     model: str
@@ -66,26 +66,25 @@ class Arcee(LLM):
         """Initializes private fields."""
 
         super().__init__(**data)
-        self._client = None
         self._client = ArceeWrapper(
-            arcee_api_key=self.arcee_api_key,
+            arcee_api_key=cast(SecretStr, self.arcee_api_key),
             arcee_api_url=self.arcee_api_url,
             arcee_api_version=self.arcee_api_version,
             model_kwargs=self.model_kwargs,
             model_name=self.model,
         )
 
-        self._client.validate_model_training_status()
-
     @root_validator()
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate Arcee environment variables."""
 
         # validate env vars
-        values["arcee_api_key"] = get_from_dict_or_env(
-            values,
-            "arcee_api_key",
-            "ARCEE_API_KEY",
+        values["arcee_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "arcee_api_key",
+                "ARCEE_API_KEY",
+            )
         )
 
         values["arcee_api_url"] = get_from_dict_or_env(
