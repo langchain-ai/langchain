@@ -1,7 +1,8 @@
 """Test Hippo functionality."""
 from typing import List, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.vectorstores.hippo import Hippo
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,

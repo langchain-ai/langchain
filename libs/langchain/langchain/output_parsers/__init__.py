@@ -28,6 +28,7 @@ from langchain.output_parsers.openai_tools import (
     JsonOutputToolsParser,
     PydanticToolsParser,
 )
+from langchain.output_parsers.pandas_dataframe import PandasDataFrameOutputParser
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.output_parsers.rail_parser import GuardrailsOutputParser
 from langchain.output_parsers.regex import RegexParser
@@ -47,6 +48,7 @@ __all__ = [
     "MarkdownListOutputParser",
     "NumberedListOutputParser",
     "OutputFixingParser",
+    "PandasDataFrameOutputParser",
     "PydanticOutputParser",
     "RegexDictParser",
     "RegexParser",

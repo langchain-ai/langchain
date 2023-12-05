@@ -1123,6 +1123,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Cassandra",
         "Chroma",
         "DashVector",
+        "DatabricksVectorSearch",
         "DeepLake",
         "Dingo",
         "ElasticVectorSearch",

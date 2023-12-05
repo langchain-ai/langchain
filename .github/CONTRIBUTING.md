@@ -23,7 +23,7 @@ It's essential that we maintain great documentation and testing. If you:
   - Update any affected example notebooks and documentation. These live in `docs`.
   - Update unit and integration tests when relevant.
 - Add a feature
-  - Add a demo notebook in `docs/modules`.
+  - Add a demo notebook in `docs/docs/`.
   - Add unit and integration tests.
 
 We are a small, progress-oriented team. If there's something you'd like to add or change, opening a pull request is the
@@ -72,9 +72,10 @@ tell Poetry to use the virtualenv python environment (`poetry config virtualenvs
 
 ### Core vs. Experimental
 
-This repository contains two separate projects:
+This repository contains three separate projects:
 - `langchain`: core langchain code, abstractions, and use cases.
-- `langchain.experimental`: see the [Experimental README](https://github.com/langchain-ai/langchain/tree/master/libs/experimental/README.md) for more information.
+- `langchain_core`: contain interfaces for key abstractions as well as logic for combining them in chains (LCEL).
+- `langchain_experimental`: see the [Experimental README](https://github.com/langchain-ai/langchain/tree/master/libs/experimental/README.md) for more information.
 
 Each of these has its own development environment. Docs are run from the top-level makefile, but development
 is split across separate test & release flows.
@@ -127,6 +128,24 @@ make docker_tests
 ```
 
 There are also [integration tests and code-coverage](https://github.com/langchain-ai/langchain/tree/master/libs/langchain/tests/README.md) available.
+
+### Only develop langchain_core or langchain_experimental
+
+If you are only developing `langchain_core` or `langchain_experimental`, you can simply install the dependencies for the respective projects and run tests:
+
+```bash
+cd libs/core
+poetry install --with test
+make test
+```
+
+Or:
+
+```bash
+cd libs/experimental
+poetry install --with test
+make test
+```
 
 ### Formatting and Linting
 
@@ -213,6 +232,10 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 ## Working with Optional Dependencies
 
 Langchain relies heavily on optional dependencies to keep the Langchain package lightweight.
+
+You only need to add a new dependency if a **unit test** relies on the package.
+If your package is only required for **integration tests**, then you can skip these
+steps and leave all pyproject.toml and poetry.lock files alone.
 
 If you're adding a new dependency to Langchain, assume that it will be an optional dependency, and
 that most users won't have it installed.

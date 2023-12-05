@@ -54,6 +54,8 @@ def get_buffer_string(
             role = "System"
         elif isinstance(m, FunctionMessage):
             role = "Function"
+        elif isinstance(m, ToolMessage):
+            role = "Tool"
         elif isinstance(m, ChatMessage):
             role = m.role
         else:
@@ -96,6 +98,15 @@ def messages_from_dict(messages: Sequence[dict]) -> List[BaseMessage]:
     return [_message_from_dict(m) for m in messages]
 
 
+def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
+    if not isinstance(chunk, BaseMessageChunk):
+        return chunk
+    # chunk classes always have the equivalent non-chunk class as their first parent
+    return chunk.__class__.__mro__[1](
+        **{k: v for k, v in chunk.__dict__.items() if k != "type"}
+    )
+
+
 __all__ = [
     "AIMessage",
     "AIMessageChunk",
@@ -113,6 +124,7 @@ __all__ = [
     "ToolMessage",
     "ToolMessageChunk",
     "get_buffer_string",
+    "message_chunk_to_message",
     "messages_from_dict",
     "messages_to_dict",
     "message_to_dict",

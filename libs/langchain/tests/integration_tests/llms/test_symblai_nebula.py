@@ -41,8 +41,7 @@ Rhea: Thanks, bye!"""
 
     instruction = """Identify the main objectives mentioned in this 
 conversation."""
-    prompt = PromptTemplate.from_template("{instruction}\n{conversation}")
-
+    prompt = PromptTemplate.from_template(template="{instruction}\n{conversation}")
     llm_chain = LLMChain(prompt=prompt, llm=llm)
     output = llm_chain.run(instruction=instruction, conversation=conversation)
     assert isinstance(output, str)
