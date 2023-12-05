@@ -56,10 +56,7 @@ def _get_multi_prompt(
     df_locals = {}
     for i, dataframe in enumerate(dfs):
         df_locals[f"df{i + 1}"] = dataframe
-    if len(extra_tools) > 0:
-        tools = [PythonAstREPLTool(locals=df_locals)] + extra_tools
-    else:
-        tools = [PythonAstREPLTool(locals=df_locals)]
+    tools = [PythonAstREPLTool(locals=df_locals)] + list(extra_tools)
     prompt = ZeroShotAgent.create_prompt(
         tools,
         prefix=prefix,
@@ -102,10 +99,7 @@ def _get_single_prompt(
     if prefix is None:
         prefix = PREFIX
 
-    if len(extra_tools) > 0:
-        tools = [PythonAstREPLTool(locals={"df": df})] + extra_tools
-    else:
-        tools = [PythonAstREPLTool(locals={"df": df})]
+    tools = [PythonAstREPLTool(locals={"df": df})] + list(extra_tools)
 
     prompt = ZeroShotAgent.create_prompt(
         tools,
