@@ -206,8 +206,12 @@ class ErnieBotChat(BaseChatModel):
         else:
             additional_kwargs = {}
         generations = [
-            ChatGeneration(message=AIMessage(content=response.get("result"),
-                                             additional_kwargs={**additional_kwargs}))
+            ChatGeneration(
+                message=AIMessage(
+                    content=response.get("result"),
+                    additional_kwargs={**additional_kwargs},
+                )
+            )
         ]
         token_usage = response.get("usage", {})
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}
