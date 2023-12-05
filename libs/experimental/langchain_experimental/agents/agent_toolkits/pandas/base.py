@@ -33,7 +33,7 @@ def _get_multi_prompt(
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-    extra_tools: Sequence[BaseTool] = [],
+    extra_tools: Sequence[BaseTool] = (),
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     num_dfs = len(dfs)
     if suffix is not None:
@@ -79,7 +79,7 @@ def _get_single_prompt(
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-    extra_tools: Sequence[BaseTool] = [],
+    extra_tools: Sequence[BaseTool] = (),
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     if suffix is not None:
         suffix_to_use = suffix
@@ -123,7 +123,7 @@ def _get_prompt_and_tools(
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-    extra_tools: Sequence[BaseTool] = [],
+    extra_tools: Sequence[BaseTool] = (),
 ) -> Tuple[BasePromptTemplate, List[BaseTool]]:
     try:
         import pandas as pd
@@ -291,7 +291,7 @@ def create_pandas_dataframe_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-    extra_tools: Sequence[BaseTool] = [],
+    extra_tools: Sequence[BaseTool] = (),
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe."""
