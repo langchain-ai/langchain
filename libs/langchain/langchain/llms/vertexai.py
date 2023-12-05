@@ -97,6 +97,10 @@ def completion_with_retry(
 
     @retry_decorator
     def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
+    
+        if 'candidate_count' in kwargs:
+            del kwargs['candidate_count']
+            
         return llm.client.predict(*args, **kwargs)
 
     return _completion_with_retry(*args, **kwargs)
@@ -326,7 +330,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 res = completion_with_retry(
                     self, prompt, run_manager=run_manager, **params
                 )
-                generations.append([_response_to_generation(r) for r in res.candidates])
+                generations.append([{'text':str(res)}])
         return LLMResult(generations=generations)
 
     async def _agenerate(
