@@ -61,7 +61,6 @@ def test_api_key_masked_when_passed_from_env(
     monkeypatch.setenv("ARCEE_API_KEY", "secret_api_key")
     arcee_with_env_var = Arcee(
         model="DALM-PubMed",
-        arcee_api_key="",
         arcee_api_url="https://localhost",
         arcee_api_version="version",
     )

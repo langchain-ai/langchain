@@ -103,7 +103,7 @@ class ArceeWrapper:
 
     def __init__(
         self,
-        arcee_api_key: str,
+        arcee_api_key: Union[str, SecretStr],
         arcee_api_url: str,
         arcee_api_version: str,
         model_kwargs: Optional[Dict[str, Any]],
@@ -118,11 +118,11 @@ class ArceeWrapper:
             model_kwargs: Keyword arguments for Arcee API.
             model_name: Name of an Arcee model.
         """
-        if not isinstance(arcee_api_key, str):
-            raise TypeError(
-                f"arcee_api_key must be a string. Got {type(arcee_api_key)}"
-            )
-        self.arcee_api_key = SecretStr(arcee_api_key)
+        if isinstance(arcee_api_key, str):
+            arcee_api_key_ = SecretStr(arcee_api_key)
+        else:
+            arcee_api_key_ = arcee_api_key
+        self.arcee_api_key: SecretStr = arcee_api_key_
         self.model_kwargs = model_kwargs
         self.arcee_api_url = arcee_api_url
         self.arcee_api_version = arcee_api_version
