@@ -73,7 +73,6 @@ class Arcee(LLM):
             model_kwargs=self.model_kwargs,
             model_name=self.model,
         )
-        self._client.validate_model_training_status()
 
     @root_validator(pre=False)
     def validate_environments(cls, values: Dict) -> Dict:

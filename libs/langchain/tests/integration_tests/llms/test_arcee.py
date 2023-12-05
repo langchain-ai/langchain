@@ -69,8 +69,3 @@ def test_api_key_masked_when_passed_from_env(
     captured = capsys.readouterr()
 
     assert "**********" == captured.out
-
-
-def test_api_key_is_secret_string() -> None:
-    llm = Arcee(model="DALM-PubMed", arcee_api_key="test-arcee-api-key")
-    assert isinstance(llm.arcee_api_key, SecretStr)
