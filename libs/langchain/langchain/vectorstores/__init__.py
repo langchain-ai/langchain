@@ -416,6 +416,12 @@ def _import_weaviate() -> Any:
     return Weaviate
 
 
+def _import_yellowbrick() -> Any:
+    from langchain.vectorstores.yellowbrick import Yellowbrick
+
+    return Yellowbrick
+
+
 def _import_zep() -> Any:
     from langchain.vectorstores.zep import ZepVectorStore
 
@@ -557,6 +563,8 @@ def __getattr__(name: str) -> Any:
         return _import_vectara()
     elif name == "Weaviate":
         return _import_weaviate()
+    elif name == "Yellowbrick":
+        return _import_yellowbrick()
     elif name == "ZepVectorStore":
         return _import_zep()
     elif name == "Zilliz":
@@ -630,6 +638,7 @@ __all__ = [
     "Vectara",
     "VespaStore",
     "Weaviate",
+    "Yellowbrick",
     "ZepVectorStore",
     "Zilliz",
     "TencentVectorDB",

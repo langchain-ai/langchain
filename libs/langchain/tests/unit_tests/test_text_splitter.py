@@ -1,5 +1,6 @@
 """Test text splitting functionality."""
 import re
+from pathlib import Path
 from typing import List
 
 import pytest
@@ -7,6 +8,7 @@ from langchain_core.documents import Document
 
 from langchain.text_splitter import (
     CharacterTextSplitter,
+    HTMLHeaderTextSplitter,
     Language,
     MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
@@ -1031,6 +1033,77 @@ def test_md_header_text_splitter_3() -> None:
     assert output == expected_output
 
 
+@pytest.mark.parametrize("fence", [("```"), ("~~~")])
+def test_md_header_text_splitter_fenced_code_block(fence: str) -> None:
+    """Test markdown splitter by header: Fenced code block."""
+
+    markdown_document = (
+        "# This is a Header\n\n"
+        f"{fence}\n"
+        "foo()\n"
+        "# Not a header\n"
+        "bar()\n"
+        f"{fence}"
+    )
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content=f"{fence}\nfoo()\n# Not a header\nbar()\n{fence}",
+            metadata={"Header 1": "This is a Header"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+@pytest.mark.parametrize(["fence", "other_fence"], [("```", "~~~"), ("~~~", "```")])
+def test_md_header_text_splitter_fenced_code_block_interleaved(
+    fence: str, other_fence: str
+) -> None:
+    """Test markdown splitter by header: Interleaved fenced code block."""
+
+    markdown_document = (
+        "# This is a Header\n\n"
+        f"{fence}\n"
+        "foo\n"
+        "# Not a header\n"
+        f"{other_fence}\n"
+        "# Not a header\n"
+        f"{fence}"
+    )
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content=(
+                f"{fence}\nfoo\n# Not a header\n{other_fence}\n# Not a header\n{fence}"
+            ),
+            metadata={"Header 1": "This is a Header"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
 def test_solidity_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.SOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
@@ -1057,3 +1130,48 @@ def test_solidity_code_splitter() -> None:
         "+ b;",
         "}\n  }",
     ]
+
+
+@pytest.mark.requires("lxml")
+def test_html_header_text_splitter(tmp_path: Path) -> None:
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")]
+    )
+
+    content = """
+<h1>Sample Document</h1>
+    <h2>Section</h2>
+        <p id="1234">Reference content.</p>
+
+    <h2>Lists</h2>
+        <ul>
+            <li>Item 1</li>
+            <li>Item 2</li>
+            <li>Item 3</li>
+        </ul>
+
+        <h3>A block</h3>
+            <div class="amazing">
+                <p>Some text</p>
+                <p>Some more text</p>
+            </div>
+    """
+
+    docs = splitter.split_text(content)
+    expected = [
+        Document(
+            page_content="Reference content.",
+            metadata={"Header 1": "Sample Document", "Header 2": "Section"},
+        ),
+        Document(
+            page_content="Item 1 Item 2 Item 3  \nSome text  \nSome more text",
+            metadata={"Header 1": "Sample Document", "Header 2": "Lists"},
+        ),
+    ]
+    assert docs == expected
+
+    with open(tmp_path / "doc.html", "w") as tmp:
+        tmp.write(content)
+    docs_from_file = splitter.split_text_from_file(tmp_path / "doc.html")
+
+    assert docs_from_file == expected
