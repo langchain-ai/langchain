@@ -4,6 +4,7 @@
 These functions do not depend on any other LangChain module.
 """
 
+from langchain_core.utils import image
 from langchain_core.utils.formatting import StrictFormatter, formatter
 from langchain_core.utils.input import (
     get_bolded_text,
@@ -39,4 +40,5 @@ __all__ = [
     "xor_args",
     "try_load_from_hub",
     "build_extra_kwargs",
+    "image",
 ]

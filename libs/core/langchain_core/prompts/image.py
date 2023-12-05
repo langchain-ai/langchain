@@ -3,7 +3,7 @@ from typing import Any
 from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
-from langchain_core.utils.image import image_to_data_url
+from langchain_core.utils import image as image_utils
 
 
 class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
@@ -66,7 +66,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         if not url:
             if not isinstance(path, str):
                 raise ValueError("path must be a string.")
-            url = image_to_data_url(path)
+            url = image_utils.image_to_data_url(path)
         if not isinstance(url, str):
             raise ValueError("url must be a string.")
         output: ImageURL = {"url": url}
