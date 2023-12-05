@@ -1,11 +1,13 @@
-"""Pass input through a moderation endpoint."""
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
+
+import openai
+from openai.types import ModerationCreateResponse, Moderation
+from openai.resources.moderations import Moderations
 
 from langchain_core.pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.chains.base import Chain
 from langchain.utils import get_from_dict_or_env
+from langchain.chains.base import Chain
 
 
 class OpenAIModerationChain(Chain):
@@ -24,7 +26,7 @@ class OpenAIModerationChain(Chain):
             moderation = OpenAIModerationChain()
     """
 
-    client: Any  #: :meta private:
+    client: Moderations = openai.moderations  #: :meta private:
     model_name: Optional[str] = None
     """Moderation model name to use."""
     error: bool = False
@@ -47,12 +49,12 @@ class OpenAIModerationChain(Chain):
             default="",
         )
         try:
-            import openai
+            # import openai
 
             openai.api_key = openai_api_key
             if openai_organization:
                 openai.organization = openai_organization
-            values["client"] = openai.Moderation
+            values["client"] = openai.moderations
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -76,8 +78,8 @@ class OpenAIModerationChain(Chain):
         """
         return [self.output_key]
 
-    def _moderate(self, text: str, results: dict) -> str:
-        if results["flagged"]:
+    def _moderate(self, text: str, results: Moderation) -> str:
+        if results.flagged:
             error_str = "Text was found that violates OpenAI's content policy."
             if self.error:
                 raise ValueError(error_str)
@@ -90,7 +92,7 @@ class OpenAIModerationChain(Chain):
         inputs: Dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        text = inputs[self.input_key]
-        results = self.client.create(text)
-        output = self._moderate(text, results["results"][0])
+        text: str = inputs[self.input_key]
+        results: ModerationCreateResponse = self.client.create(input=text)
+        output: str = self._moderate(text, results.results[0])
         return {self.output_key: output}
