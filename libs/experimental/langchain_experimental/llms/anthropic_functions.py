@@ -1,7 +1,7 @@
 import json
 from collections import defaultdict
 from html.parser import HTMLParser
-from typing import Any, DefaultDict, Dict, List, Optional
+from typing import Any, DefaultDict, Dict, List, Optional, cast
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
@@ -176,7 +176,7 @@ class AnthropicFunctions(BaseChatModel):
         response = self.model.predict_messages(
             messages, stop=stop, callbacks=run_manager, **kwargs
         )
-        completion = response.content
+        completion = cast(str, response.content)
         if forced:
             tag_parser = TagParser()
 
@@ -210,7 +210,7 @@ class AnthropicFunctions(BaseChatModel):
             message = AIMessage(content=msg, additional_kwargs=kwargs)
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
-            response.content = response.content.strip()
+            response.content = cast(str, response.content).strip()
             return ChatResult(generations=[ChatGeneration(message=response)])
 
     @property
