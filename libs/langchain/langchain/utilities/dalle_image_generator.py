@@ -1,16 +1,18 @@
 """Utility that calls OpenAI's Dall-E Image Generator."""
+import logging
 import os
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
-from typing import Any, Dict, Optional, Tuple, Mapping, Union
-
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator, Field
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.utils import (
+    get_pydantic_field_names,
+)
 
 from langchain.utils import get_from_dict_or_env
 from langchain.utils.openai import is_openai_v1
 
-from langchain_core.utils import (
-    get_pydantic_field_names,
-)
+logger = logging.getLogger(__name__)
+
 
 class DallEAPIWrapper(BaseModel):
     """Wrapper for OpenAI's DALL-E Image Generator.
@@ -22,7 +24,7 @@ class DallEAPIWrapper(BaseModel):
     1. `pip install openai`
     2. save your OPENAI_API_KEY in an environment variable
     """
-    
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
@@ -41,11 +43,6 @@ class DallEAPIWrapper(BaseModel):
             attributes["openai_proxy"] = self.openai_proxy
 
         return attributes
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
-        return True
 
     client: Any  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -80,12 +77,11 @@ class DallEAPIWrapper(BaseModel):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 
-
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid 
-        
+        extra = Extra.forbid
+
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
@@ -134,7 +130,7 @@ class DallEAPIWrapper(BaseModel):
             "OPENAI_PROXY",
             default="",
         )
-        
+
         try:
             import openai
 
@@ -143,7 +139,7 @@ class DallEAPIWrapper(BaseModel):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        
+
         if is_openai_v1():
             client_params = {
                 "api_key": values["openai_api_key"],
@@ -159,9 +155,7 @@ class DallEAPIWrapper(BaseModel):
             if not values.get("client"):
                 values["client"] = openai.OpenAI(**client_params).images
             if not values.get("async_client"):
-                values["async_client"] = openai.AsyncOpenAI(
-                    **client_params
-                ).images
+                values["async_client"] = openai.AsyncOpenAI(**client_params).images
         elif not values.get("client"):
             values["client"] = openai.Image
         else:
@@ -170,16 +164,20 @@ class DallEAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run query through OpenAI and parse result."""
-        
+
         if is_openai_v1():
             response = self.client.generate(
-                 prompt=query, n=self.n, size=self.size, model=self.model_name, quality=self.quality
+                prompt=query,
+                n=self.n,
+                size=self.size,
+                model=self.model_name,
+                quality=self.quality,
             )
-            image_urls = self.separator.join([item.url for item in response.data]) 
+            image_urls = self.separator.join([item.url for item in response.data])
         else:
             response = self.client.create(
-                 prompt=query, n=self.n, size=self.size, model=self.model_name
+                prompt=query, n=self.n, size=self.size, model=self.model_name
             )
             image_urls = self.separator.join([item["url"] for item in response["data"]])
-        
+
         return image_urls if image_urls else "No image was generated"
