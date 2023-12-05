@@ -5,7 +5,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.schema import BaseMessage, format_document
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableMap, RunnablePassthrough
+from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
 from pydantic import BaseModel, Field
 
@@ -49,7 +49,7 @@ class ChainInput(BaseModel):
     question: str = Field(..., description="The question to answer.")
 
 
-_inputs = RunnableMap(
+_inputs = RunnableParallel(
     standalone_question=RunnablePassthrough.assign(
         chat_history=lambda x: _format_chat_history(x["chat_history"])
     )

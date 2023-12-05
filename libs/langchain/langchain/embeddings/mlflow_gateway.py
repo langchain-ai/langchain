@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any, Iterator, List, Optional
 
 from langchain_core.embeddings import Embeddings
@@ -35,6 +36,11 @@ class MlflowAIGatewayEmbeddings(Embeddings, BaseModel):
     """The URI for the MLflow AI Gateway API."""
 
     def __init__(self, **kwargs: Any):
+        warnings.warn(
+            "`MlflowAIGatewayEmbeddings` is deprecated. Use `MlflowEmbeddings` or "
+            "`DatabricksEmbeddings` instead.",
+            DeprecationWarning,
+        )
         try:
             import mlflow.gateway
         except ImportError as e:

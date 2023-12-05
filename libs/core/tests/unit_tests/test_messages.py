@@ -14,6 +14,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
     get_buffer_string,
+    message_chunk_to_message,
     messages_from_dict,
     messages_to_dict,
 )
@@ -40,6 +41,9 @@ def test_message_chunks() -> None:
     assert (
         AIMessageChunk(
             content="", additional_kwargs={"function_call": {"name": "web_search"}}
+        )
+        + AIMessageChunk(
+            content="", additional_kwargs={"function_call": {"arguments": None}}
         )
         + AIMessageChunk(
             content="", additional_kwargs={"function_call": {"arguments": "{\n"}}
@@ -184,3 +188,18 @@ def test_multiple_msg() -> None:
         sys_msg,
     ]
     assert messages_from_dict(messages_to_dict(msgs)) == msgs
+
+
+def test_message_chunk_to_message() -> None:
+    assert message_chunk_to_message(
+        AIMessageChunk(content="I am", additional_kwargs={"foo": "bar"})
+    ) == AIMessage(content="I am", additional_kwargs={"foo": "bar"})
+    assert message_chunk_to_message(HumanMessageChunk(content="I am")) == HumanMessage(
+        content="I am"
+    )
+    assert message_chunk_to_message(
+        ChatMessageChunk(role="User", content="I am")
+    ) == ChatMessage(role="User", content="I am")
+    assert message_chunk_to_message(
+        FunctionMessageChunk(name="hello", content="I am")
+    ) == FunctionMessage(name="hello", content="I am")
