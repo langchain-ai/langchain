@@ -8,7 +8,7 @@ rm -rf partners/openai/{langchain_openai,tests}
 
 mkdir -p community/langchain_community
 touch community/langchain_community/__init__.py
-touch community/langchain_community/README.md
+touch community/README.md
 mkdir -p community/tests
 touch community/tests/__init__.py
 mkdir community/tests/unit_tests
@@ -138,7 +138,7 @@ mkdir -p partners/openai/langchain_openai/chat_models
 mkdir -p partners/openai/langchain_openai/llms
 mkdir -p partners/openai/langchain_openai/embeddings
 touch partners/openai/langchain_openai/__init__.py
-touch partners/openai/langchain_openai/README.md
+touch partners/openai/README.md
 
 mv community/langchain_community/utilities/loading.py langchain/langchain/utilities
 mv community/langchain_community/utilities/asyncio.py langchain/langchain/utilities
