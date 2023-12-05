@@ -9,9 +9,9 @@ from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.load import dumpd
 from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.tools import BaseTool
 
 from langchain.callbacks.manager import CallbackManager
-from langchain.tools.base import BaseTool
 from langchain.tools.render import format_tool_to_openai_tool
 
 if TYPE_CHECKING:
