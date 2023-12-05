@@ -118,7 +118,7 @@ class ArceeWrapper:
             model_kwargs: Keyword arguments for Arcee API.
             model_name: Name of an Arcee model.
         """
-        if not isinstance(arcee_api_key, (str,)):
+        if not isinstance(arcee_api_key, str):
             raise TypeError(
                 f"arcee_api_key must be a string. Got {type(arcee_api_key)}"
             )
