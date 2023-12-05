@@ -17,7 +17,7 @@ docs = loader.load()
 
 def test_page_content_loaded() -> None:
     """Verify that all docs have page_content"""
-    assert len(docs) == 5
+    assert len(docs) == 6
     assert all(doc.page_content for doc in docs)
 
 
@@ -27,7 +27,7 @@ def test_disable_collect_metadata() -> None:
         str(OBSIDIAN_EXAMPLE_PATH), collect_metadata=False
     )
     docs_wo = loader_without_metadata.load()
-    assert len(docs_wo) == 5
+    assert len(docs_wo) == 6
     assert all(doc.page_content for doc in docs_wo)
     assert all(set(doc.metadata) == STANDARD_METADATA_FIELDS for doc in docs_wo)
 
@@ -43,6 +43,24 @@ def test_metadata_with_frontmatter() -> None:
     doc = next(doc for doc in docs if doc.metadata["source"] == "frontmatter.md")
     assert set(doc.metadata) == STANDARD_METADATA_FIELDS | {"tags"}
     assert set(doc.metadata["tags"].split(",")) == {"journal/entry", "obsidian"}
+
+
+def test_metadata_with_template_vars_in_frontmatter() -> None:
+    """Verify frontmatter fields with template variables are loaded."""
+    doc = next(
+        doc for doc in docs if doc.metadata["source"] == "template_var_frontmatter.md"
+    )
+    FRONTMATTER_FIELDS = {
+        "aString",
+        "anArray",
+        "aDict",
+        "tags",
+    }
+    assert set(doc.metadata) == FRONTMATTER_FIELDS | STANDARD_METADATA_FIELDS
+    assert doc.metadata["aString"] == "{{var}}"
+    assert doc.metadata["anArray"] == "['element', '{{varElement}}']"
+    assert doc.metadata["aDict"] == "{'dictId1': 'val', 'dictId2': '{{varVal}}'}"
+    assert set(doc.metadata["tags"].split(",")) == {"tag", "{{varTag}}"}
 
 
 def test_metadata_with_bad_frontmatter() -> None:

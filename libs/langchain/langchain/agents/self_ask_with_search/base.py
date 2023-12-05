@@ -13,6 +13,7 @@ from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.searchapi import SearchApiAPIWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 
 
@@ -64,7 +65,9 @@ class SelfAskWithSearchChain(AgentExecutor):
     def __init__(
         self,
         llm: BaseLanguageModel,
-        search_chain: Union[GoogleSerperAPIWrapper, SerpAPIWrapper],
+        search_chain: Union[
+            GoogleSerperAPIWrapper, SearchApiAPIWrapper, SerpAPIWrapper
+        ],
         **kwargs: Any,
     ):
         """Initialize only with an LLM and a search chain."""

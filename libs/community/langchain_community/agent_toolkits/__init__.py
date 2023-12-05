@@ -34,6 +34,7 @@ from langchain_community.agent_toolkits.jira.toolkit import JiraToolkit
 from langchain_community.agent_toolkits.json.base import create_json_agent
 from langchain_community.agent_toolkits.json.toolkit import JsonToolkit
 from langchain_community.agent_toolkits.multion.toolkit import MultionToolkit
+from langchain_community.agent_toolkits.nasa.toolkit import NasaToolkit
 from langchain_community.agent_toolkits.nla.toolkit import NLAToolkit
 from langchain_community.agent_toolkits.office365.toolkit import O365Toolkit
 from langchain_community.agent_toolkits.openapi.base import create_openapi_agent
@@ -49,6 +50,7 @@ from langchain_community.agent_toolkits.spark_sql.base import create_spark_sql_a
 from langchain_community.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
 from langchain_community.agent_toolkits.sql.base import create_sql_agent
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
+from langchain_community.agent_toolkits.steam.toolkit import SteamToolkit
 from langchain_community.agent_toolkits.vectorstore.base import (
     create_vectorstore_agent,
     create_vectorstore_router_agent,
@@ -94,12 +96,14 @@ __all__ = [
     "JiraToolkit",
     "JsonToolkit",
     "MultionToolkit",
+    "NasaToolkit",
     "NLAToolkit",
     "O365Toolkit",
     "OpenAPIToolkit",
     "PlayWrightBrowserToolkit",
     "PowerBIToolkit",
     "SlackToolkit",
+    "SteamToolkit",
     "SQLDatabaseToolkit",
     "SparkSQLToolkit",
     "VectorStoreInfo",

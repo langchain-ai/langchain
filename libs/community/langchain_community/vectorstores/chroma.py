@@ -176,7 +176,7 @@ class Chroma(VectorStore):
         """Run more images through the embeddings and add to the vectorstore.
 
         Args:
-            images (List[List[float]]): Images to add to the vectorstore.
+            uris List[str]: File path to the image.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]], optional): Optional list of IDs.
 

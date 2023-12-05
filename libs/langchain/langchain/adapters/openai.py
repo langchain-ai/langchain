@@ -1,7 +1,16 @@
 from langchain_community.adapters.openai import (
+    Chat,
     ChatCompletion,
+    ChatCompletionChunk,
+    ChatCompletions,
+    Choice,
+    ChoiceChunk,
+    Completions,
+    IndexableBaseModel,
+    _convert_message_chunk,
     _convert_message_chunk_to_delta,
     _has_assistant_message,
+    chat,
     convert_dict_to_message,
     convert_message_to_dict,
     convert_messages_for_finetuning,
@@ -9,11 +18,20 @@ from langchain_community.adapters.openai import (
 )
 
 __all__ = [
+    "IndexableBaseModel",
+    "Choice",
+    "ChatCompletions",
+    "ChoiceChunk",
+    "ChatCompletionChunk",
     "convert_dict_to_message",
     "convert_message_to_dict",
     "convert_openai_messages",
+    "_convert_message_chunk",
     "_convert_message_chunk_to_delta",
     "ChatCompletion",
     "_has_assistant_message",
     "convert_messages_for_finetuning",
+    "Completions",
+    "Chat",
+    "chat",
 ]

@@ -130,7 +130,6 @@ git grep -l 'from langchain.tools.base' | xargs sed -i '' 's/from langchain.tool
 git grep -l 'from langchain_community.llms.openai' | xargs sed -i '' 's/from langchain_community.llms.openai/from langchain_openai.llm/g'
 git grep -l 'from langchain_community.chat_models.openai' | xargs sed -i '' 's/from langchain_community.chat_models.openai/from langchain_openai.chat_model/g'
 git grep -l 'from langchain_community.embeddings.openai' | xargs sed -i '' 's/from langchain_community.embeddings.openai/from langchain_openai.embedding/g'
-git grep -l 'from langchain.utils.json_schema' | xargs sed -i '' 's/from langchain.utils.json_schema/from langchain_core.utils.json_schema/g'
 
 cd ..
 
@@ -152,10 +151,9 @@ mv community/langchain_community/embeddings/azure_openai.py partners/openai/lang
 cp langchain/langchain/utils/openai.py partners/openai/langchain_openai/utils.py
 cp langchain/langchain/utils/openai_functions.py partners/openai/langchain_openai/functions.py
 
+git add partners core
 
 git grep -l 'from langchain.utils.json_schema' | xargs sed -i '' 's/from langchain.utils.json_schema/from langchain_core.utils.json_schema/g'
-
-git add partners core
 
 rm community/langchain_community/chat_models/base.py
 rm community/langchain_community/llms/base.py

@@ -1,34 +1,70 @@
-"""Test Arcee llm"""
+from unittest.mock import MagicMock, patch
+
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_community.llms.arcee import Arcee
 
 
-def test_api_key_is_secret_string() -> None:
-    llm = Arcee(model="DALM-PubMed", arcee_api_key="test-arcee-api-key")
-    assert isinstance(llm.arcee_api_key, SecretStr)
+@patch("langchain.utilities.arcee.requests.get")
+def test_arcee_api_key_is_secret_string(mock_get: MagicMock) -> None:
+    mock_response = mock_get.return_value
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "model_id": "",
+        "status": "training_complete",
+    }
+
+    arcee_without_env_var = Arcee(
+        model="DALM-PubMed",
+        arcee_api_key="secret_api_key",
+        arcee_api_url="https://localhost",
+        arcee_api_version="version",
+    )
+    assert isinstance(arcee_without_env_var.arcee_api_key, SecretStr)
 
 
-def test_api_key_masked_when_passed_from_env(
-    monkeypatch: MonkeyPatch, capsys: CaptureFixture
-) -> None:
-    """Test initialization with an API key provided via an env variable"""
-    monkeypatch.setenv("ARCEE_API_KEY", "test-arcee-api-key")
-
-    llm = Arcee(model="DALM-PubMed")
-
-    print(llm.arcee_api_key, end="")
-    captured = capsys.readouterr()
-    assert captured.out == "**********"
-
-
+@patch("langchain.utilities.arcee.requests.get")
 def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
+    mock_get: MagicMock, capsys: CaptureFixture
 ) -> None:
-    """Test initialization with an API key provided via the initializer"""
-    llm = Arcee(model="DALM-PubMed", arcee_api_key="test-arcee-api-key")
+    mock_response = mock_get.return_value
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "model_id": "",
+        "status": "training_complete",
+    }
 
-    print(llm.arcee_api_key, end="")
+    arcee_without_env_var = Arcee(
+        model="DALM-PubMed",
+        arcee_api_key="secret_api_key",
+        arcee_api_url="https://localhost",
+        arcee_api_version="version",
+    )
+    print(arcee_without_env_var.arcee_api_key, end="")
     captured = capsys.readouterr()
-    assert captured.out == "**********"
+
+    assert "**********" == captured.out
+
+
+@patch("langchain.utilities.arcee.requests.get")
+def test_api_key_masked_when_passed_from_env(
+    mock_get: MagicMock, capsys: CaptureFixture, monkeypatch: MonkeyPatch
+) -> None:
+    mock_response = mock_get.return_value
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "model_id": "",
+        "status": "training_complete",
+    }
+
+    monkeypatch.setenv("ARCEE_API_KEY", "secret_api_key")
+    arcee_with_env_var = Arcee(
+        model="DALM-PubMed",
+        arcee_api_url="https://localhost",
+        arcee_api_version="version",
+    )
+    print(arcee_with_env_var.arcee_api_key, end="")
+    captured = capsys.readouterr()
+
+    assert "**********" == captured.out

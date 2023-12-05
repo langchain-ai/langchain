@@ -66,6 +66,7 @@ from langchain_community.document_loaders.college_confidential import (
 from langchain_community.document_loaders.concurrent import ConcurrentLoader
 from langchain_community.document_loaders.confluence import ConfluenceLoader
 from langchain_community.document_loaders.conllu import CoNLLULoader
+from langchain_community.document_loaders.couchbase import CouchbaseLoader
 from langchain_community.document_loaders.csv_loader import (
     CSVLoader,
     UnstructuredCSVLoader,
@@ -84,7 +85,6 @@ from langchain_community.document_loaders.email import (
     OutlookMessageLoader,
     UnstructuredEmailLoader,
 )
-from langchain_community.document_loaders.embaas import EmbaasBlobLoader, EmbaasLoader
 from langchain_community.document_loaders.epub import UnstructuredEPubLoader
 from langchain_community.document_loaders.etherscan import EtherscanLoader
 from langchain_community.document_loaders.evernote import EverNoteLoader
@@ -265,6 +265,7 @@ __all__ = [
     "CollegeConfidentialLoader",
     "ConcurrentLoader",
     "ConfluenceLoader",
+    "CouchbaseLoader",
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
@@ -276,8 +277,6 @@ __all__ = [
     "Docx2txtLoader",
     "DropboxLoader",
     "DuckDBLoader",
-    "EmbaasBlobLoader",
-    "EmbaasLoader",
     "EtherscanLoader",
     "EverNoteLoader",
     "FacebookChatLoader",

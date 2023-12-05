@@ -5,7 +5,6 @@ from langchain_core.memory import BaseMemory
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts.chat import MessagesPlaceholder
 from langchain_core.tools import BaseTool
-from langchain_openai.chat_model import ChatOpenAI
 
 from langchain_community.agents.agent import AgentExecutor
 from langchain_community.agents.openai_functions_agent.agent_token_buffer_memory import (
@@ -57,8 +56,6 @@ def create_conversational_retrieval_agent(
         An agent executor initialized appropriately
     """
 
-    if not isinstance(llm, ChatOpenAI):
-        raise ValueError("Only supported with ChatOpenAI models.")
     if remember_intermediate_steps:
         memory: BaseMemory = AgentTokenBufferMemory(
             memory_key=memory_key, llm=llm, max_token_limit=max_token_limit

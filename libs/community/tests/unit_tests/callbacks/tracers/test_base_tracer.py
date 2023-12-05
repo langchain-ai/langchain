@@ -332,6 +332,42 @@ def test_tracer_llm_run_on_error() -> None:
 
 
 @freeze_time("2023-01-01")
+def test_tracer_llm_run_on_error_callback() -> None:
+    """Test tracer on an LLM run with an error and a callback."""
+    exception = Exception("test")
+    uuid = uuid4()
+
+    compare_run = Run(
+        id=str(uuid),
+        start_time=datetime.utcnow(),
+        end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "error", "time": datetime.utcnow()},
+        ],
+        extra={},
+        execution_order=1,
+        child_execution_order=1,
+        serialized=SERIALIZED,
+        inputs=dict(prompts=[]),
+        outputs=None,
+        error=repr(exception),
+        run_type="llm",
+    )
+
+    class FakeTracerWithLlmErrorCallback(FakeTracer):
+        error_run = None
+
+        def _on_llm_error(self, run: Run) -> None:
+            self.error_run = run
+
+    tracer = FakeTracerWithLlmErrorCallback()
+    tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
+    tracer.on_llm_error(exception, run_id=uuid)
+    assert tracer.error_run == compare_run
+
+
+@freeze_time("2023-01-01")
 def test_tracer_chain_run_on_error() -> None:
     """Test tracer on a Chain run with an error."""
     exception = Exception("test")
