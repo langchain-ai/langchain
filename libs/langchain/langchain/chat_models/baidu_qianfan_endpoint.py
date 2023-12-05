@@ -97,14 +97,14 @@ class QianfanChatEndpoint(BaseChatModel):
     request_timeout: Optional[int] = 60
     """request timeout for chat http requests"""
 
-    top_p: Optional[float] = None
-    temperature: Optional[float] = None
-    penalty_score: Optional[float] = None
+    top_p: Optional[float] = 0.8
+    temperature: Optional[float] = 0.95
+    penalty_score: Optional[float] = 1
     """Model params, only supported in ERNIE-Bot and ERNIE-Bot-turbo.
     In the case of other model, passing these params will not affect the result.
     """
 
-    model: Optional[str] = None
+    model: str = "ERNIE-Bot-turbo"
     """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
@@ -172,8 +172,7 @@ class QianfanChatEndpoint(BaseChatModel):
             "penalty_score": self.penalty_score,
         }
 
-        params = {**normal_params, **self.model_kwargs}
-        return {k: v for k, v in params.items() if v is not None}
+        return {**normal_params, **self.model_kwargs}
 
     def _convert_prompt_msg_params(
         self,
