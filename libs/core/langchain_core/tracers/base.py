@@ -224,7 +224,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run.end_time = datetime.utcnow()
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
         self._end_trace(llm_run)
-        self._on_chain_error(llm_run)
+        self._on_llm_error(llm_run)
         return llm_run
 
     def on_chain_start(
