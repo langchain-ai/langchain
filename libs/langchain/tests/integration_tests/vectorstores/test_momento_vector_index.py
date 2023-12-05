@@ -3,8 +3,8 @@ import uuid
 from typing import Iterator, List
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.docstore.document import Document
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import MomentoVectorIndex
 
@@ -125,7 +125,7 @@ def test_from_texts_with_metadatas(
 
 
 def test_from_texts_with_scores(vector_store: MomentoVectorIndex) -> None:
-    #    """Test end to end construction and search with scores and IDs."""
+    """Test end to end construction and search with scores and IDs."""
     texts = ["apple", "orange", "hammer"]
     metadatas = [{"page": f"{i}"} for i in range(len(texts))]
 
@@ -162,3 +162,25 @@ def test_add_documents_with_ids(vector_store: MomentoVectorIndex) -> None:
     )
     assert isinstance(response, Search.Success)
     assert [hit.id for hit in response.hits] == ids
+
+
+def test_max_marginal_relevance_search(vector_store: MomentoVectorIndex) -> None:
+    """Test max marginal relevance search."""
+    pepperoni_pizza = "pepperoni pizza"
+    cheese_pizza = "cheese pizza"
+    hot_dog = "hot dog"
+
+    vector_store.add_texts([pepperoni_pizza, cheese_pizza, hot_dog])
+    wait()
+    search_results = vector_store.similarity_search("pizza", k=2)
+
+    assert search_results == [
+        Document(page_content=pepperoni_pizza, metadata={}),
+        Document(page_content=cheese_pizza, metadata={}),
+    ]
+
+    search_results = vector_store.max_marginal_relevance_search(query="pizza", k=2)
+    assert search_results == [
+        Document(page_content=pepperoni_pizza, metadata={}),
+        Document(page_content=hot_dog, metadata={}),
+    ]

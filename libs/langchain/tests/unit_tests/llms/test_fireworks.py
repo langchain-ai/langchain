@@ -2,10 +2,10 @@
 import sys
 
 import pytest
+from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture
 
 from langchain.llms import Fireworks
-from langchain.pydantic_v1 import SecretStr
 
 if sys.version_info < (3, 9):
     pytest.skip("fireworks-ai requires Python > 3.8", allow_module_level=True)

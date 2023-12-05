@@ -4,7 +4,7 @@ In this quickstart we'll show you how to:
 - Get setup with LangChain, LangSmith and LangServe
 - Use the most basic and common components of LangChain: prompt templates, models, and output parsers
 - Use LangChain Expression Language, the protocol that LangChain is built on and which facilitates component chaining
-- Build simple application with LangChain
+- Build a simple application with LangChain
 - Trace your application with LangSmith
 - Serve your application with LangServe
 
@@ -344,7 +344,7 @@ category_chain = chat_prompt | ChatOpenAI() | CommaSeparatedListOutputParser()
 app = FastAPI(
   title="LangChain Server",
   version="1.0",
-  description="A simple api server using Langchain's Runnable interfaces",
+  description="A simple API server using LangChain's Runnable interfaces",
 )
 
 # 3. Adding chain route

@@ -1,115 +1,17 @@
 from __future__ import annotations
 
-import json
 import logging
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.utils import get_from_dict_or_env
 
 ADA_TOKEN_COUNT = 1536
 _LANGCHAIN_DEFAULT_TABLE_NAME = "langchain_pg_embedding"
-
-
-class HologresWrapper:
-    """`Hologres API` wrapper."""
-
-    def __init__(self, connection_string: str, ndims: int, table_name: str) -> None:
-        """Initialize the wrapper.
-
-        Args:
-            connection_string: Hologres connection string.
-            ndims: Number of dimensions of the embedding output.
-            table_name: Name of the table to store embeddings and data.
-        """
-
-        import psycopg2
-
-        self.table_name = table_name
-        self.conn = psycopg2.connect(connection_string)
-        self.cursor = self.conn.cursor()
-        self.conn.autocommit = False
-        self.ndims = ndims
-
-    def create_vector_extension(self) -> None:
-        self.cursor.execute("create extension if not exists proxima")
-        self.conn.commit()
-
-    def create_table(self, drop_if_exist: bool = True) -> None:
-        if drop_if_exist:
-            self.cursor.execute(f"drop table if exists {self.table_name}")
-        self.conn.commit()
-
-        self.cursor.execute(
-            f"""create table if not exists {self.table_name} (
-id text,
-embedding float4[] check(array_ndims(embedding) = 1 and \
-array_length(embedding, 1) = {self.ndims}),
-metadata json,
-document text);"""
-        )
-        self.cursor.execute(
-            f"call set_table_property('{self.table_name}'"
-            + """, 'proxima_vectors', 
-'{"embedding":{"algorithm":"Graph",
-"distance_method":"SquaredEuclidean",
-"build_params":{"min_flush_proxima_row_count" : 1,
-"min_compaction_proxima_row_count" : 1, 
-"max_total_size_to_merge_mb" : 2000}}}');"""
-        )
-        self.conn.commit()
-
-    def get_by_id(self, id: str) -> List[Tuple]:
-        statement = (
-            f"select id, embedding, metadata, "
-            f"document from {self.table_name} where id = %s;"
-        )
-        self.cursor.execute(
-            statement,
-            (id),
-        )
-        self.conn.commit()
-        return self.cursor.fetchall()
-
-    def insert(
-        self,
-        embedding: List[float],
-        metadata: dict,
-        document: str,
-        id: Optional[str] = None,
-    ) -> None:
-        self.cursor.execute(
-            f'insert into "{self.table_name}" '
-            f"values (%s, array{json.dumps(embedding)}::float4[], %s, %s)",
-            (id if id is not None else "null", json.dumps(metadata), document),
-        )
-        self.conn.commit()
-
-    def query_nearest_neighbours(
-        self, embedding: List[float], k: int, filter: Optional[Dict[str, str]] = None
-    ) -> List[Tuple[str, str, float]]:
-        params = []
-        filter_clause = ""
-        if filter is not None:
-            conjuncts = []
-            for key, val in filter.items():
-                conjuncts.append("metadata->>%s=%s")
-                params.append(key)
-                params.append(val)
-            filter_clause = "where " + " and ".join(conjuncts)
-
-        sql = (
-            f"select document, metadata::text, "
-            f"pm_approx_squared_euclidean_distance(array{json.dumps(embedding)}"
-            f"::float4[], embedding) as distance from"
-            f" {self.table_name} {filter_clause} order by distance asc limit {k};"
-        )
-        self.cursor.execute(sql, tuple(params))
-        self.conn.commit()
-        return self.cursor.fetchall()
 
 
 class Hologres(VectorStore):
@@ -151,25 +53,19 @@ class Hologres(VectorStore):
         """
         Initialize the store.
         """
-        self.storage = HologresWrapper(
-            self.connection_string, self.ndims, self.table_name
+        from hologres_vector import HologresVector
+
+        self.storage = HologresVector(
+            self.connection_string,
+            ndims=self.ndims,
+            table_name=self.table_name,
+            table_schema={"document": "text"},
+            pre_delete_table=self.pre_delete_table,
         )
-        self.create_vector_extension()
-        self.create_table()
 
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
-
-    def create_vector_extension(self) -> None:
-        try:
-            self.storage.create_vector_extension()
-        except Exception as e:
-            self.logger.exception(e)
-            raise e
-
-    def create_table(self) -> None:
-        self.storage.create_table(self.pre_delete_table)
 
     @classmethod
     def __from(
@@ -223,11 +119,10 @@ class Hologres(VectorStore):
             kwargs: vectorstore specific parameters
         """
         try:
-            for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
-                self.storage.insert(embedding, metadata, text, id)
+            schema_datas = [{"document": t} for t in texts]
+            self.storage.upsert_vectors(embeddings, ids, metadatas, schema_datas)
         except Exception as e:
             self.logger.exception(e)
-            self.storage.conn.commit()
 
     def add_texts(
         self,
@@ -332,17 +227,17 @@ class Hologres(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
-        results: List[Tuple[str, str, float]] = self.storage.query_nearest_neighbours(
-            embedding, k, filter
+        results: List[dict[str, Any]] = self.storage.search(
+            embedding, k=k, select_columns=["document"], metadata_filters=filter
         )
 
         docs = [
             (
                 Document(
-                    page_content=result[0],
-                    metadata=json.loads(result[1]),
+                    page_content=result["document"],
+                    metadata=result["metadata"],
                 ),
-                result[2],
+                result["distance"],
             )
             for result in results
         ]
@@ -362,9 +257,11 @@ class Hologres(VectorStore):
     ) -> Hologres:
         """
         Return VectorStore initialized from texts and embeddings.
-        Postgres connection string is required
+        Hologres connection string is required
         "Either pass it as a parameter
         or set the HOLOGRES_CONNECTION_STRING environment variable.
+        Create the connection string by calling
+        HologresVector.connection_string_from_db_params
         """
         embeddings = embedding.embed_documents(list(texts))
 
@@ -396,9 +293,11 @@ class Hologres(VectorStore):
         generated embeddings.
 
         Return VectorStore initialized from documents and embeddings.
-        Postgres connection string is required
+        Hologres connection string is required
         "Either pass it as a parameter
         or set the HOLOGRES_CONNECTION_STRING environment variable.
+        Create the connection string by calling
+        HologresVector.connection_string_from_db_params
 
         Example:
             .. code-block:: python
@@ -462,9 +361,11 @@ class Hologres(VectorStore):
 
         if not connection_string:
             raise ValueError(
-                "Postgres connection string is required"
+                "Hologres connection string is required"
                 "Either pass it as a parameter"
                 "or set the HOLOGRES_CONNECTION_STRING environment variable."
+                "Create the connection string by calling"
+                "HologresVector.connection_string_from_db_params"
             )
 
         return connection_string
@@ -482,9 +383,11 @@ class Hologres(VectorStore):
     ) -> Hologres:
         """
         Return VectorStore initialized from documents and embeddings.
-        Postgres connection string is required
+        Hologres connection string is required
         "Either pass it as a parameter
         or set the HOLOGRES_CONNECTION_STRING environment variable.
+        Create the connection string by calling
+        HologresVector.connection_string_from_db_params
         """
 
         texts = [d.page_content for d in documents]

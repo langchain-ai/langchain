@@ -5,16 +5,7 @@ from functools import partial
 from typing import Any, AsyncIterator, Dict, List, Optional, cast
 
 import requests
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
-from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import ChatGeneration, ChatResult
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -22,7 +13,15 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import root_validator
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
+from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
