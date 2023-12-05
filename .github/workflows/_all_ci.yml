@@ -38,7 +38,7 @@ jobs:
 
   compile-integration-tests:
     uses: ./.github/workflows/_compile_integration_test.yml
-    if: ${{ inputs.working-directory }} != "libs/core"
+    if: ${{ inputs.working-directory }} != libs/core
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
