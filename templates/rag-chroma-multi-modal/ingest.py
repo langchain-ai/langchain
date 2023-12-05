@@ -27,17 +27,21 @@ doc_path = Path(__file__).parent / "docs/DDOG_Q3_earnings_deck.pdf"
 img_dump_path = Path(__file__).parent / "docs/"
 rel_doc_path = doc_path.relative_to(Path.cwd())
 rel_img_dump_path = img_dump_path.relative_to(Path.cwd())
+print("pdf index")
 pil_images = get_images_from_pdf(rel_doc_path, rel_img_dump_path)
+print("done")
 vectorstore = Path(__file__).parent / "chroma_db_multi_modal"
 re_vectorstore_path = vectorstore.relative_to(Path.cwd())
+
+# Load embedding function
+print('Loading embedding function')
+embedding = OpenCLIPEmbeddings(model_name="ViT-H-14", checkpoint="laion2b_s32b_b79k")
 
 # Create chroma
 vectorstore_mmembd = Chroma(
     collection_name="multi-modal-rag",
     persist_directory=str(Path(__file__).parent / "chroma_db_multi_modal"),
-    embedding_function=OpenCLIPEmbeddings(
-        model_name="ViT-H-14", checkpoint="laion2b_s32b_b79k"
-    ),
+    embedding_function=embedding,
 )
 
 # Get image URIs
@@ -50,4 +54,5 @@ image_uris = sorted(
 )
 
 # Add images
+print('Embedding images')
 vectorstore_mmembd.add_images(uris=image_uris)

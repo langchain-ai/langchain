@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
 
 K = TypeVar("K")
-V = TypeVar("V")
+V = TypeVar("V", covariant=True)
 
 
 class BaseStore(Generic[K, V], ABC):
@@ -51,3 +51,6 @@ class BaseStore(Generic[K, V], ABC):
             This method is allowed to return an iterator over either K or str
             depending on what makes more sense for the given store.
         """
+
+
+ByteStore = BaseStore[str, bytes]

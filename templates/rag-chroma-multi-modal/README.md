@@ -15,7 +15,7 @@ Create your vectorstore with:
 
 ```
 poetry install
-python rag_chroma_multi_modal/ingest.py
+python ingest.py
 ```
 
 ## Embeddings
@@ -28,7 +28,7 @@ The first time you run the app, it will automatically download the multimodal em
 
 By default, LangChain will use an embedding model with strong performance, `ViT-H-14`.
 
-You can choose alternative `OpenCLIPEmbeddings` models in `rag_chroma_mutli_modal/ingest.py`:
+You can choose alternative `OpenCLIPEmbeddings` models in `rag_chroma_multi_modal/ingest.py`:
 ```
 vectorstore_mmembd = Chroma(
     collection_name="multi-modal-rag",
