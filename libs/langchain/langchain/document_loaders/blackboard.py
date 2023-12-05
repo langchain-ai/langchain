@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Any, List, Optional, Tuple
 from urllib.parse import unquote
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.pdf import PyPDFLoader
 from langchain.document_loaders.web_base import WebBaseLoader

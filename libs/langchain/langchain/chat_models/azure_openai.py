@@ -4,11 +4,12 @@ from __future__ import annotations
 import logging
 import os
 import warnings
-from typing import Any, Dict, Union
+from typing import Any, Callable, Dict, Union
+
+from langchain_core.outputs import ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.pydantic_v1 import BaseModel, Field, root_validator
-from langchain.schema import ChatResult
 from langchain.utils import get_from_dict_or_env
 from langchain.utils.openai import is_openai_v1
 
@@ -79,7 +80,7 @@ class AzureChatOpenAI(ChatOpenAI):
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
     """  # noqa: E501
-    azure_ad_token_provider: Union[str, None] = None
+    azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
         
         Will be invoked on every request.

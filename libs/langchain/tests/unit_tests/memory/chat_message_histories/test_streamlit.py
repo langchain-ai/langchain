@@ -6,7 +6,7 @@ test_script = """
     import streamlit as st
     from langchain.memory import ConversationBufferMemory
     from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
-    from langchain.schema.messages import _message_to_dict
+    from langchain_core.messages import message_to_dict
 
     message_history = StreamlitChatMessageHistory()
     memory = ConversationBufferMemory(chat_memory=message_history, return_messages=True)
@@ -25,7 +25,7 @@ test_script = """
 
     # Write the output to st.code as a json blob for inspection
     messages = memory.chat_memory.messages
-    messages_json = json.dumps([_message_to_dict(msg) for msg in messages])
+    messages_json = json.dumps([message_to_dict(msg) for msg in messages])
     st.text(messages_json)
 """
 

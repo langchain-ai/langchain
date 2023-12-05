@@ -21,17 +21,18 @@ from typing import (
     Union,
 )
 
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
+from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.utils import get_pydantic_field_names
+from langchain_core.utils.utils import build_extra_kwargs
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema import Generation, LLMResult
-from langchain.schema.output import GenerationChunk
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import get_from_dict_or_env
 from langchain.utils.openai import is_openai_v1
-from langchain.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -378,7 +379,7 @@ class BaseOpenAI(BaseLLM):
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         params = {**self._invocation_params, **kwargs, "stream": True}
-        self.get_sub_prompts(params, [prompt], stop)  # this mutate params
+        self.get_sub_prompts(params, [prompt], stop)  # this mutates params
         async for stream_resp in await acompletion_with_retry(
             self, prompt=prompt, run_manager=run_manager, **params
         ):
@@ -466,6 +467,7 @@ class BaseOpenAI(BaseLLM):
         return self.create_llm_result(
             choices,
             prompts,
+            params,
             token_usage,
             system_fingerprint=system_fingerprint,
         )
@@ -523,6 +525,7 @@ class BaseOpenAI(BaseLLM):
         return self.create_llm_result(
             choices,
             prompts,
+            params,
             token_usage,
             system_fingerprint=system_fingerprint,
         )
@@ -554,14 +557,16 @@ class BaseOpenAI(BaseLLM):
         self,
         choices: Any,
         prompts: List[str],
+        params: Dict[str, Any],
         token_usage: Dict[str, int],
         *,
         system_fingerprint: Optional[str] = None,
     ) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
+        n = params.get("n", self.n)
         for i, _ in enumerate(prompts):
-            sub_choices = choices[i * self.n : (i + 1) * self.n]
+            sub_choices = choices[i * n : (i + 1) * n]
             generations.append(
                 [
                     Generation(
@@ -777,7 +782,7 @@ class AzureOpenAI(BaseOpenAI):
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
     """  # noqa: E501
-    azure_ad_token_provider: Union[str, None] = None
+    azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every request.

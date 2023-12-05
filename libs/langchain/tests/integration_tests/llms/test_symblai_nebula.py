@@ -1,7 +1,8 @@
 """Test Nebula API wrapper."""
+from langchain_core.prompts.prompt import PromptTemplate
+
 from langchain.chains.llm import LLMChain
 from langchain.llms.symblai_nebula import Nebula
-from langchain.prompts.prompt import PromptTemplate
 
 
 def test_symblai_nebula_call() -> None:
@@ -40,8 +41,7 @@ Rhea: Thanks, bye!"""
 
     instruction = """Identify the main objectives mentioned in this 
 conversation."""
-    prompt = PromptTemplate.from_template("{instruction}\n{conversation}")
-
+    prompt = PromptTemplate.from_template(template="{instruction}\n{conversation}")
     llm_chain = LLMChain(prompt=prompt, llm=llm)
     output = llm_chain.run(instruction=instruction, conversation=conversation)
     assert isinstance(output, str)

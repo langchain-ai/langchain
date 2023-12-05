@@ -1,6 +1,6 @@
 """A Tracer implementation that records to LangChain endpoint."""
 
-from langchain.schema.callbacks.tracers.langchain import (
+from langchain_core.tracers.langchain import (
     LangChainTracer,
     wait_for_all_tracers,
 )

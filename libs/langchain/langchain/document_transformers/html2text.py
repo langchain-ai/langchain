@@ -1,6 +1,6 @@
 from typing import Any, Sequence
 
-from langchain.schema import BaseDocumentTransformer, Document
+from langchain_core.documents import BaseDocumentTransformer, Document
 
 
 class Html2TextTransformer(BaseDocumentTransformer):
@@ -39,9 +39,14 @@ class Html2TextTransformer(BaseDocumentTransformer):
         h.ignore_links = self.ignore_links
         h.ignore_images = self.ignore_images
 
+        new_documents = []
+
         for d in documents:
-            d.page_content = h.handle(d.page_content)
-        return documents
+            new_document = Document(
+                page_content=h.handle(d.page_content), metadata={**d.metadata}
+            )
+            new_documents.append(new_document)
+        return new_documents
 
     async def atransform_documents(
         self,

@@ -9,12 +9,13 @@ try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
-from langchain.schema import (
-    BaseChatMessageHistory,
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import (
+    BaseMessage,
+    message_to_dict,
+    messages_from_dict,
 )
-from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
+from sqlalchemy.orm import sessionmaker
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ class DefaultMessageConverter(BaseMessageConverter):
 
     def to_sql_model(self, message: BaseMessage, session_id: str) -> Any:
         return self.model_class(
-            session_id=session_id, message=json.dumps(_message_to_dict(message))
+            session_id=session_id, message=json.dumps(message_to_dict(message))
         )
 
     def get_sql_model_class(self) -> Any:
