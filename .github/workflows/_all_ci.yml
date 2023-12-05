@@ -26,28 +26,36 @@ env:
 
 jobs:
   lint:
-    uses: ./.github/workflows/_lint.yml
-    with:
-      working-directory: ${{ inputs.working-directory }}
-    secrets: inherit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/workflows/_lint.yml"
+        with:
+          working-directory: ${{ inputs.working-directory }}
+        secrets: inherit
 
   test:
-    uses: ./.github/workflows/_test.yml
-    with:
-      working-directory: ${{ inputs.working-directory }}
-    secrets: inherit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/workflows/_test.yml"
+        with:
+          working-directory: ${{ inputs.working-directory }}
+        secrets: inherit
 
   compile-integration-tests:
-    uses: ./.github/workflows/_compile_integration_test.yml
-    with:
-      working-directory: ${{ inputs.working-directory }}
-    secrets: inherit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/workflows/_compile_integration_test.yml"
+        with:
+          working-directory: ${{ inputs.working-directory }}
+        secrets: inherit
 
   pydantic-compatibility:
-    uses: ./.github/workflows/_pydantic_compatibility.yml
-    with:
-      working-directory: ${{ inputs.working-directory }}
-    secrets: inherit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/workflows/_pydantic_compatibility.yml"
+        with:
+          working-directory: ${{ inputs.working-directory }}
+        secrets: inherit
 
   extended-tests:
     runs-on: ubuntu-latest
@@ -71,7 +79,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: libs/langchain
+          working-directory: ${{ inputs.working-directory }}
           cache-key: extended
 
       - name: Install dependencies
