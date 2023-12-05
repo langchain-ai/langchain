@@ -91,6 +91,8 @@ EXPECTED_ALL = [
     "RequestsPostTool",
     "RequestsPutTool",
     "SceneXplainTool",
+    "SearchAPIRun",
+    "SearchAPIResults",
     "SearxSearchResults",
     "SearxSearchRun",
     "ShellTool",
