@@ -292,7 +292,7 @@ async def test_context_runnables(
 def test_runnable_context_seq_key_not_found() -> None:
     seq: Runnable = {"bar": Context.setter("input")} | Context.getter("foo")
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError):
         seq.invoke("foo")
 
 

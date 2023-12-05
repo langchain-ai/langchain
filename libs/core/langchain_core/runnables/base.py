@@ -1459,7 +1459,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         from langchain_core.runnables.context import config_with_context
 
         # setup callbacks and context
-        config = config_with_context(ensure_config(config), self.config_specs)
+        config = config_with_context(ensure_config(config), self.steps)
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
@@ -1493,7 +1493,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         from langchain_core.runnables.context import aconfig_with_context
 
         # setup callbacks and context
-        config = aconfig_with_context(ensure_config(config), self.config_specs)
+        config = aconfig_with_context(ensure_config(config), self.steps)
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
@@ -1534,7 +1534,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
         # setup callbacks and context
         configs = [
-            config_with_context(c, self.config_specs)
+            config_with_context(c, self.steps)
             for c in get_config_list(config, len(inputs))
         ]
         callback_managers = [
@@ -1657,7 +1657,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
         # setup callbacks and context
         configs = [
-            aconfig_with_context(c, self.config_specs)
+            aconfig_with_context(c, self.steps)
             for c in get_config_list(config, len(inputs))
         ]
         callback_managers = [
@@ -1776,7 +1776,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         from langchain_core.runnables.context import config_with_context
 
         steps = [self.first] + self.middle + [self.last]
-        config = config_with_context(config, self.config_specs)
+        config = config_with_context(config, self.steps)
 
         # transform the input stream of each step with the next
         # steps that don't natively support transforming an input stream will
@@ -1803,7 +1803,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         from langchain_core.runnables.context import aconfig_with_context
 
         steps = [self.first] + self.middle + [self.last]
-        config = aconfig_with_context(config, self.config_specs)
+        config = aconfig_with_context(config, self.steps)
 
         # stream the last steps
         # transform the input stream of each step with the next

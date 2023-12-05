@@ -56,36 +56,47 @@ def _getter(done: threading.Event, values: Values) -> Any:
 
 def _config_with_context(
     config: RunnableConfig,
-    specs: List[ConfigurableFieldSpec],
+    steps: List[Runnable],
     setter: Callable,
     getter: Callable,
-    event: Union[Type[threading.Event], Type[asyncio.Event]],
+    event_cls: Union[Type[threading.Event], Type[asyncio.Event]],
 ) -> RunnableConfig:
     if any(k.startswith(CONTEXT_CONFIG_PREFIX) for k in config.get("configurable", {})):
         return config
 
     context_specs = [
-        spec for spec in specs if spec.id.startswith(CONTEXT_CONFIG_PREFIX)
+        (spec, i)
+        for i, step in enumerate(steps)
+        for spec in step.config_specs
+        if spec.id.startswith(CONTEXT_CONFIG_PREFIX)
     ]
     grouped_by_key = groupby(
-        sorted(context_specs, key=lambda s: s.id), key=lambda s: s.id.split("/")[1]
+        sorted(context_specs, key=lambda s: s[0].id),
+        key=lambda s: s[0].id.split("/")[1],
     )
 
     values: Values = {}
-    events: DefaultDict[str, Union[asyncio.Event, threading.Event]] = defaultdict(event)
+    events: DefaultDict[str, Union[asyncio.Event, threading.Event]] = defaultdict(
+        event_cls
+    )
     context_funcs: Dict[str, Callable[[], Any]] = {}
     for key, group in grouped_by_key:
         lgroup = list(group)
-        getters = [s for s in lgroup if s.id.endswith(CONTEXT_CONFIG_SUFFIX_GET)]
-        setters = [s for s in lgroup if s.id.endswith(CONTEXT_CONFIG_SUFFIX_SET)]
+        getters = [s for s in lgroup if s[0].id.endswith(CONTEXT_CONFIG_SUFFIX_GET)]
+        setters = [s for s in lgroup if s[0].id.endswith(CONTEXT_CONFIG_SUFFIX_SET)]
 
         if len(getters) < 1:
-            raise KeyError(f"Expected at least one getter for context key {key}")
+            raise ValueError(f"Expected at least one getter for context key {key}")
         if len(setters) != 1:
-            raise KeyError(f"Expected exactly one setter for context key {key}")
+            raise ValueError(f"Expected exactly one setter for context key {key}")
+        setter_idx = setters[0][1]
+        if any(getter_idx < setter_idx for _, getter_idx in getters):
+            raise ValueError(
+                f"Context setter for key {key} must be defined after all getters."
+            )
 
-        context_funcs[getters[0].id] = partial(getter, events[key], values)
-        context_funcs[setters[0].id] = partial(setter, events[key], values)
+        context_funcs[getters[0][0].id] = partial(getter, events[key], values)
+        context_funcs[setters[0][0].id] = partial(setter, events[key], values)
 
     return patch_config(config, configurable=context_funcs)
 
