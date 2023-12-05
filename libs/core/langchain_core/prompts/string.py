@@ -110,15 +110,15 @@ def check_valid_template(
         validator_func = DEFAULT_VALIDATOR_MAPPING[template_format]
     except KeyError as exc:
         raise ValueError(
-            f"Invalid template format {template_format}, should be one of"
+            f"Invalid template format {template_format!r}, should be one of"
             f" {list(DEFAULT_FORMATTER_MAPPING)}."
         ) from exc
     try:
         validator_func(template, input_variables)
     except (KeyError, IndexError) as exc:
         raise ValueError(
-            f"Invalid prompt template {template}; check for mismatched or missing input"
-            f" parameters from {input_variables}."
+            "Invalid prompt schema; check for mismatched or missing input parameters"
+            f" from {input_variables}."
         ) from exc
 
 
