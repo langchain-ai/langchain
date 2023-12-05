@@ -356,7 +356,10 @@ class AzureSpeechServiceParser(BaseBlobParser):
         self.log_path = None if self.log_path == "" else self.log_path
 
         temp: str = get_from_dict_or_env(
-            kwargs, "polling_interval_seconds", "AZURE_SPEECH_SERVICE_POLLING_INTERVAL_SECONDS", ""
+            kwargs,
+            "polling_interval_seconds",
+            "AZURE_SPEECH_SERVICE_POLLING_INTERVAL_SECONDS",
+            "",
         )
         self.polling_interval_seconds = 0.5 if temp == "" else float(temp)
 
@@ -369,10 +372,7 @@ class AzureSpeechServiceParser(BaseBlobParser):
         self.raw_json_list: List[dict] = []
         self.document_list: List[Document] = []
 
-    def lazy_parse(
-        self,
-            blob: Blob
-    ) -> Iterator[Document]:
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
         import json
 
