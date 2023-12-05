@@ -22,7 +22,6 @@ concurrency:
 
 env:
   POETRY_VERSION: "1.6.1"
-  WORKDIR: ${{ inputs.working-directory }}
 
 jobs:
   lint:
@@ -39,6 +38,7 @@ jobs:
 
   compile-integration-tests:
     uses: ./.github/workflows/_compile_integration_test.yml
+    if: ${{ inputs.working-directory }} != "libs/core"
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
@@ -51,9 +51,6 @@ jobs:
 
   extended-tests:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.WORKDIR }}
     strategy:
       matrix:
         python-version:
