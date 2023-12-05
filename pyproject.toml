@@ -42,6 +42,7 @@ codespell = "^2.2.0"
 langchain-core = { path = "libs/core/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
+langchain-cli = ">=0.0.15"
 
 [tool.poetry.group.test.dependencies]
 
