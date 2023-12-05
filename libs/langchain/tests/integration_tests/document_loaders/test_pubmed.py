@@ -2,9 +2,9 @@
 from typing import List
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain.document_loaders import PubMedLoader
-from langchain.schema import Document
 
 xmltodict = pytest.importorskip("xmltodict")
 

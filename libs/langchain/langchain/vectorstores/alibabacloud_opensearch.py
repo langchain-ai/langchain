@@ -4,9 +4,9 @@ import numbers
 from hashlib import sha1
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from langchain.schema import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
 logger = logging.getLogger()
 

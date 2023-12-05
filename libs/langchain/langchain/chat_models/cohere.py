@@ -1,16 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import (
-    BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
-)
-from langchain.llms.cohere import BaseCohere
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -18,7 +8,18 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
+from langchain.llms.cohere import BaseCohere
 
 
 def get_role(message: BaseMessage) -> str:
@@ -80,9 +81,9 @@ def get_cohere_chat_request(
     )
 
     return {
-        "message": messages[0].content,
+        "message": messages[-1].content,
         "chat_history": [
-            {"role": get_role(x), "message": x.content} for x in messages[1:]
+            {"role": get_role(x), "message": x.content} for x in messages[:-1]
         ],
         "documents": documents,
         "connectors": maybe_connectors,
@@ -102,7 +103,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         .. code-block:: python
 
             from langchain.chat_models import ChatCohere
-            from langchain.schema import HumanMessage
+            from langchain_core.messages import HumanMessage
 
             chat = ChatCohere(model="foo")
             result = chat([HumanMessage(content="Hello")])
@@ -187,7 +188,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         response = self.client.chat(**request)
@@ -213,7 +214,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return await _agenerate_from_stream(stream_iter)
+            return await agenerate_from_stream(stream_iter)
 
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         response = self.client.chat(**request, stream=False)

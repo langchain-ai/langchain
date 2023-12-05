@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 _DEFAULT_TEMPLATE = """Question: Who lived longer, Muhammad Ali or Alan Turing?
 Are follow up questions needed here: Yes.
