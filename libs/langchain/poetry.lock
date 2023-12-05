@@ -4309,7 +4309,7 @@ tests = ["pandas (>=1.4)", "pytest", "pytest-asyncio", "pytest-mock"]
 
 [[package]]
 name = "langchain-core"
-version = "0.0.9"
+version = "0.0.10"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -4981,29 +4981,29 @@ files = [
 
 [[package]]
 name = "momento"
-version = "1.13.0"
+version = "1.14.1"
 description = "SDK for Momento"
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "momento-1.13.0-py3-none-any.whl", hash = "sha256:dd5ace5b8d679e882afcefaa16bc413973c270b0a7a1c6c45f3eb60b0b9526de"},
-    {file = "momento-1.13.0.tar.gz", hash = "sha256:39419627542b8f5997a777ff91aa3aaf6406b7d76fb83cd84284a0f7d1f9e356"},
+    {file = "momento-1.14.1-py3-none-any.whl", hash = "sha256:241e46669e39c19627396f2b2b027a912861f1b8097fc9f97b05b76b3d90d199"},
+    {file = "momento-1.14.1.tar.gz", hash = "sha256:d200a5e7463f7746a8a611474af1c245183d7ddf9346d9592760b78b6e801560"},
 ]
 
 [package.dependencies]
 grpcio = ">=1.46.0,<2.0.0"
-momento-wire-types = ">=0.91.1,<0.92.0"
+momento-wire-types = ">=0.96.0,<0.97.0"
 pyjwt = ">=2.4.0,<3.0.0"
 
 [[package]]
 name = "momento-wire-types"
-version = "0.91.4"
+version = "0.96.0"
 description = "Momento Client Proto Generated Files"
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "momento_wire_types-0.91.4-py3-none-any.whl", hash = "sha256:f296249693de2f6c383a397e7616b84dd83dfd466743d34b035b90865000a2a8"},
-    {file = "momento_wire_types-0.91.4.tar.gz", hash = "sha256:de8cd14a12835d95997eb9b753ea47e1a5d2916658ec9320e416da8bd835fdff"},
+    {file = "momento_wire_types-0.96.0-py3-none-any.whl", hash = "sha256:93dc0e3c31bbe1f664ce33974f235bc20e63b5e35ea8e118f0c5e5ed3cda7709"},
+    {file = "momento_wire_types-0.96.0.tar.gz", hash = "sha256:9c6c839c698741c54b9fc3a4fe0f82094ea5102418b02bb271ed6e64ea6d7d9e"},
 ]
 
 [package.dependencies]
@@ -11542,4 +11542,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "8cfc93027c76861b0f1978d7bf466d7785cce2f73e9357d11683a3bf38dd27bf"
+content-hash = "ffccc36a82a8a31fb7b1e3a4d9a024093dfaf25b6115a7c8a1fcbce9d1bb726b"
