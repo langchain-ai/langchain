@@ -94,6 +94,8 @@ _EXPECTED = [
     "RequestsPostTool",
     "RequestsPutTool",
     "SceneXplainTool",
+    "SearchAPIResults",
+    "SearchAPIRun",
     "SearxSearchResults",
     "SearxSearchRun",
     "ShellTool",
