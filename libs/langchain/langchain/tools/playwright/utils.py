@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Coroutine, List, TypeVar
+from typing import TYPE_CHECKING, Any, Coroutine, List, Optional, TypeVar
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser as AsyncBrowser
@@ -51,7 +51,7 @@ def get_current_page(browser: SyncBrowser) -> SyncPage:
 
 
 def create_async_playwright_browser(
-    headless: bool = True, args: List[str] = None
+    headless: bool = True, args: Optional[List[str]] = None
 ) -> AsyncBrowser:
     """
     Create an async playwright browser.
@@ -70,7 +70,7 @@ def create_async_playwright_browser(
 
 
 def create_sync_playwright_browser(
-    headless: bool = True, args: List[str] = None
+    headless: bool = True, args: Optional[List[str]] = None
 ) -> SyncBrowser:
     """
     Create a playwright browser.
