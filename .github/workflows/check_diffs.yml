@@ -41,14 +41,12 @@ jobs:
     outputs:
       dirs-to-run: ${{ steps.set-matrix.outputs.dirs-to-run }}
   ci:
-    runs-on: ubuntu-latest
     needs: [ build ]
     strategy:
       matrix:
         working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
-    steps:
-      - uses: ./.github/workflows/_all_ci.yml
-        with:
-          working-directory: ${{ matrix.working-directory }}
+    uses: ./.github/workflows/_all_ci.yml
+    with:
+      working-directory: ${{ matrix.working-directory }}
 
 

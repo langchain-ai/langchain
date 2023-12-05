@@ -26,36 +26,28 @@ env:
 
 jobs:
   lint:
-    steps:
-      - uses: actions/checkout@v4
-      - uses: "./.github/workflows/_lint.yml"
-        with:
-          working-directory: ${{ inputs.working-directory }}
-        secrets: inherit
+    uses: ./.github/workflows/_lint.yml
+    with:
+      working-directory: ${{ inputs.working-directory }}
+    secrets: inherit
 
   test:
-    steps:
-      - uses: actions/checkout@v4
-      - uses: "./.github/workflows/_test.yml"
-        with:
-          working-directory: ${{ inputs.working-directory }}
-        secrets: inherit
+    uses: ./.github/workflows/_test.yml
+    with:
+      working-directory: ${{ inputs.working-directory }}
+    secrets: inherit
 
   compile-integration-tests:
-    steps:
-      - uses: actions/checkout@v4
-      - uses: "./.github/workflows/_compile_integration_test.yml"
-        with:
-          working-directory: ${{ inputs.working-directory }}
-        secrets: inherit
+    uses: ./.github/workflows/_compile_integration_test.yml
+    with:
+      working-directory: ${{ inputs.working-directory }}
+    secrets: inherit
 
   pydantic-compatibility:
-    steps:
-      - uses: actions/checkout@v4
-      - uses: "./.github/workflows/_pydantic_compatibility.yml"
-        with:
-          working-directory: ${{ inputs.working-directory }}
-        secrets: inherit
+    uses: ./.github/workflows/_pydantic_compatibility.yml
+    with:
+      working-directory: ${{ inputs.working-directory }}
+    secrets: inherit
 
   extended-tests:
     runs-on: ubuntu-latest
