@@ -75,7 +75,7 @@ class Arcee(LLM):
         )
         self._client.validate_model_training_status()
 
-    @root_validator(pre=True)  # Use pre=False to pick up defaults
+    @root_validator(pre=False)
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate Arcee environment variables."""
 
