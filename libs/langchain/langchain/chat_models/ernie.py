@@ -46,7 +46,7 @@ class ErnieBotChat(BaseChatModel):
     and will be regenerated after expiration (30 days).
 
     Default model is `ERNIE-Bot-turbo`,
-    currently supported models are `ERNIE-Bot-turbo`, `ERNIE-Bot`, `ERNIE-Bot-8K`, 
+    currently supported models are `ERNIE-Bot-turbo`, `ERNIE-Bot`, `ERNIE-Bot-8K`,
     `ERNIE-Bot-4`, `ERNIE-Bot-turbo-AI`.
 
     Example:
