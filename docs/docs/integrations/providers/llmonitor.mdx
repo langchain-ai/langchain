@@ -1,0 +1,22 @@
+# LLMonitor
+
+>[LLMonitor](https://llmonitor.com?utm_source=langchain&utm_medium=py&utm_campaign=docs) is an open-source observability platform that provides cost and usage analytics, user tracking, tracing and evaluation tools.
+
+## Installation and Setup
+
+Create an account on [llmonitor.com](https://llmonitor.com?utm_source=langchain&utm_medium=py&utm_campaign=docs), then copy your new app's `tracking id`.
+
+Once you have it, set it as an environment variable by running:
+
+```bash
+export LLMONITOR_APP_ID="..."
+```
+
+
+## Callbacks
+
+See a [usage example](/docs/integrations/callbacks/llmonitor).
+
+```python
+from langchain.callbacks import LLMonitorCallbackHandler
+```
