@@ -46,7 +46,8 @@ class ErnieBotChat(BaseChatModel):
     and will be regenerated after expiration (30 days).
 
     Default model is `ERNIE-Bot-turbo`,
-    currently supported models are `ERNIE-Bot-turbo`, `ERNIE-Bot`
+    currently supported models are `ERNIE-Bot-turbo`, `ERNIE-Bot`, `ERNIE-Bot-8K`, 
+    `ERNIE-Bot-4`, `ERNIE-Bot-turbo-AI`.
 
     Example:
         .. code-block:: python
@@ -87,6 +88,11 @@ class ErnieBotChat(BaseChatModel):
     """model name of ernie, default is `ERNIE-Bot-turbo`.
       Currently supported `ERNIE-Bot-turbo`, `ERNIE-Bot`"""
 
+    system: Optional[str] = None
+    """system is mainly used for model character design, 
+    for example, you are an AI assistant produced by xxx company.
+    The length of the system is limiting of 1024 characters."""
+
     request_timeout: Optional[int] = 60
     """request timeout for chat http requests"""
 
@@ -123,6 +129,7 @@ class ErnieBotChat(BaseChatModel):
             "ERNIE-Bot": "completions",
             "ERNIE-Bot-8K": "ernie_bot_8k",
             "ERNIE-Bot-4": "completions_pro",
+            "ERNIE-Bot-turbo-AI": "ai_apaas",
             "BLOOMZ-7B": "bloomz_7b1",
             "Llama-2-7b-chat": "llama_2_7b",
             "Llama-2-13b-chat": "llama_2_13b",
@@ -180,6 +187,7 @@ class ErnieBotChat(BaseChatModel):
             "top_p": self.top_p,
             "temperature": self.temperature,
             "penalty_score": self.penalty_score,
+            "system": self.system,
             **kwargs,
         }
         logger.debug(f"Payload for ernie api is {payload}")
