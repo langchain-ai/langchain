@@ -22,15 +22,21 @@ class TestJaguar:
 
     @classmethod
     def setup_class(cls) -> None:
-        cls.url = "http://127.0.0.1:8080/fwww/"
+        url = "http://127.0.0.1:8080/fwww/"
         cls.pod = "vdb"
         cls.store = "langchain_test_store"
-        cls.vector_index = "v"
-        cls.vector_type = "cosine_fraction_float"
-        cls.vector_dimension = 10
+        vector_index = "v"
+        vector_type = "cosine_fraction_float"
+        vector_dimension = 10
         embeddings = ConsistentFakeEmbeddings()
-        cls.vectorstore = Jaguar(cls.pod, cls.store, cls.vector_index, 
-            cls.vector_type, cls.vector_dimension, cls.url, embeddings
+        cls.vectorstore = Jaguar(
+            cls.pod,
+            cls.store,
+            vector_index,
+            vector_type,
+            vector_dimension,
+            url,
+            embeddings,
         )
 
     @classmethod
@@ -50,7 +56,7 @@ class TestJaguar:
         and 'v:text' to hold text and metadatas author and category
         """
         metadata_str = "author char(32), category char(16)"
-        self.vectorstore.create( metadata_str, 1024)
+        self.vectorstore.create(metadata_str, 1024)
 
         podstore = self.pod + "." + self.store
         js = self.vectorstore.run(f"desc {podstore}")
@@ -68,9 +74,7 @@ class TestJaguar:
             {"author": "John", "category": "History"},
         ]
 
-        ids = self.vectorstore.add_texts(
-            texts=texts, metadatas=metadatas 
-        )
+        ids = self.vectorstore.add_texts(texts=texts, metadatas=metadatas)
         assert len(ids) == len(texts)
 
     def test_search(self) -> None:

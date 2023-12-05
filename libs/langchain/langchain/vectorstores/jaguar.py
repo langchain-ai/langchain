@@ -25,8 +25,8 @@ class Jaguar(VectorStore):
            from langchain.vectorstores import Jaguar
 
            vectorstore = Jaguar(
-               pod = 'vdb',  
-               store = 'mystore',  
+               pod = 'vdb',
+               store = 'mystore',
                vector_index = 'v',
                vector_type = 'cosine_fraction_float',
                vector_dimension = 1536,
@@ -35,15 +35,16 @@ class Jaguar(VectorStore):
            )
     """
 
-    def __init__(self, 
-            pod: str, 
-            store: str, 
-            vector_index: str, 
-            vector_type: str,
-            vector_dimension: int,
-            url: str,
-            embedding: Embeddings,
-        ):
+    def __init__(
+        self,
+        pod: str,
+        store: str,
+        vector_index: str,
+        vector_type: str,
+        vector_dimension: int,
+        url: str,
+        embedding: Embeddings,
+    ):
         self._pod = pod
         self._store = store
         self._vector_index = vector_index
@@ -55,8 +56,9 @@ class Jaguar(VectorStore):
         self._jag = JaguarHttpClient(url)
         self._token = ""
 
-    def login(self, 
-            jaguar_api_key: Optional[str] = "",
+    def login(
+        self,
+        jaguar_api_key: Optional[str] = "",
     ) -> bool:
         """
         login to jaguardb server with a jaguar_api_key or let self._jag find a key
@@ -77,9 +79,10 @@ class Jaguar(VectorStore):
             return False
         return True
 
-    def create(self, 
-            metadata_str: str, 
-            text_size: int,
+    def create(
+        self,
+        metadata_str: str,
+        text_size: int,
     ) -> None:
         """
         create the vector store on the backend database
@@ -90,13 +93,13 @@ class Jaguar(VectorStore):
         """
         podstore = self._pod + "." + self._store
 
-        ''' 
+        """
         source column is required.
         v:text column is required.
-        '''
+        """
         q = "create store "
         q += podstore
-        q += f" ({self._vector_index} vector({self._vector_dimension}," 
+        q += f" ({self._vector_index} vector({self._vector_dimension},"
         q += f" '{self._vector_type}'),"
         q += f" source char(256), v:text char({text_size}),"
         q += metadata_str + ")"
@@ -341,12 +344,17 @@ class Jaguar(VectorStore):
         url: str,
         pod: str,
         store: str,
+        vector_index: str,
+        vector_type: str,
+        vector_dimension: int,
         metadatas: Optional[List[dict]] = None,
         jaguar_api_key: Optional[str] = "",
         **kwargs: Any,
     ) -> Jaguar:
-        jagstore = cls(url, embedding)
-        jagstore.login(pod, store, jaguar_api_key)
+        jagstore = cls(
+            pod, store, vector_index, vector_type, vector_dimension, url, embedding
+        )
+        jagstore.login(jaguar_api_key)
         jagstore.clear()
         jagstore.add_texts(texts, metadatas, **kwargs)
         return jagstore
