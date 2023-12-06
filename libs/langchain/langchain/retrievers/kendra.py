@@ -452,7 +452,7 @@ class AmazonKendraRetriever(BaseRetriever):
             if (
                 item.metadata.get("score") is not None
                 and isinstance(item.metadata["score"], str)
-                and KENDRA_CONFIDENCE_MAPPING.get(str(item.metadata["score"]), 0.0)
+                and KENDRA_CONFIDENCE_MAPPING.get(item.metadata["score"], 0.0)
                 >= self.min_score_confidence
             )
         ]
