@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
+from typing import Dict, Iterator, List, Optional, Sequence, Tuple
 
 from langchain_core.documents import Document
 
@@ -332,8 +332,8 @@ class AzureSpeechServiceParser(BaseBlobParser):
         endpoint: Optional[str] = None,
         log_path: Optional[str] = None,
         polling_interval_seconds: float = 0.5,
-        auto_detect_languages: Optional[bool] = None,
-        speech_recognition_language: Optional[Sequence[str]] = None,
+        auto_detect_languages: Optional[list[str]] = None,
+        speech_recognition_language: Optional[str] = None,
         speech_config_kwargs: Optional[dict] = None,
     ) -> None:
         """Initialize the parser.
