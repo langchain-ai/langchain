@@ -791,7 +791,7 @@ files = [
 name = "dnspython"
 version = "2.4.2"
 description = "DNS toolkit"
-optional = false
+optional = true
 python-versions = ">=3.8,<4.0"
 files = [
     {file = "dnspython-2.4.2-py3-none-any.whl", hash = "sha256:57c6fbaaeaaf39c891292012060beb141791735dbb4004798328fc2c467402d8"},
@@ -2839,7 +2839,7 @@ plugins = ["importlib-metadata"]
 name = "pymongo"
 version = "4.6.1"
 description = "Python driver for MongoDB <http://www.mongodb.org>"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "pymongo-4.6.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:4344c30025210b9fa80ec257b0e0aab5aa1d5cca91daa70d82ab97b482cc038e"},
@@ -5052,4 +5052,4 @@ extended-testing = ["faker", "presidio-analyzer", "presidio-anonymizer", "pymong
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5e50baa9b557fa4853469ffe6c62be01928e3bd0be642d6ef6d53a516b068af0"
+content-hash = "a299bf636b758f1242cfbd5d944c9d82e3d73fcb2a37faa910cc8617f7b1a98c"
