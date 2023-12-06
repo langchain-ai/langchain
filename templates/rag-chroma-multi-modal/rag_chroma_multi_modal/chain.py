@@ -10,6 +10,7 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.vectorstores import Chroma
 from langchain_experimental.open_clip import OpenCLIPEmbeddings
+from langchain_core.prompts.chat import ChatPromptTemplate
 from PIL import Image
 
 
@@ -53,25 +54,41 @@ def img_prompt_func(data_dict, num_images=2):
     :param num_images: Number of images to include in the prompt.
     :return: A list containing message objects for each image and the text prompt.
     """
-    messages = []
-    if data_dict["context"]["images"]:
-        for image in data_dict["context"]["images"][:num_images]:
-            image_message = {
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{image}"},
-            }
-            messages.append(image_message)
-    text_message = {
-        "type": "text",
-        "text": (
-            "You are an analyst tasked with answering questions about visual content.\n"
-            "You will be give a set of image(s) from a slide deck / presentation.\n"
-            "Use this information to answer the user question. \n"
-            f"User-provided question: {data_dict['question']}\n\n"
+
+    # Base template
+    template_messages = [
+        (
+            "system",
+            "You are an analyst tasked with answering questions about visual content. \n"
+            "You will be given a set of image(s) from a slide deck / presentation.\n",
         ),
-    }
-    messages.append(text_message)
-    return [HumanMessage(content=messages)]
+        (
+            "human",
+            [
+                {
+                    "type": "text",
+                    "text": "Answer the question using the images. Question: {question}",
+                }
+            ],
+        ),
+    ]
+
+    # Add images
+    images = data_dict["context"]["images"]
+    for i in range(min(num_images, len(images))):
+        image_message = {
+            "type": "image_url",
+            "image_url": {"url": f"data:image/jpeg;base64,{images[i]}"},
+        }
+        template_messages[1][1].append(image_message)
+
+    # Format
+    rag_prompt = ChatPromptTemplate.from_messages(template_messages)
+    rag_prompt_formatted = rag_prompt.format_messages(
+        question=data_dict["question"],
+    )
+
+    return rag_prompt_formatted
 
 
 def multi_modal_rag_chain(retriever):
