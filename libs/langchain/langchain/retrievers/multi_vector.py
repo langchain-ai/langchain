@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field, validator
@@ -38,7 +38,7 @@ class MultiVectorRetriever(BaseRetriever):
 
     @validator("docstore", pre=True, always=True)
     def shim_docstore(
-        cls, docstore: Optional[BaseStore[str, Document]], values: any
+        cls, docstore: Optional[BaseStore[str, Document]], values: Any
     ) -> BaseStore[str, Document]:
         base_store = values.get("base_store")
         if base_store is not None:
