@@ -27,7 +27,8 @@ def test__convert_dict_to_message_system() -> None:
     message = SystemMessage(content="foo")
     with pytest.raises(ValueError) as e:
         _convert_message_to_dict(message)
-    assert "Got unknown type" in str(e)
+    expected_output = {"role": "system", "content": "foo"}
+    assert result == expected_output
 
 
 def test__convert_dict_to_message_function() -> None:
