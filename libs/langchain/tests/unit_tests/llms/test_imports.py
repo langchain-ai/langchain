@@ -82,6 +82,8 @@ EXPECT_ALL = [
     "JavelinAIGateway",
     "QianfanLLMEndpoint",
     "YandexGPT",
+    "VolcEngineMaasLLM",
+    "WatsonxLLM",
 ]
 
 

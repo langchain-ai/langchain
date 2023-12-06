@@ -1,7 +1,7 @@
 """Generic Wrapper for chat LLMs, with sample implementations
 for Llama-2-chat, Llama-2-instruct and Vicuna models.
 """
-from typing import Any, List, Optional
+from typing import Any, List, Optional, cast
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -90,8 +90,12 @@ class ChatWrapper(BaseChatModel):
         if self.usr_0_end is None:
             self.usr_0_end = self.usr_n_end
 
-        prompt_parts.append(self.sys_beg + messages[0].content + self.sys_end)
-        prompt_parts.append(self.usr_0_beg + messages[1].content + self.usr_0_end)
+        prompt_parts.append(
+            self.sys_beg + cast(str, messages[0].content) + self.sys_end
+        )
+        prompt_parts.append(
+            self.usr_0_beg + cast(str, messages[1].content) + self.usr_0_end
+        )
 
         for ai_message, human_message in zip(messages[2::2], messages[3::2]):
             if not isinstance(ai_message, AIMessage) or not isinstance(
@@ -102,8 +106,12 @@ class ChatWrapper(BaseChatModel):
                     "optionally prepended by a system message"
                 )
 
-            prompt_parts.append(self.ai_n_beg + ai_message.content + self.ai_n_end)
-            prompt_parts.append(self.usr_n_beg + human_message.content + self.usr_n_end)
+            prompt_parts.append(
+                self.ai_n_beg + cast(str, ai_message.content) + self.ai_n_end
+            )
+            prompt_parts.append(
+                self.usr_n_beg + cast(str, human_message.content) + self.usr_n_end
+            )
 
         return "".join(prompt_parts)
 

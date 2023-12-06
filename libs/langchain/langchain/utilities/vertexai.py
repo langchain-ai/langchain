@@ -1,13 +1,44 @@
 """Utilities to init Vertex AI."""
 from importlib import metadata
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+
+from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 
 if TYPE_CHECKING:
     from google.api_core.gapic_v1.client_info import ClientInfo
     from google.auth.credentials import Credentials
 
 
-def raise_vertex_import_error(minimum_expected_version: str = "1.35.0") -> None:
+def create_retry_decorator(
+    llm: BaseLLM,
+    *,
+    max_retries: int = 1,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
+    """Creates a retry decorator for Vertex / Palm LLMs."""
+    import google.api_core
+
+    errors = [
+        google.api_core.exceptions.ResourceExhausted,
+        google.api_core.exceptions.ServiceUnavailable,
+        google.api_core.exceptions.Aborted,
+        google.api_core.exceptions.DeadlineExceeded,
+        google.api_core.exceptions.GoogleAPIError,
+    ]
+    decorator = create_base_retry_decorator(
+        error_types=errors, max_retries=max_retries, run_manager=run_manager
+    )
+    return decorator
+
+
+def raise_vertex_import_error(minimum_expected_version: str = "1.36.0") -> None:
     """Raise ImportError related to Vertex SDK being not available.
 
     Args:
@@ -16,7 +47,7 @@ def raise_vertex_import_error(minimum_expected_version: str = "1.35.0") -> None:
         ImportError: an ImportError that mentions a required version of the SDK.
     """
     raise ImportError(
-        "Could not import VertexAI. Please, install it with "
+        "Please, install or upgrade the google-cloud-aiplatform library: "
         f"pip install google-cloud-aiplatform>={minimum_expected_version}"
     )
 

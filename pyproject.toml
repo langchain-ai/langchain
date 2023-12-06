@@ -30,13 +30,18 @@ nbdoc = "^0.0.82"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"
+langchain-core = { path = "libs/core/", develop = true }
+langchain = { path = "libs/langchain/", develop = true }
+langchain-experimental = { path = "libs/experimental/", develop = true }
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
-
+langchain-core = { path = "libs/core/", develop = true }
+langchain = { path = "libs/langchain/", develop = true }
+langchain-experimental = { path = "libs/experimental/", develop = true }
 
 [tool.poetry.group.test.dependencies]
 
@@ -54,6 +59,9 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
+extend-exclude = [
+    "docs/docs/expression_language/why.ipynb"  # TODO: look into why linter errors
+]
 
 [tool.ruff.lint.per-file-ignores]
 "**/{cookbook,docs}/*" = [

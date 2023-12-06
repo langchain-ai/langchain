@@ -4,13 +4,11 @@ from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     Dict,
     Iterator,
     List,
     Optional,
-    Union,
 )
 
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
@@ -20,8 +18,9 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import BaseLLM, create_base_retry_decorator
+from langchain.llms.base import BaseLLM
 from langchain.utilities.vertexai import (
+    create_retry_decorator,
     get_client_info,
     init_vertexai,
     raise_vertex_import_error,
@@ -65,27 +64,6 @@ def is_codey_model(model_name: str) -> bool:
     return "code" in model_name
 
 
-def _create_retry_decorator(
-    llm: VertexAI,
-    *,
-    run_manager: Optional[
-        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
-    ] = None,
-) -> Callable[[Any], Any]:
-    import google.api_core
-
-    errors = [
-        google.api_core.exceptions.ResourceExhausted,
-        google.api_core.exceptions.ServiceUnavailable,
-        google.api_core.exceptions.Aborted,
-        google.api_core.exceptions.DeadlineExceeded,
-    ]
-    decorator = create_base_retry_decorator(
-        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
-    )
-    return decorator
-
-
 def completion_with_retry(
     llm: VertexAI,
     *args: Any,
@@ -93,7 +71,7 @@ def completion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+    retry_decorator = create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
@@ -109,7 +87,9 @@ def stream_completion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+    retry_decorator = create_retry_decorator(
+        llm, max_retries=llm.max_retries, run_manager=run_manager
+    )
 
     @retry_decorator
     def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
@@ -125,7 +105,7 @@ async def acompletion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+    retry_decorator = create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     async def _acompletion_with_retry(*args: Any, **kwargs: Any) -> Any:
@@ -159,6 +139,7 @@ class _VertexAIBase(BaseModel):
 
 class _VertexAICommon(_VertexAIBase):
     client: "_LanguageModel" = None  #: :meta private:
+    client_preview: "_LanguageModel" = None  #: :meta private:
     model_name: str
     "Underlying model name."
     temperature: float = 0.0
@@ -195,19 +176,19 @@ class _VertexAICommon(_VertexAIBase):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        if self.is_codey_model:
-            return {
-                "temperature": self.temperature,
-                "max_output_tokens": self.max_output_tokens,
-            }
-        else:
-            return {
-                "temperature": self.temperature,
-                "max_output_tokens": self.max_output_tokens,
-                "top_k": self.top_k,
-                "top_p": self.top_p,
-                "candidate_count": self.n,
-            }
+        params = {
+            "temperature": self.temperature,
+            "max_output_tokens": self.max_output_tokens,
+            "candidate_count": self.n,
+        }
+        if not self.is_codey_model:
+            params.update(
+                {
+                    "top_k": self.top_k,
+                    "top_p": self.top_p,
+                }
+            )
+        return params
 
     @classmethod
     def _try_init_vertexai(cls, values: Dict) -> None:
@@ -250,24 +231,33 @@ class VertexAI(_VertexAICommon, BaseLLM):
         tuned_model_name = values.get("tuned_model_name")
         model_name = values["model_name"]
         try:
-            if not is_codey_model(model_name):
-                from vertexai.preview.language_models import TextGenerationModel
+            from vertexai.language_models import (
+                CodeGenerationModel,
+                TextGenerationModel,
+            )
+            from vertexai.preview.language_models import (
+                CodeGenerationModel as PreviewCodeGenerationModel,
+            )
+            from vertexai.preview.language_models import (
+                TextGenerationModel as PreviewTextGenerationModel,
+            )
 
-                if tuned_model_name:
-                    values["client"] = TextGenerationModel.get_tuned_model(
-                        tuned_model_name
-                    )
-                else:
-                    values["client"] = TextGenerationModel.from_pretrained(model_name)
+            if is_codey_model(model_name):
+                model_cls = CodeGenerationModel
+                preview_model_cls = PreviewCodeGenerationModel
             else:
-                from vertexai.preview.language_models import CodeGenerationModel
+                model_cls = TextGenerationModel
+                preview_model_cls = PreviewTextGenerationModel
 
-                if tuned_model_name:
-                    values["client"] = CodeGenerationModel.get_tuned_model(
-                        tuned_model_name
-                    )
-                else:
-                    values["client"] = CodeGenerationModel.from_pretrained(model_name)
+            if tuned_model_name:
+                values["client"] = model_cls.get_tuned_model(tuned_model_name)
+                values["client_preview"] = preview_model_cls.get_tuned_model(
+                    tuned_model_name
+                )
+            else:
+                values["client"] = model_cls.from_pretrained(model_name)
+                values["client_preview"] = preview_model_cls.from_pretrained(model_name)
+
         except ImportError:
             raise_vertex_import_error()
 
@@ -287,12 +277,9 @@ class VertexAI(_VertexAICommon, BaseLLM):
             The integer number of tokens in the text.
         """
         try:
-            result = self.client.count_tokens([text])
+            result = self.client_preview.count_tokens([text])
         except AttributeError:
-            raise NotImplementedError(
-                "Your google-cloud-aiplatform version didn't implement count_tokens."
-                "Please, install it with pip install google-cloud-aiplatform>=1.35.0"
-            )
+            raise_vertex_import_error()
 
         return result.total_tokens
 
@@ -319,12 +306,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 res = completion_with_retry(
                     self, prompt, run_manager=run_manager, **params
                 )
-                if self.is_codey_model:
-                    generations.append([_response_to_generation(res)])
-                else:
-                    generations.append(
-                        [_response_to_generation(r) for r in res.candidates]
-                    )
+                generations.append([_response_to_generation(r) for r in res.candidates])
         return LLMResult(generations=generations)
 
     async def _agenerate(
@@ -405,12 +387,15 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         values["async_client"] = PredictionServiceAsyncClient(
             client_options=client_options, client_info=client_info
         )
-        values["endpoint_path"] = values["client"].endpoint_path(
-            project=values["project"],
-            location=values["location"],
-            endpoint=values["endpoint_id"],
-        )
         return values
+
+    @property
+    def endpoint_path(self) -> str:
+        return self.client.endpoint_path(
+            project=self.project,
+            location=self.location,
+            endpoint=self.endpoint_id,
+        )
 
     @property
     def _llm_type(self) -> str:
