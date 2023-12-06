@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, cast
 
 import requests
 from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
@@ -92,8 +92,9 @@ class CerebriumAI(LLM):
         **kwargs: Any,
     ) -> str:
         headers: Dict = {
-            "Authorization": self.cerebriumai_api_key
-            and self.cerebriumai_api_key.get_secret_value(),
+            "Authorization": cast(
+                SecretStr, self.cerebriumai_api_key
+            ).get_secret_value(),
             "Content-Type": "application/json",
         }
         params = self.model_kwargs or {}
