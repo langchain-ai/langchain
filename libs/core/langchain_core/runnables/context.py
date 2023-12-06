@@ -277,8 +277,8 @@ class ContextSet(RunnableSerializable):
 
 class Context:
     @staticmethod
-    def create_scope(pefix: str, /) -> "PrefixContext":
-        return PrefixContext(prefix=pefix)
+    def create_scope(scope: str, /) -> "PrefixContext":
+        return PrefixContext(prefix=scope)
 
     @staticmethod
     def getter(key: Union[str, List[str]], /) -> ContextGet:
