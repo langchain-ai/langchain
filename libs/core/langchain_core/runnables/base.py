@@ -1423,7 +1423,6 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # assign context dependencies
         for pos, (spec, idx) in enumerate(all_specs):
             if spec.id.startswith(CONTEXT_CONFIG_PREFIX):
-                print(spec.id, deps_by_pos[idx])
                 all_specs[pos] = (
                     ConfigurableFieldSpec(
                         id=spec.id,
