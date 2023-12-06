@@ -13,7 +13,7 @@ tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
-	poetry run ptw --snapshot-update --now . -- -x tests/unit_tests
+	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
 
 
 ######################
@@ -30,6 +30,7 @@ lint lint_diff:
 	./scripts/check_imports.sh
 	poetry run ruff .
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || poetry run mypy $(PYTHON_FILES)
 
 format format_diff:

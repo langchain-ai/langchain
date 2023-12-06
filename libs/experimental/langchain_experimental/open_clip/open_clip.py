@@ -19,8 +19,8 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
             # model_name = "ViT-B-32"
             # checkpoint = "laion2b_s34b_b79k"
             ### Larger, more performant
-            model_name = "ViT-g-14"
-            checkpoint = "laion2b_s34b_b88k"
+            model_name = "ViT-H-14"
+            checkpoint = "laion2b_s32b_b79k"
             model, _, preprocess = open_clip.create_model_and_transforms(
                 model_name=model_name, pretrained=checkpoint
             )
