@@ -697,7 +697,7 @@ class ChatOpenAI(BaseChatModel):
         """
         from langchain.chains.openai_functions.base import convert_to_openai_function
 
-        formatted_tools = [
+        formatted_tools: Dict[str, Union[str, dict]] = [
             {"type": "function", "function": convert_to_openai_function(tool)}
             for tool in tools
         ]
