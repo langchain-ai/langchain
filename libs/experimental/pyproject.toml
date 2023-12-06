@@ -53,6 +53,7 @@ extended_testing = [
  "faker",
  "vowpal-wabbit-next",
  "sentence-transformers",
+ "pymongo",
 ]
 
 [tool.ruff]
