@@ -352,10 +352,24 @@ class LLMChain(Chain):
         self, generation: List[Dict[str, str]]
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         if self.prompt.output_parser is not None:
-            return [
-                self.prompt.output_parser.parse(res[self.output_key])
-                for res in generation
-            ]
+            # This fails for map_rerank if the output does not
+            # generate a score. This causes the code to crash as
+            # the RegexParser fails. A natural fix is to add a
+            # score 0 for the generation in the required format.
+            try:
+                return [
+                    self.prompt.output_parser.parse(res[self.output_key])
+                    for res in generation
+                ]
+            except Exception as e:
+                # Add score 0 as in the form r"(.*?)\nScore: (.*)" 
+                # to avoid error when parsing in every res 
+                # when the output does not generate a score.
+                return [
+                    self.prompt.output_parser.parse(res[self.output_key]
+                        + "\nScore: 0")
+                    for res in generation
+                ]
         else:
             return generation
 
