@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 
@@ -30,7 +30,7 @@ class Arcee(LLM):
     _client: Optional[ArceeWrapper] = None  #: :meta private:
     """Arcee _client."""
 
-    arcee_api_key: Optional[SecretStr] = None
+    arcee_api_key: Union[SecretStr, str, None] = None
     """Arcee API Key"""
 
     model: str
@@ -66,15 +66,16 @@ class Arcee(LLM):
         """Initializes private fields."""
 
         super().__init__(**data)
+        api_key = cast(SecretStr, self.arcee_api_key)
         self._client = ArceeWrapper(
-            arcee_api_key=cast(SecretStr, self.arcee_api_key),
+            arcee_api_key=api_key,
             arcee_api_url=self.arcee_api_url,
             arcee_api_version=self.arcee_api_version,
             model_kwargs=self.model_kwargs,
             model_name=self.model,
         )
 
-    @root_validator()
+    @root_validator(pre=False)
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate Arcee environment variables."""
 
@@ -106,7 +107,7 @@ class Arcee(LLM):
         )
 
         # validate model kwargs
-        if values["model_kwargs"]:
+        if values.get("model_kwargs"):
             kw = values["model_kwargs"]
 
             # validate size
@@ -120,7 +121,6 @@ class Arcee(LLM):
                     raise ValueError("`filters` must be a list")
                 for f in kw.get("filters"):
                     DALMFilter(**f)
-
         return values
 
     def _call(

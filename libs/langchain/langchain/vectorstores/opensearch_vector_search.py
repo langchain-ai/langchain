@@ -414,7 +414,7 @@ class OpenSearchVectorSearch(VectorStore):
             metadatas=metadatas,
             ids=ids,
             bulk_size=bulk_size,
-            kwargs=kwargs,
+            **kwargs,
         )
 
     def add_embeddings(
@@ -451,7 +451,7 @@ class OpenSearchVectorSearch(VectorStore):
             metadatas=metadatas,
             ids=ids,
             bulk_size=bulk_size,
-            kwargs=kwargs,
+            **kwargs,
         )
 
     def similarity_search(

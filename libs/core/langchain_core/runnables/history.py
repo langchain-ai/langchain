@@ -46,8 +46,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             from typing import Optional
 
-            from langchain_core.chat_models import ChatAnthropic
-            from langchain_core.memory.chat_message_histories import RedisChatMessageHistory
+            from langchain.chat_models import ChatAnthropic
+            from langchain.memory.chat_message_histories import RedisChatMessageHistory
+
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
             from langchain_core.runnables.history import RunnableWithMessageHistory
 
@@ -279,7 +280,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             example_input = {self.input_messages_key: "foo"}
             example_config = {"configurable": {"session_id": "123"}}
             raise ValueError(
-                "session_id_id is required."
+                "session_id is required."
                 " Pass it in as part of the config argument to .invoke() or .stream()"
                 f"\neg. chain.invoke({example_input}, {example_config})"
             )
