@@ -3,15 +3,16 @@ from typing import List
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
-from langchain.tools.mongo_database.tool import (
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.pydantic_v1 import Field
+
+from langchain_experimental.tools.mongo_database.tool import (
     InfoMongoDBTool,
     ListMongoDBTool,
     QueryMongoDBCheckerTool,
     QueryMongoDBTool,
 )
-from langchain.utilities.mongo_database import MongoDatabase
-from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Field
+from langchain_experimental.utilities.mongo_database import MongoDatabase
 
 
 class MongoDatabaseToolkit(BaseToolkit):
