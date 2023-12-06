@@ -22,6 +22,7 @@ numpy = "^1"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
+httpx = "^0.24.1"
 azure-core = {version = "^1.26.4", optional=true}
 tqdm = {version = ">=4.48.0", optional = true}
 openapi-pydantic = {version = "^0.3.2", optional = true}
