@@ -118,7 +118,7 @@ class OCIModelDeploymentLLM(BaseOCILLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+        **kwargs: Optional[Any],
     ) -> str:
         """Call out to OCI Data Science Model Deployment endpoint.
 
@@ -154,8 +154,8 @@ class OCIModelDeploymentLLM(BaseOCILLM):
         self,
         data: Any,
         endpoint: str,
-        header: dict = {},
-        **kwargs,
+        header: Optional[dict] = {},
+        **kwargs: Optional[Any],
     ) -> Dict:
         """Sends request to the oci data science model deployment endpoint.
 
@@ -167,7 +167,8 @@ class OCIModelDeploymentLLM(BaseOCILLM):
             header (dict, optional):
                 A dictionary of HTTP headers to send to the specified url.
                 Defaults to {}.
-
+            kwargs:
+                Additional ``**kwargs`` to pass to requests.post.
         Raises:
             Exception:
                 Raise when invoking fails.
