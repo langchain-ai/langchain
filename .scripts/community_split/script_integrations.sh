@@ -215,9 +215,11 @@ rm community/langchain_community/vectorstores/base.py
 rm community/langchain_community/callbacks/{base,stdout,streaming_stdout}.py
 rm community/langchain_community/callbacks/tracers/{base,evaluation,langchain,langchain_v1,log_stream,root_listeners,run_collector,schemas,stdout}.py
 
-git checkout master -- langchain/tests/unit_tests/chat_models/test_base.py
-git checkout master -- langchain/tests/unit_tests/llms/test_base.py
-git checkout master -- langchain/tests/unit_tests/tools/test_base.py
+git checkout master -- langchain/tests/unit_tests/{chat_models,llms,tools,callbacks,document_loaders}/test_base.py
+git checkout master -- langchain/tests/unit_tests/{callbacks,docstore,document_loaders,document_transformers,embeddings,graphs,llms,chat_models,storage,tools,utilities,vectorstores}/test_imports.py
+git checkout master -- langchain/tests/unit_tests/document_loaders/blob_loaders/test_public_api.py
+git checkout master -- langchain/tests/unit_tests/document_loaders/parsers/test_public_api.py
+git checkout master -- langchain/tests/unit_tests/vectorstores/test_public_api.py
 git checkout master -- langchain/tests/unit_tests/schema
 touch langchain/tests/unit_tests/{llms,chat_models,tools,callbacks,runnables}/__init__.py
 
