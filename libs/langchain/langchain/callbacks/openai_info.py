@@ -30,7 +30,7 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-3.5-turbo-16k": 0.003,
     "gpt-3.5-turbo-16k-0613": 0.003,
     # GPT-3.5 output
-    "gpt-3.5-turbo-1106": 0.002,
+    "gpt-3.5-turbo-1106-completion": 0.002,
     "gpt-3.5-turbo-completion": 0.002,
     "gpt-3.5-turbo-0301-completion": 0.002,
     "gpt-3.5-turbo-0613-completion": 0.002,
