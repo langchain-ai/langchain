@@ -2,6 +2,7 @@ from enum import Enum
 from typing import List, Optional
 
 from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Field, validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore
 from langchain_core.vectorstores import VectorStore
@@ -25,36 +26,26 @@ class MultiVectorRetriever(BaseRetriever):
     vectorstore: VectorStore
     """The underlying vectorstore to use to store small chunks
     and their embedding vectors"""
-    docstore: BaseStore[str, Document]
-    """The storage layer for the parent documents"""
-    id_key: str
-    search_kwargs: dict
+    base_store: Optional[BaseStore[str, bytes]]
+    """The lower-level backing storage layer for the parent documents"""
+    docstore: Optional[BaseStore[str, Document]]
+    """The storage interface for the parent documents"""
+    id_key: str = "doc_id"
+    search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass to the search function."""
-    search_type: SearchType
+    search_type: SearchType = SearchType.similarity
     """Type of search to perform (similarity / mmr)"""
 
-    def __init__(
-        self,
-        *,
-        vectorstore: VectorStore,
-        docstore: Optional[BaseStore[str, Document]] = None,
-        base_store: Optional[BaseStore[str, bytes]] = None,
-        id_key: str = "doc_id",
-        search_kwargs: Optional[dict] = None,
-        search_type: SearchType = SearchType.similarity,
-    ):
+    @validator("docstore", pre=True, always=True)
+    def shim_docstore(
+        cls, docstore: Optional[BaseStore[str, Document]], values: any
+    ) -> BaseStore[str, Document]:
+        base_store = values.get("base_store")
         if base_store is not None:
             docstore = create_kv_docstore(base_store)
         elif docstore is None:
             raise Exception("You must pass a `base_store` parameter.")
-
-        super().__init__(
-            vectorstore=vectorstore,
-            docstore=docstore,
-            id_key=id_key,
-            search_kwargs=search_kwargs if search_kwargs is not None else {},
-            search_type=search_type,
-        )
+        return docstore
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
