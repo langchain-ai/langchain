@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Mapping, Optional
 
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import Field, SecretStr
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -14,7 +14,7 @@ class Predibase(LLM):
     """
 
     model: str
-    predibase_api_key: str
+    predibase_api_key: SecretStr
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     @property
@@ -31,7 +31,7 @@ class Predibase(LLM):
         try:
             from predibase import PredibaseClient
 
-            pc = PredibaseClient(token=self.predibase_api_key)
+            pc = PredibaseClient(token=self.predibase_api_key.get_secret_value())
         except ImportError as e:
             raise ImportError(
                 "Could not import Predibase Python package. "
