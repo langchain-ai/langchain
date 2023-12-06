@@ -1,6 +1,14 @@
 """MongoDB agent."""
 from typing import Any, Dict, List, Optional, Sequence
 
+from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
+from langchain.agents.agent_types import AgentType
+from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
+from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
+from langchain.callbacks.base import BaseCallbackManager
+from langchain.chains.llm import LLMChain
+from langchain.tools import BaseTool
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.prompts.chat import (
@@ -9,20 +17,14 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
 )
 
-from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
-from langchain.agents.agent_toolkits.mongo.prompt import (
+from langchain_experimental.agents.agent_toolkits.mongo.prompt import (
     MONGO_FUNCTIONS_SUFFIX,
     MONGO_PREFIX,
     MONGO_SUFFIX,
 )
-from langchain.agents.agent_toolkits.mongo.toolkit import MongoDatabaseToolkit
-from langchain.agents.agent_types import AgentType
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.chains.llm import LLMChain
-from langchain.tools import BaseTool
+from langchain_experimental.agents.agent_toolkits.mongo.toolkit import (
+    MongoDatabaseToolkit,
+)
 
 
 def create_mongo_agent(

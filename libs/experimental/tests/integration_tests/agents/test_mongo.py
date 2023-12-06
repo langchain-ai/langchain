@@ -1,13 +1,13 @@
-from langchain.agents import create_mongo_agent
-from langchain.agents.agent_toolkits import MongoDatabaseToolkit
-from langchain.utilities.mongo_database import MongoDatabase
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain_experimental.agents.agent_toolkits import (
+    MongoDatabaseToolkit,
+    create_mongo_agent,
+)
+from langchain_experimental.utilities import MongoDatabase
+from tests.unit_tests.fake_llm import FakeLLM
 
 
 def test_create_mongo_agent() -> None:
-    db = MongoDatabase.from_uri(
-        "mongodb://%2Ftmp%2Fmongodb-27017.sock/test_db?inMemory=true"
-    )
+    db = MongoDatabase.from_uri("mongodb://localhost:27017/test_db")
     queries = {"foo": "Final Answer: baz"}
     llm = FakeLLM(queries=queries, sequential_responses=True)
     toolkit = MongoDatabaseToolkit(db=db, llm=llm)

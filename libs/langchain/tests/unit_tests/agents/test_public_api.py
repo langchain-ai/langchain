@@ -22,7 +22,6 @@ _EXPECTED = [
     "XMLAgent",
     "ZeroShotAgent",
     "create_json_agent",
-    "create_mongo_agent",
     "create_openapi_agent",
     "create_pbi_agent",
     "create_pbi_chat_agent",

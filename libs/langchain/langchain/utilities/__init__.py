@@ -146,12 +146,6 @@ def _import_metaphor_search() -> Any:
     return MetaphorSearchAPIWrapper
 
 
-def _import_mongo_database() -> Any:
-    from langchain.utilities.mongo_database import MongoDatabase
-
-    return MongoDatabase
-
-
 def _import_openweathermap() -> Any:
     from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 
@@ -307,8 +301,6 @@ def __getattr__(name: str) -> Any:
         return _import_merriam_webster()
     elif name == "MetaphorSearchAPIWrapper":
         return _import_metaphor_search()
-    elif name == "MongoDatabase":
-        return _import_mongo_database()
     elif name == "OpenWeatherMapAPIWrapper":
         return _import_openweathermap()
     elif name == "OutlineAPIWrapper":
@@ -373,7 +365,6 @@ __all__ = [
     "MaxComputeAPIWrapper",
     "MerriamWebsterAPIWrapper",
     "MetaphorSearchAPIWrapper",
-    "MongoDatabase",
     "OpenWeatherMapAPIWrapper",
     "OutlineAPIWrapper",
     "Portkey",

@@ -33,8 +33,6 @@ from langchain.agents.agent_toolkits.gmail.toolkit import GmailToolkit
 from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
 from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
-from langchain.agents.agent_toolkits.mongo.base import create_mongo_agent
-from langchain.agents.agent_toolkits.mongo.toolkit import MongoDatabaseToolkit
 from langchain.agents.agent_toolkits.multion.toolkit import MultionToolkit
 from langchain.agents.agent_toolkits.nla.toolkit import NLAToolkit
 from langchain.agents.agent_toolkits.office365.toolkit import O365Toolkit
@@ -93,7 +91,6 @@ __all__ = [
     "GmailToolkit",
     "JiraToolkit",
     "JsonToolkit",
-    "MongoDatabaseToolkit",
     "MultionToolkit",
     "NLAToolkit",
     "O365Toolkit",
@@ -108,7 +105,6 @@ __all__ = [
     "VectorStoreToolkit",
     "ZapierToolkit",
     "create_json_agent",
-    "create_mongo_agent",
     "create_openapi_agent",
     "create_pbi_agent",
     "create_pbi_chat_agent",

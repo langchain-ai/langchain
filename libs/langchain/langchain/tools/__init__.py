@@ -338,36 +338,6 @@ def _import_metaphor_search() -> Any:
     return MetaphorSearchResults
 
 
-def _import_mongo_database_tool_BaseMongoDBTool() -> Any:
-    from langchain.tools.mongo_database.tool import BaseMongoDBTool
-
-    return BaseMongoDBTool
-
-
-def _import_mongo_database_tool_InfoMongoDBTool() -> Any:
-    from langchain.tools.mongo_database.tool import InfoMongoDBTool
-
-    return InfoMongoDBTool
-
-
-def _import_mongo_database_tool_ListMongoDBTool() -> Any:
-    from langchain.tools.mongo_database.tool import ListMongoDBTool
-
-    return ListMongoDBTool
-
-
-def _import_mongo_database_tool_QueryMongoDBCheckerTool() -> Any:
-    from langchain.tools.mongo_database.tool import QueryMongoDBCheckerTool
-
-    return QueryMongoDBCheckerTool
-
-
-def _import_mongo_database_tool_QueryMongoDBTool() -> Any:
-    from langchain.tools.mongo_database.tool import QueryMongoDBTool
-
-    return QueryMongoDBTool
-
-
 def _import_office365_create_draft_message() -> Any:
     from langchain.tools.office365.create_draft_message import O365CreateDraftMessage
 
@@ -855,16 +825,6 @@ def __getattr__(name: str) -> Any:
         return _import_merriam_webster_tool()
     elif name == "MetaphorSearchResults":
         return _import_metaphor_search()
-    elif name == "BaseMongoDBTool":
-        return _import_mongo_database_tool_BaseMongoDBTool()
-    elif name == "InfoMongoDBTool":
-        return _import_mongo_database_tool_InfoMongoDBTool()
-    elif name == "ListMongoDBTool":
-        return _import_mongo_database_tool_ListMongoDBTool()
-    elif name == "QueryMongoDBCheckerTool":
-        return _import_mongo_database_tool_QueryMongoDBCheckerTool()
-    elif name == "QueryMongoDBTool":
-        return _import_mongo_database_tool_QueryMongoDBTool()
     elif name == "O365CreateDraftMessage":
         return _import_office365_create_draft_message()
     elif name == "O365SearchEvents":
@@ -1008,7 +968,6 @@ __all__ = [
     "AzureCogsText2SpeechTool",
     "AzureCogsTextAnalyticsHealthTool",
     "BaseGraphQLTool",
-    "BaseMongoDBTool",
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
@@ -1050,7 +1009,6 @@ __all__ = [
     "GoogleSerperRun",
     "HumanInputRun",
     "IFTTTWebhook",
-    "InfoMongoDBTool",
     "InfoPowerBITool",
     "InfoSQLDatabaseTool",
     "InfoSparkSQLTool",
@@ -1058,7 +1016,6 @@ __all__ = [
     "JsonGetValueTool",
     "JsonListKeysTool",
     "ListDirectoryTool",
-    "ListMongoDBTool",
     "ListPowerBITool",
     "ListSQLDatabaseTool",
     "ListSparkSQLTool",
@@ -1077,8 +1034,6 @@ __all__ = [
     "PubmedQueryRun",
     "RedditSearchRun",
     "QueryCheckerTool",
-    "QueryMongoDBCheckerTool",
-    "QueryMongoDBTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
     "QuerySQLDataBaseTool",
