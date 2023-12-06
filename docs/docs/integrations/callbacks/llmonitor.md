@@ -76,9 +76,13 @@ prompt = OpenAIFunctionsAgent.create_prompt(
 
 agent = OpenAIFunctionsAgent(llm=llm, tools=tools, prompt=prompt, verbose=True)
 agent_executor = AgentExecutor(
-    agent=agent, tools=tools, verbose=True, metadata={"agent_name": "WordCount"}  # <- recommended, assign a custom name
+    agent=agent,
+    tools=tools,
+    verbose=True,
+    metadata={"agent_name": "WordCount"},  # <- recommended, assign a custom name
 )
 agent_executor.run("how many letters in the word educa?", callbacks=[handler])
+
 ```
 
 Another example:
@@ -92,7 +96,12 @@ handler = LLMonitorCallbackHandler()
 
 llm = OpenAI(temperature=0)
 tools = load_tools(["serpapi", "llm-math"], llm=llm)
-agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, metadata={ "agent_name": "GirlfriendAgeFinder" })  # <- recommended, assign a custom name
+agent = initialize_agent(
+    tools,
+    llm,
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    metadata={"agent_name": "GirlfriendAgeFinder"},
+)  # <- recommended, assign a custom name
 
 agent.run(
     "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
@@ -104,13 +113,27 @@ agent.run(
 User tracking allows you to identify your users, track their cost, conversations and more.
 
 ```python
-from langchain.callbacks.llmonitor_callback import LLMonitorCallbackHandler, identify
+from langchain.agents import load_tools, initialize_agent, AgentType
+from langchain.llms import OpenAI
+from langchain.callbacks import LLMonitorCallbackHandler, identify
+
+handler = LLMonitorCallbackHandler()
+
+llm = OpenAI(temperature=0)
+tools = load_tools(["serpapi", "llm-math"], llm=llm)
+agent = initialize_agent(
+    tools,
+    llm,
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    metadata={"agent_name": "GirlfriendAgeFinder"},
+)
 
 with identify("user-123"):
     llm("Tell me a joke")
 
 with identify("user-456", user_props={"email": "user456@test.com"}):
-    agen.run("Who is Leo DiCaprio's girlfriend?")
+    agent.run("Who is Leo DiCaprio's girlfriend?")
+
 ```
 ## Support
 
