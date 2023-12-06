@@ -1,7 +1,7 @@
 from typing import Any, Iterator, List, Optional, Sequence, Tuple, cast
 
 from langchain_core._api.deprecation import deprecated
-from langchain_core.stores import BaseStore
+from langchain_core.stores import BaseStore, ByteStore
 
 
 class _UpstashRedisStore(BaseStore[str, str]):
@@ -130,7 +130,7 @@ class UpstashRedisStore(_UpstashRedisStore):
     """
 
 
-class UpstashRedisByteStore(BaseStore[str, bytes]):
+class UpstashRedisByteStore(ByteStore):
     """
     BaseStore implementation using Upstash Redis
     as the underlying store to store raw bytes.
