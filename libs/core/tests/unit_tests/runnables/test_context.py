@@ -70,6 +70,34 @@ def seq_naive_rag_alt() -> Runnable:
     )
 
 
+def seq_naive_rag_scoped() -> Runnable:
+    context = [
+        "Hi there!",
+        "How are you?",
+        "What's your name?",
+    ]
+
+    retriever = RunnableLambda(lambda x: context)
+    prompt = PromptTemplate.from_template("{context} {question}")
+    llm = FakeListLLM(responses=["hello"])
+
+    scoped = Context.create_scope("a_scope")
+
+    return (
+        Context.setter("input")
+        | {
+            "context": retriever | Context.setter("context"),
+            "question": RunnablePassthrough(),
+            "scoped": scoped.setter("context") | scoped.getter("context"),
+        }
+        | prompt
+        | llm
+        | StrOutputParser()
+        | Context.setter("result")
+        | Context.getter(["context", "input", "result"])
+    )
+
+
 test_cases = [
     (
         Context.setter("foo") | Context.getter("foo"),
@@ -242,6 +270,35 @@ test_cases = [
     ),
     (
         seq_naive_rag_alt,
+        (
+            TestCase(
+                "What up",
+                {
+                    "result": "hello",
+                    "context": [
+                        "Hi there!",
+                        "How are you?",
+                        "What's your name?",
+                    ],
+                    "input": "What up",
+                },
+            ),
+            TestCase(
+                "Howdy",
+                {
+                    "result": "hello",
+                    "context": [
+                        "Hi there!",
+                        "How are you?",
+                        "What's your name?",
+                    ],
+                    "input": "Howdy",
+                },
+            ),
+        ),
+    ),
+    (
+        seq_naive_rag_scoped,
         (
             TestCase(
                 "What up",

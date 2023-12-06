@@ -1402,7 +1402,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
-        from langchain_core.runnables.context import CONTEXT_CONFIG_PREFIX
+        from langchain_core.runnables.context import CONTEXT_CONFIG_PREFIX, _key_from_id
 
         # get all specs
         all_specs = [
@@ -1423,6 +1423,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # assign context dependencies
         for pos, (spec, idx) in enumerate(all_specs):
             if spec.id.startswith(CONTEXT_CONFIG_PREFIX):
+                print(spec.id, deps_by_pos[idx])
                 all_specs[pos] = (
                     ConfigurableFieldSpec(
                         id=spec.id,
@@ -1431,7 +1432,12 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         default=spec.default,
                         description=spec.description,
                         is_shared=spec.is_shared,
-                        dependencies=list(deps_by_pos[idx]) + (spec.dependencies or []),
+                        dependencies=[
+                            d
+                            for d in deps_by_pos[idx]
+                            if _key_from_id(d) != _key_from_id(spec.id)
+                        ]
+                        + (spec.dependencies or []),
                     ),
                     idx,
                 )

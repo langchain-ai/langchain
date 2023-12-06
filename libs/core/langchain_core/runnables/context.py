@@ -54,6 +54,16 @@ def _getter(done: threading.Event, values: Values) -> Any:
     return values[done]
 
 
+def _key_from_id(id_: str) -> str:
+    wout_prefix = id_.split(CONTEXT_CONFIG_PREFIX, maxsplit=1)[1]
+    if wout_prefix.endswith(CONTEXT_CONFIG_SUFFIX_GET):
+        return wout_prefix[: -len(CONTEXT_CONFIG_SUFFIX_GET)]
+    elif wout_prefix.endswith(CONTEXT_CONFIG_SUFFIX_SET):
+        return wout_prefix[: -len(CONTEXT_CONFIG_SUFFIX_SET)]
+    else:
+        raise ValueError(f"Invalid context config id {id_}")
+
+
 def _config_with_context(
     config: RunnableConfig,
     steps: List[Runnable],
@@ -74,12 +84,12 @@ def _config_with_context(
         key: list(group)
         for key, group in groupby(
             sorted(context_specs, key=lambda s: s[0].id),
-            key=lambda s: s[0].id.split("/")[1],
+            key=lambda s: _key_from_id(s[0].id),
         )
     }
     deps_by_key = {
         key: set(
-            dep.split("/")[1] for spec in group for dep in (spec[0].dependencies or [])
+            _key_from_id(dep) for spec in group for dep in (spec[0].dependencies or [])
         )
         for key, group in grouped_by_key.items()
     }
@@ -129,15 +139,18 @@ def config_with_context(
 
 
 class ContextGet(RunnableSerializable):
-    key: Union[str, List[str]]
+    prefix: str = ""
 
-    def __init__(self, key: Union[str, List[str]]):
-        super().__init__(key=key)
+    key: Union[str, List[str]]
 
     @property
     def ids(self) -> List[str]:
+        prefix = self.prefix + "/" if self.prefix else ""
         keys = self.key if isinstance(self.key, list) else [self.key]
-        return [f"{CONTEXT_CONFIG_PREFIX}{k}{CONTEXT_CONFIG_SUFFIX_GET}" for k in keys]
+        return [
+            f"{CONTEXT_CONFIG_PREFIX}{prefix}{k}{CONTEXT_CONFIG_SUFFIX_GET}"
+            for k in keys
+        ]
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -184,6 +197,8 @@ def _coerce_set_value(value: SetValue) -> Runnable[Input, Output]:
 
 
 class ContextSet(RunnableSerializable):
+    prefix: str = ""
+
     keys: Mapping[str, Optional[Runnable]]
 
     class Config:
@@ -193,6 +208,7 @@ class ContextSet(RunnableSerializable):
         self,
         key: Optional[str] = None,
         value: Optional[SetValue] = None,
+        prefix: str = "",
         **kwargs: SetValue,
     ):
         if key is not None:
@@ -201,13 +217,15 @@ class ContextSet(RunnableSerializable):
             keys={
                 k: _coerce_set_value(v) if v is not None else None
                 for k, v in kwargs.items()
-            }
+            },
+            prefix=prefix,
         )
 
     @property
     def ids(self) -> List[str]:
+        prefix = self.prefix + "/" if self.prefix else ""
         return [
-            f"{CONTEXT_CONFIG_PREFIX}{key}{CONTEXT_CONFIG_SUFFIX_SET}"
+            f"{CONTEXT_CONFIG_PREFIX}{prefix}{key}{CONTEXT_CONFIG_SUFFIX_SET}"
             for key in self.keys
         ]
 
@@ -259,8 +277,12 @@ class ContextSet(RunnableSerializable):
 
 class Context:
     @staticmethod
+    def create_scope(pefix: str, /) -> "PrefixContext":
+        return PrefixContext(prefix=pefix)
+
+    @staticmethod
     def getter(key: Union[str, List[str]], /) -> ContextGet:
-        return ContextGet(key)
+        return ContextGet(key=key)
 
     @staticmethod
     def setter(
@@ -270,3 +292,22 @@ class Context:
         **kwargs: SetValue,
     ) -> ContextSet:
         return ContextSet(_key, _value, **kwargs)
+
+
+class PrefixContext:
+    prefix: str = ""
+
+    def __init__(self, prefix: str = ""):
+        self.prefix = prefix
+
+    def getter(self, key: Union[str, List[str]], /) -> ContextGet:
+        return ContextGet(key=key, prefix=self.prefix)
+
+    def setter(
+        self,
+        _key: Optional[str] = None,
+        _value: Optional[SetValue] = None,
+        /,
+        **kwargs: SetValue,
+    ) -> ContextSet:
+        return ContextSet(_key, _value, prefix=self.prefix, **kwargs)
