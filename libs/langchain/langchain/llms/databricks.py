@@ -334,7 +334,7 @@ class Databricks(LLM):
 
     @property
     def _llm_params(self) -> Dict[str, Any]:
-        params = {
+        params: Dict[str, Any] = {
             "temperature": self.temperature,
             "n": self.n,
         }
