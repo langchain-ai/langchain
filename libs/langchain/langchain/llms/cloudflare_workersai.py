@@ -120,7 +120,7 @@ class CloudflareWorkersAI(LLM):
         """Regular prediction"""
         if self.streaming:
             return "".join(
-                [c.text for c in self._stream(prompt, run_manager, **kwargs)]
+                [c.text for c in self._stream(prompt, stop, run_manager, **kwargs)]
             )
         else:
             response = self._call_api(prompt, kwargs)
