@@ -118,7 +118,7 @@ class OCIModelDeploymentLLM(BaseOCILLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> str:
         """Call out to OCI Data Science Model Deployment endpoint.
 
@@ -127,8 +127,8 @@ class OCIModelDeploymentLLM(BaseOCILLM):
                 The prompt to pass into the model.
             stop (List[str], Optional):
                 List of stop words to use when generating.
-            kwargs (dict, Optional):
-                requests_kwargs (dict):
+            kwargs:
+                requests_kwargs:
                     Additional ``**kwargs`` to pass to requests.post
 
         Returns:
@@ -155,7 +155,7 @@ class OCIModelDeploymentLLM(BaseOCILLM):
         data: Any,
         endpoint: str,
         header: Optional[dict] = {},
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> Dict:
         """Sends request to the oci data science model deployment endpoint.
 
