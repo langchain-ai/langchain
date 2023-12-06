@@ -31,6 +31,24 @@ class FakeTracer(BaseTracer):
         self.runs.append(run)
 
 
+def _compare_run_with_error(run: Run, expected_run: Run) -> None:
+    if run.child_runs:
+        assert len(expected_run.child_runs) == len(run.child_runs)
+        for received, expected in zip(run.child_runs, expected_run.child_runs):
+            _compare_run_with_error(received, expected)
+    received = run.dict(exclude={"child_runs"})
+    received_err = received.pop("error")
+    expected = expected_run.dict(exclude={"child_runs"})
+    expected_err = expected.pop("error")
+
+    assert received == expected
+    if expected_err is not None:
+        assert received_err is not None
+        assert expected_err in received_err
+    else:
+        assert received_err is None
+
+
 @freeze_time("2023-01-01")
 def test_tracer_llm_run() -> None:
     """Test tracer on an LLM run."""
@@ -330,12 +348,7 @@ def test_tracer_llm_run_on_error() -> None:
     tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
     tracer.on_llm_error(exception, run_id=uuid)
     assert len(tracer.runs) == 1
-    received = tracer.runs[0].dict()
-    received_err = received.pop("error")
-    expected = compare_run.dict()
-    expected_err = expected.pop("error")
-    assert received == expected
-    assert expected_err in received_err
+    _compare_run_with_error(tracer.runs[0], compare_run)
 
 
 @freeze_time("2023-01-01")
@@ -371,12 +384,7 @@ def test_tracer_llm_run_on_error_callback() -> None:
     tracer = FakeTracerWithLlmErrorCallback()
     tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
     tracer.on_llm_error(exception, run_id=uuid)
-    received = tracer.error_run.dict()
-    received_err = received.pop("error")
-    expected = compare_run.dict()
-    expected_err = expected.pop("error")
-    assert received == expected
-    assert expected_err in received_err
+    _compare_run_with_error(tracer.error_run, compare_run)
 
 
 @freeze_time("2023-01-01")
@@ -406,7 +414,7 @@ def test_tracer_chain_run_on_error() -> None:
 
     tracer.on_chain_start(serialized={"name": "chain"}, inputs={}, run_id=uuid)
     tracer.on_chain_error(exception, run_id=uuid)
-    assert tracer.runs == [compare_run]
+    _compare_run_with_error(tracer.runs[0], compare_run)
 
 
 @freeze_time("2023-01-01")
@@ -437,7 +445,7 @@ def test_tracer_tool_run_on_error() -> None:
 
     tracer.on_tool_start(serialized={"name": "tool"}, input_str="test", run_id=uuid)
     tracer.on_tool_error(exception, run_id=uuid)
-    assert tracer.runs == [compare_run]
+    _compare_run_with_error(tracer.runs[0], compare_run)
 
 
 @freeze_time("2023-01-01")
@@ -580,4 +588,6 @@ def test_tracer_nested_runs_on_error() -> None:
             ),
         ],
     )
-    assert tracer.runs == [compare_run] * 3
+    assert len(tracer.runs) == 3
+    for run in tracer.runs:
+        _compare_run_with_error(run, compare_run)
