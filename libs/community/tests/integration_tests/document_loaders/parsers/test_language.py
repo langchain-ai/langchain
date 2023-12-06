@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-from langchain.text_splitter import Language
 
 from langchain_community.document_loaders.concurrent import ConcurrentLoader
 from langchain_community.document_loaders.generic import GenericLoader
@@ -55,7 +54,7 @@ def test_language_loader_for_python_with_parser_threshold() -> None:
     loader = GenericLoader.from_filesystem(
         file_path,
         glob="hello_world.py",
-        parser=LanguageParser(language=Language.PYTHON, parser_threshold=1000),
+        parser=LanguageParser(language="python", parser_threshold=1000),
     )
     docs = loader.load()
 
@@ -127,7 +126,7 @@ def test_language_loader_for_javascript_with_parser_threshold() -> None:
     loader = GenericLoader.from_filesystem(
         file_path,
         glob="hello_world.js",
-        parser=LanguageParser(language=Language.JS, parser_threshold=1000),
+        parser=LanguageParser(language="js", parser_threshold=1000),
     )
     docs = loader.load()
 
@@ -140,7 +139,7 @@ def test_concurrent_language_loader_for_javascript_with_parser_threshold() -> No
     loader = ConcurrentLoader.from_filesystem(
         file_path,
         glob="hello_world.js",
-        parser=LanguageParser(language=Language.JS, parser_threshold=1000),
+        parser=LanguageParser(language="js", parser_threshold=1000),
     )
     docs = loader.load()
 
@@ -153,7 +152,7 @@ def test_concurrent_language_loader_for_python_with_parser_threshold() -> None:
     loader = ConcurrentLoader.from_filesystem(
         file_path,
         glob="hello_world.py",
-        parser=LanguageParser(language=Language.PYTHON, parser_threshold=1000),
+        parser=LanguageParser(language="python", parser_threshold=1000),
     )
     docs = loader.load()
 

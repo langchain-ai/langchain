@@ -3,7 +3,6 @@ import logging
 from time import perf_counter
 from typing import Any, Dict, Optional, Tuple
 
-from langchain.chains.llm import LLMChain
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -31,7 +30,7 @@ class QueryPowerBITool(BaseTool):
 
     Example Input: "How many rows are in table1?"
     """  # noqa: E501
-    llm_chain: LLMChain
+    llm_chain: Any
     powerbi: PowerBIDataset = Field(exclude=True)
     examples: Optional[str] = DEFAULT_FEWSHOT_EXAMPLES
     session_cache: Dict[str, Any] = Field(default_factory=dict, exclude=True)
@@ -46,8 +45,8 @@ class QueryPowerBITool(BaseTool):
 
     @validator("llm_chain")
     def validate_llm_chain_input_variables(  # pylint: disable=E0213
-        cls, llm_chain: LLMChain
-    ) -> LLMChain:
+        cls, llm_chain: Any
+    ) -> Any:
         """Make sure the LLM chain has the correct input variables."""
         for var in llm_chain.prompt.input_variables:
             if var not in ["tool_input", "tables", "schemas", "examples"]:

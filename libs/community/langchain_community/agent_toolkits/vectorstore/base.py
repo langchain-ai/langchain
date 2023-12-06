@@ -1,9 +1,8 @@
 """VectorStore agent."""
-from typing import Any, Dict, Optional
+from __future__ import annotations
 
-from langchain.agents.agent import AgentExecutor
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.chains.llm import LLMChain
+from typing import TYPE_CHECKING, Any, Dict, Optional
+
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 
@@ -12,6 +11,9 @@ from langchain_community.agent_toolkits.vectorstore.toolkit import (
     VectorStoreRouterToolkit,
     VectorStoreToolkit,
 )
+
+if TYPE_CHECKING:
+    from langchain.agents.agent import AgentExecutor
 
 
 def create_vectorstore_agent(
@@ -37,6 +39,10 @@ def create_vectorstore_agent(
     Returns:
         AgentExecutor: Returns a callable AgentExecutor object. Either you can call it or use run method with the query to get the response
     """  # noqa: E501
+    from langchain.agents.agent import AgentExecutor
+    from langchain.agents.mrkl.base import ZeroShotAgent
+    from langchain.chains.llm import LLMChain
+
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(
@@ -78,6 +84,10 @@ def create_vectorstore_router_agent(
     Returns:
         AgentExecutor: Returns a callable AgentExecutor object. Either you can call it or use run method with the query to get the response.
     """  # noqa: E501
+    from langchain.agents.agent import AgentExecutor
+    from langchain.agents.mrkl.base import ZeroShotAgent
+    from langchain.chains.llm import LLMChain
+
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(

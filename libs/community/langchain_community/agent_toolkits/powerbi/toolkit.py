@@ -1,7 +1,8 @@
 """Toolkit for interacting with a Power BI dataset."""
-from typing import List, Optional, Union
+from __future__ import annotations
 
-from langchain.chains.llm import LLMChain
+from typing import TYPE_CHECKING, List, Optional, Union
+
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -26,6 +27,9 @@ from langchain_community.tools.powerbi.tool import (
     QueryPowerBITool,
 )
 from langchain_community.utilities.powerbi import PowerBIDataset
+
+if TYPE_CHECKING:
+    from langchain.chains.llm import LLMChain
 
 
 class PowerBIToolkit(BaseToolkit):
@@ -71,6 +75,8 @@ class PowerBIToolkit(BaseToolkit):
 
     def _get_chain(self) -> LLMChain:
         """Construct the chain based on the callback manager and model type."""
+        from langchain.chains.llm import LLMChain
+
         if isinstance(self.llm, BaseLanguageModel):
             return LLMChain(
                 llm=self.llm,

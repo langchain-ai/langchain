@@ -1,15 +1,16 @@
 """Spark SQL agent."""
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-from langchain.agents.agent import AgentExecutor
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.chains.llm import LLMChain
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain_community.agent_toolkits.spark_sql.prompt import SQL_PREFIX, SQL_SUFFIX
 from langchain_community.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
+
+if TYPE_CHECKING:
+    from langchain.agents.agent import AgentExecutor
 
 
 def create_spark_sql_agent(
@@ -19,7 +20,7 @@ def create_spark_sql_agent(
     callbacks: Callbacks = None,
     prefix: str = SQL_PREFIX,
     suffix: str = SQL_SUFFIX,
-    format_instructions: str = FORMAT_INSTRUCTIONS,
+    format_instructions: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     top_k: int = 10,
     max_iterations: Optional[int] = 15,
@@ -30,14 +31,23 @@ def create_spark_sql_agent(
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a Spark SQL agent from an LLM and tools."""
+    from langchain.agents.agent import AgentExecutor
+    from langchain.agents.mrkl.base import ZeroShotAgent
+    from langchain.chains.llm import LLMChain
+
     tools = toolkit.get_tools()
     prefix = prefix.format(top_k=top_k)
+    prompt_params = (
+        {"format_instructions": format_instructions}
+        if format_instructions is not None
+        else {}
+    )
     prompt = ZeroShotAgent.create_prompt(
         tools,
         prefix=prefix,
         suffix=suffix,
-        format_instructions=format_instructions,
         input_variables=input_variables,
+        **prompt_params,
     )
     llm_chain = LLMChain(
         llm=llm,

@@ -1,15 +1,18 @@
 """Tool for interacting with a single API with natural language definition."""
 
+from __future__ import annotations
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import Tool
 
 from langchain_community.tools.openapi.utils.api_models import APIOperation
 from langchain_community.tools.openapi.utils.openapi_utils import OpenAPISpec
 from langchain_community.utilities.requests import Requests
+
+if TYPE_CHECKING:
+    from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 
 
 class NLATool(Tool):

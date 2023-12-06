@@ -9,7 +9,6 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.chains.llm import LLMChain
 from langchain_core.prompts import PromptTemplate
 from langchain_community.utilities.spark_sql import SparkSQL
 from langchain_core.tools import BaseTool
@@ -85,7 +84,7 @@ class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
 
     template: str = QUERY_CHECKER
     llm: BaseLanguageModel
-    llm_chain: LLMChain = Field(init=False)
+    llm_chain: Any = Field(init=False)
     name: str = "query_checker_sql_db"
     description: str = """
     Use this tool to double check if your query is correct before executing it.
@@ -95,6 +94,8 @@ class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
     @root_validator(pre=True)
     def initialize_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "llm_chain" not in values:
+            from langchain.chains.llm import LLMChain
+
             values["llm_chain"] = LLMChain(
                 llm=values.get("llm"),
                 prompt=PromptTemplate(

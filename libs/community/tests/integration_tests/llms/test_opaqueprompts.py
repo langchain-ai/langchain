@@ -1,10 +1,8 @@
-import langchain.utilities.opaqueprompts as op
-from langchain.chains.llm import LLMChain
-from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableParallel
 
+import langchain_community.utilities.opaqueprompts as op
 from langchain_community.llms import OpenAI
 from langchain_community.llms.opaqueprompts import OpaquePrompts
 
@@ -45,13 +43,8 @@ Question: ```{question}```
 
 
 def test_opaqueprompts() -> None:
-    chain = LLMChain(
-        prompt=PromptTemplate.from_template(prompt_template),
-        llm=OpaquePrompts(llm=OpenAI()),
-        memory=ConversationBufferWindowMemory(k=2),
-    )
-
-    output = chain.run(
+    chain = PromptTemplate.from_template(prompt_template) | OpaquePrompts(llm=OpenAI())
+    output = chain.invoke(
         {
             "question": "Write a text message to remind John to do password reset \
                 for his website through his email to stay secure."

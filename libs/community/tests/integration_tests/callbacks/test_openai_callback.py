@@ -1,8 +1,6 @@
 """Integration tests for the langchain tracer module."""
 import asyncio
 
-from langchain.agents import AgentType, initialize_agent, load_tools
-
 from langchain_community.callbacks import get_openai_callback
 from langchain_community.llms import OpenAI
 
@@ -52,6 +50,8 @@ def test_openai_callback_batch_llm() -> None:
 
 
 def test_openai_callback_agent() -> None:
+    from langchain.agents import AgentType, initialize_agent, load_tools
+
     llm = OpenAI(temperature=0)
     tools = load_tools(["serpapi", "llm-math"], llm=llm)
     agent = initialize_agent(

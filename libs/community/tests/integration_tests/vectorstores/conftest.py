@@ -1,13 +1,8 @@
 import os
-from typing import Generator, List, Union
+from typing import Union
 
 import pytest
-from langchain.text_splitter import CharacterTextSplitter
-from langchain_core.documents import Document
 from vcr.request import Request
-
-from langchain_community.document_loaders import TextLoader
-from langchain_community.embeddings import OpenAIEmbeddings
 
 # Those environment variables turn on Deep Lake pytest mode.
 # It significantly makes tests run much faster.
@@ -47,35 +42,3 @@ def vcr_config() -> dict:
         ],
         "ignore_localhost": True,
     }
-
-
-# Define a fixture that yields a generator object returning a list of documents
-@pytest.fixture(scope="function")
-def documents() -> Generator[List[Document], None, None]:
-    """Return a generator that yields a list of documents."""
-
-    # Create a CharacterTextSplitter object for splitting the documents into chunks
-    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-
-    # Load the documents from a file located in the fixtures directory
-    documents = TextLoader(
-        os.path.join(os.path.dirname(__file__), "fixtures", "sharks.txt")
-    ).load()
-
-    # Yield the documents split into chunks
-    yield text_splitter.split_documents(documents)
-
-
-@pytest.fixture(scope="function")
-def texts() -> Generator[List[str], None, None]:
-    # Load the documents from a file located in the fixtures directory
-    documents = TextLoader(
-        os.path.join(os.path.dirname(__file__), "fixtures", "sharks.txt")
-    ).load()
-
-    yield [doc.page_content for doc in documents]
-
-
-@pytest.fixture(scope="module")
-def embedding_openai() -> OpenAIEmbeddings:
-    return OpenAIEmbeddings()

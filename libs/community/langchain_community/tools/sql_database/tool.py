@@ -9,7 +9,6 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.chains.llm import LLMChain
 from langchain_core.prompts import PromptTemplate
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.tools import BaseTool
@@ -86,7 +85,7 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
 
     template: str = QUERY_CHECKER
     llm: BaseLanguageModel
-    llm_chain: LLMChain = Field(init=False)
+    llm_chain: Any = Field(init=False)
     name: str = "sql_db_query_checker"
     description: str = """
     Use this tool to double check if your query is correct before executing it.
@@ -96,6 +95,8 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     @root_validator(pre=True)
     def initialize_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "llm_chain" not in values:
+            from langchain.chains.llm import LLMChain
+
             values["llm_chain"] = LLMChain(
                 llm=values.get("llm"),
                 prompt=PromptTemplate(

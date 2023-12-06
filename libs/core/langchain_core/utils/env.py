@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any, Dict, Optional
 
 
 def env_var_is_set(env_var: str) -> bool:
@@ -18,10 +19,6 @@ def env_var_is_set(env_var: str) -> bool:
         "false",
         "False",
     )
-
-
-import os
-from typing import Any, Dict, Optional
 
 
 def get_from_dict_or_env(

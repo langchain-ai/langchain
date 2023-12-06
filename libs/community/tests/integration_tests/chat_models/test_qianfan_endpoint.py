@@ -2,9 +2,6 @@
 
 from typing import Any
 
-from langchain.chains.openai_functions import (
-    create_openai_fn_chain,
-)
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
@@ -185,18 +182,12 @@ def test_functions_call_thoughts() -> None:
     ]
     prompt = ChatPromptTemplate(messages=prompt_msgs)
 
-    chain = create_openai_fn_chain(
-        _FUNCTIONS,
-        chat,
-        prompt,
-        output_parser=None,
-    )
+    chain = prompt | chat.bind(functions=_FUNCTIONS)
 
     message = HumanMessage(content="What's the temperature in Shanghai today?")
-    response = chain.generate([{"input": message}])
-    assert isinstance(response.generations[0][0], ChatGeneration)
-    assert isinstance(response.generations[0][0].message, AIMessage)
-    assert "function_call" in response.generations[0][0].message.additional_kwargs
+    response = chain.batch([{"input": message}])
+    assert isinstance(response[0], AIMessage)
+    assert "function_call" in response[0].additional_kwargs
 
 
 def test_functions_call() -> None:
@@ -223,11 +214,6 @@ def test_functions_call() -> None:
             ),
         ]
     )
-    llm_chain = create_openai_fn_chain(
-        _FUNCTIONS,
-        chat,
-        prompt,
-        output_parser=None,
-    )
-    resp = llm_chain.generate([{}])
-    assert isinstance(resp, LLMResult)
+    chain = prompt | chat.bind(functions=_FUNCTIONS)
+    resp = chain.invoke({})
+    assert isinstance(resp, AIMessage)

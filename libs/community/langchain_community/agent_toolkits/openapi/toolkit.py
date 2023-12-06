@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, List
 
-from langchain.agents.agent import AgentExecutor
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import Tool
 
@@ -65,7 +64,7 @@ class OpenAPIToolkit(BaseToolkit):
         an OpenAPI compliant API.
     """
 
-    json_agent: AgentExecutor
+    json_agent: Any
     requests_wrapper: TextRequestsWrapper
 
     def get_tools(self) -> List[BaseTool]:

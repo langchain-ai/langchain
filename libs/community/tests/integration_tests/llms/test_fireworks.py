@@ -3,13 +3,7 @@ import sys
 from typing import Generator
 
 import pytest
-from langchain.chains import LLMChain
 from langchain_core.outputs import LLMResult
-from langchain_core.prompts import PromptTemplate
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-)
 
 from langchain_community.llms.fireworks import Fireworks
 
@@ -26,22 +20,6 @@ def llm() -> Fireworks:
 def test_fireworks_call(llm: Fireworks) -> None:
     """Test valid call to fireworks."""
     output = llm("How is the weather in New York today?")
-    assert isinstance(output, str)
-
-
-@pytest.mark.scheduled
-def test_fireworks_in_chain() -> None:
-    """Tests fireworks AI in a Langchain chain"""
-    human_message_prompt = HumanMessagePromptTemplate(
-        prompt=PromptTemplate(
-            template="What is a good name for a company that makes {product}?",
-            input_variables=["product"],
-        )
-    )
-    chat_prompt_template = ChatPromptTemplate.from_messages([human_message_prompt])
-    chat = Fireworks()
-    chain = LLMChain(llm=chat, prompt=chat_prompt_template)
-    output = chain.run("football helmets")
     assert isinstance(output, str)
 
 

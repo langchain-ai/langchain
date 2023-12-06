@@ -1,6 +1,5 @@
 from typing import Optional, Type
 
-from langchain.chains import LLMChain
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
 
@@ -41,17 +40,11 @@ class AmadeusClosestAirport(AmadeusBaseTool):
         location: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        template = (
-            " What is the nearest airport to {location}? Please respond with the "
+        content = (
+            f" What is the nearest airport to {location}? Please respond with the "
             " airport's International Air Transport Association (IATA) Location "
             ' Identifier in the following JSON format. JSON: "iataCode": "IATA '
             ' Location Identifier" '
         )
 
-        llm = ChatOpenAI(temperature=0)
-
-        llm_chain = LLMChain.from_string(llm=llm, template=template)
-
-        output = llm_chain.run(location=location)
-
-        return output
+        return ChatOpenAI(temperature=0).invoke(content)

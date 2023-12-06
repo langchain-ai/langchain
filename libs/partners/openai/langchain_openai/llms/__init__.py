@@ -19,7 +19,7 @@ __all__ = [
     "_streaming_response_template",
     "_create_retry_decorator",
     "completion_with_retry",
-    "acompletion_with_rety",
+    "acompletion_with_retry",
     "OpenAIChat",
     "OpenAI",
     "AzureOpenAI",

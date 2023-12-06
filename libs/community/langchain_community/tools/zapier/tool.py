@@ -47,8 +47,6 @@ os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "")
 # get from https://nla.zapier.com/docs/authentication/
 os.environ["ZAPIER_NLA_API_KEY"] = os.environ.get("ZAPIER_NLA_API_KEY", "")
 
-from langchain_community.llms import OpenAI
-from langchain.agents import initialize_agent
 from langchain_community.agent_toolkits import ZapierToolkit
 from langchain_community.utilities.zapier import ZapierNLAWrapper
 
@@ -60,22 +58,12 @@ from langchain_community.utilities.zapier import ZapierNLAWrapper
 # in an oauth scenario, you'd get your own <provider> id (instead of 'demo')
 # which you route your users through first
 
-llm = OpenAI(temperature=0)
 zapier = ZapierNLAWrapper()
 ## To leverage OAuth you may pass the value `nla_oauth_access_token` to
 ## the ZapierNLAWrapper. If you do this there is no need to initialize
 ## the ZAPIER_NLA_API_KEY env variable
 # zapier = ZapierNLAWrapper(zapier_nla_oauth_access_token="TOKEN_HERE")
 toolkit = ZapierToolkit.from_zapier_nla_wrapper(zapier)
-agent = initialize_agent(
-    toolkit.get_tools(),
-    llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-    verbose=True
-)
-
-agent.run(("Summarize the last email I received regarding Silicon Valley Bank. "
-    "Send the summary to the #test-zapier channel in slack."))
 ```
 
 """

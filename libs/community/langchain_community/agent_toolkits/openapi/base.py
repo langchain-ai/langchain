@@ -1,10 +1,8 @@
 """OpenAPI spec agent."""
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-from langchain.agents.agent import AgentExecutor
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.chains.llm import LLMChain
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 
@@ -14,6 +12,9 @@ from langchain_community.agent_toolkits.openapi.prompt import (
 )
 from langchain_community.agent_toolkits.openapi.toolkit import OpenAPIToolkit
 
+if TYPE_CHECKING:
+    from langchain.agents.agent import AgentExecutor
+
 
 def create_openapi_agent(
     llm: BaseLanguageModel,
@@ -21,7 +22,7 @@ def create_openapi_agent(
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = OPENAPI_PREFIX,
     suffix: str = OPENAPI_SUFFIX,
-    format_instructions: str = FORMAT_INSTRUCTIONS,
+    format_instructions: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     max_iterations: Optional[int] = 15,
     max_execution_time: Optional[float] = None,
@@ -45,13 +46,22 @@ def create_openapi_agent(
 
         See https://python.langchain.com/docs/security for more information.
     """
+    from langchain.agents.agent import AgentExecutor
+    from langchain.agents.mrkl.base import ZeroShotAgent
+    from langchain.chains.llm import LLMChain
+
     tools = toolkit.get_tools()
+    prompt_params = (
+        {"format_instructions": format_instructions}
+        if format_instructions is not None
+        else {}
+    )
     prompt = ZeroShotAgent.create_prompt(
         tools,
         prefix=prefix,
         suffix=suffix,
-        format_instructions=format_instructions,
         input_variables=input_variables,
+        **prompt_params,
     )
     llm_chain = LLMChain(
         llm=llm,

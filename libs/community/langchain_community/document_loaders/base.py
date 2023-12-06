@@ -1,11 +1,15 @@
 """Abstract interface for document loader implementations."""
-from abc import ABC, abstractmethod
-from typing import Iterator, List, Optional
+from __future__ import annotations
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Iterator, List, Optional
+
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.blob_loaders import Blob
+
+if TYPE_CHECKING:
+    from langchain.text_splitter import TextSplitter
 
 
 class BaseLoader(ABC):
@@ -37,6 +41,8 @@ class BaseLoader(ABC):
         Returns:
             List of Documents.
         """
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+
         if text_splitter is None:
             _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()
         else:

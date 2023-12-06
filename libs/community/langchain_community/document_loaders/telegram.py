@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -49,6 +48,8 @@ class TelegramChatFileLoader(BaseLoader):
 
 def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
     """Convert a string or list of strings to a list of Documents with metadata."""
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+
     if isinstance(text, str):
         # Take a single string as one page
         text = [text]

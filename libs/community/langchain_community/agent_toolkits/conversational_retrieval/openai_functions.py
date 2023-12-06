@@ -1,16 +1,15 @@
-from typing import Any, List, Optional
+from __future__ import annotations
 
-from langchain.agents.agent import AgentExecutor
-from langchain.agents.openai_functions_agent.agent_token_buffer_memory import (
-    AgentTokenBufferMemory,
-)
-from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
-from langchain.memory.token_buffer import ConversationTokenBufferMemory
+from typing import TYPE_CHECKING, Any, List, Optional
+
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.memory import BaseMemory
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts.chat import MessagesPlaceholder
 from langchain_core.tools import BaseTool
+
+if TYPE_CHECKING:
+    from langchain.agents.agent import AgentExecutor
 
 
 def _get_default_system_message() -> SystemMessage:
@@ -54,6 +53,12 @@ def create_conversational_retrieval_agent(
     Returns:
         An agent executor initialized appropriately
     """
+    from langchain.agents.agent import AgentExecutor
+    from langchain.agents.openai_functions_agent.agent_token_buffer_memory import (
+        AgentTokenBufferMemory,
+    )
+    from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
+    from langchain.memory.token_buffer import ConversationTokenBufferMemory
 
     if remember_intermediate_steps:
         memory: BaseMemory = AgentTokenBufferMemory(

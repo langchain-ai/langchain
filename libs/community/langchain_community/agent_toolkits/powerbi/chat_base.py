@@ -1,11 +1,8 @@
 """Power BI agent."""
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-from langchain.agents import AgentExecutor
-from langchain.agents.agent import AgentOutputParser
-from langchain.agents.conversational_chat.base import ConversationalChatAgent
-from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_memory import BaseChatMemory
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models.chat_models import BaseChatModel
 
@@ -15,6 +12,11 @@ from langchain_community.agent_toolkits.powerbi.prompt import (
 )
 from langchain_community.agent_toolkits.powerbi.toolkit import PowerBIToolkit
 from langchain_community.utilities.powerbi import PowerBIDataset
+
+if TYPE_CHECKING:
+    from langchain.agents import AgentExecutor
+    from langchain.agents.agent import AgentOutputParser
+    from langchain.memory.chat_memory import BaseChatMemory
 
 
 def create_pbi_chat_agent(
@@ -37,6 +39,10 @@ def create_pbi_chat_agent(
 
     If you supply only a toolkit and no Power BI dataset, the same LLM is used for both.
     """
+    from langchain.agents import AgentExecutor
+    from langchain.agents.conversational_chat.base import ConversationalChatAgent
+    from langchain.memory import ConversationBufferMemory
+
     if toolkit is None:
         if powerbi is None:
             raise ValueError("Must provide either a toolkit or powerbi dataset")

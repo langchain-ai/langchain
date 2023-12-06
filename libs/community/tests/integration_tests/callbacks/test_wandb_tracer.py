@@ -3,9 +3,8 @@ import asyncio
 import os
 
 from aiohttp import ClientSession
-from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain_core.callbacks import wandb_tracing_enabled
 
+from langchain_community.callbacks import wandb_tracing_enabled
 from langchain_community.llms import OpenAI
 
 questions = [
@@ -30,6 +29,8 @@ questions = [
 
 
 def test_tracing_sequential() -> None:
+    from langchain.agents import AgentType, initialize_agent, load_tools
+
     os.environ["LANGCHAIN_WANDB_TRACING"] = "true"
     os.environ["WANDB_PROJECT"] = "langchain-tracing"
 
@@ -46,6 +47,8 @@ def test_tracing_sequential() -> None:
 
 
 def test_tracing_session_env_var() -> None:
+    from langchain.agents import AgentType, initialize_agent, load_tools
+
     os.environ["LANGCHAIN_WANDB_TRACING"] = "true"
 
     llm = OpenAI(temperature=0)
@@ -60,6 +63,8 @@ def test_tracing_session_env_var() -> None:
 
 
 async def test_tracing_concurrent() -> None:
+    from langchain.agents import AgentType, initialize_agent, load_tools
+
     os.environ["LANGCHAIN_WANDB_TRACING"] = "true"
     aiosession = ClientSession()
     llm = OpenAI(temperature=0)
@@ -77,6 +82,8 @@ async def test_tracing_concurrent() -> None:
 
 
 def test_tracing_context_manager() -> None:
+    from langchain.agents import AgentType, initialize_agent, load_tools
+
     llm = OpenAI(temperature=0)
     tools = load_tools(
         ["llm-math", "serpapi"],
@@ -94,6 +101,8 @@ def test_tracing_context_manager() -> None:
 
 
 async def test_tracing_context_manager_async() -> None:
+    from langchain.agents import AgentType, initialize_agent, load_tools
+
     llm = OpenAI(temperature=0)
     async_tools = load_tools(
         ["llm-math", "serpapi"],

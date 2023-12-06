@@ -2,7 +2,6 @@
 from typing import Any, List
 
 import pytest
-from langchain.agents.load_tools import load_tools
 from langchain_core.documents import Document
 from langchain_core.tools import BaseTool
 
@@ -135,6 +134,8 @@ def test_load_returns_full_set_of_metadata() -> None:
 
 
 def _load_pubmed_from_universal_entry(**kwargs: Any) -> BaseTool:
+    from langchain.agents.load_tools import load_tools
+
     tools = load_tools(["pubmed"], **kwargs)
     assert len(tools) == 1, "loaded more than 1 tool"
     return tools[0]

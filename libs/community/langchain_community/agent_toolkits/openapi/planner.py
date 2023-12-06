@@ -2,13 +2,9 @@
 import json
 import re
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 import yaml
-from langchain.agents.agent import AgentExecutor
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.chains.llm import LLMChain
-from langchain.memory import ReadOnlySharedMemory
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
@@ -40,6 +36,11 @@ from langchain_community.output_parsers.json import parse_json_markdown
 from langchain_community.tools.requests.tool import BaseRequestsTool
 from langchain_community.utilities.requests import RequestsWrapper
 
+if TYPE_CHECKING:
+    from langchain.agents.agent import AgentExecutor
+    from langchain.chains.llm import LLMChain
+    from langchain.memory import ReadOnlySharedMemory
+
 #
 # Requests tools with LLM-instructed extraction of truncated responses.
 #
@@ -51,6 +52,8 @@ MAX_RESPONSE_LENGTH = 5000
 
 
 def _get_default_llm_chain(prompt: BasePromptTemplate) -> LLMChain:
+    from langchain.chains.llm import LLMChain
+
     return LLMChain(
         llm=OpenAI(),
         prompt=prompt,
@@ -73,7 +76,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
-    llm_chain: LLMChain = Field(
+    llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_GET_PROMPT)
     )
     """LLMChain used to extract the response."""
@@ -103,7 +106,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
-    llm_chain: LLMChain = Field(
+    llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_POST_PROMPT)
     )
     """LLMChain used to extract the response."""
@@ -132,7 +135,7 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
-    llm_chain: LLMChain = Field(
+    llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_PATCH_PROMPT)
     )
     """LLMChain used to extract the response."""
@@ -161,7 +164,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
-    llm_chain: LLMChain = Field(
+    llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_PUT_PROMPT)
     )
     """LLMChain used to extract the response."""
@@ -191,7 +194,7 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
     """The maximum length of the response."""
-    llm_chain: LLMChain = Field(
+    llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_DELETE_PROMPT)
     )
     """The LLM chain used to parse the response."""
@@ -217,6 +220,8 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
 def _create_api_planner_tool(
     api_spec: ReducedOpenAPISpec, llm: BaseLanguageModel
 ) -> Tool:
+    from langchain.chains.llm import LLMChain
+
     endpoint_descriptions = [
         f"{name} {description}" for name, description, _ in api_spec.endpoints
     ]
@@ -240,6 +245,10 @@ def _create_api_controller_agent(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
 ) -> AgentExecutor:
+    from langchain.agents.agent import AgentExecutor
+    from langchain.agents.mrkl.base import ZeroShotAgent
+    from langchain.chains.llm import LLMChain
+
     get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
     post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
     tools: List[BaseTool] = [
@@ -329,6 +338,10 @@ def create_openapi_agent(
     rather than a top-level planner
     that invokes a controller with its plan. This is to keep the planner simple.
     """
+    from langchain.agents.agent import AgentExecutor
+    from langchain.agents.mrkl.base import ZeroShotAgent
+    from langchain.chains.llm import LLMChain
+
     tools = [
         _create_api_planner_tool(api_spec, llm),
         _create_api_controller_tool(api_spec, requests_wrapper, llm),

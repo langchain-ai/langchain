@@ -1,6 +1,7 @@
-from typing import Any, Dict, Iterator, Optional
+from __future__ import annotations
 
-from langchain.text_splitter import Language
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional
+
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
@@ -11,17 +12,26 @@ from langchain_community.document_loaders.parsers.language.javascript import (
 )
 from langchain_community.document_loaders.parsers.language.python import PythonSegmenter
 
-LANGUAGE_EXTENSIONS: Dict[str, str] = {
-    "py": Language.PYTHON,
-    "js": Language.JS,
-    "cobol": Language.COBOL,
-}
+if TYPE_CHECKING:
+    from langchain.text_splitter import Language
 
-LANGUAGE_SEGMENTERS: Dict[str, Any] = {
-    Language.PYTHON: PythonSegmenter,
-    Language.JS: JavaScriptSegmenter,
-    Language.COBOL: CobolSegmenter,
-}
+try:
+    from langchain.text_splitter import Language
+
+    LANGUAGE_EXTENSIONS: Dict[str, str] = {
+        "py": Language.PYTHON,
+        "js": Language.JS,
+        "cobol": Language.COBOL,
+    }
+
+    LANGUAGE_SEGMENTERS: Dict[str, Any] = {
+        Language.PYTHON: PythonSegmenter,
+        Language.JS: JavaScriptSegmenter,
+        Language.COBOL: CobolSegmenter,
+    }
+except ImportError:
+    LANGUAGE_EXTENSIONS = {}
+    LANGUAGE_SEGMENTERS = {}
 
 
 class LanguageParser(BaseBlobParser):

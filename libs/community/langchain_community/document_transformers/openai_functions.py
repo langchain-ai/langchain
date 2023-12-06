@@ -1,8 +1,6 @@
 """Document transformers that use OpenAI Functions models"""
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
-from langchain.chains.llm import LLMChain
-from langchain.chains.openai_functions import create_tagging_chain
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate
@@ -47,7 +45,7 @@ class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
                 enhanced_documents = document_transformer.transform_documents(original_documents)
     """  # noqa: E501
 
-    tagging_chain: LLMChain
+    tagging_chain: Any
     """The chain used to extract metadata from each document."""
 
     def transform_documents(
@@ -129,6 +127,8 @@ def create_metadata_tagger(
 
                 enhanced_documents = document_transformer.transform_documents(original_documents)
     """  # noqa: E501
+    from langchain.chains.openai_functions import create_tagging_chain
+
     metadata_schema = (
         metadata_schema
         if isinstance(metadata_schema, dict)

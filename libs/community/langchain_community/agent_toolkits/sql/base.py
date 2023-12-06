@@ -1,12 +1,8 @@
 """SQL agent."""
-from typing import Any, Dict, List, Optional, Sequence
+from __future__ import annotations
 
-from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
-from langchain.agents.agent_types import AgentType
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
-from langchain.chains.llm import LLMChain
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage, SystemMessage
@@ -24,15 +20,19 @@ from langchain_community.agent_toolkits.sql.prompt import (
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.tools import BaseTool
 
+if TYPE_CHECKING:
+    from langchain.agents.agent import AgentExecutor
+    from langchain.agents.agent_types import AgentType
+
 
 def create_sql_agent(
     llm: BaseLanguageModel,
     toolkit: SQLDatabaseToolkit,
-    agent_type: AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    agent_type: Optional[AgentType] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = SQL_PREFIX,
     suffix: Optional[str] = None,
-    format_instructions: str = FORMAT_INSTRUCTIONS,
+    format_instructions: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     top_k: int = 10,
     max_iterations: Optional[int] = 15,
@@ -44,17 +44,29 @@ def create_sql_agent(
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct an SQL agent from an LLM and tools."""
+    from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
+    from langchain.agents.agent_types import AgentType
+    from langchain.agents.mrkl.base import ZeroShotAgent
+    from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
+    from langchain.chains.llm import LLMChain
+
+    agent_type = agent_type or AgentType.ZERO_SHOT_REACT_DESCRIPTION
     tools = toolkit.get_tools() + list(extra_tools)
     prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
     agent: BaseSingleActionAgent
 
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
+        prompt_params = (
+            {"format_instructions": format_instructions}
+            if format_instructions is not None
+            else {}
+        )
         prompt = ZeroShotAgent.create_prompt(
             tools,
             prefix=prefix,
             suffix=suffix or SQL_SUFFIX,
-            format_instructions=format_instructions,
             input_variables=input_variables,
+            **prompt_params,
         )
         llm_chain = LLMChain(
             llm=llm,

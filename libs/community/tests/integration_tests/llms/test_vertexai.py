@@ -9,10 +9,7 @@ import os
 from typing import Optional
 
 import pytest
-from langchain.chains.summarize import load_summarize_chain
-from langchain_core.documents import Document
 from langchain_core.outputs import LLMResult
-from pytest_mock import MockerFixture
 
 from langchain_community.llms import VertexAI, VertexAIModelGarden
 
@@ -152,31 +149,3 @@ def test_vertex_call_count_tokens() -> None:
     llm = VertexAI()
     output = llm.get_num_tokens("How are you?")
     assert output == 4
-
-
-@pytest.mark.requires("google.cloud.aiplatform")
-def test_get_num_tokens_be_called_when_using_mapreduce_chain(
-    mocker: MockerFixture,
-) -> None:
-    from vertexai.language_models._language_models import CountTokensResponse
-
-    m1 = mocker.patch(
-        "vertexai.preview.language_models._PreviewTextGenerationModel.count_tokens",
-        return_value=CountTokensResponse(
-            total_tokens=2,
-            total_billable_characters=2,
-            _count_tokens_response={"total_tokens": 2, "total_billable_characters": 2},
-        ),
-    )
-    llm = VertexAI()
-    chain = load_summarize_chain(
-        llm,
-        chain_type="map_reduce",
-        return_intermediate_steps=False,
-    )
-    doc = Document(page_content="Hi")
-    output = chain({"input_documents": [doc]})
-    assert isinstance(output["output_text"], str)
-    m1.assert_called_once()
-    assert llm._llm_type == "vertexai"
-    assert llm.model_name == llm.client._model_id
