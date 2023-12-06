@@ -80,7 +80,7 @@ class InMemoryVectorStore(VectorStore):
         *,
         ids: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> List[str]:
         """Add the given documents to the store (insert behavior)."""
         if ids and len(ids) != len(documents):
             raise ValueError(
@@ -96,6 +96,8 @@ class InMemoryVectorStore(VectorStore):
                     f"Document with uid {_id} already exists in the store."
                 )
             self.store[_id] = document
+
+        return list(ids)
 
     async def aadd_documents(
         self,

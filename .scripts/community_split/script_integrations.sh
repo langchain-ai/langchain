@@ -222,7 +222,7 @@ git checkout master -- langchain/tests/unit_tests/document_loaders/parsers/test_
 git checkout master -- langchain/tests/unit_tests/vectorstores/test_public_api.py
 git checkout master -- langchain/tests/unit_tests/schema
 touch langchain/tests/unit_tests/{llms,chat_models,tools,callbacks,runnables,document_loaders,docstore,document_transformers,embeddings,graphs,storage,utilities,vectorstores}/__init__.py
-touch langchain/tests/unit_tests/document_loaders/{blo_loaders,parsers}/__init__.py
+touch langchain/tests/unit_tests/document_loaders/{blob_loaders,parsers}/__init__.py
 
 cp core/Makefile community
 cp core/Makefile partners/openai
