@@ -1,5 +1,6 @@
 """Test RDF/ SPARQL Graph Database Chain."""
 import os
+import re
 
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
 from langchain.graphs import RdfGraph
@@ -77,3 +78,39 @@ def test_sparql_insert() -> None:
         os.remove(_local_copy)
     except OSError:
         pass
+
+
+def test_loading_schema_from_graphdb() -> None:
+    graph = RdfGraph(
+        query_endpoint="http://localhost:7200/repositories/langchain",
+        graph_kwargs={"bind_namespaces": "none"}
+    )
+    schema = graph.get_schema
+    prefix = (
+        "In the following, each IRI is followed by the local name and optionally its description in parentheses. \n"
+        "The RDF graph supports the following node types:")
+    assert schema.startswith(prefix)
+
+    infix = "The RDF graph supports the following relationships:"
+    assert infix in schema
+
+    classes = schema[len(prefix):schema.index(infix)]
+    assert len(re.findall("<[^>]+> \\([^)]+\\)", classes)) == 5
+
+    relationships = schema[schema.index(infix) + len(infix):]
+    assert len(re.findall("<[^>]+> \\([^)]+\\)", relationships)) == 58
+
+
+def test_graph_qa_chain_with_graphdb() -> None:
+    graph = RdfGraph(
+        query_endpoint="http://localhost:7200/repositories/langchain",
+        graph_kwargs={"bind_namespaces": "none"}
+    )
+
+    chain = GraphSparqlQAChain.from_llm(OpenAI(temperature=0), graph=graph)
+    output = chain.run("What is Tim Berners-Lee's work homepage?")
+    expected_output = (
+        " The work homepage of Tim Berners-Lee is "
+        "http://www.w3.org/People/Berners-Lee/."
+    )
+    assert output == expected_output

@@ -4,6 +4,7 @@ from typing import (
     TYPE_CHECKING,
     List,
     Optional,
+    Dict,
 )
 
 if TYPE_CHECKING:
@@ -115,6 +116,7 @@ class RdfGraph:
         update_endpoint: Optional[str] = None,
         standard: Optional[str] = "rdf",
         local_copy: Optional[str] = None,
+        graph_kwargs: Optional[Dict] = None,
     ) -> None:
         """
         Set up the RDFlib graph
@@ -125,6 +127,8 @@ class RdfGraph:
         :param update_endpoint: SPARQL endpoint for UPDATE queries, write access
         :param standard: RDF, RDFS, or OWL
         :param local_copy: new local copy for storing changes
+        :param graph_kwargs: Additional rdflib.Graph specific kwargs that will be used to initialize it.
+        If not provided, only identifier="urn:x-rdflib:default" is used to initialize the graph.
         """
         self.source_file = source_file
         self.serialization = serialization
@@ -177,7 +181,10 @@ class RdfGraph:
             else:
                 self._store = sparqlstore.SPARQLUpdateStore()
                 self._store.open((query_endpoint, update_endpoint))
-            self.graph = rdflib.Graph(self._store, identifier=default)
+            if graph_kwargs:
+                self.graph = rdflib.Graph(self._store, **graph_kwargs)
+            else:
+                self.graph = rdflib.Graph(self._store, identifier=default)
 
         # Verify that the graph was loaded
         if not len(self.graph):
