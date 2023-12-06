@@ -26,7 +26,7 @@ class MultiVectorRetriever(BaseRetriever):
     vectorstore: VectorStore
     """The underlying vectorstore to use to store small chunks
     and their embedding vectors"""
-    base_store: Optional[BaseStore[str, bytes]]
+    byte_store: Optional[BaseStore[str, bytes]]
     """The lower-level backing storage layer for the parent documents"""
     docstore: BaseStore[str, Document]
     """The storage interface for the parent documents"""
@@ -40,11 +40,11 @@ class MultiVectorRetriever(BaseRetriever):
     def shim_docstore(
         cls, docstore: Optional[BaseStore[str, Document]], values: Any
     ) -> BaseStore[str, Document]:
-        base_store = values.get("base_store")
-        if base_store is not None:
-            docstore = create_kv_docstore(base_store)
+        byte_store = values.get("byte_store")
+        if byte_store is not None:
+            docstore = create_kv_docstore(byte_store)
         elif docstore is None:
-            raise Exception("You must pass a `base_store` parameter.")
+            raise Exception("You must pass a `byte_store` parameter.")
         return docstore
 
     def _get_relevant_documents(
