@@ -44,7 +44,6 @@ from langchain.agents.agent import (
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_toolkits import (
     create_json_agent,
-    create_mongo_agent,
     create_openapi_agent,
     create_pbi_agent,
     create_pbi_chat_agent,
@@ -116,7 +115,6 @@ __all__ = [
     "Tool",
     "ZeroShotAgent",
     "create_json_agent",
-    "create_mongo_agent",
     "create_openapi_agent",
     "create_pbi_agent",
     "create_pbi_chat_agent",

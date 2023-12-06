@@ -1,6 +1,7 @@
 from langchain.agents import create_mongo_agent
 from langchain.agents.agent_toolkits import MongoDatabaseToolkit
-from langchain.utilities.mongo_database import MongoDatabase
+
+from langchain_experimental.utilities.mongo_database import MongoDatabase
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

@@ -1956,7 +1956,7 @@ files = [
 name = "dnspython"
 version = "2.4.2"
 description = "DNS toolkit"
-optional = false
+optional = true
 python-versions = ">=3.8,<4.0"
 files = [
     {file = "dnspython-2.4.2-py3-none-any.whl", hash = "sha256:57c6fbaaeaaf39c891292012060beb141791735dbb4004798328fc2c467402d8"},
@@ -7030,7 +7030,7 @@ tests = ["duckdb", "ml_dtypes", "pandas (>=1.4)", "polars[pandas,pyarrow]", "pyt
 name = "pymongo"
 version = "4.6.0"
 description = "Python driver for MongoDB <http://www.mongodb.org>"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "pymongo-4.6.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:c011bd5ad03cc096f99ffcfdd18a1817354132c1331bed7a837a25226659845f"},
@@ -11086,4 +11086,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "d8210f85a293f20fa62a8fbd12bbde03b0c0b38d25a40e46ac67d086ecd09e7d"
+content-hash = "85ab3255817902f60ff78e08bc854cd029461ae16c064b767abf842458424a77"

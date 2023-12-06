@@ -11,9 +11,9 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.utilities.mongo_database import MongoDatabase
+from langchain_experimental.utilities.mongo_database import MongoDatabase
 from langchain.tools.base import BaseTool
-from langchain.tools.mongo_database.prompt import QUERY_CHECKER
+from langchain_experimental.tools.mongo_database.prompt import QUERY_CHECKER
 
 
 class BaseMongoDBTool(BaseModel):
