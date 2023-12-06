@@ -17,7 +17,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
         return [res]
 
 
-def test_multi_vector_retriever() -> None:
+def test_multi_vector_retriever_initialization() -> None:
     vectorstore = InMemoryVectorstoreWithSearch()
     retriever = MultiVectorRetriever(
         vectorstore=vectorstore, docstore=InMemoryStore(), doc_id="doc_id"

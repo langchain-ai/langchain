@@ -4,7 +4,7 @@ from langchain_core.documents import Document
 
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.storage import InMemoryStore
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import CharacterTextSplitter
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
 
@@ -17,21 +17,24 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
             return []
         return [res]
 
-    def add_documents(self, documents: Sequence) -> None:
-        return super().add_documents(documents, ids=["1"])
+    def add_documents(self, documents: Sequence[Document]) -> None:
+        print(documents)
+        return super().add_documents(
+            documents, ids=[f"{i}" for i in range(len(documents))]
+        )
 
 
-def test_parent_document_retriever() -> None:
+def test_parent_document_retriever_initialization() -> None:
     vectorstore = InMemoryVectorstoreWithSearch()
     store = InMemoryStore()
-    child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
-    documents = [Document(page_content="test document", metadata={"doc_id": "1"})]
+    child_splitter = CharacterTextSplitter(chunk_size=400)
+    documents = [Document(page_content="test document")]
     retriever = ParentDocumentRetriever(
         vectorstore=vectorstore,
         docstore=store,
         child_splitter=child_splitter,
     )
-    retriever.add_documents(documents, ids=["1"])
-    results = retriever.invoke("1")
+    retriever.add_documents(documents)
+    results = retriever.invoke("0")
     assert len(results) > 0
     assert results[0].page_content == "test document"
