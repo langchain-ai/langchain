@@ -2,8 +2,9 @@
 
 from typing import Generator
 
+from langchain_core.outputs import LLMResult
+
 from langchain.llms.volcengine_maas import VolcEngineMaasLLM
-from langchain.schema import LLMResult
 
 
 def test_default_call() -> None:
