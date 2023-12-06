@@ -32,31 +32,6 @@ MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
 GetSessionHistoryCallable = Union[Callable[..., BaseChatMessageHistory]]
 
 
-def check_callable_argument_type(callable_: GetSessionHistoryCallable) -> str:
-    """Check if the callable accepts a single argument of type 'str' or 'Dict'."""
-    sig = inspect.signature(callable_)
-
-    if len(sig.parameters) == 1:
-        param_name, param = sig.parameters.popitem()
-        if param.annotation is str:
-            return (
-                f"The callable accepts a single argument of type 'str' "
-                f"named '{param_name}'."
-            )
-        elif param.annotation is Dict:
-            return (
-                f"The callable accepts a single argument of type 'Dict' "
-                f"named '{param_name}'."
-            )
-        else:
-            return (
-                "The callable accepts a single argument, but its type is "
-                "not 'str' or 'Dict'."
-            )
-    else:
-        return "The callable does not accept a single argument."
-
-
 class RunnableWithMessageHistory(RunnableBindingBase):
     """A runnable that manages chat message history for another runnable.
 
