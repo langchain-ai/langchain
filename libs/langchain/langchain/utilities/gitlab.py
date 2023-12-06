@@ -4,7 +4,8 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -37,6 +38,10 @@ class GitLabAPIWrapper(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
+
+        gitlab_url = get_from_dict_or_env(
+            values, "gitlab_url", "GITLAB_URL", default=None
+        )
         gitlab_repository = get_from_dict_or_env(
             values, "gitlab_repository", "GITLAB_REPOSITORY"
         )
@@ -61,7 +66,11 @@ class GitLabAPIWrapper(BaseModel):
                 "Please install it with `pip install python-gitlab`"
             )
 
-        g = gitlab.Gitlab(private_token=gitlab_personal_access_token)
+        g = gitlab.Gitlab(
+            url=gitlab_url,
+            private_token=gitlab_personal_access_token,
+            keep_base_url=True,
+        )
 
         g.auth()
 

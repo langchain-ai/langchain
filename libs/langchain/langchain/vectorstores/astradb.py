@@ -17,11 +17,11 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.utils.iter import batch_iterate
+from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
-from langchain.utils.iter import batch_iterate
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 ADBVST = TypeVar("ADBVST", bound="AstraDB")
@@ -34,7 +34,7 @@ DocDict = Dict[str, Any]  # dicts expressing entries to insert
 #   (20 is the max batch size for the HTTP API at the time of writing)
 DEFAULT_BATCH_SIZE = 20
 # Number of threads to insert batches concurrently:
-DEFAULT_BULK_INSERT_BATCH_CONCURRENCY = 5
+DEFAULT_BULK_INSERT_BATCH_CONCURRENCY = 16
 # Number of threads in a batch to insert pre-existing entries:
 DEFAULT_BULK_INSERT_OVERWRITE_CONCURRENCY = 10
 # Number of threads (for deleting multiple rows concurrently):
@@ -77,6 +77,47 @@ class AstraDB(VectorStore):
 
                 vectorstore.add_texts(["Giraffes", "All good here"])
                 results = vectorstore.similarity_search("Everything's ok", k=1)
+
+      Constructor Args (only keyword-arguments accepted):
+          embedding (Embeddings): embedding function to use.
+          collection_name (str): name of the Astra DB collection to create/use.
+          token (Optional[str]): API token for Astra DB usage.
+          api_endpoint (Optional[str]): full URL to the API endpoint,
+              such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
+          astra_db_client (Optional[Any]): *alternative to token+api_endpoint*,
+              you can pass an already-created 'astrapy.db.AstraDB' instance.
+          namespace (Optional[str]): namespace (aka keyspace) where the
+              collection is created. Defaults to the database's "default namespace".
+          metric (Optional[str]): similarity function to use out of those
+              available in Astra DB. If left out, it will use Astra DB API's
+              defaults (i.e. "cosine" - but, for performance reasons,
+              "dot_product" is suggested if embeddings are normalized to one).
+
+      Advanced arguments (coming with sensible defaults):
+          batch_size (Optional[int]): Size of batches for bulk insertions.
+          bulk_insert_batch_concurrency (Optional[int]): Number of threads
+              to insert batches concurrently.
+          bulk_insert_overwrite_concurrency (Optional[int]): Number of
+              threads in a batch to insert pre-existing entries.
+          bulk_delete_concurrency (Optional[int]): Number of threads
+              (for deleting multiple rows concurrently).
+          pre_delete_collection (Optional[bool]): whether to delete the collection
+              before creating it. If False and the collection already exists,
+              the collection will be used as is.
+
+      A note on concurrency: as a rule of thumb, on a typical client machine
+      it is suggested to keep the quantity
+          bulk_insert_batch_concurrency * bulk_insert_overwrite_concurrency
+      much below 1000 to avoid exhausting the client multithreading/networking
+      resources. The hardcoded defaults are somewhat conservative to meet
+      most machines' specs, but a sensible choice to test may be:
+          bulk_insert_batch_concurrency = 80
+          bulk_insert_overwrite_concurrency = 10
+      A bit of experimentation is required to nail the best results here,
+      depending on both the machine/network specs and the expected workload
+      (specifically, how often a write is an update of an existing id).
+      Remember you can pass concurrency settings to individual calls to
+      add_texts and add_documents as well.
     """
 
     @staticmethod
@@ -100,7 +141,11 @@ class AstraDB(VectorStore):
         bulk_insert_batch_concurrency: Optional[int] = None,
         bulk_insert_overwrite_concurrency: Optional[int] = None,
         bulk_delete_concurrency: Optional[int] = None,
+        pre_delete_collection: bool = False,
     ) -> None:
+        """
+        Create an AstraDB vector store object. See class docstring for help.
+        """
         try:
             from astrapy.db import (
                 AstraDB as LibAstraDB,
@@ -113,33 +158,6 @@ class AstraDB(VectorStore):
                 "Could not import a recent astrapy python package. "
                 "Please install it with `pip install --upgrade astrapy`."
             )
-        """
-        Create an AstraDB vector store object.
-
-        Args (only keyword-arguments accepted):
-            embedding (Embeddings): embedding function to use.
-            collection_name (str): name of the Astra DB collection to create/use.
-            token (Optional[str]): API token for Astra DB usage.
-            api_endpoint (Optional[str]): full URL to the API endpoint,
-                such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
-            astra_db_client (Optional[Any]): *alternative to token+api_endpoint*,
-                you can pass an already-created 'astrapy.db.AstraDB' instance.
-            namespace (Optional[str]): namespace (aka keyspace) where the
-                collection is created. Defaults to the database's "default namespace".
-            metric (Optional[str]): similarity function to use out of those
-                available in Astra DB. If left out, it will use Astra DB API's
-                defaults (i.e. "cosine" - but, for performance reasons,
-                "dot_product" is suggested if embeddings are normalized to one).
-
-        Advanced arguments (coming with sensible defaults):
-            batch_size (Optional[int]): Size of batches for bulk insertions.
-            bulk_insert_batch_concurrency (Optional[int]): Number of threads
-                to insert batches concurrently.
-            bulk_insert_overwrite_concurrency (Optional[int]): Number of
-                threads in a batch to insert pre-existing entries.
-            bulk_delete_concurrency (Optional[int]): Number of threads
-                (for deleting multiple rows concurrently).
-        """
 
         # Conflicting-arg checks:
         if astra_db_client is not None:
@@ -178,7 +196,10 @@ class AstraDB(VectorStore):
                 api_endpoint=self.api_endpoint,
                 namespace=self.namespace,
             )
-        self._provision_collection()
+        if not pre_delete_collection:
+            self._provision_collection()
+        else:
+            self.clear()
 
         self.collection = LibAstraDBCollection(
             collection_name=self.collection_name,
@@ -330,6 +351,12 @@ class AstraDB(VectorStore):
                 pre-existing documents in each batch (which require individual
                 API calls). Defaults to instance-level setting if not provided.
 
+        A note on metadata: there are constraints on the allowed field names
+        in this dictionary, coming from the underlying Astra DB API.
+        For instance, the `$` (dollar sign) cannot be used in the dict keys.
+        See this document for details:
+            docs.datastax.com/en/astra-serverless/docs/develop/dev-with-json.html
+
         Returns:
             List[str]: List of ids of the added texts.
         """
@@ -460,12 +487,11 @@ class AstraDB(VectorStore):
             self.collection.paginated_find(
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
-                options={"limit": k},
+                options={"limit": k, "includeSimilarity": True},
                 projection={
                     "_id": 1,
                     "content": 1,
                     "metadata": 1,
-                    "$similarity": 1,
                 },
             )
         )
@@ -589,12 +615,11 @@ class AstraDB(VectorStore):
             self.collection.paginated_find(
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
-                options={"limit": fetch_k},
+                options={"limit": fetch_k, "includeSimilarity": True},
                 projection={
                     "_id": 1,
                     "content": 1,
                     "metadata": 1,
-                    "$similarity": 1,
                     "$vector": 1,
                 },
             )

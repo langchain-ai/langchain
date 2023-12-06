@@ -2,9 +2,11 @@ import logging
 import time
 from typing import Dict, Iterator, Optional, Tuple
 
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document
+from langchain.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +37,13 @@ class OpenAIWhisperParser(BaseBlobParser):
                 "pydub package not found, please install it with " "`pip install pydub`"
             )
 
-        # Set the API key if provided
-        if self.api_key:
-            openai.api_key = self.api_key
+        if is_openai_v1():
+            # api_key optional, defaults to `os.environ['OPENAI_API_KEY']`
+            client = openai.OpenAI(api_key=self.api_key)
+        else:
+            # Set the API key if provided
+            if self.api_key:
+                openai.api_key = self.api_key
 
         # Audio file from disk
         audio = AudioSegment.from_file(blob.path)
@@ -62,7 +68,12 @@ class OpenAIWhisperParser(BaseBlobParser):
             attempts = 0
             while attempts < 3:
                 try:
-                    transcript = openai.Audio.transcribe("whisper-1", file_obj)
+                    if is_openai_v1():
+                        transcript = client.audio.transcriptions.create(
+                            model="whisper-1", file=file_obj
+                        )
+                    else:
+                        transcript = openai.Audio.transcribe("whisper-1", file_obj)
                     break
                 except Exception as e:
                     attempts += 1

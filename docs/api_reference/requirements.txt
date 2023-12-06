@@ -1,5 +1,6 @@
 -e libs/langchain
 -e libs/experimental
+-e libs/core
 pydantic<2
 autodoc_pydantic==1.8.0
 myst_parser

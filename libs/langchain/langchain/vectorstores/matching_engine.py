@@ -6,9 +6,10 @@ import time
 import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
-from langchain.schema.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 from langchain.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
@@ -25,7 +26,7 @@ logger = logging.getLogger()
 
 
 class MatchingEngine(VectorStore):
-    """`Google Vertex AI Matching Engine` vector store.
+    """`Google Vertex AI Vector Search` (previously Matching Engine) vector store.
 
     While the embeddings are stored in the Matching Engine, the embedded
     documents will be stored in GCS.
@@ -33,7 +34,7 @@ class MatchingEngine(VectorStore):
     An existing Index and corresponding Endpoint are preconditions for
     using this module.
 
-    See usage in docs/modules/indexes/vectorstores/examples/matchingengine.ipynb
+    See usage in docs/integrations/vectorstores/google_vertex_ai_vector_search.ipynb
 
     Note that this implementation is mostly meant for reading if you are
     planning to do a real time implementation. While reading is a real time
@@ -49,7 +50,8 @@ class MatchingEngine(VectorStore):
         gcs_bucket_name: str,
         credentials: Optional[Credentials] = None,
     ):
-        """Vertex Matching Engine implementation of the vector store.
+        """Google Vertex AI Vector Search (previously Matching Engine)
+         implementation of the vector store.
 
         While the embeddings are stored in the Matching Engine, the embedded
         documents will be stored in GCS.
@@ -58,7 +60,7 @@ class MatchingEngine(VectorStore):
         using this module.
 
         See usage in
-        docs/modules/indexes/vectorstores/examples/matchingengine.ipynb.
+        docs/integrations/vectorstores/google_vertex_ai_vector_search.ipynb.
 
         Note that this implementation is mostly meant for reading if you are
         planning to do a real time implementation. While reading is a real time
@@ -137,7 +139,7 @@ class MatchingEngine(VectorStore):
             json_: dict = {"id": id, "embedding": embedding}
             if metadatas is not None:
                 json_["metadata"] = metadatas[idx]
-            jsons.append(json)
+            jsons.append(json_)
             self._upload_to_gcs(text, f"documents/{id}")
 
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")
@@ -231,7 +233,9 @@ class MatchingEngine(VectorStore):
         filter = filter or []
 
         # If the endpoint is public we use the find_neighbors function.
-        if self.endpoint._public_match_client:
+        if hasattr(self.endpoint, "_public_match_client") and (
+            self.endpoint._public_match_client
+        ):
             response = self.endpoint.find_neighbors(
                 deployed_index_id=self._get_index_id(),
                 queries=[embedding],

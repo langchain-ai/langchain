@@ -5,9 +5,9 @@ import zipfile
 from typing import Sequence
 
 import pytest
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from langchain.chat_loaders import telegram, utils
-from langchain.schema import AIMessage, BaseMessage, HumanMessage
 
 
 def _assert_messages_are_equal(

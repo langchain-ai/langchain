@@ -1,3 +1,6 @@
+from langchain.memory.chat_message_histories.astradb import (
+    AstraDBChatMessageHistory,
+)
 from langchain.memory.chat_message_histories.cassandra import (
     CassandraChatMessageHistory,
 )
@@ -13,6 +16,7 @@ from langchain.memory.chat_message_histories.firestore import (
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
 from langchain.memory.chat_message_histories.momento import MomentoChatMessageHistory
 from langchain.memory.chat_message_histories.mongodb import MongoDBChatMessageHistory
+from langchain.memory.chat_message_histories.neo4j import Neo4jChatMessageHistory
 from langchain.memory.chat_message_histories.postgres import PostgresChatMessageHistory
 from langchain.memory.chat_message_histories.redis import RedisChatMessageHistory
 from langchain.memory.chat_message_histories.rocksetdb import RocksetChatMessageHistory
@@ -30,6 +34,7 @@ from langchain.memory.chat_message_histories.xata import XataChatMessageHistory
 from langchain.memory.chat_message_histories.zep import ZepChatMessageHistory
 
 __all__ = [
+    "AstraDBChatMessageHistory",
     "ChatMessageHistory",
     "CassandraChatMessageHistory",
     "CosmosDBChatMessageHistory",
@@ -48,4 +53,5 @@ __all__ = [
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
     "UpstashRedisChatMessageHistory",
+    "Neo4jChatMessageHistory",
 ]

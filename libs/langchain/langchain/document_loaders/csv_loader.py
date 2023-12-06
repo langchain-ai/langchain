@@ -2,7 +2,8 @@ import csv
 from io import TextIOWrapper
 from typing import Any, Dict, List, Optional, Sequence
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.helpers import detect_file_encodings
 from langchain.document_loaders.unstructured import (
@@ -102,7 +103,7 @@ class CSVLoader(BaseLoader):
                     f"Source column '{self.source_column}' not found in CSV file."
                 )
             content = "\n".join(
-                f"{k.strip()}: {v.strip()}"
+                f"{k.strip()}: {v.strip() if v is not None else v}"
                 for k, v in row.items()
                 if k not in self.metadata_columns
             )
