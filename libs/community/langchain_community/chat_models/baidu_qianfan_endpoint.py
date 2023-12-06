@@ -18,8 +18,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +87,8 @@ class QianfanChatEndpoint(BaseChatModel):
 
     client: Any
 
-    qianfan_ak: Optional[str] = None
-    qianfan_sk: Optional[str] = None
+    qianfan_ak: Optional[SecretStr] = None
+    qianfan_sk: Optional[SecretStr] = None
 
     streaming: Optional[bool] = False
     """Whether to stream the results or not."""
@@ -117,19 +117,23 @@ class QianfanChatEndpoint(BaseChatModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        values["qianfan_ak"] = get_from_dict_or_env(
-            values,
-            "qianfan_ak",
-            "QIANFAN_AK",
+        values["qianfan_ak"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "qianfan_ak",
+                "QIANFAN_AK",
+            )
         )
-        values["qianfan_sk"] = get_from_dict_or_env(
-            values,
-            "qianfan_sk",
-            "QIANFAN_SK",
+        values["qianfan_sk"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "qianfan_sk",
+                "QIANFAN_SK",
+            )
         )
         params = {
-            "ak": values["qianfan_ak"],
-            "sk": values["qianfan_sk"],
+            "ak": values["qianfan_ak"].get_secret_value(),
+            "sk": values["qianfan_sk"].get_secret_value(),
             "model": values["model"],
             "stream": values["streaming"],
         }

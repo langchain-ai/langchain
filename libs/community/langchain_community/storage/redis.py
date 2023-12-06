@@ -1,11 +1,11 @@
 from typing import Any, Iterator, List, Optional, Sequence, Tuple, cast
 
-from langchain_core.stores import BaseStore
+from langchain_core.stores import ByteStore
 
 from langchain_community.utilities.redis import get_client
 
 
-class RedisStore(BaseStore[str, bytes]):
+class RedisStore(ByteStore):
     """BaseStore implementation using Redis as the underlying store.
 
     Examples:

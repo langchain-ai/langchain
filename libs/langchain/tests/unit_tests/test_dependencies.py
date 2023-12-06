@@ -35,7 +35,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         package_name for package_name, required in is_required.items() if required
     ]
 
-    assert sorted(required_dependencies) == sorted([
+    assert sorted(required_dependencies) == [
         "PyYAML",
         "SQLAlchemy",
         "aiohttp",
@@ -50,9 +50,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "python",
         "requests",
         "tenacity",
-        "langchain-community",
-        "langchain-openai"
-    ])
+    ]
 
     unrequired_dependencies = [
         package_name for package_name, required in is_required.items() if not required

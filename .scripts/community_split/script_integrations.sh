@@ -221,7 +221,8 @@ git checkout master -- langchain/tests/unit_tests/document_loaders/blob_loaders/
 git checkout master -- langchain/tests/unit_tests/document_loaders/parsers/test_public_api.py
 git checkout master -- langchain/tests/unit_tests/vectorstores/test_public_api.py
 git checkout master -- langchain/tests/unit_tests/schema
-touch langchain/tests/unit_tests/{llms,chat_models,tools,callbacks,runnables}/__init__.py
+touch langchain/tests/unit_tests/{llms,chat_models,tools,callbacks,runnables,document_loaders,docstore,document_transformers,embeddings,graphs,storage,utilities,vectorstores}/__init__.py
+touch langchain/tests/unit_tests/document_loaders/{blo_loaders,parsers}/__init__.py
 
 cp core/Makefile community
 cp core/Makefile partners/openai
@@ -230,65 +231,11 @@ sed -i '' 's/libs\/core/libs\/partners\/openai/g' partners/openai/Makefile
 cp -r core/scripts community
 cp -r core/scripts partners/openai
 
-printf 'from langchain_openai.llms import BaseOpenAI, OpenAI, AzureOpenAI\nfrom langchain_openai.chat_models import _import_tiktoken, ChatOpenAI, AzureChatOpenAI\nfrom langchain_openai.embeddings import OpenAIEmbeddings, AzureOpenAIEmbeddings\nfrom langchain_openai.functions import convert_pydantic_to_openai_function, convert_pydantic_to_openai_tool\n\n__all__ = ["_import_tiktoken", "OpenAI", "AzureOpenAI", "ChatOpenAI", "AzureChatOpenAI", "OpenAIEmbeddings", "AzureOpenAIEmbeddings", "convert_pydantic_to_openai_function", "convert_pydantic_to_openai_tool", "BaseOpenAI"]' >> partners/openai/langchain_openai/__init__.py
-printf 'from langchain_openai.llms.base import update_token_usage, _stream_response_to_generation_chunk, _update_response, _streaming_response_template, _create_retry_decorator, completion_with_retry, acompletion_with_retry, BaseOpenAI, OpenAIChat, OpenAI, AzureOpenAI\n\n__all__ = ["update_token_usage", "_stream_response_to_generation_chunk", "_update_response", "_streaming_response_template", "_create_retry_decorator", "completion_with_retry", "acompletion_with_rety", "OpenAIChat", "OpenAI", "AzureOpenAI", "BaseOpenAI"]' >> partners/openai/langchain_openai/llms/__init__.py
-printf 'from langchain_openai.chat_models.base import _create_retry_decorator, acompletion_with_retry, _convert_delta_to_message_chunk, _import_tiktoken, ChatOpenAI\nfrom langchain_openai.chat_models.azure import AzureChatOpenAI\n\n__all__ = ["_create_retry_decorator", "acompletion_with_retry", "_convert_delta_to_message_chunk", "_import_tiktoken", "ChatOpenAI", "AzureChatOpenAI"]' >> partners/openai/langchain_openai/chat_models/__init__.py
-printf 'from langchain_openai.embeddings.base import _create_retry_decorator, _async_retry_decorator, _check_response, embed_with_retry, async_embed_with_retry, _is_openai_v1, OpenAIEmbeddings\nfrom langchain_openai.embeddings.azure import AzureOpenAIEmbeddings\n\n\n__all__ = ["_create_retry_decorator", "_async_retry_decorator", "_check_response", "embed_with_retry", "async_embed_with_retry", "_is_openai_v1", "OpenAIEmbeddings", "AzureOpenAIEmbeddings"]' >> partners/openai/langchain_openai/embeddings/__init__.py
-
 
 sed -i '' 's/from\ langchain_openai.chat_models\ /from\ langchain_openai.chat_models.base\ /g' partners/openai/langchain_openai/chat_models/azure.py
 sed -i '' 's/from\ langchain_openai.embeddings\ /from\ langchain_openai.embeddings.base\ /g' partners/openai/langchain_openai/embeddings/azure.py
 
-echo '"""
-**Utility functions** for LangChain.
-
-These functions do not depend on any other LangChain module.
-"""
-
-from langchain_core.utils.formatting import StrictFormatter, formatter
-from langchain_core.utils.input import (
-    get_bolded_text,
-    get_color_mapping,
-    get_colored_text,
-    print_text,
-)
-from langchain_core.utils.loading import try_load_from_hub
-from langchain_core.utils.utils import (
-    build_extra_kwargs,
-    check_package_version,
-    convert_to_secret_str,
-    get_pydantic_field_names,
-    guard_import,
-    mock_now,
-    raise_for_status_with_text,
-    xor_args,
-)
-from langchain_core.utils.env import get_from_env, get_from_dict_or_env
-from langchain_core.utils.strings import stringify_dict, comma_list, stringify_value
-
-__all__ = [
-    "StrictFormatter",
-    "check_package_version",
-    "convert_to_secret_str",
-    "formatter",
-    "get_bolded_text",
-    "get_color_mapping",
-    "get_colored_text",
-    "get_pydantic_field_names",
-    "guard_import",
-    "mock_now",
-    "print_text",
-    "raise_for_status_with_text",
-    "xor_args",
-    "try_load_from_hub",
-    "build_extra_kwargs",
-    "get_from_env",
-    "get_from_dict_or_env",
-    "stringify_dict",
-    "comma_list",
-    "stringify_value",
-]
-' > core/langchain_core/utils/__init__.py
+cp -r ../.scripts/community_split/libs/* .
 
 cd core
 make format
