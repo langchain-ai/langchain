@@ -30,7 +30,7 @@ class DashVector(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import DashVector
-            from langchain_openai.embedding import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
             import dashvector
 
             client = dashvector.Client(api_key="***")

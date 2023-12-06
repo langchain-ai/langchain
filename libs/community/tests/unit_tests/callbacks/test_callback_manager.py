@@ -15,7 +15,7 @@ from langchain_core.callbacks.manager import (
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer, wait_for_all_tracers
-from langchain_openai.llm import BaseOpenAI
+from langchain_openai.llms import BaseOpenAI
 
 from tests.unit_tests.callbacks.fake_callback_handler import (
     BaseFakeCallbackHandler,

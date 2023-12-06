@@ -5,11 +5,9 @@ from langchain_community.chat_models.litellm import (
     _convert_dict_to_message,
     _convert_message_to_dict,
     _create_retry_decorator,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "ChatLiteLLMException",
     "_create_retry_decorator",
     "_convert_dict_to_message",

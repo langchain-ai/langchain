@@ -1,3 +1,3 @@
-from langchain_community.llms.bananadev import Banana, logger
+from langchain_community.llms.bananadev import Banana
 
-__all__ = ["logger", "Banana"]
+__all__ = ["Banana"]

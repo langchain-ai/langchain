@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.text import TextLoader, logger
+from langchain_community.document_loaders.text import TextLoader
 
-__all__ = ["logger", "TextLoader"]
+__all__ = ["TextLoader"]

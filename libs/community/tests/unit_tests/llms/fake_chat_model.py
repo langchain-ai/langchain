@@ -5,10 +5,9 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-
-from langchain_community.chat_models.base import SimpleChatModel
 
 
 class FakeChatModel(SimpleChatModel):

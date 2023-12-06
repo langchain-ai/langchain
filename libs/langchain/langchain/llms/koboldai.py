@@ -1,3 +1,3 @@
-from langchain_community.llms.koboldai import KoboldApiLLM, clean_url, logger
+from langchain_community.llms.koboldai import KoboldApiLLM, clean_url
 
-__all__ = ["logger", "clean_url", "KoboldApiLLM"]
+__all__ = ["clean_url", "KoboldApiLLM"]

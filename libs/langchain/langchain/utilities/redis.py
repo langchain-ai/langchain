@@ -7,11 +7,9 @@ from langchain_community.utilities.redis import (
     _redis_sentinel_client,
     check_redis_module_exist,
     get_client,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "_array_to_buffer",
     "_buffer_to_array",
     "TokenEscaper",

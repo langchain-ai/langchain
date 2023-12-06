@@ -1,7 +1,7 @@
 """Test Nebula API wrapper."""
+from langchain.chains.llm import LLMChain
 from langchain_core.prompts.prompt import PromptTemplate
 
-from langchain_community.chains.llm import LLMChain
 from langchain_community.llms.symblai_nebula import Nebula
 
 

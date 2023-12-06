@@ -22,7 +22,7 @@ class MWDumpLoader(BaseLoader):
                 encoding="utf8"
             )
             docs = loader.load()
-            from langchain_community.text_splitter import RecursiveCharacterTextSplitter
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=1000, chunk_overlap=0
             )

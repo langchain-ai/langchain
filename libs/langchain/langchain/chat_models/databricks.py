@@ -1,3 +1,3 @@
-from langchain_community.chat_models.databricks import ChatDatabricks, logger
+from langchain_community.chat_models.databricks import ChatDatabricks
 
-__all__ = ["logger", "ChatDatabricks"]
+__all__ = ["ChatDatabricks"]

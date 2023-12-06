@@ -8,7 +8,7 @@ from typing import Dict, Optional, Union
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-from langchain_openai.embedding import OpenAIEmbeddings
+from langchain_openai.embeddings.base import OpenAIEmbeddings
 from langchain_openai.utils import is_openai_v1
 
 

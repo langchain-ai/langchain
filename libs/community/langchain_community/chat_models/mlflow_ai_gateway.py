@@ -8,6 +8,7 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -21,8 +22,6 @@ from langchain_core.outputs import (
     ChatResult,
 )
 from langchain_core.pydantic_v1 import BaseModel, Extra
-
-from langchain_community.chat_models.base import BaseChatModel
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Mapping, Optional, Union
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
-
-from langchain_community.llms.base import LLM
+from langchain_core.language_models.llms import LLM
 
 if TYPE_CHECKING:
     from xinference.client import RESTfulChatModelHandle, RESTfulGenerateModelHandle

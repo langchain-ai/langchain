@@ -10,9 +10,8 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_openai.chat_model import ChatOpenAI
-
-from langchain_community.adapters.openai import convert_dict_to_message
+from langchain_openai.adapters import convert_dict_to_message
+from langchain_openai.chat_models import ChatOpenAI
 
 
 @pytest.mark.requires("openai")

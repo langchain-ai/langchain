@@ -1,6 +1,3 @@
-from langchain_community.document_loaders.cube_semantic import (
-    CubeSemanticLoader,
-    logger,
-)
+from langchain_community.document_loaders.cube_semantic import CubeSemanticLoader
 
-__all__ = ["logger", "CubeSemanticLoader"]
+__all__ = ["CubeSemanticLoader"]

@@ -1,3 +1,3 @@
-from langchain_community.llms.edenai import EdenAI, logger
+from langchain_community.llms.edenai import EdenAI
 
-__all__ = ["logger", "EdenAI"]
+__all__ = ["EdenAI"]

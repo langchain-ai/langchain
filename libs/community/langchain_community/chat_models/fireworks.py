@@ -14,6 +14,8 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -32,10 +34,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
 from langchain_core.utils.env import get_from_dict_or_env
-
-from langchain_community.adapters.openai import convert_message_to_dict
-from langchain_community.chat_models.base import BaseChatModel
-from langchain_community.llms.base import create_base_retry_decorator
+from langchain_openai.adapters import convert_message_to_dict
 
 
 def _convert_delta_to_message_chunk(

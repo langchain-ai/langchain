@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.zilliz import Zilliz, logger
+from langchain_community.vectorstores.zilliz import Zilliz
 
-__all__ = ["logger", "Zilliz"]
+__all__ = ["Zilliz"]

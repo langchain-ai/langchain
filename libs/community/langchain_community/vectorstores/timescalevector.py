@@ -56,7 +56,7 @@ class TimescaleVector(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import TimescaleVector
-            from langchain_openai.embedding import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
 
             SERVICE_URL = "postgres://tsdbadmin:<password>@<id>.tsdb.cloud.timescale.com:<port>/tsdb?sslmode=require"
             COLLECTION_NAME = "state_of_the_union_test"

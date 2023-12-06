@@ -7,9 +7,8 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models.llms import LLM
 from langchain_core.runnables import RunnableConfig
-
-from langchain_community.llms.base import LLM
 
 
 class FakeListLLM(LLM):

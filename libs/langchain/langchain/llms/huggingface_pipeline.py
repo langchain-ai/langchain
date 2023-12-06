@@ -4,7 +4,6 @@ from langchain_community.llms.huggingface_pipeline import (
     DEFAULT_TASK,
     VALID_TASKS,
     HuggingFacePipeline,
-    logger,
 )
 
 __all__ = [
@@ -12,6 +11,5 @@ __all__ = [
     "DEFAULT_TASK",
     "VALID_TASKS",
     "DEFAULT_BATCH_SIZE",
-    "logger",
     "HuggingFacePipeline",
 ]

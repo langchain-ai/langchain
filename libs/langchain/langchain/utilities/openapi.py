@@ -1,3 +1,3 @@
-from langchain_community.utilities.openapi import HTTPVerb, OpenAPISpec, logger
+from langchain_community.utilities.openapi import HTTPVerb, OpenAPISpec
 
-__all__ = ["logger", "HTTPVerb", "OpenAPISpec"]
+__all__ = ["HTTPVerb", "OpenAPISpec"]

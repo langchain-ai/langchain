@@ -14,14 +14,13 @@ from different APIs and services.
 import logging
 from typing import Any
 
-from langchain_openai.embedding import OpenAIEmbeddings
+from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 
 from langchain_community.embeddings.aleph_alpha import (
     AlephAlphaAsymmetricSemanticEmbedding,
     AlephAlphaSymmetricSemanticEmbedding,
 )
 from langchain_community.embeddings.awa import AwaEmbeddings
-from langchain_community.embeddings.azure_openai import AzureOpenAIEmbeddings
 from langchain_community.embeddings.baidu_qianfan_endpoint import (
     QianfanEmbeddingsEndpoint,
 )
@@ -147,11 +146,9 @@ class HypotheticalDocumentEmbedder:
     def __init__(self, *args: Any, **kwargs: Any):
         logger.warning(
             "Using a deprecated class. Please use "
-            "`from langchain_community.chains import HypotheticalDocumentEmbedder` instead"
+            "`from langchain.chains import HypotheticalDocumentEmbedder` instead"
         )
-        from langchain_community.chains.hyde.base import (
-            HypotheticalDocumentEmbedder as H,
-        )
+        from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
 
         return H(*args, **kwargs)  # type: ignore
 
@@ -159,10 +156,8 @@ class HypotheticalDocumentEmbedder:
     def from_llm(cls, *args: Any, **kwargs: Any) -> Any:
         logger.warning(
             "Using a deprecated class. Please use "
-            "`from langchain_community.chains import HypotheticalDocumentEmbedder` instead"
+            "`from langchain.chains import HypotheticalDocumentEmbedder` instead"
         )
-        from langchain_community.chains.hyde.base import (
-            HypotheticalDocumentEmbedder as H,
-        )
+        from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
 
         return H.from_llm(*args, **kwargs)

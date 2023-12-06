@@ -59,7 +59,7 @@ class Meilisearch(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import Meilisearch
-            from langchain_openai.embedding import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
             import meilisearch
 
             # api_key is optional; provide it if your meilisearch instance requires it

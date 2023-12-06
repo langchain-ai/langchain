@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.matching_engine import MatchingEngine, logger
+from langchain_community.vectorstores.matching_engine import MatchingEngine
 
-__all__ = ["logger", "MatchingEngine"]
+__all__ = ["MatchingEngine"]

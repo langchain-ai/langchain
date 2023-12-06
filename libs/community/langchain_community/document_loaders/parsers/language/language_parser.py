@@ -1,5 +1,6 @@
 from typing import Any, Dict, Iterator, Optional
 
+from langchain.text_splitter import Language
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
@@ -9,7 +10,6 @@ from langchain_community.document_loaders.parsers.language.javascript import (
     JavaScriptSegmenter,
 )
 from langchain_community.document_loaders.parsers.language.python import PythonSegmenter
-from langchain_community.text_splitter import Language
 
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "py": Language.PYTHON,
@@ -42,7 +42,7 @@ class LanguageParser(BaseBlobParser):
 
        .. code-block:: python
 
-            from langchain_community.text_splitter.Language
+            from langchain.text_splitter.Language
             from langchain_community.document_loaders.generic import GenericLoader
             from langchain_community.document_loaders.parsers import LanguageParser
 
@@ -58,7 +58,7 @@ class LanguageParser(BaseBlobParser):
 
         .. code-block:: python
 
-            from langchain_community.text_splitter import Language
+            from langchain.text_splitter import Language
 
             loader = GenericLoader.from_filesystem(
                 "./code",

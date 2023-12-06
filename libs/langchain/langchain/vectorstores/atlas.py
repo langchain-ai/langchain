@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.atlas import AtlasDB, logger
+from langchain_community.vectorstores.atlas import AtlasDB
 
-__all__ = ["logger", "AtlasDB"]
+__all__ = ["AtlasDB"]

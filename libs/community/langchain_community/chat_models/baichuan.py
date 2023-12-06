@@ -6,6 +6,10 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 
 import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    generate_from_stream,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -23,8 +27,6 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
-
-from langchain_community.chat_models.base import BaseChatModel, generate_from_stream
 
 logger = logging.getLogger(__name__)
 

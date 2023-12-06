@@ -5,7 +5,7 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_community.llms.base import LLM
+from langchain_core.language_models.llms import LLM
 from langchain_community.llms.utils import enforce_stop_tokens
 from langchain_core.outputs import GenerationChunk
 

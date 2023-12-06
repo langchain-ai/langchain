@@ -1,3 +1,3 @@
-from langchain_community.llms.gooseai import GooseAI, logger
+from langchain_community.llms.gooseai import GooseAI
 
-__all__ = ["logger", "GooseAI"]
+__all__ = ["GooseAI"]

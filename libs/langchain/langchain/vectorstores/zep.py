@@ -1,7 +1,3 @@
-from langchain_community.vectorstores.zep import (
-    CollectionConfig,
-    ZepVectorStore,
-    logger,
-)
+from langchain_community.vectorstores.zep import CollectionConfig, ZepVectorStore
 
-__all__ = ["logger", "CollectionConfig", "ZepVectorStore"]
+__all__ = ["CollectionConfig", "ZepVectorStore"]

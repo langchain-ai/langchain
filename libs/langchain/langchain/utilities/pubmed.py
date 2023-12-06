@@ -1,3 +1,3 @@
-from langchain_community.utilities.pubmed import PubMedAPIWrapper, logger
+from langchain_community.utilities.pubmed import PubMedAPIWrapper
 
-__all__ = ["logger", "PubMedAPIWrapper"]
+__all__ = ["PubMedAPIWrapper"]

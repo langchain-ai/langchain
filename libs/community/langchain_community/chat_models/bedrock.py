@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterator, List, Optional
 from langchain_core.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Extra
@@ -10,7 +11,6 @@ from langchain_core.pydantic_v1 import Extra
 from langchain_community.chat_models.anthropic import (
     convert_messages_to_prompt_anthropic,
 )
-from langchain_community.chat_models.base import BaseChatModel
 from langchain_community.chat_models.meta import convert_messages_to_prompt_llama
 from langchain_community.llms.bedrock import BedrockBase
 from langchain_community.utilities.anthropic import (

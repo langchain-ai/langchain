@@ -1,3 +1,3 @@
-from langchain_community.llms.opaqueprompts import OpaquePrompts, logger
+from langchain_community.llms.opaqueprompts import OpaquePrompts
 
-__all__ = ["logger", "OpaquePrompts"]
+__all__ = ["OpaquePrompts"]

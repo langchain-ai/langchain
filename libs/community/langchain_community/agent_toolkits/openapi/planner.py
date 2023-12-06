@@ -5,12 +5,16 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
 import yaml
+from langchain.agents.agent import AgentExecutor
+from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.chains.llm import LLMChain
+from langchain.memory import ReadOnlySharedMemory
 from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool, Tool
-from langchain_openai.llm import OpenAI
+from langchain_openai.llms import OpenAI
 
 from langchain_community.agent_toolkits.openapi.planner_prompt import (
     API_CONTROLLER_PROMPT,
@@ -32,10 +36,6 @@ from langchain_community.agent_toolkits.openapi.planner_prompt import (
     REQUESTS_PUT_TOOL_DESCRIPTION,
 )
 from langchain_community.agent_toolkits.openapi.spec import ReducedOpenAPISpec
-from langchain_community.agents.agent import AgentExecutor
-from langchain_community.agents.mrkl.base import ZeroShotAgent
-from langchain_community.chains.llm import LLMChain
-from langchain_community.memory import ReadOnlySharedMemory
 from langchain_community.output_parsers.json import parse_json_markdown
 from langchain_community.tools.requests.tool import BaseRequestsTool
 from langchain_community.utilities.requests import RequestsWrapper

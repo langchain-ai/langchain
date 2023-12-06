@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.sqlitevss import SQLiteVSS, logger
+from langchain_community.vectorstores.sqlitevss import SQLiteVSS
 
-__all__ = ["logger", "SQLiteVSS"]
+__all__ = ["SQLiteVSS"]

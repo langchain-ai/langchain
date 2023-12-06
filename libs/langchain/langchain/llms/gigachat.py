@@ -1,3 +1,3 @@
-from langchain_community.llms.gigachat import GigaChat, _BaseGigaChat, logger
+from langchain_community.llms.gigachat import GigaChat, _BaseGigaChat
 
-__all__ = ["logger", "_BaseGigaChat", "GigaChat"]
+__all__ = ["_BaseGigaChat", "GigaChat"]

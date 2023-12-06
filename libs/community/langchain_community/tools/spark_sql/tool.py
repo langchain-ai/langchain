@@ -9,7 +9,7 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_community.chains.llm import LLMChain
+from langchain.chains.llm import LLMChain
 from langchain_core.prompts import PromptTemplate
 from langchain_community.utilities.spark_sql import SparkSQL
 from langchain_core.tools import BaseTool

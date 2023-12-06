@@ -17,8 +17,8 @@ from typing import (
 
 import numpy as np
 from langchain_core.documents import Document
+from langchain_core.vectorstores import VectorStore
 
-from langchain_community.vectorstores.base import VectorStore
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -56,7 +56,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         . code-block:: python
 
             from langchain_community.vectorstores import AzureCosmosDBVectorSearch
-            from langchain_openai.embedding import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
             from pymongo import MongoClient
 
             mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")

@@ -5,11 +5,9 @@ from langchain_community.document_loaders.base_o365 import (
     _O365Settings,
     _O365TokenStorage,
     fetch_mime_types,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "CHUNK_SIZE",
     "_O365Settings",
     "_O365TokenStorage",

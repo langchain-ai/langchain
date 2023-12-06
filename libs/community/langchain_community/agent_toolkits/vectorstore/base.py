@@ -1,6 +1,9 @@
 """VectorStore agent."""
 from typing import Any, Dict, Optional
 
+from langchain.agents.agent import AgentExecutor
+from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.chains.llm import LLMChain
 from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 
@@ -9,9 +12,6 @@ from langchain_community.agent_toolkits.vectorstore.toolkit import (
     VectorStoreRouterToolkit,
     VectorStoreToolkit,
 )
-from langchain_community.agents.agent import AgentExecutor
-from langchain_community.agents.mrkl.base import ZeroShotAgent
-from langchain_community.chains.llm import LLMChain
 
 
 def create_vectorstore_agent(

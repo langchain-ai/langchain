@@ -4,9 +4,8 @@ import json
 from typing import Any, List
 
 import requests
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field
-
-from langchain_community.schema.embeddings import Embeddings
 
 API_URL = "https://api.bookend.ai/"
 DEFAULT_TASK = "embeddings"

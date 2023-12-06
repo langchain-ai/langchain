@@ -1,3 +1,3 @@
-from langchain_community.llms.predictionguard import PredictionGuard, logger
+from langchain_community.llms.predictionguard import PredictionGuard
 
-__all__ = ["logger", "PredictionGuard"]
+__all__ = ["PredictionGuard"]

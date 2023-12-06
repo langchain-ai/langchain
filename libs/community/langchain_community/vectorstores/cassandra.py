@@ -41,7 +41,7 @@ class Cassandra(VectorStore):
         .. code-block:: python
 
                 from langchain_community.vectorstores import Cassandra
-                from langchain_openai.embedding import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 session = ...             # create your Cassandra session object

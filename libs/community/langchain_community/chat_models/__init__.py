@@ -17,11 +17,10 @@ an interface where "chat messages" are the inputs and outputs.
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
 
-from langchain_openai.chat_model import ChatOpenAI
+from langchain_openai.chat_models import AzureChatOpenAI, ChatOpenAI
 
 from langchain_community.chat_models.anthropic import ChatAnthropic
 from langchain_community.chat_models.anyscale import ChatAnyscale
-from langchain_community.chat_models.azure_openai import AzureChatOpenAI
 from langchain_community.chat_models.baichuan import ChatBaichuan
 from langchain_community.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from langchain_community.chat_models.bedrock import BedrockChat

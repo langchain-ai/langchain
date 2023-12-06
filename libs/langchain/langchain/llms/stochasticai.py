@@ -1,3 +1,3 @@
-from langchain_community.llms.stochasticai import StochasticAI, logger
+from langchain_community.llms.stochasticai import StochasticAI
 
-__all__ = ["logger", "StochasticAI"]
+__all__ = ["StochasticAI"]

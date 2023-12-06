@@ -1,3 +1,3 @@
-from langchain_community.llms.pipelineai import PipelineAI, logger
+from langchain_community.llms.pipelineai import PipelineAI
 
-__all__ = ["logger", "PipelineAI"]
+__all__ = ["PipelineAI"]

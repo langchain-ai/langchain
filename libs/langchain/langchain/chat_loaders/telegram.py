@@ -1,3 +1,3 @@
-from langchain_community.chat_loaders.telegram import TelegramChatLoader, logger
+from langchain_community.chat_loaders.telegram import TelegramChatLoader
 
-__all__ = ["logger", "TelegramChatLoader"]
+__all__ = ["TelegramChatLoader"]

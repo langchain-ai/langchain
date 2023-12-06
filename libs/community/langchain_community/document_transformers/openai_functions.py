@@ -1,13 +1,12 @@
 """Document transformers that use OpenAI Functions models"""
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
+from langchain.chains.llm import LLMChain
+from langchain.chains.openai_functions import create_tagging_chain
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
-
-from langchain_community.chains.llm import LLMChain
-from langchain_community.chains.openai_functions import create_tagging_chain
 
 
 class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):

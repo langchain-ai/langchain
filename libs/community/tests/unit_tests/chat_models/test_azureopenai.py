@@ -3,8 +3,7 @@ import os
 from unittest import mock
 
 import pytest
-
-from langchain_community.chat_models.azure_openai import AzureChatOpenAI
+from langchain_openai.chat_models import AzureChatOpenAI
 
 
 @mock.patch.dict(

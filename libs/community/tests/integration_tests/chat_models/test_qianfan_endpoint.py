@@ -2,6 +2,9 @@
 
 from typing import Any
 
+from langchain.chains.openai_functions import (
+    create_openai_fn_chain,
+)
 from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.messages import (
     AIMessage,
@@ -12,9 +15,6 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 
-from langchain_community.chains.openai_functions import (
-    create_openai_fn_chain,
-)
 from langchain_community.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 

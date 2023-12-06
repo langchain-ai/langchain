@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.mhtml import MHTMLLoader, logger
+from langchain_community.document_loaders.mhtml import MHTMLLoader
 
-__all__ = ["logger", "MHTMLLoader"]
+__all__ = ["MHTMLLoader"]

@@ -9,11 +9,11 @@ import os
 from typing import Optional
 
 import pytest
+from langchain.chains.summarize import load_summarize_chain
 from langchain_core.documents import Document
 from langchain_core.outputs import LLMResult
 from pytest_mock import MockerFixture
 
-from langchain_community.chains.summarize import load_summarize_chain
 from langchain_community.llms import VertexAI, VertexAIModelGarden
 
 

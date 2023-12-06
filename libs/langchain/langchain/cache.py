@@ -32,11 +32,9 @@ from langchain_community.cache import (
     _load_generations_from_json,
     _loads_generations,
     _validate_ttl,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "_hash",
     "_dump_generations_to_json",
     "_load_generations_from_json",

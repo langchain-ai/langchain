@@ -1,3 +1,3 @@
-from langchain_community.llms.pai_eas_endpoint import PaiEasEndpoint, logger
+from langchain_community.llms.pai_eas_endpoint import PaiEasEndpoint
 
-__all__ = ["logger", "PaiEasEndpoint"]
+__all__ = ["PaiEasEndpoint"]

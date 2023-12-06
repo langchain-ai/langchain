@@ -1,6 +1,10 @@
 """Power BI agent."""
 from typing import Any, Dict, List, Optional
 
+from langchain.agents import AgentExecutor
+from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
+from langchain.chains.llm import LLMChain
 from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 
@@ -9,10 +13,6 @@ from langchain_community.agent_toolkits.powerbi.prompt import (
     POWERBI_SUFFIX,
 )
 from langchain_community.agent_toolkits.powerbi.toolkit import PowerBIToolkit
-from langchain_community.agents import AgentExecutor
-from langchain_community.agents.mrkl.base import ZeroShotAgent
-from langchain_community.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain_community.chains.llm import LLMChain
 from langchain_community.utilities.powerbi import PowerBIDataset
 
 

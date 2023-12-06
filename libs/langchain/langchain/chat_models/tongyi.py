@@ -5,11 +5,9 @@ from langchain_community.chat_models.tongyi import (
     _stream_response_to_generation_chunk,
     convert_dict_to_message,
     convert_message_to_dict,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "convert_dict_to_message",
     "convert_message_to_dict",
     "_stream_response_to_generation_chunk",

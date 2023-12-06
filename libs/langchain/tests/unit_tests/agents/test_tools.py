@@ -4,7 +4,7 @@ from typing import Any, Type
 from unittest.mock import MagicMock, Mock
 
 import pytest
-from langchain_core.tools import ToolException
+from langchain_core.tools import Tool, ToolException, tool
 
 from langchain.agents import load_tools
 from langchain.agents.agent import Agent
@@ -14,7 +14,6 @@ from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.react.base import ReActDocstoreAgent, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
-from langchain.agents.tools import Tool, tool
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

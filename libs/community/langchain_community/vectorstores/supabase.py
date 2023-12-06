@@ -45,7 +45,7 @@ class SupabaseVectorStore(VectorStore):
 
     .. code-block:: python
 
-        from langchain_openai.embedding import OpenAIEmbeddings
+        from langchain_openai.embeddings import OpenAIEmbeddings
         from langchain_core.documents import Document
         from langchain_community.vectorstores import SupabaseVectorStore
         from supabase.client import create_client
@@ -68,7 +68,7 @@ class SupabaseVectorStore(VectorStore):
 
     .. code-block:: python
 
-        from langchain_openai.embedding import OpenAIEmbeddings
+        from langchain_openai.embeddings import OpenAIEmbeddings
         from langchain_community.vectorstores import SupabaseVectorStore
         from supabase.client import create_client
 

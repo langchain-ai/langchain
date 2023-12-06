@@ -6,11 +6,9 @@ from langchain_community.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
     _parse_video_id,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "SCOPES",
     "GoogleApiClient",
     "ALLOWED_SCHEMAS",

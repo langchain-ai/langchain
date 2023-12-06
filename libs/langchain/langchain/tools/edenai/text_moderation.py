@@ -1,6 +1,3 @@
-from langchain_community.tools.edenai.text_moderation import (
-    EdenAiTextModerationTool,
-    logger,
-)
+from langchain_community.tools.edenai.text_moderation import EdenAiTextModerationTool
 
-__all__ = ["logger", "EdenAiTextModerationTool"]
+__all__ = ["EdenAiTextModerationTool"]

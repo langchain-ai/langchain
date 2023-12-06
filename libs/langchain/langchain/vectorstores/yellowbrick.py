@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.yellowbrick import Yellowbrick, logger
+from langchain_community.vectorstores.yellowbrick import Yellowbrick
 
-__all__ = ["logger", "Yellowbrick"]
+__all__ = ["Yellowbrick"]

@@ -1,11 +1,11 @@
 from pathlib import Path
 
 import pytest
+from langchain.text_splitter import Language
 
 from langchain_community.document_loaders.concurrent import ConcurrentLoader
 from langchain_community.document_loaders.generic import GenericLoader
 from langchain_community.document_loaders.parsers import LanguageParser
-from langchain_community.text_splitter import Language
 
 
 def test_language_loader_for_python() -> None:

@@ -1,3 +1,3 @@
-from langchain_community.llms.replicate import Replicate, logger
+from langchain_community.llms.replicate import Replicate
 
-__all__ = ["logger", "Replicate"]
+__all__ = ["Replicate"]

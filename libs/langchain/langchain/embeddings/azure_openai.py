@@ -1,3 +1,3 @@
-from langchain_community.embeddings.azure_openai import AzureOpenAIEmbeddings
+from langchain_openai.embeddings import AzureOpenAIEmbeddings
 
 __all__ = ["AzureOpenAIEmbeddings"]

@@ -9,7 +9,6 @@ from langchain_community.document_loaders.docugami import (
     TAG_KEY,
     XPATH_KEY,
     DocugamiLoader,
-    logger,
 )
 
 __all__ = [
@@ -22,6 +21,5 @@ __all__ = [
     "TAG_KEY",
     "PROJECTS_KEY",
     "DEFAULT_API_ENDPOINT",
-    "logger",
     "DocugamiLoader",
 ]

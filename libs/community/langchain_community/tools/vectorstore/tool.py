@@ -8,7 +8,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 from langchain_core.vectorstores import VectorStore
-from langchain_openai.llm import OpenAI
+from langchain_openai.llms import OpenAI
 
 
 class BaseVectorStoreTool(BaseModel):
@@ -45,7 +45,7 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        from langchain_community.chains.retrieval_qa.base import RetrievalQA
+        from langchain.chains.retrieval_qa.base import RetrievalQA
 
         chain = RetrievalQA.from_chain_type(
             self.llm, retriever=self.vectorstore.as_retriever()
@@ -78,7 +78,7 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
     ) -> str:
         """Use the tool."""
 
-        from langchain_community.chains.qa_with_sources.retrieval import (
+        from langchain.chains.qa_with_sources.retrieval import (
             RetrievalQAWithSourcesChain,
         )
 

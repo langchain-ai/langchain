@@ -1,6 +1,5 @@
 from langchain_community.tools.azure_cognitive_services.image_analysis import (
     AzureCogsImageAnalysisTool,
-    logger,
 )
 
-__all__ = ["logger", "AzureCogsImageAnalysisTool"]
+__all__ = ["AzureCogsImageAnalysisTool"]

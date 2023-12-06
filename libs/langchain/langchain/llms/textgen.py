@@ -1,3 +1,3 @@
-from langchain_community.llms.textgen import TextGen, logger
+from langchain_community.llms.textgen import TextGen
 
-__all__ = ["logger", "TextGen"]
+__all__ = ["TextGen"]

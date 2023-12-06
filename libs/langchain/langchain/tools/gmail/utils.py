@@ -8,11 +8,9 @@ from langchain_community.tools.gmail.utils import (
     import_google,
     import_googleapiclient_resource_builder,
     import_installed_app_flow,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "import_google",
     "import_installed_app_flow",
     "import_googleapiclient_resource_builder",

@@ -1,9 +1,8 @@
 from typing import Any, Dict, List, Optional
 
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
-
-from langchain_community.schema.embeddings import Embeddings
 
 
 class CohereEmbeddings(BaseModel, Embeddings):

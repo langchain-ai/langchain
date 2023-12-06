@@ -14,6 +14,10 @@ from typing import (
 )
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    generate_from_stream,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -43,11 +47,6 @@ from tenacity import (
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-)
-
-from langchain_community.chat_models.base import (
-    BaseChatModel,
-    generate_from_stream,
 )
 
 logger = logging.getLogger(__name__)

@@ -17,10 +17,10 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
-from langchain_community.llms.base import BaseLLM, create_base_retry_decorator
 from langchain_community.utilities.vertexai import (
     get_client_info,
     init_vertexai,

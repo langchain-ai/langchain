@@ -1,12 +1,11 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_openai.llm import BaseOpenAI
+from langchain_openai.llms import BaseOpenAI
 from langchain_openai.utils import is_openai_v1
-
-from langchain_community.llms.base import BaseLLM
 
 
 class VLLM(BaseLLM):

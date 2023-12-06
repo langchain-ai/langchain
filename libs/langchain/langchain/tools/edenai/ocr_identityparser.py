@@ -1,6 +1,3 @@
-from langchain_community.tools.edenai.ocr_identityparser import (
-    EdenAiParsingIDTool,
-    logger,
-)
+from langchain_community.tools.edenai.ocr_identityparser import EdenAiParsingIDTool
 
-__all__ = ["logger", "EdenAiParsingIDTool"]
+__all__ = ["EdenAiParsingIDTool"]

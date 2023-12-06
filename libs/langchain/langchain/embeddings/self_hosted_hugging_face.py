@@ -7,7 +7,6 @@ from langchain_community.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceInstructEmbeddings,
     _embed_documents,
     load_embedding_model,
-    logger,
 )
 
 __all__ = [
@@ -15,7 +14,6 @@ __all__ = [
     "DEFAULT_INSTRUCT_MODEL",
     "DEFAULT_EMBED_INSTRUCTION",
     "DEFAULT_QUERY_INSTRUCTION",
-    "logger",
     "_embed_documents",
     "load_embedding_model",
     "SelfHostedHuggingFaceEmbeddings",

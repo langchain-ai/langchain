@@ -4,11 +4,9 @@ from langchain_community.vectorstores.elasticsearch import (
     ElasticsearchStore,
     ExactRetrievalStrategy,
     SparseRetrievalStrategy,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "BaseRetrievalStrategy",
     "ApproxRetrievalStrategy",
     "ExactRetrievalStrategy",

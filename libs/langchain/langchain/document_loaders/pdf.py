@@ -12,11 +12,9 @@ from langchain_community.document_loaders.pdf import (
     PyPDFium2Loader,
     PyPDFLoader,
     UnstructuredPDFLoader,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "UnstructuredPDFLoader",
     "BasePDFLoader",
     "OnlinePDFLoader",

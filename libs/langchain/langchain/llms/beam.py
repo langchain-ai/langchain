@@ -1,8 +1,3 @@
-from langchain_community.llms.beam import (
-    DEFAULT_NUM_TRIES,
-    DEFAULT_SLEEP_TIME,
-    Beam,
-    logger,
-)
+from langchain_community.llms.beam import DEFAULT_NUM_TRIES, DEFAULT_SLEEP_TIME, Beam
 
-__all__ = ["logger", "DEFAULT_NUM_TRIES", "DEFAULT_SLEEP_TIME", "Beam"]
+__all__ = ["DEFAULT_NUM_TRIES", "DEFAULT_SLEEP_TIME", "Beam"]

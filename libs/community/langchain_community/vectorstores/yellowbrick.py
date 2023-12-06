@@ -27,7 +27,7 @@ class Yellowbrick(VectorStore):
     Example:
         .. code-block:: python
             from langchain_community.vectorstores import Yellowbrick
-            from langchain_openai.embedding import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
             ...
     """
 

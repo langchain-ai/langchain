@@ -1,4 +1,4 @@
-from langchain_openai.llm import (
+from langchain_openai.llms import (
     AzureOpenAI,
     BaseOpenAI,
     OpenAI,
@@ -8,12 +8,10 @@ from langchain_openai.llm import (
     _streaming_response_template,
     _update_response,
     completion_with_retry,
-    logger,
     update_token_usage,
 )
 
 __all__ = [
-    "logger",
     "update_token_usage",
     "_stream_response_to_generation_chunk",
     "_update_response",

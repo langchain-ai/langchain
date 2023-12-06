@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.url import UnstructuredURLLoader, logger
+from langchain_community.document_loaders.url import UnstructuredURLLoader
 
-__all__ = ["logger", "UnstructuredURLLoader"]
+__all__ = ["UnstructuredURLLoader"]

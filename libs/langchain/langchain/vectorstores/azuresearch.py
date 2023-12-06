@@ -7,11 +7,9 @@ from langchain_community.vectorstores.azuresearch import (
     AzureSearch,
     AzureSearchVectorStoreRetriever,
     _get_search_client,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "FIELDS_ID",
     "FIELDS_CONTENT",
     "FIELDS_CONTENT_VECTOR",

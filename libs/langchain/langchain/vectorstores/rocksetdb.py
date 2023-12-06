@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.rocksetdb import Rockset, logger
+from langchain_community.vectorstores.rocksetdb import Rockset
 
-__all__ = ["logger", "Rockset"]
+__all__ = ["Rockset"]

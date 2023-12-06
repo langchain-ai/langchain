@@ -23,7 +23,7 @@ class AtlasDB(VectorStore):
         .. code-block:: python
 
                 from langchain_community.vectorstores import AtlasDB
-                from langchain_openai.embedding import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 vectorstore = AtlasDB("my_project", embeddings.embed_query)

@@ -1,3 +1,3 @@
-from langchain_community.llms.modal import Modal, logger
+from langchain_community.llms.modal import Modal
 
-__all__ = ["logger", "Modal"]
+__all__ = ["Modal"]

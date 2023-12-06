@@ -1,3 +1,3 @@
-from langchain_community.chat_models.azure_openai import AzureChatOpenAI, logger
+from langchain_openai.chat_models import AzureChatOpenAI
 
-__all__ = ["logger", "AzureChatOpenAI"]
+__all__ = ["AzureChatOpenAI"]

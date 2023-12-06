@@ -1,6 +1,12 @@
 """SQL agent."""
 from typing import Any, Dict, List, Optional, Sequence
 
+from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
+from langchain.agents.agent_types import AgentType
+from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
+from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
+from langchain.chains.llm import LLMChain
 from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage, SystemMessage
@@ -16,12 +22,6 @@ from langchain_community.agent_toolkits.sql.prompt import (
     SQL_SUFFIX,
 )
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
-from langchain_community.agents.agent import AgentExecutor, BaseSingleActionAgent
-from langchain_community.agents.agent_types import AgentType
-from langchain_community.agents.mrkl.base import ZeroShotAgent
-from langchain_community.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain_community.agents.openai_functions_agent.base import OpenAIFunctionsAgent
-from langchain_community.chains.llm import LLMChain
 from langchain_community.tools import BaseTool
 
 

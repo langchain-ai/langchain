@@ -19,17 +19,16 @@ import requests
 from langchain_core.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    generate_from_stream,
+)
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
-from langchain_openai.chat_model import _convert_delta_to_message_chunk
-
-from langchain_community.adapters.openai import (
-    convert_dict_to_message,
-    convert_message_to_dict,
-)
-from langchain_community.chat_models.base import BaseChatModel, generate_from_stream
+from langchain_openai.adapters import convert_dict_to_message, convert_message_to_dict
+from langchain_openai.chat_models import _convert_delta_to_message_chunk
 
 DEFAULT_API_BASE = "https://api.konko.ai/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-13b-chat-hf"

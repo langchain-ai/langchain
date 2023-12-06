@@ -6,12 +6,11 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
 from langchain_core.utils.env import get_from_dict_or_env
-
-from langchain_community.llms.base import BaseLLM, create_base_retry_decorator
 
 
 def _stream_response_to_generation_chunk(

@@ -1,6 +1,3 @@
-from langchain_community.tools.edenai.ocr_invoiceparser import (
-    EdenAiParsingInvoiceTool,
-    logger,
-)
+from langchain_community.tools.edenai.ocr_invoiceparser import EdenAiParsingInvoiceTool
 
-__all__ = ["logger", "EdenAiParsingInvoiceTool"]
+__all__ = ["EdenAiParsingInvoiceTool"]

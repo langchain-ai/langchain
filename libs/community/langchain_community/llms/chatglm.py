@@ -3,8 +3,8 @@ from typing import Any, List, Mapping, Optional
 
 import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.language_models.llms import LLM
 
-from langchain_community.llms.base import LLM
 from langchain_community.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)

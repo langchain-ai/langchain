@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.couchbase import CouchbaseLoader, logger
+from langchain_community.document_loaders.couchbase import CouchbaseLoader
 
-__all__ = ["logger", "CouchbaseLoader"]
+__all__ = ["CouchbaseLoader"]

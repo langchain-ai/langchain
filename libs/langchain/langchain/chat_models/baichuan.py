@@ -5,11 +5,9 @@ from langchain_community.chat_models.baichuan import (
     _convert_dict_to_message,
     _convert_message_to_dict,
     _signature,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "DEFAULT_API_BASE",
     "_convert_message_to_dict",
     "_convert_dict_to_message",

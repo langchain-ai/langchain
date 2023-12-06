@@ -6,11 +6,9 @@ from langchain_community.chat_models.google_palm import (
     _response_to_result,
     _truncate_at_stop_tokens,
     chat_with_retry,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "ChatGooglePalmError",
     "_truncate_at_stop_tokens",
     "_response_to_result",

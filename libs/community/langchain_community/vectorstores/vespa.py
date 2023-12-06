@@ -4,8 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-
-from langchain_community.vectorstores.base import VectorStore, VectorStoreRetriever
+from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
 
 class VespaStore(VectorStore):
@@ -18,7 +17,7 @@ class VespaStore(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import VespaStore
-            from langchain_openai.embedding import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
             from vespa.application import Vespa
 
             # Create a vespa client dependent upon your application,

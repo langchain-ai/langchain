@@ -5,11 +5,9 @@ from langchain_community.vectorstores.redis.base import (
     _generate_field_schema,
     _prepare_metadata,
     check_index_exists,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "_default_relevance_score",
     "check_index_exists",
     "Redis",

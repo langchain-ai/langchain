@@ -2,10 +2,10 @@
 from typing import Any, List
 
 import pytest
+from langchain.agents.load_tools import load_tools
 from langchain_core.documents import Document
 from langchain_core.tools import BaseTool
 
-from langchain_community.agents.load_tools import load_tools
 from langchain_community.tools import ArxivQueryRun
 from langchain_community.utilities import ArxivAPIWrapper
 

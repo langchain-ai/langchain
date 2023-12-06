@@ -91,7 +91,7 @@ class PGVector(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import PGVector
-            from langchain_openai.embedding import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
 
             CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
             COLLECTION_NAME = "state_of_the_union_test"

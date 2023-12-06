@@ -9,8 +9,8 @@ To use this tool, you must first set as environment variables:
 Below is a sample script that uses the Clickup tool:
 
 ```python
-from langchain_community.agents import AgentType
-from langchain_community.agents import initialize_agent
+from langchain.agents import AgentType
+from langchain.agents import initialize_agent
 from langchain_community.agent_toolkits.clickup.toolkit import ClickupToolkit
 from langchain_community.llms import OpenAI
 from langchain_community.utilities.clickup import ClickupAPIWrapper

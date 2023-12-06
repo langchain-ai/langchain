@@ -4,11 +4,9 @@ from langchain_community.llms.cohere import (
     _create_retry_decorator,
     acompletion_with_retry,
     completion_with_retry,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "_create_retry_decorator",
     "completion_with_retry",
     "acompletion_with_retry",

@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.obsidian import ObsidianLoader, logger
+from langchain_community.document_loaders.obsidian import ObsidianLoader
 
-__all__ = ["logger", "ObsidianLoader"]
+__all__ = ["ObsidianLoader"]

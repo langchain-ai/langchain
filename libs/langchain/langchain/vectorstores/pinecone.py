@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.pinecone import Pinecone, logger
+from langchain_community.vectorstores.pinecone import Pinecone
 
-__all__ = ["logger", "Pinecone"]
+__all__ = ["Pinecone"]

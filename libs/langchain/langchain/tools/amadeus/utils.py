@@ -1,3 +1,3 @@
-from langchain_community.tools.amadeus.utils import authenticate, logger
+from langchain_community.tools.amadeus.utils import authenticate
 
-__all__ = ["logger", "authenticate"]
+__all__ = ["authenticate"]

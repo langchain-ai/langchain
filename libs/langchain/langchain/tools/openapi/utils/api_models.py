@@ -10,11 +10,9 @@ from langchain_community.tools.openapi.utils.api_models import (
     APIPropertyLocation,
     APIRequestBody,
     APIRequestBodyProperty,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "PRIMITIVE_TYPES",
     "APIPropertyLocation",
     "_SUPPORTED_MEDIA_TYPES",

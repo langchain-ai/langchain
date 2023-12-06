@@ -43,7 +43,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import MongoDBAtlasVectorSearch
-            from langchain_openai.embedding import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
             from pymongo import MongoClient
 
             mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")

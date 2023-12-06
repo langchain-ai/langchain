@@ -2,12 +2,12 @@ import os
 from typing import Generator, List, Union
 
 import pytest
+from langchain.text_splitter import CharacterTextSplitter
 from langchain_core.documents import Document
 from vcr.request import Request
 
 from langchain_community.document_loaders import TextLoader
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.text_splitter import CharacterTextSplitter
 
 # Those environment variables turn on Deep Lake pytest mode.
 # It significantly makes tests run much faster.

@@ -6,11 +6,11 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+from langchain_core.language_models.llms import __all__
 from langchain_core.outputs import Generation, LLMResult
 
 from langchain_community.cache import InMemoryCache, SQLAlchemyCache
 from langchain_community.globals import get_llm_cache, set_llm_cache
-from langchain_community.llms.base import __all__
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 EXPECTED_ALL = [

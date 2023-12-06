@@ -1,7 +1,3 @@
-from langchain_community.tools.nuclia.tool import (
-    NUASchema,
-    NucliaUnderstandingAPI,
-    logger,
-)
+from langchain_community.tools.nuclia.tool import NUASchema, NucliaUnderstandingAPI
 
-__all__ = ["logger", "NUASchema", "NucliaUnderstandingAPI"]
+__all__ = ["NUASchema", "NucliaUnderstandingAPI"]

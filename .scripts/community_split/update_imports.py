@@ -39,7 +39,7 @@ def find_public_classes_and_methods(file_path):
         if (
             isinstance(item, ast.Assign)
             and hasattr(item.targets[0], "id")
-            and item.targets[0].id != "__all__"
+            and item.targets[0].id not in ("__all__", "logger")
         ):
             public_items.append(item.targets[0].id)
 

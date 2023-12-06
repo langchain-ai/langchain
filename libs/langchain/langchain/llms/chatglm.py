@@ -1,3 +1,3 @@
-from langchain_community.llms.chatglm import ChatGLM, logger
+from langchain_community.llms.chatglm import ChatGLM
 
-__all__ = ["logger", "ChatGLM"]
+__all__ = ["ChatGLM"]

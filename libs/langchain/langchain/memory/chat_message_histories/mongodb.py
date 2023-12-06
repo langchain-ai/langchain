@@ -2,12 +2,6 @@ from langchain_community.chat_message_histories.mongodb import (
     DEFAULT_COLLECTION_NAME,
     DEFAULT_DBNAME,
     MongoDBChatMessageHistory,
-    logger,
 )
 
-__all__ = [
-    "logger",
-    "DEFAULT_DBNAME",
-    "DEFAULT_COLLECTION_NAME",
-    "MongoDBChatMessageHistory",
-]
+__all__ = ["DEFAULT_DBNAME", "DEFAULT_COLLECTION_NAME", "MongoDBChatMessageHistory"]

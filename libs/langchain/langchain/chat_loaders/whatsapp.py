@@ -1,3 +1,3 @@
-from langchain_community.chat_loaders.whatsapp import WhatsAppChatLoader, logger
+from langchain_community.chat_loaders.whatsapp import WhatsAppChatLoader
 
-__all__ = ["logger", "WhatsAppChatLoader"]
+__all__ = ["WhatsAppChatLoader"]

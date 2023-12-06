@@ -20,21 +20,17 @@ from typing import (
     Union,
 )
 
-from langchain_community.adapters.openai import (
-    convert_dict_to_message,
-    convert_message_to_dict,
-)
-from langchain_community.chat_models.base import (
-    BaseChatModel,
-    agenerate_from_stream,
-    generate_from_stream,
-)
-from langchain_community.llms.base import create_base_retry_decorator
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
+from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
@@ -53,6 +49,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 
+from langchain_openai.adapters import convert_dict_to_message, convert_message_to_dict
 from langchain_openai.utils import is_openai_v1
 
 if TYPE_CHECKING:
@@ -648,9 +645,7 @@ class ChatOpenAI(BaseChatModel):
             kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
-        from langchain_community.chains.openai_functions.base import (
-            convert_to_openai_function,
-        )
+        from langchain.chains.openai_functions.base import convert_to_openai_function
 
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
         if function_call is not None:

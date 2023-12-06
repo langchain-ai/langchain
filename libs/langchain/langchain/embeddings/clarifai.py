@@ -1,3 +1,3 @@
-from langchain_community.embeddings.clarifai import ClarifaiEmbeddings, logger
+from langchain_community.embeddings.clarifai import ClarifaiEmbeddings
 
-__all__ = ["logger", "ClarifaiEmbeddings"]
+__all__ = ["ClarifaiEmbeddings"]

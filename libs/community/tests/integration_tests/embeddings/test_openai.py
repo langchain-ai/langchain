@@ -1,7 +1,7 @@
 """Test openai embeddings."""
 import numpy as np
 import pytest
-from langchain_openai.embedding import OpenAIEmbeddings
+from langchain_openai.embeddings import OpenAIEmbeddings
 
 
 @pytest.mark.scheduled

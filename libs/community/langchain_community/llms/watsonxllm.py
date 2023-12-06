@@ -3,11 +3,11 @@ import os
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Union
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
-from langchain_community.llms.base import BaseLLM
 from langchain_community.schema import LLMResult
 
 logger = logging.getLogger(__name__)

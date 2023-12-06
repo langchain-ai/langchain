@@ -1,6 +1,3 @@
-from langchain_community.vectorstores.baiducloud_vector_search import (
-    BESVectorStore,
-    logger,
-)
+from langchain_community.vectorstores.baiducloud_vector_search import BESVectorStore
 
-__all__ = ["logger", "BESVectorStore"]
+__all__ = ["BESVectorStore"]

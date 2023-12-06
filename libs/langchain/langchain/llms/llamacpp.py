@@ -1,3 +1,3 @@
-from langchain_community.llms.llamacpp import LlamaCpp, logger
+from langchain_community.llms.llamacpp import LlamaCpp
 
-__all__ = ["logger", "LlamaCpp"]
+__all__ = ["LlamaCpp"]

@@ -1,3 +1,3 @@
-from langchain_community.utilities.arxiv import ArxivAPIWrapper, logger
+from langchain_community.utilities.arxiv import ArxivAPIWrapper
 
-__all__ = ["logger", "ArxivAPIWrapper"]
+__all__ = ["ArxivAPIWrapper"]

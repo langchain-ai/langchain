@@ -23,7 +23,7 @@ class Clarifai(VectorStore):
         .. code-block:: python
 
                 from langchain_community.vectorstores import Clarifai
-                from langchain_openai.embedding import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 vectorstore = Clarifai("langchain_store", embeddings.embed_query)

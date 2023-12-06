@@ -10,7 +10,7 @@ from langchain_core.outputs import ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-from langchain_openai.chat_model import ChatOpenAI
+from langchain_openai.chat_models.base import ChatOpenAI
 from langchain_openai.utils import is_openai_v1
 
 logger = logging.getLogger(__name__)

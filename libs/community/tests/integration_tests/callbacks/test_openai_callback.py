@@ -1,9 +1,9 @@
 """Integration tests for the langchain tracer module."""
 import asyncio
 
+from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain_core.callbacks import get_openai_callback
 
-from langchain_community.agents import AgentType, initialize_agent, load_tools
 from langchain_community.llms import OpenAI
 
 

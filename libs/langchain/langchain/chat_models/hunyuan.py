@@ -7,11 +7,9 @@ from langchain_community.chat_models.hunyuan import (
     _convert_message_to_dict,
     _create_chat_result,
     _signature,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "DEFAULT_API_BASE",
     "DEFAULT_PATH",
     "_convert_message_to_dict",

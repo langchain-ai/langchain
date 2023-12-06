@@ -44,7 +44,7 @@ class DeepLake(VectorStore):
         .. code-block:: python
 
                 from langchain_community.vectorstores import DeepLake
-                from langchain_openai.embedding import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 vectorstore = DeepLake("langchain_store", embeddings.embed_query)

@@ -1,8 +1,3 @@
-from langchain_community.graphs.nebula_graph import (
-    RETRY_TIMES,
-    NebulaGraph,
-    logger,
-    rel_query,
-)
+from langchain_community.graphs.nebula_graph import RETRY_TIMES, NebulaGraph, rel_query
 
-__all__ = ["logger", "rel_query", "RETRY_TIMES", "NebulaGraph"]
+__all__ = ["rel_query", "RETRY_TIMES", "NebulaGraph"]

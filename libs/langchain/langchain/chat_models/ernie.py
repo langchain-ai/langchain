@@ -1,7 +1,3 @@
-from langchain_community.chat_models.ernie import (
-    ErnieBotChat,
-    _convert_message_to_dict,
-    logger,
-)
+from langchain_community.chat_models.ernie import ErnieBotChat, _convert_message_to_dict
 
-__all__ = ["logger", "_convert_message_to_dict", "ErnieBotChat"]
+__all__ = ["_convert_message_to_dict", "ErnieBotChat"]

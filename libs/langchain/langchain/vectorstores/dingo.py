@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.dingo import Dingo, logger
+from langchain_community.vectorstores.dingo import Dingo
 
-__all__ = ["logger", "Dingo"]
+__all__ = ["Dingo"]

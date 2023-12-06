@@ -1,3 +1,3 @@
-from langchain_community.llms.petals import Petals, logger
+from langchain_community.llms.petals import Petals
 
-__all__ = ["logger", "Petals"]
+__all__ = ["Petals"]

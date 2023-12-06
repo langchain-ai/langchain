@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.evernote import EverNoteLoader, logger
+from langchain_community.document_loaders.evernote import EverNoteLoader
 
-__all__ = ["logger", "EverNoteLoader"]
+__all__ = ["EverNoteLoader"]

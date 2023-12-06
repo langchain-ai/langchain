@@ -96,7 +96,7 @@ class Neo4jVector(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores.neo4j_vector import Neo4jVector
-            from langchain_openai.embedding import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
 
             url="bolt://localhost:7687"
             username="neo4j"

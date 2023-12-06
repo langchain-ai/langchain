@@ -5,10 +5,10 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
-from langchain_community.text_splitter import RecursiveCharacterTextSplitter
 
 if TYPE_CHECKING:
     import pandas as pd

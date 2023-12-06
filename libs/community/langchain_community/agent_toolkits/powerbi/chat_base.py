@@ -1,19 +1,19 @@
 """Power BI agent."""
 from typing import Any, Dict, List, Optional
 
+from langchain.agents import AgentExecutor
+from langchain.agents.agent import AgentOutputParser
+from langchain.agents.conversational_chat.base import ConversationalChatAgent
+from langchain.memory import ConversationBufferMemory
+from langchain.memory.chat_memory import BaseChatMemory
 from langchain_core.callbacks.base import BaseCallbackManager
+from langchain_core.language_models.chat_models import BaseChatModel
 
 from langchain_community.agent_toolkits.powerbi.prompt import (
     POWERBI_CHAT_PREFIX,
     POWERBI_CHAT_SUFFIX,
 )
 from langchain_community.agent_toolkits.powerbi.toolkit import PowerBIToolkit
-from langchain_community.agents import AgentExecutor
-from langchain_community.agents.agent import AgentOutputParser
-from langchain_community.agents.conversational_chat.base import ConversationalChatAgent
-from langchain_community.chat_models.base import BaseChatModel
-from langchain_community.memory import ConversationBufferMemory
-from langchain_community.memory.chat_memory import BaseChatMemory
 from langchain_community.utilities.powerbi import PowerBIDataset
 
 

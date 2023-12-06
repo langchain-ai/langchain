@@ -1,15 +1,13 @@
-from langchain_openai.embedding import (
+from langchain_openai.embeddings import (
     OpenAIEmbeddings,
     _async_retry_decorator,
     _check_response,
     _create_retry_decorator,
     _is_openai_v1,
     embed_with_retry,
-    logger,
 )
 
 __all__ = [
-    "logger",
     "_create_retry_decorator",
     "_async_retry_decorator",
     "_check_response",

@@ -1,3 +1,3 @@
-from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool, logger
+from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
-__all__ = ["logger", "EdenaiTool"]
+__all__ = ["EdenaiTool"]

@@ -1,3 +1,3 @@
-from langchain_community.chat_loaders.slack import SlackChatLoader, logger
+from langchain_community.chat_loaders.slack import SlackChatLoader
 
-__all__ = ["logger", "SlackChatLoader"]
+__all__ = ["SlackChatLoader"]

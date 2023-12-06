@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.epsilla import Epsilla, logger
+from langchain_community.vectorstores.epsilla import Epsilla
 
-__all__ = ["logger", "Epsilla"]
+__all__ = ["Epsilla"]

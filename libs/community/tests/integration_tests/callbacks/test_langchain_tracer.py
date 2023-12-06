@@ -3,6 +3,10 @@ import asyncio
 import os
 
 from aiohttp import ClientSession
+from langchain.agents import AgentType, initialize_agent, load_tools
+from langchain.chains import LLMChain
+from langchain.chains.constitutional_ai.base import ConstitutionalChain
+from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain_core.callbacks import tracing_enabled
 from langchain_core.callbacks.manager import (
     atrace_as_chain_group,
@@ -11,10 +15,6 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.prompts import PromptTemplate
 
-from langchain_community.agents import AgentType, initialize_agent, load_tools
-from langchain_community.chains import LLMChain
-from langchain_community.chains.constitutional_ai.base import ConstitutionalChain
-from langchain_community.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms import OpenAI
 

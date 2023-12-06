@@ -19,7 +19,7 @@ access to the large language model (**LLM**) APIs and services.
 """  # noqa: E501
 from typing import Any, Callable, Dict, Type
 
-from langchain_community.llms.base import BaseLLM
+from langchain_core.language_models.llms import BaseLLM
 
 
 def _import_ai21() -> Any:
@@ -83,7 +83,7 @@ def _import_bananadev() -> Any:
 
 
 def _import_baseten() -> Any:
-    from langchain_community.llms.baseten import Baseten
+    from langchain_core.language_models.llmsten import Baseten
 
     return Baseten
 
@@ -337,19 +337,19 @@ def _import_opaqueprompts() -> Any:
 
 
 def _import_azure_openai() -> Any:
-    from langchain_openai.llm import AzureOpenAI
+    from langchain_openai.llms import AzureOpenAI
 
     return AzureOpenAI
 
 
 def _import_openai() -> Any:
-    from langchain_openai.llm import OpenAI
+    from langchain_openai.llms import OpenAI
 
     return OpenAI
 
 
 def _import_openai_chat() -> Any:
-    from langchain_openai.llm import OpenAIChat
+    from langchain_openai.llms import OpenAIChat
 
     return OpenAIChat
 

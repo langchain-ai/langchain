@@ -1,8 +1,3 @@
-from langchain_community.llms.openllm import (
-    IdentifyingParams,
-    OpenLLM,
-    ServerType,
-    logger,
-)
+from langchain_community.llms.openllm import IdentifyingParams, OpenLLM, ServerType
 
-__all__ = ["ServerType", "IdentifyingParams", "logger", "OpenLLM"]
+__all__ = ["ServerType", "IdentifyingParams", "OpenLLM"]

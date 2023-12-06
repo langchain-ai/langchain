@@ -4,8 +4,7 @@ import ssl
 from typing import Any, List, Mapping, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
-
-from langchain_community.llms.base import LLM
+from langchain_core.language_models.llms import LLM
 
 
 class NIBittensorLLM(LLM):

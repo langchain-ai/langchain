@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.bibtex import BibtexLoader, logger
+from langchain_community.document_loaders.bibtex import BibtexLoader
 
-__all__ = ["logger", "BibtexLoader"]
+__all__ = ["BibtexLoader"]

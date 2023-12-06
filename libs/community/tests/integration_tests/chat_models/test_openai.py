@@ -2,6 +2,9 @@
 from typing import Any, List, Optional, Union
 
 import pytest
+from langchain.chains.openai_functions import (
+    create_openai_fn_chain,
+)
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -14,11 +17,8 @@ from langchain_core.outputs import (
 )
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_openai.chat_model import ChatOpenAI
+from langchain_openai.chat_models import ChatOpenAI
 
-from langchain_community.chains.openai_functions import (
-    create_openai_fn_chain,
-)
 from langchain_community.output_parsers.openai_functions import (
     JsonOutputFunctionsParser,
 )

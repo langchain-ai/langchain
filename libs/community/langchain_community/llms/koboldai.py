@@ -3,8 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
-
-from langchain_community.llms.base import LLM
+from langchain_core.language_models.llms import LLM
 
 logger = logging.getLogger(__name__)
 

@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.onedrive import OneDriveLoader, logger
+from langchain_community.document_loaders.onedrive import OneDriveLoader
 
-__all__ = ["logger", "OneDriveLoader"]
+__all__ = ["OneDriveLoader"]

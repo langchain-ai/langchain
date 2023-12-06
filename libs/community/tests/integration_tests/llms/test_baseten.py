@@ -1,7 +1,7 @@
 """Test Baseten API wrapper."""
 import os
 
-from langchain_community.llms.baseten import Baseten
+from langchain_core.language_models.llmsten import Baseten
 
 
 def test_baseten_call() -> None:

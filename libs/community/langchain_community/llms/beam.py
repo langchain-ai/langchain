@@ -8,10 +8,9 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
-
-from langchain_community.llms.base import LLM
 
 logger = logging.getLogger(__name__)
 

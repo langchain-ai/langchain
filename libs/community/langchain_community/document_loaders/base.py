@@ -2,13 +2,10 @@
 from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional
 
+from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.text_splitter import (
-    RecursiveCharacterTextSplitter,
-    TextSplitter,
-)
 
 
 class BaseLoader(ABC):

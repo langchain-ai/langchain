@@ -1,3 +1,3 @@
-from langchain_community.chat_models.mlflow import ChatMlflow, logger
+from langchain_community.chat_models.mlflow import ChatMlflow
 
-__all__ = ["logger", "ChatMlflow"]
+__all__ = ["ChatMlflow"]

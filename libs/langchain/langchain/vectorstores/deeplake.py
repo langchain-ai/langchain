@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.deeplake import DeepLake, logger
+from langchain_community.vectorstores.deeplake import DeepLake
 
-__all__ = ["logger", "DeepLake"]
+__all__ = ["DeepLake"]

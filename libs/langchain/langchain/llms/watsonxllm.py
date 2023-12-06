@@ -1,3 +1,3 @@
-from langchain_community.llms.watsonxllm import WatsonxLLM, logger
+from langchain_community.llms.watsonxllm import WatsonxLLM
 
-__all__ = ["logger", "WatsonxLLM"]
+__all__ = ["WatsonxLLM"]

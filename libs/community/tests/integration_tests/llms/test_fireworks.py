@@ -3,6 +3,7 @@ import sys
 from typing import Generator
 
 import pytest
+from langchain.chains import LLMChain
 from langchain_core.outputs import LLMResult
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
@@ -10,7 +11,6 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 
-from langchain_community.chains import LLMChain
 from langchain_community.llms.fireworks import Fireworks
 
 if sys.version_info < (3, 9):

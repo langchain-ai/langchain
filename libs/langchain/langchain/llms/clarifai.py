@@ -1,3 +1,3 @@
-from langchain_community.llms.clarifai import Clarifai, logger
+from langchain_community.llms.clarifai import Clarifai
 
-__all__ = ["logger", "Clarifai"]
+__all__ = ["Clarifai"]

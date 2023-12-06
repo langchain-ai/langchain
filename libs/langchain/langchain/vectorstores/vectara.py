@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.vectara import Vectara, VectaraRetriever, logger
+from langchain_community.vectorstores.vectara import Vectara, VectaraRetriever
 
-__all__ = ["logger", "Vectara", "VectaraRetriever"]
+__all__ = ["Vectara", "VectaraRetriever"]

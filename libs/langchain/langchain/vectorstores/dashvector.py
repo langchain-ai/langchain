@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.dashvector import DashVector, logger
+from langchain_community.vectorstores.dashvector import DashVector
 
-__all__ = ["logger", "DashVector"]
+__all__ = ["DashVector"]

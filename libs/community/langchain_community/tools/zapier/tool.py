@@ -48,7 +48,7 @@ os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "")
 os.environ["ZAPIER_NLA_API_KEY"] = os.environ.get("ZAPIER_NLA_API_KEY", "")
 
 from langchain_community.llms import OpenAI
-from langchain_community.agents import initialize_agent
+from langchain.agents import initialize_agent
 from langchain_community.agent_toolkits import ZapierToolkit
 from langchain_community.utilities.zapier import ZapierNLAWrapper
 

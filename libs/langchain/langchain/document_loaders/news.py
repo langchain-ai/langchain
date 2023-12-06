@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.news import NewsURLLoader, logger
+from langchain_community.document_loaders.news import NewsURLLoader
 
-__all__ = ["logger", "NewsURLLoader"]
+__all__ = ["NewsURLLoader"]
