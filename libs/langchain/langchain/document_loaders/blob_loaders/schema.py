@@ -11,9 +11,9 @@ import mimetypes
 from abc import ABC, abstractmethod
 from io import BufferedReader, BytesIO
 from pathlib import PurePath
-from typing import Any, Generator, Iterable, Mapping, Optional, Union
+from typing import Any, Dict, Generator, Iterable, Mapping, Optional, Union, cast
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 PathLike = Union[str, PurePath]
 
@@ -28,14 +28,20 @@ class Blob(BaseModel):
     Inspired by: https://developer.mozilla.org/en-US/docs/Web/API/Blob
     """
 
-    data: Union[bytes, str, None]  # Raw data
-    mimetype: Optional[str] = None  # Not to be confused with a file extension
-    encoding: str = "utf-8"  # Use utf-8 as default encoding, if decoding to string
-    # Location where the original content was found
-    # Represent location on the local file system
-    # Useful for situations where downstream code assumes it must work with file paths
-    # rather than in-memory content.
+    data: Union[bytes, str, None]
+    """Raw data associated with the blob."""
+    mimetype: Optional[str] = None
+    """MimeType not to be confused with a file extension."""
+    encoding: str = "utf-8"
+    """Encoding to use if decoding the bytes into a string.
+    
+    Use utf-8 as default encoding, if decoding to string.
+    """
     path: Optional[PathLike] = None
+    """Location where the original content was found."""
+
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    """Metadata about the blob (e.g., source)"""
 
     class Config:
         arbitrary_types_allowed = True
@@ -43,7 +49,15 @@ class Blob(BaseModel):
 
     @property
     def source(self) -> Optional[str]:
-        """The source location of the blob as string if known otherwise none."""
+        """The source location of the blob as string if known otherwise none.
+
+        If a path is associated with the blob, it will default to the path location.
+
+        Unless explicitly set via a metadata field called "source", in which
+        case that value will be used instead.
+        """
+        if self.metadata and "source" in self.metadata:
+            return cast(Optional[str], self.metadata["source"])
         return str(self.path) if self.path else None
 
     @root_validator(pre=True)
@@ -96,6 +110,7 @@ class Blob(BaseModel):
         encoding: str = "utf-8",
         mime_type: Optional[str] = None,
         guess_type: bool = True,
+        metadata: Optional[dict] = None,
     ) -> Blob:
         """Load the blob from a path like object.
 
@@ -105,6 +120,7 @@ class Blob(BaseModel):
             mime_type: if provided, will be set as the mime-type of the data
             guess_type: If True, the mimetype will be guessed from the file extension,
                         if a mime-type was not provided
+            metadata: Metadata to associate with the blob
 
         Returns:
             Blob instance
@@ -115,7 +131,13 @@ class Blob(BaseModel):
             _mimetype = mime_type
         # We do not load the data immediately, instead we treat the blob as a
         # reference to the underlying data.
-        return cls(data=None, mimetype=_mimetype, encoding=encoding, path=path)
+        return cls(
+            data=None,
+            mimetype=_mimetype,
+            encoding=encoding,
+            path=path,
+            metadata=metadata if metadata is not None else {},
+        )
 
     @classmethod
     def from_data(
@@ -125,6 +147,7 @@ class Blob(BaseModel):
         encoding: str = "utf-8",
         mime_type: Optional[str] = None,
         path: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> Blob:
         """Initialize the blob from in-memory data.
 
@@ -133,11 +156,18 @@ class Blob(BaseModel):
             encoding: Encoding to use if decoding the bytes into a string
             mime_type: if provided, will be set as the mime-type of the data
             path: if provided, will be set as the source from which the data came
+            metadata: Metadata to associate with the blob
 
         Returns:
             Blob instance
         """
-        return cls(data=data, mimetype=mime_type, encoding=encoding, path=path)
+        return cls(
+            data=data,
+            mimetype=mime_type,
+            encoding=encoding,
+            path=path,
+            metadata=metadata if metadata is not None else {},
+        )
 
     def __repr__(self) -> str:
         """Define the blob representation."""
