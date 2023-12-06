@@ -6,7 +6,7 @@ from pymongo import MongoClient
 
 from langchain_experimental.utilities.mongo_database import MongoDatabase
 
-uri = "mongodb://%2Ftmp%2Fmongodb-27017.sock/test_db?inMemory=true"
+uri = "mongodb://localhost:27017/test_db"
 
 
 def test_collection_info() -> None:

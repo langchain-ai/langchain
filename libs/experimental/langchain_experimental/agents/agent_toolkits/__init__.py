@@ -1,4 +1,8 @@
 from langchain_experimental.agents.agent_toolkits.csv.base import create_csv_agent
+from langchain_experimental.agents.agent_toolkits.mongo.base import (
+    MongoDatabaseToolkit,
+    create_mongo_agent,
+)
 from langchain_experimental.agents.agent_toolkits.pandas.base import (
     create_pandas_dataframe_agent,
 )
@@ -16,4 +20,6 @@ __all__ = [
     "create_spark_dataframe_agent",
     "create_python_agent",
     "create_csv_agent",
+    "create_mongo_agent",
+    "MongoDatabaseToolkit",
 ]

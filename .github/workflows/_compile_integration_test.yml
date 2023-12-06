@@ -40,6 +40,13 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           cache-key: compile-integration
 
+      - name: MongoDB in GitHub Actions
+        uses: supercharge/mongodb-github-action@1.10.0
+        with:
+          mongodb-version: 7.0
+          mongodb-replica-set: test
+          mongodb-port: 27017
+
       - name: Install integration dependencies
         shell: bash
         run: poetry install --with=test_integration

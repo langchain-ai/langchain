@@ -11,6 +11,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.308"
+langchain-core = "^0.0.4"
 presidio-anonymizer = {version = "^2.2.33", optional = true}
 presidio-analyzer = {version = "^2.2.33", optional = true}
 faker = {version = "^19.3.1", optional = true}
@@ -40,7 +41,7 @@ pytest-asyncio = "^0.20.3"
 
 [tool.poetry.group.test_integration]
 optional = true
-dependencies = {pymongo = "^4.6.1"}
+dependencies = {pymongo = "^4.6.1",openai = "^1"}
 
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without
