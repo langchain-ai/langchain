@@ -6,6 +6,7 @@ EXPECTED_ALL = [
     "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
+    "DatabricksEmbeddings",
     "ElasticsearchEmbeddings",
     "FastEmbedEmbeddings",
     "HuggingFaceEmbeddings",
@@ -16,6 +17,7 @@ EXPECTED_ALL = [
     "LlamaCppEmbeddings",
     "HuggingFaceHubEmbeddings",
     "MlflowAIGatewayEmbeddings",
+    "MlflowEmbeddings",
     "ModelScopeEmbeddings",
     "TensorflowHubEmbeddings",
     "SagemakerEndpointEmbeddings",
@@ -51,6 +53,7 @@ EXPECTED_ALL = [
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
+    "BookendEmbeddings",
 ]
 
 

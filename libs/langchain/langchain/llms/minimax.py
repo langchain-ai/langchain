@@ -10,14 +10,14 @@ from typing import (
 )
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class _MinimaxEndpointClient(BaseModel):
 
     host: str
     group_id: str
-    api_key: str
+    api_key: SecretStr
     api_url: str
 
     @root_validator(pre=True, allow_reuse=True)
@@ -40,7 +40,7 @@ class _MinimaxEndpointClient(BaseModel):
         return values
 
     def post(self, request: Any) -> Any:
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        headers = {"Authorization": f"Bearer {self.api_key.get_secret_value()}"}
         response = requests.post(self.api_url, headers=headers, json=request)
         # TODO: error handling and automatic retries
         if not response.ok:
@@ -69,13 +69,13 @@ class MinimaxCommon(BaseModel):
     """Holds any model parameters valid for `create` call not explicitly specified."""
     minimax_api_host: Optional[str] = None
     minimax_group_id: Optional[str] = None
-    minimax_api_key: Optional[str] = None
+    minimax_api_key: Optional[SecretStr] = None
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["minimax_api_key"] = get_from_dict_or_env(
-            values, "minimax_api_key", "MINIMAX_API_KEY"
+        values["minimax_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "minimax_api_key", "MINIMAX_API_KEY")
         )
         values["minimax_group_id"] = get_from_dict_or_env(
             values, "minimax_group_id", "MINIMAX_GROUP_ID"
