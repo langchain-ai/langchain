@@ -28,7 +28,7 @@ class MultiVectorRetriever(BaseRetriever):
     and their embedding vectors"""
     base_store: Optional[BaseStore[str, bytes]]
     """The lower-level backing storage layer for the parent documents"""
-    docstore: Optional[BaseStore[str, Document]]
+    docstore: BaseStore[str, Document]
     """The storage interface for the parent documents"""
     id_key: str = "doc_id"
     search_kwargs: dict = Field(default_factory=dict)
