@@ -14,7 +14,7 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4-32k-0314": 0.06,
     "gpt-4-32k-0613": 0.06,
     # GPT-4 output
-    "gpt-4-1106-preview": 0.03,
+    "gpt-4-1106-preview-completion": 0.03,
     "gpt-4-completion": 0.06,
     "gpt-4-0314-completion": 0.06,
     "gpt-4-0613-completion": 0.06,
