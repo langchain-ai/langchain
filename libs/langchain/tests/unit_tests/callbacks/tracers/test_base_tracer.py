@@ -7,12 +7,12 @@ from uuid import uuid4
 
 import pytest
 from freezegun import freeze_time
+from langchain_core.messages import HumanMessage
+from langchain_core.outputs import LLMResult
+from langchain_core.tracers.base import BaseTracer, TracerException
+from langchain_core.tracers.schemas import Run
 
 from langchain.callbacks.manager import CallbackManager
-from langchain.callbacks.tracers.base import BaseTracer, TracerException
-from langchain.callbacks.tracers.schemas import Run
-from langchain.schema import LLMResult
-from langchain.schema.messages import HumanMessage
 
 SERIALIZED = {"id": ["llm"]}
 SERIALIZED_CHAT = {"id": ["chat_model"]}
@@ -330,6 +330,42 @@ def test_tracer_llm_run_on_error() -> None:
     tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
     tracer.on_llm_error(exception, run_id=uuid)
     assert tracer.runs == [compare_run]
+
+
+@freeze_time("2023-01-01")
+def test_tracer_llm_run_on_error_callback() -> None:
+    """Test tracer on an LLM run with an error and a callback."""
+    exception = Exception("test")
+    uuid = uuid4()
+
+    compare_run = Run(
+        id=str(uuid),
+        start_time=datetime.utcnow(),
+        end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "error", "time": datetime.utcnow()},
+        ],
+        extra={},
+        execution_order=1,
+        child_execution_order=1,
+        serialized=SERIALIZED,
+        inputs=dict(prompts=[]),
+        outputs=None,
+        error=repr(exception),
+        run_type="llm",
+    )
+
+    class FakeTracerWithLlmErrorCallback(FakeTracer):
+        error_run = None
+
+        def _on_llm_error(self, run: Run) -> None:
+            self.error_run = run
+
+    tracer = FakeTracerWithLlmErrorCallback()
+    tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
+    tracer.on_llm_error(exception, run_id=uuid)
+    assert tracer.error_run == compare_run
 
 
 @freeze_time("2023-01-01")

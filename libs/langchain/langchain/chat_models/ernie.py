@@ -3,18 +3,17 @@ import threading
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.pydantic_v1 import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatMessage,
-    ChatResult,
-    HumanMessage,
-)
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -46,13 +45,28 @@ class ErnieBotChat(BaseChatModel):
     and will be regenerated after expiration (30 days).
 
     Default model is `ERNIE-Bot-turbo`,
-    currently supported models are `ERNIE-Bot-turbo`, `ERNIE-Bot`
+    currently supported models are `ERNIE-Bot-turbo`, `ERNIE-Bot`, `ERNIE-Bot-8K`,
+    `ERNIE-Bot-4`, `ERNIE-Bot-turbo-AI`.
 
     Example:
         .. code-block:: python
 
             from langchain.chat_models import ErnieBotChat
             chat = ErnieBotChat(model_name='ERNIE-Bot')
+
+
+    Deprecated Note:
+    Please use `QianfanChatEndpoint` instead of this class.
+    `QianfanChatEndpoint` is a more suitable choice for production.
+
+    Always test your code after changing to `QianfanChatEndpoint`.
+
+    Example of `QianfanChatEndpoint`:
+        .. code-block:: python
+
+            from langchain.chat_models import QianfanChatEndpoint
+            qianfan_chat = QianfanChatEndpoint(model="ERNIE-Bot",
+                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
 
     """
 
@@ -72,6 +86,11 @@ class ErnieBotChat(BaseChatModel):
     model_name: str = "ERNIE-Bot-turbo"
     """model name of ernie, default is `ERNIE-Bot-turbo`.
       Currently supported `ERNIE-Bot-turbo`, `ERNIE-Bot`"""
+
+    system: Optional[str] = None
+    """system is mainly used for model character design, 
+    for example, you are an AI assistant produced by xxx company.
+    The length of the system is limiting of 1024 characters."""
 
     request_timeout: Optional[int] = 60
     """request timeout for chat http requests"""
@@ -107,7 +126,9 @@ class ErnieBotChat(BaseChatModel):
         model_paths = {
             "ERNIE-Bot-turbo": "eb-instant",
             "ERNIE-Bot": "completions",
+            "ERNIE-Bot-8K": "ernie_bot_8k",
             "ERNIE-Bot-4": "completions_pro",
+            "ERNIE-Bot-turbo-AI": "ai_apaas",
             "BLOOMZ-7B": "bloomz_7b1",
             "Llama-2-7b-chat": "llama_2_7b",
             "Llama-2-13b-chat": "llama_2_13b",
@@ -165,6 +186,7 @@ class ErnieBotChat(BaseChatModel):
             "top_p": self.top_p,
             "temperature": self.temperature,
             "penalty_score": self.penalty_score,
+            "system": self.system,
             **kwargs,
         }
         logger.debug(f"Payload for ernie api is {payload}")
@@ -179,8 +201,19 @@ class ErnieBotChat(BaseChatModel):
         return self._create_chat_result(resp)
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+        if "function_call" in response:
+            additional_kwargs = {
+                "function_call": dict(response.get("function_call", {}))
+            }
+        else:
+            additional_kwargs = {}
         generations = [
-            ChatGeneration(message=AIMessage(content=response.get("result")))
+            ChatGeneration(
+                message=AIMessage(
+                    content=response.get("result"),
+                    additional_kwargs={**additional_kwargs},
+                )
+            )
         ]
         token_usage = response.get("usage", {})
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}

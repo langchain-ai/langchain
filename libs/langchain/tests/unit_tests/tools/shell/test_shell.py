@@ -1,8 +1,6 @@
 import warnings
 from typing import List
 
-import pytest
-
 from langchain.tools.shell.tool import ShellInput, ShellTool
 
 # Test data
@@ -55,7 +53,6 @@ def test_shell_tool_run() -> None:
     assert result.strip() == "hello"
 
 
-@pytest.mark.asyncio
 async def test_shell_tool_arun() -> None:
     placeholder = PlaceholderProcess(output="hello")
     shell_tool = ShellTool(process=placeholder)
