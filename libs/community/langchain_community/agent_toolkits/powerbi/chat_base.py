@@ -6,7 +6,7 @@ from langchain.agents.agent import AgentOutputParser
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain_core.callbacks.base import BaseCallbackManager
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from langchain_community.agent_toolkits.powerbi.prompt import (

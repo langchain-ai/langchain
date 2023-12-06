@@ -2,7 +2,7 @@ import json
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
 import aiohttp
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )

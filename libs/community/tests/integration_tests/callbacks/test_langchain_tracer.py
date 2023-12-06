@@ -7,14 +7,14 @@ from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.chains import LLMChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
-from langchain_core.callbacks import tracing_enabled
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     atrace_as_chain_group,
     trace_as_chain_group,
     tracing_v2_enabled,
 )
 from langchain_core.prompts import PromptTemplate
 
+from langchain_community.callbacks import tracing_enabled
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms import OpenAI
 

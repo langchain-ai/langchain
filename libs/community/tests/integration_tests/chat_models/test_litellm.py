@@ -1,7 +1,7 @@
 """Test Anthropic API wrapper."""
 from typing import List
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     CallbackManager,
 )
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage

@@ -5,7 +5,7 @@ from io import StringIO
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import yaml
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )

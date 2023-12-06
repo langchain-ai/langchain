@@ -18,7 +18,7 @@ from typing import (
 )
 
 import numpy as np
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )

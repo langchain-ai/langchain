@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from langchain_core.callbacks.manager import CallbackManagerForToolRun
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.merriam_webster import MerriamWebsterAPIWrapper

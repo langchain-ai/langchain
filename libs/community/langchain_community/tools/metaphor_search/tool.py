@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Optional, Union
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

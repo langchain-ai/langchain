@@ -4,7 +4,7 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Mapping, Optional
 
-from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import BaseModel, validator
 from langchain_core.utils import get_from_dict_or_env

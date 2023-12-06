@@ -69,6 +69,7 @@ mv langchain/langchain/callbacks community/langchain_community/callbacks
 mv langchain/langchain/indexes/base.py community/langchain_community/indexes
 mv langchain/langchain/indexes/_sql_record_manager.py community/langchain_community/indexes
 mv langchain/langchain/utils/math.py community/langchain_community/utils
+
 mv langchain/langchain/utils/openai.py partners/openai/langchain_openai/utils.py
 mv langchain/langchain/utils/openai_functions.py partners/openai/langchain_openai/functions.py
 
@@ -126,7 +127,10 @@ git add community
 cd community
 
 git grep -l 'from langchain.pydantic_v1' | xargs sed -i '' 's/from langchain.pydantic_v1/from langchain_core.pydantic_v1/g'
-git grep -l 'from langchain.callbacks' | xargs sed -i '' 's/from langchain.callbacks/from langchain_core.callbacks/g'
+git grep -l 'from langchain.callbacks.base' | xargs sed -i '' 's/from langchain.callbacks.base/from langchain_core.callbacks/g'
+git grep -l 'from langchain.callbacks.stdout' | xargs sed -i '' 's/from langchain.callbacks.stdout/from langchain_core.callbacks/g'
+git grep -l 'from langchain.callbacks.streaming_stdout' | xargs sed -i '' 's/from langchain.callbacks.streaming_stdout/from langchain_core.callbacks/g'
+git grep -l 'from langchain.callbacks.manager' | xargs sed -i '' 's/from langchain.callbacks.manager/from langchain_core.callbacks/g'
 git grep -l 'from langchain.tools.base' | xargs sed -i '' 's/from langchain.tools.base/from langchain_core.tools/g'
 git grep -l 'from langchain.agents.tools' | xargs sed -i '' 's/from langchain.agents.tools/from langchain_core.tools/g'
 git grep -l 'from langchain.schema.output' | xargs sed -i '' 's/from langchain.schema.output/from langchain_core.outputs/g'
@@ -145,8 +149,8 @@ git grep -l 'from langchain.utils' | xargs sed -i '' 's/from langchain.utils/fro
 git grep -l 'from langchain\.' | xargs sed -i '' 's/from langchain\./from langchain_community./g'
 git grep -l 'from langchain_community.memory.chat_message_histories' | xargs sed -i '' 's/from langchain_community.memory.chat_message_histories/from langchain_community.chat_message_histories/g'
 git grep -l 'from langchain_community.agents.agent_toolkits' | xargs sed -i '' 's/from langchain_community.agents.agent_toolkits/from langchain_community.agent_toolkits/g'
-git grep -l 'from langchain_community.text_splitter' | xargs sed -i '' 's/from langchain_community.text_splitter/from langchain.text_splitter/g'
 
+git grep -l 'from langchain_community\.text_splitter' | xargs sed -i '' 's/from langchain_community\.text_splitter/from langchain.text_splitter/g'
 git grep -l 'from langchain_community\.chains' | xargs sed -i '' 's/from langchain_community\.chains/from langchain.chains/g'
 git grep -l 'from langchain_community\.agents' | xargs sed -i '' 's/from langchain_community\.agents/from langchain.agents/g'
 git grep -l 'from langchain_community\.memory' | xargs sed -i '' 's/from langchain_community\.memory/from langchain.memory/g'
@@ -156,6 +160,7 @@ git checkout master -- langchain/langchain
 cd langchain
 
 python ../../.scripts/community_split/update_imports.py langchain/chat_loaders langchain_community.chat_loaders
+python ../../.scripts/community_split/update_imports.py langchain/callbacks langchain_community.callbacks
 python ../../.scripts/community_split/update_imports.py langchain/document_loaders langchain_community.document_loaders
 python ../../.scripts/community_split/update_imports.py langchain/docstore langchain_community.docstore
 python ../../.scripts/community_split/update_imports.py langchain/document_transformers langchain_community.document_transformers
@@ -207,6 +212,8 @@ rm community/langchain_community/llms/base.py
 rm community/langchain_community/tools/base.py
 rm community/langchain_community/embeddings/base.py
 rm community/langchain_community/vectorstores/base.py
+rm community/langchain_community/callbacks/{base,stdout,streaming_stdout}.py
+rm community/langchain_community/callbacks/tracers/{base,evaluation,langchain,langchain_v1,log_stream,root_listeners,run_collector,schemas,stdout}.py
 
 git checkout master -- langchain/tests/unit_tests/chat_models/test_base.py
 git checkout master -- langchain/tests/unit_tests/llms/test_base.py

@@ -1,7 +1,7 @@
 """Tool for the SearxNG search API."""
 from typing import Optional
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

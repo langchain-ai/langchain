@@ -16,7 +16,7 @@ from typing import (
 )
 
 import requests
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import (

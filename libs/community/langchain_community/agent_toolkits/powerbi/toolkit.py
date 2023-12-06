@@ -2,7 +2,7 @@
 from typing import List, Optional, Union
 
 from langchain.chains.llm import LLMChain
-from langchain_core.callbacks.base import BaseCallbackManager
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.prompts import PromptTemplate

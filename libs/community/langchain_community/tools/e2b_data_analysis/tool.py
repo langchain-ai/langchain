@@ -7,7 +7,7 @@ from io import StringIO
 from sys import version_info
 from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManager,
     CallbackManagerForToolRun,

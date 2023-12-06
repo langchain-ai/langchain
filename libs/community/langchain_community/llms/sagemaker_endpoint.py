@@ -4,7 +4,7 @@ import json
 from abc import abstractmethod
 from typing import Any, Dict, Generic, Iterator, List, Mapping, Optional, TypeVar, Union
 
-from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra, root_validator
 

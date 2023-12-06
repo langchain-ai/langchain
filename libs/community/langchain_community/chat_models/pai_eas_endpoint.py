@@ -5,7 +5,7 @@ from functools import partial
 from typing import Any, AsyncIterator, Dict, List, Optional, cast
 
 import requests
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )

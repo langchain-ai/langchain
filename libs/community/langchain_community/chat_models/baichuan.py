@@ -5,7 +5,7 @@ import time
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 
 import requests
-from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     generate_from_stream,

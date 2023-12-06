@@ -4,15 +4,15 @@ from unittest.mock import patch
 
 import pytest
 from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManager,
+    BaseCallbackHandler,
     CallbackManager,
+    StdOutCallbackHandler,
     get_openai_callback,
     trace_as_chain_group,
     tracing_v2_enabled,
 )
-from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer, wait_for_all_tracers
 from langchain_openai.llms import BaseOpenAI

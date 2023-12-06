@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, cast
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )

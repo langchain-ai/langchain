@@ -82,7 +82,7 @@ agent.run(("Summarize the last email I received regarding Silicon Valley Bank. "
 from typing import Any, Dict, Optional
 
 from langchain_core._api import warn_deprecated
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

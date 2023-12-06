@@ -9,7 +9,7 @@ from uuid import UUID
 
 import requests
 from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.callbacks.base import BaseCallbackHandler
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
 from packaging.version import parse
@@ -199,7 +199,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     #### Example:
     ```python
     from langchain_community.llms import OpenAI
-    from langchain_core.callbacks import LLMonitorCallbackHandler
+    from langchain_community.callbacks import LLMonitorCallbackHandler
 
     llmonitor_callback = LLMonitorCallbackHandler()
     llm = OpenAI(callbacks=[llmonitor_callback],

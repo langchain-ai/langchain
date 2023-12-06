@@ -3,7 +3,7 @@ import asyncio
 import time
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )

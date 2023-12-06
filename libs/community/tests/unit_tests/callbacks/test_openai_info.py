@@ -2,9 +2,10 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
-from langchain_core.callbacks import OpenAICallbackHandler
 from langchain_core.outputs import LLMResult
 from langchain_openai.llms import BaseOpenAI
+
+from langchain_community.callbacks import OpenAICallbackHandler
 
 
 @pytest.fixture

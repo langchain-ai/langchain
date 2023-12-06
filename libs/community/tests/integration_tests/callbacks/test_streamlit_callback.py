@@ -6,10 +6,9 @@ from langchain.agents import AgentType, initialize_agent, load_tools
 # Import the internal StreamlitCallbackHandler from its module - and not from
 # the `langchain.callbacks.streamlit` package - so that we don't end up using
 # Streamlit's externally-provided callback handler.
-from langchain_core.callbacks.streamlit.streamlit_callback_handler import (
+from langchain_community.callbacks.streamlit.streamlit_callback_handler import (
     StreamlitCallbackHandler,
 )
-
 from langchain_community.llms import OpenAI
 
 

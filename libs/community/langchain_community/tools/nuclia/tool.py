@@ -16,7 +16,7 @@ import os
 from typing import Any, Dict, Optional, Type, Union
 
 import requests
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

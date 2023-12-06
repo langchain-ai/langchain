@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_core.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain_core.outputs import LLMResult
+
+from langchain_community.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 
 DEFAULT_ANSWER_PREFIX_TOKENS = ["Final", "Answer", ":"]
 

@@ -3,7 +3,7 @@
 from typing import cast
 
 import pytest
-from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.pydantic_v1 import SecretStr

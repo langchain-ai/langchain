@@ -4,7 +4,7 @@ from time import perf_counter
 from typing import Any, Dict, Optional, Tuple
 
 from langchain.chains.llm import LLMChain
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

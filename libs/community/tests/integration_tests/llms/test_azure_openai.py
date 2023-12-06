@@ -3,7 +3,7 @@ import os
 from typing import Any, Generator
 
 import pytest
-from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.callbacks import CallbackManager
 from langchain_core.outputs import LLMResult
 
 from langchain_community.llms import AzureOpenAI

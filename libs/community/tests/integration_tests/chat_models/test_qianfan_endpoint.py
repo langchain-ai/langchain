@@ -5,7 +5,7 @@ from typing import Any
 from langchain.chains.openai_functions import (
     create_openai_fn_chain,
 )
-from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,

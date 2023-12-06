@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence
 
 from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.callbacks.utils import (
+from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.outputs import LLMResult
+
+from langchain_community.callbacks.utils import (
     BaseMetadataCallbackHandler,
     flatten_dict,
     hash_string,
@@ -16,7 +18,6 @@ from langchain_core.callbacks.utils import (
     import_textstat,
     load_json,
 )
-from langchain_core.outputs import LLMResult
 
 if TYPE_CHECKING:
     import pandas as pd

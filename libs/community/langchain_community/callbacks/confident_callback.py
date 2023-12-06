@@ -3,7 +3,7 @@ import os
 import warnings
 from typing import Any, Dict, List, Optional, Union
 
-from langchain_core.callbacks.base import BaseCallbackHandler
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.outputs import LLMResult
 
@@ -20,7 +20,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
 
     Examples:
         >>> from langchain_community.llms import OpenAI
-        >>> from langchain_core.callbacks import DeepEvalCallbackHandler
+        >>> from langchain_community.callbacks import DeepEvalCallbackHandler
         >>> from deepeval.metrics import AnswerRelevancy
         >>> metric = AnswerRelevancy(minimum_score=0.3)
         >>> deepeval_callback = DeepEvalCallbackHandler(

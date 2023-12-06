@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Mapping, Optional
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )

@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Optional, cast
 
-from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import (
     AIMessage,

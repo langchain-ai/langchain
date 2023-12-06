@@ -1,7 +1,7 @@
 from typing import Any, Iterator, List, Mapping, Optional
 
 import requests
-from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from requests.exceptions import ConnectionError

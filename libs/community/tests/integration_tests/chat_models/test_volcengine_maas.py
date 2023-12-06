@@ -1,6 +1,6 @@
 """Test volc engine maas chat model."""
 
-from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.callbacks import CallbackManager
 
 from langchain_community.chat_models.volcengine_maas import VolcEngineMaasChat
 from langchain_community.schema import (

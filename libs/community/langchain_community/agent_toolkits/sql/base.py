@@ -7,7 +7,7 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
 from langchain.chains.llm import LLMChain
-from langchain_core.callbacks.base import BaseCallbackManager
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.prompts.chat import (

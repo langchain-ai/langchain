@@ -10,6 +10,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain.chains.llm import LLMChain
 from langchain.chains.loading import load_chain
 from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain_community.llms import get_type_to_cls_dict
 
 
 class FakeOutputParser(BaseOutputParser):
@@ -27,14 +28,15 @@ def fake_llm_chain() -> LLMChain:
     return LLMChain(prompt=prompt, llm=FakeLLM(), output_key="text1")
 
 
-@patch("langchain.llms.get_type_to_cls_dict", lambda: {"fake": lambda: FakeLLM})
+@patch("langchain_community.llms.get_type_to_cls_dict", lambda: {"fake": lambda: FakeLLM})
 def test_serialization(fake_llm_chain: LLMChain) -> None:
     """Test serialization."""
+    assert get_type_to_cls_dict() == {"fake": 1}
     with TemporaryDirectory() as temp_dir:
         file = temp_dir + "/llm.json"
         fake_llm_chain.save(file)
         loaded_chain = load_chain(file)
-        assert loaded_chain == fake_llm_chain
+    assert loaded_chain == fake_llm_chain
 
 
 def test_missing_inputs(fake_llm_chain: LLMChain) -> None:

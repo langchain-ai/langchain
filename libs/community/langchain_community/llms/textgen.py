@@ -3,7 +3,7 @@ import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 import requests
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )

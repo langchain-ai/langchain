@@ -5,8 +5,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.callbacks.utils import (
+from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.outputs import LLMResult
+
+from langchain_community.callbacks.utils import (
     BaseMetadataCallbackHandler,
     flatten_dict,
     hash_string,
@@ -14,7 +16,6 @@ from langchain_core.callbacks.utils import (
     import_spacy,
     import_textstat,
 )
-from langchain_core.outputs import LLMResult
 
 
 def import_wandb() -> Any:

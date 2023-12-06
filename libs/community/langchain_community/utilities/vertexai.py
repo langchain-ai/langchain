@@ -2,7 +2,7 @@
 from importlib import metadata
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )

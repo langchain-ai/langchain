@@ -1,7 +1,7 @@
 """Test AliCloud Pai Eas Chat Model."""
 import os
 
-from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 

@@ -1,7 +1,7 @@
 import logging
 from typing import Any, AsyncIterator, Iterator, List, Optional
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )

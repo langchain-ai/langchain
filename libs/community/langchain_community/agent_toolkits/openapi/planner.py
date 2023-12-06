@@ -9,7 +9,7 @@ from langchain.agents.agent import AgentExecutor
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.chains.llm import LLMChain
 from langchain.memory import ReadOnlySharedMemory
-from langchain_core.callbacks.base import BaseCallbackManager
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import Field

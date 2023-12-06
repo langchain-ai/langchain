@@ -1,7 +1,7 @@
 import json
 from typing import Any, Iterator, List, Optional
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel

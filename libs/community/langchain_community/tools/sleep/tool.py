@@ -3,7 +3,7 @@ from asyncio import sleep as asleep
 from time import sleep
 from typing import Optional, Type
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

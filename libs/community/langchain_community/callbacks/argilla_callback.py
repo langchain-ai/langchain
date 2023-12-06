@@ -3,7 +3,7 @@ import warnings
 from typing import Any, Dict, List, Optional
 
 from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.callbacks.base import BaseCallbackHandler
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 from packaging.version import parse
 
@@ -33,7 +33,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
 
     Examples:
         >>> from langchain_community.llms import OpenAI
-        >>> from langchain_core.callbacks import ArgillaCallbackHandler
+        >>> from langchain_community.callbacks import ArgillaCallbackHandler
         >>> argilla_callback = ArgillaCallbackHandler(
         ...     dataset_name="my-dataset",
         ...     workspace_name="my-workspace",

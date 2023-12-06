@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.chains.llm import LLMChain
-from langchain_core.callbacks.base import BaseCallbackManager
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain_community.agent_toolkits.vectorstore.prompt import PREFIX, ROUTER_PREFIX

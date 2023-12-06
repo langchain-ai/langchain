@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.callbacks.base import BaseCallbackHandler
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage, ChatMessage
 from langchain_core.outputs import Generation, LLMResult
 
@@ -90,7 +90,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
 
     Examples:
         >>> from langchain_community.llms import OpenAI
-        >>> from langchain_core.callbacks import LabelStudioCallbackHandler
+        >>> from langchain_community.callbacks import LabelStudioCallbackHandler
         >>> handler = LabelStudioCallbackHandler(
         ...             api_key='<your_key_here>',
         ...             url='http://localhost:8080',

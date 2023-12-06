@@ -23,7 +23,7 @@ from typing import (
 import numpy as np
 import yaml
 from langchain_core._api import deprecated
-from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env

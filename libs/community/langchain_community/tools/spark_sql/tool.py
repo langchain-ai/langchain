@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

@@ -1,14 +1,15 @@
 from types import ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING, Any, Callable, Dict
 
-from langchain_core.callbacks.tracers.base import BaseTracer
+from langchain_community.callbacks.tracers.base import BaseTracer
 
 if TYPE_CHECKING:
     from uuid import UUID
 
     from comet_llm import Span
     from comet_llm.chains.chain import Chain
-    from langchain_core.callbacks.tracers.schemas import Run
+
+    from langchain_community.callbacks.tracers.schemas import Run
 
 
 def _get_run_type(run: "Run") -> str:

@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Any, Optional, Protocol, Sequence, runtime_checkable
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

@@ -1,7 +1,7 @@
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
@@ -36,7 +36,7 @@ class HuggingFaceTextGenInference(LLM):
             print(llm("What is Deep Learning?"))
 
             # Streaming response example
-            from langchain_core.callbacks import streaming_stdout
+            from langchain_community.callbacks import streaming_stdout
 
             callbacks = [streaming_stdout.StreamingStdOutCallbackHandler()]
             llm = HuggingFaceTextGenInference(

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional
 
 import numpy as np
 from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.callbacks.base import BaseCallbackHandler
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 
 if TYPE_CHECKING:
