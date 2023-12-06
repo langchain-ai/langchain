@@ -24,7 +24,7 @@ supported functions:
 - `delete_doc_by_texts`
 
 
-For a more detailed walk through of the Alibaba Cloud OpenSearch wrapper, see [this notebook](../modules/indexes/vectorstores/examples/alibabacloud_opensearch.ipynb)
+For a more detailed walk through of the Alibaba Cloud OpenSearch wrapper, see [this notebook](../modules/indexes/vectorstores/examples/alibabacloud_opensearch)
 
 If you encounter any problems during use, please feel free to contact [xingshaomin.xsm@alibaba-inc.com](xingshaomin.xsm@alibaba-inc.com) , and we will do our best to provide you with assistance and support.
 
