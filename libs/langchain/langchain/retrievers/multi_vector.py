@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field, validator
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.stores import BaseStore
+from langchain_core.stores import ByteStore
 from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
@@ -26,7 +26,7 @@ class MultiVectorRetriever(BaseRetriever):
     vectorstore: VectorStore
     """The underlying vectorstore to use to store small chunks
     and their embedding vectors"""
-    byte_store: Optional[BaseStore[str, bytes]]
+    byte_store: Optional[ByteStore]
     """The lower-level backing storage layer for the parent documents"""
     docstore: BaseStore[str, Document]
     """The storage interface for the parent documents"""
