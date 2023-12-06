@@ -17,7 +17,7 @@ class CerebriumAI(LLM):
 
     To use, you should have the ``cerebrium`` python package installed.
     You should also have the environment variable ``CEREBRIUMAI_API_KEY``
-    set with your API key or pass it as a named arguement in the constructor.
+    set with your API key or pass it as a named argument in the constructor.
 
     Any parameters that are valid to be passed to the call can be passed
     in, even if not explicitly saved on this class.
