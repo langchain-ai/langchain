@@ -2,7 +2,7 @@
 
 Note: These tests are designed to validate the functionality of NVAIPlayEmbeddings.
 """
-from langchain.embeddings import NVAIPlayEmbeddings  # Replace with actual import path
+from langchain.embeddings import NVAIPlayEmbeddings
 
 
 def test_nvai_play_embedding_documents() -> None:

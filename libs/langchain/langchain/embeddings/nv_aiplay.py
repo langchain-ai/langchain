@@ -2,14 +2,11 @@
 
 import asyncio
 from collections import abc
-from typing import Any, Dict, List, Literal
+from typing import Any, List, Literal, Sequence
 
 from langchain.llms.nv_aiplay import ClientModel, NVCRModel
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import Field
 from langchain.schema.embeddings import Embeddings
-
-## NOTE: This file should not be ran in isolation as a single-file standalone.
-## Please use llms.nv_aiplay instead.
 
 
 class NVAIPlayEmbeddings(ClientModel, Embeddings):
@@ -19,10 +16,10 @@ class NVAIPlayEmbeddings(ClientModel, Embeddings):
     model: str = Field("nvolveqa")
     max_length: int = Field(2048, ge=1, le=2048)
 
-    @root_validator()
-    def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        values["client"] = values["client"](**values)
-        return values
+    def __init__(self, *args: Sequence, **kwargs: Any):
+        if "client" not in kwargs:
+            kwargs["client"] = NVCRModel(**kwargs)
+        super().__init__(*args, **kwargs)
 
     def _embed(self, text: str, model_type: Literal["passage", "query"]) -> List[float]:
         """Embed a single text entry to either passage or query type"""

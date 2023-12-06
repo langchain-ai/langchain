@@ -158,7 +158,11 @@ class NVCRModel(ClientModel):
     @root_validator()
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate and update model arguments, including API key and formatting"""
-        values["nvapi_key"] = get_from_dict_or_env(values, "nvapi_key", "NVAPI_KEY")
+        values["nvapi_key"] = get_from_dict_or_env(
+            ClientModel.desecretize(values),
+            "nvapi_key",
+            "NVAPI_KEY",
+        )
         if "nvapi-" not in values.get("nvapi_key", ""):
             raise ValueError("Invalid NVAPI key detected. Should start with `nvapi-`")
         values["is_staging"] = "nvapi-stg-" in values["nvapi_key"]
@@ -473,11 +477,12 @@ class NVAIPlayClient(ClientModel):
     ####################################################################################
 
     def __init__(self, *args: Sequence, **kwargs: Any):
+        if "client" not in kwargs:
+            kwargs["client"] = NVCRModel(**kwargs)
         super().__init__(*args, **kwargs)
 
     @root_validator()
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        values["client"] = values["client"](**values)
         if values.get("labels"):
             values["labels"] = cls.LabelModel(**values["labels"]).dict()
         return values
