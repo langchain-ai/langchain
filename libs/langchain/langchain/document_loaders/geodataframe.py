@@ -1,6 +1,7 @@
 from typing import Any, Iterator, List
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseLoader
 
 
@@ -34,7 +35,7 @@ class GeoDataFrameLoader(BaseLoader):
                 f"Expected data_frame to have a column named {page_content_column}"
             )
 
-        if not isinstance(data_frame[page_content_column].iloc[0], gpd.GeoSeries):
+        if not isinstance(data_frame[page_content_column], gpd.GeoSeries):
             raise ValueError(
                 f"Expected data_frame[{page_content_column}] to be a GeoSeries"
             )

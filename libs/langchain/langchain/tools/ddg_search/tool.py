@@ -1,12 +1,17 @@
 """Tool for the DuckDuckGo search API."""
 
 import warnings
-from typing import Any, Optional
+from typing import Any, Optional, Type
+
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
+
+
+class DDGInput(BaseModel):
+    query: str = Field(description="search query to look up")
 
 
 class DuckDuckGoSearchRun(BaseTool):
@@ -21,6 +26,7 @@ class DuckDuckGoSearchRun(BaseTool):
     api_wrapper: DuckDuckGoSearchAPIWrapper = Field(
         default_factory=DuckDuckGoSearchAPIWrapper
     )
+    args_schema: Type[BaseModel] = DDGInput
 
     def _run(
         self,
@@ -40,11 +46,12 @@ class DuckDuckGoSearchResults(BaseTool):
         "Useful for when you need to answer questions about current events. "
         "Input should be a search query. Output is a JSON array of the query results"
     )
-    num_results: int = 4
+    max_results: int = Field(alias="num_results", default=4)
     api_wrapper: DuckDuckGoSearchAPIWrapper = Field(
         default_factory=DuckDuckGoSearchAPIWrapper
     )
-    backend: str = "api"
+    backend: str = "text"
+    args_schema: Type[BaseModel] = DDGInput
 
     def _run(
         self,
@@ -52,7 +59,7 @@ class DuckDuckGoSearchResults(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        res = self.api_wrapper.results(query, self.num_results, backend=self.backend)
+        res = self.api_wrapper.results(query, self.max_results, source=self.backend)
         res_strs = [", ".join([f"{k}: {v}" for k, v in d.items()]) for d in res]
         return ", ".join([f"[{rs}]" for rs in res_strs])
 

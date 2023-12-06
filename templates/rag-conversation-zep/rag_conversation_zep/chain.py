@@ -14,7 +14,7 @@ from langchain.schema.runnable import (
     ConfigurableField,
     RunnableBranch,
     RunnableLambda,
-    RunnableMap,
+    RunnableParallel,
     RunnablePassthrough,
 )
 from langchain.schema.runnable.utils import ConfigurableFieldSingleOption
@@ -133,7 +133,7 @@ class ChatHistory(BaseModel):
     question: str
 
 
-_inputs = RunnableMap(
+_inputs = RunnableParallel(
     {
         "question": lambda x: x["question"],
         "chat_history": lambda x: _format_chat_history(x["chat_history"]),

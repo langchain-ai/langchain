@@ -393,14 +393,24 @@ from langchain.chat_loaders.gmail import GMailLoader
 
 ## 3rd Party Integrations
 
+### SearchApi
+
+>[SearchApi](https://www.searchapi.io/) provides a 3rd-party API to access Google search results, YouTube search & transcripts, and other Google-related engines.
+
+See [usage examples and authorization instructions](/docs/integrations/tools/searchapi).
+
+```python
+from langchain.utilities import SearchApiAPIWrapper
+```
+
 ### SerpAPI
 
 >[SerpApi](https://serpapi.com/) provides a 3rd-party API to access Google search results.
 
-See a [usage example and authorization instructions](/docs/integrations/tools/google_serper).
+See a [usage example and authorization instructions](/docs/integrations/tools/serpapi).
 
 ```python
-from langchain.utilities import GoogleSerperAPIWrapper
+from langchain.utilities import SerpAPIWrapper
 ```
 
 ### YouTube

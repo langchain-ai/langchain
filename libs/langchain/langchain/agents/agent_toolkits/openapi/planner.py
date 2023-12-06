@@ -5,6 +5,9 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
 import yaml
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+from langchain_core.pydantic_v1 import Field
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.openapi.planner_prompt import (
@@ -33,10 +36,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
-from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import Field
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
+from langchain.output_parsers.json import parse_json_markdown
 from langchain.tools.base import BaseTool
 from langchain.tools.requests.tool import BaseRequestsTool
 from langchain.utilities.requests import RequestsWrapper
@@ -81,7 +81,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
 
     def _run(self, text: str) -> str:
         try:
-            data = json.loads(text)
+            data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
         data_params = data.get("params")
@@ -111,7 +111,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
 
     def _run(self, text: str) -> str:
         try:
-            data = json.loads(text)
+            data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.post(data["url"], data["data"])
@@ -140,7 +140,7 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
 
     def _run(self, text: str) -> str:
         try:
-            data = json.loads(text)
+            data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.patch(data["url"], data["data"])
@@ -169,7 +169,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
 
     def _run(self, text: str) -> str:
         try:
-            data = json.loads(text)
+            data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.put(data["url"], data["data"])
@@ -199,7 +199,7 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
 
     def _run(self, text: str) -> str:
         try:
-            data = json.loads(text)
+            data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.delete(data["url"])

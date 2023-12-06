@@ -2,8 +2,8 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from langchain.pydantic_v1 import BaseModel, root_validator
-from langchain.schema import Document
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,9 @@ class WikipediaAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run Wikipedia search and get page summaries."""
-        page_titles = self.wiki_client.search(query[:WIKIPEDIA_MAX_QUERY_LENGTH])
+        page_titles = self.wiki_client.search(
+            query[:WIKIPEDIA_MAX_QUERY_LENGTH], results=self.top_k_results
+        )
         summaries = []
         for page_title in page_titles[: self.top_k_results]:
             if wiki_page := self._fetch_page(page_title):
@@ -103,7 +105,9 @@ class WikipediaAPIWrapper(BaseModel):
         Returns: a list of documents.
 
         """
-        page_titles = self.wiki_client.search(query[:WIKIPEDIA_MAX_QUERY_LENGTH])
+        page_titles = self.wiki_client.search(
+            query[:WIKIPEDIA_MAX_QUERY_LENGTH], results=self.top_k_results
+        )
         docs = []
         for page_title in page_titles[: self.top_k_results]:
             if wiki_page := self._fetch_page(page_title):

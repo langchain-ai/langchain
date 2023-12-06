@@ -1,9 +1,10 @@
 """Toolkit for interacting with an SQL database."""
 from typing import List
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.pydantic_v1 import Field
+
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.pydantic_v1 import Field
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.sql_database.tool import (
     InfoSQLDatabaseTool,
@@ -38,7 +39,7 @@ class SQLDatabaseToolkit(BaseToolkit):
             "schema and sample rows for those tables. "
             "Be sure that the tables actually exist by calling "
             f"{list_sql_database_tool.name} first! "
-            "Example Input: 'table1, table2, table3'"
+            "Example Input: table1, table2, table3"
         )
         info_sql_database_tool = InfoSQLDatabaseTool(
             db=self.db, description=info_sql_database_tool_description

@@ -2,13 +2,12 @@ import json
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import requests
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.outputs import GenerationChunk, LLMResult
+from langchain_core.pydantic_v1 import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
-from langchain.pydantic_v1 import Extra
-from langchain.schema import LLMResult
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.output import GenerationChunk
 
 
 def _stream_response_to_generation_chunk(
@@ -89,11 +88,24 @@ class _OllamaCommon(BaseLanguageModel):
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
 
+    system: Optional[str] = None
+    """system prompt (overrides what is defined in the Modelfile)"""
+
+    template: Optional[str] = None
+    """full prompt or prompt template (overrides what is defined in the Modelfile)"""
+
+    format: Optional[str] = None
+    """Specify the format of the output (e.g., json)"""
+
+    timeout: Optional[int] = None
+    """Timeout for the request stream"""
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
         return {
             "model": self.model,
+            "format": self.format,
             "options": {
                 "mirostat": self.mirostat,
                 "mirostat_eta": self.mirostat_eta,
@@ -109,12 +121,14 @@ class _OllamaCommon(BaseLanguageModel):
                 "top_k": self.top_k,
                 "top_p": self.top_p,
             },
+            "system": self.system,
+            "template": self.template,
         }
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
+        return {**{"model": self.model, "format": self.format}, **self._default_params}
 
     def _create_stream(
         self,
@@ -128,12 +142,27 @@ class _OllamaCommon(BaseLanguageModel):
             stop = self.stop
         elif stop is None:
             stop = []
-        params = {**self._default_params, "stop": stop, **kwargs}
+
+        params = self._default_params
+
+        if "model" in kwargs:
+            params["model"] = kwargs["model"]
+
+        if "options" in kwargs:
+            params["options"] = kwargs["options"]
+        else:
+            params["options"] = {
+                **params["options"],
+                "stop": stop,
+                **kwargs,
+            }
+
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
             headers={"Content-Type": "application/json"},
             json={"prompt": prompt, **params},
             stream=True,
+            timeout=self.timeout,
         )
         response.encoding = "utf-8"
         if response.status_code != 200:

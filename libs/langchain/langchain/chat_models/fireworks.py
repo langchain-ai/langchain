@@ -10,15 +10,7 @@ from typing import (
     Union,
 )
 
-from langchain.adapters.openai import convert_message_to_dict
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel
-from langchain.llms.base import create_base_retry_decorator
-from langchain.pydantic_v1 import Field, SecretStr, root_validator
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
@@ -32,8 +24,17 @@ from langchain.schema.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain.utils import convert_to_secret_str
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
+
+from langchain.adapters.openai import convert_message_to_dict
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain.chat_models.base import BaseChatModel
+from langchain.llms.base import create_base_retry_decorator
 from langchain.utils.env import get_from_dict_or_env
 
 
@@ -134,6 +135,7 @@ class ChatFireworks(BaseChatModel):
             "model": self.model,
             "messages": message_dicts,
             **self.model_kwargs,
+            **kwargs,
         }
         response = completion_with_retry(
             self,
@@ -156,6 +158,7 @@ class ChatFireworks(BaseChatModel):
             "model": self.model,
             "messages": message_dicts,
             **self.model_kwargs,
+            **kwargs,
         }
         response = await acompletion_with_retry(
             self, self.use_retry, run_manager=run_manager, stop=stop, **params
@@ -199,6 +202,7 @@ class ChatFireworks(BaseChatModel):
             "messages": message_dicts,
             "stream": True,
             **self.model_kwargs,
+            **kwargs,
         }
         for chunk in completion_with_retry(
             self, self.use_retry, run_manager=run_manager, stop=stop, **params
@@ -229,6 +233,7 @@ class ChatFireworks(BaseChatModel):
             "messages": message_dicts,
             "stream": True,
             **self.model_kwargs,
+            **kwargs,
         }
         async for chunk in await acompletion_with_retry_streaming(
             self, self.use_retry, run_manager=run_manager, stop=stop, **params

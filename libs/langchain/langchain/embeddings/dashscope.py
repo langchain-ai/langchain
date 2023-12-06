@@ -9,6 +9,8 @@ from typing import (
     Optional,
 )
 
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -18,8 +20,6 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)

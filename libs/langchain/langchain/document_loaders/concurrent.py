@@ -4,11 +4,12 @@ import concurrent.futures
 from pathlib import Path
 from typing import Iterator, Literal, Optional, Sequence, Union
 
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import BlobLoader, FileSystemBlobLoader
 from langchain.document_loaders.generic import GenericLoader
 from langchain.document_loaders.parsers.registry import get_parser
-from langchain.schema import Document
 
 _PathLike = Union[str, Path]
 
@@ -49,11 +50,9 @@ class ConcurrentLoader(GenericLoader):
         show_progress: bool = False,
         parser: Union[DEFAULT, BaseBlobParser] = "default",
         num_workers: int = 4,
+        parser_kwargs: Optional[dict] = None,
     ) -> ConcurrentLoader:
-        """
-        Create a concurrent generic document loader using a
-        filesystem blob loader.
-
+        """Create a concurrent generic document loader using a filesystem blob loader.
 
         Args:
             path: The path to the directory to load documents from.
@@ -65,6 +64,7 @@ class ConcurrentLoader(GenericLoader):
                            Proxies to the file system loader.
             parser: A blob parser which knows how to parse blobs into documents
             num_workers: Max number of concurrent workers to use.
+            parser_kwargs: Keyword arguments to pass to the parser.
         """
         blob_loader = FileSystemBlobLoader(
             path,
@@ -74,7 +74,11 @@ class ConcurrentLoader(GenericLoader):
             show_progress=show_progress,
         )
         if isinstance(parser, str):
-            blob_parser = get_parser(parser)
+            if parser == "default" and cls.get_parser != GenericLoader.get_parser:
+                # There is an implementation of get_parser on the class, use it.
+                blob_parser = cls.get_parser(**(parser_kwargs or {}))
+            else:
+                blob_parser = get_parser(parser)
         else:
             blob_parser = parser
         return cls(blob_loader, blob_parser, num_workers=num_workers)

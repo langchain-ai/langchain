@@ -1,11 +1,12 @@
 import logging
 from typing import Any, Dict, List, Optional
 
+from langchain_core.outputs import Generation, LLMResult
+from langchain_core.pydantic_v1 import Extra, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -70,8 +71,8 @@ class Clarifai(LLM):
             raise ValueError("Please provide a model_id.")
 
         try:
-            from clarifai.auth.helper import ClarifaiAuthHelper
             from clarifai.client import create_stub
+            from clarifai.client.auth.helper import ClarifaiAuthHelper
         except ImportError:
             raise ImportError(
                 "Could not import clarifai python package. "
