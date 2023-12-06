@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.stores import BaseStore
+from langchain_core.stores import BaseStore, ByteStore
 from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
@@ -38,7 +38,7 @@ class MultiVectorRetriever(BaseRetriever):
         *,
         vectorstore: VectorStore,
         docstore: Optional[BaseStore[str, Document]] = None,
-        base_store: Optional[BaseStore[str, bytes]] = None,
+        base_store: Optional[ByteStore] = None,
         id_key: str = "doc_id",
         search_kwargs: Optional[dict] = None,
         search_type: SearchType = SearchType.similarity,
