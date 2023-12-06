@@ -65,7 +65,7 @@ class MlflowAIGatewayEmbeddings(Embeddings, BaseModel):
         embeddings = []
         for txt in _chunk(texts, 20):
             resp = mlflow.gateway.query(self.route, data={"text": txt})
-            embeddings.append(resp["embeddings"])
+            embeddings.extend(resp["embeddings"])
         return embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
