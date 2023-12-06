@@ -243,7 +243,7 @@ class BaseOpenAI(BaseLLM):
             warnings.warn(
                 "You are trying to use a chat model. This way of initializing it is "
                 "no longer supported. Instead, please use: "
-                "`from langchain_community.chat_models import ChatOpenAI`"
+                "`from langchain_openai.chat_models import ChatOpenAI`"
             )
             return OpenAIChat(**data)
         return super().__new__(cls)
@@ -731,7 +731,7 @@ class OpenAI(BaseOpenAI):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import OpenAI
+            from langchain_openai.llms import OpenAI
             openai = OpenAI(model_name="text-davinci-003")
     """
 
@@ -950,7 +950,7 @@ class OpenAIChat(BaseLLM):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import OpenAIChat
+            from langchain_openai.llms import OpenAIChat
             openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
     """
 
@@ -1042,7 +1042,7 @@ class OpenAIChat(BaseLLM):
         warnings.warn(
             "You are trying to use a chat model. This way of initializing it is "
             "no longer supported. Instead, please use: "
-            "`from langchain_community.chat_models import ChatOpenAI`"
+            "`from langchain_openai.chat_models import ChatOpenAI`"
         )
         return values
 

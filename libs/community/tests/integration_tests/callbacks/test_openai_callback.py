@@ -1,6 +1,7 @@
 """Integration tests for the langchain tracer module."""
 import asyncio
 
+
 from langchain_community.callbacks import get_openai_callback
 from langchain_community.llms import OpenAI
 

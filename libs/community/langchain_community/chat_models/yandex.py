@@ -2,11 +2,6 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -15,6 +10,11 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_community.llms.utils import enforce_stop_tokens
 from langchain_community.llms.yandex import _BaseYandexGPT
 

@@ -53,12 +53,12 @@ except ImportError:
 
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.embeddings import Embeddings
-from langchain_core.language_models.llms import LLM, get_prompts
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.utils import get_from_env
 
+from langchain_core.language_models.llms import LLM, get_prompts
+from langchain_core.utils import get_from_env
 from langchain_community.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
@@ -467,7 +467,7 @@ class RedisSemanticCache(BaseCache):
             from langchain_community.globals import set_llm_cache
 
             from langchain_community.cache import RedisSemanticCache
-            from langchain_community.embeddings import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
 
             set_llm_cache(RedisSemanticCache(
                 redis_url="redis://localhost:6379",

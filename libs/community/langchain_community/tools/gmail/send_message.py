@@ -4,9 +4,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Any, Dict, List, Optional, Union
 
-from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
 
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_community.tools.gmail.base import GmailBaseTool
 
 

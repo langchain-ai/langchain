@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.utils import get_from_dict_or_env
 
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_community.llms import BaseLLM
 from langchain_community.utilities.vertexai import create_retry_decorator
+from langchain_core.utils import get_from_dict_or_env
 
 
 def completion_with_retry(

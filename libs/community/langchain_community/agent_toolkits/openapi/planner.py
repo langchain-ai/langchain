@@ -2,7 +2,7 @@
 import json
 import re
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
 import yaml
 from langchain_core.callbacks import BaseCallbackManager
@@ -245,8 +245,8 @@ def _create_api_controller_agent(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
 ) -> AgentExecutor:
-    from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
+    from langchain.agents.agent import AgentExecutor
     from langchain.chains.llm import LLMChain
 
     get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
@@ -338,8 +338,8 @@ def create_openapi_agent(
     rather than a top-level planner
     that invokes a controller with its plan. This is to keep the planner simple.
     """
-    from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
+    from langchain.agents.agent import AgentExecutor
     from langchain.chains.llm import LLMChain
 
     tools = [

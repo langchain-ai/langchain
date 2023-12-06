@@ -1,7 +1,7 @@
 from types import ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING, Any, Callable, Dict
 
-from langchain_community.callbacks.tracers.base import BaseTracer
+from langchain_core.tracers import BaseTracer
 
 if TYPE_CHECKING:
     from uuid import UUID

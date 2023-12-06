@@ -17,9 +17,9 @@ from typing import (
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_env
 from langchain_core.vectorstores import VectorStore
 
+from langchain_core.utils import get_from_env
 from langchain_community.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
@@ -677,7 +677,7 @@ class Neo4jVector(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores.neo4j_vector import Neo4jVector
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))

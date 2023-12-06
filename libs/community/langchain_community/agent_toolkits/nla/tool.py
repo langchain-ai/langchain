@@ -1,8 +1,7 @@
 """Tool for interacting with a single API with natural language definition."""
 
 from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import Tool

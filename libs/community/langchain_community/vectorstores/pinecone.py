@@ -405,7 +405,7 @@ class Pinecone(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import Pinecone
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 import pinecone
 
                 # The environment should be the one specified next to the API key

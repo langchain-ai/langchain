@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
-
 from langchain_community.tools.slack.utils import login
 
 if TYPE_CHECKING:

@@ -3,9 +3,10 @@ import os
 from typing import Any, Dict, List
 from uuid import UUID
 
-from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
+
+from langchain_core.callbacks import BaseCallbackHandler
 
 
 def import_context() -> Any:
@@ -62,7 +63,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
 
     Chain Example:
         >>> from langchain.chains import LLMChain
-        >>> from langchain_community.chat_models import ChatOpenAI
+        >>> from langchain_openai.chat_models import ChatOpenAI
         >>> from langchain_community.callbacks import ContextCallbackHandler
         >>> context_callback = ContextCallbackHandler(
         ...     token="<CONTEXT_TOKEN_HERE>",

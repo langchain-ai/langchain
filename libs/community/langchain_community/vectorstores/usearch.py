@@ -155,7 +155,7 @@ class USearch(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import USearch
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 usearch = USearch.from_texts(texts, embeddings)

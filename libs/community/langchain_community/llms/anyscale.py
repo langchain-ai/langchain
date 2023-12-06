@@ -12,18 +12,20 @@ from typing import (
     cast,
 )
 
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
+
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_openai.llms import (
     BaseOpenAI,
     acompletion_with_retry,
     completion_with_retry,
 )
+from langchain_core.utils import get_from_dict_or_env
 
 
 def update_token_usage(

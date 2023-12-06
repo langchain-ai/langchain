@@ -6,7 +6,7 @@ def test_confident_deepeval() -> None:
     from deepeval.metrics.answer_relevancy import AnswerRelevancy
 
     from langchain_community.callbacks.confident_callback import DeepEvalCallbackHandler
-    from langchain_community.llms import OpenAI
+    from langchain_openai.llms import OpenAI
 
     answer_relevancy = AnswerRelevancy(minimum_score=0.3)
     deepeval_callback = DeepEvalCallbackHandler(

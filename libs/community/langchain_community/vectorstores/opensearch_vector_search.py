@@ -7,9 +7,9 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
+from langchain_core.utils import get_from_dict_or_env
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 IMPORT_OPENSEARCH_PY_ERROR = (
@@ -735,7 +735,7 @@ class OpenSearchVectorSearch(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import OpenSearchVectorSearch
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 opensearch_vector_search = OpenSearchVectorSearch.from_texts(
                     texts,
@@ -801,7 +801,7 @@ class OpenSearchVectorSearch(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import OpenSearchVectorSearch
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 embedder = OpenAIEmbeddings()
                 embeddings = embedder.embed_documents(["foo", "bar"])
                 opensearch_vector_search = OpenSearchVectorSearch.from_embeddings(

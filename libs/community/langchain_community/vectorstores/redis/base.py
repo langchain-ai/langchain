@@ -23,18 +23,18 @@ from typing import (
 import numpy as np
 import yaml
 from langchain_core._api import deprecated
-from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_community.utilities.redis import (
     _array_to_buffer,
     _buffer_to_array,
     check_redis_module_exist,
     get_client,
 )
+from langchain_core.utils import get_from_dict_or_env
 from langchain_community.vectorstores.redis.constants import (
     REDIS_REQUIRED_MODULES,
     REDIS_TAG_SEPARATOR,
@@ -102,13 +102,13 @@ class Redis(VectorStore):
     .. code-block:: python
 
         from langchain_community.vectorstores import Redis
-        from langchain_community.embeddings import OpenAIEmbeddings
+        from langchain_openai.embeddings import OpenAIEmbeddings
 
     Initialize, create index, and load Documents
         .. code-block:: python
 
             from langchain_community.vectorstores import Redis
-            from langchain_community.embeddings import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
 
             rds = Redis.from_documents(
                 documents, # a list of Document objects from loaders or created
@@ -317,7 +317,7 @@ class Redis(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import Redis
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 redis, keys = Redis.from_texts_return_keys(
                     texts,
@@ -452,7 +452,7 @@ class Redis(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import Redis
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 redisearch = RediSearch.from_texts(
                     texts,
@@ -508,7 +508,7 @@ class Redis(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import Redis
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
 

@@ -3,12 +3,13 @@
 import json
 from typing import Any, Dict, Optional
 
-from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.tools import BaseTool
 from langchain_core.vectorstores import VectorStore
+
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_openai.llms import OpenAI
+from langchain_core.tools import BaseTool
 
 
 class BaseVectorStoreTool(BaseModel):

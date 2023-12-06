@@ -5,7 +5,7 @@ from typing import Iterator, List
 import pytest
 from langchain_core.documents import Document
 
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import MomentoVectorIndex
 
 API_KEY_ENV_VAR = "MOMENTO_API_KEY"

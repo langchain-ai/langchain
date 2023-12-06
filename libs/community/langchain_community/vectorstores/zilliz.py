@@ -68,7 +68,7 @@ class Zilliz(Milvus):
         .. code-block:: python
 
         from langchain_community.vectorstores import Zilliz
-        from langchain_community.embeddings import OpenAIEmbeddings
+        from langchain_openai.embeddings import OpenAIEmbeddings
 
         embedding = OpenAIEmbeddings()
         # Connect to a Zilliz instance

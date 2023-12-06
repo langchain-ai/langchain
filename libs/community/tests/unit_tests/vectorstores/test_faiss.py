@@ -4,12 +4,33 @@ import math
 import tempfile
 
 import pytest
+
+from typing import Union
+
 from langchain_core.documents import Document
 
+from langchain_community.docstore.base import Docstore
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores.faiss import FAISS
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-from tests.unit_tests.agents.test_react import FakeDocstore
+
+
+_PAGE_CONTENT = """This is a page about LangChain.
+
+It is a really cool framework.
+
+What isn't there to love about langchain?
+
+Made in 2022."""
+
+
+class FakeDocstore(Docstore):
+    """Fake docstore for testing purposes."""
+
+    def search(self, search: str) -> Union[str, Document]:
+        """Return the fake document."""
+        document = Document(page_content=_PAGE_CONTENT)
+        return document
 
 
 @pytest.mark.requires("faiss")

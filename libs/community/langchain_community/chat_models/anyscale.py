@@ -9,12 +9,14 @@ from typing import TYPE_CHECKING, Dict, Optional, Set
 import requests
 from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str
+
 from langchain_openai.adapters import convert_message_to_dict
 from langchain_openai.chat_models import (
     ChatOpenAI,
     _import_tiktoken,
 )
+from langchain_core.utils import get_from_dict_or_env
 from langchain_openai.utils import is_openai_v1
 
 if TYPE_CHECKING:

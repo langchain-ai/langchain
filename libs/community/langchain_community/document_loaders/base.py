@@ -1,8 +1,7 @@
 """Abstract interface for document loader implementations."""
 from __future__ import annotations
-
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterator, List, Optional
+from typing import Iterator, List, Optional, TYPE_CHECKING
 
 from langchain_core.documents import Document
 

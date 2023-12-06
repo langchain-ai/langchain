@@ -4,7 +4,6 @@ from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
-
 from langchain_community.utilities.bing_search import BingSearchAPIWrapper
 
 

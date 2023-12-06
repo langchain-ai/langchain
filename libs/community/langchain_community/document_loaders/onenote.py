@@ -4,6 +4,8 @@ from typing import Dict, Iterator, List, Optional
 
 import requests
 from langchain_core.documents import Document
+
+from langchain_community.document_loaders.base import BaseLoader
 from langchain_core.pydantic_v1 import (
     BaseModel,
     BaseSettings,
@@ -11,8 +13,6 @@ from langchain_core.pydantic_v1 import (
     FilePath,
     SecretStr,
 )
-
-from langchain_community.document_loaders.base import BaseLoader
 
 
 class _OneNoteGraphSettings(BaseSettings):

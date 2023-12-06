@@ -62,7 +62,7 @@ class Hippo(VectorStore):
         .. code-block:: python
 
         from langchain_community.vectorstores import Hippo
-        from langchain_community.embeddings import OpenAIEmbeddings
+        from langchain_openai.embeddings import OpenAIEmbeddings
 
         embedding = OpenAIEmbeddings()
         # Connect to a hippo instance on localhost

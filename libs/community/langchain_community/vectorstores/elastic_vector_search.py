@@ -17,8 +17,9 @@ from typing import (
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
+
+from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -72,7 +73,7 @@ class ElasticVectorSearch(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import ElasticVectorSearch
-            from langchain_community.embeddings import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
             elastic_vector_search = ElasticVectorSearch(
@@ -108,7 +109,7 @@ class ElasticVectorSearch(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import ElasticVectorSearch
-            from langchain_community.embeddings import OpenAIEmbeddings
+            from langchain_openai.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
 
@@ -302,7 +303,7 @@ class ElasticVectorSearch(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import ElasticVectorSearch
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 elastic_vector_search = ElasticVectorSearch.from_texts(
                     texts,

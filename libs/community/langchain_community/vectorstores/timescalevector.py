@@ -20,9 +20,9 @@ from typing import (
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
+from langchain_core.utils import get_from_dict_or_env
 from langchain_community.vectorstores.utils import DistanceStrategy
 
 if TYPE_CHECKING:
@@ -661,7 +661,7 @@ class TimescaleVector(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import TimescaleVector
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))
@@ -706,7 +706,7 @@ class TimescaleVector(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import TimescaleVector
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))

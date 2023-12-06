@@ -8,10 +8,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
-from langchain_core.utils import get_from_dict_or_env
 
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_community.callbacks.utils import (
     BaseMetadataCallbackHandler,
     flatten_dict,
@@ -20,6 +19,7 @@ from langchain_community.callbacks.utils import (
     import_spacy,
     import_textstat,
 )
+from langchain_core.utils import get_from_dict_or_env
 
 
 def import_mlflow() -> Any:

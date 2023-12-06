@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
 

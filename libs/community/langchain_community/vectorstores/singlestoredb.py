@@ -140,7 +140,7 @@ class SingleStoreDB(VectorStore):
 
             .. code-block:: python
 
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
                 vectorstore = SingleStoreDB(
@@ -152,7 +152,7 @@ class SingleStoreDB(VectorStore):
 
             .. code-block:: python
 
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
                 vectorstore = SingleStoreDB(
@@ -172,7 +172,7 @@ class SingleStoreDB(VectorStore):
 
             .. code-block:: python
 
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
                 os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
@@ -303,7 +303,7 @@ class SingleStoreDB(VectorStore):
         Examples:
             .. code-block:: python
                 from langchain_community.vectorstores import SingleStoreDB
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 s2 = SingleStoreDB.from_documents(
                     docs,
                     OpenAIEmbeddings(),
@@ -420,7 +420,7 @@ class SingleStoreDB(VectorStore):
         Example:
             .. code-block:: python
                 from langchain_community.vectorstores import SingleStoreDB
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 s2 = SingleStoreDB.from_texts(
                     texts,
                     OpenAIEmbeddings(),

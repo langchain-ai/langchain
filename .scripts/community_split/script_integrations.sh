@@ -27,12 +27,18 @@ mkdir community/tests/unit_tests/indexes
 touch community/tests/unit_tests/indexes/__init__.py
 
 
-mkdir -p partners/openai/langchain_openai/chat_models
-mkdir -p partners/openai/langchain_openai/llms
-mkdir -p partners/openai/langchain_openai/embeddings
+mkdir -p partners/openai/langchain_openai/{chat_models,llms,embeddings}
+mkdir -p partners/openai/tests/{unit_tests,integration_tests}/llms
+mkdir -p partners/openai/tests/{unit_tests,integration_tests}/chat_models
+mkdir -p partners/openai/tests/{unit_tests,integration_tests}/embeddings
+mkdir -p partners/openai/tests/integration_tests/adapters
 touch partners/openai/langchain_openai/__init__.py
 touch partners/openai/README.md
 touch partners/openai/langchain_openai/{llms,chat_models,embeddings}/__init__.py
+touch partners/openai/tests/{unit_tests,integration_tests}/__init__.py
+touch partners/openai/tests/{unit_tests,integration_tests}/chat_models/__init__.py
+touch partners/openai/tests/{unit_tests,integration_tests}/llms/__init__.py
+touch partners/openai/tests/{unit_tests,integration_tests}/embeddings/__init__.py
 
 cd langchain
 
@@ -117,6 +123,7 @@ mv langchain/tests/integration_tests/utilities community/tests/integration_tests
 mv langchain/tests/integration_tests/vectorstores community/tests/integration_tests
 mv langchain/tests/integration_tests/adapters community/tests/integration_tests
 mv langchain/tests/integration_tests/callbacks community/tests/integration_tests
+touch community/tests/integration_tests/{chat_message_histories,tools}/__init__.py
 
 git grep -l 'from langchain.utils.json_schema' | xargs sed -i '' 's/from langchain.utils.json_schema/from langchain_core.utils.json_schema/g'
 git grep -l 'from langchain.utils.html' | xargs sed -i '' 's/from langchain.utils.html/from langchain_core.utils.html/g'
@@ -131,6 +138,7 @@ git grep -l 'from langchain.callbacks.base' | xargs sed -i '' 's/from langchain.
 git grep -l 'from langchain.callbacks.stdout' | xargs sed -i '' 's/from langchain.callbacks.stdout/from langchain_core.callbacks/g'
 git grep -l 'from langchain.callbacks.streaming_stdout' | xargs sed -i '' 's/from langchain.callbacks.streaming_stdout/from langchain_core.callbacks/g'
 git grep -l 'from langchain.callbacks.manager' | xargs sed -i '' 's/from langchain.callbacks.manager/from langchain_core.callbacks/g'
+git grep -l 'from langchain.callbacks.tracers.base' | xargs sed -i '' 's/from langchain.callbacks.tracers.base/from langchain_core.tracers/g'
 git grep -l 'from langchain.tools.base' | xargs sed -i '' 's/from langchain.tools.base/from langchain_core.tools/g'
 git grep -l 'from langchain.agents.tools' | xargs sed -i '' 's/from langchain.agents.tools/from langchain_core.tools/g'
 git grep -l 'from langchain.schema.output' | xargs sed -i '' 's/from langchain.schema.output/from langchain_core.outputs/g'
@@ -140,6 +148,10 @@ git grep -l 'from langchain.utils.math' | xargs sed -i '' 's/from langchain.util
 git grep -l 'from langchain.utils.openai_functions' | xargs sed -i '' 's/from langchain.utils.openai_functions/from langchain_openai.functions/g'
 git grep -l 'from langchain.utils.openai' | xargs sed -i '' 's/from langchain.utils.openai/from langchain_openai.utils/g'
 git grep -l 'from langchain.chat_models.openai' | xargs sed -i '' 's/from langchain.chat_models.openai/from langchain_openai.chat_models/g'
+git grep -l 'from langchain.chat_models import ChatOpenAI' | xargs sed -i '' 's/from langchain.chat_models import ChatOpenAI/from langchain_openai.chat_models import ChatOpenAI/g'
+git grep -l 'from langchain.chat_models import AzureChatOpenAI' | xargs sed -i '' 's/from langchain.chat_models import AzureChatOpenAI/from langchain_openai.chat_models import AzureChatOpenAI/g'
+git grep -l 'from langchain.llms import OpenAI' | xargs sed -i '' 's/from langchain.llms import OpenAI/from langchain_openai.llms import OpenAI/g'
+git grep -l 'from langchain.embeddings import OpenAIEmbeddings' | xargs sed -i '' 's/from langchain.embeddings import OpenAIEmbeddings/from langchain_openai.embeddings import OpenAIEmbeddings/g'
 git grep -l 'from langchain.chat_models.azure_openai' | xargs sed -i '' 's/from langchain.chat_models.azure_openai/from langchain_openai.chat_models/g'
 git grep -l 'from langchain.embeddings.openai' | xargs sed -i '' 's/from langchain.embeddings.openai/from langchain_openai.embeddings/g'
 git grep -l 'from langchain.embeddings.azure_openai' | xargs sed -i '' 's/from langchain.embeddings.azure_openai/from langchain_openai.embeddings/g'
@@ -154,6 +166,9 @@ git grep -l 'from langchain_community\.text_splitter' | xargs sed -i '' 's/from 
 git grep -l 'from langchain_community\.chains' | xargs sed -i '' 's/from langchain_community\.chains/from langchain.chains/g'
 git grep -l 'from langchain_community\.agents' | xargs sed -i '' 's/from langchain_community\.agents/from langchain.agents/g'
 git grep -l 'from langchain_community\.memory' | xargs sed -i '' 's/from langchain_community\.memory/from langchain.memory/g'
+git grep -l 'langchain\.__version__' | xargs sed -i '' 's/langchain\.__version__/langchain_community.__version__/g'
+git grep -l 'import langchain$' | xargs sed -i '' 's/import\ langchain$/import\ langchain_community/g'
+
 
 cd ..
 git checkout master -- langchain/langchain
@@ -205,14 +220,26 @@ mv community/langchain_community/embeddings/openai.py partners/openai/langchain_
 mv community/langchain_community/embeddings/azure_openai.py partners/openai/langchain_openai/embeddings/azure.py
 mv community/langchain_community/adapters/openai.py partners/openai/langchain_openai/adapters.py
 
+mv community/tests/unit_tests/chat_models/test_openai.py partners/openai/tests/unit_tests/chat_models/test_base.py
+mv community/tests/integration_tests/chat_models/test_openai.py partners/openai/tests/integration_tests/chat_models/test_base.py
+mv community/tests/unit_tests/chat_models/test_azureopenai.py partners/openai/tests/unit_tests/chat_models/test_azure.py
+mv community/tests/integration_tests/chat_models/test_azure_openai.py partners/openai/tests/integration_tests/chat_models/test_azure.py
+
+mv community/tests/unit_tests/llms/test_openai.py partners/openai/tests/unit_tests/llms/test_base.py
+mv community/tests/integration_tests/llms/test_openai.py partners/openai/tests/integration_tests/llms/test_base.py
+mv community/tests/integration_tests/llms/test_azure_openai.py partners/openai/tests/integration_tests/llms/test_azure.py
+
+mv community/tests/unit_tests/embeddings/test_openai.py partners/openai/tests/unit_tests/embeddings/test_base.py
+mv community/tests/integration_tests/embeddings/test_openai.py partners/openai/tests/integration_tests/embeddings/test_base.py
+mv community/tests/integration_tests/embeddings/test_azure_openai.py partners/openai/tests/integration_tests/embeddings/test_azure.py
+
+mv community/tests/integration_tests/adapters/{__init__,test_openai}.py partners/openai/tests/integration_tests/
+
 git add partners core
 
-rm community/langchain_community/chat_models/base.py
-rm community/langchain_community/llms/base.py
-rm community/langchain_community/tools/base.py
-rm community/langchain_community/embeddings/base.py
-rm community/langchain_community/vectorstores/base.py
-rm community/langchain_community/callbacks/{base,stdout,streaming_stdout}.py
+rm community/langchain_community/{chat_models,llms,tools,embeddings,vectorstores,callbacks}/base.py
+rm community/tests/unit_tests/{chat_models,llms,tools,callbacks}/test_base.py
+rm community/langchain_community/callbacks/{stdout,streaming_stdout}.py
 rm community/langchain_community/callbacks/tracers/{base,evaluation,langchain,langchain_v1,log_stream,root_listeners,run_collector,schemas,stdout}.py
 
 git checkout master -- langchain/tests/unit_tests/{chat_models,llms,tools,callbacks,document_loaders}/test_base.py
@@ -235,7 +262,13 @@ cp -r core/scripts partners/openai
 sed -i '' 's/from\ langchain_openai.chat_models\ /from\ langchain_openai.chat_models.base\ /g' partners/openai/langchain_openai/chat_models/azure.py
 sed -i '' 's/from\ langchain_openai.embeddings\ /from\ langchain_openai.embeddings.base\ /g' partners/openai/langchain_openai/embeddings/azure.py
 
+git grep -l '@pytest\.mark\.requires' partners/openai | xargs sed -i '' 's/@pytest\.mark\.requires("openai")//g'
+
+
+cp -r langchain/tests/integration_tests/examples community/tests
+cp langchain/tests/unit_tests/conftest.py community/tests/unit_tests
 cp -r ../.scripts/community_split/libs/* .
+
 
 cd core
 make format
@@ -251,3 +284,4 @@ make format
 cd ../..
 sed -E -i '' '1 s/(.*)/\1\ \ \#\ noqa\:\ E501/g' langchain/langchain/agents/agent_toolkits/conversational_retrieval/openai_functions.py
 sed -i '' 's/llms\.loading\.get_type_to_cls_dict/llms.get_type_to_cls_dict/g' langchain/tests/unit_tests/chains/test_llm.py
+touch community/langchain_community/agent_toolkits/amadeus/__init__.py

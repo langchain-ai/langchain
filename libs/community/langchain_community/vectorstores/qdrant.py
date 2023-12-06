@@ -1306,7 +1306,7 @@ class Qdrant(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import Qdrant
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
         """
@@ -1482,7 +1482,7 @@ class Qdrant(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import Qdrant
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
         """
