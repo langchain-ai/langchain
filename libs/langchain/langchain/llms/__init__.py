@@ -504,6 +504,12 @@ def _import_vllm_openai() -> Any:
     return VLLMOpenAI
 
 
+def _import_watsonxllm() -> Any:
+    from langchain.llms.watsonxllm import WatsonxLLM
+
+    return WatsonxLLM
+
+
 def _import_writer() -> Any:
     from langchain.llms.writer import Writer
 
@@ -685,6 +691,8 @@ def __getattr__(name: str) -> Any:
         return _import_vllm()
     elif name == "VLLMOpenAI":
         return _import_vllm_openai()
+    elif name == "WatsonxLLM":
+        return _import_watsonxllm()
     elif name == "Writer":
         return _import_writer()
     elif name == "Xinference":
@@ -777,6 +785,7 @@ __all__ = [
     "VertexAIModelGarden",
     "VLLM",
     "VLLMOpenAI",
+    "WatsonxLLM",
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
@@ -861,10 +870,11 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "openllm_client": _import_openllm,
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
+        "watsonxllm": _import_watsonxllm,
         "writer": _import_writer,
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,
         "qianfan_endpoint": _import_baidu_qianfan_endpoint,
         "yandex_gpt": _import_yandex_gpt,
-        "VolcEngineMaasLLM": _import_volcengine_maas(),
+        "VolcEngineMaasLLM": _import_volcengine_maas,
     }
