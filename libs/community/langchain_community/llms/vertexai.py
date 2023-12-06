@@ -4,24 +4,23 @@ from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     Dict,
     Iterator,
     List,
     Optional,
-    Union,
 )
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
+from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain_community.utilities.vertexai import (
+    create_retry_decorator,
     get_client_info,
     init_vertexai,
     raise_vertex_import_error,
@@ -65,27 +64,6 @@ def is_codey_model(model_name: str) -> bool:
     return "code" in model_name
 
 
-def _create_retry_decorator(
-    llm: VertexAI,
-    *,
-    run_manager: Optional[
-        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
-    ] = None,
-) -> Callable[[Any], Any]:
-    import google.api_core
-
-    errors = [
-        google.api_core.exceptions.ResourceExhausted,
-        google.api_core.exceptions.ServiceUnavailable,
-        google.api_core.exceptions.Aborted,
-        google.api_core.exceptions.DeadlineExceeded,
-    ]
-    decorator = create_base_retry_decorator(
-        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
-    )
-    return decorator
-
-
 def completion_with_retry(
     llm: VertexAI,
     *args: Any,
@@ -93,7 +71,7 @@ def completion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+    retry_decorator = create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
@@ -109,7 +87,9 @@ def stream_completion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+    retry_decorator = create_retry_decorator(
+        llm, max_retries=llm.max_retries, run_manager=run_manager
+    )
 
     @retry_decorator
     def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
@@ -125,7 +105,7 @@ async def acompletion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+    retry_decorator = create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     async def _acompletion_with_retry(*args: Any, **kwargs: Any) -> Any:

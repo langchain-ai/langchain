@@ -96,7 +96,7 @@ class AmadeusFlightSearch(AmadeusBaseTool):
             )
             return [None]
 
-        # Collect all results from the API
+        # Collect all results from the Amadeus Flight Offers Search API
         try:
             response = client.shopping.flight_offers_search.get(
                 originLocationCode=originLocationCode,

@@ -1,7 +1,6 @@
 from langchain_community.llms.vertexai import (
     VertexAI,
     VertexAIModelGarden,
-    _create_retry_decorator,
     _response_to_generation,
     _VertexAIBase,
     _VertexAICommon,
@@ -13,7 +12,6 @@ from langchain_community.llms.vertexai import (
 __all__ = [
     "_response_to_generation",
     "is_codey_model",
-    "_create_retry_decorator",
     "completion_with_retry",
     "stream_completion_with_retry",
     "_VertexAIBase",

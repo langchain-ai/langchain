@@ -6,6 +6,8 @@ Note: This test must be run with the GOOGLE_API_KEY environment variable set to 
 
 from pathlib import Path
 
+from langchain_core.outputs import LLMResult
+
 from langchain_community.llms.google_palm import GooglePalm
 from langchain_community.llms.loading import load_llm
 
@@ -15,6 +17,22 @@ def test_google_palm_call() -> None:
     llm = GooglePalm(max_output_tokens=10)
     output = llm("Say foo:")
     assert isinstance(output, str)
+    assert llm._llm_type == "google_palm"
+    assert llm.model_name == "models/text-bison-001"
+
+
+def test_google_palm_generate() -> None:
+    llm = GooglePalm(temperature=0.3, n=2)
+    output = llm.generate(["Say foo:"])
+    assert isinstance(output, LLMResult)
+    assert len(output.generations) == 1
+    assert len(output.generations[0]) == 2
+
+
+def test_google_palm_get_num_tokens() -> None:
+    llm = GooglePalm()
+    output = llm.get_num_tokens("How are you?")
+    assert output == 4
 
 
 def test_saving_loading_llm(tmp_path: Path) -> None:

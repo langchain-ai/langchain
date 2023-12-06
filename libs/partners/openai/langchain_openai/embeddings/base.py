@@ -39,14 +39,19 @@ logger = logging.getLogger(__name__)
 def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any]:
     import openai
 
-    min_seconds = 4
-    max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    # retry_min_seconds seconds, then up to retry_max_seconds seconds,
+    # then retry_max_seconds seconds afterwards
+    # retry_min_seconds and retry_max_seconds are optional arguments of
+    # OpenAIEmbeddings
     return retry(
         reraise=True,
         stop=stop_after_attempt(embeddings.max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        wait=wait_exponential(
+            multiplier=1,
+            min=embeddings.retry_min_seconds,
+            max=embeddings.retry_max_seconds,
+        ),
         retry=(
             retry_if_exception_type(openai.error.Timeout)
             | retry_if_exception_type(openai.error.APIError)
@@ -61,14 +66,19 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
 def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
     import openai
 
-    min_seconds = 4
-    max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    # retry_min_seconds seconds, then up to retry_max_seconds seconds,
+    # then retry_max_seconds seconds afterwards
+    # retry_min_seconds and retry_max_seconds are optional arguments of
+    # OpenAIEmbeddings
     async_retrying = AsyncRetrying(
         reraise=True,
         stop=stop_after_attempt(embeddings.max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        wait=wait_exponential(
+            multiplier=1,
+            min=embeddings.retry_min_seconds,
+            max=embeddings.retry_max_seconds,
+        ),
         retry=(
             retry_if_exception_type(openai.error.Timeout)
             | retry_if_exception_type(openai.error.APIError)
@@ -232,6 +242,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
+    retry_min_seconds: int = 4
+    """Min number of seconds to wait between retries"""
+    retry_max_seconds: int = 20
+    """Max number of seconds to wait between retries"""
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 

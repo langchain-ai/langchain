@@ -34,6 +34,7 @@ logger = logging.getLogger()
 if TYPE_CHECKING:
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes.models import (
+        CorsOptions,
         ScoringProfile,
         SearchField,
         VectorSearch,
@@ -77,6 +78,7 @@ def _get_search_client(
     default_scoring_profile: Optional[str] = None,
     default_fields: Optional[List[SearchField]] = None,
     user_agent: Optional[str] = "langchain",
+    cors_options: Optional[CorsOptions] = None,
 ) -> SearchClient:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
@@ -226,6 +228,7 @@ def _get_search_client(
             semantic_settings=semantic_settings,
             scoring_profiles=scoring_profiles,
             default_scoring_profile=default_scoring_profile,
+            cors_options=cors_options,
         )
         index_client.create_index(index)
     # Create the search client
@@ -254,6 +257,7 @@ class AzureSearch(VectorStore):
         semantic_settings: Optional[Union[SemanticSearch, SemanticSettings]] = None,
         scoring_profiles: Optional[List[ScoringProfile]] = None,
         default_scoring_profile: Optional[str] = None,
+        cors_options: Optional[CorsOptions] = None,
         **kwargs: Any,
     ):
         from azure.search.documents.indexes.models import (
@@ -304,6 +308,7 @@ class AzureSearch(VectorStore):
             default_scoring_profile=default_scoring_profile,
             default_fields=default_fields,
             user_agent=user_agent,
+            cors_options=cors_options,
         )
         self.search_type = search_type
         self.semantic_configuration_name = semantic_configuration_name
