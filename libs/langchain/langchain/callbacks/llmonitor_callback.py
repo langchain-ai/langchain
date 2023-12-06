@@ -17,8 +17,6 @@ from langchain.callbacks.base import BaseCallbackHandler
 
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
-
 DEFAULT_API_URL = "https://app.llmonitor.com"
 
 user_ctx = ContextVar[Union[str, None]]("user_ctx", default=None)
