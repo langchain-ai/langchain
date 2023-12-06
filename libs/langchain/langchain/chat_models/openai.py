@@ -629,6 +629,7 @@ class ChatOpenAI(BaseChatModel):
         self,
         functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
         function_call: Optional[str] = None,
+        json_mode: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind functions (and other objects) to this chat model.
@@ -642,6 +643,9 @@ class ChatOpenAI(BaseChatModel):
                 Must be the name of the single provided function or
                 "auto" to automatically determine which function to call
                 (if any).
+            json_mode: Whether to set JSON mode for the function call.
+                This guarantees the model will respond in valid JSON
+                (unless truncated).
             kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
@@ -661,7 +665,59 @@ class ChatOpenAI(BaseChatModel):
                 )
             function_call_ = {"name": function_call}
             kwargs = {**kwargs, "function_call": function_call_}
-        return super().bind(
+        return self.bind(
             functions=formatted_functions,
+            **kwargs,
+        )
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+        tool_choice: Optional[str] = None,
+        json_mode: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tools (and other objects) to this chat model.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, or callable. Pydantic
+                models and callables will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Must be the name of the single provided tool or
+                "auto" to automatically determine which tool to call
+                (if any).
+            json_mode: Whether to set JSON mode for the tool call.
+                This guarantees the model will respond in valid JSON
+                (unless truncated).
+            kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+
+        """
+        from langchain.chains.openai_functions.base import convert_to_openai_function
+
+        formatted_tools = [
+            {"type": "function", "function": convert_to_openai_function(tool)}
+            for tool in tools
+        ]
+        if tool_choice is not None:
+            if not formatted_tools:
+                raise ValueError(
+                    "When specifying `tool_choice`, you must provide at least one "
+                    "tool."
+                )
+            tool_names = [tool["function"]["name"] for tool in formatted_tools]
+            if not any(tool_name == tool_choice for tool_name in tool_names):
+                raise ValueError(
+                    f"Tool choice {tool_choice} was specified, but the only "
+                    f"provided tools were {tool_names}."
+                )
+            tool_choice_ = {"type": "function", "function": {"name": tool_choice}}
+            kwargs = {**kwargs, "tool_choice": tool_choice_}
+        if json_mode:
+            kwargs = {**kwargs, "response_format": {"type": "json_object"}}
+        return self.bind(
+            tools=formatted_tools,
             **kwargs,
         )
