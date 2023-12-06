@@ -291,7 +291,7 @@ class Context:
         /,
         **kwargs: SetValue,
     ) -> ContextSet:
-        return ContextSet(_key, _value, **kwargs)
+        return ContextSet(_key, _value, prefix="", **kwargs)
 
 
 class PrefixContext:
