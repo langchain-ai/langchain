@@ -17,7 +17,7 @@ from typing import (
 
 from langchain_core.stores import BaseStore
 
-V = TypeVar("V", covariant=True)
+V = TypeVar("V")
 
 
 class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
