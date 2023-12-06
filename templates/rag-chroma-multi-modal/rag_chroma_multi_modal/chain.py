@@ -5,12 +5,11 @@ from pathlib import Path
 from langchain.chat_models import ChatOpenAI
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema.document import Document
-from langchain.schema.messages import HumanMessage
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.vectorstores import Chroma
-from langchain_experimental.open_clip import OpenCLIPEmbeddings
 from langchain_core.prompts.chat import ChatPromptTemplate
+from langchain_experimental.open_clip import OpenCLIPEmbeddings
 from PIL import Image
 
 
@@ -57,17 +56,13 @@ def img_prompt_func(data_dict, num_images=2):
 
     # Base template
     template_messages = [
-        (
-            "system",
-            "You are an analyst tasked with answering questions about visual content. \n"
-            "You will be given a set of image(s) from a slide deck / presentation.\n",
-        ),
+        ("system", "Answer questions use images. \n"),
         (
             "human",
             [
                 {
                     "type": "text",
-                    "text": "Answer the question using the images. Question: {question}",
+                    "text": "Answer the question with the given images. Question: {question}",
                 }
             ],
         ),
