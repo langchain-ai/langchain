@@ -46,7 +46,7 @@ jobs:
 
       - name: Check imports with base dependencies
         shell: bash
-        run: make check_imports
+        run: poetry run make check_imports
 
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
