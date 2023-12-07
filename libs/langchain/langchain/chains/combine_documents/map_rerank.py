@@ -202,6 +202,16 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         results: Sequence[Union[str, List[str], Dict[str, str]]],
     ) -> Tuple[str, dict]:
         typed_results = cast(List[dict], results)
+        # Check if x[0][self.rank_key] is invalid 
+        # for int, if so make it 0, this happens 
+        # when the llm_chain fails to return a
+        # valid numeric score, so the rank_key is
+        # a blank string.
+        for i, result in enumerate(typed_results):
+            try:
+                int(result[self.rank_key])
+            except ValueError:
+                typed_results[i][self.rank_key] = 0
         sorted_res = sorted(
             zip(typed_results, docs), key=lambda x: -int(x[0][self.rank_key])
         )
