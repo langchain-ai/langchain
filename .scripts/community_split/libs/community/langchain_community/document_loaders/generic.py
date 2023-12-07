@@ -1,8 +1,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Iterator, List, Literal, Optional, Sequence, Union, \
-    TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+)
 
 from langchain_core.documents import Document
 
@@ -84,7 +92,7 @@ class GenericLoader(BaseLoader):
             parser=PyPDFParser()
         )
 
-    """
+    """  # noqa: E501
 
     def __init__(
         self,

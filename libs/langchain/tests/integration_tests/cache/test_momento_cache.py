@@ -13,8 +13,8 @@ from typing import Iterator
 import pytest
 from langchain_core.outputs import Generation, LLMResult
 
-from langchain_community.cache import MomentoCache
-from langchain_community.globals import set_llm_cache
+from langchain.cache import MomentoCache
+from langchain.globals import set_llm_cache
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

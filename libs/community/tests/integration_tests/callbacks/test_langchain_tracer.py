@@ -3,13 +3,11 @@ import asyncio
 import os
 
 from aiohttp import ClientSession
-from langchain_core.callbacks import atrace_as_chain_group, trace_as_chain_group
+from langchain_core.callbacks.manager import atrace_as_chain_group, trace_as_chain_group
 from langchain_core.prompts import PromptTemplate
-from langchain_core.tracers.context import tracing_v2_enabled
-
-from langchain_community.callbacks import tracing_enabled
-from langchain_community.chat_models import ChatOpenAI
-from langchain_community.llms import OpenAI
+from langchain_core.tracers.context import tracing_enabled, tracing_v2_enabled
+from langchain_openai.chat_models import ChatOpenAI
+from langchain_openai.llms import OpenAI
 
 questions = [
     (
