@@ -193,7 +193,7 @@ class Aphrodite(BaseLLM):
         return {
             "n": self.n,
             "best_of": self.best_of,
-            "max_tokens": self.max_new_tokens,
+            "max_tokens": self.max_tokens,
             "top_k": self.top_k,
             "top_p": self.top_p,
             "top_a": self.top_a,
