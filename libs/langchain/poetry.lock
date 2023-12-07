@@ -975,8 +975,8 @@ files = [
 jmespath = ">=0.7.1,<2.0.0"
 python-dateutil = ">=2.1,<3.0.0"
 urllib3 = [
-    {version = ">=1.25.4,<1.27", markers = "python_version < \"3.10\""},
     {version = ">=1.25.4,<2.1", markers = "python_version >= \"3.10\""},
+    {version = ">=1.25.4,<1.27", markers = "python_version < \"3.10\""},
 ]
 
 [package.extras]
@@ -1833,8 +1833,8 @@ files = [
 [package.dependencies]
 aiohttp = ">=3.1.0,<4.0.0"
 grpcio = [
-    {version = ">=1.22.0", markers = "python_version < \"3.11\""},
     {version = ">=1.49.1", markers = "python_version >= \"3.11\""},
+    {version = ">=1.22.0", markers = "python_version < \"3.11\""},
 ]
 numpy = "*"
 protobuf = ">=3.8.0,<4.0.0"
@@ -2919,8 +2919,8 @@ files = [
 [package.dependencies]
 google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
 proto-plus = [
-    {version = ">=1.22.0,<2.0.0dev", markers = "python_version < \"3.11\""},
     {version = ">=1.22.2,<2.0.0dev", markers = "python_version >= \"3.11\""},
+    {version = ">=1.22.0,<2.0.0dev", markers = "python_version < \"3.11\""},
 ]
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
 
@@ -6053,10 +6053,10 @@ files = [
 
 [package.dependencies]
 numpy = [
+    {version = ">=1.23.5", markers = "python_version >= \"3.11\""},
     {version = ">=1.21.0", markers = "python_version <= \"3.9\" and platform_system == \"Darwin\" and platform_machine == \"arm64\" and python_version >= \"3.8\""},
     {version = ">=1.19.3", markers = "platform_system == \"Linux\" and platform_machine == \"aarch64\" and python_version >= \"3.8\" and python_version < \"3.10\" or python_version > \"3.9\" and python_version < \"3.10\" or python_version >= \"3.9\" and platform_system != \"Darwin\" and python_version < \"3.10\" or python_version >= \"3.9\" and platform_machine != \"arm64\" and python_version < \"3.10\""},
     {version = ">=1.17.3", markers = "(platform_system != \"Darwin\" and platform_system != \"Linux\") and python_version >= \"3.8\" and python_version < \"3.9\" or platform_system != \"Darwin\" and python_version >= \"3.8\" and python_version < \"3.9\" and platform_machine != \"aarch64\" or platform_machine != \"arm64\" and python_version >= \"3.8\" and python_version < \"3.9\" and platform_system != \"Linux\" or (platform_machine != \"arm64\" and platform_machine != \"aarch64\") and python_version >= \"3.8\" and python_version < \"3.9\""},
-    {version = ">=1.23.5", markers = "python_version >= \"3.11\""},
     {version = ">=1.21.4", markers = "python_version >= \"3.10\" and platform_system == \"Darwin\" and python_version < \"3.11\""},
     {version = ">=1.21.2", markers = "platform_system != \"Darwin\" and python_version >= \"3.10\" and python_version < \"3.11\""},
 ]
@@ -6234,8 +6234,8 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.20.3", markers = "python_version < \"3.10\""},
     {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
+    {version = ">=1.20.3", markers = "python_version < \"3.10\""},
     {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
@@ -7791,23 +7791,6 @@ pytest = ">=5.0"
 
 [package.extras]
 dev = ["pre-commit", "pytest-asyncio", "tox"]
-
-[[package]]
-name = "pytest-order"
-version = "1.2.0"
-description = "pytest plugin to run your tests in a specific order"
-optional = true
-python-versions = ">=3.6"
-files = [
-    {file = "pytest-order-1.2.0.tar.gz", hash = "sha256:944f86b6d441aa7b1da80f801c6ab65b84bbeba472d0a7a12eb43ba26650101a"},
-    {file = "pytest_order-1.2.0-py3-none-any.whl", hash = "sha256:9d65c3b6dc6d6ee984d6ae2c6c4aa4f1331e5b915116219075c888c8bcbb93b8"},
-]
-
-[package.dependencies]
-pytest = [
-    {version = ">=5.0", markers = "python_version < \"3.10\""},
-    {version = ">=6.2.4", markers = "python_version >= \"3.10\""},
-]
 
 [[package]]
 name = "pytest-socket"
@@ -11570,4 +11553,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "c70d0393bd2e8176265fa569301a997226615d9a9be37ad7136fe54d64fc95ac"
+content-hash = "191e70e4abdf315992c1f7e3e7d474151f1cb97fbf8bc64da9e1740b567e8b38"
