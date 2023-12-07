@@ -9,7 +9,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.0.9,<0.1"
+langchain-core = ">=0.0.11,<0.1"
 langchain-openai = { path = "../partners/openai", develop = true }
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
@@ -137,6 +137,7 @@ python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
 tiktoken = "^0.3.2"
 anthropic = "^0.3.11"
+langchain-core = { path = "../core", develop = true }
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"
