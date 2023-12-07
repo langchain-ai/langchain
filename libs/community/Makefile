@@ -24,8 +24,10 @@ test_watch:
 PYTHON_FILES=.
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/community -name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_package: PYTHON_FILES=langchain_community
+lint_tests: PYTHON_FILES=tests
 
-lint lint_diff:
+lint lint_diff lint_package lint_tests:
 	./scripts/check_pydantic.sh .
 	./scripts/check_imports.sh
 	poetry run ruff .

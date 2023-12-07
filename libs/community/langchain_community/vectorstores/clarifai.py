@@ -8,7 +8,6 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Iterable, List, Optional, Tuple
 
 import requests
-from google.protobuf.struct_pb2 import Struct
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -87,6 +86,7 @@ class Clarifai(VectorStore):
         """
         try:
             from clarifai.client.input import Inputs
+            from google.protobuf.struct_pb2 import Struct
         except ImportError as e:
             raise ImportError(
                 "Could not import clarifai python package. "

@@ -267,10 +267,6 @@ git checkout master -- langchain/tests/unit_tests/schema
 touch langchain/tests/unit_tests/{llms,chat_models,tools,callbacks,runnables,document_loaders,docstore,document_transformers,embeddings,graphs,storage,utilities,vectorstores}/__init__.py
 touch langchain/tests/unit_tests/document_loaders/{blob_loaders,parsers}/__init__.py
 
-cp core/Makefile community
-cp core/Makefile partners/openai
-sed -i '' 's/libs\/core/libs\/community/g' community/Makefile
-sed -i '' 's/libs\/core/libs\/partners\/openai/g' partners/openai/Makefile
 cp -r core/scripts community
 cp -r core/scripts partners/openai
 

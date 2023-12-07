@@ -14,7 +14,7 @@ from langchain_community.document_loaders.google_speech_to_text import (
 )
 
 
-@pytest.mark.requires("google_api_core")
+@pytest.mark.requires("google.api_core")
 def test_initialization() -> None:
     loader = GoogleSpeechToTextLoader(
         project_id="test_project_id", file_path="./testfile.mp3"

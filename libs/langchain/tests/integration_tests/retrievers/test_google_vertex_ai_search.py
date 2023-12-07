@@ -23,7 +23,7 @@ from langchain.retrievers.google_vertex_ai_search import (
 )
 
 
-@pytest.mark.requires("google_api_core")
+@pytest.mark.requires("google.api_core")
 def test_google_vertex_ai_search_get_relevant_documents() -> None:
     """Test the get_relevant_documents() method."""
     retriever = GoogleVertexAISearchRetriever()
@@ -36,7 +36,7 @@ def test_google_vertex_ai_search_get_relevant_documents() -> None:
         assert doc.metadata["source"]
 
 
-@pytest.mark.requires("google_api_core")
+@pytest.mark.requires("google.api_core")
 def test_google_vertex_ai_multiturnsearch_get_relevant_documents() -> None:
     """Test the get_relevant_documents() method."""
     retriever = GoogleVertexAIMultiTurnSearchRetriever()
@@ -49,7 +49,7 @@ def test_google_vertex_ai_multiturnsearch_get_relevant_documents() -> None:
         assert doc.metadata["source"]
 
 
-@pytest.mark.requires("google_api_core")
+@pytest.mark.requires("google.api_core")
 def test_google_vertex_ai_search_enterprise_search_deprecation() -> None:
     """Test the deprecation of GoogleCloudEnterpriseSearchRetriever."""
     with pytest.warns(
