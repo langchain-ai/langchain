@@ -131,3 +131,20 @@ def test_blob_loader() -> None:
             yield Blob(data=b"Hello, World!")
 
     assert list(TestLoader().yield_blobs()) == [Blob(data=b"Hello, World!")]
+
+
+def test_metadata_and_source() -> None:
+    """Test metadata and source"""
+    blob = Blob(path="some_file", data="b")
+    assert blob.source == "some_file"
+    assert blob.metadata == {}
+    blob = Blob(data=b"", metadata={"source": "hello"})
+    assert blob.source == "hello"
+    assert blob.metadata == {"source": "hello"}
+
+    blob = Blob.from_data("data", metadata={"source": "somewhere"})
+    assert blob.source == "somewhere"
+
+    with get_temp_file(b"hello") as path:
+        blob = Blob.from_path(path, metadata={"source": "somewhere"})
+        assert blob.source == "somewhere"
