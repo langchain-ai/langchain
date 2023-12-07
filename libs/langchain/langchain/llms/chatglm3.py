@@ -1,13 +1,20 @@
-import logging
 import json
-from typing import Any, List, Optional, Dict, Union
+import logging
+from typing import Any, Dict, List, Optional, Union
 
 import httpx
 from langchain_core.pydantic_v1 import Field
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.schema.messages import HumanMessage, BaseMessage, AIMessage, SystemMessage, FunctionMessage
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.schema.messages import (
+    AIMessage,
+    BaseMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
+)
 
 logger = logging.getLogger(__name__)
 HEADERS = {"Content-Type": "application/json"}
@@ -29,8 +36,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class ChatGLM3(LLM):
-    """ChatGLM3 LLM service.
-    """
+    """ChatGLM3 LLM service."""
+
     model_name: str = Field(default="chatglm3-6b", alias="model")
     endpoint_url: str = "http://127.0.0.1:8000/v1/chat/completions"
     """Endpoint URL to use."""
@@ -72,9 +79,11 @@ class ChatGLM3(LLM):
     def _get_payload(self, prompt: str):
         params = self._invocation_params
         messages = self.prefix_messages + [HumanMessage(content=prompt)]
-        params.update({
-            "messages": [_convert_message_to_dict(m) for m in messages],
-        })
+        params.update(
+            {
+                "messages": [_convert_message_to_dict(m) for m in messages],
+            }
+        )
         return params
 
     def _call(
@@ -102,7 +111,9 @@ class ChatGLM3(LLM):
         logger.debug(f"ChatGLM3 payload: {payload}")
 
         try:
-            response = self.client.post(self.endpoint_url, headers=HEADERS, json=payload)
+            response = self.client.post(
+                self.endpoint_url, headers=HEADERS, json=payload
+            )
         except httpx.NetworkError as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
@@ -119,7 +130,7 @@ class ChatGLM3(LLM):
                 if content_keys in parsed_response:
                     choices = parsed_response[content_keys]
                     if len(choices):
-                        text = choices[0]['message']['content']
+                        text = choices[0]["message"]["content"]
                 else:
                     raise ValueError(f"No content in response : {parsed_response}")
             else:
