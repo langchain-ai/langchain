@@ -26,7 +26,8 @@ class HuggingFaceHub(LLM):
     environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
     it as a named parameter to the constructor.
 
-    Supports `text-generation`, `text2text-generation`, `conversational`, `summarization`, and `translation`.
+    Supports `text-generation`, `text2text-generation`, `conversational`, `translation`,
+     and `summarization`.
 
     Example:
         .. code-block:: python
@@ -37,10 +38,12 @@ class HuggingFaceHub(LLM):
 
     client: Any  #: :meta private:
     repo_id: Optional[str] = None
-    """Model name to use. If not provided, the default model for the chosen task will be used."""
+    """Model name to use. 
+    If not provided, the default model for the chosen task will be used."""
     task: Optional[str] = None
     """Task to call the model with.
-    Should be a task that returns `generated_text` or `summary_text`."""
+    Should be a task that returns `generated_text`, `summary_text`, 
+    or `translation_text`."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model."""
 
@@ -65,15 +68,17 @@ class HuggingFaceHub(LLM):
                 model=repo_id,
                 token=huggingfacehub_api_token,
             )
-            if not values['task']:
+            if not values["task"]:
                 if not repo_id:
-                    raise ValueError("Must specify either `repo_id` or `task`, or both.")
+                    raise ValueError(
+                        "Must specify either `repo_id` or `task`, or both."
+                    )
                 # Use the recommended task for the chosen model
                 model_info = HfApi(token=huggingfacehub_api_token).model_info(
                     repo_id=repo_id
                 )
-                values['task'] = model_info.pipeline_tag
-            if values['task'] not in VALID_TASKS_DICT:
+                values["task"] = model_info.pipeline_tag
+            if values["task"] not in VALID_TASKS_DICT:
                 raise ValueError(
                     f"Got invalid task {values['task']}, "
                     f"currently only {VALID_TASKS_DICT} are supported"
@@ -101,11 +106,11 @@ class HuggingFaceHub(LLM):
         return "huggingface_hub"
 
     def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
 
@@ -132,7 +137,7 @@ class HuggingFaceHub(LLM):
             raise ValueError(f"Error raised by inference API: {response['error']}")
 
         response_key = VALID_TASKS_DICT[self.task]
-        if type(response) is list:
+        if isinstance(response, list):
             text = response[0][response_key]
         else:
             text = response[response_key]
