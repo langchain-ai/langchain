@@ -11,7 +11,12 @@ from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain_core.outputs import LLMResult
 
 from langchain.chat_models import ChatVertexAI
@@ -41,6 +46,7 @@ def test_vertexai_single_call(model_name: str) -> None:
     assert isinstance(response.content, str)
 
 
+@pytest.mark.scheduled
 def test_candidates() -> None:
     model = ChatVertexAI(model_name="chat-bison@001", temperature=0.3, n=2)
     message = HumanMessage(content="Hello")
@@ -60,6 +66,20 @@ async def test_vertexai_agenerate() -> None:
 
     sync_response = model.generate([[message]])
     assert response.generations[0][0] == sync_response.generations[0][0]
+
+
+@pytest.mark.scheduled
+async def test_vertexai_stream() -> None:
+    model = ChatVertexAI(temperature=0)
+    message = HumanMessage(content="Hello")
+    response = model.astream([message])
+
+    async for chunk in response:
+        assert isinstance(chunk, AIMessageChunk)
+
+    sync_response = model.stream([message])
+    for chunk in sync_response:
+        assert isinstance(chunk, AIMessageChunk)
 
 
 @pytest.mark.scheduled
