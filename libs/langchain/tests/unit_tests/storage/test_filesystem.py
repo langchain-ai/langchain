@@ -1,3 +1,4 @@
+import os
 import tempfile
 from typing import Generator
 
@@ -74,5 +75,5 @@ def test_yield_keys(file_store: LocalFileStore) -> None:
     keys = list(file_store.yield_keys())
 
     # Assert that the yielded keys match the expected keys
-    expected_keys = ["key1", "subdir/key2"]
+    expected_keys = ["key1", os.path.join("subdir", "key2")]
     assert keys == expected_keys
