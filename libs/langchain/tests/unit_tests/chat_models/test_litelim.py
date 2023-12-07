@@ -6,7 +6,7 @@ from pytest import MonkeyPatch
 from langchain.chat_models import litellm
 
 
-# @pytest.mark.requires("litellm")
+@pytest.mark.requires("litellm")
 def test_api_key_is_secret() -> None:
     pytest.importorskip("google.generativeai")
     llm = litellm.ChatLiteLLM(model_name="gpt2")
@@ -14,7 +14,7 @@ def test_api_key_is_secret() -> None:
     assert llm.model_name.get_secret_value() == "gpt2"
 
 
-# @pytest.mark.requires("litellm")
+@pytest.mark.requires("litellm")
 def test_api_key_masked_when_passed_via_constructor() -> None:
     pytest.importorskip("google.generativeai")
     llm = litellm.ChatLiteLLM(model_name="gpt2")
@@ -25,7 +25,7 @@ def test_api_key_masked_when_passed_via_constructor() -> None:
     assert "gpt2" not in str(llm)
 
 
-# @pytest.mark.requires("litellm")
+@pytest.mark.requires("litellm")
 def test_api_key_masked_when_passed_via_env_var(monkeypatch: MonkeyPatch) -> None:
     pytest.importorskip("google.generativeai")
     monkeypatch.setenv("LITELLM_API_KEY", "gpt2")
