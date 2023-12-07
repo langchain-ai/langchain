@@ -4929,9 +4929,9 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.link
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy (>=0.9.1)", "pytest-ruff"]
 
 [extras]
-extended-testing = ["faker", "presidio-analyzer", "presidio-anonymizer", "sentence-transformers", "vowpal-wabbit-next"]
+extended-testing = ["faker", "jinja2", "presidio-analyzer", "presidio-anonymizer", "sentence-transformers", "vowpal-wabbit-next"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "eadf6aa880ba6c50311c77d9746e584eb46a19143ad569bcc2f406fb3f33d6ee"
+content-hash = "e2626bc18493830ed99ff4fbdde931d44c17f6d6421d2ebe11c669309a890702"
