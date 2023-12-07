@@ -71,8 +71,13 @@ class GenAIAqa(RunnableSerializable[AqaModelInput, AqaModelOutput]):
     def __init__(self, **kwargs: Any) -> None:
         """Construct a Google Generative AI AQA model.
 
+        All arguments are optional.
+
         Args:
-            answer_style: See `google.ai.generativelanguage.AnswerStyle`.
+            answer_style: See
+              `google.ai.generativelanguage.GenerateAnswerRequest.AnswerStyle`.
+            safety_settings: See `google.ai.generativelanguage.SafetySetting`.
+            temperature: 0.0 to 1.0.
         """
         try:
             from .aqa_model import AqaModel
@@ -80,25 +85,21 @@ class GenAIAqa(RunnableSerializable[AqaModelInput, AqaModelOutput]):
             raise ImportError(_import_err_msg)
 
         super().__init__(**kwargs)
-        self._client = AqaModel()
+        self._client = AqaModel(**kwargs)
 
     def invoke(
         self, input: AqaModelInput, config: Optional[RunnableConfig] = None
     ) -> AqaModelOutput:
         """Generates a grounded response using the provided passages."""
         try:
-            import google.ai.generativelanguage as genai
-
             from .aqa_model import AqaModel
         except ImportError:
             raise ImportError(_import_err_msg)
 
         client: AqaModel = self._client
 
-        response = client.generate_text_answer(
-            prompt=input.prompt,
-            passages=input.source_passages,
-            answer_style=genai.AnswerStyle(self.answer_style),
+        response = client.generate_answer(
+            prompt=input.prompt, passages=input.source_passages
         )
 
         return AqaModelOutput(
@@ -106,5 +107,5 @@ class GenAIAqa(RunnableSerializable[AqaModelInput, AqaModelOutput]):
             attributed_passages=[
                 passage.text for passage in response.attributed_passages
             ],
-            answerable_probability=response.answerable_probability,
+            answerable_probability=response.answerable_probability or 0.0,
         )

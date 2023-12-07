@@ -366,12 +366,16 @@ class GoogleVectorStore(VectorStore):
         """
         return lambda score: score
 
-    def as_aqa(
-        self, *, answer_style: int, **kwargs: Any
-    ) -> Runnable[str, AqaModelOutput]:
-        """
+    def as_aqa(self, **kwargs: Any) -> Runnable[str, AqaModelOutput]:
+        """Construct a Google Generative AI AQA engine.
+
+        All arguments are optional.
+
         Args:
-            answer_style: See `google.ai.generativelanguage.AnswerStyle`.
+            answer_style: See
+              `google.ai.generativelanguage.GenerateAnswerRequest.AnswerStyle`.
+            safety_settings: See `google.ai.generativelanguage.SafetySetting`.
+            temperature: 0.0 to 1.0.
         """
         return (
             RunnablePassthrough[str]()
@@ -380,7 +384,7 @@ class GoogleVectorStore(VectorStore):
                 "passages": self.as_retriever(),
             }
             | RunnableLambda(_toAqaInput)
-            | GenAIAqa(answer_style=answer_style, **kwargs)
+            | GenAIAqa(**kwargs)
         )
 
 

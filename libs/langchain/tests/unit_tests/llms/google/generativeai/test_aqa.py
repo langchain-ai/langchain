@@ -29,33 +29,41 @@ def test_it_can_be_constructed() -> None:
 
 
 @pytest.mark.requires("google.ai.generativelanguage")
-@patch("google.ai.generativelanguage.TextServiceClient.generate_text_answer")
-def test_invoke(mock_generate_text_answer: MagicMock) -> None:
+@patch("google.ai.generativelanguage.GenerativeServiceClient.generate_answer")
+def test_invoke(mock_generate_answer: MagicMock) -> None:
     # Arrange
-    mock_generate_text_answer.return_value = genai.GenerateTextAnswerResponse(
-        answer=genai.TextCompletion(
-            output="42",
-            citation_metadata=genai.CitationMetadata(
-                citation_sources=[
-                    genai.CitationSource(
-                        start_index=100,
-                        end_index=200,
-                        uri="answer.com/meaning_of_life.txt",
-                    )
-                ]
-            ),
+    mock_generate_answer.return_value = genai.GenerateAnswerResponse(
+        answer=genai.Candidate(
+            content=genai.Content(parts=[genai.Part(text="42")]),
+            grounding_attributions=[
+                genai.GroundingAttribution(
+                    content=genai.Content(
+                        parts=[genai.Part(text="Meaning of life is 42.")]
+                    ),
+                    source_id=genai.AttributionSourceId(
+                        grounding_passage=genai.AttributionSourceId.GroundingPassageId(
+                            passage_id="corpora/123/documents/456/chunks/789",
+                            part_index=0,
+                        )
+                    ),
+                ),
+            ],
+            finish_reason=genai.Candidate.FinishReason.STOP,
         ),
-        attributed_passages=[
-            genai.AttributedPassage(
-                text="Meaning of life is 42.",
-                passage_ids=["corpora/123/documents/456/chunks/789"],
-            ),
-        ],
         answerable_probability=0.7,
     )
 
     # Act
-    aqa = GenAIAqa(answer_style=genai.AnswerStyle.EXTRACTIVE)
+    aqa = GenAIAqa(
+        temperature=0.5,
+        answer_style=genai.GenerateAnswerRequest.AnswerStyle.EXTRACTIVE,
+        safety_settings=[
+            genai.SafetySetting(
+                category=genai.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                threshold=genai.SafetySetting.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            )
+        ],
+    )
     output = aqa.invoke(
         input=AqaModelInput(
             prompt="What is the meaning of life?",
@@ -68,11 +76,25 @@ def test_invoke(mock_generate_text_answer: MagicMock) -> None:
     assert output.attributed_passages == ["Meaning of life is 42."]
     assert output.answerable_probability == pytest.approx(0.7)
 
-    assert mock_generate_text_answer.call_count == 1
-    request = mock_generate_text_answer.call_args.args[0]
-    assert request.question.text == "What is the meaning of life?"
-    assert request.answer_style == genai.AnswerStyle.EXTRACTIVE
-    passages = request.grounding_source.passages.passages
+    assert mock_generate_answer.call_count == 1
+    request = mock_generate_answer.call_args.args[0]
+    assert request.contents[0].parts[0].text == "What is the meaning of life?"
+
+    assert request.answer_style == genai.GenerateAnswerRequest.AnswerStyle.EXTRACTIVE
+
+    assert len(request.safety_settings) == 1
+    assert (
+        request.safety_settings[0].category
+        == genai.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT
+    )
+    assert (
+        request.safety_settings[0].threshold
+        == genai.SafetySetting.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+    )
+
+    assert request.temperature == 0.5
+
+    passages = request.inline_passages.passages
     assert len(passages) == 1
     passage = passages[0]
-    assert passage.text == "It's 42."
+    assert passage.content.parts[0].text == "It's 42."

@@ -392,13 +392,13 @@ def test_delete(
 
 
 @pytest.mark.requires("google.ai.generativelanguage")
-@patch("google.ai.generativelanguage.TextServiceClient.generate_text_answer")
+@patch("google.ai.generativelanguage.GenerativeServiceClient.generate_answer")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.query_corpus")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
 def test_aqa(
     mock_get_corpus: MagicMock,
     mock_query_corpus: MagicMock,
-    mock_generate_text_answer: MagicMock,
+    mock_generate_answer: MagicMock,
 ) -> None:
     # Arrange
     mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
@@ -413,22 +413,30 @@ def test_aqa(
             )
         ]
     )
-    mock_generate_text_answer.return_value = genai.GenerateTextAnswerResponse(
-        answer=genai.TextCompletion(
-            output="42",
+    mock_generate_answer.return_value = genai.GenerateAnswerResponse(
+        answer=genai.Candidate(
+            content=genai.Content(parts=[genai.Part(text="42")]),
+            grounding_attributions=[
+                genai.GroundingAttribution(
+                    content=genai.Content(
+                        parts=[genai.Part(text="Meaning of life is 42.")]
+                    ),
+                    source_id=genai.AttributionSourceId(
+                        grounding_passage=genai.AttributionSourceId.GroundingPassageId(
+                            passage_id="corpora/123/documents/456/chunks/789",
+                            part_index=0,
+                        )
+                    ),
+                ),
+            ],
+            finish_reason=genai.Candidate.FinishReason.STOP,
         ),
-        attributed_passages=[
-            genai.AttributedPassage(
-                text="Meaning of life is 42.",
-                passage_ids=["corpora/123/documents/456/chunks/789"],
-            ),
-        ],
         answerable_probability=0.7,
     )
 
     # Act
     store = GoogleVectorStore(corpus_id="123")
-    aqa = store.as_aqa(answer_style=genai.AnswerStyle.EXTRACTIVE)
+    aqa = store.as_aqa(answer_style=genai.GenerateAnswerRequest.AnswerStyle.EXTRACTIVE)
     response = aqa.invoke("What is the meaning of life?")
 
     # Assert
@@ -436,5 +444,5 @@ def test_aqa(
     assert response.attributed_passages == ["Meaning of life is 42."]
     assert response.answerable_probability == pytest.approx(0.7)
 
-    request = mock_generate_text_answer.call_args.args[0]
-    assert request.answer_style == genai.AnswerStyle.EXTRACTIVE
+    request = mock_generate_answer.call_args.args[0]
+    assert request.answer_style == genai.GenerateAnswerRequest.AnswerStyle.EXTRACTIVE
