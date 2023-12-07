@@ -1,6 +1,6 @@
 """Test the File Management utils."""
 
-
+import re
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -16,8 +16,8 @@ def test_get_validated_relative_path_errs_on_absolute() -> None:
     """Safely resolve a path."""
     root = Path(__file__).parent
     user_path = "/bin/bash"
-    matches = f"Path {user_path} is outside of the allowed directory {root}"
-    with pytest.raises(FileValidationError, match=matches):
+    match = re.escape(f"Path {user_path} is outside of the allowed directory {root}")
+    with pytest.raises(FileValidationError, match=match):
         get_validated_relative_path(root, user_path)
 
 
@@ -25,8 +25,8 @@ def test_get_validated_relative_path_errs_on_parent_dir() -> None:
     """Safely resolve a path."""
     root = Path(__file__).parent
     user_path = "data/sub/../../../sibling"
-    matches = f"Path {user_path} is outside of the allowed directory {root}"
-    with pytest.raises(FileValidationError, match=matches):
+    match = re.escape(f"Path {user_path} is outside of the allowed directory {root}")
+    with pytest.raises(FileValidationError, match=match):
         get_validated_relative_path(root, user_path)
 
 
@@ -49,10 +49,10 @@ def test_get_validated_relative_path_errs_for_symlink_outside_root() -> None:
         symlink_path = root / user_path
         symlink_path.symlink_to(outside_path)
 
-        matches = (
+        match = re.escape(
             f"Path {user_path} is outside of the allowed directory {root.resolve()}"
         )
-        with pytest.raises(FileValidationError, match=matches):
+        with pytest.raises(FileValidationError, match=match):
             get_validated_relative_path(root, user_path)
 
         symlink_path.unlink()
