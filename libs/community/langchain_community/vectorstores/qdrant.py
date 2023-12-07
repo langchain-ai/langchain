@@ -27,7 +27,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-from langchain.vectorstores.utils import maximal_marginal_relevance
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from qdrant_client import grpc  # noqa
