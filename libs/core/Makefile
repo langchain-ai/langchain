@@ -16,7 +16,7 @@ test_watch:
 	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
 
 extended_tests:
-	poetry run pytest --only-extended tests/unit_tests
+	poetry run pytest --only-extended $(TEST_FILE)
 
 
 ######################
