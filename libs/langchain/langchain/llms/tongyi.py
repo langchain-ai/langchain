@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
+from langchain_core.outputs import Generation, LLMResult
+from langchain_core.pydantic_v1 import Field, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -14,8 +16,6 @@ from tenacity import (
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -218,9 +218,23 @@ class Tongyi(LLM):
             if len(prompts) > 1:
                 raise ValueError("Cannot stream results with multiple prompts.")
             params["stream"] = True
+            temp = ""
             for stream_resp in stream_generate_with_retry(
                 self, prompt=prompts[0], **params
             ):
+                if run_manager:
+                    stream_resp_text = stream_resp["output"]["text"]
+                    stream_resp_text = stream_resp_text.replace(temp, "")
+                    # Ali Cloud's streaming transmission interface, each return content
+                    # will contain the output
+                    # of the previous round(as of September 20, 2023, future updates to
+                    # the Alibaba Cloud API may vary)
+                    run_manager.on_llm_new_token(stream_resp_text)
+                    # The implementation of streaming transmission primarily relies on
+                    # the "on_llm_new_token" method
+                    # of the streaming callback.
+                temp = stream_resp["output"]["text"]
+
                 generations.append(
                     [
                         Generation(
@@ -231,6 +245,19 @@ class Tongyi(LLM):
                         )
                     ]
                 )
+            generations.reverse()
+            # In the official implementation of the OpenAI API,
+            # the "generations" parameter passed to LLMResult seems to be a 1*1*1
+            # two-dimensional list
+            # (including in non-streaming mode).
+            # Considering that Alibaba Cloud's streaming transmission
+            # (as of September 20, 2023, future updates to the Alibaba Cloud API may
+            # vary)
+            # includes the output of the previous round in each return,
+            # reversing this "generations" list should suffice
+            # (This is the solution with the least amount of changes to the source code,
+            # while still allowing for convenient modifications in the future,
+            # although it may result in slightly more memory consumption).
         else:
             for prompt in prompts:
                 completion = generate_with_retry(

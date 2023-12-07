@@ -13,7 +13,7 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import (
     RunnableBranch,
     RunnableLambda,
-    RunnableMap,
+    RunnableParallel,
     RunnablePassthrough,
 )
 from langchain.vectorstores.timescalevector import TimescaleVector
@@ -136,7 +136,7 @@ def get_retriever_with_metadata(x):
 
 _retriever = RunnableLambda(get_retriever_with_metadata)
 
-_inputs = RunnableMap(
+_inputs = RunnableParallel(
     {
         "question": lambda x: x["question"],
         "chat_history": lambda x: _format_chat_history(x["chat_history"]),

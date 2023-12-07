@@ -4,10 +4,10 @@ from __future__ import annotations
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 
@@ -41,19 +41,40 @@ class Vald(VectorStore):
             ("grpc.keepalive_time_ms", 1000 * 10),
             ("grpc.keepalive_timeout_ms", 1000 * 10),
         ),
+        grpc_use_secure: bool = False,
+        grpc_credentials: Optional[Any] = None,
     ):
         self._embedding = embedding
         self.target = host + ":" + str(port)
         self.grpc_options = grpc_options
+        self.grpc_use_secure = grpc_use_secure
+        self.grpc_credentials = grpc_credentials
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
         return self._embedding
 
+    def _get_channel(self) -> Any:
+        try:
+            import grpc
+        except ImportError:
+            raise ValueError(
+                "Could not import grpcio python package. "
+                "Please install it with `pip install grpcio`."
+            )
+        return (
+            grpc.secure_channel(
+                self.target, self.grpc_credentials, options=self.grpc_options
+            )
+            if self.grpc_use_secure
+            else grpc.insecure_channel(self.target, options=self.grpc_options)
+        )
+
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        grpc_metadata: Optional[Any] = None,
         skip_strict_exist_check: bool = False,
         **kwargs: Any,
     ) -> List[str]:
@@ -62,7 +83,6 @@ class Vald(VectorStore):
             skip_strict_exist_check: Deprecated. This is not used basically.
         """
         try:
-            import grpc
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import upsert_pb2_grpc
         except ImportError:
@@ -71,7 +91,7 @@ class Vald(VectorStore):
                 "Please install it with `pip install vald-client-python`."
             )
 
-        channel = grpc.insecure_channel(self.target, options=self.grpc_options)
+        channel = self._get_channel()
         # Depending on the network quality,
         # it is necessary to wait for ChannelConnectivity.READY.
         # _ = grpc.channel_ready_future(channel).result(timeout=10)
@@ -82,7 +102,10 @@ class Vald(VectorStore):
         embs = self._embedding.embed_documents(list(texts))
         for text, emb in zip(texts, embs):
             vec = payload_pb2.Object.Vector(id=text, vector=emb)
-            res = stub.Upsert(payload_pb2.Upsert.Request(vector=vec, config=cfg))
+            res = stub.Upsert(
+                payload_pb2.Upsert.Request(vector=vec, config=cfg),
+                metadata=grpc_metadata,
+            )
             ids.append(res.uuid)
 
         channel.close()
@@ -92,6 +115,7 @@ class Vald(VectorStore):
         self,
         ids: Optional[List[str]] = None,
         skip_strict_exist_check: bool = False,
+        grpc_metadata: Optional[Any] = None,
         **kwargs: Any,
     ) -> Optional[bool]:
         """
@@ -99,7 +123,6 @@ class Vald(VectorStore):
             skip_strict_exist_check: Deprecated. This is not used basically.
         """
         try:
-            import grpc
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import remove_pb2_grpc
         except ImportError:
@@ -111,7 +134,7 @@ class Vald(VectorStore):
         if ids is None:
             raise ValueError("No ids provided to delete")
 
-        channel = grpc.insecure_channel(self.target, options=self.grpc_options)
+        channel = self._get_channel()
         # Depending on the network quality,
         # it is necessary to wait for ChannelConnectivity.READY.
         # _ = grpc.channel_ready_future(channel).result(timeout=10)
@@ -120,7 +143,9 @@ class Vald(VectorStore):
 
         for _id in ids:
             oid = payload_pb2.Object.ID(id=_id)
-            _ = stub.Remove(payload_pb2.Remove.Request(id=oid, config=cfg))
+            _ = stub.Remove(
+                payload_pb2.Remove.Request(id=oid, config=cfg), metadata=grpc_metadata
+            )
 
         channel.close()
         return True
@@ -132,10 +157,11 @@ class Vald(VectorStore):
         radius: float = -1.0,
         epsilon: float = 0.01,
         timeout: int = 3000000000,
+        grpc_metadata: Optional[Any] = None,
         **kwargs: Any,
     ) -> List[Document]:
         docs_and_scores = self.similarity_search_with_score(
-            query, k, radius, epsilon, timeout
+            query, k, radius, epsilon, timeout, grpc_metadata
         )
 
         docs = []
@@ -151,11 +177,12 @@ class Vald(VectorStore):
         radius: float = -1.0,
         epsilon: float = 0.01,
         timeout: int = 3000000000,
+        grpc_metadata: Optional[Any] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         emb = self._embedding.embed_query(query)
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            emb, k, radius, epsilon, timeout
+            emb, k, radius, epsilon, timeout, grpc_metadata
         )
 
         return docs_and_scores
@@ -167,10 +194,11 @@ class Vald(VectorStore):
         radius: float = -1.0,
         epsilon: float = 0.01,
         timeout: int = 3000000000,
+        grpc_metadata: Optional[Any] = None,
         **kwargs: Any,
     ) -> List[Document]:
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding, k, radius, epsilon, timeout
+            embedding, k, radius, epsilon, timeout, grpc_metadata
         )
 
         docs = []
@@ -186,10 +214,10 @@ class Vald(VectorStore):
         radius: float = -1.0,
         epsilon: float = 0.01,
         timeout: int = 3000000000,
+        grpc_metadata: Optional[Any] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         try:
-            import grpc
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import search_pb2_grpc
         except ImportError:
@@ -198,7 +226,7 @@ class Vald(VectorStore):
                 "Please install it with `pip install vald-client-python`."
             )
 
-        channel = grpc.insecure_channel(self.target, options=self.grpc_options)
+        channel = self._get_channel()
         # Depending on the network quality,
         # it is necessary to wait for ChannelConnectivity.READY.
         # _ = grpc.channel_ready_future(channel).result(timeout=10)
@@ -207,7 +235,10 @@ class Vald(VectorStore):
             num=k, radius=radius, epsilon=epsilon, timeout=timeout
         )
 
-        res = stub.Search(payload_pb2.Search.Request(vector=embedding, config=cfg))
+        res = stub.Search(
+            payload_pb2.Search.Request(vector=embedding, config=cfg),
+            metadata=grpc_metadata,
+        )
 
         docs_and_scores = []
         for result in res.results:
@@ -225,6 +256,7 @@ class Vald(VectorStore):
         radius: float = -1.0,
         epsilon: float = 0.01,
         timeout: int = 3000000000,
+        grpc_metadata: Optional[Any] = None,
         **kwargs: Any,
     ) -> List[Document]:
         emb = self._embedding.embed_query(query)
@@ -236,6 +268,7 @@ class Vald(VectorStore):
             epsilon=epsilon,
             timeout=timeout,
             lambda_mult=lambda_mult,
+            grpc_metadata=grpc_metadata,
         )
 
         return docs
@@ -249,10 +282,10 @@ class Vald(VectorStore):
         radius: float = -1.0,
         epsilon: float = 0.01,
         timeout: int = 3000000000,
+        grpc_metadata: Optional[Any] = None,
         **kwargs: Any,
     ) -> List[Document]:
         try:
-            import grpc
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import object_pb2_grpc
         except ImportError:
@@ -260,15 +293,19 @@ class Vald(VectorStore):
                 "Could not import vald-client-python python package. "
                 "Please install it with `pip install vald-client-python`."
             )
-
-        channel = grpc.insecure_channel(self.target, options=self.grpc_options)
+        channel = self._get_channel()
         # Depending on the network quality,
         # it is necessary to wait for ChannelConnectivity.READY.
         # _ = grpc.channel_ready_future(channel).result(timeout=10)
         stub = object_pb2_grpc.ObjectStub(channel)
 
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding, fetch_k=fetch_k, radius=radius, epsilon=epsilon, timeout=timeout
+            embedding,
+            fetch_k=fetch_k,
+            radius=radius,
+            epsilon=epsilon,
+            timeout=timeout,
+            grpc_metadata=grpc_metadata,
         )
 
         docs = []
@@ -277,7 +314,8 @@ class Vald(VectorStore):
             vec = stub.GetObject(
                 payload_pb2.Object.VectorRequest(
                     id=payload_pb2.Object.ID(id=doc.page_content)
-                )
+                ),
+                metadata=grpc_metadata,
             )
             embs.append(vec.vector)
             docs.append(doc)
@@ -304,6 +342,9 @@ class Vald(VectorStore):
             ("grpc.keepalive_time_ms", 1000 * 10),
             ("grpc.keepalive_timeout_ms", 1000 * 10),
         ),
+        grpc_use_secure: bool = False,
+        grpc_credentials: Optional[Any] = None,
+        grpc_metadata: Optional[Any] = None,
         skip_strict_exist_check: bool = False,
         **kwargs: Any,
     ) -> Vald:
@@ -316,11 +357,14 @@ class Vald(VectorStore):
             host=host,
             port=port,
             grpc_options=grpc_options,
+            grpc_use_secure=grpc_use_secure,
+            grpc_credentials=grpc_credentials,
             **kwargs,
         )
         vald.add_texts(
             texts=texts,
             metadatas=metadatas,
+            grpc_metadata=grpc_metadata,
             skip_strict_exist_check=skip_strict_exist_check,
         )
         return vald

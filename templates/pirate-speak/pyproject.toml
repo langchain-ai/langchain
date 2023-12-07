@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "pirate-speak"
 version = "0.0.1"
-description = ""
+description = "Get started with a simple template that speaks like a pirate"
 authors = []
 readme = "README.md"
 
@@ -18,6 +18,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "pirate_speak.chain"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "chatbot"
+author = "LangChain"
+integrations = ["OpenAI"]
+tags = ["getting-started"]
 
 [build-system]
 requires = [

@@ -14,12 +14,23 @@ from typing import (
     Dict,
     List,
     Optional,
-    Sequence,
     Tuple,
     Union,
     cast,
 )
 
+from langchain_core._api import warn_deprecated
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage, messages_from_dict
+from langchain_core.outputs import ChatResult, LLMResult
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
+from langchain_core.runnables import config as runnable_config
+from langchain_core.runnables import utils as runnable_utils
+from langchain_core.tracers.evaluation import (
+    EvaluatorCallbackHandler,
+    wait_for_all_evaluators,
+)
+from langchain_core.tracers.langchain import LangChainTracer
 from langsmith.client import Client
 from langsmith.evaluation import RunEvaluator
 from langsmith.run_helpers import as_runnable, is_traceable_function
@@ -27,13 +38,7 @@ from langsmith.schemas import Dataset, DataType, Example
 from langsmith.utils import LangSmithError
 from requests import HTTPError
 
-from langchain._api import warn_deprecated
 from langchain.callbacks.manager import Callbacks
-from langchain.callbacks.tracers.evaluation import (
-    EvaluatorCallbackHandler,
-    wait_for_all_evaluators,
-)
-from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
 from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.schema import (
@@ -41,12 +46,6 @@ from langchain.evaluation.schema import (
     PairwiseStringEvaluator,
     StringEvaluator,
 )
-from langchain.schema import ChatResult, LLMResult
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage, messages_from_dict
-from langchain.schema.runnable import Runnable, RunnableConfig, RunnableLambda
-from langchain.schema.runnable import config as runnable_config
-from langchain.schema.runnable import utils as runnable_utils
 from langchain.smith import evaluation as smith_eval
 from langchain.smith.evaluation import config as smith_eval_config
 from langchain.smith.evaluation import name_generation, progress
@@ -77,7 +76,7 @@ class TestResult(dict):
     """A dictionary of the results of a single test run."""
 
     def get_aggregate_feedback(
-        self, quantiles: Optional[Sequence[float]] = None
+        self,
     ) -> pd.DataFrame:
         """Return quantiles for the feedback scores.
 
@@ -88,15 +87,15 @@ class TestResult(dict):
             A DataFrame containing the quantiles for each feedback key.
         """
         df = self.to_dataframe()
-        feedback_cols = [
-            col for col in df.columns if col not in ["input", "output", "reference"]
+        # Drop all things starting with inputs., outputs., and reference
+        to_drop = [
+            col
+            for col in df.columns
+            if col.startswith("inputs.")
+            or col.startswith("outputs.")
+            or col.startswith("reference")
         ]
-        _quantiles = df[feedback_cols].quantile(
-            quantiles or [0.25, 0.5, 0.75], numeric_only=True
-        )
-        _quantiles.loc["mean"] = df[feedback_cols].mean()
-        _quantiles.loc["mode"] = df[feedback_cols].mode().iloc[0]
-        return _quantiles.transpose()
+        return df.describe(include="all").drop(to_drop, axis=1)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the results to a dataframe."""
@@ -112,18 +111,50 @@ class TestResult(dict):
         records = []
         for example_id, result in self["results"].items():
             feedback = result["feedback"]
+            output_ = result.get("output")
+            if isinstance(output_, dict):
+                output = {f"outputs.{k}": v for k, v in output_.items()}
+            elif output_ is None:
+                output = {}
+            else:
+                output = {"output": output_}
+
             r = {
-                **{f.key: f.score for f in feedback},
-                "input": result["input"],
-                "output": result["output"],
-                "execution_time": result["execution_time"],
+                **{f"inputs.{k}": v for k, v in result["input"].items()},
+                **output,
             }
             if "reference" in result:
-                r["reference"] = result["reference"]
+                if isinstance(result["reference"], dict):
+                    r.update(
+                        {f"reference.{k}": v for k, v in result["reference"].items()}
+                    )
+                else:
+                    r["reference"] = result["reference"]
+            r.update(
+                {
+                    **{f"feedback.{f.key}": f.score for f in feedback},
+                    "error": result.get("Error"),
+                    "execution_time": result["execution_time"],
+                    "run_id": result.get("run_id"),
+                }
+            )
             records.append(r)
             indices.append(example_id)
 
         return pd.DataFrame(records, index=indices)
+
+
+class EvalError(dict):
+    """Your architecture raised an error."""
+
+    def __init__(self, Error: BaseException, **kwargs: Any) -> None:
+        super().__init__(Error=Error, **kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(f"'EvalError' object has no attribute '{name}'")
 
 
 def _wrap_in_chain_factory(
@@ -742,7 +773,7 @@ async def _arun_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\n{repr(e)}"
         )
-        result = {"Error": repr(e)}
+        result = EvalError(Error=e)
     return result
 
 
@@ -874,7 +905,7 @@ def _run_llm_or_chain(
             f"with inputs {example.inputs}"
             f"\nError Type: {error_type}, Message: {e}"
         )
-        result = {"Error": repr(e)}
+        result = EvalError(Error=e)
     return result
 
 
@@ -887,14 +918,19 @@ def _prepare_eval_run(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     project_name: str,
     project_metadata: Optional[Dict[str, Any]] = None,
+    tags: Optional[List[str]] = None,
 ) -> Tuple[MCF, str, Dataset, List[Example]]:
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
+
     try:
+        project_extra: dict = {"metadata": project_metadata} if project_metadata else {}
+        if tags:
+            project_extra["tags"] = tags
         project = client.create_project(
             project_name,
             reference_dataset_id=dataset.id,
-            project_extra={"metadata": project_metadata} if project_metadata else {},
+            project_extra=project_extra,
         )
     except (HTTPError, ValueError, LangSmithError) as e:
         if "already exists " not in str(e):
@@ -910,9 +946,10 @@ run_on_dataset(
             f"Test project {project_name} already exists. Please use a different name:"
             f"\n\n{example_msg}"
         )
+    comparison_url = dataset.url + f"/compare?selectedSessions={project.id}"
     print(
         f"View the evaluation results for project '{project_name}'"
-        f" at:\n{project.url}?eval=true\n\n"
+        f" at:\n{comparison_url}\n\n"
         f"View all tests for Dataset {dataset_name} at:\n{dataset.url}",
         flush=True,
     )
@@ -940,6 +977,7 @@ def _prepare_run_on_dataset(
         llm_or_chain_factory,
         project_name,
         project_metadata=project_metadata,
+        tags=tags,
     )
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
     run_evaluators = _setup_evaluation(
@@ -960,6 +998,7 @@ def _prepare_run_on_dataset(
                     evaluators=run_evaluators or [],
                     client=client,
                     example_id=example.id,
+                    max_concurrency=0,
                 ),
                 progress_bar,
             ],
@@ -979,6 +1018,8 @@ def _collect_test_results(
 ) -> TestResult:
     wait_for_all_evaluators()
     all_eval_results = {}
+    all_execution_time = {}
+    all_run_ids = {}
     for c in configs:
         for callback in cast(list, c["callbacks"]):
             if isinstance(callback, EvaluatorCallbackHandler):
@@ -988,27 +1029,59 @@ def _collect_test_results(
                 )
             elif isinstance(callback, LangChainTracer):
                 run = callback.latest_run
+                example_id = callback.example_id
+                run_id = str(run.id) if run else None
                 execution_time = (
                     (run.end_time - run.start_time).total_seconds()
                     if run and run.end_time
                     else None
                 )
+                all_execution_time[str(example_id)] = execution_time
+                all_run_ids[str(example_id)] = run_id
 
-    results = {}
+    results: dict = {}
     for example, output in zip(examples, batch_results):
         feedback = all_eval_results.get(str(example.id), [])
         results[str(example.id)] = {
-            "output": output,
             "input": example.inputs,
             "feedback": feedback,
-            "execution_time": execution_time,
+            "execution_time": all_execution_time.get(str(example.id)),
+            "run_id": all_run_ids.get(str(example.id)),
         }
+        if isinstance(output, EvalError):
+            results[str(example.id)]["Error"] = output.Error
+        else:
+            results[str(example.id)]["output"] = output
         if example.outputs:
             results[str(example.id)]["reference"] = example.outputs
     return TestResult(
         project_name=project_name,
         results=results,
     )
+
+
+def _is_jupyter_environment() -> bool:
+    try:
+        from IPython import get_ipython
+
+        res = get_ipython()
+        return get_ipython() is not None and "zmqshell" in str(type(res))
+    except ImportError:
+        return False
+
+
+def _display_aggregate_results(aggregate_results: pd.DataFrame) -> None:
+    if _is_jupyter_environment():
+        from IPython.display import HTML, display
+
+        display(HTML("<h3>Experiment Results:</h3>"))
+        display(aggregate_results)
+    else:
+        formatted_string = aggregate_results.to_string(
+            float_format=lambda x: f"{x:.2f}", justify="right"
+        )
+        print("\n Experiment Results:")
+        print(formatted_string)
 
 
 _INPUT_MAPPER_DEP_WARNING = (
@@ -1063,7 +1136,6 @@ async def arun_on_dataset(
         concurrency_level,
         project_metadata=project_metadata,
     )
-
     batch_results = await runnable_utils.gather_with_concurrency(
         configs[0].get("max_concurrency"),
         *map(
@@ -1152,8 +1224,7 @@ def run_on_dataset(
     if verbose:
         try:
             agg_feedback = results.get_aggregate_feedback()
-            print("\n Eval quantiles:")
-            print(agg_feedback)
+            _display_aggregate_results(agg_feedback)
         except Exception as e:
             logger.debug(f"Failed to print aggregate feedback: {repr(e)}")
     return results

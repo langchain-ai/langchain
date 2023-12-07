@@ -3,12 +3,24 @@
 This is a simple implementation of the BaseStore using a dictionary that is useful
 primarily for unit testing purposes.
 """
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+)
 
-from langchain.schema import BaseStore
+from langchain_core.stores import BaseStore
+
+V = TypeVar("V")
 
 
-class InMemoryStore(BaseStore[str, Any]):
+class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
     """In-memory implementation of the BaseStore using a dictionary.
 
     Attributes:
@@ -34,9 +46,9 @@ class InMemoryStore(BaseStore[str, Any]):
 
     def __init__(self) -> None:
         """Initialize an empty store."""
-        self.store: Dict[str, Any] = {}
+        self.store: Dict[str, V] = {}
 
-    def mget(self, keys: Sequence[str]) -> List[Optional[Any]]:
+    def mget(self, keys: Sequence[str]) -> List[Optional[V]]:
         """Get the values associated with the given keys.
 
         Args:
@@ -48,7 +60,7 @@ class InMemoryStore(BaseStore[str, Any]):
         """
         return [self.store.get(key) for key in keys]
 
-    def mset(self, key_value_pairs: Sequence[Tuple[str, Any]]) -> None:
+    def mset(self, key_value_pairs: Sequence[Tuple[str, V]]) -> None:
         """Set the values for the given keys.
 
         Args:
@@ -67,7 +79,8 @@ class InMemoryStore(BaseStore[str, Any]):
             keys (Sequence[str]): A sequence of keys to delete.
         """
         for key in keys:
-            self.store.pop(key, None)
+            if key in self.store:
+                del self.store[key]
 
     def yield_keys(self, prefix: Optional[str] = None) -> Iterator[str]:
         """Get an iterator over keys that match the given prefix.
@@ -84,3 +97,7 @@ class InMemoryStore(BaseStore[str, Any]):
             for key in self.store.keys():
                 if key.startswith(prefix):
                     yield key
+
+
+InMemoryStore = InMemoryBaseStore[Any]
+InMemoryByteStore = InMemoryBaseStore[bytes]

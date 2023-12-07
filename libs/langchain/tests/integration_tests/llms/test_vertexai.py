@@ -1,21 +1,20 @@
 """Test Vertex AI API wrapper.
-In order to run this test, you need to install VertexAI SDK (that is is the private
-preview)  and be whitelisted to list the models themselves:
-In order to run this test, you need to install VertexAI SDK 
-pip install google-cloud-aiplatform>=1.35.0
+In order to run this test, you need to install VertexAI SDK:
+pip install google-cloud-aiplatform>=1.36.0
 
 Your end-user credentials would be used to make the calls (make sure you've run 
 `gcloud auth login` first).
 """
 import os
+from typing import Optional
 
 import pytest
+from langchain_core.documents import Document
+from langchain_core.outputs import LLMResult
 from pytest_mock import MockerFixture
 
 from langchain.chains.summarize import load_summarize_chain
-from langchain.docstore.document import Document
 from langchain.llms import VertexAI, VertexAIModelGarden
-from langchain.schema import LLMResult
 
 
 def test_vertex_initialization() -> None:
@@ -49,7 +48,6 @@ def test_vertex_generate_code() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
 async def test_vertex_agenerate() -> None:
     llm = VertexAI(temperature=0)
     output = await llm.agenerate(["Please say foo:"])
@@ -63,7 +61,6 @@ def test_vertex_stream() -> None:
     assert isinstance(outputs[0], str)
 
 
-@pytest.mark.asyncio
 async def test_vertex_consistency() -> None:
     llm = VertexAI(temperature=0)
     output = llm.generate(["Please say foo:"])
@@ -73,50 +70,88 @@ async def test_vertex_consistency() -> None:
     assert output.generations[0][0].text == async_output.generations[0][0].text
 
 
-def test_model_garden() -> None:
-    """In order to run this test, you should provide an endpoint name.
+@pytest.mark.parametrize(
+    "endpoint_os_variable_name,result_arg",
+    [("FALCON_ENDPOINT_ID", "generated_text"), ("LLAMA_ENDPOINT_ID", None)],
+)
+def test_model_garden(
+    endpoint_os_variable_name: str, result_arg: Optional[str]
+) -> None:
+    """In order to run this test, you should provide endpoint names.
 
     Example:
-    export ENDPOINT_ID=...
+    export FALCON_ENDPOINT_ID=...
+    export LLAMA_ENDPOINT_ID=...
     export PROJECT=...
     """
-    endpoint_id = os.environ["ENDPOINT_ID"]
+    endpoint_id = os.environ[endpoint_os_variable_name]
     project = os.environ["PROJECT"]
-    llm = VertexAIModelGarden(endpoint_id=endpoint_id, project=project)
+    location = "europe-west4"
+    llm = VertexAIModelGarden(
+        endpoint_id=endpoint_id,
+        project=project,
+        result_arg=result_arg,
+        location=location,
+    )
     output = llm("What is the meaning of life?")
     assert isinstance(output, str)
     assert llm._llm_type == "vertexai_model_garden"
 
 
-def test_model_garden_generate() -> None:
-    """In order to run this test, you should provide an endpoint name.
+@pytest.mark.parametrize(
+    "endpoint_os_variable_name,result_arg",
+    [("FALCON_ENDPOINT_ID", "generated_text"), ("LLAMA_ENDPOINT_ID", None)],
+)
+def test_model_garden_generate(
+    endpoint_os_variable_name: str, result_arg: Optional[str]
+) -> None:
+    """In order to run this test, you should provide endpoint names.
 
     Example:
-    export ENDPOINT_ID=...
+    export FALCON_ENDPOINT_ID=...
+    export LLAMA_ENDPOINT_ID=...
     export PROJECT=...
     """
-    endpoint_id = os.environ["ENDPOINT_ID"]
+    endpoint_id = os.environ[endpoint_os_variable_name]
     project = os.environ["PROJECT"]
-    llm = VertexAIModelGarden(endpoint_id=endpoint_id, project=project)
+    location = "europe-west4"
+    llm = VertexAIModelGarden(
+        endpoint_id=endpoint_id,
+        project=project,
+        result_arg=result_arg,
+        location=location,
+    )
     output = llm.generate(["What is the meaning of life?", "How much is 2+2"])
     assert isinstance(output, LLMResult)
     assert len(output.generations) == 2
 
 
 @pytest.mark.asyncio
-async def test_model_garden_agenerate() -> None:
-    endpoint_id = os.environ["ENDPOINT_ID"]
+@pytest.mark.parametrize(
+    "endpoint_os_variable_name,result_arg",
+    [("FALCON_ENDPOINT_ID", "generated_text"), ("LLAMA_ENDPOINT_ID", None)],
+)
+async def test_model_garden_agenerate(
+    endpoint_os_variable_name: str, result_arg: Optional[str]
+) -> None:
+    endpoint_id = os.environ[endpoint_os_variable_name]
     project = os.environ["PROJECT"]
-    llm = VertexAIModelGarden(endpoint_id=endpoint_id, project=project)
+    location = "europe-west4"
+    llm = VertexAIModelGarden(
+        endpoint_id=endpoint_id,
+        project=project,
+        result_arg=result_arg,
+        location=location,
+    )
     output = await llm.agenerate(["What is the meaning of life?", "How much is 2+2"])
     assert isinstance(output, LLMResult)
     assert len(output.generations) == 2
 
 
-def test_vertex_call_trigger_count_tokens() -> None:
+def test_vertex_call_count_tokens() -> None:
     llm = VertexAI()
-    output = llm.get_num_tokens("Hi")
-    assert output == 2
+    output = llm.get_num_tokens("How are you?")
+    assert output == 4
 
 
 @pytest.mark.requires("google.cloud.aiplatform")

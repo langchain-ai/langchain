@@ -1,11 +1,13 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, cast
+
+import requests
+from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, Field, root_validator
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +15,9 @@ logger = logging.getLogger(__name__)
 class CerebriumAI(LLM):
     """CerebriumAI large language models.
 
-    To use, you should have the ``cerebrium`` python package installed, and the
-    environment variable ``CEREBRIUMAI_API_KEY`` set with your API key.
+    To use, you should have the ``cerebrium`` python package installed.
+    You should also have the environment variable ``CEREBRIUMAI_API_KEY``
+    set with your API key or pass it as a named argument in the constructor.
 
     Any parameters that are valid to be passed to the call can be passed
     in, even if not explicitly saved on this class.
@@ -23,7 +26,7 @@ class CerebriumAI(LLM):
         .. code-block:: python
 
             from langchain.llms import CerebriumAI
-            cerebrium = CerebriumAI(endpoint_url="")
+            cerebrium = CerebriumAI(endpoint_url="", cerebriumai_api_key="my-api-key")
 
     """
 
@@ -34,7 +37,7 @@ class CerebriumAI(LLM):
     """Holds any model parameters valid for `create` call not
     explicitly specified."""
 
-    cerebriumai_api_key: Optional[str] = None
+    cerebriumai_api_key: Optional[SecretStr] = None
 
     class Config:
         """Configuration for this pydantic config."""
@@ -62,8 +65,8 @@ class CerebriumAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        cerebriumai_api_key = get_from_dict_or_env(
-            values, "cerebriumai_api_key", "CEREBRIUMAI_API_KEY"
+        cerebriumai_api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "cerebriumai_api_key", "CEREBRIUMAI_API_KEY")
         )
         values["cerebriumai_api_key"] = cerebriumai_api_key
         return values
@@ -88,24 +91,23 @@ class CerebriumAI(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Call to CerebriumAI endpoint."""
-        try:
-            from cerebrium import model_api_request
-        except ImportError:
-            raise ValueError(
-                "Could not import cerebrium python package. "
-                "Please install it with `pip install cerebrium`."
-            )
-
+        headers: Dict = {
+            "Authorization": cast(
+                SecretStr, self.cerebriumai_api_key
+            ).get_secret_value(),
+            "Content-Type": "application/json",
+        }
         params = self.model_kwargs or {}
-        response = model_api_request(
-            self.endpoint_url,
-            {"prompt": prompt, **params, **kwargs},
-            self.cerebriumai_api_key,
-        )
-        text = response["data"]["result"]
-        if stop is not None:
-            # I believe this is required since the stop tokens
-            # are not enforced by the model parameters
-            text = enforce_stop_tokens(text, stop)
-        return text
+        payload = {"prompt": prompt, **params, **kwargs}
+        response = requests.post(self.endpoint_url, json=payload, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            text = data["result"]
+            if stop is not None:
+                # I believe this is required since the stop tokens
+                # are not enforced by the model parameters
+                text = enforce_stop_tokens(text, stop)
+            return text
+        else:
+            response.raise_for_status()
+        return ""

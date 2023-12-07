@@ -2,7 +2,7 @@ from langchain.agents import AgentExecutor
 from langchain.chat_models import ChatAnthropic
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableMap, RunnablePassthrough
+from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 
 from .agent_scratchpad import format_agent_scratchpad
 from .output_parser import parse_output
@@ -29,7 +29,7 @@ chain = (
 )
 
 agent_chain = (
-    RunnableMap(
+    RunnableParallel(
         {
             "partial_completion": chain,
             "intermediate_steps": lambda x: x["intermediate_steps"],

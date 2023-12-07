@@ -2,9 +2,9 @@
 import os
 from typing import List
 
+from langchain_core.documents import Document
 from sqlalchemy.orm import Session
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.pgvector import PGVector
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
@@ -16,7 +16,6 @@ CONNECTION_STRING = PGVector.connection_string_from_db_params(
     user=os.environ.get("TEST_PGVECTOR_USER", "postgres"),
     password=os.environ.get("TEST_PGVECTOR_PASSWORD", "postgres"),
 )
-
 
 ADA_TOKEN_COUNT = 1536
 
@@ -179,6 +178,27 @@ def test_pgvector_with_filter_in_set() -> None:
     )
     output = docsearch.similarity_search_with_score(
         "foo", k=2, filter={"page": {"IN": ["0", "2"]}}
+    )
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), 0.0),
+        (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406),
+    ]
+
+
+def test_pgvector_with_filter_nin_set() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection_filter",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        metadatas=metadatas,
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.similarity_search_with_score(
+        "foo", k=2, filter={"page": {"NIN": ["1"]}}
     )
     assert output == [
         (Document(page_content="foo", metadata={"page": "0"}), 0.0),
