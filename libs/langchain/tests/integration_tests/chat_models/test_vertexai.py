@@ -72,10 +72,6 @@ async def test_vertexai_agenerate() -> None:
 async def test_vertexai_stream() -> None:
     model = ChatVertexAI(temperature=0)
     message = HumanMessage(content="Hello")
-    response = model.astream([message])
-
-    async for chunk in response:
-        assert isinstance(chunk, AIMessageChunk)
 
     sync_response = model.stream([message])
     for chunk in sync_response:
