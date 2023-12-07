@@ -1,1 +1,0 @@
-"""Merriam-Webster API toolkit."""

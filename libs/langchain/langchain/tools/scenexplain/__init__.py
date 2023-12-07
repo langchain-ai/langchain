@@ -1,1 +1,0 @@
-"""SceneXplain API toolkit."""
