@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional, Union
 
 import httpx
 from langchain_core.pydantic_v1 import Field
@@ -61,7 +61,7 @@ class ChatGLM3(LLM):
         return "chat_glm_3"
 
     @property
-    def _invocation_params(self) -> Dict[str, Any]:
+    def _invocation_params(self) -> dict:
         """Get the parameters used to invoke the model."""
         params = {
             "model": self.model_name,
@@ -73,10 +73,10 @@ class ChatGLM3(LLM):
         return {**params, **(self.model_kwargs or {})}
 
     @property
-    def client(self):
+    def client(self) -> Any:
         return self.http_client or httpx.Client(timeout=self.timeout)
 
-    def _get_payload(self, prompt: str):
+    def _get_payload(self, prompt: str) -> dict:
         params = self._invocation_params
         messages = self.prefix_messages + [HumanMessage(content=prompt)]
         params.update(
