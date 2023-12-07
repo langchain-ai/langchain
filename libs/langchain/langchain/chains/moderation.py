@@ -1,13 +1,20 @@
-from typing import Dict, List, Optional
-
-import openai
-from openai.types import ModerationCreateResponse, Moderation
-from openai.resources.moderations import Moderations
+from typing import Any, Dict, List, Optional
 
 from langchain_core.pydantic_v1 import root_validator
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.utils import get_from_dict_or_env
 from langchain.chains.base import Chain
+from langchain.utils.openai import is_openai_v1
+
+import openai
+if is_openai_v1():
+    import openai
+    from openai import moderations as moderation
+    from openai.types import ModerationCreateResponse, Moderation
+    from openai.resources.moderations import Moderations
+else:
+    from openai import Moderation as Moderations
+    moderation = Moderations()
 
 
 class OpenAIModerationChain(Chain):
@@ -26,7 +33,7 @@ class OpenAIModerationChain(Chain):
             moderation = OpenAIModerationChain()
     """
 
-    client: Moderations = openai.moderations  #: :meta private:
+    client: Any = moderation #: :meta private:
     model_name: Optional[str] = None
     """Moderation model name to use."""
     error: bool = False
@@ -52,7 +59,7 @@ class OpenAIModerationChain(Chain):
             openai.api_key = openai_api_key
             if openai_organization:
                 openai.organization = openai_organization
-            values["client"] = openai.moderations
+            values["client"] = moderation
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -76,7 +83,7 @@ class OpenAIModerationChain(Chain):
         """
         return [self.output_key]
 
-    def _moderate(self, text: str, results: Moderation) -> str:
+    def _moderate(self, text: str, results) -> str:
         if results.flagged:
             error_str = "Text was found that violates OpenAI's content policy."
             if self.error:
@@ -91,6 +98,10 @@ class OpenAIModerationChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         text: str = inputs[self.input_key]
-        results: ModerationCreateResponse = self.client.create(input=text)
-        output: str = self._moderate(text, results.results[0])
+        if is_openai_v1():
+            results: ModerationCreateResponse = self.client.create(input=text)
+            output: str = self._moderate(text, results.results[0])
+        else:
+            results = self.client.create(text)
+            output: str = self._moderate(text, results["results"][0])
         return {self.output_key: output}
