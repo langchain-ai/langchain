@@ -320,6 +320,7 @@ all = [
     "python-arango",
     "hologres-vector",
     "dgml-utils",
+    "gpudb"
 ]
 
 cli = [
