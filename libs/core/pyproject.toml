@@ -18,6 +18,7 @@ anyio = ">=3,<5"
 PyYAML = ">=5.3"
 requests = "^2"
 packaging = "^23.2"
+jinja2 = {version = "^3", optional = true}
 
 [tool.poetry.group.lint]
 optional = true
@@ -54,12 +55,14 @@ pytest-mock  = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-jinja2 = "^3"
 
 
 [tool.poetry.group.test_integration]
 optional = true
 dependencies = {}
+
+[tool.poetry.extras]
+extended_testing = ["jinja2"]
 
 [tool.ruff]
 select = [
