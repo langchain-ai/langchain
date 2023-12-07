@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional, Tuple
 
 import sqlalchemy
 from sqlalchemy.dialects.postgresql import JSON, UUID
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pgvector.sqlalchemy import Vector
 
 
-def _import_vector() -> None:
+def _import_vector() -> Any:
     try:
         from pgvector.sqlalchemy import Vector
     except ImportError:
