@@ -267,7 +267,12 @@ class BedrockBase(BaseModel, ABC):
             text = LLMInputOutputAdapter.prepare_output(provider, response)
 
         except Exception as e:
-            raise ValueError(f"Error raised by bedrock service: {e}")
+            if "ThrottlingException" in str(e):
+                # Handle throttling exception separately
+                raise ValueError(f"ThrottlingException raised by bedrock service: {e}") from e
+            else:
+                # Catch any other exceptions and provide a general error message
+                raise ValueError(f"Error raised by bedrock service: {e}") from e
 
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
