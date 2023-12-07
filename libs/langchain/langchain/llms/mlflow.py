@@ -33,7 +33,7 @@ class Mlflow(LLM):
             completions = Mlflow(
                 target_uri="http://localhost:5000",
                 endpoint="test",
-                params={"temperature": 0.1}
+                temperature=0.1,
             )
     """
 
