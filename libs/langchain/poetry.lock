@@ -4297,6 +4297,7 @@ develop = true
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
 langchain-core = ">=0.0.9,<0.1"
+langchain-openai = {path = "../partners/openai", develop = true}
 langsmith = "~0.0.63"
 numpy = "^1"
 PyYAML = ">=5.3"
@@ -4342,6 +4343,7 @@ develop = true
 
 [package.dependencies]
 langchain-core = ">=0.0.9,<0.1"
+numpy = "^1"
 
 [package.source]
 type = "directory"
@@ -11563,8 +11565,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-<<<<<<< HEAD
-content-hash = "02baa6b856a03d0d687f0cc2b20136d7a56e2951d2ea076f3ce5dd3648ed4950"
-=======
-content-hash = "e1bf5b9a8cdfa1f5f57401a618fdadd806617a2a3c40c38d3ff377bde0774d83"
->>>>>>> master
+content-hash = "c960495ff010964308668fd8625bac0a03e3017b276e5522ab3413d0790bcda6"
