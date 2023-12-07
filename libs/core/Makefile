@@ -15,6 +15,10 @@ tests:
 test_watch:
 	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
 
+check_imports: langchain_core/**/*.py
+	for f in $^ ; do \
+		python -c "from importlib.machinery import SourceFileLoader; SourceFileLoader('x', '$$f').load_module()" ; \
+	done
 
 ######################
 # LINTING AND FORMATTING
@@ -27,7 +31,7 @@ lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/experimenta
 
 lint lint_diff:
 	./scripts/check_pydantic.sh .
-	./scripts/check_imports.sh
+	./scripts/lint_imports.sh
 	poetry run ruff .
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)
