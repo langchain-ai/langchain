@@ -105,7 +105,7 @@ class AgentFinish(Serializable):
 
 
 def _convert_agent_action_to_messages(
-    agent_action: AgentAction
+    agent_action: AgentAction,
 ) -> Sequence[BaseMessage]:
     """Convert an agent action to a message.
 
