@@ -1,4 +1,4 @@
-name: pydantic v1/v2 compatibility
+name: dependencies
 
 on:
   workflow_call:
@@ -28,7 +28,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-    name: Pydantic v1/v2 compatibility - Python ${{ matrix.python-version }}
+    name: dependencies - Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
 
