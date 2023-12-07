@@ -4,7 +4,8 @@ from typing import Any
 
 import numpy as np
 import pytest
-from langchain_community.embeddings import AzureOpenAIEmbeddings
+
+from langchain_openai.embeddings import AzureOpenAIEmbeddings
 
 
 def _get_embeddings(**kwargs: Any) -> AzureOpenAIEmbeddings:

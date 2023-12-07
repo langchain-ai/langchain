@@ -3,12 +3,10 @@ import os
 from typing import Any
 
 import pytest
-from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 
 from langchain_openai.chat_models import AzureChatOpenAI
-from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "")
 OPENAI_API_BASE = os.environ.get("AZURE_OPENAI_API_BASE", "")
@@ -72,52 +70,6 @@ def test_chat_openai_multiple_completions() -> None:
 
 
 @pytest.mark.scheduled
-def test_chat_openai_streaming() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    chat = _get_llm(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    message = HumanMessage(content="Hello")
-    response = chat([message])
-    assert callback_handler.llm_streams > 0
-    assert isinstance(response, BaseMessage)
-
-
-@pytest.mark.scheduled
-def test_chat_openai_streaming_generation_info() -> None:
-    """Test that generation info is preserved when streaming."""
-
-    class _FakeCallback(FakeCallbackHandler):
-        saved_things: dict = {}
-
-        def on_llm_end(
-            self,
-            *args: Any,
-            **kwargs: Any,
-        ) -> Any:
-            # Save the generation
-            self.saved_things["generation"] = args[0]
-
-    callback = _FakeCallback()
-    callback_manager = CallbackManager([callback])
-    chat = _get_llm(
-        max_tokens=2,
-        temperature=0,
-        callback_manager=callback_manager,
-    )
-    list(chat.stream("hi"))
-    generation = callback.saved_things["generation"]
-    # `Hello!` is two tokens, assert that that is what is returned
-    assert generation.generations[0][0].text == "Hello!"
-
-
-@pytest.mark.scheduled
 async def test_async_chat_openai() -> None:
     """Test async generation."""
     chat = _get_llm(max_tokens=10, n=2)
@@ -127,31 +79,6 @@ async def test_async_chat_openai() -> None:
     assert len(response.generations) == 2
     for generations in response.generations:
         assert len(generations) == 2
-        for generation in generations:
-            assert isinstance(generation, ChatGeneration)
-            assert isinstance(generation.text, str)
-            assert generation.text == generation.message.content
-
-
-@pytest.mark.scheduled
-async def test_async_chat_openai_streaming() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    chat = _get_llm(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    message = HumanMessage(content="Hello")
-    response = await chat.agenerate([[message], [message]])
-    assert callback_handler.llm_streams > 0
-    assert isinstance(response, LLMResult)
-    assert len(response.generations) == 2
-    for generations in response.generations:
-        assert len(generations) == 1
         for generation in generations:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)

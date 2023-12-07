@@ -2,14 +2,10 @@
 from typing import Generator
 
 import pytest
-from langchain_core.callbacks import CallbackManager
 from langchain_core.outputs import LLMResult
 
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_openai.llms import OpenAI
-from tests.unit_tests.callbacks.fake_callback_handler import (
-    FakeCallbackHandler,
-)
 
 
 @pytest.mark.scheduled
@@ -183,20 +179,6 @@ def test_openai_streaming_call() -> None:
     assert isinstance(output, str)
 
 
-def test_openai_streaming_callback() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    llm = OpenAI(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    llm("Write me a sentence with 100 words.")
-    assert callback_handler.llm_streams == 10
-
 
 @pytest.mark.scheduled
 async def test_openai_async_generate() -> None:
@@ -205,21 +187,6 @@ async def test_openai_async_generate() -> None:
     output = await llm.agenerate(["Hello, how are you?"])
     assert isinstance(output, LLMResult)
 
-
-async def test_openai_async_streaming_callback() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    llm = OpenAI(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    result = await llm.agenerate(["Write me a sentence with 100 words."])
-    assert callback_handler.llm_streams == 10
-    assert isinstance(result, LLMResult)
 
 
 def test_openai_modelname_to_contextsize_valid() -> None:

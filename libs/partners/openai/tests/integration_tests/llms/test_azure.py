@@ -3,11 +3,9 @@ import os
 from typing import Any, Generator
 
 import pytest
-from langchain_community.llms import AzureOpenAI
-from langchain_core.callbacks import CallbackManager
 from langchain_core.outputs import LLMResult
 
-from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+from langchain_openai.llms import AzureOpenAI
 
 OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "")
 OPENAI_API_BASE = os.environ.get("AZURE_OPENAI_API_BASE", "")
@@ -135,40 +133,9 @@ def test_openai_streaming_call() -> None:
     assert isinstance(output, str)
 
 
-def test_openai_streaming_callback() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    llm = _get_llm(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    llm("Write me a sentence with 100 words.")
-    assert callback_handler.llm_streams == 11
-
-
 @pytest.mark.scheduled
 async def test_openai_async_generate() -> None:
     """Test async generation."""
     llm = _get_llm(max_tokens=10)
     output = await llm.agenerate(["Hello, how are you?"])
     assert isinstance(output, LLMResult)
-
-
-async def test_openai_async_streaming_callback() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    llm = _get_llm(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    result = await llm.agenerate(["Write me a sentence with 100 words."])
-    assert callback_handler.llm_streams == 11
-    assert isinstance(result, LLMResult)

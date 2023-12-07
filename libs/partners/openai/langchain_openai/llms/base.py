@@ -752,7 +752,7 @@ class AzureOpenAI(BaseOpenAI):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import AzureOpenAI
+            from langchain_openai.llms import AzureOpenAI
             openai = AzureOpenAI(model_name="text-davinci-003")
     """
 

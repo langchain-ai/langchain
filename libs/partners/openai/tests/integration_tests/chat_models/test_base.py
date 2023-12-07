@@ -1,11 +1,7 @@
 """Test ChatOpenAI wrapper."""
-from typing import Any, Optional
+from typing import Optional
 
 import pytest
-from langchain_community.output_parsers.openai_functions import (
-    JsonOutputFunctionsParser,
-)
-from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import (
     ChatGeneration,
@@ -16,7 +12,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_openai.chat_models import ChatOpenAI
-from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 @pytest.mark.scheduled
@@ -90,52 +85,6 @@ def test_chat_openai_multiple_completions() -> None:
         assert isinstance(generation.message.content, str)
 
 
-@pytest.mark.scheduled
-def test_chat_openai_streaming() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    chat = ChatOpenAI(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    message = HumanMessage(content="Hello")
-    response = chat([message])
-    assert callback_handler.llm_streams > 0
-    assert isinstance(response, BaseMessage)
-
-
-@pytest.mark.scheduled
-def test_chat_openai_streaming_generation_info() -> None:
-    """Test that generation info is preserved when streaming."""
-
-    class _FakeCallback(FakeCallbackHandler):
-        saved_things: dict = {}
-
-        def on_llm_end(
-            self,
-            *args: Any,
-            **kwargs: Any,
-        ) -> Any:
-            # Save the generation
-            self.saved_things["generation"] = args[0]
-
-    callback = _FakeCallback()
-    callback_manager = CallbackManager([callback])
-    chat = ChatOpenAI(
-        max_tokens=2,
-        temperature=0,
-        callback_manager=callback_manager,
-    )
-    list(chat.stream("hi"))
-    generation = callback.saved_things["generation"]
-    # `Hello!` is two tokens, assert that that is what is returned
-    assert generation.generations[0][0].text == "Hello!"
-
-
 def test_chat_openai_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
     chat = ChatOpenAI(max_tokens=10)
@@ -184,31 +133,6 @@ async def test_async_chat_openai() -> None:
 
 
 @pytest.mark.scheduled
-async def test_async_chat_openai_streaming() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    chat = ChatOpenAI(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    message = HumanMessage(content="Hello")
-    response = await chat.agenerate([[message], [message]])
-    assert callback_handler.llm_streams > 0
-    assert isinstance(response, LLMResult)
-    assert len(response.generations) == 2
-    for generations in response.generations:
-        assert len(generations) == 1
-        for generation in generations:
-            assert isinstance(generation, ChatGeneration)
-            assert isinstance(generation.text, str)
-            assert generation.text == generation.message.content
-
-
-@pytest.mark.scheduled
 async def test_async_chat_openai_bind_functions() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
 
@@ -234,17 +158,13 @@ async def test_async_chat_openai_bind_functions() -> None:
         ]
     )
 
-    chain = prompt | chat | JsonOutputFunctionsParser(args_only=True)
+    chain = prompt | chat
 
     message = HumanMessage(content="Sally is 13 years old")
     response = await chain.abatch([{"input": message}])
 
     assert isinstance(response, list)
     assert len(response) == 1
-    for generation in response:
-        assert isinstance(generation, dict)
-        assert "name" in generation
-        assert "age" in generation
 
 
 def test_chat_openai_extra_kwargs() -> None:

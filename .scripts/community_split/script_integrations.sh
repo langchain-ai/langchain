@@ -157,12 +157,15 @@ git grep -l 'from langchain.utils.openai' | xargs sed -i '' 's/from langchain.ut
 git grep -l 'from langchain.chat_models.openai' | xargs sed -i '' 's/from\ langchain.chat_models.openai/from langchain_openai.chat_models/g'
 git grep -l 'from langchain.chat_models import ChatOpenAI' | xargs sed -i '' 's/from\ langchain.chat_models\ import\ ChatOpenAI/from langchain_openai.chat_models import ChatOpenAI/g'
 git grep -l 'from langchain.chat_models import AzureChatOpenAI' | xargs sed -i '' 's/from\ langchain.chat_models\ import\ AzureChatOpenAI/from langchain_openai.chat_models import AzureChatOpenAI/g'
-git grep -l 'from langchain.llms\ import OpenAI' | xargs sed -i '' 's/from\ langchain.llms\ import\ OpenAI/from langchain_openai.llms import OpenAI/g'
+git grep -l 'from langchain.llms import OpenAI' | xargs sed -i '' 's/from\ langchain.llms\ import\ OpenAI/from langchain_openai.llms import OpenAI/g'
+git grep -l 'from langchain.llms import AzureOpenAI' | xargs sed -i '' 's/from\ langchain.llms\ import\ AzureOpenAI/from langchain_openai.llms import AzureOpenAI/g'
 git grep -l 'from langchain.embeddings import OpenAIEmbeddings' | xargs sed -i '' 's/from\ langchain.embeddings\ import\ OpenAIEmbeddings/from langchain_openai.embeddings import OpenAIEmbeddings/g'
+git grep -l 'from langchain.embeddings import AzureOpenAIEmbeddings' | xargs sed -i '' 's/from\ langchain.embeddings\ import\ AzureOpenAIEmbeddings/from langchain_openai.embeddings import AzureOpenAIEmbeddings/g'
 git grep -l 'from langchain.chat_models.azure_openai' | xargs sed -i '' 's/from\ langchain.chat_models.azure_openai/from langchain_openai.chat_models/g'
 git grep -l 'from langchain.embeddings.openai' | xargs sed -i '' 's/from langchain.embeddings.openai/from langchain_openai.embeddings/g'
 git grep -l 'from langchain.embeddings.azure_openai' | xargs sed -i '' 's/from langchain.embeddings.azure_openai/from langchain_openai.embeddings/g'
 git grep -l 'from langchain.adapters.openai' | xargs sed -i '' 's/from langchain.adapters.openai/from langchain_openai.adapters/g'
+git grep -l 'from langchain.adapters import openai' | xargs sed -i '' 's/from\ langchain.adapters\ import\ openai/from\ langchain_openai\ import\ adapters/g'
 git grep -l 'from langchain.llms.openai' | xargs sed -i '' 's/from langchain.llms.openai/from langchain_openai.llms/g'
 git grep -l 'from langchain.utils' | xargs sed -i '' 's/from langchain.utils/from langchain_core.utils/g'
 git grep -l 'from langchain\.' | xargs sed -i '' 's/from langchain\./from langchain_community./g'
@@ -284,6 +287,8 @@ git grep -l '@pytest\.mark\.requires' partners/openai | xargs sed -i '' 's/@pyte
 
 cp -r langchain/tests/integration_tests/examples community/tests
 cp langchain/tests/unit_tests/conftest.py community/tests/unit_tests
+cp langchain/tests/integration_tests/test_compile.py community/tests/integration_tests
+cp langchain/tests/integration_tests/test_compile.py partners/openai/tests/integration_tests
 cp -r ../.scripts/community_split/libs/* .
 
 
