@@ -1,11 +1,23 @@
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
 import sqlalchemy
-from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Session, relationship
 
 from langchain.vectorstores.pgvector import BaseModel
+
+if TYPE_CHECKING:
+    from pgvector.sqlalchemy import Vector
+
+
+def _import_vector() -> None:
+    try:
+        from pgvector.sqlalchemy import Vector
+    except ImportError:
+        raise ImportError(
+            "The `pgvector` library is required to use the PGVectorStore."
+        )
+    return Vector
 
 
 class CollectionStore(BaseModel):
@@ -63,7 +75,7 @@ class EmbeddingStore(BaseModel):
     )
     collection = relationship(CollectionStore, back_populates="embeddings")
 
-    embedding: Vector = sqlalchemy.Column(Vector(None))
+    embedding: Vector = sqlalchemy.Column(_import_vector()(None))
     document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     cmetadata = sqlalchemy.Column(JSON, nullable=True)
 
