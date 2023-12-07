@@ -1701,6 +1701,9 @@ PyYAML = ">=5.3"
 requests = "^2"
 tenacity = "^8.1.0"
 
+[package.extras]
+extended-testing = ["jinja2 (>=3,<4)"]
+
 [package.source]
 type = "directory"
 url = "../core"
@@ -4934,4 +4937,4 @@ extended-testing = ["faker", "jinja2", "presidio-analyzer", "presidio-anonymizer
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e2626bc18493830ed99ff4fbdde931d44c17f6d6421d2ebe11c669309a890702"
+content-hash = "4bb3c4e436aba1fdab5159d3a3919173b7ae63f5816dc2e12accd2d76f58c29c"
