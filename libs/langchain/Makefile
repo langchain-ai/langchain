@@ -53,8 +53,10 @@ check_imports: langchain/**/*.py
 PYTHON_FILES=.
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_package: PYTHON_FILES=langchain
+lint_tests: PYTHON_FILES=tests
 
-lint lint_diff:
+lint lint_diff lint_package lint_tests:
 	./scripts/check_pydantic.sh .
 	./scripts/lint_imports.sh
 	poetry run ruff .

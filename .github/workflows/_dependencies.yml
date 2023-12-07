@@ -42,7 +42,7 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: poetry install
+        run: poetry install  --with test
 
       - name: Check imports with base dependencies
         shell: bash
