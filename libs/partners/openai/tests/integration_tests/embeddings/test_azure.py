@@ -1,4 +1,5 @@
 """Test openai embeddings."""
+# mypy: ignore-errors
 import os
 from typing import Any
 
