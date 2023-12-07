@@ -7,30 +7,32 @@ from langchain.schema import BaseOutputParser
 
 from langchain_experimental.tot.thought import ThoughtValidity
 
-COT_PROMPT = PromptTemplate(
-    template_format="jinja2",
-    input_variables=["problem_description", "thoughts"],
-    template=dedent(
-        """
-        You are an intelligent agent that is generating one thought at a time in
-        a tree of thoughts setting.
 
-        PROBLEM 
-        
-        {{problem_description}}
-        
-        {% if thoughts %}
-        THOUGHTS
-        
-        {% for thought in thoughts %}
-        {{ thought }}
-        {% endfor %}
-        {% endif %}
-        
-        Let's think step by step.
-        """
-    ).strip(),
-)
+def get_cot_prompt() -> PromptTemplate:
+    return PromptTemplate(
+        template_format="jinja2",
+        input_variables=["problem_description", "thoughts"],
+        template=dedent(
+            """
+            You are an intelligent agent that is generating one thought at a time in
+            a tree of thoughts setting.
+
+            PROBLEM 
+            
+            {{problem_description}}
+            
+            {% if thoughts %}
+            THOUGHTS
+            
+            {% for thought in thoughts %}
+            {{ thought }}
+            {% endfor %}
+            {% endif %}
+            
+            Let's think step by step.
+            """
+        ).strip(),
+    )
 
 
 class JSONListOutputParser(BaseOutputParser):
@@ -50,45 +52,46 @@ class JSONListOutputParser(BaseOutputParser):
             return []
 
 
-PROPOSE_PROMPT = PromptTemplate(
-    template_format="jinja2",
-    input_variables=["problem_description", "thoughts", "n"],
-    output_parser=JSONListOutputParser(),
-    template=dedent(
-        """
-        You are an intelligent agent that is generating thoughts in a tree of
-        thoughts setting.
-
-        The output should be a markdown code snippet formatted as a JSON list of
-        strings, including the leading and trailing "```json" and "```":
-
-        ```json
-        [
-            "<thought-1>",
-            "<thought-2>",
-            "<thought-3>"
-        ]
-        ```
-
-        PROBLEM
-
-        {{ problem_description }}
-
-        {% if thoughts %}
-        VALID THOUGHTS
-
-        {% for thought in thoughts %}
-        {{ thought }}
-        {% endfor %}
-
-        Possible next {{ n }} valid thoughts based on the last valid thought:
-        {% else %}
-
-        Possible next {{ n }} valid thoughts based on the PROBLEM:
-        {%- endif -%}
-        """
-    ).strip(),
-)
+def get_propose_prompt() -> PromptTemplate:
+    return PromptTemplate(
+        template_format="jinja2",
+        input_variables=["problem_description", "thoughts", "n"],
+        output_parser=JSONListOutputParser(),
+        template=dedent(
+            """
+                You are an intelligent agent that is generating thoughts in a tree of
+                thoughts setting.
+                
+                The output should be a markdown code snippet formatted as a JSON list of
+                strings, including the leading and trailing "```json" and "```":
+                
+                ```json
+                [
+                "<thought-1>",
+                "<thought-2>",
+                "<thought-3>"
+                ]
+                ```
+                
+                PROBLEM
+                
+                {{ problem_description }}
+                
+                {% if thoughts %}
+                VALID THOUGHTS
+                
+                {% for thought in thoughts %}
+                {{ thought }}
+                {% endfor %}
+                
+                Possible next {{ n }} valid thoughts based on the last valid thought:
+                {% else %}
+                
+                Possible next {{ n }} valid thoughts based on the PROBLEM:
+                {%- endif -%}
+                """
+        ).strip(),
+    )
 
 
 class CheckerOutputParser(BaseOutputParser):
