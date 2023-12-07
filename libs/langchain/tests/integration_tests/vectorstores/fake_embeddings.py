@@ -53,11 +53,6 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         """Return consistent embeddings for the text, if seen before, or a constant
         one if the text is unknown."""
         return self.embed_documents([text])[0]
-        if text not in self.known_texts:
-            return [float(1.0)] * (self.dimensionality - 1) + [float(0.0)]
-        return [float(1.0)] * (self.dimensionality - 1) + [
-            float(self.known_texts.index(text))
-        ]
 
 
 class AngularTwoDimensionalEmbeddings(Embeddings):
