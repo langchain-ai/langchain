@@ -242,7 +242,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
-        params = self._prepare_params(stop=stop, **kwargs)
+        params = self._prepare_params(stop=stop, stream=True, **kwargs)
         examples = kwargs.get("examples", None)
         if examples:
             params["examples"] = _parse_examples(examples)
