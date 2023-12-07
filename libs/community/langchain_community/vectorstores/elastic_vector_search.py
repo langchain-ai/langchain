@@ -168,7 +168,7 @@ class ElasticVectorSearch(VectorStore):
 
     @staticmethod
     def get_user_agent() -> str:
-        from langchain import __version__
+        from langchain_community import __version__
 
         return f"langchain-py-dvs/{__version__}"
 

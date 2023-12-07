@@ -60,7 +60,7 @@ class TileDB(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain import TileDB
+            from langchain_community import TileDB
             embeddings = OpenAIEmbeddings()
             db = TileDB(embeddings, index_uri, metric)
 
@@ -681,7 +681,7 @@ class TileDB(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import TileDB
+                from langchain_community import TileDB
                 from langchain_openai.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 index = TileDB.from_texts(texts, embeddings)
@@ -732,7 +732,7 @@ class TileDB(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain import TileDB
+                from langchain_community import TileDB
                 from langchain_openai.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)

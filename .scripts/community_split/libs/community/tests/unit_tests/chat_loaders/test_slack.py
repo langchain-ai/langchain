@@ -4,7 +4,11 @@ from langchain_community.chat_loaders import slack, utils
 
 
 def test_slack_chat_loader() -> None:
-    chat_path = pathlib.Path(__file__).parents[2] / "examples" / "slack_export.zip"
+    chat_path = (
+        pathlib.Path(__file__).parents[2]
+        / "examples"
+        / "slack_export.zip"
+    )
     loader = slack.SlackChatLoader(str(chat_path))
 
     chat_sessions = list(

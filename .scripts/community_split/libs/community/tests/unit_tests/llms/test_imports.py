@@ -1,5 +1,6 @@
-from langchain_community import llms
 from langchain_core.language_models.llms import BaseLLM
+
+from langchain_community import llms
 
 EXPECT_ALL = [
     "AI21",
@@ -10,7 +11,6 @@ EXPECT_ALL = [
     "Arcee",
     "Aviary",
     "AzureMLOnlineEndpoint",
-    "AzureOpenAI",
     "Banana",
     "Baseten",
     "Beam",
@@ -50,8 +50,6 @@ EXPECT_ALL = [
     "NIBittensorLLM",
     "NLPCloud",
     "Ollama",
-    "OpenAI",
-    "OpenAIChat",
     "OpenLLM",
     "OpenLM",
     "PaiEasEndpoint",

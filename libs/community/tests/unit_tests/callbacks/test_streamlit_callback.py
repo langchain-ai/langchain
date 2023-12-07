@@ -16,7 +16,9 @@ class TestImport(unittest.TestCase):
     def tearDown(self) -> None:
         builtins.__import__ = self.builtins_import
 
-    @mock.patch("langchain.callbacks.streamlit._InternalStreamlitCallbackHandler")
+    @mock.patch(
+        "langchain_community.callbacks.streamlit._InternalStreamlitCallbackHandler"
+    )
     def test_create_internal_handler(self, mock_internal_handler: Any) -> None:
         """If we're using a Streamlit that does not expose its own
         StreamlitCallbackHandler, use our own implementation.

@@ -12,7 +12,9 @@ tool = EdenAiTextModerationTool(
 
 @pytest.fixture
 def mock_post() -> Generator:
-    with patch("langchain.tools.edenai.edenai_base_tool.requests.post") as mock:
+    with patch(
+        "langchain_community.tools.edenai.edenai_base_tool.requests.post"
+    ) as mock:
         yield mock
 
 

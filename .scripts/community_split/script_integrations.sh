@@ -167,7 +167,12 @@ git grep -l 'from langchain_community\.chains' | xargs sed -i '' 's/from langcha
 git grep -l 'from langchain_community\.agents' | xargs sed -i '' 's/from langchain_community\.agents/from langchain.agents/g'
 git grep -l 'from langchain_community\.memory' | xargs sed -i '' 's/from langchain_community\.memory/from langchain.memory/g'
 git grep -l 'langchain\.__version__' | xargs sed -i '' 's/langchain\.__version__/langchain_community.__version__/g'
+git grep -l 'langchain\.document_loaders' | xargs sed -i '' 's/langchain\.document_loaders/langchain_community.document_loaders/g'
+git grep -l 'langchain\.callbacks' | xargs sed -i '' 's/langchain\.callbacks/langchain_community.callbacks/g'
+git grep -l 'langchain\.tools' | xargs sed -i '' 's/langchain\.tools/langchain_community.tools/g'
+git grep -l 'langchain\.llms' | xargs sed -i '' 's/langchain\.llms/langchain_community.llms/g'
 git grep -l 'import langchain$' | xargs sed -i '' 's/import\ langchain$/import\ langchain_community/g'
+git grep -l 'from\ langchain\ ' | xargs sed -i '' 's/from\ langchain\ /from\ langchain_community\ /g'
 
 
 cd ..
@@ -239,11 +244,13 @@ git add partners core
 
 rm community/langchain_community/{chat_models,llms,tools,embeddings,vectorstores,callbacks}/base.py
 rm community/tests/unit_tests/{chat_models,llms,tools,callbacks}/test_base.py
+rm community/tests/unit_tests/callbacks/test_manager.py
 rm community/langchain_community/callbacks/{stdout,streaming_stdout}.py
 rm community/langchain_community/callbacks/tracers/{base,evaluation,langchain,langchain_v1,log_stream,root_listeners,run_collector,schemas,stdout}.py
 
 git checkout master -- langchain/tests/unit_tests/{chat_models,llms,tools,callbacks,document_loaders}/test_base.py
 git checkout master -- langchain/tests/unit_tests/{callbacks,docstore,document_loaders,document_transformers,embeddings,graphs,llms,chat_models,storage,tools,utilities,vectorstores}/test_imports.py
+git checkout master -- langchain/tests/unit_tests/callbacks/test_manager.py
 git checkout master -- langchain/tests/unit_tests/document_loaders/blob_loaders/test_public_api.py
 git checkout master -- langchain/tests/unit_tests/document_loaders/parsers/test_public_api.py
 git checkout master -- langchain/tests/unit_tests/vectorstores/test_public_api.py

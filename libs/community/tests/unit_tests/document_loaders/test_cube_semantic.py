@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 from langchain_community.document_loaders import CubeSemanticLoader
 
-MODULE_PATH = "langchain.document_loaders.cube_semantic.CubeSemanticLoader"
+MODULE_PATH = "langchain_community.document_loaders.cube_semantic.CubeSemanticLoader"
 
 
 class TestCubeSemanticLoader(unittest.TestCase):

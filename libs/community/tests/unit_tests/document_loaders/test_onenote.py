@@ -48,7 +48,7 @@ def test_load(mocker: MockerFixture) -> None:
     assert documents == []
 
     mocker.patch(
-        "langchain.document_loaders.onenote.OneNoteLoader._get_page_content",
+        "langchain_community.document_loaders.onenote.OneNoteLoader._get_page_content",
         return_value=(
             "<html><head><title>Test Title</title></head>"
             "<body><p>Test Content</p></body></html>"

@@ -32,7 +32,8 @@ def fakerun(**args: Any) -> Any:
 @mock.patch.dict(os.environ, {"NUCLIA_NUA_KEY": "_a_key_"})
 def test_nuclia_loader() -> None:
     with mock.patch(
-        "langchain.tools.nuclia.tool.NucliaUnderstandingAPI._run", new_callable=fakerun
+        "langchain_community.tools.nuclia.tool.NucliaUnderstandingAPI._run",
+        new_callable=fakerun,
     ):
         nua = NucliaUnderstandingAPI(enable_ml=False)
         loader = NucliaLoader("/whatever/file.mp3", nua)

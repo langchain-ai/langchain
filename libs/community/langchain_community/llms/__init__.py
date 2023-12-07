@@ -6,7 +6,7 @@ access to the large language model (**LLM**) APIs and services.
 
 .. code-block::
 
-    BaseLanguageModel --> BaseLLM --> LLM --> <name>  # Examples: AI21, HuggingFaceHub, OpenAI
+    BaseLanguageModel --> BaseLLM --> LLM --> <name>  # Examples: AI21, HuggingFaceHub
 
 **Main helpers:**
 
@@ -83,7 +83,7 @@ def _import_bananadev() -> Any:
 
 
 def _import_baseten() -> Any:
-    from langchain_core.language_models.llmsten import Baseten
+    from langchain_community.llms.baseten import Baseten
 
     return Baseten
 
@@ -698,7 +698,6 @@ __all__ = [
     "Arcee",
     "Aviary",
     "AzureMLOnlineEndpoint",
-    "AzureOpenAI",
     "Banana",
     "Baseten",
     "Beam",
@@ -738,8 +737,6 @@ __all__ = [
     "NIBittensorLLM",
     "NLPCloud",
     "Ollama",
-    "OpenAI",
-    "OpenAIChat",
     "OpenLLM",
     "OpenLM",
     "PaiEasEndpoint",

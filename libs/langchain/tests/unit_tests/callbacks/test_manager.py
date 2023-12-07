@@ -1,4 +1,4 @@
-from langchain_core.callbacks import __all__
+from langchain.callbacks.manager import __all__
 
 EXPECTED_ALL = [
     "BaseRunManager",
@@ -27,6 +27,8 @@ EXPECTED_ALL = [
     "ahandle_event",
     "env_var_is_set",
     "Callbacks",
+    "get_openai_callback",
+    "wandb_tracing_enabled",
 ]
 
 
