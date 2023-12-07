@@ -362,7 +362,8 @@ def batch_create_chunk(
         metadatas = [{} for _ in texts]
     if len(texts) != len(metadatas):
         raise ValueError(
-            f"metadatas's length {len(metadatas)} and texts's length {len(texts)} are mismatched"
+            f"metadatas's length {len(metadatas)} and "
+            f"texts's length {len(texts)} are mismatched"
         )
 
     doc_name = str(EntityName(corpus_id=corpus_id, document_id=document_id))
