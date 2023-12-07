@@ -172,6 +172,8 @@ class Anyscale(BaseOpenAI):
                 }
                 values["client"] = openai.OpenAI(**client_params).chat.completions
             else:
+                values['openai_api_base'] = values["anyscale_api_base"]
+                values['openai_api_key'] = values["anyscale_api_key"].get_secret_value()
                 values["client"] = openai.ChatCompletion
         except ImportError:
             raise ImportError(
