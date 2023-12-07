@@ -1,0 +1,7 @@
+input_variables: [text]
+output_parser: null
+template: 'Перепиши текст, исправив грамматические, орфографические и пунктуационные ошибки в тексте.
+Текст:
+{text}'
+template_format: f-string
+_type: prompt
