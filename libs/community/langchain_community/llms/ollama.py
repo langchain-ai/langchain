@@ -2,12 +2,11 @@ import json
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import requests
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Extra
-
-from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.llms import BaseLLM
 
 
 def _stream_response_to_generation_chunk(

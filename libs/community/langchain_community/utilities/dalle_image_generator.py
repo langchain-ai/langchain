@@ -5,10 +5,9 @@ from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import (
+    get_from_dict_or_env,
     get_pydantic_field_names,
 )
-
-from langchain_core.utils import get_from_dict_or_env
 from langchain_openai.utils import is_openai_v1
 
 logger = logging.getLogger(__name__)

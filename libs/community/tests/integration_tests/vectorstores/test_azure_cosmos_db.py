@@ -6,8 +6,8 @@ from typing import Any, Generator, Optional, Union
 
 import pytest
 from langchain_core.documents import Document
-
 from langchain_openai.embeddings import OpenAIEmbeddings
+
 from langchain_community.vectorstores.azure_cosmos_db import (
     AzureCosmosDBVectorSearch,
     CosmosDBSimilarityType,

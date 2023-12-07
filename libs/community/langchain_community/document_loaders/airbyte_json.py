@@ -2,9 +2,9 @@ import json
 from typing import List
 
 from langchain_core.documents import Document
+from langchain_core.utils import stringify_dict
 
 from langchain_community.document_loaders.base import BaseLoader
-from langchain_core.utils import stringify_dict
 
 
 class AirbyteJSONLoader(BaseLoader):

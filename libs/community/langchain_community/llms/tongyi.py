@@ -3,8 +3,11 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.utils import get_from_dict_or_env
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -13,10 +16,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-
-from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.llms import LLM
-from langchain_core.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

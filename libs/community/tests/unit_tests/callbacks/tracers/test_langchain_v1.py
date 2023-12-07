@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import pytest
 from freezegun import freeze_time
+from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import HumanMessage
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.base import BaseTracer, TracerException
@@ -18,8 +19,6 @@ from langchain_core.tracers.langchain_v1 import (
     TracerSessionV1,
 )
 from langchain_core.tracers.schemas import Run, TracerSessionV1Base
-
-from langchain_core.callbacks import CallbackManager
 
 TEST_SESSION_ID = 2023
 

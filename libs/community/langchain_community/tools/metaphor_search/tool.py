@@ -7,6 +7,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.tools import BaseTool
+
 from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapper
 
 

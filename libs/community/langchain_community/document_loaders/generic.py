@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Iterator,
     List,
@@ -9,7 +10,6 @@ from typing import (
     Optional,
     Sequence,
     Union,
-    TYPE_CHECKING,
 )
 
 from langchain_core.documents import Document

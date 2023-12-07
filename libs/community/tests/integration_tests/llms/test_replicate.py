@@ -1,6 +1,7 @@
 """Test Replicate API wrapper."""
 
 from langchain_core.callbacks import CallbackManager
+
 from langchain_community.llms.replicate import Replicate
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 

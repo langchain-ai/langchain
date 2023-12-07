@@ -6,9 +6,9 @@ import re
 from typing import List, Type
 
 import pytest
+from langchain_core.tools import BaseTool
 
 from langchain_community.tools.amadeus.base import AmadeusBaseTool
-from langchain_core.tools import BaseTool
 from langchain_community.tools.gmail.base import GmailBaseTool
 from langchain_community.tools.office365.base import O365BaseTool
 from langchain_community.tools.playwright.base import BaseBrowserTool

@@ -2,18 +2,15 @@
 import datetime
 import math
 import tempfile
-
-import pytest
-
 from typing import Union
 
+import pytest
 from langchain_core.documents import Document
 
 from langchain_community.docstore.base import Docstore
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores.faiss import FAISS
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-
 
 _PAGE_CONTENT = """This is a page about LangChain.
 

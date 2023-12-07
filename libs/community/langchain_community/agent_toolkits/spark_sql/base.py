@@ -1,6 +1,7 @@
 """Spark SQL agent."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.language_models import BaseLanguageModel

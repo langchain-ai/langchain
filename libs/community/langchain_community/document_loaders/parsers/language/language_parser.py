@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional
 
 from langchain_core.documents import Document
 

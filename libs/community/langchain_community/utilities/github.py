@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import requests
 import tiktoken
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-
 from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:

@@ -18,8 +18,8 @@ from typing import Iterable, List
 
 import pytest
 from langchain_core.documents import Document
-
 from langchain_core.embeddings import Embeddings
+
 from langchain_community.vectorstores import AstraDB
 
 # Ad-hoc embedding classes:

@@ -1,5 +1,6 @@
-from langchain_community.vectorstores import __all__
 from langchain_core.vectorstores import VectorStore
+
+from langchain_community.vectorstores import __all__
 
 
 def test_all_imports() -> None:

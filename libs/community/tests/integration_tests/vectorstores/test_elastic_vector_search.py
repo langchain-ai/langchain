@@ -6,8 +6,8 @@ from typing import Generator, List, Union
 
 import pytest
 from langchain_core.documents import Document
-
 from langchain_openai.embeddings import OpenAIEmbeddings
+
 from langchain_community.vectorstores.elastic_vector_search import ElasticVectorSearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 

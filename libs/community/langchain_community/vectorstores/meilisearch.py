@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Ty
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
-
 from langchain_core.utils import get_from_env
+from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
     from meilisearch import Client

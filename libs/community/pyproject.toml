@@ -239,7 +239,7 @@ select = [
   "I",  # isort
 ]
 exclude = [
-  "tests/integration_tests/examples/non-utf8-encoding.py",
+  "tests/examples/non-utf8-encoding.py",
 ]
 
 [tool.mypy]

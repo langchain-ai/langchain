@@ -3,10 +3,10 @@ import time
 from typing import Dict, Iterator, Optional, Tuple
 
 from langchain_core.documents import Document
+from langchain_openai.utils import is_openai_v1
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_openai.utils import is_openai_v1
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,7 @@
 """Toolkit for interacting with a Power BI dataset."""
 from __future__ import annotations
-from typing import List, Optional, Union, TYPE_CHECKING
+
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel

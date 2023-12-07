@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import Iterator, List, Optional
 
 from langchain_core.documents import Document
+from langchain_core.utils import get_from_env
 
 from langchain_community.document_loaders.base import BaseLoader
-from langchain_core.utils import get_from_env
 
 LINK_NOTE_TEMPLATE = "joplin://x-callback-url/openNote?id={id}"
 

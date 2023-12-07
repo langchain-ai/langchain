@@ -2,8 +2,9 @@ import uuid
 from types import SimpleNamespace
 from unittest import mock
 
-from langchain_community.callbacks.tracers import comet
 from langchain_core.outputs import LLMResult
+
+from langchain_community.callbacks.tracers import comet
 
 
 def test_comet_tracer__trace_chain_with_single_span__happyflow() -> None:

@@ -3,11 +3,11 @@
 from pathlib import Path
 from typing import cast
 
+from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_community.llms.loading import load_llm
 from langchain_community.llms.nlpcloud import NLPCloud
-from langchain_core.pydantic_v1 import SecretStr
 from tests.integration_tests.llms.utils import assert_llm_equality
 
 

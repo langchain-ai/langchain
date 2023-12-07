@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, List, Literal, Optional, Tuple
 
 from langchain_core.documents import Document
+from langchain_core.utils import get_from_env
 
 from langchain_community.document_loaders.base import BaseLoader
-from langchain_core.utils import get_from_env
 
 if TYPE_CHECKING:
     from trello import Board, Card, TrelloClient
