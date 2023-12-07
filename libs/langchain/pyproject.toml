@@ -211,11 +211,6 @@ optional = true
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"
-types-toml = "^0.10.8.1"
-types-redis = "^4.3.21.6"
-types-pytz = "^2023.3.0.0"
-types-chardet = "^5.0.4.6"
-mypy-protobuf = "^3.0.0"
 
 [tool.poetry.group.typing]
 optional = true
@@ -224,6 +219,11 @@ optional = true
 mypy = "^0.991"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
+types-toml = "^0.10.8.1"
+types-redis = "^4.3.21.6"
+types-pytz = "^2023.3.0.0"
+types-chardet = "^5.0.4.6"
+mypy-protobuf = "^3.0.0"
 
 [tool.poetry.group.dev]
 optional = true
