@@ -36,7 +36,7 @@ export_attr = "chain"
 [tool.templates-hub]
 use-case = "rag"
 author = "Redis"
-integrations = ["OpenAI", "Redis"]
+integrations = ["OpenAI", "Redis", "HuggingFace"]
 tags = ["vectordbs"]
 
 [tool.poe.tasks.start]

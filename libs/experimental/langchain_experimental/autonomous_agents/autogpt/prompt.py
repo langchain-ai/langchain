@@ -1,5 +1,5 @@
 import time
-from typing import Any, Callable, List
+from typing import Any, Callable, List, cast
 
 from langchain.prompts.chat import (
     BaseChatPromptTemplate,
@@ -62,19 +62,13 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):  # type: ignore[misc]
         return full_prompt
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
-        system_content = self.construct_full_prompt(kwargs["goals"])
-        system_content += f"\n\nТекущее время и дата {time.strftime('%c')}"
-
-        # base_prompt =
-        #   SystemMessage(content=self.construct_full_prompt(kwargs["goals"]))
-        # time_prompt = SystemMessage(
-        #     content=f"Текущее время и дата {time.strftime('%c')}"
-        # )
-        # used_tokens = self.token_counter(base_prompt.content) + self.token_counter(
-        #     time_prompt.content
-        # )
-        used_tokens = self.token_counter(system_content)
-
+        base_prompt = SystemMessage(content=self.construct_full_prompt(kwargs["goals"]))
+        time_prompt = SystemMessage(
+            content=f"Текущее время и дата {time.strftime('%c')}"
+        )
+        used_tokens = self.token_counter(
+            cast(str, base_prompt.content)
+        ) + self.token_counter(cast(str, time_prompt.content))
         memory: VectorStoreRetriever = kwargs["memory"]
         previous_messages = kwargs["messages"]
         relevant_docs = memory.get_relevant_documents(str(previous_messages[-10:]))
@@ -87,15 +81,12 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):  # type: ignore[misc]
             relevant_memory_tokens = sum(
                 [self.token_counter(doc) for doc in relevant_memory]
             )
-        if len(relevant_memory) > 0:
-            content = (
-                "\n\n"
-                f"Это напоминает тебе о следующих событиях "
-                f"из вашего прошлого:\n{relevant_memory}\n\n"
-            )
-            # memory_message = SystemMessage(content=content_format)
-            system_content += content
-            used_tokens += self.token_counter(content)
+        content_format = (
+            f"Это напоминает тебе о следующих событиях "
+            f"из вашего прошлого:\n{relevant_memory}\n\n"
+        )
+        memory_message = SystemMessage(content=content_format)
+        used_tokens += self.token_counter(cast(str, memory_message.content))
         historical_messages: List[BaseMessage] = []
         for message in previous_messages[-10:][::-1]:
             message_tokens = self.token_counter(message.content)

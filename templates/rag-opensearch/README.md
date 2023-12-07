@@ -7,12 +7,20 @@ This Template performs RAG using [OpenSearch](https://python.langchain.com/docs/
 Set the following environment variables. 
 
 - `OPENAI_API_KEY` -  To access OpenAI Embeddings and Models.
+
+And optionally set the OpenSearch ones if not using defaults:
+
 - `OPENSEARCH_URL` - URL of the hosted OpenSearch Instance
 - `OPENSEARCH_USERNAME` - User name for the OpenSearch instance
 - `OPENSEARCH_PASSWORD` - Password for the OpenSearch instance
 - `OPENSEARCH_INDEX_NAME` - Name of the index 
 
-Note: To load dummy index named `langchain-test` with dummy documents, use `dummy_index_setup.py` script in the folder
+To run the default OpenSeach instance in docker, you can use the command
+```shell
+docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" --name opensearch-node -d opensearchproject/opensearch:latest
+```
+
+Note: To load dummy index named `langchain-test` with dummy documents, run `python dummy_index_setup.py` in the package
 
 ## Usage
 

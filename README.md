@@ -252,3 +252,9 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 Проект распространяется по лицензии MIT, доступной в файле `LICENSE`.
 
 [^1]: В настоящий момент эта функциональность доступна в бета-режиме.
+
+For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).
+
+## 🌟 Contributors
+
+[![langchain contributors](https://contrib.rocks/image?repo=langchain-ai/langchain&max=2000)](https://github.com/langchain-ai/langchain/graphs/contributors)
