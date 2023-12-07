@@ -15,10 +15,10 @@ PyYAML = ">=6.0"
 anyio = ">=4.0"
 jsonpatch = "^1.33"
 langsmith = "~0.0.63"
-packaging = ">=21.3"
+packaging = ">=23.2"
 requests = "^2"
 tenacity = "^8.1.0"
-typing-extensions = ">=4.0"
+typing-extensions = ">=4.8"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"
