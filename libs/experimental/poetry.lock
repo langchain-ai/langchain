@@ -1695,7 +1695,10 @@ develop = true
 anyio = ">=3,<5"
 jsonpatch = "^1.33"
 langsmith = "~0.0.63"
+packaging = "^23.2"
 pydantic = ">=1,<3"
+PyYAML = ">=5.3"
+requests = "^2"
 tenacity = "^8.1.0"
 
 [package.source]
@@ -4931,4 +4934,4 @@ extended-testing = ["faker", "presidio-analyzer", "presidio-anonymizer", "senten
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "82bebfc5475be48f180bcb5013850eb88f451ffdc1f126a12112e10ed56f6529"
+content-hash = "eadf6aa880ba6c50311c77d9746e584eb46a19143ad569bcc2f406fb3f33d6ee"
