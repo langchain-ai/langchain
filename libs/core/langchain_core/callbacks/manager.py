@@ -573,7 +573,7 @@ class AsyncParentRunManager(AsyncRunManager):
 class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
     """Callback manager for LLM run."""
 
-    def on_llm_new_token(
+    async def on_llm_new_token(
         self,
         token: str,
         *,
