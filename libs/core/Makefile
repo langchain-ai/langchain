@@ -17,7 +17,7 @@ test_watch:
 
 check_imports: langchain_core/**/*.py
 	for f in $^ ; do \
-		python -c "from importlib.machinery import SourceFileLoader; SourceFileLoader('x', '$$f').load_module()" ; \
+		python -c "from importlib.machinery import SourceFileLoader; SourceFileLoader('x', '$$f').load_module()" || exit 1; \
 	done
 
 ######################
