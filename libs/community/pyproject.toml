@@ -144,6 +144,7 @@ ruff = "^0.1.5"
 types-toml = "^0.10.8.1"
 types-pytz = "^2023.3.0.0"
 types-chardet = "^5.0.4.6"
+types-redis = "^4.3.21.6"
 mypy-protobuf = "^3.0.0"
 
 [tool.poetry.group.typing.dependencies]
