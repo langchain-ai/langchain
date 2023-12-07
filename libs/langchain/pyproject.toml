@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.346"
+version = "0.0.347"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,7 +12,7 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.0.10,<0.1"
+langchain-core = ">=0.0.11,<0.1"
 langchain-community = { path = "../community", develop = true }
 langchain-openai = { path = "../partners/openai", develop = true }
 pydantic = ">=1,<3"

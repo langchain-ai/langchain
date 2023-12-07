@@ -4314,7 +4314,7 @@ url = "../community"
 
 [[package]]
 name = "langchain-core"
-version = "0.0.10"
+version = "0.0.11"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -11563,4 +11563,8 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
+<<<<<<< HEAD
 content-hash = "02baa6b856a03d0d687f0cc2b20136d7a56e2951d2ea076f3ce5dd3648ed4950"
+=======
+content-hash = "e1bf5b9a8cdfa1f5f57401a618fdadd806617a2a3c40c38d3ff377bde0774d83"
+>>>>>>> master
