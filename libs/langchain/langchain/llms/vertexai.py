@@ -74,11 +74,7 @@ def completion_with_retry(
     retry_decorator = create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
-    def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
-    
-        if 'candidate_count' in kwargs:
-            del kwargs['candidate_count']
-            
+    def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:  
         return llm.client.predict(*args, **kwargs)
 
     return _completion_with_retry(*args, **kwargs)
@@ -160,8 +156,6 @@ class _VertexAICommon(_VertexAIBase):
     "The default custom credentials (google.auth.credentials.Credentials) to use "
     "when making API calls. If not provided, credentials will be ascertained from "
     "the environment."
-    n: int = 1
-    """How many completions to generate for each prompt."""
     streaming: bool = False
     """Whether to stream the results or not."""
 
@@ -182,8 +176,7 @@ class _VertexAICommon(_VertexAIBase):
     def _default_params(self) -> Dict[str, Any]:
         params = {
             "temperature": self.temperature,
-            "max_output_tokens": self.max_output_tokens,
-            "candidate_count": self.n,
+            "max_output_tokens": self.max_output_tokens
         }
         if not self.is_codey_model:
             params.update(
@@ -208,11 +201,7 @@ class _VertexAICommon(_VertexAIBase):
         **kwargs: Any,
     ) -> dict:
         stop_sequences = stop or self.stop
-        params_mapping = {"n": "candidate_count"}
-        params = {params_mapping.get(k, k): v for k, v in kwargs.items()}
-        params = {**self._default_params, "stop_sequences": stop_sequences, **params}
-        if stream or self.streaming:
-            params.pop("candidate_count")
+        params = {**self._default_params, "stop_sequences": stop_sequences}
         return params
 
 
@@ -265,8 +254,6 @@ class VertexAI(_VertexAICommon, BaseLLM):
         except ImportError:
             raise_vertex_import_error()
 
-        if values["streaming"] and values["n"] > 1:
-            raise ValueError("Only one candidate can be generated with streaming!")
         return values
 
     def get_num_tokens(self, text: str) -> int:
@@ -326,7 +313,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
             res = await acompletion_with_retry(
                 self, prompt, run_manager=run_manager, **params
             )
-            generations.append([_response_to_generation(r) for r in res.candidates])
+            generations.append([{'text':str(res)}])
         return LLMResult(generations=generations)
 
     def _stream(
