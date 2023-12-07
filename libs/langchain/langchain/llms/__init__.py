@@ -52,6 +52,18 @@ def _import_anyscale() -> Any:
     return Anyscale
 
 
+def _import_vllm() -> Any:
+    from langchain.llms.aphrodite import Aphrodite
+
+    return Aphrodite
+
+
+def _import_vllm_openai() -> Any:
+    from langchain.llms.aphrodite import AphroditeOpenAI
+
+    return AphroditeOpenAI
+
+
 def _import_arcee() -> Any:
     from langchain.llms.arcee import Arcee
 
