@@ -15,6 +15,7 @@ langsmith = "~0.0.63"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
 anyio = ">=3,<5"
+PyYAML = ">=5.3"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"

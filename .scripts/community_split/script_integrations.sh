@@ -123,13 +123,8 @@ mv langchain/tests/integration_tests/utilities community/tests/integration_tests
 mv langchain/tests/integration_tests/vectorstores community/tests/integration_tests
 mv langchain/tests/integration_tests/adapters community/tests/integration_tests
 mv langchain/tests/integration_tests/callbacks community/tests/integration_tests
-mv langchain/tests/integration_tests/cache community/tests/integration_tests
 mv langchain/tests/integration_tests/{test_kuzu,test_nebulagraph}.py community/tests/integration_tests/graphs
 touch community/tests/integration_tests/{chat_message_histories,tools}/__init__.py
-
-mkdir -p langchain/tests/integration_tests/cache
-mv community/tests/integration_tests/cache/test_upstash_redis_cache.py langchain/tests/integration_tests/cache/
-touch langchain/tests/integration_tests/cache/__init__.py
 
 
 git grep -l 'from langchain.utils.json_schema' | xargs sed -i '' 's/from langchain.utils.json_schema/from langchain_core.utils.json_schema/g'
@@ -183,6 +178,7 @@ git grep -l 'langchain\.tools' | xargs sed -i '' 's/langchain\.tools/langchain_c
 git grep -l 'langchain\.llms' | xargs sed -i '' 's/langchain\.llms/langchain_community.llms/g'
 git grep -l 'import langchain$' | xargs sed -i '' 's/import\ langchain$/import\ langchain_community/g'
 git grep -l 'from\ langchain\ ' | xargs sed -i '' 's/from\ langchain\ /from\ langchain_community\ /g'
+git grep -l 'langchain_core.language_models.llmsten' | xargs sed -i '' 's/langchain_core.language_models.llmsten/langchain_community.llms.baseten/g'
 
 
 cd ..

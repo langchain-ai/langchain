@@ -7,7 +7,7 @@ from different APIs and services.
 
 .. code-block::
 
-    Embeddings --> <name>Embeddings  # Examples: BedrockEmbeddings, HuggingFaceEmbeddings
+    Embeddings --> <name>Embeddings  # Examples: CohereEmbeddings, HuggingFaceEmbeddings
 """
 
 

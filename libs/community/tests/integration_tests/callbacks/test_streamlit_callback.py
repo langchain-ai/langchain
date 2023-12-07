@@ -1,6 +1,7 @@
 """Integration tests for the StreamlitCallbackHandler module."""
 
 import pytest
+from langchain_openai.llms import OpenAI
 
 # Import the internal StreamlitCallbackHandler from its module - and not from
 # the `langchain_community.callbacks.streamlit` package - so that we don't end up using
@@ -8,7 +9,6 @@ import pytest
 from langchain_community.callbacks.streamlit.streamlit_callback_handler import (
     StreamlitCallbackHandler,
 )
-from langchain_community.llms import OpenAI
 
 
 @pytest.mark.requires("streamlit")

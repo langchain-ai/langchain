@@ -8,7 +8,7 @@ import pytest
 from langchain_community.callbacks.streamlit.streamlit_callback_handler import (
     StreamlitCallbackHandler,
 )
-from langchain_community.llms import OpenAI
+from langchain_openai.llms import OpenAI
 
 
 @pytest.mark.requires("streamlit")

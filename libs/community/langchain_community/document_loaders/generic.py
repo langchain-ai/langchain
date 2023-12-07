@@ -92,7 +92,7 @@ class GenericLoader(BaseLoader):
             parser=PyPDFParser()
         )
 
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
