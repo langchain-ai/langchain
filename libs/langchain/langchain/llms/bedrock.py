@@ -1,5 +1,4 @@
 import json
-import traceback
 import warnings
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Mapping, Optional
