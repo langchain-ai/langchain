@@ -89,7 +89,7 @@ class RecursiveUrlLoader(BaseLoader):
         metadata_extractor: Optional[Callable[[str, str], str]] = None,
         exclude_dirs: Optional[Sequence[str]] = (),
         timeout: Optional[int] = 10,
-        prevent_outside: bool = True,
+        prevent_outside: Union[bool, str] = True,
         link_regex: Union[str, re.Pattern, None] = None,
         headers: Optional[dict] = None,
         check_response_status: bool = False,
@@ -113,7 +113,7 @@ class RecursiveUrlLoader(BaseLoader):
             timeout: The timeout for the requests, in the unit of seconds. If None then
                 connection will not timeout.
             prevent_outside: If True, prevent loading from urls which are not children
-                of the root url.
+                of the root url. If a str, treated as a parent url to check against.
             link_regex: Regex for extracting sub-links from the raw html of a web page.
             check_response_status: If True, check HTTP response status and skip
                 URLs with error responses (400-599).
