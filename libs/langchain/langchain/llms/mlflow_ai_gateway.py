@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra
@@ -46,6 +47,10 @@ class MlflowAIGateway(LLM):
     params: Optional[Params] = None
 
     def __init__(self, **kwargs: Any):
+        warnings.warn(
+            "`MlflowAIGateway` is deprecated. Use `Mlflow` or `Databricks` instead.",
+            DeprecationWarning,
+        )
         try:
             import mlflow.gateway
         except ImportError as e:
