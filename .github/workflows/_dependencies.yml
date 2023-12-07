@@ -42,11 +42,15 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: poetry install  --with test
+        run: poetry install
 
       - name: Check imports with base dependencies
         shell: bash
         run: poetry run make check_imports
+
+      - name: Install test dependencies
+        shell: bash
+        run: poetry install --with test
 
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
