@@ -99,7 +99,7 @@ class ChatGLM3(LLM):
                 response = chatglm_llm("Who are you?")
         """
         payload = self._get_payload(prompt)
-        print(f"ChatGLM3 payload: {payload}")
+        logger.debug(f"ChatGLM3 payload: {payload}")
 
         try:
             response = self.client.post(self.endpoint_url, headers=HEADERS, json=payload)
