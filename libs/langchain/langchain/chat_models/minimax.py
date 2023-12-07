@@ -7,7 +7,7 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
 )
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatResult, ChatGeneration
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -79,9 +79,11 @@ class MiniMaxChat(MinimaxCommon, BaseChatModel):
         payload = self._default_params
         payload["messages"] = history
         text = self._client.post(payload)
+        generations = ChatGeneration(message=AIMessage(content=text))
+        return ChatResult(generations=[generations])
 
         # This is required since the stop are not enforced by the model parameters
-        return text if stop is None else enforce_stop_tokens(text, stop)
+        # return text if stop is None else enforce_stop_tokens(text, stop)
 
     async def _agenerate(
         self,
