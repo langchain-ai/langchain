@@ -49,8 +49,6 @@ class OpenAIModerationChain(Chain):
             default="",
         )
         try:
-            # import openai
-
             openai.api_key = openai_api_key
             if openai_organization:
                 openai.organization = openai_organization
