@@ -1,4 +1,4 @@
-lint lint_diff lint_package lint_test:
+lint lint_diff lint_package lint_tests:
 	poetry run poe lint
 
 test:
