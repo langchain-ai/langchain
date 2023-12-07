@@ -67,7 +67,6 @@ extend-exclude = [
 "**/{cookbook,docs}/*" = [
     "E402",  # allow imports to appear anywhere in docs
     "F401",  # allow "imported but unused" example code
-    "E722",  # allow use bare `except` in example code
     "F811",  # allow re-importing the same module, so that cells can stay independent
     "F841",  # allow assignments to variables that are never read -- it's example code
 ]
