@@ -4294,6 +4294,7 @@ files = []
 develop = true
 
 [package.dependencies]
+anyio = ">=3,<5"
 jsonpatch = "^1.33"
 langsmith = "~0.0.63"
 pydantic = ">=1,<3"
@@ -11519,4 +11520,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e1bf5b9a8cdfa1f5f57401a618fdadd806617a2a3c40c38d3ff377bde0774d83"
+content-hash = "320f2f289223eba792f3affa640a09ade9328975a61f29088f797a0860b89b75"
