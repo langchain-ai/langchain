@@ -81,7 +81,7 @@ class HuggingFaceHub(LLM):
             if values["task"] not in VALID_TASKS_DICT:
                 raise ValueError(
                     f"Got invalid task {values['task']}, "
-                    f"currently only {VALID_TASKS_DICT} are supported"
+                    f"currently only {VALID_TASKS_DICT.keys()} are supported"
                 )
             values["client"] = client
         except ImportError:
@@ -136,7 +136,7 @@ class HuggingFaceHub(LLM):
         if "error" in response:
             raise ValueError(f"Error raised by inference API: {response['error']}")
 
-        response_key = VALID_TASKS_DICT[self.task]
+        response_key = VALID_TASKS_DICT[self.task]  # type: ignore
         if isinstance(response, list):
             text = response[0][response_key]
         else:
