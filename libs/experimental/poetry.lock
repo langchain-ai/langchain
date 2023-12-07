@@ -1642,7 +1642,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.0.346"
+version = "0.0.347"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1651,11 +1651,10 @@ develop = true
 
 [package.dependencies]
 aiohttp = "^3.8.3"
-anyio = "<4.0"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
 jsonpatch = "^1.33"
-langchain-core = ">=0.0.10,<0.1"
+langchain-core = ">=0.0.11,<0.1"
 langsmith = "~0.0.63"
 numpy = "^1"
 pydantic = ">=1,<3"
@@ -1685,7 +1684,7 @@ url = "../langchain"
 
 [[package]]
 name = "langchain-core"
-version = "0.0.10"
+version = "0.0.11"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1693,10 +1692,17 @@ files = []
 develop = true
 
 [package.dependencies]
+anyio = ">=3,<5"
 jsonpatch = "^1.33"
 langsmith = "~0.0.63"
+packaging = "^23.2"
 pydantic = ">=1,<3"
+PyYAML = ">=5.3"
+requests = "^2"
 tenacity = "^8.1.0"
+
+[package.extras]
+extended-testing = ["jinja2 (>=3,<4)"]
 
 [package.source]
 type = "directory"
@@ -4926,9 +4932,9 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.link
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy (>=0.9.1)", "pytest-ruff"]
 
 [extras]
-extended-testing = ["faker", "presidio-analyzer", "presidio-anonymizer", "sentence-transformers", "vowpal-wabbit-next"]
+extended-testing = ["faker", "jinja2", "presidio-analyzer", "presidio-anonymizer", "sentence-transformers", "vowpal-wabbit-next"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "82bebfc5475be48f180bcb5013850eb88f451ffdc1f126a12112e10ed56f6529"
+content-hash = "4bb3c4e436aba1fdab5159d3a3919173b7ae63f5816dc2e12accd2d76f58c29c"
