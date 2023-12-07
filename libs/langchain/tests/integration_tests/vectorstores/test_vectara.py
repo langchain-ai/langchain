@@ -238,7 +238,7 @@ def test_vectara_with_summary(vectara3) -> None:
     # test summarization
     num_results = 10
     output1 = vectara3.similarity_search(query="what is generative AI?", k=num_results, 
-                                         summaryConfig=SummaryConfig(is_enabled=True, max_results=5))
+                                         summary_config=SummaryConfig(is_enabled=True, max_results=5))
 
     assert len(output1) == num_results+1
     assert len(output1[num_results].page_content) > 0

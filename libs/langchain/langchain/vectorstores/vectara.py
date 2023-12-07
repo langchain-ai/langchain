@@ -58,16 +58,16 @@ class VectaraQueryConfig:
         filtered out.
     n_sentence_context: number of sentences before/after the matching segment
         to add, defaults to 2
-    mmrConfig: MMRConfig configuration dataclass
-    summaryConfig: SummaryConfig configuration dataclass
+    mmr_config: MMRConfig configuration dataclass
+    summary_config: SummaryConfig configuration dataclass
     '''
     k: int = 10
     lambda_val: float = 0.0
     filter: str = ""
     score_threshold: Optional[float] = None
     n_sentence_context: int = 2
-    mmrConfig: MMRConfig = MMRConfig()
-    summaryConfig: SummaryConfig = SummaryConfig()
+    mmr_config: MMRConfig = MMRConfig()
+    summary_config: SummaryConfig = SummaryConfig()
 
 class Vectara(VectorStore):
     """`Vectara API` vector store.
@@ -304,27 +304,30 @@ class Vectara(VectorStore):
     def vectara_query(
         self,
         query: str,
-        k: int,
         config: VectaraQueryConfig,
         **kwargs: Any,
-    ) -> Tuple[List[Tuple[Document, float]], str]:
-        """Return Vectara documents most similar to query, along with scores.
+    ) -> List[Tuple[Document, float]]:
+        """Run a Vectara query
 
         Args:
             query: Text to look up documents similar to.
             config: VectaraQueryConfig object
         Returns:
-            A tuple with:
-            - List of Documents most similar to the query and their score
-            - summary if enabled
+            A list of k Documents matching the given query
+            If summary is enabled, last document is the summary text with 'summary'=True
         """
+        if type(config.mmr_config) is dict:
+            config.mmr_config = MMRConfig(**config.mmr_config)
+        if type(config.summary_config) is dict:
+            config.summary_config = SummaryConfig(**config.summary_config)
+
         data = {
             "query": [
                 {
                     "query": query,
                     "start": 0,
                     "numResults": 
-                        config.mmrConfig.mmr_k if config.mmrConfig.is_enabled else k,
+                        config.mmr_config.mmr_k if config.mmr_config.is_enabled else config.k,
                     "contextConfig": {
                         "sentencesBefore": config.n_sentence_context,
                         "sentencesAfter": config.n_sentence_context,
@@ -340,17 +343,17 @@ class Vectara(VectorStore):
                 }
             ]
         }
-        if config.mmrConfig.is_enabled:
+        if config.mmr_config.is_enabled:
             data['query'][0]['rerankingConfig'] = {
                 'rerankerId': 272725718,
                 'mmrConfig': {
-                    'diversityBias': config.mmrConfig.diversity_bias
+                    'diversityBias': config.mmr_config.diversity_bias
                 }
             }
-        if config.summaryConfig.is_enabled:
+        if config.summary_config.is_enabled:
             data['query'][0]['summary'] = [{
-                'maxSummarizedResults': config.summaryConfig.max_results,
-                'responseLang': config.summaryConfig.response_lang
+                'maxSummarizedResults': config.summary_config.max_results,
+                'responseLang': config.summary_config.response_lang
             }]
 
         response = self._session.post(
@@ -390,7 +393,7 @@ class Vectara(VectorStore):
             md.update(doc_md)
             metadatas.append(md)
 
-        docs_with_score = [
+        res = [
             (
                 Document(
                     page_content=x["text"],
@@ -401,46 +404,42 @@ class Vectara(VectorStore):
             for x, md in zip(responses, metadatas)
         ]
 
-        if config.mmrConfig.is_enabled:
-            docs_with_score = docs_with_score[:k]
-        if config.summaryConfig.is_enabled:
+        if config.mmr_config.is_enabled:
+            res = res[:config.k]
+        if config.summary_config.is_enabled:
             summary = result["responseSet"][0]["summary"][0]["text"]
-        else:
-            summary = None
+            res.append((Document(page_content=summary, metadata={'summary': True}), 0.0))
 
-        return docs_with_score, summary
+        return res
 
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = 10,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return Vectara documents most similar to query, along with scores.
 
         Args:
             query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 10.
             any other querying variable in VectaraQueryConfig like:
             - lambda_val: lexical match parameter for hybrid search.
             - filter: filter string
             - score_threshold: minimal score threshold for the result.
             - n_sentence_context: number of sentences before/after the matching segment
-            - mmrConfig: optional configuration for MMR (see MMRConfig dataclass)
-            - summaryConfig: optional configuration for summary 
+            - mmr_config: optional configuration for MMR (see MMRConfig dataclass)
+            - summary_config: optional configuration for summary 
               (see SummaryConfig dataclass)
         Returns:
             List of Documents most similar to the query and score for each.
         """
         config = VectaraQueryConfig(**kwargs)
-        docs, summary = self.vectara_query(query, k, config)
-        if config.summaryConfig.is_enabled:
-            docs.append((Document(page_content=summary, metadata={'summary': True}), 0.0))
+        docs = self.vectara_query(query, config)
         return docs
 
     def similarity_search(
         self,
         query: str,
-        k: int = 10,
         **kwargs: Any,
     ) -> List[Document]:
         """Return Vectara documents most similar to query, along with scores.
@@ -448,15 +447,12 @@ class Vectara(VectorStore):
         Args:
             query: Text to look up documents similar to.
             any other querying variable in VectaraQueryConfig
-            n_sentence_context: number of sentences before/after the matching segment
-                to add, defaults to 2
 
         Returns:
             List of Documents most similar to the query
         """
         docs_and_scores = self.similarity_search_with_score(
             query,
-            k,
             **kwargs,
         )
         return [doc for doc, _ in docs_and_scores]
@@ -464,7 +460,6 @@ class Vectara(VectorStore):
     def max_marginal_relevance_search(
         self,
         query: str,
-        k: int = 10,
         fetch_k: int = 50,
         lambda_mult: float = 0.5,
         **kwargs: Any,
@@ -485,9 +480,9 @@ class Vectara(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        kwargs['mmrConfig'] = MMRConfig(is_enabled=True, mmr_k=fetch_k, 
-                                        diversity_bias=1-lambda_mult)
-        return self.similarity_search(query, k, **kwargs)
+        kwargs['mmr_config'] = MMRConfig(is_enabled=True, mmr_k=fetch_k, 
+                                         diversity_bias=1-lambda_mult)
+        return self.similarity_search(query, **kwargs)
 
     @classmethod
     def from_texts(
@@ -548,5 +543,5 @@ class Vectara(VectorStore):
         vectara.add_files(files, metadatas)
         return vectara
 
-    def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
-        return super().as_retriever(**kwargs)
+#    def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
+#        return super().as_retriever(**kwargs)
