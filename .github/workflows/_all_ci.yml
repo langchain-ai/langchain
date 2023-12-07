@@ -67,7 +67,6 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-    if: ${{ inputs.working-directory == 'libs/langchain' }}
     name: Python ${{ matrix.python-version }} extended tests
     defaults:
       run:
@@ -88,11 +87,6 @@ jobs:
         run: |
           echo "Running extended tests, installing dependencies with poetry..."
           poetry install -E extended_testing --with test
-
-      - name: Install langchain core editable
-        shell: bash
-        run: |
-          poetry run pip install -e ../core
 
       - name: Run extended tests
         run: make extended_tests
