@@ -2,6 +2,7 @@ from langchain_core.runnables import __all__
 
 EXPECTED_ALL = [
     "AddableDict",
+    "Context",
     "ConfigurableField",
     "ConfigurableFieldSingleOption",
     "ConfigurableFieldMultiOption",
