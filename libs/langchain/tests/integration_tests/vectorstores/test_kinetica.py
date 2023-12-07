@@ -200,7 +200,7 @@ def test_kinetica_relevance_score(get_db: GPUdb) -> None:
     ]
 
 
-@pytest.mark.requires(OpenAIEmbeddings)
+@pytest.mark.requires("openai")
 def test_kinetica_max_marginal_relevance_search(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
@@ -238,7 +238,7 @@ def test_kinetica_max_marginal_relevance_search_with_score(get_db: GPUdb) -> Non
     assert output == [(Document(page_content="foo"), 0.0)]
 
 
-@pytest.mark.requires(OpenAIEmbeddings)
+@pytest.mark.requires("openai")
 def test_kinetica_with_openai_embeddings(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
