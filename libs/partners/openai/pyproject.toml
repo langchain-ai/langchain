@@ -98,6 +98,8 @@ optional = true
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
+[tool.poetry.extras]
+extended_testing = []
 
 [tool.ruff]
 select = [
