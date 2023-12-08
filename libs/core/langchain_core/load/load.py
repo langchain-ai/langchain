@@ -64,7 +64,14 @@ class Reviver:
                 raise ValueError(f"Invalid namespace: {value}")
 
             # Get the importable path
-            import_path = SERIALIZABLE_MAPPING[tuple(namespace + [name])]
+            key = tuple(namespace + [name])
+            if key not in SERIALIZABLE_MAPPING:
+                raise ValueError(
+                    "Trying to deserialize something that cannot "
+                    "be deserialized in current version of langchain-core: "
+                    f"{key}"
+                )
+            import_path = SERIALIZABLE_MAPPING[key]
             # Split into module and name
             import_dir, import_obj = import_path[:-1], import_path[-1]
             # Import module

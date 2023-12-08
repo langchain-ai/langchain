@@ -29,5 +29,5 @@ def test_serializable_mapping():
     serializable_modules = set(import_all_modules("langchain"))
     extra_modules = serializable_modules.difference(SERIALIZABLE_MAPPING)
     assert len(extra_modules) == 0
-    missing_modules = SERIALIZABLE_MAPPING.difference(serializable_modules)
+    missing_modules = set(SERIALIZABLE_MAPPING).difference(serializable_modules)
     assert len(missing_modules) == 0
