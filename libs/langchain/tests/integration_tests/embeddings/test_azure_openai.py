@@ -7,12 +7,28 @@ import pytest
 
 from langchain.embeddings import AzureOpenAIEmbeddings
 
+OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "")
+OPENAI_API_BASE = os.environ.get("AZURE_OPENAI_API_BASE", "")
+OPENAI_API_KEY = os.environ.get("AZURE_OPENAI_API_KEY", "")
+DEPLOYMENT_NAME = os.environ.get(
+    "AZURE_OPENAI_DEPLOYMENT_NAME",
+    os.environ.get("AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME", ""),
+)
+
 
 def _get_embeddings(**kwargs: Any) -> AzureOpenAIEmbeddings:
     return AzureOpenAIEmbeddings(
-        openai_api_version=os.environ.get("AZURE_OPENAI_API_VERSION", ""),
+        deployment_name=DEPLOYMENT_NAME,
+        api_version=OPENAI_API_VERSION,
+        openai_api_base=OPENAI_API_BASE,
+        openai_api_key=OPENAI_API_KEY,
         **kwargs,
     )
+
+
+@pytest.fixture
+def embedding() -> AzureOpenAIEmbeddings:
+    return _get_embeddings()
 
 
 def test_azure_openai_embedding_documents() -> None:

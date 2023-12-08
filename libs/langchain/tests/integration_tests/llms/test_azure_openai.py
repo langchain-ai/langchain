@@ -28,7 +28,6 @@ def _get_llm(**kwargs: Any) -> AzureOpenAI:
     )
 
 
-@pytest.mark.scheduled
 @pytest.fixture
 def llm() -> AzureOpenAI:
     return _get_llm(
