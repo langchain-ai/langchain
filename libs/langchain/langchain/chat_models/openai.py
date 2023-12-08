@@ -240,6 +240,10 @@ class ChatOpenAI(BaseChatModel):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
+
+        if "model" not in values and {"tools", "functions"} & values.keys():
+            values["model_name"] = "gpt-3.5-turbo-1106"
+
         for field_name in list(values):
             if field_name in extra:
                 raise ValueError(f"Found {field_name} supplied twice.")
