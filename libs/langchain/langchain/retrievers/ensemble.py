@@ -3,6 +3,8 @@ Ensemble retriever that ensemble the results of
 multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
 from typing import Any, Dict, List
+from collections import defaultdict
+from itertools import chain
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
@@ -154,33 +156,22 @@ class EnsembleRetriever(BaseRetriever):
             raise ValueError(
                 "Number of rank lists must be equal to the number of weights."
             )
-
-        # Create a union of all unique documents in the input doc_lists
-        all_documents = set()
-        for doc_list in doc_lists:
-            for doc in doc_list:
-                all_documents.add(doc.page_content)
-
-        # Initialize the RRF score dictionary for each document
-        rrf_score_dic = {doc: 0.0 for doc in all_documents}
-
-        # Calculate RRF scores for each document
-        for doc_list, weight in zip(doc_lists, self.weights):
+        
+        # Associate each doc's content with its RRF score for later sorting by it
+        # Duplicate contents across retrievers are collapsed & scored cumulatively
+        rrf_score = defaultdict(float)
+        for doc_list, weight in zip(doc_lists, SELF_WEIGHTS):
             for rank, doc in enumerate(doc_list, start=1):
-                rrf_score = weight * (1 / (rank + self.c))
-                rrf_score_dic[doc.page_content] += rrf_score
+                    rrf_score[doc.page_content] += weight / (rank + SELF_C)
 
-        # Sort documents by their RRF scores in descending order
-        sorted_documents = sorted(
-            rrf_score_dic.keys(), key=lambda x: rrf_score_dic[x], reverse=True
+        # Deduplicate -non-hashable- docs by their contents for final sorting
+        unique_docs = {
+            doc.page_content: doc for doc in chain.from_iterable(doc_lists)
+        }.values()
+
+        # Sort docs by their RRF scores in descending order
+        sorted_docs = sorted(
+            unique_docs, reverse=True,
+            key=lambda doc: rrf_score[doc.page_content],
         )
-
-        # Map the sorted page_content back to the original document objects
-        page_content_to_doc_map = {
-            doc.page_content: doc for doc_list in doc_lists for doc in doc_list
-        }
-        sorted_docs = [
-            page_content_to_doc_map[page_content] for page_content in sorted_documents
-        ]
-
         return sorted_docs
