@@ -1,5 +1,5 @@
 """Hugging Face Chat Wrapper."""
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, Type
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -11,6 +11,8 @@ from langchain.llms import (
     HuggingFaceHub,
     HuggingFaceTextGenInference,
 )
+from langchain.llms.base import LLM
+
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -21,12 +23,14 @@ from langchain.schema import (
     SystemMessage,
 )
 
+from transformers import AutoTokenizer
+
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
 
-class HuggingFaceChatWrapper(BaseChatModel):
+class ChatHuggingFace(BaseChatModel):
     """
-    Wrapper for using HF LLM's as ChatModels.
+    Wrapper for using Hugging Face LLM's as ChatModels.
 
     Works with `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`,
     and `HuggingFaceHub` LLMs.
@@ -38,15 +42,16 @@ class HuggingFaceChatWrapper(BaseChatModel):
     Adapted from: https://python.langchain.com/docs/integrations/chat/llama2_chat
     """
 
-    llm: Union[HuggingFaceTextGenInference, HuggingFaceEndpoint, HuggingFaceHub]
+    llm: LLM
     system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
-    tokenizer: Optional[Any] = None
-    model_id: Optional[str] = None
+    tokenizer: AutoTokenizer = None
+    model_id: str = None # type: ignore
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
-        from transformers import AutoTokenizer
+        if not isinstance(self.llm, (HuggingFaceEndpoint, HuggingFaceTextGenInference, HuggingFaceHub)):
+            raise ValueError(f"LLM type not supported for ChatHuggingFace: {type(self.llm)}")
 
         self._resolve_model_id()
         self.tokenizer = (
@@ -136,7 +141,7 @@ class HuggingFaceChatWrapper(BaseChatModel):
             generations=chat_generations, llm_output=llm_result.llm_output
         )
 
-    def _resolve_model_id(self):
+    def _resolve_model_id(self) -> None:
         """Resolve the model_id from the LLM's inference_server_url"""
 
         from huggingface_hub import list_inference_endpoints
@@ -165,7 +170,7 @@ class HuggingFaceChatWrapper(BaseChatModel):
             raise ValueError(
                 "Failed to resolve model_id"
                 f"Could not find model id for inference server provided: {endpoint_url}"
-                "Check to ensure the HF token you're using has access to the endpoint."
+                "Check to ensure the Hugging Face token you're using has access to the endpoint."
             )
 
     @property
