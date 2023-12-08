@@ -483,7 +483,7 @@ class MarkdownHeaderTextSplitter:
                             }
                         )
                         current_content.clear()
-                    
+
                     if not self.strip_headers:
                         current_content.append(stripped_line)
 

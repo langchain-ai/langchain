@@ -1040,7 +1040,7 @@ def test_md_header_text_splitter_preserve_headers_1() -> None:
         "# Foo\n\n"
         "    ## Bat\n\n"
         "Hi this is Jim\n\n"
-        "Hi this is Joe\n\n"
+        "Hi Joe\n\n"
         "## Baz\n\n"
         "# Bar\n\n"
         "This is Alice\n\n"
@@ -1056,12 +1056,12 @@ def test_md_header_text_splitter_preserve_headers_1() -> None:
     output = markdown_splitter.split_text(markdown_document)
     expected_output = [
         Document(
-            page_content="# Foo  \n## Bat  \nHi this is Jim  \nHi this is Joe  \n## Baz",
-            metadata={'Header 1': 'Foo'},
+            page_content="# Foo  \n## Bat  \nHi this is Jim  \nHi Joe  \n## Baz",
+            metadata={"Header 1": "Foo"},
         ),
         Document(
             page_content="# Bar  \nThis is Alice  \nThis is Bob",
-            metadata={'Header 1': 'Bar'},
+            metadata={"Header 1": "Bar"},
         ),
     ]
     assert output == expected_output
@@ -1109,10 +1109,7 @@ def test_md_header_text_splitter_preserve_headers_2() -> None:
             page_content="## Buz",
             metadata={"Header 1": "Foo", "Header 2": "Buz"},
         ),
-        Document(
-            page_content="# Bop",
-            metadata={"Header 1": "Bop"}
-        ),
+        Document(page_content="# Bop", metadata={"Header 1": "Bop"}),
     ]
     assert output == expected_output
 
