@@ -132,8 +132,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """The namespace of a RunnableBranch is the namespace of its default branch."""
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ['langchain',
+                'schema',
+                'runnable']
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None

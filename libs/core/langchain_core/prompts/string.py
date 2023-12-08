@@ -151,6 +151,13 @@ def get_template_variables(template: str, template_format: str) -> List[str]:
 class StringPromptTemplate(BasePromptTemplate, ABC):
     """String prompt that exposes the format method, returning a prompt."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ['langchain',
+                'prompts',
+                'base']
+
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
         return StringPromptValue(text=self.format(**kwargs))

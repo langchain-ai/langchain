@@ -31,6 +31,13 @@ class BaseMessage(Serializable):
         """Return whether this class is serializable."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ['langchain',
+                'schema',
+                'messages']
+
     def __add__(self, other: Any) -> ChatPromptTemplate:
         from langchain_core.prompts.chat import ChatPromptTemplate
 
@@ -67,6 +74,13 @@ def merge_content(
 
 class BaseMessageChunk(BaseMessage):
     """A Message chunk, which can be concatenated with other Message chunks."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ['langchain',
+                'schema',
+                'messages']
 
     def _merge_kwargs_dict(
         self, left: Dict[str, Any], right: Dict[str, Any]

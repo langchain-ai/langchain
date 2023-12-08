@@ -114,6 +114,13 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     max_attempt_number: int = 3
     """The maximum number of attempts to retry the runnable."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ['langchain',
+                'schema',
+                'runnable']
+
     @property
     def _kwargs_retrying(self) -> Dict[str, Any]:
         kwargs: Dict[str, Any] = dict()

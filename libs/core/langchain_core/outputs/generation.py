@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Literal, Optional, List
 
 from langchain_core.load import Serializable
 
@@ -24,9 +24,23 @@ class Generation(Serializable):
         """Return whether this class is serializable."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ['langchain',
+                'schema',
+                'output']
+
 
 class GenerationChunk(Generation):
     """A Generation chunk, which can be concatenated with other Generation chunks."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ['langchain',
+                'schema',
+                'output']
 
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
         if isinstance(other, GenerationChunk):
