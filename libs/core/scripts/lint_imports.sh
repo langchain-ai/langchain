@@ -5,7 +5,7 @@ set -eu
 # Initialize a variable to keep track of errors
 errors=0
 
-# make sure not importing from langchain_community or langchain_experimental
+# make sure not importing from langchain or langchain_experimental
 git --no-pager grep '^from langchain\.' . && errors=$((errors+1))
 git --no-pager grep '^from langchain_experimental\.' . && errors=$((errors+1))
 

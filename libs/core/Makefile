@@ -15,6 +15,10 @@ tests:
 test_watch:
 	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
 
+check_imports: langchain_core/**/*.py
+	for f in $^ ; do \
+		python -c "from importlib.machinery import SourceFileLoader; SourceFileLoader('x', '$$f').load_module()" || exit 1; \
+	done
 extended_tests:
 	poetry run pytest --only-extended $(TEST_FILE)
 
@@ -34,7 +38,7 @@ lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
 	./scripts/check_pydantic.sh .
-	./scripts/check_imports.sh
+	./scripts/lint_imports.sh
 	poetry run ruff .
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)
