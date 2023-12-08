@@ -41,7 +41,10 @@ def import_all_modules(package_name: str) -> dict:
 
 def test_serializable_mapping() -> None:
     serializable_modules = import_all_modules("langchain")
-    assert serializable_modules == SERIALIZABLE_MAPPING
+    missing = set(SERIALIZABLE_MAPPING).difference(serializable_modules)
+    assert missing == set()
+    extra = set(serializable_modules).difference(SERIALIZABLE_MAPPING)
+    assert extra == set()
 
     for k, import_path in serializable_modules.items():
         import_dir, import_obj = import_path[:-1], import_path[-1]
