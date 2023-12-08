@@ -287,6 +287,8 @@ cp -r ../.scripts/community_split/libs/* .
 cp community/tests/integration_tests/vectorstores/fake_embeddings.py langchain/tests/integration_tests/cache/
 
 mv community/tests/{unit_tests,integration_tests}/document_loaders/test_telegram.py
+mv community/tests/{unit_tests,integration_tests}/document_loaders/parsers/test_docai.py
+mv community/tests/{unit_tests,integration_tests}/chat_message_histories/test_streamlit.py
 
 g grep -l 'integration_tests\.vectorstores\.fake_embeddings' community/tests | xargs sed -i '' 's/integration_tests\.vectorstores\.fake_embeddings/integration_tests.cache.fake_embeddings/g'
 

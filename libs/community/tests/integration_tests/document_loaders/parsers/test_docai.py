@@ -1,37 +1,26 @@
-"""Test Google Cloud DocAI parser.
+"""Tests for the Google Cloud DocAI parser."""
+from unittest.mock import ANY, patch
 
-You need to create a processor and enable the DocAI before running this test:
+import pytest
 
-https://cloud.google.com/document-ai/docs/setup
-"""
-import os
-
-from langchain_core.documents import Document
-
-from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers import DocAIParser
 
 
-def test_docai_parser() -> None:
-    """In order to run this test, you should provide a processor name, output path
-        for DocAI to store parsing results, and an input blob path to parse.
+@pytest.mark.requires("google.cloud", "google.cloud.documentai")
+def test_docai_parser_valid_processor_name() -> None:
+    processor_name = "projects/123456/locations/us-central1/processors/ab123dfg"
+    with patch("google.cloud.documentai.DocumentProcessorServiceClient") as test_client:
+        parser = DocAIParser(processor_name=processor_name, location="us")
+        test_client.assert_called_once_with(client_options=ANY, client_info=ANY)
+        assert parser._processor_name == processor_name
 
-    Example:
-    export BLOB_PATH=gs://...
-    export GCS_OUTPUT_PATH=gs://...
-    export PROCESSOR_NAME=projects/.../locations/us/processors/...
-    """
-    blob_path = os.environ["BLOB_PATH"]
-    gcs_output_path = os.environ["GCS_OUTPUT_PATH"]
-    processor_name = os.environ["PROCESSOR_NAME"]
-    parser = DocAIParser(
-        location="us", processor_name=processor_name, gcs_output_path=gcs_output_path
-    )
-    blob = Blob(path=blob_path)
-    documents = list(parser.lazy_parse(blob))
-    assert len(documents) > 0
-    for i, doc in enumerate(documents):
-        assert isinstance(doc, Document)
-        assert doc.page_content
-        assert doc.metadata["source"] == blob_path
-        assert doc.metadata["page"] == i + 1
+
+@pytest.mark.requires("google.cloud", "google.cloud.documentai")
+@pytest.mark.parametrize(
+    "processor_name",
+    ["projects/123456/locations/us-central1/processors/ab123dfg:publish", "ab123dfg"],
+)
+def test_docai_parser_invalid_processor_name(processor_name: str) -> None:
+    with patch("google.cloud.documentai.DocumentProcessorServiceClient"):
+        with pytest.raises(ValueError):
+            _ = DocAIParser(processor_name=processor_name, location="us")
