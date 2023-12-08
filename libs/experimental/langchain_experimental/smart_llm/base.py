@@ -170,7 +170,7 @@ class SmartLLMChain(Chain):
         self.history.critique = critique
         resolution = self._resolve(stop, run_manager)
         if self.return_intermediate_steps:
-            return {"ideas": ideas, "critique": critique, self.ouput_key: resolution}
+            return {"ideas": ideas, "critique": critique, self.output_key: resolution}
         return {self.output_key: resolution}
 
     def _get_text_from_llm_result(self, result: LLMResult, step: str) -> str:
