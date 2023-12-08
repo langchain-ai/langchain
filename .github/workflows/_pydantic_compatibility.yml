@@ -42,7 +42,7 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: poetry install
+        run: poetry install  --with test
 
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}

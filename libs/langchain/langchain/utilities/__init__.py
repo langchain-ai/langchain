@@ -134,6 +134,12 @@ def _import_max_compute() -> Any:
     return MaxComputeAPIWrapper
 
 
+def _import_merriam_webster() -> Any:
+    from langchain.utilities.merriam_webster import MerriamWebsterAPIWrapper
+
+    return MerriamWebsterAPIWrapper
+
+
 def _import_metaphor_search() -> Any:
     from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 
@@ -212,6 +218,12 @@ def _import_sql_database() -> Any:
     return SQLDatabase
 
 
+def _import_steam_webapi() -> Any:
+    from langchain.utilities.steam import SteamWebAPIWrapper
+
+    return SteamWebAPIWrapper
+
+
 def _import_stackexchange() -> Any:
     from langchain.utilities.stackexchange import StackExchangeAPIWrapper
 
@@ -246,6 +258,12 @@ def _import_zapier() -> Any:
     from langchain.utilities.zapier import ZapierNLAWrapper
 
     return ZapierNLAWrapper
+
+
+def _import_nasa() -> Any:
+    from langchain.utilities.nasa import NasaAPIWrapper
+
+    return NasaAPIWrapper
 
 
 def __getattr__(name: str) -> Any:
@@ -291,8 +309,12 @@ def __getattr__(name: str) -> Any:
         return _import_jira()
     elif name == "MaxComputeAPIWrapper":
         return _import_max_compute()
+    elif name == "MerriamWebsterAPIWrapper":
+        return _import_merriam_webster()
     elif name == "MetaphorSearchAPIWrapper":
         return _import_metaphor_search()
+    elif name == "NasaAPIWrapper":
+        return _import_nasa()
     elif name == "OpenWeatherMapAPIWrapper":
         return _import_openweathermap()
     elif name == "OutlineAPIWrapper":
@@ -319,6 +341,8 @@ def __getattr__(name: str) -> Any:
         return _import_stackexchange()
     elif name == "SQLDatabase":
         return _import_sql_database()
+    elif name == "SteamWebAPIWrapper":
+        return _import_steam_webapi()
     elif name == "TensorflowDatasets":
         return _import_tensorflow_datasets()
     elif name == "TwilioAPIWrapper":
@@ -355,7 +379,9 @@ __all__ = [
     "JiraAPIWrapper",
     "LambdaWrapper",
     "MaxComputeAPIWrapper",
+    "MerriamWebsterAPIWrapper",
     "MetaphorSearchAPIWrapper",
+    "NasaAPIWrapper",
     "OpenWeatherMapAPIWrapper",
     "OutlineAPIWrapper",
     "Portkey",
@@ -364,6 +390,7 @@ __all__ = [
     "PythonREPL",
     "Requests",
     "RequestsWrapper",
+    "SteamWebAPIWrapper",
     "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearchApiAPIWrapper",

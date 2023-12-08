@@ -23,6 +23,7 @@ EXPECTED_ALL = [
     "LambdaWrapper",
     "MaxComputeAPIWrapper",
     "MetaphorSearchAPIWrapper",
+    "NasaAPIWrapper",
     "OpenWeatherMapAPIWrapper",
     "OutlineAPIWrapper",
     "Portkey",
@@ -38,12 +39,14 @@ EXPECTED_ALL = [
     "SerpAPIWrapper",
     "SparkSQL",
     "StackExchangeAPIWrapper",
+    "SteamWebAPIWrapper",
     "TensorflowDatasets",
     "TextRequestsWrapper",
     "TwilioAPIWrapper",
     "WikipediaAPIWrapper",
     "WolframAlphaAPIWrapper",
     "ZapierNLAWrapper",
+    "MerriamWebsterAPIWrapper",
 ]
 
 
