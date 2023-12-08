@@ -1,4 +1,4 @@
-from typing import cast
+"""Test ChatBaichuan wrapper."""
 
 import pytest
 from langchain_core.messages import (
@@ -142,8 +142,5 @@ def test_uses_actual_secret_value_from_secret_str() -> None:
     chat = ChatBaichuan(
         baichuan_api_key="test-api-key", baichuan_secret_key="test-secret-key"
     )
-    assert cast(SecretStr, chat.baichuan_api_key).get_secret_value() == "test-api-key"
-    assert (
-        cast(SecretStr, chat.baichuan_secret_key).get_secret_value()
-        == "test-secret-key"
-    )
+    assert chat.baichuan_api_key.get_secret_value() == "test-api-key"
+    assert chat.baichuan_secret_key.get_secret_value() == "test-secret-key"

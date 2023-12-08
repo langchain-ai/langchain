@@ -66,9 +66,8 @@ class Arcee(LLM):
         """Initializes private fields."""
 
         super().__init__(**data)
-        api_key = cast(SecretStr, self.arcee_api_key)
         self._client = ArceeWrapper(
-            arcee_api_key=api_key,
+            arcee_api_key=self.arcee_api_key,
             arcee_api_url=self.arcee_api_url,
             arcee_api_version=self.arcee_api_version,
             model_kwargs=self.model_kwargs,

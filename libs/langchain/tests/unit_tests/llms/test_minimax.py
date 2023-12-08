@@ -1,5 +1,4 @@
 """Test Minimax llm"""
-from typing import cast
 
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
@@ -39,4 +38,4 @@ def test_api_key_masked_when_passed_via_constructor(
 def test_uses_actual_secret_value_from_secretstr() -> None:
     """Test that actual secret is retrieved using `.get_secret_value()`."""
     llm = Minimax(minimax_api_key="secret-api-key", minimax_group_id="group_id")
-    assert cast(SecretStr, llm.minimax_api_key).get_secret_value() == "secret-api-key"
+    assert llm.minimax_api_key.get_secret_value() == "secret-api-key"

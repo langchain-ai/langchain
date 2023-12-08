@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
@@ -6,7 +6,7 @@ from langchain_core.utils import convert_to_secret_str
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class AI21PenaltyData(BaseModel):
@@ -81,7 +81,7 @@ class AI21(LLM):
         ai21_api_key = convert_to_secret_str(
             get_from_dict_or_env(values, "ai21_api_key", "AI21_API_KEY")
         )
-        values["ai21_api_key"] = ai21_api_key
+        values["ai21_api_key"] = convert_to_secret_str(ai21_api_key)
         return values
 
     @property
@@ -144,7 +144,6 @@ class AI21(LLM):
             else:
                 base_url = "https://api.ai21.com/studio/v1"
         params = {**self._default_params, **kwargs}
-        self.ai21_api_key = cast(SecretStr, self.ai21_api_key)
         response = requests.post(
             url=f"{base_url}/{self.model}/complete",
             headers={"Authorization": f"Bearer {self.ai21_api_key.get_secret_value()}"},

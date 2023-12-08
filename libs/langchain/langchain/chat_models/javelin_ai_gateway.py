@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional, cast
+from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.messages import (
     AIMessage,
@@ -86,7 +86,7 @@ class ChatJavelinAIGateway(BaseChatModel):
             try:
                 self.client = JavelinClient(
                     base_url=self.gateway_uri,
-                    api_key=cast(SecretStr, self.javelin_api_key).get_secret_value(),
+                    api_key=convert_to_secret_str(self.javelin_api_key),
                 )
             except UnauthorizedError as e:
                 raise ValueError("Javelin: Incorrect API Key.") from e
@@ -95,7 +95,7 @@ class ChatJavelinAIGateway(BaseChatModel):
     def _default_params(self) -> Dict[str, Any]:
         params: Dict[str, Any] = {
             "gateway_uri": self.gateway_uri,
-            "javelin_api_key": cast(SecretStr, self.javelin_api_key).get_secret_value(),
+            "javelin_api_key": convert_to_secret_str(self.javelin_api_key),
             "route": self.route,
             **(self.params.dict() if self.params else {}),
         }

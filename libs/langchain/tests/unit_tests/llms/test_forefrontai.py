@@ -1,5 +1,4 @@
 """Test ForeFrontAI LLM"""
-from typing import cast
 
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
@@ -45,6 +44,4 @@ def test_forefrontai_uses_actual_secret_value_from_secretstr() -> None:
         forefrontai_api_key="secret-api-key",
         temperature=0.2,
     )
-    assert (
-        cast(SecretStr, llm.forefrontai_api_key).get_secret_value() == "secret-api-key"
-    )
+    assert llm.forefrontai_api_key.get_secret_value() == "secret-api-key"

@@ -1,5 +1,4 @@
 """Test Together LLM"""
-from typing import cast
 
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
@@ -58,4 +57,4 @@ def test_together_uses_actual_secret_value_from_secretstr() -> None:
         temperature=0.2,
         max_tokens=250,
     )
-    assert cast(SecretStr, llm.together_api_key).get_secret_value() == "secret-api-key"
+    assert llm.together_api_key.get_secret_value() == "secret-api-key"

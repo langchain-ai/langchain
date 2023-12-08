@@ -1,5 +1,3 @@
-from typing import cast
-
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
@@ -49,5 +47,5 @@ def test_uses_actual_secret_value_from_secret_str() -> None:
         qianfan_ak="test-api-key",
         qianfan_sk="test-secret-key",
     )
-    assert cast(SecretStr, chat.qianfan_ak).get_secret_value() == "test-api-key"
-    assert cast(SecretStr, chat.qianfan_sk).get_secret_value() == "test-secret-key"
+    assert chat.qianfan_ak.get_secret_value() == "test-api-key"
+    assert chat.qianfan_sk.get_secret_value() == "test-secret-key"

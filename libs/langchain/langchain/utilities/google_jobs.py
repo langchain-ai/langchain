@@ -1,5 +1,5 @@
 """Util that calls Google Scholar Search."""
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional
 
 from langchain.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain.utils import convert_to_secret_str, get_from_dict_or_env
@@ -53,10 +53,9 @@ class GoogleJobsAPIWrapper(BaseModel):
         """Run query through Google Trends with Serpapi"""
 
         # set up query
-        serpapi_api_key = cast(SecretStr, self.serp_api_key)
         params = {
             "engine": "google_jobs",
-            "api_key": serpapi_api_key.get_secret_value(),
+            "api_key": self.serp_api_key.get_secret_value(),
             "q": query,
         }
 

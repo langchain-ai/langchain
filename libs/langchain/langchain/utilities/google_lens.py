@@ -1,5 +1,5 @@
 """Util that calls Google Lens Search."""
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional
 
 import requests
 
@@ -46,11 +46,10 @@ class GoogleLensAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run query through Google Trends with Serpapi"""
-        serpapi_api_key = cast(SecretStr, self.serp_api_key)
 
         params = {
             "engine": "google_lens",
-            "api_key": serpapi_api_key.get_secret_value(),
+            "api_key": self.serp_api_key.get_secret_value(),
             "url": query,
         }
         queryURL = f"https://serpapi.com/search?engine={params['engine']}&api_key={params['api_key']}&url={params['url']}"

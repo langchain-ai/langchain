@@ -1,7 +1,6 @@
 """Test NLPCloud API wrapper."""
 
 from pathlib import Path
-from typing import cast
 
 from pytest import CaptureFixture, MonkeyPatch
 
@@ -34,8 +33,7 @@ def test_nlpcloud_api_key(monkeypatch: MonkeyPatch, capsys: CaptureFixture) -> N
     monkeypatch.setenv("NLPCLOUD_API_KEY", "secret-api-key")
     llm = NLPCloud()
     assert isinstance(llm.nlpcloud_api_key, SecretStr)
-
-    assert cast(SecretStr, llm.nlpcloud_api_key).get_secret_value() == "secret-api-key"
+    assert llm.nlpcloud_api_key.get_secret_value() == "secret-api-key"
 
     print(llm.nlpcloud_api_key, end="")
     captured = capsys.readouterr()

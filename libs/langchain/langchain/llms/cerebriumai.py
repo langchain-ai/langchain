@@ -65,10 +65,9 @@ class CerebriumAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        cerebriumai_api_key = convert_to_secret_str(
+        values["cerebriumai_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "cerebriumai_api_key", "CEREBRIUMAI_API_KEY")
         )
-        values["cerebriumai_api_key"] = cerebriumai_api_key
         return values
 
     @property
@@ -92,9 +91,7 @@ class CerebriumAI(LLM):
         **kwargs: Any,
     ) -> str:
         headers: Dict = {
-            "Authorization": cast(
-                SecretStr, self.cerebriumai_api_key
-            ).get_secret_value(),
+            "Authorization": self.cerebriumai_api_key.get_secret_value(),
             "Content-Type": "application/json",
         }
         params = self.model_kwargs or {}
