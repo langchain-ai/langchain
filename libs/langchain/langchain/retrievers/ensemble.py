@@ -169,7 +169,6 @@ class EnsembleRetriever(BaseRetriever):
             doc.page_content: doc for doc in chain.from_iterable(doc_lists)
         }.values()
 
-        # Sort docs by their RRF scores in descending order
         sorted_docs = sorted(
             unique_docs,
             reverse=True,
