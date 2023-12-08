@@ -44,13 +44,9 @@ class Html2TextTransformer(BaseDocumentTransformer):
 
         for d in documents:
             if store_raw_html:
-                # Convert HTML to text
                 text_content = h.handle(d.page_content)
-                
-                # Store the original HTML content in the metadata
                 updated_metadata = {**d.metadata, "original_page": d.page_content}
 
-                # Create a new Document with the text content and updated metadata
                 new_document = Document(
                     page_content=text_content, 
                     metadata=updated_metadata
