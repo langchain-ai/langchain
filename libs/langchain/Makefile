@@ -40,6 +40,11 @@ docker_tests:
 	docker build -t my-langchain-image:test .
 	docker run --rm my-langchain-image:test
 
+check_imports: langchain/**/*.py
+	for f in $^ ; do \
+		python -c "from importlib.machinery import SourceFileLoader; SourceFileLoader('x', '$$f').load_module()" || exit 1; \
+	done
+
 ######################
 # LINTING AND FORMATTING
 ######################
@@ -53,7 +58,7 @@ lint_tests: PYTHON_FILES=tests
 
 lint lint_diff lint_package lint_tests:
 	./scripts/check_pydantic.sh .
-	./scripts/check_imports.sh
+	./scripts/lint_imports.sh
 	poetry run ruff .
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)
