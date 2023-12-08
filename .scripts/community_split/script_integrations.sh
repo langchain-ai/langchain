@@ -218,6 +218,7 @@ git grep -l 'from langchain_community.chat_models.openai' | xargs sed -i '' 's/f
 git grep -l 'from langchain_community.chat_models.azure_openai' | xargs sed -i '' 's/from langchain_community.chat_models.azure_openai/from langchain_openai.chat_models/g'
 git grep -l 'from langchain_community.embeddings.openai' | xargs sed -i '' 's/from langchain_community.embeddings.openai/from langchain_openai.embeddings/g'
 git grep -l 'from langchain_community.embeddings.azure_openai' | xargs sed -i '' 's/from langchain_community.embeddings.azure_openai/from langchain_openai.embeddings/g'
+git grep -l 'from langchain_community.adapters.openai' | xargs sed -i '' 's/from langchain_community.adapters.openai/from langchain_openai.adapters/g'
 
 git grep -l 'langchain_core.language_models.llmsten' | xargs sed -i '' 's/langchain_core.language_models.llmsten/langchain_community.llms.baseten/g'
 

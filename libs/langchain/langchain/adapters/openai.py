@@ -1,4 +1,4 @@
-from langchain_community.adapters.openai import (
+from langchain_openai.adapters import (
     Chat,
     ChatCompletion,
     ChatCompletionChunk,
