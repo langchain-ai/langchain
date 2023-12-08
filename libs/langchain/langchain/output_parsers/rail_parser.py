@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict
 
 from langchain_core.output_parsers import BaseOutputParser
 
@@ -10,8 +10,6 @@ class GuardrailsOutputParser(BaseOutputParser):
 
     guard: Any
     """The Guardrails object."""
-    api: Optional[Callable]
-    """The LLM API passed to Guardrails during parsing. An example is `openai.completions.create`."""  # noqa: E501
     args: Any
     """Positional arguments to pass to the above LLM API callable."""
     kwargs: Any
@@ -26,7 +24,6 @@ class GuardrailsOutputParser(BaseOutputParser):
         cls,
         rail_file: str,
         num_reasks: int = 1,
-        api: Optional[Callable] = None,
         *args: Any,
         **kwargs: Any,
     ) -> GuardrailsOutputParser:
@@ -35,7 +32,6 @@ class GuardrailsOutputParser(BaseOutputParser):
         Args:
             rail_file: a rail file.
             num_reasks: number of times to re-ask the question.
-            api: the API to use for the Guardrails object.
             *args: The arguments to pass to the API
             **kwargs: The keyword arguments to pass to the API.
 
@@ -51,7 +47,6 @@ class GuardrailsOutputParser(BaseOutputParser):
             )
         return cls(
             guard=Guard.from_rail(rail_file, num_reasks=num_reasks),
-            api=api,
             args=args,
             kwargs=kwargs,
         )
@@ -61,7 +56,6 @@ class GuardrailsOutputParser(BaseOutputParser):
         cls,
         rail_str: str,
         num_reasks: int = 1,
-        api: Optional[Callable] = None,
         *args: Any,
         **kwargs: Any,
     ) -> GuardrailsOutputParser:
@@ -74,7 +68,6 @@ class GuardrailsOutputParser(BaseOutputParser):
             )
         return cls(
             guard=Guard.from_rail_string(rail_str, num_reasks=num_reasks),
-            api=api,
             args=args,
             kwargs=kwargs,
         )
@@ -84,7 +77,6 @@ class GuardrailsOutputParser(BaseOutputParser):
         cls,
         output_class: Any,
         num_reasks: int = 1,
-        api: Optional[Callable] = None,
         *args: Any,
         **kwargs: Any,
     ) -> GuardrailsOutputParser:
@@ -97,7 +89,6 @@ class GuardrailsOutputParser(BaseOutputParser):
             )
         return cls(
             guard=Guard.from_pydantic(output_class, "", num_reasks=num_reasks),
-            api=api,
             args=args,
             kwargs=kwargs,
         )
@@ -105,5 +96,6 @@ class GuardrailsOutputParser(BaseOutputParser):
     def get_format_instructions(self) -> str:
         return self.guard.raw_prompt.format_instructions
 
-    def parse(self, text: str) -> Dict:
-        return self.guard.parse(text, llm_api=self.api, *self.args, **self.kwargs)
+    def parse(self, text: str, *args: Any, **kwargs: Any) -> Dict:
+        new_kwargs = {**self.kwargs, **kwargs}
+        return self.guard.parse(text, *args, *self.args, **new_kwargs)
