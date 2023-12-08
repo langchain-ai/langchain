@@ -32,7 +32,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         FileNotFoundError: if the `FeedbackDataset` retrieval from Argilla fails.
 
     Examples:
-        >>> from langchain_openai.llms import OpenAI
+        >>> from langchain_community.llms import OpenAI
         >>> from langchain_community.callbacks import ArgillaCallbackHandler
         >>> argilla_callback = ArgillaCallbackHandler(
         ...     dataset_name="my-dataset",

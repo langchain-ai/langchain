@@ -34,7 +34,8 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
 from langchain_core.utils.env import get_from_dict_or_env
-from langchain_openai.adapters import convert_message_to_dict
+
+from langchain_community.adapters.openai import convert_message_to_dict
 
 
 def _convert_delta_to_message_chunk(

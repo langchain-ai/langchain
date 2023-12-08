@@ -8,7 +8,6 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
 
 from langchain.chains.llm import LLMChain
-from langchain.chains.loading import load_chain
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -33,6 +32,8 @@ def fake_llm_chain() -> LLMChain:
 )
 def test_serialization(fake_llm_chain: LLMChain) -> None:
     """Test serialization."""
+    from langchain.chains.loading import load_chain
+
     with TemporaryDirectory() as temp_dir:
         file = temp_dir + "/llm.json"
         fake_llm_chain.save(file)

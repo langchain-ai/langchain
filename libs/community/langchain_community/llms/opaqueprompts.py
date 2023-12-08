@@ -24,7 +24,7 @@ class OpaquePrompts(LLM):
         .. code-block:: python
 
             from langchain_community.llms import OpaquePrompts
-            from langchain_openai.chat_models import ChatOpenAI
+            from langchain_community.chat_models import ChatOpenAI
 
             op_llm = OpaquePrompts(base_llm=ChatOpenAI())
     """

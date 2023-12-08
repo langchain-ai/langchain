@@ -19,6 +19,7 @@ an interface where "chat messages" are the inputs and outputs.
 
 from langchain_community.chat_models.anthropic import ChatAnthropic
 from langchain_community.chat_models.anyscale import ChatAnyscale
+from langchain_community.chat_models.azure_openai import AzureChatOpenAI
 from langchain_community.chat_models.baichuan import ChatBaichuan
 from langchain_community.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from langchain_community.chat_models.bedrock import BedrockChat
@@ -40,6 +41,7 @@ from langchain_community.chat_models.minimax import MiniMaxChat
 from langchain_community.chat_models.mlflow import ChatMlflow
 from langchain_community.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
 from langchain_community.chat_models.ollama import ChatOllama
+from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
 from langchain_community.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain_community.chat_models.vertexai import ChatVertexAI
@@ -47,7 +49,9 @@ from langchain_community.chat_models.volcengine_maas import VolcEngineMaasChat
 from langchain_community.chat_models.yandex import ChatYandexGPT
 
 __all__ = [
+    "ChatOpenAI",
     "BedrockChat",
+    "AzureChatOpenAI",
     "FakeListChatModel",
     "PromptLayerChatOpenAI",
     "ChatDatabricks",

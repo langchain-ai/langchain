@@ -2,10 +2,10 @@
 
 import pytest
 from langchain_core.pydantic_v1 import SecretStr
-from langchain_openai.utils import is_openai_v1
 from pytest import MonkeyPatch
 
 from langchain_community.llms.gooseai import GooseAI
+from langchain_community.utils.openai import is_openai_v1
 
 
 def _openai_v1_installed() -> bool:

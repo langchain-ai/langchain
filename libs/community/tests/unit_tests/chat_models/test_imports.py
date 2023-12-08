@@ -1,7 +1,9 @@
 from langchain_community.chat_models import __all__
 
 EXPECTED_ALL = [
+    "ChatOpenAI",
     "BedrockChat",
+    "AzureChatOpenAI",
     "FakeListChatModel",
     "PromptLayerChatOpenAI",
     "ChatEverlyAI",

@@ -6,7 +6,7 @@ access to the large language model (**LLM**) APIs and services.
 
 .. code-block::
 
-    BaseLanguageModel --> BaseLLM --> LLM --> <name>  # Examples: AI21, HuggingFaceHub
+    BaseLanguageModel --> BaseLLM --> LLM --> <name>  # Examples: AI21, HuggingFaceHub, OpenAI
 
 **Main helpers:**
 
@@ -336,6 +336,24 @@ def _import_opaqueprompts() -> Any:
     return OpaquePrompts
 
 
+def _import_azure_openai() -> Any:
+    from langchain_community.llms.openai import AzureOpenAI
+
+    return AzureOpenAI
+
+
+def _import_openai() -> Any:
+    from langchain_community.llms.openai import OpenAI
+
+    return OpenAI
+
+
+def _import_openai_chat() -> Any:
+    from langchain_community.llms.openai import OpenAIChat
+
+    return OpenAIChat
+
+
 def _import_openllm() -> Any:
     from langchain_community.llms.openllm import OpenLLM
 
@@ -619,6 +637,12 @@ def __getattr__(name: str) -> Any:
         return _import_ollama()
     elif name == "OpaquePrompts":
         return _import_opaqueprompts()
+    elif name == "AzureOpenAI":
+        return _import_azure_openai()
+    elif name == "OpenAI":
+        return _import_openai()
+    elif name == "OpenAIChat":
+        return _import_openai_chat()
     elif name == "OpenLLM":
         return _import_openllm()
     elif name == "OpenLM":
@@ -698,6 +722,7 @@ __all__ = [
     "Arcee",
     "Aviary",
     "AzureMLOnlineEndpoint",
+    "AzureOpenAI",
     "Banana",
     "Baseten",
     "Beam",
@@ -737,6 +762,8 @@ __all__ = [
     "NIBittensorLLM",
     "NLPCloud",
     "Ollama",
+    "OpenAI",
+    "OpenAIChat",
     "OpenLLM",
     "OpenLM",
     "PaiEasEndpoint",
@@ -781,6 +808,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "anyscale": _import_anyscale,
         "arcee": _import_arcee,
         "aviary": _import_aviary,
+        "azure": _import_azure_openai,
         "azureml_endpoint": _import_azureml_endpoint,
         "bananadev": _import_bananadev,
         "baseten": _import_baseten,
@@ -821,6 +849,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nibittensor": _import_bittensor,
         "nlpcloud": _import_nlpcloud,
         "ollama": _import_ollama,
+        "openai": _import_openai,
         "openlm": _import_openlm,
         "pai_eas_endpoint": _import_pai_eas_endpoint,
         "petals": _import_petals,

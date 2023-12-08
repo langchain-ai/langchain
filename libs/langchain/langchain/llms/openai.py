@@ -1,4 +1,4 @@
-from langchain_openai.llms import (
+from langchain_community.llms.openai import (
     AzureOpenAI,
     BaseOpenAI,
     OpenAI,

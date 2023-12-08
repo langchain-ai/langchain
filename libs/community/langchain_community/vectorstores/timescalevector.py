@@ -56,7 +56,7 @@ class TimescaleVector(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import TimescaleVector
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             SERVICE_URL = "postgres://tsdbadmin:<password>@<id>.tsdb.cloud.timescale.com:<port>/tsdb?sslmode=require"
             COLLECTION_NAME = "state_of_the_union_test"
@@ -661,7 +661,7 @@ class TimescaleVector(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import TimescaleVector
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))
@@ -706,7 +706,7 @@ class TimescaleVector(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import TimescaleVector
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))

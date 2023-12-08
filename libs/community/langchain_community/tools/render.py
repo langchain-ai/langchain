@@ -7,7 +7,8 @@ This module contains various ways to render tools.
 from typing import List
 
 from langchain_core.tools import BaseTool
-from langchain_openai.functions import (
+
+from langchain_community.utils.openai_functions import (
     FunctionDescription,
     ToolDescription,
     convert_pydantic_to_openai_function,

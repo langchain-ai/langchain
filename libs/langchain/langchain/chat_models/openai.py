@@ -1,4 +1,4 @@
-from langchain_openai.chat_models import (
+from langchain_community.chat_models.openai import (
     ChatOpenAI,
     _convert_delta_to_message_chunk,
     _create_retry_decorator,

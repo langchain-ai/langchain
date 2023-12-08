@@ -3,9 +3,9 @@ from uuid import uuid4
 
 import pytest
 from langchain_core.outputs import LLMResult
-from langchain_openai.llms import BaseOpenAI
 
 from langchain_community.callbacks import OpenAICallbackHandler
+from langchain_community.llms.openai import BaseOpenAI
 
 
 @pytest.fixture

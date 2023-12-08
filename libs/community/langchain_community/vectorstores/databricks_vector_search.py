@@ -58,7 +58,7 @@ class DatabricksVectorSearch(VectorStore):
 
             from langchain_community.vectorstores import DatabricksVectorSearch
             from databricks.vector_search.client import VectorSearchClient
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             vs_client = VectorSearchClient()
             vs_index = vs_client.get_index(
@@ -79,7 +79,7 @@ class DatabricksVectorSearch(VectorStore):
 
             from langchain_community.vectorstores import DatabricksVectorSearch
             from databricks.vector_search.client import VectorSearchClient
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             vs_client = VectorSearchClient()
             vs_index = vs_client.get_index(

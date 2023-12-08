@@ -682,7 +682,7 @@ class TileDB(VectorStore):
             .. code-block:: python
 
                 from langchain_community import TileDB
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 index = TileDB.from_texts(texts, embeddings)
         """
@@ -733,7 +733,7 @@ class TileDB(VectorStore):
             .. code-block:: python
 
                 from langchain_community import TileDB
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))

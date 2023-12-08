@@ -102,13 +102,13 @@ class Redis(VectorStore):
     .. code-block:: python
 
         from langchain_community.vectorstores import Redis
-        from langchain_openai.embeddings import OpenAIEmbeddings
+        from langchain_community.embeddings import OpenAIEmbeddings
 
     Initialize, create index, and load Documents
         .. code-block:: python
 
             from langchain_community.vectorstores import Redis
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings import OpenAIEmbeddings
 
             rds = Redis.from_documents(
                 documents, # a list of Document objects from loaders or created
@@ -317,7 +317,7 @@ class Redis(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import Redis
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 redis, keys = Redis.from_texts_return_keys(
                     texts,
@@ -452,7 +452,7 @@ class Redis(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import Redis
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 redisearch = RediSearch.from_texts(
                     texts,
@@ -508,7 +508,7 @@ class Redis(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import Redis
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
 

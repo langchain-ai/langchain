@@ -19,7 +19,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
         ImportError: if the `deepeval` package is not installed.
 
     Examples:
-        >>> from langchain_openai.llms import OpenAI
+        >>> from langchain_community.llms import OpenAI
         >>> from langchain_community.callbacks import DeepEvalCallbackHandler
         >>> from deepeval.metrics import AnswerRelevancy
         >>> metric = AnswerRelevancy(minimum_score=0.3)

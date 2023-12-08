@@ -4297,7 +4297,6 @@ develop = true
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
 langchain-core = ">=0.0.12,<0.1"
-langchain-openai = {path = "../partners/openai", develop = true}
 langsmith = "~0.0.63"
 numpy = "^1"
 PyYAML = ">=5.3"
@@ -4338,23 +4337,6 @@ extended-testing = ["jinja2 (>=3,<4)"]
 [package.source]
 type = "directory"
 url = "../core"
-
-[[package]]
-name = "langchain-openai"
-version = "0.0.1"
-description = "Official LangChain OpenAI integrations."
-optional = false
-python-versions = ">=3.8.1,<4.0"
-files = []
-develop = true
-
-[package.dependencies]
-langchain-core = ">=0.0.12,<0.1"
-numpy = "^1"
-
-[package.source]
-type = "directory"
-url = "../partners/openai"
 
 [[package]]
 name = "langkit"
@@ -11572,4 +11554,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e8a0a32f5d56ea0805e3c8030b5d6a28cfdd67fcf8cbe9ecc258bec28cadbb07"
+content-hash = "ec38e232c7367f8a2d958b58eb70d89a2ce3b7a0e9b3e9846fb7f65b365dc933"

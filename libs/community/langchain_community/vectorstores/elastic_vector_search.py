@@ -72,7 +72,7 @@ class ElasticVectorSearch(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import ElasticVectorSearch
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
             elastic_vector_search = ElasticVectorSearch(
@@ -108,7 +108,7 @@ class ElasticVectorSearch(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import ElasticVectorSearch
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings import OpenAIEmbeddings
 
             embedding = OpenAIEmbeddings()
 
@@ -302,7 +302,7 @@ class ElasticVectorSearch(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import ElasticVectorSearch
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 elastic_vector_search = ElasticVectorSearch.from_texts(
                     texts,

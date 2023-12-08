@@ -7,7 +7,7 @@ from different APIs and services.
 
 .. code-block::
 
-    Embeddings --> <name>Embeddings  # Examples: CohereEmbeddings, HuggingFaceEmbeddings
+    Embeddings --> <name>Embeddings  # Examples: OpenAIEmbeddings, HuggingFaceEmbeddings
 """
 
 
@@ -19,6 +19,7 @@ from langchain_community.embeddings.aleph_alpha import (
     AlephAlphaSymmetricSemanticEmbedding,
 )
 from langchain_community.embeddings.awa import AwaEmbeddings
+from langchain_community.embeddings.azure_openai import AzureOpenAIEmbeddings
 from langchain_community.embeddings.baidu_qianfan_endpoint import (
     QianfanEmbeddingsEndpoint,
 )
@@ -63,6 +64,7 @@ from langchain_community.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 from langchain_community.embeddings.nlpcloud import NLPCloudEmbeddings
 from langchain_community.embeddings.octoai_embeddings import OctoAIEmbeddings
 from langchain_community.embeddings.ollama import OllamaEmbeddings
+from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.embeddings.sagemaker_endpoint import (
     SagemakerEndpointEmbeddings,
 )
@@ -83,6 +85,8 @@ from langchain_community.embeddings.xinference import XinferenceEmbeddings
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    "OpenAIEmbeddings",
+    "AzureOpenAIEmbeddings",
     "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",

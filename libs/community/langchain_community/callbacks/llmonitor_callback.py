@@ -198,7 +198,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
     #### Example:
     ```python
-    from langchain_openai.llms import OpenAI
+    from langchain_community.llms import OpenAI
     from langchain_community.callbacks import LLMonitorCallbackHandler
 
     llmonitor_callback = LLMonitorCallbackHandler()

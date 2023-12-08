@@ -23,7 +23,7 @@ class Dingo(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import Dingo
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             embeddings = OpenAIEmbeddings()
             dingo = Dingo(embeddings, "text")
@@ -296,7 +296,7 @@ class Dingo(VectorStore):
                     .. code-block:: python
 
                         from langchain_community.vectorstores import Dingo
-                        from langchain_openai.embeddings import OpenAIEmbeddings
+                        from langchain_community.embeddings import OpenAIEmbeddings
                         import dingodb
         sss
                         embeddings = OpenAIEmbeddings()

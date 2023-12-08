@@ -89,7 +89,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         mode: Label Studio mode ("prompt" or "chat")
 
     Examples:
-        >>> from langchain_openai.llms import OpenAI
+        >>> from langchain_community.llms import OpenAI
         >>> from langchain_community.callbacks import LabelStudioCallbackHandler
         >>> handler = LabelStudioCallbackHandler(
         ...             api_key='<your_key_here>',

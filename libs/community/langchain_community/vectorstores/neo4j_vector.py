@@ -96,7 +96,7 @@ class Neo4jVector(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores.neo4j_vector import Neo4jVector
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             url="bolt://localhost:7687"
             username="neo4j"
@@ -677,7 +677,7 @@ class Neo4jVector(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores.neo4j_vector import Neo4jVector
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))

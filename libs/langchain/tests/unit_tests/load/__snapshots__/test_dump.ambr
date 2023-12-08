@@ -76,9 +76,9 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain_openai",
+          "langchain",
           "llms",
-          "base",
+          "openai",
           "OpenAI"
         ],
         "kwargs": {
@@ -131,9 +131,9 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain_openai",
+          "langchain",
           "chat_models",
-          "base",
+          "openai",
           "ChatOpenAI"
         ],
         "kwargs": {
@@ -215,9 +215,9 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain_openai",
+          "langchain",
           "llms",
-          "base",
+          "openai",
           "OpenAI"
         ],
         "kwargs": {
@@ -260,9 +260,9 @@
     "lc": 1,
     "type": "constructor",
     "id": [
-      "langchain_openai",
+      "langchain",
       "llms",
-      "base",
+      "openai",
       "OpenAI"
     ],
     "kwargs": {

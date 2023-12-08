@@ -10,7 +10,6 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool, Tool
-from langchain_openai.llms import OpenAI
 
 from langchain_community.agent_toolkits.openapi.planner_prompt import (
     API_CONTROLLER_PROMPT,
@@ -32,7 +31,7 @@ from langchain_community.agent_toolkits.openapi.planner_prompt import (
     REQUESTS_PUT_TOOL_DESCRIPTION,
 )
 from langchain_community.agent_toolkits.openapi.spec import ReducedOpenAPISpec
-from langchain_community.output_parsers.json import parse_json_markdown
+from langchain_community.llms import OpenAI
 from langchain_community.tools.requests.tool import BaseRequestsTool
 from langchain_community.utilities.requests import RequestsWrapper
 
@@ -82,6 +81,8 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
     """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
+        from langchain.output_parsers.json import parse_json_markdown
+
         try:
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
@@ -112,6 +113,8 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
     """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
+        from langchain.output_parsers.json import parse_json_markdown
+
         try:
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
@@ -141,6 +144,8 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
     """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
+        from langchain.output_parsers.json import parse_json_markdown
+
         try:
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
@@ -170,6 +175,8 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
     """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
+        from langchain.output_parsers.json import parse_json_markdown
+
         try:
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
@@ -200,6 +207,8 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
     """The LLM chain used to parse the response."""
 
     def _run(self, text: str) -> str:
+        from langchain.output_parsers.json import parse_json_markdown
+
         try:
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:

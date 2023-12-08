@@ -91,7 +91,7 @@ class PGVector(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import PGVector
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
             COLLECTION_NAME = "state_of_the_union_test"
@@ -556,7 +556,7 @@ class PGVector(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import PGVector
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))

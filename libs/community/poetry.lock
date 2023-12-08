@@ -3283,23 +3283,6 @@ type = "directory"
 url = "../core"
 
 [[package]]
-name = "langchain-openai"
-version = "0.0.1"
-description = "Official LangChain OpenAI integrations."
-optional = false
-python-versions = ">=3.8.1,<4.0"
-files = []
-develop = true
-
-[package.dependencies]
-langchain-core = ">=0.0.12,<0.1"
-numpy = "^1"
-
-[package.source]
-type = "directory"
-url = "../partners/openai"
-
-[[package]]
 name = "langsmith"
 version = "0.0.69"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
@@ -8633,4 +8616,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "91058251b1fe3ee7301f4b6f77c0111664512bd7164a2b1f6e2be882e9a15211"
+content-hash = "eeca83423eb6d92972ce5f5c835855203e0969a2b13cc5b1ccbe72280236e907"

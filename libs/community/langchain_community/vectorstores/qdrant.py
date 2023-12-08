@@ -75,7 +75,7 @@ class Qdrant(VectorStore):
         .. code-block:: python
 
             from qdrant_client import QdrantClient
-            from langchain.vectorstores import Qdrant
+            from langchain_community.vectorstores import Qdrant
 
             client = QdrantClient()
             collection_name = "MyCollection"
@@ -1293,8 +1293,8 @@ class Qdrant(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain.vectorstores import Qdrant
-                from langchain.embeddings import OpenAIEmbeddings
+                from langchain_community.vectorstores import Qdrant
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
         """
@@ -1469,8 +1469,8 @@ class Qdrant(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain.vectorstores import Qdrant
-                from langchain.embeddings import OpenAIEmbeddings
+                from langchain_community.vectorstores import Qdrant
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
         """

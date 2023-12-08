@@ -1,4 +1,4 @@
-from langchain_openai.embeddings import (
+from langchain_community.embeddings.openai import (
     OpenAIEmbeddings,
     _async_retry_decorator,
     _check_response,

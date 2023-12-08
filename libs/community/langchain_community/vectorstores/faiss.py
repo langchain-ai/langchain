@@ -80,7 +80,7 @@ class FAISS(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
             from langchain_community.vectorstores import FAISS
 
             embeddings = OpenAIEmbeddings()
@@ -906,7 +906,7 @@ class FAISS(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import FAISS
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 faiss = FAISS.from_texts(texts, embeddings)
@@ -943,7 +943,7 @@ class FAISS(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import FAISS
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 faiss = await FAISS.afrom_texts(texts, embeddings)
@@ -980,7 +980,7 @@ class FAISS(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import FAISS
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)

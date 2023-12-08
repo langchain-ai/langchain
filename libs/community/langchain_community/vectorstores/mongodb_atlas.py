@@ -43,7 +43,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import MongoDBAtlasVectorSearch
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
             from pymongo import MongoClient
 
             mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
@@ -338,7 +338,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 from pymongo import MongoClient
 
                 from langchain_community.vectorstores import MongoDBAtlasVectorSearch
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
 
                 mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
                 collection = mongo_client["<db_name>"]["<collection_name>"]

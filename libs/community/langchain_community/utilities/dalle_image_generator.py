@@ -8,7 +8,8 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
-from langchain_openai.utils import is_openai_v1
+
+from langchain_community.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
 

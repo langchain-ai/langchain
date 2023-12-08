@@ -9,8 +9,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.pydantic_v1 import Field, validator
 from langchain_core.tools import BaseTool
-from langchain_openai.chat_models import _import_tiktoken
 
+from langchain_community.chat_models.openai import _import_tiktoken
 from langchain_community.tools.powerbi.prompt import (
     BAD_REQUEST_RESPONSE,
     DEFAULT_FEWSHOT_EXAMPLES,

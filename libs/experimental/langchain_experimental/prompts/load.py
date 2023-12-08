@@ -1,5 +1,5 @@
 # Susceptible to arbitrary code execution: https://github.com/langchain-ai/langchain/issues/4849
-import importlib.util
+import importlib
 import json
 from pathlib import Path
 from typing import Union

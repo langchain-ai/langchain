@@ -467,7 +467,7 @@ class RedisSemanticCache(BaseCache):
             from langchain_community.globals import set_llm_cache
 
             from langchain_community.cache import RedisSemanticCache
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings import OpenAIEmbeddings
 
             set_llm_cache(RedisSemanticCache(
                 redis_url="redis://localhost:6379",

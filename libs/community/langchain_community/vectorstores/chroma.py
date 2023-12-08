@@ -58,7 +58,7 @@ class Chroma(VectorStore):
         .. code-block:: python
 
                 from langchain_community.vectorstores import Chroma
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 vectorstore = Chroma("langchain_store", embeddings)

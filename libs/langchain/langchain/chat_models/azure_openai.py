@@ -1,3 +1,3 @@
-from langchain_openai.chat_models import AzureChatOpenAI
+from langchain_community.chat_models.azure_openai import AzureChatOpenAI
 
 __all__ = ["AzureChatOpenAI"]

@@ -51,7 +51,6 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "requests",
             "tenacity",
             "langchain-community",
-            "langchain-openai",
         ]
     )
 

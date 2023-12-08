@@ -7,8 +7,8 @@ from langchain_core.callbacks.manager import atrace_as_chain_group, trace_as_cha
 from langchain_core.tracers.context import tracing_v2_enabled, tracing_enabled
 from langchain_core.prompts import PromptTemplate
 
-from langchain_openai.chat_models import ChatOpenAI
-from langchain_openai.llms import OpenAI
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.llms import OpenAI
 
 questions = [
     (

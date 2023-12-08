@@ -40,7 +40,7 @@ class MomentoVectorIndex(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings import OpenAIEmbeddings
             from langchain_community.vectorstores import MomentoVectorIndex
             from momento import (
                 CredentialProvider,

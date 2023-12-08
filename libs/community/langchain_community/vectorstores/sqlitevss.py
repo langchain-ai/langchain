@@ -29,7 +29,7 @@ class SQLiteVSS(VectorStore):
     Example:
         .. code-block:: python
             from langchain_community.vectorstores import SQLiteVSS
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
             ...
     """
 

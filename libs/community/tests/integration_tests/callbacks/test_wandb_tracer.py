@@ -3,9 +3,9 @@ import asyncio
 import os
 
 from aiohttp import ClientSession
-from langchain_openai.llms import OpenAI
 
 from langchain_community.callbacks import wandb_tracing_enabled
+from langchain_community.llms import OpenAI
 
 questions = [
     (

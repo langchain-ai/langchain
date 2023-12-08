@@ -3,7 +3,7 @@ import asyncio
 
 
 from langchain_community.callbacks import get_openai_callback
-from langchain_openai.llms import OpenAI
+from langchain_community.llms import OpenAI
 
 
 async def test_openai_callback() -> None:

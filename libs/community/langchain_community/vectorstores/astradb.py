@@ -65,7 +65,7 @@ class AstraDB(VectorStore):
         .. code-block:: python
 
                 from langchain_community.vectorstores import AstraDB
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 vectorstore = AstraDB(

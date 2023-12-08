@@ -386,7 +386,7 @@ class ElasticsearchStore(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import ElasticsearchStore
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             embeddings = OpenAIEmbeddings()
             vectorstore = ElasticsearchStore(
@@ -422,7 +422,7 @@ class ElasticsearchStore(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import ElasticsearchStore
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             vectorstore = ElasticsearchStore(
                 embedding=OpenAIEmbeddings(),
@@ -439,7 +439,7 @@ class ElasticsearchStore(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import ElasticsearchStore
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             from elasticsearch import Elasticsearch
 
@@ -462,7 +462,7 @@ class ElasticsearchStore(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import ElasticsearchStore
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             vectorstore = ElasticsearchStore(
                 embedding=OpenAIEmbeddings(),
@@ -479,7 +479,7 @@ class ElasticsearchStore(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import ElasticsearchStore
-            from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import OpenAIEmbeddings
             from langchain_community.vectorstores.utils import DistanceStrategy
 
             vectorstore = ElasticsearchStore(
@@ -1070,7 +1070,7 @@ class ElasticsearchStore(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import ElasticsearchStore
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings.openai import OpenAIEmbeddings
 
                 db = ElasticsearchStore.from_texts(
                     texts,
@@ -1170,7 +1170,7 @@ class ElasticsearchStore(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import ElasticsearchStore
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings.openai import OpenAIEmbeddings
 
                 db = ElasticsearchStore.from_documents(
                     texts,

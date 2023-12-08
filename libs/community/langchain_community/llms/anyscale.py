@@ -19,7 +19,8 @@ from langchain_core.callbacks import (
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from langchain_openai.llms import (
+
+from langchain_community.llms.openai import (
     BaseOpenAI,
     acompletion_with_retry,
     completion_with_retry,

@@ -735,7 +735,7 @@ class OpenSearchVectorSearch(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import OpenSearchVectorSearch
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 opensearch_vector_search = OpenSearchVectorSearch.from_texts(
                     texts,
@@ -801,7 +801,7 @@ class OpenSearchVectorSearch(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import OpenSearchVectorSearch
-                from langchain_openai.embeddings import OpenAIEmbeddings
+                from langchain_community.embeddings import OpenAIEmbeddings
                 embedder = OpenAIEmbeddings()
                 embeddings = embedder.embed_documents(["foo", "bar"])
                 opensearch_vector_search = OpenSearchVectorSearch.from_embeddings(

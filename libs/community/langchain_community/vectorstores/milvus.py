@@ -85,7 +85,7 @@ class Milvus(VectorStore):
         .. code-block:: python
 
         from langchain_community.vectorstores import Milvus
-        from langchain_openai.embeddings import OpenAIEmbeddings
+        from langchain_community.embeddings import OpenAIEmbeddings
 
         embedding = OpenAIEmbeddings()
         # Connect to a milvus instance on localhost
