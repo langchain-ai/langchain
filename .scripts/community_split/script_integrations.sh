@@ -314,7 +314,7 @@ mv community/tests/{unit_tests,integration_tests}/document_loaders/parsers/test_
 mv community/tests/{unit_tests,integration_tests}/chat_message_histories/test_streamlit.py
 
 # fix some final tests
-#git grep -l 'integration_tests\.vectorstores\.fake_embeddings' community/tests | xargs sed -i '' 's/integration_tests\.vectorstores\.fake_embeddings/integration_tests.cache.fake_embeddings/g'
+git grep -l 'integration_tests\.vectorstores\.fake_embeddings' langchain/tests | xargs sed -i '' 's/integration_tests\.vectorstores\.fake_embeddings/integration_tests.cache.fake_embeddings/g'
 #sed -i '' 's/llms\.loading\.get_type_to_cls_dict/llms.get_type_to_cls_dict/g' langchain/tests/unit_tests/chains/test_llm.py
 touch community/langchain_community/agent_toolkits/amadeus/__init__.py
 
