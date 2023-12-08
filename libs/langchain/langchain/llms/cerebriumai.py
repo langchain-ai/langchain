@@ -90,8 +90,13 @@ class CerebriumAI(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
+        key = (
+            self.cerebriumai_api_key.get_secret_value()
+            if self.cerebriumai_api_key
+            else ""
+        )
         headers: Dict = {
-            "Authorization": self.cerebriumai_api_key.get_secret_value(),
+            "Authorization": key,
             "Content-Type": "application/json",
         }
         params = self.model_kwargs or {}

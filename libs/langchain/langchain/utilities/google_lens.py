@@ -46,10 +46,10 @@ class GoogleLensAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run query through Google Trends with Serpapi"""
-
+        api_key = self.serp_api_key.get_secret_value() or ""
         params = {
             "engine": "google_lens",
-            "api_key": self.serp_api_key.get_secret_value(),
+            "api_key": api_key,
             "url": query,
         }
         queryURL = f"https://serpapi.com/search?engine={params['engine']}&api_key={params['api_key']}&url={params['url']}"

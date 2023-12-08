@@ -30,7 +30,7 @@ class Arcee(LLM):
     _client: Optional[ArceeWrapper] = None  #: :meta private:
     """Arcee _client."""
 
-    arcee_api_key: Union[SecretStr, str, None] = None
+    arcee_api_key: Optional[SecretStr] = None
     """Arcee API Key"""
 
     model: str
@@ -67,7 +67,7 @@ class Arcee(LLM):
 
         super().__init__(**data)
         self._client = ArceeWrapper(
-            arcee_api_key=self.arcee_api_key,
+            arcee_api_key=self.arcee_api_key.get_secret_value or "",
             arcee_api_url=self.arcee_api_url,
             arcee_api_version=self.arcee_api_version,
             model_kwargs=self.model_kwargs,

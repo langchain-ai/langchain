@@ -37,7 +37,7 @@ class GoogleTrendsAPIWrapper(BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["serp_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "serp_api_key", "SERPAPI_API_KEY")
+            get_from_dict_or_env(values, "serp_api_key", "SERP_API_KEY")
         )
 
         try:
@@ -56,9 +56,10 @@ class GoogleTrendsAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run query through Google Trends with Serpapi"""
+        api_key = self.serp_api_key.get_secret_value() or ""
         params = {
             "engine": "google_trends",
-            "api_key": self.serp_api_key.get_secret_value(),
+            "api_key": api_key,
             "q": query,
         }
 
@@ -85,7 +86,7 @@ class GoogleTrendsAPIWrapper(BaseModel):
 
         params = {
             "engine": "google_trends",
-            "api_key": self.serpapi_api_key.get_secret_value(),
+            "api_key": api_key,
             "data_type": "RELATED_QUERIES",
             "q": query,
         }

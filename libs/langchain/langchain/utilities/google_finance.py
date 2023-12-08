@@ -51,9 +51,10 @@ class GoogleFinanceAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run query through Google Finance with Serpapi"""
+        api_key = self.serp_api_key.get_secret_value() or ""
         params = {
             "engine": "google_finance",
-            "api_key": self.serp_api_key.get_secret_value(),
+            "api_key": api_key,
             "q": query,
         }
 

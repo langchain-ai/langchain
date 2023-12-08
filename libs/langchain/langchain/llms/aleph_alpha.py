@@ -178,7 +178,7 @@ class AlephAlpha(LLM):
             from aleph_alpha_client import Client
 
             values["client"] = Client(
-                token=values["aleph_alpha_api_key"].get_secret_value(),
+                token=values["aleph_alpha_api_key"].get_secret_value() or "",
                 host=values["host"],
                 hosting=values["hosting"],
                 request_timeout_seconds=values["request_timeout_seconds"],
