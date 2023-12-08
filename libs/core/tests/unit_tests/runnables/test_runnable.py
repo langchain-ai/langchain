@@ -4228,7 +4228,9 @@ async def test_astream_log_deep_copies() -> None:
 
     run_log = _get_run_log(chunks)
     state = run_log.state.copy()
-    state.pop("id")
+    # Ignoring type here since we know that the state is a dict
+    # so we can delete `id` for testing purposes
+    state.pop("id")  # type: ignore
     assert state == {
         "final_output": 2,
         "logs": {},
