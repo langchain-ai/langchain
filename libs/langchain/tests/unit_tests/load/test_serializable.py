@@ -6,16 +6,16 @@ from langchain_core.load.mapping import SERIALIZABLE_MAPPING
 
 def import_all_modules(package_name: str) -> dict:
     package = importlib.import_module(package_name)
-    classes = {}
+    classes: dict = {}
 
     for attribute_name in dir(package):
         attribute = getattr(package, attribute_name)
         if hasattr(attribute, "is_lc_serializable") and isinstance(attribute, type):
             if (
-                isinstance(attribute.is_lc_serializable(), bool)
-                and attribute.is_lc_serializable()
+                isinstance(attribute.is_lc_serializable(), bool)  # type: ignore
+                and attribute.is_lc_serializable()  # type: ignore
             ):
-                key = tuple(attribute.lc_id())
+                key = tuple(attribute.lc_id())  # type: ignore
                 value = tuple(attribute.__module__.split(".") + [attribute.__name__])
                 if key in classes and classes[key] != value:
                     raise ValueError
