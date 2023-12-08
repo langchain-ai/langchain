@@ -2,7 +2,6 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
