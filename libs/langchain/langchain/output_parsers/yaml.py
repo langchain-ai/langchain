@@ -19,7 +19,8 @@ class YamlOutputParser(BaseOutputParser[T]):
     pattern: re.Pattern = re.compile(
         r"^```(?:ya?ml)?(?P<yaml>[^`]*)", re.MULTILINE | re.DOTALL
     )
-    """Regex pattern to match yaml code blocks within triple backticks with optional yaml or yml prefix."""
+    """Regex pattern to match yaml code blocks 
+    within triple backticks with optional yaml or yml prefix."""
 
     def parse(self, text: str) -> T:
         try:

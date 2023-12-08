@@ -35,8 +35,8 @@ from langchain.output_parsers.regex import RegexParser
 from langchain.output_parsers.regex_dict import RegexDictParser
 from langchain.output_parsers.retry import RetryOutputParser, RetryWithErrorOutputParser
 from langchain.output_parsers.structured import ResponseSchema, StructuredOutputParser
-from langchain.output_parsers.yaml import YamlOutputParser
 from langchain.output_parsers.xml import XMLOutputParser
+from langchain.output_parsers.yaml import YamlOutputParser
 
 __all__ = [
     "BooleanOutputParser",
