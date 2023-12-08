@@ -333,13 +333,17 @@ class MarkdownHeaderTextSplitter:
     """Splitting markdown files based on specified headers."""
 
     def __init__(
-        self, headers_to_split_on: List[Tuple[str, str]], return_each_line: bool = False
+        self,
+        headers_to_split_on: List[Tuple[str, str]],
+        return_each_line: bool = False,
+        strip_headers: bool = True,
     ):
         """Create a new MarkdownHeaderTextSplitter.
 
         Args:
             headers_to_split_on: Headers we want to track
             return_each_line: Return each line w/ associated headers
+            strip_headers: Strip split headers from the content of the chunk
         """
         # Output line-by-line or aggregated into chunks w/ common headers
         self.return_each_line = return_each_line
@@ -348,6 +352,8 @@ class MarkdownHeaderTextSplitter:
         self.headers_to_split_on = sorted(
             headers_to_split_on, key=lambda split: len(split[0]), reverse=True
         )
+        # Strip headers split headers from the content of the chunk
+        self.strip_headers = strip_headers
 
     def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Document]:
         """Combine lines with common metadata into chunks
@@ -460,6 +466,9 @@ class MarkdownHeaderTextSplitter:
                             }
                         )
                         current_content.clear()
+                    
+                    if not self.strip_headers:
+                        current_content.append(stripped_line)
 
                     break
             else:
