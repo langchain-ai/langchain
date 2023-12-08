@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, List
+from typing import List, Literal
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Field
@@ -25,6 +25,4 @@ class Document(Serializable):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'document']
+        return ["langchain", "schema", "document"]

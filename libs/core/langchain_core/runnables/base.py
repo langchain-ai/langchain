@@ -1352,9 +1352,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'runnable']
+        return ["langchain", "schema", "runnable"]
 
     @property
     def steps(self) -> List[Runnable[Any, Any]]:
@@ -1943,9 +1941,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'runnable']
+        return ["langchain", "schema", "runnable"]
 
     class Config:
         arbitrary_types_allowed = True
@@ -2712,9 +2708,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'runnable']
+        return ["langchain", "schema", "runnable"]
 
     def _invoke(
         self,
@@ -2758,9 +2752,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'runnable']
+        return ["langchain", "schema", "runnable"]
 
     def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
         return RunnableEach(bound=self.bound.bind(**kwargs))
@@ -2927,9 +2919,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'runnable']
+        return ["langchain", "schema", "runnable"]
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
         config = merge_configs(self.config, *configs)
@@ -3108,9 +3098,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'runnable']
+        return ["langchain", "schema", "runnable"]
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """Bind additional kwargs to a Runnable, returning a new Runnable.

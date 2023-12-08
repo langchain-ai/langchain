@@ -1,4 +1,4 @@
-from typing import Any, Literal, List
+from typing import Any, List, Literal
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -20,9 +20,7 @@ class AIMessage(BaseMessage):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'messages']
+        return ["langchain", "schema", "messages"]
 
 
 AIMessage.update_forward_refs()
@@ -39,9 +37,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'messages']
+        return ["langchain", "schema", "messages"]
+
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
             if self.example != other.example:

@@ -34,9 +34,7 @@ class BaseMessage(Serializable):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'messages']
+        return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         from langchain_core.prompts.chat import ChatPromptTemplate
@@ -78,9 +76,7 @@ class BaseMessageChunk(BaseMessage):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'messages']
+        return ["langchain", "schema", "messages"]
 
     def _merge_kwargs_dict(
         self, left: Dict[str, Any], right: Dict[str, Any]

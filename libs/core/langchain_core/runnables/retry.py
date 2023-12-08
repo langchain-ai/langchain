@@ -117,9 +117,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'runnable']
+        return ["langchain", "schema", "runnable"]
 
     @property
     def _kwargs_retrying(self) -> Dict[str, Any]:

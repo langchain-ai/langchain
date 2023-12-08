@@ -45,9 +45,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'prompts',
-                'few_shot_with_templates']
+        return ["langchain", "prompts", "few_shot_with_templates"]
 
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:

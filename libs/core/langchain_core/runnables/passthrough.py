@@ -168,9 +168,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'runnable']
+        return ["langchain", "schema", "runnable"]
 
     @property
     def InputType(self) -> Any:
@@ -316,9 +314,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'runnable']
+        return ["langchain", "schema", "runnable"]
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None

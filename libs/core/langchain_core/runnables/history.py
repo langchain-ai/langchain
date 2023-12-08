@@ -89,9 +89,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'runnable']
+        return ["langchain", "schema", "runnable"]
 
     def __init__(
         self,

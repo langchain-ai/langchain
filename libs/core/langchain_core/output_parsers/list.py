@@ -29,9 +29,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'output_parsers',
-                'list']
+        return ["langchain", "output_parsers", "list"]
 
     def get_format_instructions(self) -> str:
         return (

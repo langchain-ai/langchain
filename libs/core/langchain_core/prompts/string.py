@@ -154,9 +154,7 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'prompts',
-                'base']
+        return ["langchain", "prompts", "base"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""

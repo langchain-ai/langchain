@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, List
+from typing import Any, Dict, List, Literal
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
@@ -30,9 +30,7 @@ class ChatGeneration(Generation):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'output']
+        return ["langchain", "schema", "output"]
 
 
 class ChatGenerationChunk(ChatGeneration):
@@ -51,9 +49,7 @@ class ChatGenerationChunk(ChatGeneration):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'output']
+        return ["langchain", "schema", "output"]
 
     def __add__(self, other: ChatGenerationChunk) -> ChatGenerationChunk:
         if isinstance(other, ChatGenerationChunk):

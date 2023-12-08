@@ -1,4 +1,4 @@
-from typing import Literal, List
+from typing import List, Literal
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
@@ -16,9 +16,7 @@ class HumanMessage(BaseMessage):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'messages']
+        return ["langchain", "schema", "messages"]
 
 
 HumanMessage.update_forward_refs()
@@ -35,6 +33,4 @@ class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'messages']
+        return ["langchain", "schema", "messages"]

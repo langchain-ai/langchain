@@ -1,4 +1,5 @@
 from typing import List
+
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 
 
@@ -13,9 +14,7 @@ class StrOutputParser(BaseTransformOutputParser[str]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'schema',
-                'output_parser']
+        return ["langchain", "schema", "output_parser"]
 
     @property
     def _type(self) -> str:

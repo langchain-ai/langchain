@@ -46,9 +46,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'prompts',
-                'chat']
+        return ["langchain", "prompts", "chat"]
 
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
@@ -92,9 +90,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'prompts',
-                'chat']
+        return ["langchain", "prompts", "chat"]
 
     def __init__(self, variable_name: str, **kwargs: Any):
         return super().__init__(variable_name=variable_name, **kwargs)
@@ -149,9 +145,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'prompts',
-                'chat']
+        return ["langchain", "prompts", "chat"]
 
     @classmethod
     def from_template(
@@ -245,9 +239,7 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'prompts',
-                'chat']
+        return ["langchain", "prompts", "chat"]
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -270,9 +262,7 @@ class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'prompts',
-                'chat']
+        return ["langchain", "prompts", "chat"]
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -293,9 +283,7 @@ class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'prompts',
-                'chat']
+        return ["langchain", "prompts", "chat"]
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -318,9 +306,7 @@ class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'prompts',
-                'chat']
+        return ["langchain", "prompts", "chat"]
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -420,9 +406,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ['langchain',
-                'prompts',
-                'chat']
+        return ["langchain", "prompts", "chat"]
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
