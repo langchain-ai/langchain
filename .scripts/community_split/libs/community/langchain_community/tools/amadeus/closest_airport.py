@@ -47,4 +47,4 @@ class AmadeusClosestAirport(AmadeusBaseTool):
             ' Location Identifier" '
         )
 
-        return ChatOpenAI(temperature=0).invoke(content)
+        return ChatOpenAI(temperature=0).predict(content)
