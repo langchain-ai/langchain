@@ -3785,9 +3785,10 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.link
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy (>=0.9.1)", "pytest-ruff"]
 
 [extras]
+all = ["openai", "tiktoken"]
 extended-testing = []
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "1ca72fd47e510ad7237afbb494434428a4133abf3e1b623b457b33482232a5f4"
+content-hash = "22f6a7c2154e79c458cc11272e48669f82a2b80b561a06d4f8288a8f1e2d5f87"
