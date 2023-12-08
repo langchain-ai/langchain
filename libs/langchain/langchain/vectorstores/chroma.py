@@ -16,11 +16,11 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import xor_args
 from langchain_core.vectorstores import VectorStore
 
-from langchain.docstore.document import Document
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
@@ -176,7 +176,7 @@ class Chroma(VectorStore):
         """Run more images through the embeddings and add to the vectorstore.
 
         Args:
-            images (List[List[float]]): Images to add to the vectorstore.
+            uris List[str]: File path to the image.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]], optional): Optional list of IDs.
 

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "astradb_entomology_rag"
 version = "0.0.1"
-description = ""
+description = "RAG using AstraDB"
 authors = [
     "Stefano Lottini <stefano.lottini@datastax.com>",
 ]
@@ -20,6 +20,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "astradb_entomology_rag"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Datastax"
+integrations = ["AstraDB"]
+tags = ["vectordbs"]
 
 [build-system]
 requires = [

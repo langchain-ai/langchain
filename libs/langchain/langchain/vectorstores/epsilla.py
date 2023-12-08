@@ -5,10 +5,9 @@ import logging
 import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
 
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-
-from langchain.docstore.document import Document
 
 if TYPE_CHECKING:
     from pyepsilla import vectordb

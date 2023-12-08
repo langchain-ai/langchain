@@ -13,7 +13,10 @@ tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
-	poetry run ptw --snapshot-update --now . -- -x tests/unit_tests
+	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
+
+extended_tests:
+	poetry run pytest --only-extended $(TEST_FILE)
 
 
 ######################
@@ -24,10 +27,15 @@ test_watch:
 PYTHON_FILES=.
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/experimental --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_package: PYTHON_FILES=langchain_core
+lint_tests: PYTHON_FILES=tests
 
-lint lint_diff:
+lint lint_diff lint_package lint_tests:
+	./scripts/check_pydantic.sh .
+	./scripts/check_imports.sh
 	poetry run ruff .
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || poetry run mypy $(PYTHON_FILES)
 
 format format_diff:

@@ -1,8 +1,8 @@
 """Test Deep Lake functionality."""
 import pytest
+from langchain_core.documents import Document
 from pytest import FixtureRequest
 
-from langchain.docstore.document import Document
 from langchain.vectorstores import DeepLake
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 

@@ -19,7 +19,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel, _generate_from_stream
+from langchain.chat_models.base import BaseChatModel, generate_from_stream
 from langchain.llms.vertexai import _VertexAICommon, is_codey_model
 from langchain.utilities.vertexai import raise_vertex_import_error
 
@@ -132,16 +132,14 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         """Validate that the python package exists in environment."""
         cls._try_init_vertexai(values)
         try:
-            if is_codey_model(values["model_name"]):
-                from vertexai.preview.language_models import CodeChatModel
-
-                values["client"] = CodeChatModel.from_pretrained(values["model_name"])
-            else:
-                from vertexai.preview.language_models import ChatModel
-
-                values["client"] = ChatModel.from_pretrained(values["model_name"])
+            from vertexai.language_models import ChatModel, CodeChatModel
         except ImportError:
             raise_vertex_import_error()
+        if is_codey_model(values["model_name"]):
+            model_cls = CodeChatModel
+        else:
+            model_cls = ChatModel
+        values["client"] = model_cls.from_pretrained(values["model_name"])
         return values
 
     def _generate(
@@ -172,7 +170,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
 
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
@@ -244,7 +242,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
-        params = self._prepare_params(stop=stop, **kwargs)
+        params = self._prepare_params(stop=stop, stream=True, **kwargs)
         examples = kwargs.get("examples", None)
         if examples:
             params["examples"] = _parse_examples(examples)

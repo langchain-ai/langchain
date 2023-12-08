@@ -39,7 +39,6 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "PyYAML",
         "SQLAlchemy",
         "aiohttp",
-        "anyio",
         "async-timeout",
         "dataclasses-json",
         "jsonpatch",
@@ -74,6 +73,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         [
             "duckdb-engine",
             "freezegun",
+            "langchain-core",
             "lark",
             "pandas",
             "pytest",
@@ -103,5 +103,8 @@ def test_imports() -> None:
     from langchain.llms import OpenAI  # noqa: F401
     from langchain.retrievers import VespaRetriever  # noqa: F401
     from langchain.tools import DuckDuckGoSearchResults  # noqa: F401
-    from langchain.utilities import SerpAPIWrapper  # noqa: F401
+    from langchain.utilities import (
+        SearchApiAPIWrapper,  # noqa: F401
+        SerpAPIWrapper,  # noqa: F401
+    )
     from langchain.vectorstores import FAISS  # noqa: F401

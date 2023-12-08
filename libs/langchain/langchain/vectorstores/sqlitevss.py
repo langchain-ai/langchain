@@ -13,10 +13,9 @@ from typing import (
     Type,
 )
 
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-
-from langchain.docstore.document import Document
 
 if TYPE_CHECKING:
     import sqlite3

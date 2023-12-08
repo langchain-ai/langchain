@@ -37,10 +37,10 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain_core.callbacks.base import BaseCallbackManager
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
+    BaseCallbackManager,
     CallbackManager,
     CallbackManagerForLLMRun,
     Callbacks,
@@ -382,9 +382,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
+            generation: Optional[GenerationChunk] = None
             try:
-                generation: Optional[GenerationChunk] = None
                 for chunk in self._stream(
                     prompt, stop=stop, run_manager=run_manager, **kwargs
                 ):
@@ -395,7 +396,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         generation += chunk
                 assert generation is not None
             except BaseException as e:
-                run_manager.on_llm_error(e)
+                run_manager.on_llm_error(
+                    e,
+                    response=LLMResult(
+                        generations=[[generation]] if generation else []
+                    ),
+                )
                 raise e
             else:
                 run_manager.on_llm_end(LLMResult(generations=[[generation]]))
@@ -433,9 +439,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
+            generation: Optional[GenerationChunk] = None
             try:
-                generation: Optional[GenerationChunk] = None
                 async for chunk in self._astream(
                     prompt, stop=stop, run_manager=run_manager, **kwargs
                 ):
@@ -446,7 +453,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         generation += chunk
                 assert generation is not None
             except BaseException as e:
-                await run_manager.on_llm_error(e)
+                await run_manager.on_llm_error(
+                    e,
+                    response=LLMResult(
+                        generations=[[generation]] if generation else []
+                    ),
+                )
                 raise e
             else:
                 await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
@@ -537,7 +549,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
         except BaseException as e:
             for run_manager in run_managers:
-                run_manager.on_llm_error(e)
+                run_manager.on_llm_error(e, response=LLMResult(generations=[]))
             raise e
         flattened_outputs = output.flatten()
         for manager, flattened_output in zip(run_managers, flattened_outputs):
@@ -645,6 +657,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     invocation_params=params,
                     options=options,
                     name=run_name,
+                    batch_size=len(prompts),
                 )[0]
                 for callback_manager, prompt, run_name in zip(
                     callback_managers, prompts, run_name_list
@@ -662,6 +675,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     invocation_params=params,
                     options=options,
                     name=run_name_list[idx],
+                    batch_size=len(missing_prompts),
                 )[0]
                 for idx in missing_prompt_idxs
             ]
@@ -703,7 +717,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
         except BaseException as e:
             await asyncio.gather(
-                *[run_manager.on_llm_error(e) for run_manager in run_managers]
+                *[
+                    run_manager.on_llm_error(e, response=LLMResult(generations=[]))
+                    for run_manager in run_managers
+                ]
             )
             raise e
         flattened_outputs = output.flatten()
@@ -810,6 +827,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         invocation_params=params,
                         options=options,
                         name=run_name,
+                        batch_size=len(prompts),
                     )
                     for callback_manager, prompt, run_name in zip(
                         callback_managers, prompts, run_name_list
@@ -830,6 +848,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         invocation_params=params,
                         options=options,
                         name=run_name_list[idx],
+                        batch_size=len(missing_prompts),
                     )
                     for idx in missing_prompt_idxs
                 ]

@@ -146,11 +146,23 @@ def test_cypher_intermediate_steps() -> None:
     assert output["result"] == expected_output
 
     query = output["intermediate_steps"][0]["query"]
-    expected_query = (
-        "\n\nMATCH (a:Actor)-[:ACTED_IN]->"
-        "(m:Movie {title: 'Pulp Fiction'}) RETURN a.name"
-    )
-    assert query == expected_query
+    # LLM can return variations of the same query
+    expected_queries = [
+        (
+            "\n\nMATCH (a:Actor)-[:ACTED_IN]->"
+            "(m:Movie {title: 'Pulp Fiction'}) RETURN a.name"
+        ),
+        (
+            "\n\nMATCH (a:Actor)-[:ACTED_IN]->"
+            "(m:Movie {title: 'Pulp Fiction'}) RETURN a.name;"
+        ),
+        (
+            "\n\nMATCH (a:Actor)-[:ACTED_IN]->"
+            "(m:Movie) WHERE m.title = 'Pulp Fiction' RETURN a.name"
+        ),
+    ]
+
+    assert query in expected_queries
 
     context = output["intermediate_steps"][1]["context"]
     expected_context = [{"a.name": "Bruce Willis"}]
@@ -307,14 +319,12 @@ def test_exclude_types() -> None:
         OpenAI(temperature=0), graph=graph, exclude_types=["Person", "DIRECTED"]
     )
     expected_schema = (
-        "Node properties are the following: \n"
-        " {'Movie': [{'property': 'title', 'type': 'STRING'}], "
-        "'Actor': [{'property': 'name', 'type': 'STRING'}]}\n"
-        "Relationships properties are the following: \n"
-        " {}\nRelationships are: \n"
-        "['(:Actor)-[:ACTED_IN]->(:Movie)']"
+        "Node properties are the following:\n"
+        "Movie {title: STRING},Actor {name: STRING}\n"
+        "Relationship properties are the following:\n\n"
+        "The relationships are the following:\n"
+        "(:Actor)-[:ACTED_IN]->(:Movie)"
     )
-
     assert chain.graph_schema == expected_schema
 
 
@@ -347,12 +357,11 @@ def test_include_types() -> None:
         OpenAI(temperature=0), graph=graph, include_types=["Movie", "Actor", "ACTED_IN"]
     )
     expected_schema = (
-        "Node properties are the following: \n"
-        " {'Movie': [{'property': 'title', 'type': 'STRING'}], "
-        "'Actor': [{'property': 'name', 'type': 'STRING'}]}\n"
-        "Relationships properties are the following: \n"
-        " {}\nRelationships are: \n"
-        "['(:Actor)-[:ACTED_IN]->(:Movie)']"
+        "Node properties are the following:\n"
+        "Movie {title: STRING},Actor {name: STRING}\n"
+        "Relationship properties are the following:\n\n"
+        "The relationships are the following:\n"
+        "(:Actor)-[:ACTED_IN]->(:Movie)"
     )
 
     assert chain.graph_schema == expected_schema
@@ -387,11 +396,9 @@ def test_include_types2() -> None:
         OpenAI(temperature=0), graph=graph, include_types=["Movie", "ACTED_IN"]
     )
     expected_schema = (
-        "Node properties are the following: \n"
-        " {'Movie': [{'property': 'title', 'type': 'STRING'}]}\n"
-        "Relationships properties are the following: \n"
-        " {}\nRelationships are: \n"
-        "[]"
+        "Node properties are the following:\n"
+        "Movie {title: STRING}\n"
+        "Relationship properties are the following:\n\n"
+        "The relationships are the following:\n"
     )
-
     assert chain.graph_schema == expected_schema
