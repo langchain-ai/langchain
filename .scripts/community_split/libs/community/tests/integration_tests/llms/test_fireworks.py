@@ -1,15 +1,10 @@
 """Test Fireworks AI API Wrapper."""
-import sys
 from typing import Generator
 
 import pytest
 from langchain_core.outputs import LLMResult
 
 from langchain_community.llms.fireworks import Fireworks
-
-if sys.version_info < (3, 9):
-    pytest.skip("fireworks-ai requires Python > 3.8", allow_module_level=True)
-
 
 @pytest.fixture
 def llm() -> Fireworks:
@@ -54,9 +49,6 @@ def test_fireworks_batch(llm: Fireworks) -> None:
         [
             "How is the weather in New York today?",
             "How is the weather in New York today?",
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
         ],
         stop=[","],
     )
@@ -70,9 +62,6 @@ async def test_fireworks_abatch(llm: Fireworks) -> None:
     """Tests completion with invoke"""
     output = await llm.abatch(
         [
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
             "How is the weather in New York today?",
             "How is the weather in New York today?",
         ],
