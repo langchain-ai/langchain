@@ -28,7 +28,7 @@ EXPECTED_ALL = [
     "ChatBaichuan",
     "ChatHunyuan",
     "GigaChat",
-    "HuggingFaceChatWrapper",
+    "ChatHuggingFace",
     "VolcEngineMaasChat",
 ]
 
