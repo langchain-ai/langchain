@@ -49,6 +49,9 @@ def test_vertexai_single_call(model_name: str) -> None:
     assert isinstance(response.content, str)
 
 
+# mark xfail because Vertex API randomly doesn't respect
+# the n/candidate_count parameter
+@pytest.mark.xfail
 @pytest.mark.scheduled
 def test_candidates() -> None:
     model = ChatVertexAI(model_name="chat-bison@001", temperature=0.3, n=2)

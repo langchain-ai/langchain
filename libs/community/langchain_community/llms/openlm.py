@@ -8,6 +8,10 @@ from langchain_community.llms.openai import BaseOpenAI
 class OpenLM(BaseOpenAI):
     """OpenLM models."""
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"model": self.model_name}, **super()._invocation_params}

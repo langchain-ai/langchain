@@ -105,7 +105,7 @@ class Tongyi(LLM):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        return True
+        return False
 
     client: Any  #: :meta private:
     model_name: str = "qwen-plus-v1"

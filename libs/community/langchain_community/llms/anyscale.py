@@ -89,6 +89,10 @@ class Anyscale(BaseOpenAI):
 
     prefix_messages: List = Field(default_factory=list)
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""

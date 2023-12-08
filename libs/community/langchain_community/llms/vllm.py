@@ -147,6 +147,10 @@ class VLLM(BaseLLM):
 class VLLMOpenAI(BaseOpenAI):
     """vLLM OpenAI-compatible API client"""
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""

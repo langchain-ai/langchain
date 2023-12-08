@@ -63,7 +63,7 @@ class ChatKonko(BaseChatModel):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
-        return True
+        return False
 
     client: Any = None  #: :meta private:
     model: str = Field(default=DEFAULT_MODEL, alias="model")
