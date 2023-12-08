@@ -140,7 +140,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     input_messages_key: Optional[str] = None
     output_messages_key: Optional[str] = None
     history_messages_key: Optional[str] = None
-    history_factory_config: Sequence[ConfigurableFieldSpec] = None
+    history_factory_config: Sequence[ConfigurableFieldSpec]
 
     def __init__(
         self,
