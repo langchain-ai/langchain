@@ -278,6 +278,7 @@ git grep -l '@pytest\.mark\.requires' partners/openai | xargs sed -i '' 's/@pyte
 
 
 cp -r langchain/tests/integration_tests/examples community/tests
+cp -r langchain/tests/unit_tests/examples community/tests/unit_tests
 cp langchain/tests/unit_tests/conftest.py community/tests/unit_tests
 cp langchain/tests/integration_tests/test_compile.py community/tests/integration_tests
 cp langchain/tests/integration_tests/test_compile.py partners/openai/tests/integration_tests
