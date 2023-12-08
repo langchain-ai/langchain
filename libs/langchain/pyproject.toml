@@ -397,6 +397,7 @@ extended_testing = [
  "couchbase",
  "dgml-utils",
  "cohere",
+ "gpudb"
 ]
 
 [tool.ruff]
