@@ -2,9 +2,9 @@
 Ensemble retriever that ensemble the results of 
 multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
-from typing import Any, Dict, List
 from collections import defaultdict
 from itertools import chain
+from typing import Any, Dict, List
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
@@ -156,13 +156,13 @@ class EnsembleRetriever(BaseRetriever):
             raise ValueError(
                 "Number of rank lists must be equal to the number of weights."
             )
-        
+
         # Associate each doc's content with its RRF score for later sorting by it
         # Duplicate contents across retrievers are collapsed & scored cumulatively
         rrf_score = defaultdict(float)
         for doc_list, weight in zip(doc_lists, SELF_WEIGHTS):
             for rank, doc in enumerate(doc_list, start=1):
-                    rrf_score[doc.page_content] += weight / (rank + SELF_C)
+                rrf_score[doc.page_content] += weight / (rank + SELF_C)
 
         # Deduplicate -non-hashable- docs by their contents for final sorting
         unique_docs = {
@@ -171,7 +171,8 @@ class EnsembleRetriever(BaseRetriever):
 
         # Sort docs by their RRF scores in descending order
         sorted_docs = sorted(
-            unique_docs, reverse=True,
+            unique_docs,
+            reverse=True,
             key=lambda doc: rrf_score[doc.page_content],
         )
         return sorted_docs
