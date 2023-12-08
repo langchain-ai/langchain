@@ -5,7 +5,6 @@ import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import requests
-import tiktoken
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
@@ -385,6 +384,9 @@ class GitHubAPIWrapper(BaseModel):
             dict: A dictionary containing the issue's title,
             body, and comments as a string
         """
+
+        import tiktoken
+
         MAX_TOKENS_FOR_FILES = 3_000
         pr_files = []
         pr = self.github_repo_instance.get_pull(number=int(pr_number))
@@ -448,6 +450,9 @@ class GitHubAPIWrapper(BaseModel):
             dict: A dictionary containing the pull's title, body,
             and comments as a string
         """
+
+        import tiktoken
+
         max_tokens = 2_000
         pull = self.github_repo_instance.get_pull(number=pr_number)
         total_tokens = 0
