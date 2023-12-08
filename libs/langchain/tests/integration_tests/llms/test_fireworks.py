@@ -1,5 +1,4 @@
 """Test Fireworks AI API Wrapper."""
-import sys
 from typing import Generator
 
 import pytest
@@ -68,12 +67,8 @@ async def test_fireworks_ainvoke(llm: Fireworks) -> None:
 @pytest.mark.scheduled
 def test_fireworks_batch(llm: Fireworks) -> None:
     """Tests completion with invoke"""
-    llm = Fireworks()
     output = llm.batch(
         [
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
             "How is the weather in New York today?",
             "How is the weather in New York today?",
         ],
@@ -89,9 +84,6 @@ async def test_fireworks_abatch(llm: Fireworks) -> None:
     """Tests completion with invoke"""
     output = await llm.abatch(
         [
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
-            "How is the weather in New York today?",
             "How is the weather in New York today?",
             "How is the weather in New York today?",
         ],
