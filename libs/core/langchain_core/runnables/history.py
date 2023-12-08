@@ -81,6 +81,59 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             )
             # -> "The inverse of cosine is called arccosine ..."
 
+
+    Here's an example that uses an in memory chat history, and a factory that
+    takes in two keys (user_id and conversation id) to create a chat history instance.
+
+        .. code-block:: python
+
+            store = {}
+
+            def get_session_history(
+                user_id: str, conversation_id: str
+            ) -> ChatMessageHistory:
+                if (user_id, conversation_id) not in store:
+                    store[(user_id, conversation_id)] = ChatMessageHistory()
+                return store[(user_id, conversation_id)]
+
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", "You're an assistant who's good at {ability}"),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{question}"),
+            ])
+
+            chain = prompt | ChatAnthropic(model="claude-2")
+
+            with_message_history = RunnableWithMessageHistory(
+                chain,
+                get_session_history=get_session_history,
+                input_messages_key="messages",
+                history_messages_key="history",
+                session_history_config_specs=[
+                    ConfigurableFieldSpec(
+                        id="user_id",
+                        annotation=str,
+                        name="User ID",
+                        description="Unique identifier for the user.",
+                        default="",
+                        is_shared=True,
+                    ),
+                    ConfigurableFieldSpec(
+                        id="conversation_id",
+                        annotation=str,
+                        name="Conversation ID",
+                        description="Unique identifier for the conversation.",
+                        default="",
+                        is_shared=True,
+                    ),
+                ],
+            )
+
+            chain_with_history.invoke(
+                {"ability": "math", "question": "What does cosine mean?"},
+                config={"configurable": {"user_id": "123", "conversation_id": "1"}}
+            )
+
     """  # noqa: E501
 
     get_session_history: GetSessionHistoryCallable

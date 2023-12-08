@@ -1,4 +1,4 @@
-from typing import Any, Callable, Sequence, Union, Tuple, Optional, Dict
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.pydantic_v1 import BaseModel
@@ -257,23 +257,19 @@ def test_get_input_schema_input_messages() -> None:
 
 def test_using_custom_config_specs() -> None:
     """Test that we can configure which keys should be passed to the session factory."""
-    runnable = RunnableLambda(
-        lambda messages: {
-            "output": [
-                AIMessage(
-                    content="you said: "
-                    + "\n".join(
-                        [
-                            str(m.content)
-                            for m in messages
-                            if isinstance(m, HumanMessage)
-                        ]
-                    )
-                )
-            ]
-        }
-    )
 
+    def _fake_llm(input) -> List[BaseMessage]:
+        messages = input["messages"]
+        return [
+            AIMessage(
+                content="you said: "
+                + "\n".join(
+                    str(m.content) for m in messages if isinstance(m, HumanMessage)
+                )
+            )
+        ]
+
+    runnable = RunnableLambda(_fake_llm)
     store = {}
 
     def get_session_history(user_id: str, conversation_id: str) -> ChatMessageHistory:
@@ -284,6 +280,8 @@ def test_using_custom_config_specs() -> None:
     with_message_history = RunnableWithMessageHistory(
         runnable,
         get_session_history=get_session_history,
+        input_messages_key="messages",
+        history_messages_key="history",
         session_history_config_specs=[
             ConfigurableFieldSpec(
                 id="user_id",
@@ -298,20 +296,20 @@ def test_using_custom_config_specs() -> None:
                 annotation=str,
                 name="Conversation ID",
                 description="Unique identifier for the conversation.",
-                # None means that the conversation ID will be generated automatically
                 default=None,
                 is_shared=True,
             ),
         ],
     )
     result = with_message_history.invoke(
-        "hello", {"configurable": {"user_id": "user1", "conversation_id": "1"}}
+        {
+            "messages": [HumanMessage(content="hello")],
+        },
+        {"configurable": {"user_id": "user1", "conversation_id": "1"}},
     )
-    assert result == {
-        "output": [
-            AIMessage(content="you said: hello"),
-        ]
-    }
+    assert result == [
+        AIMessage(content="you said: hello"),
+    ]
     assert store == {
         ("user1", "1"): ChatMessageHistory(
             messages=[
@@ -322,20 +320,47 @@ def test_using_custom_config_specs() -> None:
     }
 
     result = with_message_history.invoke(
-        "goodbye", {"configurable": {"user_id": "user1", "conversation_id": "1"}}
+        {
+            "messages": [HumanMessage(content="goodbye")],
+        },
+        {"configurable": {"user_id": "user1", "conversation_id": "1"}},
     )
-    assert result == {
-        "output": [
-            AIMessage(content="you said: hello\ngoodbye"),
-        ]
-    }
+    assert result == [
+        AIMessage(content="you said: goodbye"),
+    ]
     assert store == {
         ("user1", "1"): ChatMessageHistory(
             messages=[
                 HumanMessage(content="hello"),
                 AIMessage(content="you said: hello"),
                 HumanMessage(content="goodbye"),
-                AIMessage(content="you said: hello\ngoodbye"),
+                AIMessage(content="you said: goodbye"),
             ]
         )
+    }
+
+    result = with_message_history.invoke(
+        {
+            "messages": [HumanMessage(content="meow")],
+        },
+        {"configurable": {"user_id": "user2", "conversation_id": "1"}},
+    )
+    assert result == [
+        AIMessage(content="you said: meow"),
+    ]
+    assert store == {
+        ("user1", "1"): ChatMessageHistory(
+            messages=[
+                HumanMessage(content="hello"),
+                AIMessage(content="you said: hello"),
+                HumanMessage(content="goodbye"),
+                AIMessage(content="you said: goodbye"),
+            ]
+        ),
+        ("user2", "1"): ChatMessageHistory(
+            messages=[
+                HumanMessage(content="meow"),
+                AIMessage(content="you said: meow"),
+            ]
+        ),
     }
