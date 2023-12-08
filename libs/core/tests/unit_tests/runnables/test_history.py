@@ -5,6 +5,7 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import RunnableLambda
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.runnables.utils import ConfigurableFieldSpec
 from tests.unit_tests.fake.memory import ChatMessageHistory
 
 
@@ -239,3 +240,72 @@ def test_get_input_schema_input_messages() -> None:
         with_history.get_input_schema().schema()
         == RunnableWithChatHistoryInput.schema()
     )
+
+
+def test_using_custom_config_specs() -> None:
+    """Test that we can configure which keys should be passed to the session factory."""
+    runnable = RunnableLambda(
+        lambda messages: {
+            "output": [
+                AIMessage(
+                    content="you said: "
+                    + "\n".join(
+                        [
+                            str(m.content)
+                            for m in messages
+                            if isinstance(m, HumanMessage)
+                        ]
+                    )
+                )
+            ]
+        }
+    )
+
+    store = {}
+
+    def get_session_history(user_id: str, conversation_id: str) -> ChatMessageHistory:
+        if (user_id, conversation_id) not in store:
+            store[(user_id, conversation_id)] = ChatMessageHistory()
+        return store[(user_id, conversation_id)]
+
+    with_message_history = RunnableWithMessageHistory(
+        runnable,
+        get_session_history=get_session_history,
+        input_messages_key="input",
+        session_history_config_specs=[
+            ConfigurableFieldSpec(
+                id="user_id",
+                annotation=str,
+                name="User ID",
+                description="Unique identifier for the user.",
+                default="",
+                is_shared=True,
+            ),
+            ConfigurableFieldSpec(
+                id="conversation_id",
+                annotation=str,
+                name="Conversation ID",
+                description="Unique identifier for the conversation.",
+                # None means that the conversation ID will be generated automatically
+                default=None,
+                is_shared=True,
+            ),
+        ],
+    )
+    result = with_message_history.invoke(
+        "hello", {"configurable": {"user_id": "user1", "conversation_id": "1"}}
+    )
+    assert result == {
+        "output": [
+            AIMessage(content="you said: hello"),
+        ]
+    }
+    with_message_history.invoke(
+        {"input": "meow"}, {"configurable": {"user_id": "user1", "conversation_id": "1"}}
+    )
+
+    with_message_history.invoke(
+        {"input": "goodbye"}, {"configurable": {"user_id": "user2", "conversation_id": "1"}}
+    )
+    assert store == {
+    }
