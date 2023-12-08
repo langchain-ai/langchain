@@ -356,9 +356,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
         config = super()._merge_configs(*configs)
-        expected_keys = [
-            field_spec.id for field_spec in self.history_factory_config
-        ]
+        expected_keys = [field_spec.id for field_spec in self.history_factory_config]
 
         configurable = config.get("configurable", {})
 
