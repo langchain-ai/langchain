@@ -21,6 +21,11 @@ extended_tests:
 integration_tests:
 	poetry run pytest tests/integration_tests
 
+check_imports: langchain_experimental/**/*.py
+	for f in $^ ; do \
+		python -c "from importlib.machinery import SourceFileLoader; SourceFileLoader('x', '$$f').load_module()" || exit 1; \
+	done
+
 
 ######################
 # LINTING AND FORMATTING
@@ -30,8 +35,10 @@ integration_tests:
 PYTHON_FILES=.
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/experimental --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_package: PYTHON_FILES=langchain_experimental
+lint_tests: PYTHON_FILES=tests
 
-lint lint_diff:
+lint lint_diff lint_package lint_tests:
 	poetry run ruff .
 	poetry run ruff format $(PYTHON_FILES) --diff
 	poetry run ruff --select I $(PYTHON_FILES)
