@@ -1,0 +1,31 @@
+{
+    "name": "Grace ðŸ§¤",
+    "type": "personal_chat",
+    "id": 2730825451,
+    "messages": [
+      {
+        "id": 1980499,
+        "type": "message",
+        "date": "2020-01-01T00:00:02",
+        "from": "Henry",
+        "from_id": 4325636679,
+        "text": "It's 2020..."
+      },
+      {
+        "id": 1980500,
+        "type": "message",
+        "date": "2020-01-01T00:00:04",
+        "from": "Henry",
+        "from_id": 4325636679,
+        "text": "Fireworks!"
+      },
+      {
+        "id": 1980501,
+        "type": "message",
+        "date": "2020-01-01T00:00:05",
+        "from": "Grace ðŸ§¤ ðŸ’",
+        "from_id": 4720225552,
+        "text": "You're a minute late!"
+      }
+    ]
+  }

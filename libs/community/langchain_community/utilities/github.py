@@ -5,13 +5,24 @@ import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import requests
-import tiktoken
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     from github.Issue import Issue
     from github.PullRequest import PullRequest
+
+
+def _import_tiktoken() -> Any:
+    """Import tiktoken."""
+    try:
+        import tiktoken
+    except ImportError:
+        raise ImportError(
+            "tiktoken is not installed. "
+            "Please install it with `pip install tiktoken`"
+        )
+    return tiktoken
 
 
 class GitHubAPIWrapper(BaseModel):
@@ -384,6 +395,7 @@ class GitHubAPIWrapper(BaseModel):
             dict: A dictionary containing the issue's title,
             body, and comments as a string
         """
+        tiktoken = _import_tiktoken()
         MAX_TOKENS_FOR_FILES = 3_000
         pr_files = []
         pr = self.github_repo_instance.get_pull(number=int(pr_number))
@@ -452,6 +464,7 @@ class GitHubAPIWrapper(BaseModel):
         total_tokens = 0
 
         def get_tokens(text: str) -> int:
+            tiktoken = _import_tiktoken()
             return len(tiktoken.get_encoding("cl100k_base").encode(text))
 
         def add_to_dict(data_dict: Dict[str, Any], key: str, value: str) -> None:
