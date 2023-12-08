@@ -13,9 +13,6 @@ from langchain_core.prompts.chat import (
 from langchain.chains import LLMChain
 from langchain.llms.fireworks import Fireworks
 
-if sys.version_info < (3, 9):
-    pytest.skip("fireworks-ai requires Python > 3.8", allow_module_level=True)
-
 
 @pytest.fixture
 def llm() -> Fireworks:
