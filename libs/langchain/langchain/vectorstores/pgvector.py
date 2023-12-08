@@ -22,8 +22,8 @@ from typing import (
 import numpy as np
 import sqlalchemy
 from sqlalchemy import delete
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy.dialects.postgresql import JSON, UUID
+from sqlalchemy.orm import Session, relationship
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -62,6 +62,79 @@ class BaseModel(Base):
 
     __abstract__ = True
     uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+
+def _get_collection_store() -> Any:
+    class CollectionStore(BaseModel):
+        """Collection store."""
+
+        __tablename__ = "langchain_pg_collection"
+
+        name = sqlalchemy.Column(sqlalchemy.String)
+        cmetadata = sqlalchemy.Column(JSON)
+
+        embeddings = relationship(
+            "EmbeddingStore",
+            back_populates="collection",
+            passive_deletes=True,
+        )
+
+        @classmethod
+        def get_by_name(
+            cls, session: Session, name: str
+        ) -> Optional["CollectionStore"]:
+            return session.query(cls).filter(cls.name == name).first()  # type: ignore
+
+        @classmethod
+        def get_or_create(
+            cls,
+            session: Session,
+            name: str,
+            cmetadata: Optional[dict] = None,
+        ) -> Tuple["CollectionStore", bool]:
+            """
+            Get or create a collection.
+            Returns [Collection, bool] where the bool is True if the collection was created.
+            """
+            created = False
+            collection = cls.get_by_name(session, name)
+            if collection:
+                return collection, created
+
+            collection = cls(name=name, cmetadata=cmetadata)
+            session.add(collection)
+            session.commit()
+            created = True
+            return collection, created
+
+    return CollectionStore
+
+
+def _get_embedding_store() -> Any:
+    from pgvector.sqlalchemy import Vector
+
+    class EmbeddingStore(BaseModel):
+        """Embedding store."""
+
+        __tablename__ = "langchain_pg_embedding"
+
+        collection_id = sqlalchemy.Column(
+            UUID(as_uuid=True),
+            sqlalchemy.ForeignKey(
+                f"{CollectionStore.__tablename__}.uuid",
+                ondelete="CASCADE",
+            ),
+        )
+        collection = relationship(CollectionStore, back_populates="embeddings")
+
+        embedding: Vector = sqlalchemy.Column(Vector(None))
+        document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        cmetadata = sqlalchemy.Column(JSON, nullable=True)
+
+        # custom_id : any user defined id
+        custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+
+    return EmbeddingStore
 
 
 def _results_to_docs(docs_and_scores: Any) -> List[Document]:
@@ -138,13 +211,9 @@ class PGVector(VectorStore):
     ) -> None:
         """Initialize the store."""
         self.create_vector_extension()
-        from langchain.vectorstores._pgvector_data_models import (
-            CollectionStore,
-            EmbeddingStore,
-        )
 
-        self.CollectionStore = CollectionStore
-        self.EmbeddingStore = EmbeddingStore
+        self.CollectionStore = _get_collection_store()
+        self.EmbeddingStore = _get_embedding_store()
         self.create_tables_if_not_exists()
         self.create_collection()
 
