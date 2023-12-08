@@ -36,15 +36,16 @@ def _results_to_docs(results: Any) -> List[Document]:
     return [doc for doc, _ in _results_to_docs_and_scores(results)]
 
 
-def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
+def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float, str]]:
     return [
         # TODO: Chroma can do batch querying,
         # we shouldn't hard code to the 1st result
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
+        (Document(page_content=result[0], metadata=result[1] or {}), result[2], result[3])
         for result in zip(
             results["documents"][0],
             results["metadatas"][0],
             results["distances"][0],
+            results["ids"][0],
         )
     ]
 
@@ -379,7 +380,7 @@ class Chroma(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[Document, float, str]]:
         """
         Return docs most similar to embedding vector and similarity score.
 
@@ -389,8 +390,8 @@ class Chroma(VectorStore):
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List[Tuple[Document, float]]: List of documents most similar to
-            the query text and cosine distance in float for each.
+            List[Tuple[Document, float, str]]: List of documents most similar to
+            the query text, cosine distance in float, and vector id for each.
             Lower score represents more similarity.
         """
         results = self.__query_collection(
@@ -408,7 +409,7 @@ class Chroma(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[Document, float, str]]:
         """Run similarity search with Chroma with distance.
 
         Args:
@@ -417,8 +418,8 @@ class Chroma(VectorStore):
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List[Tuple[Document, float]]: List of documents most similar to
-            the query text and cosine distance in float for each.
+            List[Tuple[Document, float, str]]: List of documents most similar to
+            the query text, cosine distance in float, and vector id for each.
             Lower score represents more similarity.
         """
         if self._embedding_function is None:

@@ -52,13 +52,14 @@ def test_chroma_with_metadatas_with_scores() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Chroma.from_texts(
+        ids=["foo_id", "bar_id", "baz_id"],
         collection_name="test_collection",
         texts=texts,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
-    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0, "foo_id")]
 
 
 def test_chroma_with_metadatas_with_scores_using_vector() -> None:
@@ -68,6 +69,7 @@ def test_chroma_with_metadatas_with_scores_using_vector() -> None:
     embeddings = FakeEmbeddings()
 
     docsearch = Chroma.from_texts(
+        ids=["foo_id", "bar_id", "baz_id"],
         collection_name="test_collection",
         texts=texts,
         embedding=embeddings,
@@ -77,7 +79,7 @@ def test_chroma_with_metadatas_with_scores_using_vector() -> None:
     output = docsearch.similarity_search_by_vector_with_relevance_scores(
         embedding=embedded_query, k=1
     )
-    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0, "foo_id")]
 
 
 def test_chroma_search_filter() -> None:
@@ -101,6 +103,7 @@ def test_chroma_search_filter_with_scores() -> None:
     texts = ["far", "bar", "baz"]
     metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
     docsearch = Chroma.from_texts(
+        ids=["foo_id", "bar_id", "baz_id"],
         collection_name="test_collection",
         texts=texts,
         embedding=FakeEmbeddings(),
@@ -110,13 +113,13 @@ def test_chroma_search_filter_with_scores() -> None:
         "far", k=1, filter={"first_letter": "f"}
     )
     assert output == [
-        (Document(page_content="far", metadata={"first_letter": "f"}), 0.0)
+        (Document(page_content="far", metadata={"first_letter": "f"}), 0.0, "foo_id")
     ]
     output = docsearch.similarity_search_with_score(
         "far", k=1, filter={"first_letter": "b"}
     )
     assert output == [
-        (Document(page_content="bar", metadata={"first_letter": "b"}), 1.0)
+        (Document(page_content="bar", metadata={"first_letter": "b"}), 1.0, "bar_id")
     ]
 
 
