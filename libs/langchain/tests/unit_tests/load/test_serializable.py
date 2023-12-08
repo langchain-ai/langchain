@@ -4,7 +4,7 @@ import pkgutil
 from langchain_core.load.mapping import SERIALIZABLE_MAPPING
 
 
-def import_all_modules(package_name):
+def import_all_modules(package_name: str) -> dict:
     package = importlib.import_module(package_name)
     classes = {}
 
@@ -39,7 +39,7 @@ def import_all_modules(package_name):
     return classes
 
 
-def test_serializable_mapping():
+def test_serializable_mapping() -> None:
     serializable_modules = import_all_modules("langchain")
     assert serializable_modules == SERIALIZABLE_MAPPING
 
