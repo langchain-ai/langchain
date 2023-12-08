@@ -44,7 +44,16 @@ def test_input_messages() -> None:
     assert output == "you said: hello"
     output = with_history.invoke([HumanMessage(content="good bye")], config)
     assert output == "you said: hello\ngood bye"
-    assert store == {}
+    assert store == {
+        "1": ChatMessageHistory(
+            messages=[
+                HumanMessage(content="hello"),
+                AIMessage(content="you said: hello"),
+                HumanMessage(content="good bye"),
+                AIMessage(content="you said: hello\ngood bye"),
+            ]
+        )
+    }
 
 
 def test_input_dict() -> None:
