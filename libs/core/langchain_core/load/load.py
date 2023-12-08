@@ -5,7 +5,12 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.load.serializable import Serializable
 
-DEFAULT_NAMESPACES = ["langchain", "langchain_core"]
+DEFAULT_NAMESPACES = [
+    "langchain",
+    "langchain_community",
+    "langchain_openai",
+    "langchain_core",
+]
 
 
 class Reviver:
