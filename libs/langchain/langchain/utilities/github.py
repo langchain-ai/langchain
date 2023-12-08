@@ -14,6 +14,18 @@ if TYPE_CHECKING:
     from github.PullRequest import PullRequest
 
 
+def _import_tiktoken() -> Any:
+    """Import tiktoken."""
+    try:
+        import tiktoken
+    except ImportError:
+        raise ImportError(
+            "tiktoken is not installed. "
+            "Please install it with `pip install tiktoken`"
+        )
+    return tiktoken
+
+
 class GitHubAPIWrapper(BaseModel):
     """Wrapper for GitHub API."""
 
@@ -384,9 +396,7 @@ class GitHubAPIWrapper(BaseModel):
             dict: A dictionary containing the issue's title,
             body, and comments as a string
         """
-
-        import tiktoken
-
+        tiktoken = _import_tiktoken()
         MAX_TOKENS_FOR_FILES = 3_000
         pr_files = []
         pr = self.github_repo_instance.get_pull(number=int(pr_number))
@@ -450,14 +460,12 @@ class GitHubAPIWrapper(BaseModel):
             dict: A dictionary containing the pull's title, body,
             and comments as a string
         """
-
-        import tiktoken
-
         max_tokens = 2_000
         pull = self.github_repo_instance.get_pull(number=pr_number)
         total_tokens = 0
 
         def get_tokens(text: str) -> int:
+            tiktoken = _import_tiktoken()
             return len(tiktoken.get_encoding("cl100k_base").encode(text))
 
         def add_to_dict(data_dict: Dict[str, Any], key: str, value: str) -> None:
