@@ -24,6 +24,7 @@ class Html2TextTransformer(BaseDocumentTransformer):
     def transform_documents(
         self,
         documents: Sequence[Document],
+        store_raw_html: bool = False,
         **kwargs: Any,
     ) -> Sequence[Document]:
         try:
@@ -42,10 +43,25 @@ class Html2TextTransformer(BaseDocumentTransformer):
         new_documents = []
 
         for d in documents:
-            new_document = Document(
-                page_content=h.handle(d.page_content), metadata={**d.metadata}
-            )
-            new_documents.append(new_document)
+            if store_raw_html:
+                # Convert HTML to text
+                text_content = h.handle(d.page_content)
+                
+                # Store the original HTML content in the metadata
+                updated_metadata = {**d.metadata, "original_page": d.page_content}
+
+                # Create a new Document with the text content and updated metadata
+                new_document = Document(
+                    page_content=text_content, 
+                    metadata=updated_metadata
+                )
+                new_documents.append(new_document)
+            else:
+                new_document = Document(
+                    page_content=h.handle(d.page_content), metadata={**d.metadata}
+                )
+                new_documents.append(new_document)
+                
         return new_documents
 
     async def atransform_documents(
