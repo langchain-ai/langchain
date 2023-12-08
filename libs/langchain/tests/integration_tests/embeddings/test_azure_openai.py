@@ -18,7 +18,7 @@ DEPLOYMENT_NAME = os.environ.get(
 
 def _get_embeddings(**kwargs: Any) -> AzureOpenAIEmbeddings:
     return AzureOpenAIEmbeddings(
-        deployment_name=DEPLOYMENT_NAME,
+        azure_deployment=DEPLOYMENT_NAME,
         api_version=OPENAI_API_VERSION,
         openai_api_base=OPENAI_API_BASE,
         openai_api_key=OPENAI_API_KEY,
