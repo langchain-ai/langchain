@@ -6,7 +6,6 @@ ALL_DIRS = {
     "libs/langchain",
     "libs/experimental",
     "libs/community",
-    "libs/partners/openai",
 }
 
 if __name__ == "__main__":
