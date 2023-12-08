@@ -9,9 +9,9 @@ from langchain.prompts.database.converter_prompt_template import ConverterPrompt
 def test_values() -> None:
     """Basic functionality test."""
 
-    def converter(in1: int, in2: str) -> Dict[str, Any]:
+    def converter(in1: str, in2: str) -> Dict[str, Any]:
         return {
-            "out1": in1 * 2,
+            "out1": f"<{in1}>",
             "out2": in2 + in2,
         }
 
@@ -25,8 +25,8 @@ def test_values() -> None:
         converter_output_variables=["out1", "out2"],
     )
 
-    result = c_p_template.format(in1=5, in2="x", another="a")
-    assert result == "out1=10 out2=xx another=a"
+    result = c_p_template.format(in1="A", in2="x", another="a")
+    assert result == "out1=<A> out2=xx another=a"
 
 
 def test_validate_template() -> None:
@@ -52,7 +52,7 @@ def test_partialing() -> None:
 
     def converter(in1: int, in2: str) -> Dict[str, Any]:
         return {
-            "out1": in1 * 2,
+            "out1": f"<{in1}>",
             "out2": in2 + in2,
         }
 
@@ -66,17 +66,17 @@ def test_partialing() -> None:
         converter_output_variables=["out1", "out2"],
     )
 
-    c_p_partial1 = c_p_template.partial(in1=5)
+    c_p_partial1 = c_p_template.partial(in1="A")
     result1 = c_p_partial1.format(in2="x", another="a")
-    assert result1 == "out1=10 out2=xx another=a"
+    assert result1 == "out1=<A> out2=xx another=a"
 
     c_p_partial2 = c_p_template.partial(another="a")
-    result2 = c_p_partial2.format(in1=5, in2="x")
-    assert result2 == "out1=10 out2=xx another=a"
+    result2 = c_p_partial2.format(in1="A", in2="x")
+    assert result2 == "out1=<A> out2=xx another=a"
 
     c_p_partial3 = c_p_template.partial(in2="x", another="a")
-    result3 = c_p_partial3.format(in1=5)
-    assert result3 == "out1=10 out2=xx another=a"
+    result3 = c_p_partial3.format(in1="A")
+    assert result3 == "out1=<A> out2=xx another=a"
 
 
 def test_converter_prompt_template_as_runnable() -> None:
