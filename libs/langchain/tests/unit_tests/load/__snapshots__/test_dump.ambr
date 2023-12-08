@@ -76,7 +76,7 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain_community",
+          "langchain",
           "llms",
           "openai",
           "OpenAI"
@@ -131,7 +131,7 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain_community",
+          "langchain",
           "chat_models",
           "openai",
           "ChatOpenAI"
@@ -215,7 +215,7 @@
         "lc": 1,
         "type": "constructor",
         "id": [
-          "langchain_community",
+          "langchain",
           "llms",
           "openai",
           "OpenAI"
@@ -260,7 +260,7 @@
     "lc": 1,
     "type": "constructor",
     "id": [
-      "langchain_community",
+      "langchain",
       "llms",
       "openai",
       "OpenAI"
