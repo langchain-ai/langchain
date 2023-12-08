@@ -13,7 +13,10 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "")
 OPENAI_API_BASE = os.environ.get("AZURE_OPENAI_API_BASE", "")
 OPENAI_API_KEY = os.environ.get("AZURE_OPENAI_API_KEY", "")
-DEPLOYMENT_NAME = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "")
+DEPLOYMENT_NAME = os.environ.get(
+    "AZURE_OPENAI_DEPLOYMENT_NAME",
+    os.environ.get("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME", ""),
+)
 
 
 def _get_llm(**kwargs: Any) -> AzureChatOpenAI:
