@@ -78,10 +78,9 @@ class AI21(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        ai21_api_key = convert_to_secret_str(
+        values["ai21_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "ai21_api_key", "AI21_API_KEY")
         )
-        values["ai21_api_key"] = convert_to_secret_str(ai21_api_key)
         return values
 
     @property

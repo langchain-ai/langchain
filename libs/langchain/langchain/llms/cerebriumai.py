@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional, cast
+from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator

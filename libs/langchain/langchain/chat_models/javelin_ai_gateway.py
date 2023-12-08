@@ -20,6 +20,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
+from langchain.utils import convert_to_secret_str
 
 logger = logging.getLogger(__name__)
 

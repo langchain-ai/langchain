@@ -85,7 +85,7 @@ class GoogleTrendsAPIWrapper(BaseModel):
 
         params = {
             "engine": "google_trends",
-            "api_key": serpapi_api_key.get_secret_value(),
+            "api_key": self.serpapi_api_key.get_secret_value(),
             "data_type": "RELATED_QUERIES",
             "q": query,
         }

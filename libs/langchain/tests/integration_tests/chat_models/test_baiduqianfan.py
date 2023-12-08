@@ -6,6 +6,16 @@ from langchain.chat_models.baidu_qianfan_endpoint import (
 )
 
 
+def test_api_key_is_secret_string() -> None:
+    """Test that actual secret is the s`."""
+    chat = QianfanChatEndpoint(
+        qianfan_ak="test-api-key",
+        qianfan_sk="test-secret-key",
+    )
+    assert isinstance(chat.qianfan_ak, SecretStr)
+    assert isinstance(chat.qianfan_sk, SecretStr)
+
+
 def test_qianfan_key_masked_when_passed_from_env(
     monkeypatch: MonkeyPatch, capsys: CaptureFixture
 ) -> None:
