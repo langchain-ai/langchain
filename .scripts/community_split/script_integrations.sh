@@ -333,3 +333,4 @@ g add .
 
 cd ..
 sed -E -i '' '1 s/(.*)/\1\ \ \#\ noqa\:\ E501/g' langchain/langchain/agents/agent_toolkits/conversational_retrieval/openai_functions.py
+sed -E -i '' 's/import\ importlib$/import importlib.utils' experimental/langchain_experimental/prompts/load.py
