@@ -53,12 +53,6 @@ jobs:
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
           poetry install --with=test_integration
-          poetry run pip install google-cloud-aiplatform
-          poetry run pip install "boto3>=1.28.57"
-          if [[ ${{ matrix.python-version }} != "3.8" ]]
-          then
-            poetry run pip install fireworks-ai
-          fi
 
       - name: Run tests
         shell: bash
