@@ -3258,7 +3258,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.0.12"
+version = "0.0.13rc1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -8616,4 +8616,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "eeca83423eb6d92972ce5f5c835855203e0969a2b13cc5b1ccbe72280236e907"
+content-hash = "235bb16598003b76fc4000e9a87bb205f557bee0c204f9a7ff7b68c0c42914d9"
