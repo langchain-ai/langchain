@@ -36,6 +36,10 @@ class PromptLayerOpenAI(OpenAI):
     pl_tags: Optional[List[str]]
     return_pl_id: Optional[bool] = False
 
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
+
     def _generate(
         self,
         prompts: List[str],

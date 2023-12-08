@@ -32,7 +32,7 @@ from langchain_community.agent_toolkits.openapi.planner_prompt import (
     REQUESTS_PUT_TOOL_DESCRIPTION,
 )
 from langchain_community.agent_toolkits.openapi.spec import ReducedOpenAPISpec
-from langchain_community.output_parsers.json import parse_json_markdown
+from langchain.output_parsers.json import parse_json_markdown
 from langchain_community.tools.requests.tool import BaseRequestsTool
 from langchain_community.utilities.requests import RequestsWrapper
 

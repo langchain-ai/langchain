@@ -29,6 +29,10 @@ class _ResponseChain(LLMChain):
 
     prompt: BasePromptTemplate = PROMPT
 
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
+
     @property
     def input_keys(self) -> List[str]:
         return self.prompt.input_variables
@@ -51,6 +55,10 @@ class _ResponseChain(LLMChain):
 
 class _OpenAIResponseChain(_ResponseChain):
     """Chain that generates responses from user input and context."""
+
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
 
     llm: OpenAI = Field(
         default_factory=lambda: OpenAI(
@@ -76,6 +84,10 @@ class QuestionGeneratorChain(LLMChain):
 
     prompt: BasePromptTemplate = QUESTION_GENERATOR_PROMPT
     """Prompt template for the chain."""
+
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
 
     @property
     def input_keys(self) -> List[str]:

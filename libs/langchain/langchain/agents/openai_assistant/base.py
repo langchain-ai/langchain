@@ -28,6 +28,10 @@ class OpenAIAssistantFinish(AgentFinish):
     run_id: str
     thread_id: str
 
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
+
 
 class OpenAIAssistantAction(AgentAction):
     """AgentAction with info needed to submit custom tool output to existing run."""
@@ -35,6 +39,10 @@ class OpenAIAssistantAction(AgentAction):
     tool_call_id: str
     run_id: str
     thread_id: str
+
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
 
 
 def _get_openai_client() -> openai.OpenAI:

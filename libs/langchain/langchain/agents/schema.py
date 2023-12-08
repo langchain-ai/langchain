@@ -7,6 +7,10 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 class AgentScratchPadChatPromptTemplate(ChatPromptTemplate):
     """Chat prompt template for the agent scratchpad."""
 
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
+
     def _construct_agent_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
     ) -> str:

@@ -15,6 +15,10 @@ class _DocumentWithState(Document):
     state: dict = Field(default_factory=dict)
     """State associated with the document."""
 
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
+
     def to_document(self) -> Document:
         """Convert the DocumentWithState to a Document."""
         return Document(page_content=self.page_content, metadata=self.metadata)

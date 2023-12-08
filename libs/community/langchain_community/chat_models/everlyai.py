@@ -50,6 +50,10 @@ class ChatEverlyAI(ChatOpenAI):
     def lc_secrets(self) -> Dict[str, str]:
         return {"everlyai_api_key": "EVERLYAI_API_KEY"}
 
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
+
     everlyai_api_key: Optional[str] = None
     """EverlyAI Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")

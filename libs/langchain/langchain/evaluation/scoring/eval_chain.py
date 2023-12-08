@@ -180,6 +180,10 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     criterion_name: str
     """The name of the criterion being evaluated."""
 
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
+
     class Config:
         """Configuration for the ScoreStringEvalChain."""
 
@@ -404,6 +408,10 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
         output_parser (BaseOutputParser): The output parser for the chain.
 
     """
+
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
 
     @property
     def requires_reference(self) -> bool:

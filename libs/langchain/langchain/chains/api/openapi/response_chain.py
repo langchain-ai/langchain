@@ -41,6 +41,10 @@ class APIResponderChain(LLMChain):
     """Get the response parser."""
 
     @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
+
+    @classmethod
     def from_llm(
         cls, llm: BaseLanguageModel, verbose: bool = True, **kwargs: Any
     ) -> LLMChain:

@@ -36,6 +36,10 @@ class ConversationChain(LLMChain):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
+    @classmethod
+    def is_lc_serializable(self) -> bool:
+        return False
+
     @property
     def input_keys(self) -> List[str]:
         """Use this since so some prompt vars come from history."""

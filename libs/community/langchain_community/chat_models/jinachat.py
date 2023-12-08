@@ -167,7 +167,7 @@ class JinaChat(BaseChatModel):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
-        return True
+        return False
 
     client: Any  #: :meta private:
     temperature: float = 0.7
