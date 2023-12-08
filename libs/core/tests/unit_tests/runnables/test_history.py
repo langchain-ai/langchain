@@ -282,7 +282,7 @@ def test_using_custom_config_specs() -> None:
         get_session_history=get_session_history,
         input_messages_key="messages",
         history_messages_key="history",
-        session_history_config_specs=[
+        history_factory_config=[
             ConfigurableFieldSpec(
                 id="user_id",
                 annotation=str,
