@@ -2,12 +2,14 @@
 
 cd libs
 
+# cleanup anything existing
 git checkout master -- langchain/{langchain,tests}
 git checkout master -- core/{langchain_core,tests}
 git checkout master -- experimental/{langchain_experimental,tests}
 rm -rf community/{langchain_community,tests}
 rm -rf partners/openai/{langchain_openai,tests}
 
+# make new dirs
 mkdir -p community/langchain_community
 touch community/langchain_community/__init__.py
 touch community/README.md
@@ -26,20 +28,7 @@ touch community/langchain_community/indexes/__init__.py
 mkdir community/tests/unit_tests/indexes
 touch community/tests/unit_tests/indexes/__init__.py
 
-
-mkdir -p partners/openai/langchain_openai/{chat_models,llms,embeddings}
-mkdir -p partners/openai/tests/{unit_tests,integration_tests}/llms
-mkdir -p partners/openai/tests/{unit_tests,integration_tests}/chat_models
-mkdir -p partners/openai/tests/{unit_tests,integration_tests}/embeddings
-mkdir -p partners/openai/tests/integration_tests/adapters
-touch partners/openai/langchain_openai/__init__.py
-touch partners/openai/README.md
-touch partners/openai/langchain_openai/{llms,chat_models,embeddings}/__init__.py
-touch partners/openai/tests/{unit_tests,integration_tests}/__init__.py
-touch partners/openai/tests/{unit_tests,integration_tests}/chat_models/__init__.py
-touch partners/openai/tests/{unit_tests,integration_tests}/llms/__init__.py
-touch partners/openai/tests/{unit_tests,integration_tests}/embeddings/__init__.py
-
+# import core stuff from core
 cd langchain
 
 git grep -l 'from langchain.pydantic_v1' | xargs sed -i '' 's/from langchain.pydantic_v1/from langchain_core.pydantic_v1/g'
@@ -53,6 +42,7 @@ git grep -l 'from langchain.schema.output' | xargs sed -i '' 's/from langchain.s
 git grep -l 'from langchain.schema.messages' | xargs sed -i '' 's/from langchain.schema.messages/from langchain_core.messages/g'
 git grep -l 'from langchain.schema.embeddings' | xargs sed -i '' 's/from langchain.schema.embeddings/from langchain_core.embeddings/g'
 
+# mv stuff to community
 cd ..
 
 mv langchain/langchain/chat_loaders community/langchain_community
@@ -76,15 +66,18 @@ mv langchain/langchain/indexes/base.py community/langchain_community/indexes
 mv langchain/langchain/indexes/_sql_record_manager.py community/langchain_community/indexes
 mv langchain/langchain/utils/math.py community/langchain_community/utils
 
+# mv stuff to openai
 mv langchain/langchain/utils/openai.py partners/openai/langchain_openai/utils.py
 mv langchain/langchain/utils/openai_functions.py partners/openai/langchain_openai/functions.py
 
+# mv stuff to core
 mv langchain/langchain/utils/json_schema.py core/langchain_core/utils
 mv langchain/langchain/utils/html.py core/langchain_core/utils
 mv langchain/langchain/utils/strings.py core/langchain_core/utils
 cat langchain/langchain/utils/env.py >> core/langchain_core/utils/env.py
 rm langchain/langchain/utils/env.py
 
+# mv unit tests to community
 mv langchain/tests/unit_tests/chat_loaders community/tests/unit_tests
 mv langchain/tests/unit_tests/document_loaders community/tests/unit_tests
 mv langchain/tests/unit_tests/docstore community/tests/unit_tests
@@ -102,15 +95,18 @@ mv langchain/tests/unit_tests/callbacks community/tests/unit_tests
 mv langchain/tests/unit_tests/indexes/test_sql_record_manager.py community/tests/unit_tests/indexes
 mv langchain/tests/unit_tests/utils/test_math.py community/tests/unit_tests/utils
 
+# cp some test helpers back to langchain
 mkdir -p langchain/tests/unit_tests/llms
 cp {community,langchain}/tests/unit_tests/llms/fake_llm.py
 cp {community,langchain}/tests/unit_tests/llms/fake_chat_model.py
 mkdir -p langchain/tests/unit_tests/callbacks
 cp {community,langchain}/tests/unit_tests/callbacks/fake_callback_handler.py
 
+# mv unit tests to core
 mv langchain/tests/unit_tests/utils/test_json_schema.py core/tests/unit_tests/utils
 mv langchain/tests/unit_tests/utils/test_html.py core/tests/unit_tests/utils
 
+# mv integration tests to community
 mv langchain/tests/integration_tests/document_loaders community/tests/integration_tests
 mv langchain/tests/integration_tests/embeddings community/tests/integration_tests
 mv langchain/tests/integration_tests/graphs community/tests/integration_tests
@@ -126,7 +122,7 @@ mv langchain/tests/integration_tests/callbacks community/tests/integration_tests
 mv langchain/tests/integration_tests/{test_kuzu,test_nebulagraph}.py community/tests/integration_tests/graphs
 touch community/tests/integration_tests/{chat_message_histories,tools}/__init__.py
 
-
+# import new core stuff from core (everywhere)
 git grep -l 'from langchain.utils.json_schema' | xargs sed -i '' 's/from langchain.utils.json_schema/from langchain_core.utils.json_schema/g'
 git grep -l 'from langchain.utils.html' | xargs sed -i '' 's/from langchain.utils.html/from langchain_core.utils.html/g'
 git grep -l 'from langchain.utils.strings' | xargs sed -i '' 's/from langchain.utils.strings/from langchain_core.utils.strings/g'
@@ -135,6 +131,7 @@ git grep -l 'from langchain.utils.env' | xargs sed -i '' 's/from langchain.utils
 git add community
 cd community
 
+# import core stuff from core
 git grep -l 'from langchain.pydantic_v1' | xargs sed -i '' 's/from langchain.pydantic_v1/from langchain_core.pydantic_v1/g'
 git grep -l 'from langchain.callbacks.base' | xargs sed -i '' 's/from langchain.callbacks.base/from langchain_core.callbacks/g'
 git grep -l 'from langchain.callbacks.stdout' | xargs sed -i '' 's/from langchain.callbacks.stdout/from langchain_core.callbacks/g'
@@ -146,6 +143,7 @@ git grep -l 'from langchain.agents.tools' | xargs sed -i '' 's/from langchain.ag
 git grep -l 'from langchain.schema.output' | xargs sed -i '' 's/from langchain.schema.output/from langchain_core.outputs/g'
 git grep -l 'from langchain.schema.messages' | xargs sed -i '' 's/from langchain.schema.messages/from langchain_core.messages/g'
 
+# import openai stuff from openai
 git grep -l 'from langchain.utils.math' | xargs sed -i '' 's/from langchain.utils.math/from langchain_community.utils.math/g'
 git grep -l 'from langchain.utils.openai_functions' | xargs sed -i '' 's/from langchain.utils.openai_functions/from langchain_openai.functions/g'
 git grep -l 'from langchain.utils.openai' | xargs sed -i '' 's/from langchain.utils.openai/from langchain_openai.utils/g'
@@ -180,10 +178,9 @@ git grep -l 'import langchain$' | xargs sed -i '' 's/import\ langchain$/import\ 
 git grep -l 'from\ langchain\ ' | xargs sed -i '' 's/from\ langchain\ /from\ langchain_community\ /g'
 git grep -l 'langchain_core.language_models.llmsten' | xargs sed -i '' 's/langchain_core.language_models.llmsten/langchain_community.llms.baseten/g'
 
-
-cd ..
-git checkout master -- langchain/langchain
-cd langchain
+# update all moved langchain files to re-export classes and functions
+cd ../langchain
+git checkout master -- langchain
 
 python ../../.scripts/community_split/update_imports.py langchain/chat_loaders langchain_community.chat_loaders
 python ../../.scripts/community_split/update_imports.py langchain/callbacks langchain_community.callbacks
@@ -210,6 +207,7 @@ python ../../.scripts/community_split/update_imports.py langchain/utils/strings.
 python ../../.scripts/community_split/update_imports.py langchain/utils/openai.py langchain_openai.utils
 python ../../.scripts/community_split/update_imports.py langchain/utils/openai_functions.py langchain_openai.functions
 
+# update core and openai imports
 git grep -l 'from langchain.llms.base ' | xargs sed -i '' 's/from langchain.llms.base /from langchain_core.language_models.llms /g'
 git grep -l 'from langchain.chat_models.base ' | xargs sed -i '' 's/from langchain.chat_models.base /from langchain_core.language_models.chat_models /g'
 git grep -l 'from langchain.tools.base' | xargs sed -i '' 's/from langchain.tools.base/from langchain_core.tools/g'
@@ -227,6 +225,7 @@ cd ..
 mv community/langchain_community/utilities/loading.py langchain/langchain/utilities
 mv community/langchain_community/utilities/asyncio.py langchain/langchain/utilities
 
+# move from community to openai
 mv community/langchain_community/chat_models/openai.py partners/openai/langchain_openai/chat_models/base.py
 mv community/langchain_community/chat_models/azure_openai.py partners/openai/langchain_openai/chat_models/azure.py
 mv community/langchain_community/llms/openai.py partners/openai/langchain_openai/llms/base.py
@@ -234,15 +233,15 @@ mv community/langchain_community/embeddings/openai.py partners/openai/langchain_
 mv community/langchain_community/embeddings/azure_openai.py partners/openai/langchain_openai/embeddings/azure.py
 mv community/langchain_community/adapters/openai.py partners/openai/langchain_openai/adapters.py
 
+# move tests from community to openai
+mv community/langchain_community/chat_models/openai.py partners/openai/langchain_openai/chat_models/base.py
 mv community/tests/unit_tests/chat_models/test_openai.py partners/openai/tests/unit_tests/chat_models/test_base.py
 mv community/tests/integration_tests/chat_models/test_openai.py partners/openai/tests/integration_tests/chat_models/test_base.py
 mv community/tests/unit_tests/chat_models/test_azureopenai.py partners/openai/tests/unit_tests/chat_models/test_azure.py
 mv community/tests/integration_tests/chat_models/test_azure_openai.py partners/openai/tests/integration_tests/chat_models/test_azure.py
-
 mv community/tests/unit_tests/llms/test_openai.py partners/openai/tests/unit_tests/llms/test_base.py
 mv community/tests/integration_tests/llms/test_openai.py partners/openai/tests/integration_tests/llms/test_base.py
 mv community/tests/integration_tests/llms/test_azure_openai.py partners/openai/tests/integration_tests/llms/test_azure.py
-
 mv community/tests/unit_tests/embeddings/test_openai.py partners/openai/tests/unit_tests/embeddings/test_base.py
 mv community/tests/integration_tests/embeddings/test_openai.py partners/openai/tests/integration_tests/embeddings/test_base.py
 mv community/tests/integration_tests/embeddings/test_azure_openai.py partners/openai/tests/integration_tests/embeddings/test_azure.py
@@ -252,12 +251,14 @@ mv community/tests/integration_tests/adapters/{__init__,test_openai}.py partners
 
 git add partners core
 
+# rm files from community that just export core classes
 rm community/langchain_community/{chat_models,llms,tools,embeddings,vectorstores,callbacks}/base.py
 rm community/tests/unit_tests/{chat_models,llms,tools,callbacks}/test_base.py
 rm community/tests/unit_tests/callbacks/test_manager.py
 rm community/langchain_community/callbacks/{stdout,streaming_stdout}.py
 rm community/langchain_community/callbacks/tracers/{base,evaluation,langchain,langchain_v1,log_stream,root_listeners,run_collector,schemas,stdout}.py
 
+# keep export tests in langchain
 git checkout master -- langchain/tests/unit_tests/{chat_models,llms,tools,callbacks,document_loaders}/test_base.py
 git checkout master -- langchain/tests/unit_tests/{callbacks,docstore,document_loaders,document_transformers,embeddings,graphs,llms,chat_models,storage,tools,utilities,vectorstores}/test_imports.py
 git checkout master -- langchain/tests/unit_tests/callbacks/test_manager.py
@@ -268,31 +269,39 @@ git checkout master -- langchain/tests/unit_tests/schema
 touch langchain/tests/unit_tests/{llms,chat_models,tools,callbacks,runnables,document_loaders,docstore,document_transformers,embeddings,graphs,storage,utilities,vectorstores}/__init__.py
 touch langchain/tests/unit_tests/document_loaders/{blob_loaders,parsers}/__init__.py
 
+# cp lint scripts
 cp -r core/scripts community
 cp -r core/scripts partners/openai
 
-
+# circular imports
 sed -i '' 's/from\ langchain_openai.chat_models\ /from\ langchain_openai.chat_models.base\ /g' partners/openai/langchain_openai/chat_models/azure.py
 sed -i '' 's/from\ langchain_openai.embeddings\ /from\ langchain_openai.embeddings.base\ /g' partners/openai/langchain_openai/embeddings/azure.py
 
+# rm requires marker in openai
 git grep -l '@pytest\.mark\.requires' partners/openai | xargs sed -i '' 's/@pytest\.mark\.requires("openai")//g'
 
-
+# cp test helpers
 cp -r langchain/tests/integration_tests/examples community/tests
 cp -r langchain/tests/integration_tests/examples community/tests/integration_tests
 cp -r langchain/tests/unit_tests/examples community/tests/unit_tests
 cp langchain/tests/unit_tests/conftest.py community/tests/unit_tests
 cp langchain/tests/integration_tests/test_compile.py community/tests/integration_tests
 cp langchain/tests/integration_tests/test_compile.py partners/openai/tests/integration_tests
-cp -r ../.scripts/community_split/libs/* .
 cp community/tests/integration_tests/vectorstores/fake_embeddings.py langchain/tests/integration_tests/cache/
 
+# cp manually changed files
+cp -r ../.scripts/community_split/libs/* .
+
+# mv some tests to integrations
 mv community/tests/{unit_tests,integration_tests}/document_loaders/test_telegram.py
 mv community/tests/{unit_tests,integration_tests}/document_loaders/parsers/test_docai.py
 mv community/tests/{unit_tests,integration_tests}/chat_message_histories/test_streamlit.py
 
+# fix some final tests
 g grep -l 'integration_tests\.vectorstores\.fake_embeddings' community/tests | xargs sed -i '' 's/integration_tests\.vectorstores\.fake_embeddings/integration_tests.cache.fake_embeddings/g'
+sed -i '' 's/llms\.loading\.get_type_to_cls_dict/llms.get_type_to_cls_dict/g' langchain/tests/unit_tests/chains/test_llm.py
 
+# format
 cd core
 make format
 cd ../langchain
@@ -306,5 +315,4 @@ make format
 
 cd ../..
 sed -E -i '' '1 s/(.*)/\1\ \ \#\ noqa\:\ E501/g' langchain/langchain/agents/agent_toolkits/conversational_retrieval/openai_functions.py
-sed -i '' 's/llms\.loading\.get_type_to_cls_dict/llms.get_type_to_cls_dict/g' langchain/tests/unit_tests/chains/test_llm.py
 touch community/langchain_community/agent_toolkits/amadeus/__init__.py
