@@ -3791,4 +3791,4 @@ extended-testing = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "22f6a7c2154e79c458cc11272e48669f82a2b80b561a06d4f8288a8f1e2d5f87"
+content-hash = "ea2780387bac85737006fdacd19d81b7fca04dc1e551b9fc50cd489ef622f2a1"
