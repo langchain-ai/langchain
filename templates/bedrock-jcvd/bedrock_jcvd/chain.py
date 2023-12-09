@@ -1,10 +1,12 @@
+import os
+
 from langchain.chat_models import BedrockChat
 from langchain.prompts import ChatPromptTemplate
 
 _model = BedrockChat(
-    model_id="anthropic.claude-v2",
+    model_id=os.getenv("BEDROCK_JCVD_MODEL_ID", "anthropic.claude-v2"),
     model_kwargs={
-        "temperature": 0.1
+        "temperature": os.getenv("BEDROCK_JCVD_TEMPERATURE", "0.1")
     }
 )
 
