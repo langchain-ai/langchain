@@ -50,7 +50,7 @@ def extract_sub_links(
     *,
     base_url: Optional[str] = None,
     pattern: Union[str, re.Pattern, None] = None,
-    prevent_outside: bool = True,
+    prevent_outside: Union[bool, str] = True,
     exclude_prefixes: Sequence[str] = (),
 ) -> List[str]:
     """Extract all links from a raw html string and convert into absolute paths.
@@ -67,7 +67,13 @@ def extract_sub_links(
     Returns:
         List[str]: sub links
     """
-    base_url = base_url if base_url is not None else url
+    base_url = (
+        prevent_outside
+        if isinstance(prevent_outside, str)
+        else base_url
+        if base_url is not None
+        else url
+    )
     all_links = find_all_links(raw_html, pattern=pattern)
     absolute_paths = set()
     for link in all_links:
