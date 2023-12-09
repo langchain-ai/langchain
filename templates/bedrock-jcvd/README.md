@@ -2,7 +2,9 @@
 
 ## Overview
 
-LangChain template that uses [Anthropic's Claude on Amazon Bedrock ⛰️](https://aws.amazon.com/bedrock/claude/) to behaves like JCVD.
+LangChain template that uses [Anthropic's Claude on Amazon Bedrock](https://aws.amazon.com/bedrock/claude/) to behave like JCVD.
+
+> I am the Fred Astaire of Chatbots! 🕺
 
 '![JCVD](https://media.tenor.com/CVp9l7g3axwAAAAj/jean-claude-van-damme-jcvd.gif)
 
