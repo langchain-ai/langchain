@@ -56,7 +56,7 @@ class MultiFieldRetriever(BaseRetriever):
     """
 
     retriever: BaseRetriever
-    documents: List[Document] = []
+    documents: dict[int, Document] = []
 
     @classmethod
     def from_documents(
@@ -103,7 +103,9 @@ class MultiFieldRetriever(BaseRetriever):
         retriever = retriever.from_documents(documents=pseudo_doc_list, **kwargs)
         if isinstance(retriever, VectorStore):
             return cls(retriever=retriever.as_retriever(search_kwargs=search_kwargs))
-        return cls(retriever=retriever, documents=documents)
+        return cls(
+            retriever=retriever, documents={i: doc for i, doc in enumerate(documents)}
+        )
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
