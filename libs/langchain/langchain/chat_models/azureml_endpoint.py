@@ -8,23 +8,20 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.pydantic_v1 import SecretStr, root_validator, validator
-from langchain_core.utils import convert_to_secret_str
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
 from langchain.llms.azureml_endpoint import (
     AzureMLBaseOnlineEndpoint,
-    AzureMLEndpointClient,
     ContentFormatterBase,
 )
-from langchain.utils import get_from_dict_or_env
 
 
 class LlamaContentFormatter(ContentFormatterBase):
     def __init__(self):
         raise TypeError(
-            "`LlamaContentFormatter` is deprecated for chat models. Use `LlamaChatContentFormatter` instead."
+            "`LlamaContentFormatter` is deprecated for chat models. Use "
+            "`LlamaChatContentFormatter` instead."
         )
 
 

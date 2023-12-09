@@ -233,8 +233,8 @@ class AzureMLBaseOnlineEndpoint(BaseModel):
     """  # noqa: E501
 
     endpoint_type: str = "realtime"
-    """Type of the endpoint being consumed. Possible values are `paygo` for pay-as-you-go and
-        `realtime` for real-time endpoints. """
+    """Type of the endpoint being consumed. Possible values are `paygo` for 
+        pay-as-you-go and `realtime` for real-time endpoints. """
 
     endpoint_url: str = ""
     """URL of pre-existing Endpoint. Should be passed to constructor or specified as 
@@ -275,9 +275,9 @@ class AzureMLBaseOnlineEndpoint(BaseModel):
             "inference.ml.azure.com/"
         ):
             raise ValueError(
-                "`endpoint_url` should contain the full invocation URL including `/score` for "
-                "`endpoint_type='realtime'` or `/v1/chat/completions` or `/v1/chat/completions` "
-                "for `endpoint_type='paygo'`"
+                "`endpoint_url` should contain the full invocation URL including "
+                "`/score` for `endpoint_type='realtime'` or `/v1/chat/completions` "
+                "or `/v1/chat/completions` for `endpoint_type='paygo'`"
             )
         if endpoint_type == "realtime" and not endpoint_url.endswith("/score"):
             raise ValueError(
