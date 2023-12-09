@@ -1,3 +1,4 @@
+import json
 import re
 from typing import Type, TypeVar
 
@@ -48,7 +49,7 @@ class YamlOutputParser(BaseOutputParser[T]):
         if "type" in reduced_schema:
             del reduced_schema["type"]
         # Ensure yaml in context is well-formed with double quotes.
-        schema_str = yaml.dump(reduced_schema)
+        schema_str = json.dumps(reduced_schema)
 
         return YAML_FORMAT_INSTRUCTIONS.format(schema=schema_str)
 
