@@ -1,4 +1,4 @@
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict, List
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
@@ -56,7 +56,7 @@ class MultiFieldRetriever(BaseRetriever):
     """
 
     retriever: BaseRetriever
-    documents: dict[int, Document] = []
+    documents: Dict[int, Document] = {}
 
     @classmethod
     def from_documents(
