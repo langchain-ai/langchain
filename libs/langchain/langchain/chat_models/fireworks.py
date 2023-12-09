@@ -101,6 +101,11 @@ class ChatFireworks(BaseChatModel):
     def is_lc_serializable(cls) -> bool:
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "chat_models", "fireworks"]
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key in environment."""
@@ -135,6 +140,7 @@ class ChatFireworks(BaseChatModel):
             "model": self.model,
             "messages": message_dicts,
             **self.model_kwargs,
+            **kwargs,
         }
         response = completion_with_retry(
             self,
@@ -157,6 +163,7 @@ class ChatFireworks(BaseChatModel):
             "model": self.model,
             "messages": message_dicts,
             **self.model_kwargs,
+            **kwargs,
         }
         response = await acompletion_with_retry(
             self, self.use_retry, run_manager=run_manager, stop=stop, **params
@@ -200,6 +207,7 @@ class ChatFireworks(BaseChatModel):
             "messages": message_dicts,
             "stream": True,
             **self.model_kwargs,
+            **kwargs,
         }
         for chunk in completion_with_retry(
             self, self.use_retry, run_manager=run_manager, stop=stop, **params
@@ -230,6 +238,7 @@ class ChatFireworks(BaseChatModel):
             "messages": message_dicts,
             "stream": True,
             **self.model_kwargs,
+            **kwargs,
         }
         async for chunk in await acompletion_with_retry_streaming(
             self, self.use_retry, run_manager=run_manager, stop=stop, **params

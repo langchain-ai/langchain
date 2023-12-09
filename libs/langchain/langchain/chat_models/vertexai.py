@@ -127,21 +127,24 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     def is_lc_serializable(self) -> bool:
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "chat_models", "vertexai"]
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         cls._try_init_vertexai(values)
         try:
-            if is_codey_model(values["model_name"]):
-                from vertexai.preview.language_models import CodeChatModel
-
-                values["client"] = CodeChatModel.from_pretrained(values["model_name"])
-            else:
-                from vertexai.preview.language_models import ChatModel
-
-                values["client"] = ChatModel.from_pretrained(values["model_name"])
+            from vertexai.language_models import ChatModel, CodeChatModel
         except ImportError:
             raise_vertex_import_error()
+        if is_codey_model(values["model_name"]):
+            model_cls = CodeChatModel
+        else:
+            model_cls = ChatModel
+        values["client"] = model_cls.from_pretrained(values["model_name"])
         return values
 
     def _generate(
@@ -244,7 +247,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         question = _get_question(messages)
         history = _parse_chat_history(messages[:-1])
-        params = self._prepare_params(stop=stop, **kwargs)
+        params = self._prepare_params(stop=stop, stream=True, **kwargs)
         examples = kwargs.get("examples", None)
         if examples:
             params["examples"] = _parse_examples(examples)

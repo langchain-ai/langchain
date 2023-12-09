@@ -61,7 +61,9 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get the schema for tables in a comma-separated list."""
-        return self.db.get_table_info_no_throw(table_names.split(", "))
+        return self.db.get_table_info_no_throw(
+            [t.strip() for t in table_names.split(",")]
+        )
 
 
 class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):

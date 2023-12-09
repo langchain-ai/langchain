@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import os
 import warnings
-from typing import Any, Dict, Union
+from typing import Any, Callable, Dict, List, Union
 
 from langchain_core.outputs import ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
@@ -80,7 +80,7 @@ class AzureChatOpenAI(ChatOpenAI):
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
     """  # noqa: E501
-    azure_ad_token_provider: Union[str, None] = None
+    azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
         
         Will be invoked on every request.
@@ -93,6 +93,11 @@ class AzureChatOpenAI(ChatOpenAI):
     """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "chat_models", "azure_openai"]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

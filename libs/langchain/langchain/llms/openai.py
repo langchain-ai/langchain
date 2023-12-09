@@ -149,6 +149,11 @@ class BaseOpenAI(BaseLLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "llms", "openai"]
+
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
@@ -467,6 +472,7 @@ class BaseOpenAI(BaseLLM):
         return self.create_llm_result(
             choices,
             prompts,
+            params,
             token_usage,
             system_fingerprint=system_fingerprint,
         )
@@ -524,6 +530,7 @@ class BaseOpenAI(BaseLLM):
         return self.create_llm_result(
             choices,
             prompts,
+            params,
             token_usage,
             system_fingerprint=system_fingerprint,
         )
@@ -555,14 +562,16 @@ class BaseOpenAI(BaseLLM):
         self,
         choices: Any,
         prompts: List[str],
+        params: Dict[str, Any],
         token_usage: Dict[str, int],
         *,
         system_fingerprint: Optional[str] = None,
     ) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
+        n = params.get("n", self.n)
         for i, _ in enumerate(prompts):
-            sub_choices = choices[i * self.n : (i + 1) * self.n]
+            sub_choices = choices[i * n : (i + 1) * n]
             generations.append(
                 [
                     Generation(
@@ -732,6 +741,11 @@ class OpenAI(BaseOpenAI):
             openai = OpenAI(model_name="text-davinci-003")
     """
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "llms", "openai"]
+
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"model": self.model_name}, **super()._invocation_params}
@@ -778,7 +792,7 @@ class AzureOpenAI(BaseOpenAI):
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
     """  # noqa: E501
-    azure_ad_token_provider: Union[str, None] = None
+    azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every request.
@@ -789,6 +803,11 @@ class AzureOpenAI(BaseOpenAI):
     """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "llms", "openai"]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

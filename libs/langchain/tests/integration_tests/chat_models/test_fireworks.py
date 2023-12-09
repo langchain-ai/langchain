@@ -102,19 +102,16 @@ def test_fireworks_batch(chat: ChatFireworks) -> None:
     """Test batch tokens from ChatFireworks."""
     result = chat.batch(
         [
-            "What is the weather in Redwood City, CA today",
-            "What is the weather in Redwood City, CA today",
-            "What is the weather in Redwood City, CA today",
-            "What is the weather in Redwood City, CA today",
-            "What is the weather in Redwood City, CA today",
-            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today?",
+            "What is the weather in Redwood City, CA today?",
+            "What is the weather in Redwood City, CA today?",
         ],
-        config={"max_concurrency": 5},
+        config={"max_concurrency": 2},
         stop=[","],
     )
     for token in result:
         assert isinstance(token.content, str)
-        assert token.content[-1] == ","
+        assert token.content[-1] == ",", token.content
 
 
 @pytest.mark.scheduled
@@ -122,12 +119,8 @@ async def test_fireworks_abatch(chat: ChatFireworks) -> None:
     """Test batch tokens from ChatFireworks."""
     result = await chat.abatch(
         [
-            "What is the weather in Redwood City, CA today",
-            "What is the weather in Redwood City, CA today",
-            "What is the weather in Redwood City, CA today",
-            "What is the weather in Redwood City, CA today",
-            "What is the weather in Redwood City, CA today",
-            "What is the weather in Redwood City, CA today",
+            "What is the weather in Redwood City, CA today?",
+            "What is the weather in Redwood City, CA today?",
         ],
         config={"max_concurrency": 5},
         stop=[","],

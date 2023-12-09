@@ -30,8 +30,8 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_pydantic_field_names
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_pydantic_field_names
 from tenacity import (
     before_sleep_log,
     retry,
@@ -165,14 +165,14 @@ class JinaChat(BaseChatModel):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
-        return True
+        return False
 
     client: Any  #: :meta private:
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    jinachat_api_key: Optional[str] = None
+    jinachat_api_key: Optional[SecretStr] = None
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
@@ -218,8 +218,8 @@ class JinaChat(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["jinachat_api_key"] = get_from_dict_or_env(
-            values, "jinachat_api_key", "JINACHAT_API_KEY"
+        values["jinachat_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "jinachat_api_key", "JINACHAT_API_KEY")
         )
         try:
             import openai
@@ -395,7 +395,8 @@ class JinaChat(BaseChatModel):
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
         jinachat_creds: Dict[str, Any] = {
-            "api_key": self.jinachat_api_key,
+            "api_key": self.jinachat_api_key
+            and self.jinachat_api_key.get_secret_value(),
             "api_base": "https://api.chat.jina.ai/v1",
             "model": "jinachat",
         }

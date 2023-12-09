@@ -160,6 +160,11 @@ class ChatOpenAI(BaseChatModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "chat_models", "openai"]
+
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
@@ -418,7 +423,11 @@ class ChatOpenAI(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
+        params = {
+            **params,
+            **({"stream": stream} if stream is not None else {}),
+            **kwargs,
+        }
         response = self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         )
@@ -502,7 +511,11 @@ class ChatOpenAI(BaseChatModel):
             return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
+        params = {
+            **params,
+            **({"stream": stream} if stream is not None else {}),
+            **kwargs,
+        }
         response = await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         )

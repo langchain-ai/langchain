@@ -49,6 +49,7 @@ from langchain_core.prompts import (
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
+    AddableDict,
     ConfigurableField,
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
@@ -1542,6 +1543,7 @@ async def test_prompt() -> None:
 
     assert stream_log[1:] == [
         RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": expected},
             {
                 "op": "replace",
                 "path": "/final_output",
@@ -1551,9 +1553,8 @@ async def test_prompt() -> None:
                         HumanMessage(content="What is your name?"),
                     ]
                 ),
-            }
+            },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
     ]
 
     stream_log_state = [
@@ -1612,6 +1613,7 @@ async def test_prompt() -> None:
 
     assert stream_log_nested[1:] == [
         RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": expected},
             {
                 "op": "replace",
                 "path": "/final_output",
@@ -1621,9 +1623,8 @@ async def test_prompt() -> None:
                         HumanMessage(content="What is your name?"),
                     ]
                 ),
-            }
+            },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": expected}),
     ]
 
 
@@ -2028,7 +2029,7 @@ async def test_prompt_with_llm(
             ):
                 del op["value"]["id"]
 
-    assert stream_log == [
+    expected = [
         RunLogPatch(
             {
                 "op": "replace",
@@ -2107,11 +2108,12 @@ async def test_prompt_with_llm(
                 "value": "2023-01-01T00:00:00.000",
             },
         ),
-        RunLogPatch({"op": "add", "path": "/streamed_output/-", "value": "foo"}),
         RunLogPatch(
-            {"op": "replace", "path": "/final_output", "value": {"output": "foo"}}
+            {"op": "add", "path": "/streamed_output/-", "value": "foo"},
+            {"op": "replace", "path": "/final_output", "value": "foo"},
         ),
     ]
+    assert stream_log == expected
 
 
 @freeze_time("2023-01-01")
@@ -2154,6 +2156,71 @@ async def test_stream_log_retriever() -> None:
     ]
 
 
+@freeze_time("2023-01-01")
+async def test_stream_log_lists() -> None:
+    async def list_producer(input: AsyncIterator[Any]) -> AsyncIterator[AddableDict]:
+        for i in range(4):
+            yield AddableDict(alist=[str(i)])
+
+    chain: Runnable = RunnableGenerator(list_producer)
+
+    stream_log = [
+        part async for part in chain.astream_log({"question": "What is your name?"})
+    ]
+
+    # remove ids from logs
+    for part in stream_log:
+        for op in part.ops:
+            if (
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
+            ):
+                del op["value"]["id"]
+
+    assert stream_log == [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "",
+                "value": {"final_output": None, "logs": {}, "streamed_output": []},
+            }
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["0"]}},
+            {"op": "replace", "path": "/final_output", "value": {"alist": ["0"]}},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["1"]}},
+            {"op": "add", "path": "/final_output/alist/1", "value": "1"},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["2"]}},
+            {"op": "add", "path": "/final_output/alist/2", "value": "2"},
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": {"alist": ["3"]}},
+            {"op": "add", "path": "/final_output/alist/3", "value": "3"},
+        ),
+    ]
+
+    state = add(stream_log)
+
+    assert isinstance(state, RunLog)
+
+    assert state.state == {
+        "final_output": {"alist": ["0", "1", "2", "3"]},
+        "logs": {},
+        "streamed_output": [
+            {"alist": ["0"]},
+            {"alist": ["1"]},
+            {"alist": ["2"]},
+            {"alist": ["3"]},
+        ],
+    }
+
+
+@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm_and_async_lambda(
     mocker: MockerFixture, snapshot: SnapshotAssertion
@@ -4080,3 +4147,93 @@ async def test_ainvoke_on_returned_runnable() -> None:
         return idchain
 
     assert await RunnableLambda(func).ainvoke({})
+
+
+def test_invoke_stream_passthrough_assign_trace() -> None:
+    def idchain_sync(__input: dict) -> bool:
+        return False
+
+    chain = RunnablePassthrough.assign(urls=idchain_sync)
+
+    tracer = FakeTracer()
+    chain.invoke({"example": [1, 2, 3]}, dict(callbacks=[tracer]))
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+    tracer = FakeTracer()
+    for item in chain.stream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+        pass
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_astream_passthrough_assign_trace() -> None:
+    def idchain_sync(__input: dict) -> bool:
+        return False
+
+    chain = RunnablePassthrough.assign(urls=idchain_sync)
+
+    tracer = FakeTracer()
+    await chain.ainvoke({"example": [1, 2, 3]}, dict(callbacks=[tracer]))
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+    tracer = FakeTracer()
+    async for item in chain.astream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+        pass
+
+    assert tracer.runs[0].name == "RunnableAssign"
+    assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+
+async def test_astream_log_deep_copies() -> None:
+    """Verify that deep copies are used when using jsonpatch in astream log.
+
+    jsonpatch re-uses objects in its API; e.g.,
+
+    import jsonpatch
+    obj1 = { "a": 1 }
+    value = { "b": 2 }
+    obj2 = { "a": 1, "value": value }
+
+    ops = list(jsonpatch.JsonPatch.from_diff(obj1, obj2))
+    assert id(ops[0]['value']) == id(value)
+
+    This can create unexpected consequences for downstream code.
+    """
+
+    def _get_run_log(run_log_patches: Sequence[RunLogPatch]) -> RunLog:
+        """Get run log"""
+        run_log = RunLog(state=None)  # type: ignore
+        for log_patch in run_log_patches:
+            run_log = run_log + log_patch
+        return run_log
+
+    def add_one(x: int) -> int:
+        """Add one."""
+        return x + 1
+
+    chain = RunnableLambda(add_one)
+    chunks = []
+    final_output = None
+    async for chunk in chain.astream_log(1):
+        chunks.append(chunk)
+        if final_output is None:
+            final_output = chunk
+        else:
+            final_output = final_output + chunk
+
+    run_log = _get_run_log(chunks)
+    state = run_log.state.copy()
+    # Ignoring type here since we know that the state is a dict
+    # so we can delete `id` for testing purposes
+    state.pop("id")  # type: ignore
+    assert state == {
+        "final_output": 2,
+        "logs": {},
+        "streamed_output": [2],
+    }
