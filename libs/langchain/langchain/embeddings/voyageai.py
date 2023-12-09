@@ -104,7 +104,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
     def _invocation_params(
         self, input: List[str], input_type: Optional[str] = None
     ) -> Dict:
-        api_key = self.voyage_api_key.get_secret_value() or ""
+        api_key = self.voyage_api_key.get_secret_value() if self.voyage_api_key else ""
         params = {
             "url": self.voyage_api_base,
             "headers": {"Authorization": f"Bearer {api_key}"},

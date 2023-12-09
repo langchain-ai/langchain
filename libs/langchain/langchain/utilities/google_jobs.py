@@ -53,7 +53,7 @@ class GoogleJobsAPIWrapper(BaseModel):
         """Run query through Google Trends with Serpapi"""
 
         # set up query
-        api_key = self.serp_api_key.get_secret_value() or ""
+        api_key = self.serp_api_key.get_secret_value() if self.serp_api_key else ""
         params = {
             "engine": "google_jobs",
             "api_key": api_key,

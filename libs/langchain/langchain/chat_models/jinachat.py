@@ -394,7 +394,9 @@ class JinaChat(BaseChatModel):
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
-        api_key = self.jinachat_api_key.get_secret_value() or ""
+        api_key = (
+            self.jinachat_api_key.get_secret_value() if self.jinachat_api_key else ""
+        )
         jinachat_creds: Dict[str, Any] = {
             "api_key": api_key,
             "api_base": "https://api.chat.jina.ai/v1",

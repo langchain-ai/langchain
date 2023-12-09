@@ -142,5 +142,9 @@ def test_uses_actual_secret_value_from_secret_str() -> None:
     chat = ChatBaichuan(
         baichuan_api_key="test-api-key", baichuan_secret_key="test-secret-key"
     )
-    assert chat.baichuan_api_key.get_secret_value() == "test-api-key"
-    assert chat.baichuan_secret_key.get_secret_value() == "test-secret-key"
+    api_key = chat.baichuan_api_key.get_secret_value() if chat.baichuan_api_key else ""
+    secret_key = (
+        chat.baichuan_secret_key.get_secret_value() if chat.baichuan_secret_key else ""
+    )
+    assert api_key == "test-api-key"
+    assert secret_key == "test-secret-key"

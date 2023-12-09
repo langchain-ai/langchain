@@ -127,8 +127,11 @@ class Anyscale(BaseOpenAI):
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
+        api_key = (
+            self.anyscale_api_key.get_secret_value() if self.anyscale_api_key else ""
+        )
         openai_creds: Dict[str, Any] = {
-            "api_key": self.anyscale_api_key.get_secret_value() or "",
+            "api_key": api_key,
             "api_base": self.anyscale_api_base,
         }
         return {**openai_creds, **{"model": self.model_name}, **super()._default_params}
