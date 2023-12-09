@@ -56,6 +56,7 @@ class MultiFieldRetriever(BaseRetriever):
     """
 
     retriever: BaseRetriever
+    documents: List[Document] = []
 
     @classmethod
     def from_documents(
@@ -94,15 +95,15 @@ class MultiFieldRetriever(BaseRetriever):
         pseudo_doc_list = [
             Document(
                 page_content=str_concat_func(doc, meta_data_keys),
-                metadata={"doc": doc},
+                metadata={"uid": i},
             )
-            for doc in documents
+            for i, doc in enumerate(documents)
         ]
 
         retriever = retriever.from_documents(documents=pseudo_doc_list, **kwargs)
         if isinstance(retriever, VectorStore):
             return cls(retriever=retriever.as_retriever(search_kwargs=search_kwargs))
-        return cls(retriever=retriever)
+        return cls(retriever=retriever, documents=documents)
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -124,5 +125,5 @@ class MultiFieldRetriever(BaseRetriever):
             List[Document]: A list of documents that are relevant to the query.
         """
         sub_docs = self.retriever.get_relevant_documents(query)
-
-        return [doc.metadata["doc"] for doc in sub_docs]
+        ids = [doc.metadata["uid"] for doc in sub_docs]
+        return [self.documents[i] for i in ids]
