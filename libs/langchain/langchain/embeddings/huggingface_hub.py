@@ -93,7 +93,8 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         texts = [text.replace("\n", " ") for text in texts]
         _model_kwargs = self.model_kwargs or {}
         responses = self.client.post(
-            json={"inputs": texts, "parameters": _model_kwargs, "task": self.task}
+            json={"inputs": texts, "parameters": _model_kwargs},
+            task=self.task
         )
         return json.loads(responses.decode())
 
