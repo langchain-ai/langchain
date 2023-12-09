@@ -58,9 +58,10 @@ class ToyLoader(BaseLoader):
 class InMemoryVectorStore(VectorStore):
     """In-memory implementation of VectorStore using a dictionary."""
 
-    def __init__(self) -> None:
+    def __init__(self, permit_upserts: bool = False) -> None:
         """Vector store interface for testing things in memory."""
         self.store: Dict[str, Document] = {}
+        self.permit_upserts = permit_upserts
 
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
@@ -91,7 +92,7 @@ class InMemoryVectorStore(VectorStore):
             raise NotImplementedError("This is not implemented yet.")
 
         for _id, document in zip(ids, documents):
-            if _id in self.store:
+            if _id in self.store and not self.permit_upserts:
                 raise ValueError(
                     f"Document with uid {_id} already exists in the store."
                 )
@@ -115,7 +116,7 @@ class InMemoryVectorStore(VectorStore):
             raise NotImplementedError("This is not implemented yet.")
 
         for _id, document in zip(ids, documents):
-            if _id in self.store:
+            if _id in self.store and not self.permit_upserts:
                 raise ValueError(
                     f"Document with uid {_id} already exists in the store."
                 )
@@ -174,6 +175,12 @@ async def arecord_manager() -> SQLRecordManager:
 def vector_store() -> InMemoryVectorStore:
     """Vector store fixture."""
     return InMemoryVectorStore()
+
+
+@pytest.fixture
+def upserting_vector_store() -> InMemoryVectorStore:
+    """Vector store fixture."""
+    return InMemoryVectorStore(permit_upserts=True)
 
 
 def test_indexing_same_content(
@@ -1072,6 +1079,100 @@ async def test_abatch() -> None:
     batches = _abatch(2, _to_async_iter(range(5)))
     assert isinstance(batches, AsyncIterator)
     assert [batch async for batch in batches] == [[0, 1], [2, 3], [4]]
+
+
+def test_indexing_force_update(
+    record_manager: SQLRecordManager, upserting_vector_store: VectorStore
+) -> None:
+    """Test indexing with force update."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+    ]
+
+    assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
+
+    assert index(
+        docs, record_manager, upserting_vector_store, cleanup="full", force_update=True
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 2,
+    }
+
+
+async def test_aindexing_force_update(
+    arecord_manager: SQLRecordManager, upserting_vector_store: VectorStore
+) -> None:
+    """Test indexing with force update."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+    ]
+
+    assert await aindex(
+        docs, arecord_manager, upserting_vector_store, cleanup="full"
+    ) == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert await aindex(
+        docs, arecord_manager, upserting_vector_store, cleanup="full"
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
+
+    assert await aindex(
+        docs,
+        arecord_manager,
+        upserting_vector_store,
+        cleanup="full",
+        force_update=True,
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 2,
+    }
 
 
 def test_compatible_vectorstore_documentation() -> None:

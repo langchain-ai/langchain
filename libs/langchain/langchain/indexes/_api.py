@@ -191,6 +191,7 @@ def index(
     cleanup: Literal["incremental", "full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
+    force_update: bool = False,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -229,6 +230,8 @@ def index(
         source_id_key: Optional key that helps identify the original source
             of the document.
         cleanup_batch_size: Batch size to use when cleaning up documents.
+        force_update: Force update documents even if they are present in the
+            record manager. Useful if you are re-indexing with updated embeddings.
 
     Returns:
         Indexing result which contains information about how many documents
@@ -304,10 +307,14 @@ def index(
         uids = []
         docs_to_index = []
         uids_to_refresh = []
+        seen_docs: Set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
-                uids_to_refresh.append(hashed_doc.uid)
-                continue
+                if force_update:
+                    seen_docs.add(hashed_doc.uid)
+                else:
+                    uids_to_refresh.append(hashed_doc.uid)
+                    continue
             uids.append(hashed_doc.uid)
             docs_to_index.append(hashed_doc.to_document())
 
@@ -320,7 +327,8 @@ def index(
         # First write to vector store
         if docs_to_index:
             vector_store.add_documents(docs_to_index, ids=uids)
-            num_added += len(docs_to_index)
+            num_added += len(docs_to_index) - len(seen_docs)
+            num_updated += len(seen_docs)
 
         # And only then update the record store.
         # Update ALL records, even if they already exist since we want to refresh
@@ -387,6 +395,7 @@ async def aindex(
     cleanup: Literal["incremental", "full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
+    force_update: bool = False,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -425,6 +434,8 @@ async def aindex(
         source_id_key: Optional key that helps identify the original source
             of the document.
         cleanup_batch_size: Batch size to use when cleaning up documents.
+        force_update: Force update documents even if they are present in the
+            record manager. Useful if you are re-indexing with updated embeddings.
 
     Returns:
         Indexing result which contains information about how many documents
@@ -504,11 +515,14 @@ async def aindex(
         uids: list[str] = []
         docs_to_index: list[Document] = []
         uids_to_refresh = []
-
+        seen_docs: Set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
-                uids_to_refresh.append(hashed_doc.uid)
-                continue
+                if force_update:
+                    seen_docs.add(hashed_doc.uid)
+                else:
+                    uids_to_refresh.append(hashed_doc.uid)
+                    continue
             uids.append(hashed_doc.uid)
             docs_to_index.append(hashed_doc.to_document())
 
@@ -521,7 +535,8 @@ async def aindex(
         # First write to vector store
         if docs_to_index:
             await vector_store.aadd_documents(docs_to_index, ids=uids)
-            num_added += len(docs_to_index)
+            num_added += len(docs_to_index) - len(seen_docs)
+            num_updated += len(seen_docs)
 
         # And only then update the record store.
         # Update ALL records, even if they already exist since we want to refresh
