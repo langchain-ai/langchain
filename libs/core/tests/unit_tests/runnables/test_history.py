@@ -245,7 +245,7 @@ def test_get_input_schema_input_messages() -> None:
 def test_using_custom_config_specs() -> None:
     """Test that we can configure which keys should be passed to the session factory."""
 
-    def _fake_llm(input) -> List[BaseMessage]:
+    def _fake_llm(input: dict) -> List[BaseMessage]:
         messages = input["messages"]
         return [
             AIMessage(
