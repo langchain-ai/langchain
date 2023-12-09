@@ -69,6 +69,11 @@ class Replicate(LLM):
     def is_lc_serializable(cls) -> bool:
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "llms", "replicate"]
+
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""

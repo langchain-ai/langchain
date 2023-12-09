@@ -130,6 +130,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     def is_lc_serializable(self) -> bool:
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "chat_models", "vertexai"]
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""

@@ -148,6 +148,11 @@ class BaseOpenAI(BaseLLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "llms", "openai"]
+
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
@@ -735,6 +740,11 @@ class OpenAI(BaseOpenAI):
             openai = OpenAI(model_name="text-davinci-003")
     """
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "llms", "openai"]
+
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"model": self.model_name}, **super()._invocation_params}
@@ -792,6 +802,11 @@ class AzureOpenAI(BaseOpenAI):
     """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "llms", "openai"]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

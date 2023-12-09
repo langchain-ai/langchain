@@ -50,6 +50,11 @@ class Fireworks(BaseLLM):
     def is_lc_serializable(cls) -> bool:
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "llms", "fireworks"]
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key in environment."""
