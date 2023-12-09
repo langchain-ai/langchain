@@ -76,7 +76,7 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
-        return True
+        return False
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
