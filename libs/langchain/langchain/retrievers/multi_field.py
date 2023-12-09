@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, List
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
@@ -60,7 +60,7 @@ class MultiFieldRetriever(BaseRetriever):
     @classmethod
     def from_documents(
         cls,
-        retriever: Union[BaseRetriever, VectorStore],
+        retriever: Any,
         documents: List[Document],
         meta_data_keys: List[str] = [],
         search_kwargs: dict = {},
