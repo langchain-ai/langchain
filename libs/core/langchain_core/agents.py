@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Literal, Sequence, Union
+from typing import Any, List, Literal, Sequence, Union
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
@@ -39,6 +39,11 @@ class AgentAction(Serializable):
     def is_lc_serializable(cls) -> bool:
         """Return whether or not the class is serializable."""
         return True
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "agent"]
 
     @property
     def messages(self) -> Sequence[BaseMessage]:
@@ -97,6 +102,11 @@ class AgentFinish(Serializable):
     def is_lc_serializable(cls) -> bool:
         """Return whether or not the class is serializable."""
         return True
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "agent"]
 
     @property
     def messages(self) -> Sequence[BaseMessage]:
