@@ -207,9 +207,7 @@ cassio = "^0.1.0"
 tiktoken = "^0.3.2"
 anthropic = "^0.3.11"
 langchain-core = {path = "../core", develop = true}
-fireworks-ai = "^0.9.0"
-boto3 = ">=1.28.57,<2"
-google-cloud-aiplatform = ">=1.37.0,<2"
+langchain-community = {path = "../community", develop = true}
 
 [tool.poetry.group.lint]
 optional = true
@@ -230,6 +228,7 @@ types-pytz = "^2023.3.0.0"
 types-chardet = "^5.0.4.6"
 mypy-protobuf = "^3.0.0"
 langchain-core = {path = "../core", develop = true}
+langchain-community = {path = "../community", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
@@ -239,6 +238,7 @@ jupyter = "^1.0.0"
 playwright = "^1.28.0"
 setuptools = "^67.6.1"
 langchain-core = {path = "../core", develop = true}
+langchain-community = {path = "../community", develop = true}
 
 [tool.poetry.extras]
 llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
