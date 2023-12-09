@@ -33,6 +33,10 @@ def authenticate() -> Client:
         )
         return None
 
-    client = Client(client_id=client_id, client_secret=client_secret)
+    hostname = "test"  # Default hostname
+    if "AMADEUS_HOSTNAME" in os.environ:
+        hostname = os.environ["AMADEUS_HOSTNAME"]
+
+    client = Client(client_id=client_id, client_secret=client_secret, hostname=hostname)
 
     return client

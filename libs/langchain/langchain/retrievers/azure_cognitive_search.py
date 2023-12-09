@@ -13,7 +13,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, get_from_env
+
+DEFAULT_URL_SUFFIX = "search.windows.net"
+"""Default URL Suffix for endpoint connection - commercial cloud"""
 
 
 class AzureCognitiveSearchRetriever(BaseRetriever):
@@ -54,7 +57,10 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
         return values
 
     def _build_search_url(self, query: str) -> str:
-        base_url = f"https://{self.service_name}.search.windows.net/"
+        url_suffix = get_from_env(
+            "", "AZURE_COGNITIVE_SEARCH_URL_SUFFIX", DEFAULT_URL_SUFFIX
+        )
+        base_url = f"https://{self.service_name}.{url_suffix}/"
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
         top_param = f"&$top={self.top_k}" if self.top_k else ""
         return base_url + endpoint_path + f"&search={query}" + top_param

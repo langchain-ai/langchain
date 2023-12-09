@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.345"
+version = "0.0.348"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,7 +12,7 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.0.9,<0.1"
+langchain-core = ">=0.0.12,<0.1"
 pydantic = ">=1,<3"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
@@ -20,7 +20,6 @@ PyYAML = ">=5.3"
 numpy = "^1"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0"
-anyio = "<4.0"
 jsonpatch = "^1.33"
 azure-core = {version = "^1.26.4", optional=true}
 tqdm = {version = ">=4.48.0", optional = true}
@@ -141,14 +140,18 @@ rspace_client = {version = "^2.5.0", optional = true}
 upstash-redis = {version = "^0.15.0", optional = true}
 azure-ai-textanalytics = {version = "^5.3.0", optional = true}
 google-cloud-documentai = {version = "^2.20.1", optional = true}
-fireworks-ai = {version = "^0.6.0", optional = true, python = ">=3.9,<4.0"}
+fireworks-ai = {version = "^0.9.0", optional = true}
 javelin-sdk = {version = "^0.1.8", optional = true}
 hologres-vector = {version = "^0.0.6", optional = true}
 praw = {version = "^7.7.1", optional = true}
 msal = {version = "^1.25.0", optional = true}
 databricks-vectorsearch = {version = "^0.21", optional = true}
+couchbase = {version = "^4.1.9", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
+
+[tool.poetry.group.test]
+optional = true
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
@@ -169,6 +172,9 @@ pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
 langchain-core = {path = "../core", develop = true}
+
+[tool.poetry.group.codespell]
+optional = true
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -199,19 +205,28 @@ python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
 tiktoken = "^0.3.2"
 anthropic = "^0.3.11"
+fireworks-ai = "^0.9.0"
+boto3 = ">=1.28.57,<2"
+google-cloud-aiplatform = ">=1.37.0,<2"
+
+[tool.poetry.group.lint]
+optional = true
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"
-types-toml = "^0.10.8.1"
-types-redis = "^4.3.21.6"
-types-pytz = "^2023.3.0.0"
-types-chardet = "^5.0.4.6"
-mypy-protobuf = "^3.0.0"
+
+[tool.poetry.group.typing]
+optional = true
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
+types-toml = "^0.10.8.1"
+types-redis = "^4.3.21.6"
+types-pytz = "^2023.3.0.0"
+types-chardet = "^5.0.4.6"
+mypy-protobuf = "^3.0.0"
 
 [tool.poetry.group.dev]
 optional = true
@@ -391,6 +406,7 @@ extended_testing = [
  "hologres-vector",
  "praw",
  "databricks-vectorsearch",
+ "couchbase",
  "dgml-utils",
  "cohere",
 ]
