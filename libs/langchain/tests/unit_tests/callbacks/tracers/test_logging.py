@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from langchain_community.callbacks.tracers import LoggingCallbackHandler
+from langchain.callbacks.tracers import LoggingCallbackHandler
 
 
 def test_logging(

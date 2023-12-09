@@ -3,8 +3,8 @@ from typing import Generator
 
 import pytest
 
-from langchain_community.storage.exceptions import InvalidKeyException
-from langchain_community.storage.file_system import LocalFileStore
+from langchain.storage.exceptions import InvalidKeyException
+from langchain.storage.file_system import LocalFileStore
 
 
 @pytest.fixture

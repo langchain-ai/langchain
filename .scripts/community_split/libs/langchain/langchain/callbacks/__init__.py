@@ -22,7 +22,7 @@ from langchain_community.callbacks.arthur_callback import ArthurCallbackHandler
 from langchain_community.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain_community.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain_community.callbacks.context_callback import ContextCallbackHandler
-from langchain_community.callbacks.file import FileCallbackHandler
+from langchain.callbacks.file import FileCallbackHandler
 from langchain_community.callbacks.flyte_callback import FlyteCallbackHandler
 from langchain_community.callbacks.human import HumanApprovalCallbackHandler
 from langchain_community.callbacks.infino_callback import InfinoCallbackHandler
@@ -32,8 +32,8 @@ from langchain_community.callbacks.mlflow_callback import MlflowCallbackHandler
 from langchain_community.callbacks.openai_info import OpenAICallbackHandler
 from langchain_community.callbacks.promptlayer_callback import PromptLayerCallbackHandler
 from langchain_community.callbacks.sagemaker_callback import SageMakerCallbackHandler
-from langchain_community.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
-from langchain_community.callbacks.streaming_stdout_final_only import (
+from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
+from langchain.callbacks.streaming_stdout_final_only import (
     FinalStreamingStdOutCallbackHandler,
 )
 from langchain_community.callbacks.streamlit import LLMThoughtLabeler, StreamlitCallbackHandler

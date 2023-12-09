@@ -4,8 +4,8 @@ from typing import List
 import pytest
 from langchain_core.embeddings import Embeddings
 
-from langchain_community.embeddings import CacheBackedEmbeddings
-from langchain_community.storage.in_memory import InMemoryStore
+from langchain.embeddings import CacheBackedEmbeddings
+from langchain.storage.in_memory import InMemoryStore
 
 
 class MockEmbeddings(Embeddings):

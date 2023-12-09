@@ -219,12 +219,6 @@ rm community/tests/unit_tests/{chat_models,llms,tools,callbacks}/test_base.py
 rm community/tests/unit_tests/callbacks/test_manager.py
 rm community/langchain_community/callbacks/{stdout,streaming_stdout}.py
 rm community/langchain_community/callbacks/tracers/{base,evaluation,langchain,langchain_v1,log_stream,root_listeners,run_collector,schemas,stdout}.py
-rm community/langchain_community/retrievers/{multi_query,multi_vector,contextual_compression,ensemble,merger_retriever,parent_document_retriever,re_phraser,web_research,time_weighted_retriever}.py
-rm -r community/langchain_community/retrievers/{self_query,document_compressors}
-rm community/tests/unit_tests/retrievers/test_{ensemble,multi_query,multi_vector,parent_document,time_weighted_retriever,web_research}.py
-rm community/tests/integration_tests/retrievers/test_{contextual_compression,merger_retriever}.py
-rm -r community/tests/unit_tests/retrievers/{self_query,document_compressors}
-rm -r community/tests/integration_tests/retrievers/document_compressors
 
 # keep export tests in langchain
 git checkout master -- langchain/tests/unit_tests/{chat_models,llms,tools,callbacks,document_loaders}/test_base.py
@@ -234,6 +228,29 @@ git checkout master -- langchain/tests/unit_tests/document_loaders/blob_loaders/
 git checkout master -- langchain/tests/unit_tests/document_loaders/parsers/test_public_api.py
 git checkout master -- langchain/tests/unit_tests/vectorstores/test_public_api.py
 git checkout master -- langchain/tests/unit_tests/schema
+
+# keep some non-integration stuff in langchain. rm from community and add back to langchain
+rm community/langchain_community/retrievers/{multi_query,multi_vector,contextual_compression,ensemble,merger_retriever,parent_document_retriever,re_phraser,web_research,time_weighted_retriever}.py
+rm -r community/langchain_community/retrievers/{self_query,document_compressors}
+rm community/tests/unit_tests/retrievers/test_{ensemble,multi_query,multi_vector,parent_document,time_weighted_retriever,web_research}.py
+rm community/tests/integration_tests/retrievers/test_{contextual_compression,merger_retriever}.py
+rm -r community/tests/unit_tests/retrievers/{self_query,document_compressors}
+rm -r community/tests/integration_tests/retrievers/document_compressors
+
+rm community/langchain_community/agent_toolkits/{pandas,python,spark}/__init__.py
+rm community/langchain_community/tools/python/__init__.py
+
+rm -r community/langchain_community/agent_toolkits/conversational_retrieval/
+rm -r community/langchain_community/agent_toolkits/vectorstore/
+rm community/langchain_community/callbacks/tracers/logging.py
+rm community/langchain_community/callbacks/{file,streaming_aiter_final_only,streaming_aiter,streaming_stdout_final_only}.py
+rm community/langchain_community/embeddings/cache.py
+rm community/langchain_community/storage/{encoder_backed,file_system,in_memory,_lc_store}.py
+rm community/langchain_community/tools/retriever.py
+rm community/tests/unit_tests/callbacks/tracers/test_logging.py
+rm community/tests/unit_tests/embeddings/test_caching.py
+rm community/tests/unit_tests/storage/test_{filesystem,in_memory,lc_store}.py
+
 git checkout master -- langchain/langchain/retrievers/{multi_query,multi_vector,self_query/base,contextual_compression,ensemble,merger_retriever,parent_document_retriever,re_phraser,web_research,time_weighted_retriever}.py
 git checkout master -- langchain/langchain/retrievers/{self_query,document_compressors}
 git checkout master -- langchain/tests/unit_tests/retrievers/test_{ensemble,multi_query,multi_vector,parent_document,time_weighted_retriever,web_research}.py
@@ -243,6 +260,18 @@ git checkout master -- langchain/tests/integration_tests/retrievers/document_com
 touch langchain/tests/unit_tests/{llms,chat_models,tools,callbacks,runnables,document_loaders,docstore,document_transformers,embeddings,graphs,storage,utilities,vectorstores,retrievers}/__init__.py
 touch langchain/tests/unit_tests/document_loaders/{blob_loaders,parsers}/__init__.py
 mv {community,langchain}/tests/unit_tests/retrievers/sequential_retriever.py
+
+git checkout master -- langchain/langchain/agents/agent_toolkits/conversational_retrieval/
+git checkout master -- langchain/langchain/agents/agent_toolkits/vectorstore/
+git checkout master -- langchain/langchain/callbacks/tracers/logging.py
+git checkout master -- langchain/langchain/callbacks/{file,streaming_aiter_final_only,streaming_aiter,streaming_stdout_final_only}.py
+git checkout master -- langchain/langchain/embeddings/cache.py
+git checkout master -- langchain/langchain/storage/{encoder_backed,file_system,in_memory,_lc_store}.py
+git checkout master -- langchain/langchain/tools/retriever.py
+git checkout master -- langchain/tests/unit_tests/callbacks/tracers/{test_logging,__init__}.py
+git checkout master -- langchain/tests/unit_tests/embeddings/{__init__,test_caching}.py
+git checkout master -- langchain/tests/unit_tests/storage/test_{filesystem,in_memory,lc_store}.py
+git checkout master -- langchain/tests/unit_tests/storage/__init__.py
 
 # cp lint scripts
 cp -r core/scripts community
@@ -276,8 +305,8 @@ cd ../experimental
 make format
 cd ../community
 make format
-g add .
 
 cd ..
 sed -E -i '' '1 s/(.*)/\1\ \ \#\ noqa\:\ E501/g' langchain/langchain/agents/agent_toolkits/conversational_retrieval/openai_functions.py
 sed -E -i '' 's/import\ importlib$/import importlib.util/g' experimental/langchain_experimental/prompts/load.py
+git add .
