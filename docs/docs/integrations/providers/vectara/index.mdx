@@ -4,7 +4,7 @@
 > for semantic search or RAG (Retreieval augmented generation).
 
 **Vectara Overview:**
-- `Vectara` is developer-first API platform for building GenAI applications
+- `Vectara` is developer-first API platform for building trusted GenAI applications. 
 - To use Vectara - first [sign up](https://vectara.com/integrations/langchain) and create an account. Then create a corpus and an API key for indexing and searching.
 - You can use Vectara's [indexing API](https://docs.vectara.com/docs/indexing-apis/indexing) to add documents into Vectara's index
 - You can use Vectara's [Search API](https://docs.vectara.com/docs/search-apis/search) to query Vectara's index (which also supports Hybrid search implicitly).
@@ -70,9 +70,9 @@ In this case, we used the default retrieval parameters, but you can also specify
    - `mmr_k`: number of results to use for MMR reranking
    - `diversity_bias`: 0 = no diversity, 1 = full diversity. This is the lambda parameter in the MMR formula and is in the range 0...1
 
-## Vectara for RAG
+## Vectara for Retrieval Augmented Generation (RAG)
 
-Vectara also provides a full RAG pipeline, including generative summarization. 
+Vectara provides a full RAG pipeline, including generative summarization. 
 To use this pipeline, you can specify the `summary_config` argument in `similarity_search` or `similarity_search_with_score` as follows:
 
 - `summary_config`: can be used to request an LLM summary in RAG
