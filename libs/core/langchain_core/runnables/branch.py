@@ -12,10 +12,6 @@ from typing import (
     cast,
 )
 
-from langchain_core.beta.runnables.context import (
-    CONTEXT_CONFIG_PREFIX,
-    CONTEXT_CONFIG_SUFFIX_SET,
-)
 from langchain_core.load.dump import dumpd
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import (
@@ -152,6 +148,11 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
+        from langchain_core.beta.runnables.context import (
+            CONTEXT_CONFIG_PREFIX,
+            CONTEXT_CONFIG_SUFFIX_SET,
+        )
+        
         specs = get_unique_config_specs(
             spec
             for step in (
