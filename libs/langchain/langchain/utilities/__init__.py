@@ -55,11 +55,6 @@ def _import_brave_search() -> Any:
 
     return BraveSearchWrapper
 
-def _import_connery() -> Any:
-    from langchain.utilities.connery import ConneryAPIWrapper
-
-    return ConneryAPIWrapper
-
 
 def _import_duckduckgo_search() -> Any:
     from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
@@ -290,8 +285,6 @@ def __getattr__(name: str) -> Any:
         return _import_brave_search()
     elif name == "DuckDuckGoSearchAPIWrapper":
         return _import_duckduckgo_search()
-    elif name == "ConneryAPIWrapper":
-        return _import_connery()
     elif name == "GoogleLensAPIWrapper":
         return _import_google_lens()
     elif name == "GoldenQueryAPIWrapper":
@@ -372,7 +365,6 @@ __all__ = [
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
-    "ConneryAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
     "GoldenQueryAPIWrapper",
     "GoogleFinanceAPIWrapper",
