@@ -7,7 +7,6 @@ import logging
 import uuid
 from functools import partial
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -22,8 +21,8 @@ from typing import (
 import numpy as np
 import sqlalchemy
 from sqlalchemy import delete
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy.dialects.postgresql import JSON, UUID
+from sqlalchemy.orm import Session, relationship
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -36,9 +35,6 @@ from langchain_core.vectorstores import VectorStore
 
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.utils import maximal_marginal_relevance
-
-if TYPE_CHECKING:
-    from langchain.vectorstores._pgvector_data_models import CollectionStore
 
 
 class DistanceStrategy(str, enum.Enum):
@@ -62,6 +58,74 @@ class BaseModel(Base):
 
     __abstract__ = True
     uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+
+class CollectionStore(BaseModel):
+    """Collection store."""
+
+    __tablename__ = "langchain_pg_collection"
+
+    name = sqlalchemy.Column(sqlalchemy.String)
+    cmetadata = sqlalchemy.Column(JSON)
+
+    embeddings = relationship(
+        "EmbeddingStore",
+        back_populates="collection",
+        passive_deletes=True,
+    )
+
+    @classmethod
+    def get_by_name(cls, session: Session, name: str) -> Optional["CollectionStore"]:
+        return session.query(cls).filter(cls.name == name).first()  # type: ignore
+
+    @classmethod
+    def get_or_create(
+        cls,
+        session: Session,
+        name: str,
+        cmetadata: Optional[dict] = None,
+    ) -> Tuple["CollectionStore", bool]:
+        """
+        Get or create a collection.
+        Returns [Collection, bool] where the bool is True if the collection was created.
+        """
+        created = False
+        collection = cls.get_by_name(session, name)
+        if collection:
+            return collection, created
+
+        collection = cls(name=name, cmetadata=cmetadata)
+        session.add(collection)
+        session.commit()
+        created = True
+        return collection, created
+
+
+def _get_embedding_store() -> Any:
+    from pgvector.sqlalchemy import Vector
+
+    class EmbeddingStore(BaseModel):
+        """Embedding store."""
+
+        __tablename__ = "langchain_pg_embedding"
+
+        collection_id = sqlalchemy.Column(
+            UUID(as_uuid=True),
+            sqlalchemy.ForeignKey(
+                f"{CollectionStore.__tablename__}.uuid",
+                ondelete="CASCADE",
+            ),
+        )
+        collection = relationship(CollectionStore, back_populates="embeddings")
+
+        embedding: Vector = sqlalchemy.Column(Vector(None))
+        document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        cmetadata = sqlalchemy.Column(JSON, nullable=True)
+
+        # custom_id : any user defined id
+        custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+
+    return EmbeddingStore
 
 
 def _results_to_docs(docs_and_scores: Any) -> List[Document]:
@@ -138,13 +202,9 @@ class PGVector(VectorStore):
     ) -> None:
         """Initialize the store."""
         self.create_vector_extension()
-        from langchain.vectorstores._pgvector_data_models import (
-            CollectionStore,
-            EmbeddingStore,
-        )
 
         self.CollectionStore = CollectionStore
-        self.EmbeddingStore = EmbeddingStore
+        self.EmbeddingStore = _get_embedding_store()
         self.create_tables_if_not_exists()
         self.create_collection()
 
@@ -434,16 +494,24 @@ class PGVector(VectorStore):
 
             if filter is not None:
                 filter_clauses = []
+                IN, NIN = "in", "nin"
                 for key, value in filter.items():
-                    IN = "in"
-                    if isinstance(value, dict) and IN in map(str.lower, value):
+                    if isinstance(value, dict):
                         value_case_insensitive = {
                             k.lower(): v for k, v in value.items()
                         }
-                        filter_by_metadata = self.EmbeddingStore.cmetadata[
-                            key
-                        ].astext.in_(value_case_insensitive[IN])
-                        filter_clauses.append(filter_by_metadata)
+                        if IN in map(str.lower, value):
+                            filter_by_metadata = self.EmbeddingStore.cmetadata[
+                                key
+                            ].astext.in_(value_case_insensitive[IN])
+                        elif NIN in map(str.lower, value):
+                            filter_by_metadata = self.EmbeddingStore.cmetadata[
+                                key
+                            ].astext.not_in(value_case_insensitive[NIN])
+                        else:
+                            filter_by_metadata = None
+                        if filter_by_metadata is not None:
+                            filter_clauses.append(filter_by_metadata)
                     else:
                         filter_by_metadata = self.EmbeddingStore.cmetadata[
                             key

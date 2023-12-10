@@ -17,6 +17,24 @@ Install the Python SDK:
 pip install redis
 ```
 
+To run Redis locally, you can use Docker:
+
+```bash
+docker run --name langchain-redis -d -p 6379:6379 redis redis-server --save 60 1 --loglevel warning
+```
+
+To stop the container:
+
+```bash
+docker stop langchain-redis
+```
+
+And to start it again:
+
+```bash
+docker start langchain-redis
+```
+
 ## Wrappers
 
 All wrappers need a redis url connection string to connect to the database support either a stand alone Redis server

@@ -105,6 +105,11 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         """Return whether this model can be serialized by Langchain."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "chat_models", "anthropic"]
+
     def _convert_messages_to_prompt(self, messages: List[BaseMessage]) -> str:
         """Format a list of messages into a full prompt for the Anthropic model
         Args:

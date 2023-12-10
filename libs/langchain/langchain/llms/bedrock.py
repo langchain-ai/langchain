@@ -357,6 +357,11 @@ class Bedrock(LLM, BedrockBase):
         """Return whether this model can be serialized by Langchain."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "llms", "bedrock"]
+
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
