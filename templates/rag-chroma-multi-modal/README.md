@@ -69,9 +69,9 @@ langchain app add rag-chroma-multi-modal
 
 And add the following code to your `server.py` file:
 ```python
-from rag_chroma import chain as rag_chroma_chain
+from rag_chroma_multi_modal import chain as rag_chroma_multi_modal_chain
 
-add_routes(app, rag_chroma_chain, path="/rag-chroma-multi-modal")
+add_routes(app, rag_chroma_multi_modal_chain, path="/rag-chroma-multi-modal")
 ```
 
 (Optional) Let's now configure LangSmith. 

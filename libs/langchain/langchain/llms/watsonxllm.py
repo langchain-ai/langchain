@@ -97,7 +97,7 @@ class WatsonxLLM(BaseLLM):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        return True
+        return False
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
