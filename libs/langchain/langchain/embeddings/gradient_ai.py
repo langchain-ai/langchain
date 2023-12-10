@@ -203,7 +203,7 @@ class TinyAsyncGradientEmbeddingClient:  #: :meta private:
 
         if self.host is None or len(self.host) < 3:
             raise ValueError(" param `host` must be set to a valid url")
-        self._batch_size = 128
+        self._batch_size = 64
 
     @staticmethod
     def _permute(
