@@ -70,17 +70,18 @@ Install Poetry: **[documentation on how to install it](https://python-poetry.org
 ❗Note: If you use `Conda` or `Pyenv` as your environment/package manager, after installing Poetry,
 tell Poetry to use the virtualenv python environment (`poetry config virtualenvs.prefer-active-python true`)
 
-### Core vs. Experimental
+### Different projects
 
-This repository contains three separate projects:
-- `langchain`: core langchain code, abstractions, and use cases.
-- `langchain_core`: contain interfaces for key abstractions as well as logic for combining them in chains (LCEL).
-- `langchain_experimental`: see the [Experimental README](https://github.com/langchain-ai/langchain/tree/master/libs/experimental/README.md) for more information.
+This repository contains multiple projects:
+- `langchain_core`: Base interfaces for key abstractions as well as logic for combining them in chains (LangChain Expression Language).
+- `langchain-community`: Third-party integrations and implementations of various components.
+- `langchain`: Chains, agents, and retrieval logic that makes up the cognitive architecture of your applications.
+- `langchain_experimental`: Components or chains that are more experimental in nature or unsafe (contain CVEs).
 
 Each of these has its own development environment. Docs are run from the top-level makefile, but development
 is split across separate test & release flows.
 
-For this quickstart, start with langchain core:
+For this quickstart, start with langchain:
 
 ```bash
 cd libs/langchain
@@ -330,15 +331,55 @@ what you wanted by clicking the `View deployment` or `Visit Preview` buttons on 
 This will take you to a preview of the documentation changes.
 This preview is created by [Vercel](https://vercel.com/docs/getting-started-with-vercel).
 
-## 🏭 Release Process
+## 📕 Releases & Versioning
 
 As of now, LangChain has an ad hoc release process: releases are cut with high frequency by
-a developer and published to [PyPI](https://pypi.org/project/langchain/).
+a developer and published to [PyPI](https://pypi.org/project/langchain/). 
+The different packages are versioned slightly differently.
 
-LangChain follows the [semver](https://semver.org/) versioning standard. However, as pre-1.0 software,
-even patch releases may contain [non-backwards-compatible changes](https://semver.org/#spec-item-4).
+### `langchain-core`
 
-### 🌟 Recognition
+`langchain-core` is currently on version `0.1.x`. 
+
+As `langchain-core` contains the base abstractions and runtime for the whole LangChain ecosystem, we will communicate any breaking changes with advance notice and version bumps. The exception for this is anything in `langchain_core.beta`. The reason for `langchain_core.beta` is that given the rate of change of the field, being able to move quickly is still a priority, and this module is our attempt to do so.
+
+Minor version increases will occur for:
+
+- Breaking changes for any public interfaces NOT in `langchain_core.beta`
+
+Patch version increases will occur for:
+
+- Bug fixes
+- New features
+- Any changes to private interfaces
+- Any changes to `langchain_core.beta`
+
+### `langchain`
+
+`langchain` is currently on version `0.0.x`
+
+All changes will be accompanied by a patch version increase. Any changes to public interfaces are nearly always done in a backwards compatible way.
+
+We are targeting January 2024 for a release of `langchain` v0.1, at which point `langchain` will adopt the same versioning policy as `langchain-core`.
+
+### `langchain-community`
+
+`langchain-community` is currently on version `0.0.x`
+
+All changes will be accompanied by a patch version increase.
+
+### `langchain-experimental`
+
+`langchain-experimental` is currently on version `0.0.x`
+
+All changes will be accompanied by a patch version increase.
+
+
+## 🏭 Release Process
+
+
+
+## 🌟 Recognition
 
 If your contribution has made its way into a release, we will want to give you credit on Twitter (only if you want though)!
 If you have a Twitter account you would like us to mention, please let us know in the PR or through another means.
