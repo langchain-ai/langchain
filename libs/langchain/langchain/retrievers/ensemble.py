@@ -1,5 +1,5 @@
 """
-Ensemble retriever that ensemble the results of 
+Ensemble retriever that ensemble the results of
 multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
 from collections import defaultdict
@@ -9,6 +9,7 @@ from typing import Any, Dict, List
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.utils.utils import unique_by_key
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -158,19 +159,16 @@ class EnsembleRetriever(BaseRetriever):
             )
 
         # Associate each doc's content with its RRF score for later sorting by it
-        # Duplicate contents across retrievers are collapsed & scored cumulatively
+        # Duplicated contents across retrievers are collapsed & scored cumulatively
         rrf_score: dict[str, float] = defaultdict(float)
         for doc_list, weight in zip(doc_lists, self.weights):
             for rank, doc in enumerate(doc_list, start=1):
                 rrf_score[doc.page_content] += weight / (rank + self.c)
 
-        # Deduplicate -non-hashable- docs by their contents for final sorting
-        unique_docs = {
-            doc.page_content: doc for doc in chain.from_iterable(doc_lists)
-        }.values()
-
+        # Docs are deduplicated by their contents then sorted by their scores
+        all_docs = chain.from_iterable(doc_lists)
         sorted_docs = sorted(
-            unique_docs,
+            unique_by_key(all_docs, lambda doc: doc.page_content),
             reverse=True,
             key=lambda doc: rrf_score[doc.page_content],
         )

@@ -6,11 +6,13 @@ from langchain_core.utils.utils import (
     guard_import,
     mock_now,
     raise_for_status_with_text,
+    unique_by_key,
     xor_args,
 )
 
 __all__ = [
     "xor_args",
+    "unique_by_key",
     "raise_for_status_with_text",
     "mock_now",
     "guard_import",
