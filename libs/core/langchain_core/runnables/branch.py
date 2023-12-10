@@ -153,6 +153,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             CONTEXT_CONFIG_SUFFIX_SET,
         )
         
+        
         specs = get_unique_config_specs(
             spec
             for step in (
