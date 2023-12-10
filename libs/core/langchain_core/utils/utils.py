@@ -5,13 +5,13 @@ import functools
 import importlib
 import warnings
 from importlib.metadata import version
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Union
+from collections.abc import Iterable, Iterator, Hashable
+from typing import Any, Callable, Dict, Optional, Set, Tuple, Union, TypeVar
 
 from packaging.version import parse
 from requests import HTTPError, Response
 
 from langchain_core.pydantic_v1 import SecretStr
-
 
 def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
     """Validate specified keyword args are mutually exclusive."""
@@ -38,6 +38,14 @@ def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
 
     return decorator
 
+T = TypeVar('T')
+H = TypeVar('H', bound=Hashable)
+def unique_by_key(iterable: Iterable[T], key: Callable[[T], H]) -> Iterator[T]:
+    seen = set()
+    for e in iterable:
+        if (k:=key(e)) not in seen:
+            seen.add(k)
+            yield e
 
 def raise_for_status_with_text(response: Response) -> None:
     """Raise an error with the response text."""
