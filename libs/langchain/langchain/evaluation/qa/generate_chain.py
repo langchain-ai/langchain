@@ -23,6 +23,10 @@ class QAGenerateChain(LLMChain):
     output_key: str = "qa_pairs"
 
     @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
+    @classmethod
     def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> QAGenerateChain:
         """Load QA Generate Chain from LLM."""
         return cls(llm=llm, prompt=PROMPT, **kwargs)

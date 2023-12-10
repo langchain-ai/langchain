@@ -50,7 +50,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
-        return True
+        return False
 
     def _format_message_as_text(self, message: BaseMessage) -> str:
         if isinstance(message, ChatMessage):

@@ -57,6 +57,10 @@ class ChatAnyscale(ChatOpenAI):
     def lc_secrets(self) -> Dict[str, str]:
         return {"anyscale_api_key": "ANYSCALE_API_KEY"}
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     anyscale_api_key: SecretStr
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
