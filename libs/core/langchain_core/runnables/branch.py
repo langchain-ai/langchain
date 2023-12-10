@@ -12,6 +12,10 @@ from typing import (
     cast,
 )
 
+from langchain_core.beta.runnables.context import (
+    CONTEXT_CONFIG_PREFIX,
+    CONTEXT_CONFIG_SUFFIX_SET,
+)
 from langchain_core.load.dump import dumpd
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import (
@@ -25,10 +29,6 @@ from langchain_core.runnables.config import (
     ensure_config,
     get_callback_manager_for_config,
     patch_config,
-)
-from langchain_core.runnables.context import (
-    CONTEXT_CONFIG_PREFIX,
-    CONTEXT_CONFIG_SUFFIX_SET,
 )
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
