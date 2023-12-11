@@ -555,7 +555,7 @@ class OpenSearchVectorSearch(VectorStore):
         return documents_with_scores
 
     def _raw_similarity_search_with_score(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = 4, query_embedding: Optional[List[float]] = None, **kwargs: Any
     ) -> List[dict]:
         """Return raw opensearch documents (dict) including vectors,
         scores most similar to query.
@@ -566,6 +566,8 @@ class OpenSearchVectorSearch(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            query_embedding: Embedding of the query. If not provided, the query will
+                be embedded first.
 
         Returns:
             List of dict with its scores most similar to the query.
@@ -573,7 +575,12 @@ class OpenSearchVectorSearch(VectorStore):
         Optional Args:
             same as `similarity_search`
         """
-        embedding = self.embedding_function.embed_query(query)
+        # If query embedding is not provided, embed the query
+        if query_embedding is None:
+            embedding = self.embedding_function.embed_query(query)
+        else:
+            embedding = query_embedding
+            
         search_type = kwargs.get("search_type", "approximate_search")
         vector_field = kwargs.get("vector_field", "vector_field")
         index_name = kwargs.get("index_name", self.index_name)
@@ -702,7 +709,7 @@ class OpenSearchVectorSearch(VectorStore):
         embedding = self.embedding_function.embed_query(query)
 
         # Do ANN/KNN search to get top fetch_k results where fetch_k >= k
-        results = self._raw_similarity_search_with_score(query, fetch_k, **kwargs)
+        results = self._raw_similarity_search_with_score(query, fetch_k, query_embedding=embedding, **kwargs)
 
         embeddings = [result["_source"][vector_field] for result in results]
 
