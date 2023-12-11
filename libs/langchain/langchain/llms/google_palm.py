@@ -1,5 +1,6 @@
 from langchain_community.llms.google_palm import (
-    GooglePalm,
     GoogleGenerativeAI,
+    GooglePalm,
 )
+
 __all__ = ["GoogleGenerativeAI", "GooglePalm"]
