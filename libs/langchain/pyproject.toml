@@ -149,6 +149,7 @@ databricks-vectorsearch = {version = "^0.21", optional = true}
 couchbase = {version = "^4.1.9", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
+intel-extension-for-transformers = {version = "^1.2.1", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -237,7 +238,8 @@ playwright = "^1.28.0"
 setuptools = "^67.6.1"
 
 [tool.poetry.extras]
-llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers",
+  "intel-extension-for-transformers"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
