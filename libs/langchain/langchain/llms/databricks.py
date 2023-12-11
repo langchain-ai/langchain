@@ -334,13 +334,14 @@ class Databricks(LLM):
 
     @property
     def _llm_params(self) -> Dict[str, Any]:
-        params = {
+        params: Dict[str, Any] = {
             "temperature": self.temperature,
             "n": self.n,
-            "stop": self.stop,
-            "max_tokens": self.max_tokens,
-            **(self.model_kwargs or self.extra_params),
         }
+        if self.stop:
+            params["stop"] = self.stop
+        if self.max_tokens is not None:
+            params["max_tokens"] = self.max_tokens
         return params
 
     @validator("cluster_id", always=True)
@@ -457,11 +458,9 @@ class Databricks(LLM):
         request: Dict[str, Any] = {"prompt": prompt}
         if self._client.llm:
             request.update(self._llm_params)
-            request.update(self.model_kwargs or self.extra_params)
-        else:
-            request.update(self.model_kwargs or self.extra_params)
+        request.update(self.model_kwargs or self.extra_params)
         request.update(kwargs)
-        if stop := self.stop or stop:
+        if stop:
             request["stop"] = stop
 
         if self.transform_input_fn:

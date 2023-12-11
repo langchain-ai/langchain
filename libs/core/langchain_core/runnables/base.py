@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
 from copy import deepcopy
 from functools import partial, wraps
-from itertools import tee
+from itertools import groupby, tee
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -22,6 +22,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -1348,6 +1349,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     last: Runnable[Any, Output]
     """The last runnable in the sequence."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
+
     @property
     def steps(self) -> List[Runnable[Any, Any]]:
         """All the runnables that make up the sequence in order."""
@@ -1356,10 +1362,6 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
 
     class Config:
         arbitrary_types_allowed = True
@@ -1401,9 +1403,46 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
-        return get_unique_config_specs(
-            spec for step in self.steps for spec in step.config_specs
+        from langchain_core.runnables.context import CONTEXT_CONFIG_PREFIX, _key_from_id
+
+        # get all specs
+        all_specs = [
+            (spec, idx)
+            for idx, step in enumerate(self.steps)
+            for spec in step.config_specs
+        ]
+        # calculate context dependencies
+        specs_by_pos = groupby(
+            [tup for tup in all_specs if tup[0].id.startswith(CONTEXT_CONFIG_PREFIX)],
+            lambda x: x[1],
         )
+        next_deps: Set[str] = set()
+        deps_by_pos: Dict[int, Set[str]] = {}
+        for pos, specs in specs_by_pos:
+            deps_by_pos[pos] = next_deps
+            next_deps = next_deps | {spec[0].id for spec in specs}
+        # assign context dependencies
+        for pos, (spec, idx) in enumerate(all_specs):
+            if spec.id.startswith(CONTEXT_CONFIG_PREFIX):
+                all_specs[pos] = (
+                    ConfigurableFieldSpec(
+                        id=spec.id,
+                        annotation=spec.annotation,
+                        name=spec.name,
+                        default=spec.default,
+                        description=spec.description,
+                        is_shared=spec.is_shared,
+                        dependencies=[
+                            d
+                            for d in deps_by_pos[idx]
+                            if _key_from_id(d) != _key_from_id(spec.id)
+                        ]
+                        + (spec.dependencies or []),
+                    ),
+                    idx,
+                )
+
+        return get_unique_config_specs(spec for spec, _ in all_specs)
 
     def __repr__(self) -> str:
         return "\n| ".join(
@@ -1456,8 +1495,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             )
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-        # setup callbacks
-        config = ensure_config(config)
+        from langchain_core.runnables.context import config_with_context
+
+        # setup callbacks and context
+        config = config_with_context(ensure_config(config), self.steps)
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
@@ -1488,8 +1529,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        # setup callbacks
-        config = ensure_config(config)
+        from langchain_core.runnables.context import aconfig_with_context
+
+        # setup callbacks and context
+        config = aconfig_with_context(ensure_config(config), self.steps)
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
@@ -1523,12 +1566,16 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> List[Output]:
         from langchain_core.callbacks.manager import CallbackManager
+        from langchain_core.runnables.context import config_with_context
 
         if not inputs:
             return []
 
-        # setup callbacks
-        configs = get_config_list(config, len(inputs))
+        # setup callbacks and context
+        configs = [
+            config_with_context(c, self.steps)
+            for c in get_config_list(config, len(inputs))
+        ]
         callback_managers = [
             CallbackManager.configure(
                 inheritable_callbacks=config.get("callbacks"),
@@ -1641,15 +1688,17 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain_core.callbacks.manager import (
-            AsyncCallbackManager,
-        )
+        from langchain_core.callbacks.manager import AsyncCallbackManager
+        from langchain_core.runnables.context import aconfig_with_context
 
         if not inputs:
             return []
 
-        # setup callbacks
-        configs = get_config_list(config, len(inputs))
+        # setup callbacks and context
+        configs = [
+            aconfig_with_context(c, self.steps)
+            for c in get_config_list(config, len(inputs))
+        ]
         callback_managers = [
             AsyncCallbackManager.configure(
                 inheritable_callbacks=config.get("callbacks"),
@@ -1763,7 +1812,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> Iterator[Output]:
+        from langchain_core.runnables.context import config_with_context
+
         steps = [self.first] + self.middle + [self.last]
+        config = config_with_context(config, self.steps)
 
         # transform the input stream of each step with the next
         # steps that don't natively support transforming an input stream will
@@ -1787,7 +1839,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> AsyncIterator[Output]:
+        from langchain_core.runnables.context import aconfig_with_context
+
         steps = [self.first] + self.middle + [self.last]
+        config = aconfig_with_context(config, self.steps)
 
         # stream the last steps
         # transform the input stream of each step with the next
@@ -1885,7 +1940,8 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     class Config:
         arbitrary_types_allowed = True
@@ -2651,7 +2707,8 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     def _invoke(
         self,
@@ -2691,6 +2748,11 @@ class RunnableEach(RunnableEachBase[Input, Output]):
     A runnable that delegates calls to another runnable
     with each element of the input sequence.
     """
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
         return RunnableEach(bound=self.bound.bind(**kwargs))
@@ -2856,7 +2918,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
         config = merge_configs(self.config, *configs)
@@ -3031,6 +3094,11 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             )
             runnable_binding.invoke('Say "Parrot-MAGIC"') # Should return `Parrot`
     """
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """Bind additional kwargs to a Runnable, returning a new Runnable.

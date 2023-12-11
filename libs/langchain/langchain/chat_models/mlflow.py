@@ -115,13 +115,13 @@ class ChatMlflow(BaseChatModel):
             "messages": message_dicts,
             "temperature": self.temperature,
             "n": self.n,
-            "stop": stop or self.stop,
-            "max_tokens": self.max_tokens,
             **self.extra_params,
             **kwargs,
         }
         if stop := self.stop or stop:
             data["stop"] = stop
+        if self.max_tokens is not None:
+            data["max_tokens"] = self.max_tokens
         resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return ChatMlflow._create_chat_result(resp)
 
