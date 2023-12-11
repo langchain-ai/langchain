@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "openai-functions-agent"
+name = "openai-functions-agent-gmail"
 version = "0.1.0"
 description = "Agent using OpenAI function calling to execute functions, including search"
 authors = [
@@ -9,10 +9,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.325"
+langchain = ">=0.0.349,<0.1.0"
 openai = "<2"
-langchain-core = {path = "../../libs/core", develop = true}
-langchain-community = {path = "../../libs/community", develop = true}
+langchain-core = ">=0.0.13,<0.1.0"
+langchain-community = ">=0.0.1,<0.1.0" 
 google-api-python-client = "^2.110.0"
 google-auth-oauthlib = "^1.1.0"
 google-auth-httplib2 = "^0.1.1"

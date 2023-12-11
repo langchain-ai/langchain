@@ -4,11 +4,6 @@ from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain_community.chat_models import ChatOpenAI
-from langchain_community.tools.render import format_tool_to_openai_function
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.tools import tool
 from langchain_community.tools.gmail import (
     GmailCreateDraft,
     GmailGetMessage,
@@ -16,6 +11,18 @@ from langchain_community.tools.gmail import (
     GmailSearch,
     GmailSendMessage,
 )
+from langchain_community.tools.render import format_tool_to_openai_function
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.tools import tool
+
+
+@tool
+def ask_for_input(self, question: str) -> str:
+    """Ask the user for input."""
+    return input(question)
+
 
 # Create the tools
 tools = [
@@ -24,7 +31,9 @@ tools = [
     GmailGetThread(),
     GmailSearch(),
     GmailSendMessage(),
+    ask_for_input,
 ]
+
 assistant_system_message = """You are a helpful assistant. \
 Use tools (only if necessary) to best answer the users questions."""
 prompt = ChatPromptTemplate.from_messages(
@@ -35,6 +44,7 @@ prompt = ChatPromptTemplate.from_messages(
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ]
 )
+
 
 llm = ChatOpenAI(model="gpt-4-1106-preview", temperature=0)
 llm_with_tools = llm.bind(functions=[format_tool_to_openai_function(t) for t in tools])
