@@ -1403,7 +1403,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
-        from langchain_core.runnables.context import CONTEXT_CONFIG_PREFIX, _key_from_id
+        from langchain_core.beta.runnables.context import (
+            CONTEXT_CONFIG_PREFIX,
+            _key_from_id,
+        )
 
         # get all specs
         all_specs = [
@@ -1495,7 +1498,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             )
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-        from langchain_core.runnables.context import config_with_context
+        from langchain_core.beta.runnables.context import config_with_context
 
         # setup callbacks and context
         config = config_with_context(ensure_config(config), self.steps)
@@ -1529,7 +1532,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        from langchain_core.runnables.context import aconfig_with_context
+        from langchain_core.beta.runnables.context import aconfig_with_context
 
         # setup callbacks and context
         config = aconfig_with_context(ensure_config(config), self.steps)
@@ -1565,8 +1568,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
+        from langchain_core.beta.runnables.context import config_with_context
         from langchain_core.callbacks.manager import CallbackManager
-        from langchain_core.runnables.context import config_with_context
 
         if not inputs:
             return []
@@ -1688,8 +1691,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
+        from langchain_core.beta.runnables.context import aconfig_with_context
         from langchain_core.callbacks.manager import AsyncCallbackManager
-        from langchain_core.runnables.context import aconfig_with_context
 
         if not inputs:
             return []
@@ -1812,7 +1815,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> Iterator[Output]:
-        from langchain_core.runnables.context import config_with_context
+        from langchain_core.beta.runnables.context import config_with_context
 
         steps = [self.first] + self.middle + [self.last]
         config = config_with_context(config, self.steps)
@@ -1839,7 +1842,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> AsyncIterator[Output]:
-        from langchain_core.runnables.context import aconfig_with_context
+        from langchain_core.beta.runnables.context import aconfig_with_context
 
         steps = [self.first] + self.middle + [self.last]
         config = aconfig_with_context(config, self.steps)
