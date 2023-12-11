@@ -1,5 +1,5 @@
 """
-This module contains the Connery Action Tool.
+This module contains the ConneryAction Tool.
 """
 
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
@@ -75,7 +75,7 @@ class ConneryAction(BaseTool):
         Initialize a Connery Action Tool.
         Parameters:
             action (Action): The Connery Action to wrap.
-            connery_service (ConneryService): The Connery API Wrapper.
+            connery_service (ConneryService): The Connery API Wrapper. We use Any here to avoid circular imports.
         Returns:
             ConneryAction: The Connery Action Tool.
         """
@@ -85,7 +85,7 @@ class ConneryAction(BaseTool):
         if not isinstance(connery_service, ConneryService):
             raise ValueError("The connery_service must be an instance of ConneryService.")
 
-        input_schema = cls._create_dynamic_input_schema(action.inputParameters)
+        input_schema = cls._create_input_schema(action.inputParameters)
         description = action.title + (": " + action.description if action.description else "")
 
         instance = cls(
@@ -99,13 +99,13 @@ class ConneryAction(BaseTool):
         return instance
     
     @classmethod
-    def _create_dynamic_input_schema(cls, inputParameters: List[Parameter]) -> Type[BaseModel]:
+    def _create_input_schema(cls, inputParameters: List[Parameter]) -> Type[BaseModel]:
         """
-        Creates a dynamic input schema for a Connery Action Tool based on the input parameters of the Connery Action.
+        Creates an input schema for a Connery Action Tool based on the input parameters of the Connery Action.
         Parameters:
             inputParameters: List of input parameters of the Connery Action.
         Returns:
-            Type[BaseModel]: The dynamic input schema for the Connery Action Tool.
+            Type[BaseModel]: The input schema for the Connery Action Tool.
         """
 
         dynamic_input_fields = {}

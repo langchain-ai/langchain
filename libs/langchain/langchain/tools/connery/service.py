@@ -1,3 +1,7 @@
+"""
+This module contains the ConneryService.
+"""
+
 import json
 from typing import List, Optional, Dict
 from langchain_core.pydantic_v1 import BaseModel, root_validator
@@ -8,7 +12,9 @@ from .tool import ConneryAction
 
 class ConneryService(BaseModel):
     """
-    A service for working with Connery actions.
+    A service for interacting with the Connery Runner API.
+    It gets the list of available actions from the Connery Runner, wraps them in ConneryAction Tools and returns them to the user.
+    It also provides a method for running the actions.
     """
 
     runner_url: Optional[str] = None
