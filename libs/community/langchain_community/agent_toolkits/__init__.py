@@ -18,9 +18,6 @@ from langchain_community.agent_toolkits.amadeus.toolkit import AmadeusToolkit
 from langchain_community.agent_toolkits.azure_cognitive_services import (
     AzureCognitiveServicesToolkit,
 )
-from langchain_community.agent_toolkits.conversational_retrieval.openai_functions import (  # noqa: E501
-    create_conversational_retrieval_agent,
-)
 from langchain_community.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
 )
@@ -74,5 +71,4 @@ __all__ = [
     "create_pbi_chat_agent",
     "create_spark_sql_agent",
     "create_sql_agent",
-    "create_conversational_retrieval_agent",
 ]
