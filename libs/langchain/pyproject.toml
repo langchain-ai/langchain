@@ -112,6 +112,7 @@ dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
 langchain-openai = {version = ">=0.0.2,<0.1", optional = true}
 rdflib = {version = "7.0.0", optional = true}
+intel-extension-for-transformers = {version = "^1.2.1", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -203,7 +204,8 @@ langchain-core = {path = "../core", develop = true}
 langchain-community = {path = "../community", develop = true}
 
 [tool.poetry.extras]
-llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers",
+  "intel-extension-for-transformers"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
