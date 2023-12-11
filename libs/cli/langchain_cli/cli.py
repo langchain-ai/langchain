@@ -16,7 +16,7 @@ app.add_typer(
     template_namespace.package_cli, name="template", help=template_namespace.__doc__
 )
 app.add_typer(app_namespace.app_cli, name="app", help=app_namespace.__doc__)
-app.add_typer(integration_)
+app.add_typer(integration_namespace.integration_cli)
 
 
 def version_callback(show_version: bool) -> None:
