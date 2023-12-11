@@ -7,6 +7,17 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
+  workflow_dispatch:
+    inputs:
+      working-directory:
+        required: true
+        type: choice
+        default: 'libs/langchain'
+        options:
+          - libs/langchain
+          - libs/core
+          - libs/experimental
+          - libs/community
 
 env:
   PYTHON_VERSION: "3.10"
@@ -14,7 +25,7 @@ env:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/master'
+#    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     outputs:
