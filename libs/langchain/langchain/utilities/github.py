@@ -77,8 +77,12 @@ class GitHubAPIWrapper(BaseModel):
             private_key,
         )
         gi = GithubIntegration(auth=auth)
-        installation = gi.get_installations()[0]
-
+        installation = gi.get_installations()
+        if not installation:
+            raise ValueError(
+                "Make sure that you have installed your github app on the repo"
+            )
+        installation = installation[0]
         # create a GitHub instance:
         g = installation.get_github_for_installation()
         repo = g.get_repo(github_repository)
