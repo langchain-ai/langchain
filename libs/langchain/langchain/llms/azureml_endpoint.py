@@ -305,9 +305,9 @@ class AzureMLBaseEndpoint(BaseModel):
             values.get("endpoint_api_type"),
             values.get("endpoint_url"),
         )
-        if endpoint_url.endswith("inference.ml.azure.com") or endpoint_url.endswith(
-            "inference.ml.azure.com/"
-        ):
+        if endpoint_url.endswith("/"):
+            endpoint_url = endpoint_url[:-1]
+        if endpoint_url.endswith("inference.ml.azure.com"):
             raise ValueError(
                 "`endpoint_url` should contain the full invocation URL including "
                 "`/score` for `endpoint_api_type='realtime'` or `/v1/completions` "
