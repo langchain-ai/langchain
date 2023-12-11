@@ -11,9 +11,9 @@ from enum import Enum
 from functools import partial
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
-import gpudb
+# import gpudb
 import numpy as np
-from gpudb import GPUdb
+from gpudb import GPUdb, GPUdbTable
 
 from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
@@ -117,7 +117,7 @@ class Kinetica(VectorStore):
         ]
 
         self.create_schema()
-        self.EmbeddingStore: gpudb.GPUdbTable = self.create_tables_if_not_exists()
+        self.EmbeddingStore: GPUdbTable = self.create_tables_if_not_exists()
 
     @property
     def embeddings(self) -> Embeddings:
@@ -193,10 +193,10 @@ class Kinetica(VectorStore):
 
         return store
 
-    def create_tables_if_not_exists(self) -> gpudb.GPUdbTable:
+    def create_tables_if_not_exists(self) -> GPUdbTable:
         """Create the table to store the texts and embeddings"""
 
-        return gpudb.GPUdbTable(
+        return GPUdbTable(
             _type=self.table_schema,
             name=self.table_name,
             db=self._db,
