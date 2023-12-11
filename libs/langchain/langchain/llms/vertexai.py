@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import (
     TYPE_CHECKING,
@@ -9,6 +10,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Tuple,
 )
 
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
@@ -39,18 +41,18 @@ if TYPE_CHECKING:
     )
 
 
-def _response_to_generation(
-    response: TextGenerationResponse,
-) -> GenerationChunk:
+def parse_response(response: TextGenerationResponse) -> Tuple[str, Dict[str, Any]]:
+    """Convert a generation response to a two-tuple of text and public metadata."""
+    metadata = dataclasses.asdict(response)
+    return metadata.pop("text"), {
+        k: v for k, v in metadata.items() if not k.startswith("_")
+    }
+
+
+def _response_to_generation(response: TextGenerationResponse) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
-    try:
-        generation_info = {
-            "is_blocked": response.is_blocked,
-            "safety_attributes": response.safety_attributes,
-        }
-    except Exception:
-        generation_info = None
-    return GenerationChunk(text=response.text, generation_info=generation_info)
+    text, generation_info = parse_response(response)
+    return GenerationChunk(text=text, generation_info=generation_info)
 
 
 def is_codey_model(model_name: str) -> bool:

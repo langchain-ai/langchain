@@ -20,7 +20,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel, generate_from_stream
-from langchain.llms.vertexai import _VertexAICommon, is_codey_model
+from langchain.llms.vertexai import _VertexAICommon, is_codey_model, parse_response
 from langchain.utilities.vertexai import raise_vertex_import_error
 
 if TYPE_CHECKING:
@@ -30,6 +30,7 @@ if TYPE_CHECKING:
         CodeChatSession,
         InputOutputTextPair,
     )
+    from vertexai.language_models._language_models import TextGenerationResponse
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +117,14 @@ def _get_question(messages: List[BaseMessage]) -> HumanMessage:
     return question
 
 
+def _response_to_chat_generation(response: TextGenerationResponse) -> ChatGeneration:
+    """Convert a generation response to a chat generation."""
+    content, generation_info = parse_response(response)
+    return ChatGeneration(
+        message=AIMessage(content=content), generation_info=generation_info
+    )
+
+
 class ChatVertexAI(_VertexAICommon, BaseChatModel):
     """`Vertex AI` Chat large language models API."""
 
@@ -191,13 +200,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         chat = self._start_chat(history, **params)
         response = chat.send_message(question.content, **msg_params)
         return ChatResult(
-            generations=[
-                ChatGeneration(
-                    message=AIMessage(content=r.text),
-                    generation_info=r.raw_prediction_response,
-                )
-                for r in response.candidates
-            ]
+            generations=[_response_to_chat_generation(r) for r in response.candidates]
         )
 
     async def _agenerate(
@@ -237,13 +240,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         chat = self._start_chat(history, **params)
         response = await chat.send_message_async(question.content, **msg_params)
         return ChatResult(
-            generations=[
-                ChatGeneration(
-                    message=AIMessage(content=r.text),
-                    generation_info=r.raw_prediction_response,
-                )
-                for r in response.candidates
-            ]
+            generations=[_response_to_chat_generation(r) for r in response.candidates]
         )
 
     def _stream(
@@ -265,9 +262,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         for response in responses:
             if run_manager:
                 run_manager.on_llm_new_token(response.text)
+            content, generation_info = parse_response(response)
             yield ChatGenerationChunk(
-                message=AIMessageChunk(content=response.text),
-                generation_info=response.raw_prediction_response,
+                message=AIMessageChunk(content=content), generation_info=generation_info
             )
 
     def _start_chat(
