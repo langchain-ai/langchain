@@ -14,7 +14,7 @@ Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 Create a [`credentials.json`](https://developers.google.com/gmail/api/quickstart/python#authorize_credentials_for_a_desktop_application) file containing your OAuth client ID from Gmail. To customize authentication, see the [Customize Auth](#customize-auth) section below.
 
-_*Note:* The first time you run this app, it will force you to go through a user authentication flow_
+_*Note:* The first time you run this app, it will force you to go through a user authentication flow._
 
 ## Usage
 
@@ -27,20 +27,20 @@ pip install -U langchain-cli
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package openai-functions-agent-core
+langchain app new my-app --package openai-functions-agent-gmail
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add openai-functions-agent-core
+langchain app add openai-functions-agent-gmail
 ```
 
 And add the following code to your `server.py` file:
 ```python
 from openai_functions_agent import agent_executor as openai_functions_agent_chain
 
-add_routes(app, openai_functions_agent_chain, path="/openai-functions-agent-core")
+add_routes(app, openai_functions_agent_chain, path="/openai-functions-agent-gmail")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -64,14 +64,14 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/openai-functions-agent-core/playground](http://127.0.0.1:8000/openai-functions-agent/playground)  
+We can access the playground at [http://127.0.0.1:8000/openai-functions-agent-gmail/playground](http://127.0.0.1:8000/openai-functions-agent/playground)  
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/openai-functions-agent-core")
+runnable = RemoteRunnable("http://localhost:8000/openai-functions-agent-gmail")
 ```
 
 ## Customize Auth
