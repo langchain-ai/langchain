@@ -282,7 +282,7 @@ class AzureMLBaseEndpoint(BaseModel):
 
     @root_validator()
     @classmethod
-    def validate_endpoint_api_type(cls, values: Dict) -> AzureMLBaseEndpoint:
+    def validate_endpoint_api_type(cls, values: Dict) -> Dict:
         content_formatter = values.get("content_formatter")
         endpoint_api_type, endpoint_url = (
             values.get("endpoint_api_type"),
