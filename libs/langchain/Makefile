@@ -40,7 +40,7 @@ docker_tests:
 	docker build -t my-langchain-image:test .
 	docker run --rm my-langchain-image:test
 
-check_imports: langchain/**/*.py
+check_imports: $(shell find langchain -name '*.py')
 	for f in $^ ; do \
 		python -c "from importlib.machinery import SourceFileLoader; SourceFileLoader('x', '$$f').load_module()" || exit 1; \
 	done
