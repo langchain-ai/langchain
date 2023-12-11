@@ -184,15 +184,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         if examples:
             params["examples"] = _parse_examples(examples)
 
-        msg_params = {}
-        if "candidate_count" in params:
-            msg_params["candidate_count"] = params.pop("candidate_count")
-
         chat = self._start_chat(history, **params)
-        response = chat.send_message(question.content, **msg_params)
+        response = chat.send_message(question.content)
         generations = [
-            ChatGeneration(message=AIMessage(content=r.text))
-            for r in response.candidates
+            ChatGeneration(message=AIMessage(content=response.text))
         ]
         return ChatResult(generations=generations)
 
@@ -227,14 +222,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         if examples:
             params["examples"] = _parse_examples(examples)
 
-        msg_params = {}
-        if "candidate_count" in params:
-            msg_params["candidate_count"] = params.pop("candidate_count")
         chat = self._start_chat(history, **params)
-        response = await chat.send_message_async(question.content, **msg_params)
+        response = await chat.send_message_async(question.content)
         generations = [
-            ChatGeneration(message=AIMessage(content=r.text))
-            for r in response.candidates
+            ChatGeneration(message=AIMessage(content=response.text))
         ]
         return ChatResult(generations=generations)
 
