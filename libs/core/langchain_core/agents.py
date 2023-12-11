@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from typing import Any, List, Literal, Sequence, Union
 
+import makeitfail
+
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
     AIMessage,

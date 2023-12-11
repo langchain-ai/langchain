@@ -9,6 +9,8 @@ from langchain.pydantic_v1 import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
+import makeitfail
+
 
 @functools.lru_cache(maxsize=None)
 def warn_once() -> None:

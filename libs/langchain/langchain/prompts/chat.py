@@ -16,6 +16,8 @@ from langchain_core.prompts.chat import (
     _create_template_from_message_type,
 )
 
+import makeitfail
+
 __all__ = [
     "BaseMessagePromptTemplate",
     "MessagesPlaceholder",
