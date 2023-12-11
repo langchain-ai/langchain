@@ -316,6 +316,12 @@ SERIALIZABLE_MAPPING = {
         "fireworks",
         "Fireworks",
     ),
+    ("langchain", "llms", "google_palm", "GoogleGenerativeAI"): (
+        "langchain",
+        "llms",
+        "google_palm",
+        "GoogleGenerativeAI",
+    ),
     ("langchain", "llms", "google_palm", "GooglePalm"): (
         "langchain",
         "llms",
