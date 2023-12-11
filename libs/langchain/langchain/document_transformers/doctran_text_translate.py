@@ -37,7 +37,7 @@ class DoctranTextTranslator(BaseDocumentTransformer):
         )
         self.language = language
 
-    def atransform_documents(
+    async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         raise NotImplementedError
