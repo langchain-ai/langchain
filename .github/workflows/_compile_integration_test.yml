@@ -38,7 +38,7 @@ jobs:
 
       - name: Install integration dependencies
         shell: bash
-        run: poetry install --with=test_integration
+        run: poetry install --with=test_integration,test
 
       - name: Check integration tests compile
         shell: bash
