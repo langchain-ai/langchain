@@ -1,8 +1,5 @@
 from langchain.schema.runnable import RunnableBranch
-from langchain.prompts import PromptTemplate
-from langchain.chat_models import ChatAnthropic
 from langchain.schema.output_parser import StrOutputParser
-from langchain.chains.llm import LLMChain
 from .chat import chat
 from .blurb_matcher import book_rec_chain
 from  .library_info import library_info
@@ -24,11 +21,11 @@ Classification:"""
     | StrOutputParser()
 )
 
-extr = lambda x: x["output_text"]
+extract_op_field = lambda x: x["output_text"]
 
 branch = RunnableBranch(
-    (lambda x: "recommendation" in x["topic"].lower(), book_rec_chain | extr),
-    { "message": lambda x: x["message"] } | library_info | { "output_text": lambda x: x["text"]  }
+    (lambda x: "recommendation" in x["topic"].lower(), book_rec_chain | extract_op_field),
+    { "message": lambda x: x["message"] } | library_info
 )
 
 branched_chain = {"topic": chain, "message": lambda x: x["message"]} | branch

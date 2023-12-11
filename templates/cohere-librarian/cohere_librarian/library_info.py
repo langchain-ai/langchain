@@ -7,7 +7,7 @@ from langchain.prompts import (
     HumanMessagePromptTemplate,
 )
 
-librarian_prompt_no_history = ChatPromptTemplate.from_messages(
+librarian_prompt = ChatPromptTemplate.from_messages(
     [
         SystemMessagePromptTemplate.from_template(
             """
@@ -27,4 +27,4 @@ librarian_prompt_no_history = ChatPromptTemplate.from_messages(
     ]
 )
 
-library_info = librarian_prompt_no_history | chat
+library_info = librarian_prompt | chat

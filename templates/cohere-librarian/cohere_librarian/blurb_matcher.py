@@ -48,10 +48,3 @@ book_rec_chain = {
     "input_documents": lambda x: docsearch.get_relevant_documents(x["message"]),
     "message": lambda x: x["message"],
 } | load_qa_chain(chat, chain_type="stuff", prompt=PROMPT)
-
-query = "books that are good for people that like horror"
-
-# result = book_rec_chain.invoke({"message": query})
-
-
-# print(result["output_text"])
