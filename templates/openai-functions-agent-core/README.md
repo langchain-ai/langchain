@@ -1,6 +1,6 @@
-# OpenAI Functions Agent (using core)
+# OpenAI Functions Agent - Gmail
 
-This template implements a simple agent using OpenAI function calling imports directly from [langchain-core](https://pypi.org/project/langchain-core/) and (`langchain-community`](https://pypi.org/project/langchain-community/).
+This template implements a simple agent using OpenAI function calling imports directly from [langchain-core](https://pypi.org/project/langchain-core/) and [`langchain-community`](https://pypi.org/project/langchain-community/).
 
 This template creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take. 
 
@@ -11,6 +11,10 @@ This example creates an agent that can optionally look up information on the int
 The following environment variables need to be set:
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+
+Create a [`credentials.json`](https://developers.google.com/gmail/api/quickstart/python#authorize_credentials_for_a_desktop_application) file containing your OAuth client ID from Gmail. To customize authentication, see the [Customize Auth](#customize-auth) section below.
+
+_*Note:* The first time you run this app, it will force you to go through a user authentication flow_
 
 ## Usage
 
@@ -68,4 +72,20 @@ We can access the template from code with:
 from langserve.client import RemoteRunnable
 
 runnable = RemoteRunnable("http://localhost:8000/openai-functions-agent-core")
+```
+
+## Customize Auth
+
+```
+from langchain.tools.gmail.utils import build_resource_service, get_gmail_credentials
+
+# Can review scopes here https://developers.google.com/gmail/api/auth/scopes
+# For instance, readonly scope is 'https://www.googleapis.com/auth/gmail.readonly'
+credentials = get_gmail_credentials(
+    token_file="token.json",
+    scopes=["https://mail.google.com/"],
+    client_secrets_file="credentials.json",
+)
+api_resource = build_resource_service(credentials=credentials)
+toolkit = GmailToolkit(api_resource=api_resource)
 ```

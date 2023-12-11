@@ -13,6 +13,10 @@ langchain = ">=0.0.325"
 openai = "<2"
 langchain-core = {path = "../../libs/core", develop = true}
 langchain-community = {path = "../../libs/community", develop = true}
+google-api-python-client = "^2.110.0"
+google-auth-oauthlib = "^1.1.0"
+google-auth-httplib2 = "^0.1.1"
+bs4 = "^0.0.1"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"

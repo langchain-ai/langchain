@@ -1,4 +1,3 @@
-import math
 from typing import List, Tuple
 
 from langchain.agents import AgentExecutor
@@ -10,49 +9,22 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
+from langchain_community.tools.gmail import (
+    GmailCreateDraft,
+    GmailGetMessage,
+    GmailGetThread,
+    GmailSearch,
+    GmailSendMessage,
+)
 
 # Create the tools
-
-
-@tool
-def add(a: float, b: float) -> float:
-    """Add a to b."""
-    return a + b
-
-
-@tool
-def subtract(a: float, b: float) -> float:
-    """Subtract b from a."""
-    return a - b
-
-
-@tool
-def multiply(a: float, b: float) -> float:
-    """Multiply a by b."""
-    return a * b
-
-
-@tool
-def divide(a: float, b: float) -> float:
-    """Divide a by b."""
-    return a / b
-
-
-@tool
-def exponentiate(a: float, b: float) -> float:
-    """Raise a to the power of b."""
-    return a**b
-
-
-@tool
-def log(a: float, base: float = 2) -> float:
-    """Return the log of a with base b."""
-    return math.log(a, base)
-
-
-tools = [add, subtract, multiply, divide, exponentiate, log]
-
-llm = ChatOpenAI(temperature=0)
+tools = [
+    GmailCreateDraft(),
+    GmailGetMessage(),
+    GmailGetThread(),
+    GmailSearch(),
+    GmailSendMessage(),
+]
 assistant_system_message = """You are a helpful assistant. \
 Use tools (only if necessary) to best answer the users questions."""
 prompt = ChatPromptTemplate.from_messages(
@@ -64,9 +36,8 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-llm_with_tools = llm.bind(
-    functions=[format_tool_to_openai_function(t) for t in tools]
-)
+llm = ChatOpenAI(model="gpt-4-1106-preview", temperature=0)
+llm_with_tools = llm.bind(functions=[format_tool_to_openai_function(t) for t in tools])
 
 
 def _format_chat_history(chat_history: List[Tuple[str, str]]):
