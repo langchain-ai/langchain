@@ -54,6 +54,7 @@ See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 from langchain.chat_models import ChatVertexAI
 ```
 
+
 ## Document Loaders
 ### Google BigQuery
 
@@ -130,6 +131,8 @@ See a [usage example and authorization instructions](/docs/integrations/document
 ```python
 from langchain.document_loaders import GoogleSpeechToTextLoader
 ```
+
+
 
 ## Vector Stores
 
@@ -261,9 +264,14 @@ from langchain.tools import GooglePlacesTool
 
 ### Google Search
 
+We need to install a python package.
+
+```bash
+pip install google-api-python-client
+```
+
 - Set up a Custom Search Engine, following [these instructions](https://stackoverflow.com/questions/37083058/programmatically-searching-google-in-python-using-custom-search)
-- Get an API Key and Custom Search Engine ID from the previous step, and set them as environment variables 
-`GOOGLE_API_KEY` and `GOOGLE_CSE_ID` respectively.
+- Get an API Key and Custom Search Engine ID from the previous step, and set them as environment variables `GOOGLE_API_KEY` and `GOOGLE_CSE_ID` respectively
 
 ```python
 from langchain.utilities import GoogleSearchAPIWrapper
@@ -278,74 +286,6 @@ from langchain.agents import load_tools
 tools = load_tools(["google-search"])
 ```
 
-### Google Finance
-
-We need to install a python package.
-
-```bash
-pip install google-search-results
-```
-
-See a [usage example and authorization instructions](/docs/integrations/tools/google_finance).
-
-```python
-from langchain.tools.google_finance import GoogleFinanceQueryRun
-from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
-```
-
-### Google Jobs
-
-We need to install a python package.
-
-```bash
-pip install google-search-results
-```
-
-See a [usage example and authorization instructions](/docs/integrations/tools/google_jobs).
-
-```python
-from langchain.tools.google_jobs import GoogleJobsQueryRun
-from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
-```
-
-### Google Lens
-
-See a [usage example and authorization instructions](/docs/integrations/tools/google_lens).
-
-```python
-from langchain.tools.google_lens import GoogleLensQueryRun
-from langchain.utilities.google_lens import GoogleLensAPIWrapper
-```
-
-### Google Scholar
-
-We need to install a python package.
-
-```bash
-pip install google-search-results
-```
-
-See a [usage example and authorization instructions](/docs/integrations/tools/google_scholar).
-
-```python
-from langchain.tools.google_scholar import GoogleScholarQueryRun
-from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
-```
-
-### Google Trends
-
-We need to install a python package.
-
-```bash
-pip install google-search-results
-```
-
-See a [usage example and authorization instructions](/docs/integrations/tools/google_trends).
-
-```python
-from langchain.tools.google_trends import GoogleTrendsQueryRun
-from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
-```
 
 ## Document Transformers
 
@@ -471,14 +411,6 @@ See a [usage example and authorization instructions](/docs/integrations/tools/se
 
 ```python
 from langchain.utilities import SerpAPIWrapper
-```
-
-### Serper.dev
-
-See a [usage example and authorization instructions](/docs/integrations/tools/google_serper).
-
-```python
-from langchain.utilities import GoogleSerperAPIWrapper
 ```
 
 ### YouTube

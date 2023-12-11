@@ -178,6 +178,7 @@ def test_output_dict() -> None:
 def test_get_input_schema_input_dict() -> None:
     class RunnableWithChatHistoryInput(BaseModel):
         input: Union[str, BaseMessage, Sequence[BaseMessage]]
+        history: Sequence[BaseMessage]
 
     runnable = RunnableLambda(
         lambda input: {

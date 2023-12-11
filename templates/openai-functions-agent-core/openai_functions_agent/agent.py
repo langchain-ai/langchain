@@ -64,7 +64,7 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-llm_with_tools = llm.bind_functions(
+llm_with_tools = llm.bind(
     functions=[format_tool_to_openai_function(t) for t in tools]
 )
 
