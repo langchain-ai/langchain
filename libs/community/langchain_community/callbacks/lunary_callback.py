@@ -1,5 +1,5 @@
-import logging
 import importlib.metadata
+import logging
 import os
 import traceback
 import warnings
@@ -8,17 +8,14 @@ from typing import Any, Dict, List, Union, cast
 from uuid import UUID
 
 import requests
-from packaging.version import parse
-
-from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.agents import AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
-
-
 from opentelemetry import trace
+from opentelemetry.sdk.trace import Span, TracerProvider
 from opentelemetry.trace import set_span_in_context
-from opentelemetry.sdk.trace import TracerProvider, Span
+from packaging.version import parse
 
 if not trace.get_tracer_provider():
     provider = TracerProvider()
@@ -357,7 +354,8 @@ class LunaryCallbackHandler(BaseCallbackHandler):
             )
         except Exception as e:
             warnings.warn(
-                f"[Lunary] An error occurred in on_llm_start: {e}\n{traceback.format_exc()}"
+                f"""[Lunary] An error occurred in on_llm_start: 
+                {e}\n{traceback.format_exc()}"""
             )
 
     def on_chat_model_start(
@@ -375,7 +373,8 @@ class LunaryCallbackHandler(BaseCallbackHandler):
             context = set_span_in_context(trace.get_current_span())
             run_id = str(run_id)
 
-            # Sometimes parent_run_id is set by langchain, but the corresponding callback handler method is not called
+            # Sometimes parent_run_id is set by langchain, but the
+            # corresponding callback handler method is not called
             if parent_run_id and spans.get(str(parent_run_id)) is None:
                 parent_run_id = None
 
