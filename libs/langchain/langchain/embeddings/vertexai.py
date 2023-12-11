@@ -9,6 +9,7 @@ from langchain.utilities.vertexai import raise_vertex_import_error
 
 logger = logging.getLogger(__name__)
 
+
 class VertexAIEmbeddings(_VertexAICommon, Embeddings):
     """Google Cloud VertexAI embedding models."""
 
@@ -55,7 +56,7 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
 
         embeddings = []
         for batch_start in range(0, len(texts), batch_size):
-            text_batch = texts[batch_start: batch_start + batch_size]
+            text_batch = texts[batch_start : batch_start + batch_size]
             embeddings_batch = self.client.get_embeddings(text_batch)
             embeddings.extend([el.values for el in embeddings_batch])
 
