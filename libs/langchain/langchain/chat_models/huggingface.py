@@ -1,5 +1,5 @@
 """Hugging Face Chat Wrapper."""
-from typing import Any, List, Optional, Union, Type
+from typing import Any, List, Optional, Union
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -12,7 +12,6 @@ from langchain.llms import (
     HuggingFaceTextGenInference,
 )
 from langchain.llms.base import LLM
-
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -22,8 +21,6 @@ from langchain.schema import (
     LLMResult,
     SystemMessage,
 )
-
-from transformers import AutoTokenizer
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
@@ -44,14 +41,20 @@ class ChatHuggingFace(BaseChatModel):
 
     llm: LLM
     system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
-    tokenizer: AutoTokenizer = None
-    model_id: str = None # type: ignore
+    tokenizer: None
+    model_id: str = None  # type: ignore
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
-        if not isinstance(self.llm, (HuggingFaceEndpoint, HuggingFaceTextGenInference, HuggingFaceHub)):
-            raise ValueError(f"LLM type not supported for ChatHuggingFace: {type(self.llm)}")
+        from transformers import AutoTokenizer
+
+        if not isinstance(
+            self.llm, (HuggingFaceEndpoint, HuggingFaceTextGenInference, HuggingFaceHub)
+        ):
+            raise ValueError(
+                f"LLM type not supported for ChatHuggingFace: {type(self.llm)}"
+            )
 
         self._resolve_model_id()
         self.tokenizer = (
