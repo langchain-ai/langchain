@@ -29,8 +29,6 @@ def import_all_modules(package_name: str) -> dict:
                 "langchain.chains.llm_symbolic_math",
                 "langchain.tools.python",
                 "langchain.vectorstores._pgvector_data_models",
-                # TODO: why does this error?
-                "langchain.agents.agent_toolkits.openapi.planner",
             ):
                 importlib.import_module(module_name)
                 new_classes = import_all_modules(module_name)
