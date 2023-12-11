@@ -1,4 +1,4 @@
-name: pydantic v1/v2 compatibility
+name: dependencies
 
 on:
   workflow_call:
@@ -28,7 +28,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-    name: Pydantic v1/v2 compatibility - Python ${{ matrix.python-version }}
+    name: dependencies - Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,6 +43,14 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: poetry install
+
+      - name: Check imports with base dependencies
+        shell: bash
+        run: poetry run make check_imports
+
+      - name: Install test dependencies
+        shell: bash
+        run: poetry install --with test
 
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}

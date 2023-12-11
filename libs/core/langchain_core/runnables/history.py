@@ -86,6 +86,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     output_messages_key: Optional[str] = None
     history_messages_key: Optional[str] = None
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
+
     def __init__(
         self,
         runnable: Runnable[
@@ -192,8 +197,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
             else:
                 fields["__root__"] = (Sequence[BaseMessage], ...)
-            if self.history_messages_key:
-                fields[self.history_messages_key] = (Sequence[BaseMessage], ...)
             return create_model(  # type: ignore[call-overload]
                 "RunnableWithChatHistoryInput",
                 **fields,
