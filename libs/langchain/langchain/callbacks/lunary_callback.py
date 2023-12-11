@@ -1,7 +1,7 @@
-from langchain_community.callbacks.llmonitor_callback import (
+from langchain_community.callbacks.lunary_callback import (
     DEFAULT_API_URL,
     PARAMS_TO_CAPTURE,
-    LLMonitorCallbackHandler,
+    LunaryCallbackHandler,
     UserContextManager,
     _get_user_id,
     _get_user_props,
@@ -31,5 +31,5 @@ __all__ = [
     "_get_user_props",
     "_parse_lc_message",
     "_parse_lc_messages",
-    "LLMonitorCallbackHandler",
+    "LunaryCallbackHandler",
 ]

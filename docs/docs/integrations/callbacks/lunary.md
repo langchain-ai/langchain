@@ -1,27 +1,27 @@
-# LLMonitor
+# Lunary
 
->[LLMonitor](https://llmonitor.com?utm_source=langchain&utm_medium=py&utm_campaign=docs) is an open-source observability platform that provides cost and usage analytics, user tracking, tracing and evaluation tools.
+>[Lunary](https://lunary.ai?utm_source=langchain&utm_medium=py&utm_campaign=docs) is an open-source observability platform that provides cost and usage analytics, user tracking, tracing and evaluation tools.
 
 <video controls width='100%' >
-  <source src='https://llmonitor.com/videos/demo-annotated.mp4'/>
+  <source src='https://lunary.ai/videos/demo-annotated.mp4'/>
 </video>
 
 ## Setup
 
-Create an account on [llmonitor.com](https://llmonitor.com?utm_source=langchain&utm_medium=py&utm_campaign=docs), then copy your new app's `tracking id`.
+Create an account on [lunary.ai](https://lunary.ai?utm_source=langchain&utm_medium=py&utm_campaign=docs), then copy your new app's `tracking id`.
 
 Once you have it, set it as an environment variable by running:
 
 ```bash
-export LLMONITOR_APP_ID="..."
+export LUNARY_APP_ID="..."
 ```
 
 If you'd prefer not to set an environment variable, you can pass the key directly when initializing the callback handler:
 
 ```python
-from langchain.callbacks import LLMonitorCallbackHandler
+from langchain.callbacks import LunaryCallbackHandler
 
-handler = LLMonitorCallbackHandler(app_id="...")
+handler = LunaryCallbackHandler(app_id="...")
 ```
 
 ## Usage with LLM/Chat models
@@ -29,9 +29,9 @@ handler = LLMonitorCallbackHandler(app_id="...")
 ```python
 from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
-from langchain.callbacks import LLMonitorCallbackHandler
+from langchain.callbacks import LunaryCallbackHandler
 
-handler = LLMonitorCallbackHandler()
+handler = LunaryCallbackHandler()
 
 llm = OpenAI(
     callbacks=[handler],
@@ -55,11 +55,11 @@ Example:
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
 from langchain.agents import OpenAIFunctionsAgent, AgentExecutor, tool
-from langchain.callbacks import LLMonitorCallbackHandler
+from langchain.callbacks import LunaryCallbackHandler
 
 llm = ChatOpenAI(temperature=0)
 
-handler = LLMonitorCallbackHandler()
+handler = LunaryCallbackHandler()
 
 @tool
 def get_word_length(word: str) -> int:
@@ -90,9 +90,9 @@ Another example:
 ```python
 from langchain.agents import load_tools, initialize_agent, AgentType
 from langchain.llms import OpenAI
-from langchain.callbacks import LLMonitorCallbackHandler
+from langchain.callbacks import LunaryCallbackHandler
 
-handler = LLMonitorCallbackHandler()
+handler = LunaryCallbackHandler()
 
 llm = OpenAI(temperature=0)
 tools = load_tools(["serpapi", "llm-math"], llm=llm)
@@ -115,9 +115,9 @@ User tracking allows you to identify your users, track their cost, conversations
 ```python
 from langchain.agents import load_tools, initialize_agent, AgentType
 from langchain.llms import OpenAI
-from langchain.callbacks import LLMonitorCallbackHandler, identify
+from langchain.callbacks import LunaryCallbackHandler, identify
 
-handler = LLMonitorCallbackHandler()
+handler = LunaryCallbackHandler()
 
 llm = OpenAI(temperature=0)
 tools = load_tools(["serpapi", "llm-math"], llm=llm)
@@ -137,4 +137,4 @@ with identify("user-456", user_props={"email": "user456@test.com"}):
 ```
 ## Support
 
-For any question or issue with integration you can reach out to the LLMonitor team on [Discord](http://discord.com/invite/8PafSG58kK) or via [email](mailto:vince@llmonitor.com).
+For any question or issue with integration you can reach out to the Lunary team via [email](mailto:hello@lubary.ai).

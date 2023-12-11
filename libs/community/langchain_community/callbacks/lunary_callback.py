@@ -1,5 +1,5 @@
-import importlib.metadata
 import logging
+import importlib.metadata
 import os
 import traceback
 import warnings
@@ -8,18 +8,32 @@ from typing import Any, Dict, List, Union, cast
 from uuid import UUID
 
 import requests
+from packaging.version import parse
+
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
-from packaging.version import parse
+
+
+from opentelemetry import trace
+from opentelemetry.trace import set_span_in_context
+from opentelemetry.sdk.trace import TracerProvider, Span
+
+if not trace.get_tracer_provider():
+    provider = TracerProvider()
+    trace.set_tracer_provider(provider)
+tracer = trace.get_tracer("lunary")
+
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_API_URL = "https://app.llmonitor.com"
+DEFAULT_API_URL = "https://app.lunary.ai"
 
 user_ctx = ContextVar[Union[str, None]]("user_ctx", default=None)
 user_props_ctx = ContextVar[Union[str, None]]("user_props_ctx", default=None)
+
+spans: Dict[str, Span] = {}
 
 PARAMS_TO_CAPTURE = [
     "temperature",
@@ -40,7 +54,7 @@ PARAMS_TO_CAPTURE = [
 
 
 class UserContextManager:
-    """Context manager for LLMonitor user context."""
+    """Context manager for Lunary user context."""
 
     def __init__(self, user_id: str, user_props: Any = None) -> None:
         user_ctx.set(user_id)
@@ -55,7 +69,7 @@ class UserContextManager:
 
 
 def identify(user_id: str, user_props: Any = None) -> UserContextManager:
-    """Builds an LLMonitor UserContextManager
+    """Builds a Lunary UserContextManager
 
     Parameters:
         - `user_id`: The user id.
@@ -180,15 +194,15 @@ def _parse_lc_messages(messages: Union[List[BaseMessage], Any]) -> List[Dict[str
     return [_parse_lc_message(message) for message in messages]
 
 
-class LLMonitorCallbackHandler(BaseCallbackHandler):
-    """Callback Handler for LLMonitor`.
+class LunaryCallbackHandler(BaseCallbackHandler):
+    """Callback Handler for Lunary`.
 
     #### Parameters:
         - `app_id`: The app id of the app you want to report to. Defaults to
-        `None`, which means that `LLMONITOR_APP_ID` will be used.
-        - `api_url`: The url of the LLMonitor API. Defaults to `None`,
-        which means that either `LLMONITOR_API_URL` environment variable
-        or `https://app.llmonitor.com` will be used.
+        `None`, which means that `LUNARY_APP_ID` will be used.
+        - `api_url`: The url of the Lunary API. Defaults to `None`,
+        which means that either `LUNARY_API_URL` environment variable
+        or `https://app.lunary.ai` will be used.
 
     #### Raises:
         - `ValueError`: if `app_id` is not provided either as an
@@ -198,21 +212,17 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
     #### Example:
     ```python
-    from langchain_community.llms import OpenAI
-    from langchain_community.callbacks import LLMonitorCallbackHandler
+    from langchain.llms import OpenAI
+    from langchain.callbacks import LunaryCallbackHandler
 
-    llmonitor_callback = LLMonitorCallbackHandler()
-    llm = OpenAI(callbacks=[llmonitor_callback],
-                 metadata={"userId": "user-123"})
+    handler = LunaryCallbackHandler()
+    llm = OpenAI(callbacks=[handler],
+                metadata={"userId": "user-123"})
     llm.predict("Hello, how are you?")
     ```
     """
 
-    __api_url: str
     __app_id: str
-    __verbose: bool
-    __llmonitor_version: str
-    __has_valid_config: bool
 
     def __init__(
         self,
@@ -221,42 +231,48 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         verbose: bool = False,
     ) -> None:
         super().__init__()
-
-        self.__has_valid_config = True
-
         try:
-            import llmonitor
+            import lunary
 
-            self.__llmonitor_version = importlib.metadata.version("llmonitor")
-            self.__track_event = llmonitor.track_event
+            self.__lunary_version = importlib.metadata.version("lunary")
+            self.__track_event = lunary.track_event
 
         except ImportError:
             logger.warning(
-                """[LLMonitor] To use the LLMonitor callback handler you need to 
-                have the `llmonitor` Python package installed. Please install it 
-                with `pip install llmonitor`"""
+                """[Lunary] To use the Lunary callback handler you need to 
+                have the `lunary` Python package installed. Please install it 
+                with `pip install lunary`"""
             )
             self.__has_valid_config = False
             return
 
-        if parse(self.__llmonitor_version) < parse("0.0.32"):
+        if parse(self.__lunary_version) < parse("0.0.32"):
             logger.warning(
-                f"""[LLMonitor] The installed `llmonitor` version is 
-                {self.__llmonitor_version} 
-                but `LLMonitorCallbackHandler` requires at least version 0.0.32 
-                upgrade `llmonitor` with `pip install --upgrade llmonitor`"""
+                f"""[Lunary] The installed `lunary` version is 
+                {self.__lunary_version} 
+                but `LunaryCallbackHandler` requires at least version 0.1.1 
+                upgrade `lunary` with `pip install --upgrade lunary`"""
             )
             self.__has_valid_config = False
 
         self.__has_valid_config = True
 
-        self.__api_url = api_url or os.getenv("LLMONITOR_API_URL") or DEFAULT_API_URL
-        self.__verbose = verbose or bool(os.getenv("LLMONITOR_VERBOSE"))
+        self.__api_url = (
+            api_url
+            or os.getenv("LUNARY_API_URL")
+            or os.getenv("LLMONITOR_API_URL")
+            or DEFAULT_API_URL
+        )
+        self.__verbose = (
+            verbose
+            or bool(os.getenv("LUNARY_VERBOSE"))
+            or bool(os.getenv("LLMONITOR_VERBOSE"))
+        )
 
-        _app_id = app_id or os.getenv("LLMONITOR_APP_ID")
+        _app_id = app_id or os.getenv("LUNARY_APP_ID") or os.getenv("LLMONITOR_APP_ID")
         if _app_id is None:
             logger.warning(
-                """[LLMonitor] app_id must be provided either as an argument or 
+                """[Lunary] app_id must be provided either as an argument or 
                 as an environment variable"""
             )
             self.__has_valid_config = False
@@ -272,7 +288,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 raise ConnectionError()
         except Exception:
             logger.warning(
-                f"""[LLMonitor] Could not connect to the LLMonitor API at 
+                f"""[Lunary] Could not connect to the Lunary API at 
                 {self.__api_url}"""
             )
 
@@ -287,9 +303,19 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> None:
-        if self.__has_valid_config is False:
-            return
         try:
+            run_id = str(run_id)
+            if parent_run_id and spans.get(str(parent_run_id)):
+                parent = spans[str(parent_run_id)]
+                context = set_span_in_context(parent)
+                span = tracer.start_span("llm", context=context)
+                spans[run_id] = span
+            else:
+                context = set_span_in_context(trace.get_current_span())
+                span = tracer.start_span("llm", context=context)
+                parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
+                spans[run_id] = span
+
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
 
@@ -319,8 +345,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 "llm",
                 "start",
                 user_id=user_id,
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                run_id=run_id,
+                parent_run_id=parent_run_id,
                 name=name,
                 input=input,
                 tags=tags,
@@ -330,7 +356,9 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            warnings.warn(f"[LLMonitor] An error occurred in on_llm_start: {e}")
+            warnings.warn(
+                f"[Lunary] An error occurred in on_llm_start: {e}\n{traceback.format_exc()}"
+            )
 
     def on_chat_model_start(
         self,
@@ -343,10 +371,25 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> Any:
-        if self.__has_valid_config is False:
-            return
-
         try:
+            context = set_span_in_context(trace.get_current_span())
+            run_id = str(run_id)
+
+            # Sometimes parent_run_id is set by langchain, but the corresponding callback handler method is not called
+            if parent_run_id and spans.get(str(parent_run_id)) is None:
+                parent_run_id = None
+
+            if parent_run_id:
+                parent = spans[str(parent_run_id)]
+                context = set_span_in_context(parent)
+                span = tracer.start_span("llm", context=context)
+                spans[run_id] = span
+            else:
+                context = set_span_in_context(trace.get_current_span())
+                span = tracer.start_span("llm", context=context)
+                parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
+                spans[run_id] = span
+
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
 
@@ -376,8 +419,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 "llm",
                 "start",
                 user_id=user_id,
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                run_id=run_id,
+                parent_run_id=str(parent_run_id),
                 name=name,
                 input=input,
                 tags=tags,
@@ -387,7 +430,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logger.error(f"[LLMonitor] An error occurred in on_chat_model_start: {e}")
+            logger.error(f"[Lunary] An error occurred in on_chat_model_start: {e}")
 
     def on_llm_end(
         self,
@@ -397,12 +440,12 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> None:
-        if self.__has_valid_config is False:
-            return
-
         try:
-            token_usage = (response.llm_output or {}).get("token_usage", {})
+            span = spans.get(str(run_id))
+            if span and hasattr(span, "is_recording") and span.is_recording():
+                span.end()
 
+            token_usage = (response.llm_output or {}).get("token_usage", {})
             parsed_output: Any = [
                 _parse_lc_message(generation.message)
                 if hasattr(generation, "message")
@@ -417,8 +460,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
             self.__track_event(
                 "llm",
                 "end",
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                run_id=run_id,
                 output=parsed_output,
                 token_usage={
                     "prompt": token_usage.get("prompt_tokens"),
@@ -427,7 +469,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logger.error(f"[LLMonitor] An error occurred in on_llm_end: {e}")
+            logger.error(f"[Lunary] An error occurred in on_llm_end: {e}")
 
     def on_tool_start(
         self,
@@ -440,9 +482,19 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> None:
-        if self.__has_valid_config is False:
-            return
         try:
+            run_id = str(run_id)
+            if parent_run_id:
+                parent = spans[str(parent_run_id)]
+                context = set_span_in_context(parent)
+                span = tracer.start_span("tool", context=context)
+                spans[run_id] = span
+            else:
+                context = set_span_in_context(trace.get_current_span())
+                span = tracer.start_span("tool", context=context)
+                parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
+                spans[run_id] = span
+
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
             name = serialized.get("name")
@@ -451,8 +503,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 "tool",
                 "start",
                 user_id=user_id,
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                run_id=run_id,
+                parent_run_id=str(parent_run_id),
                 name=name,
                 input=input_str,
                 tags=tags,
@@ -461,7 +513,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logger.error(f"[LLMonitor] An error occurred in on_tool_start: {e}")
+            logger.error(f"[Lunary] An error occurred in on_tool_start: {e}")
 
     def on_tool_end(
         self,
@@ -472,19 +524,19 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         tags: Union[List[str], None] = None,
         **kwargs: Any,
     ) -> None:
-        if self.__has_valid_config is False:
-            return
         try:
+            span = spans.get(str(run_id))
+            if span and hasattr(span, "is_recording") and span.is_recording():
+                span.end()
             self.__track_event(
                 "tool",
                 "end",
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                run_id=run_id,
                 output=output,
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logger.error(f"[LLMonitor] An error occurred in on_tool_end: {e}")
+            logger.error(f"[Lunary] An error occurred in on_tool_end: {e}")
 
     def on_chain_start(
         self,
@@ -497,9 +549,20 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> Any:
-        if self.__has_valid_config is False:
-            return
+        print(metadata)
         try:
+            run_id = str(run_id)
+            if parent_run_id and spans.get(str(parent_run_id)):
+                parent = spans[str(parent_run_id)]
+                context = set_span_in_context(parent)
+                span = tracer.start_span("chain", context=context)
+                spans[run_id] = span
+            else:
+                context = set_span_in_context(trace.get_current_span())
+                span = tracer.start_span("tool", context=context)
+                parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
+                spans[run_id] = span
+
             name = serialized.get("id", [None, None, None, None])[3]
             type = "chain"
             metadata = metadata or {}
@@ -524,8 +587,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 type,
                 "start",
                 user_id=user_id,
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                run_id=run_id,
+                parent_run_id=parent_run_id,
                 name=name,
                 input=input,
                 tags=tags,
@@ -534,7 +597,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logger.error(f"[LLMonitor] An error occurred in on_chain_start: {e}")
+            logger.error(f"[Lunary] An error occurred in on_chain_start: {e}")
 
     def on_chain_end(
         self,
@@ -544,47 +607,22 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
-        if self.__has_valid_config is False:
-            return
         try:
+            span = spans.get(str(run_id))
+            if span and hasattr(span, "is_recording") and span.is_recording():
+                span.end()
+
             output = _parse_output(outputs)
 
             self.__track_event(
                 "chain",
                 "end",
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                run_id=run_id,
                 output=output,
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logger.error(f"[LLMonitor] An error occurred in on_chain_end: {e}")
-
-    def on_agent_action(
-        self,
-        action: AgentAction,
-        *,
-        run_id: UUID,
-        parent_run_id: Union[UUID, None] = None,
-        **kwargs: Any,
-    ) -> Any:
-        if self.__has_valid_config is False:
-            return
-        try:
-            name = action.tool
-            input = _parse_input(action.tool_input)
-
-            self.__track_event(
-                "tool",
-                "start",
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
-                name=name,
-                input=input,
-                app_id=self.__app_id,
-            )
-        except Exception as e:
-            logger.error(f"[LLMonitor] An error occurred in on_agent_action: {e}")
+            logger.error(f"[Lunary] An error occurred in on_chain_end: {e}")
 
     def on_agent_finish(
         self,
@@ -594,21 +632,21 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
-        if self.__has_valid_config is False:
-            return
         try:
+            span = spans.get(str(run_id))
+            if span and hasattr(span, "is_recording") and span.is_recording():
+                span.end()
             output = _parse_output(finish.return_values)
 
             self.__track_event(
                 "agent",
                 "end",
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                run_id=run_id,
                 output=output,
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logger.error(f"[LLMonitor] An error occurred in on_agent_finish: {e}")
+            logger.error(f"[Lunary] An error occurred in on_agent_finish: {e}")
 
     def on_chain_error(
         self,
@@ -618,19 +656,19 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
-        if self.__has_valid_config is False:
-            return
         try:
+            span = spans.get(str(run_id))
+            if span and hasattr(span, "is_recording") and span.is_recording():
+                span.end()
             self.__track_event(
                 "chain",
                 "error",
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                run_id=run_id,
                 error={"message": str(error), "stack": traceback.format_exc()},
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logger.error(f"[LLMonitor] An error occurred in on_chain_error: {e}")
+            logger.error(f"[Lunary] An error occurred in on_chain_error: {e}")
 
     def on_tool_error(
         self,
@@ -640,19 +678,19 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
-        if self.__has_valid_config is False:
-            return
         try:
+            span = spans.get(str(run_id))
+            if span and hasattr(span, "is_recording") and span.is_recording():
+                span.end()
             self.__track_event(
                 "tool",
                 "error",
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                run_id=run_id,
                 error={"message": str(error), "stack": traceback.format_exc()},
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logger.error(f"[LLMonitor] An error occurred in on_tool_error: {e}")
+            logger.error(f"[Lunary] An error occurred in on_tool_error: {e}")
 
     def on_llm_error(
         self,
@@ -662,19 +700,16 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         parent_run_id: Union[UUID, None] = None,
         **kwargs: Any,
     ) -> Any:
-        if self.__has_valid_config is False:
-            return
         try:
+            span = spans.get(str(run_id))
+            if span and hasattr(span, "is_recording") and span.is_recording():
+                span.end()
             self.__track_event(
                 "llm",
                 "error",
-                run_id=str(run_id),
-                parent_run_id=str(parent_run_id) if parent_run_id else None,
+                run_id=run_id,
                 error={"message": str(error), "stack": traceback.format_exc()},
                 app_id=self.__app_id,
             )
         except Exception as e:
-            logger.error(f"[LLMonitor] An error occurred in on_llm_error: {e}")
-
-
-__all__ = ["LLMonitorCallbackHandler", "identify"]
+            logger.error(f"[Lunary] An error occurred in on_llm_error: {e}")
