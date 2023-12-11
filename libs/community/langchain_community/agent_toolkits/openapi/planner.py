@@ -2,7 +2,7 @@
 import json
 import re
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import yaml
 from langchain_core.callbacks import BaseCallbackManager
