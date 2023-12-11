@@ -106,6 +106,18 @@ class LlamaChatContentFormatter(ContentFormatterBase):
 
 
 class AzureMLChatOnlineEndpoint(SimpleChatModel, AzureMLBaseEndpoint):
+    """Azure ML Online Endpoint chat models.
+
+    Example:
+        .. code-block:: python
+            azure_llm = AzureMLOnlineEndpoint(
+                endpoint_url="https://<your-endpoint>.<your_region>.inference.ml.azure.com/score",
+                endpoint_api_type=AzureMLApiType.realtime,
+                endpoint_api_key="my-api-key",
+                content_formatter=chat_content_formatter,
+            )
+    """  # noqa: E501
+
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""

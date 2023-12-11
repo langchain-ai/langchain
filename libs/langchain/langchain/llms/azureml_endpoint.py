@@ -254,13 +254,13 @@ class LlamaContentFormatter(ContentFormatterBase):
 class AzureMLBaseEndpoint(BaseModel):
     """Azure ML Online Endpoint models."""
 
-    endpoint_api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime
-    """Type of the endpoint being consumed. Possible values are `serverless` for 
-        pay-as-you-go and `realtime` for real-time endpoints. """
-
     endpoint_url: str = ""
     """URL of pre-existing Endpoint. Should be passed to constructor or specified as 
         env var `AZUREML_ENDPOINT_URL`."""
+
+    endpoint_api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime
+    """Type of the endpoint being consumed. Possible values are `serverless` for 
+        pay-as-you-go and `realtime` for real-time endpoints. """
 
     endpoint_api_key: str = ""
     """Authentication Key for Endpoint. Should be passed to constructor or specified as
@@ -282,7 +282,7 @@ class AzureMLBaseEndpoint(BaseModel):
 
     @root_validator()
     @classmethod
-    def validate_endpoint_api_type(cls, values: Dict) -> AzureMLEndpointClient:
+    def validate_endpoint_api_type(cls, values: Dict) -> AzureMLBaseEndpoint:
         content_formatter = values.get("content_formatter")
         endpoint_api_type, endpoint_url = (
             values.get("endpoint_api_type"),
@@ -346,8 +346,8 @@ class AzureMLOnlineEndpoint(LLM, AzureMLBaseEndpoint):
     Example:
         .. code-block:: python
             azure_llm = AzureMLOnlineEndpoint(
-                endpoint_api_type=AzureML
                 endpoint_url="https://<your-endpoint>.<your_region>.inference.ml.azure.com/score",
+                endpoint_api_type=AzureMLApiType.realtime,
                 endpoint_api_key="my-api-key",
                 content_formatter=content_formatter,
             )
