@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, List
 
 from langchain_core.embeddings import Embeddings
@@ -6,11 +7,13 @@ from langchain_core.pydantic_v1 import root_validator
 from langchain.llms.vertexai import _VertexAICommon
 from langchain.utilities.vertexai import raise_vertex_import_error
 
+logger = logging.getLogger(__name__)
 
 class VertexAIEmbeddings(_VertexAICommon, Embeddings):
     """Google Cloud VertexAI embedding models."""
 
     model_name: str = "textembedding-gecko"
+    show_progress_bar: bool = False
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -36,11 +39,32 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        if self.show_progress_bar:
+            try:
+                from tqdm import tqdm
+            except ImportError:
+                logger.warning(
+                    "Unable to show progress bar because tqdm could not be imported. "
+                    "Please install with `pip install tqdm`."
+                )
+                progress_bar = None
+            else:
+                progress_bar = tqdm(total=len(texts), desc="VertexAIEmbeddings")
+        else:
+            progress_bar = None
+
         embeddings = []
-        for batch in range(0, len(texts), batch_size):
-            text_batch = texts[batch : batch + batch_size]
+        for batch_start in range(0, len(texts), batch_size):
+            text_batch = texts[batch_start: batch_start + batch_size]
             embeddings_batch = self.client.get_embeddings(text_batch)
             embeddings.extend([el.values for el in embeddings_batch])
+
+            if progress_bar:
+                progress_bar.update(len(text_batch))
+
+        if progress_bar:
+            progress_bar.close()
+
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
