@@ -1,5 +1,5 @@
 """
-Develop installable templates.
+Develop integration packages for LangChain.
 """
 
 import re
@@ -17,9 +17,10 @@ integration_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 def new(
     integration_name: Annotated[
         str,
-        typer.Argument(
+        typer.Option(
             help="The name of the integration to create. "
-            "Do not include `langchain-`."
+            "Do not include `langchain-`.",
+            prompt=True,
         ),
     ],
 ):
