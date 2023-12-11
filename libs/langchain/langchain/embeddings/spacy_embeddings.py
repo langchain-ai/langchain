@@ -20,7 +20,8 @@ class SpacyEmbeddings(BaseModel, Embeddings):
 
     nlp: Optional[
         Any
-    ] = "en_core_web_sm"  # The spaCy model loaded into memory, defaulting to "en_core_web_sm"
+    ] = "en_core_web_sm" # The spaCy model loaded into memory, 
+                        # defaulting to "en_core_web_sm"
 
     class Config:
         """Configuration for this pydantic object."""
