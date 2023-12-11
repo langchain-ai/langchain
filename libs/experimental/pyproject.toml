@@ -32,6 +32,8 @@ optional = true
 mypy = "^0.991"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
+langchain = {path = "../langchain", develop = true}
+langchain-core = {path = "../core", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
@@ -55,7 +57,10 @@ langchain-core = {path = "../core", develop = true}
 
 [tool.poetry.group.test_integration]
 optional = true
-dependencies = {}
+
+[tool.poetry.group.test_integration.dependencies]
+langchain = {path = "../langchain", develop = true}
+langchain-core = {path = "../core", develop = true}
 
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without

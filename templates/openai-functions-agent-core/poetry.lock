@@ -702,28 +702,58 @@ typer = {version = ">=0.9.0,<0.10.0", extras = ["all"]}
 uvicorn = ">=0.23.2,<0.24.0"
 
 [[package]]
+name = "langchain-community"
+version = "0.0.1-rc.2"
+description = "Community contributed LangChain integrations."
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+aiohttp = "^3.8.3"
+dataclasses-json = ">= 0.5.7, < 0.7"
+langchain-core = ">=0.0.13-rc.2,<0.1"
+langsmith = "~0.0.63"
+numpy = "^1"
+PyYAML = ">=5.3"
+requests = "^2"
+SQLAlchemy = ">=1.4,<3"
+tenacity = "^8.1.0"
+
+[package.extras]
+cli = ["typer (>=0.9.0,<0.10.0)"]
+extended-testing = ["aiosqlite (>=0.19.0,<0.20.0)", "aleph-alpha-client (>=2.15.0,<3.0.0)", "anthropic (>=0.3.11,<0.4.0)", "arxiv (>=1.4,<2.0)", "assemblyai (>=0.17.0,<0.18.0)", "atlassian-python-api (>=3.36.0,<4.0.0)", "beautifulsoup4 (>=4,<5)", "bibtexparser (>=1.4.0,<2.0.0)", "cassio (>=0.1.0,<0.2.0)", "chardet (>=5.1.0,<6.0.0)", "cohere (>=4,<5)", "dashvector (>=1.0.1,<2.0.0)", "databricks-vectorsearch (>=0.21,<0.22)", "datasets (>=2.15.0,<3.0.0)", "dgml-utils (>=0.3.0,<0.4.0)", "esprima (>=4.0.1,<5.0.0)", "faiss-cpu (>=1,<2)", "feedparser (>=6.0.10,<7.0.0)", "fireworks-ai (>=0.9.0,<0.10.0)", "geopandas (>=0.13.1,<0.14.0)", "gitpython (>=3.1.32,<4.0.0)", "google-cloud-documentai (>=2.20.1,<3.0.0)", "gql (>=3.4.1,<4.0.0)", "hologres-vector (>=0.0.6,<0.0.7)", "html2text (>=2020.1.16,<2021.0.0)", "javelin-sdk (>=0.1.8,<0.2.0)", "jinja2 (>=3,<4)", "jq (>=1.4.1,<2.0.0)", "jsonschema (>1)", "lxml (>=4.9.2,<5.0.0)", "markdownify (>=0.11.6,<0.12.0)", "motor (>=3.3.1,<4.0.0)", "msal (>=1.25.0,<2.0.0)", "mwparserfromhell (>=0.6.4,<0.7.0)", "mwxml (>=0.3.3,<0.4.0)", "newspaper3k (>=0.2.8,<0.3.0)", "numexpr (>=2.8.6,<3.0.0)", "openai (<2)", "openapi-pydantic (>=0.3.2,<0.4.0)", "pandas (>=2.0.1,<3.0.0)", "pdfminer-six (>=20221105,<20221106)", "pgvector (>=0.1.6,<0.2.0)", "praw (>=7.7.1,<8.0.0)", "psychicapi (>=0.8.0,<0.9.0)", "py-trello (>=0.19.0,<0.20.0)", "pymupdf (>=1.22.3,<2.0.0)", "pypdf (>=3.4.0,<4.0.0)", "pypdfium2 (>=4.10.0,<5.0.0)", "pyspark (>=3.4.0,<4.0.0)", "rank-bm25 (>=0.2.2,<0.3.0)", "rapidfuzz (>=3.1.1,<4.0.0)", "rapidocr-onnxruntime (>=1.3.2,<2.0.0)", "requests-toolbelt (>=1.0.0,<2.0.0)", "rspace_client (>=2.5.0,<3.0.0)", "scikit-learn (>=1.2.2,<2.0.0)", "sqlite-vss (>=0.1.2,<0.2.0)", "streamlit (>=1.18.0,<2.0.0)", "sympy (>=1.12,<2.0)", "telethon (>=1.28.5,<2.0.0)", "timescale-vector (>=0.0.1,<0.0.2)", "tqdm (>=4.48.0)", "upstash-redis (>=0.15.0,<0.16.0)", "xata (>=1.0.0a7,<2.0.0)", "xmltodict (>=0.13.0,<0.14.0)"]
+
+[package.source]
+type = "directory"
+url = "../../libs/community"
+
+[[package]]
 name = "langchain-core"
-version = "0.0.12"
+version = "0.0.13-rc.2"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
-files = [
-    {file = "langchain_core-0.0.12-py3-none-any.whl", hash = "sha256:7dd7379c3848f9473c93b71992d96ab73b4889c1951bf3d899417b849ba0236c"},
-    {file = "langchain_core-0.0.12.tar.gz", hash = "sha256:9c6cca4ed25a10950071be80dc62921b30caafae73ac1bd4b93d9f070967a7b2"},
-]
+files = []
+develop = true
 
 [package.dependencies]
 anyio = ">=3,<5"
-jsonpatch = ">=1.33,<2.0"
-langsmith = ">=0.0.63,<0.1.0"
-packaging = ">=23.2,<24.0"
+jsonpatch = "^1.33"
+langsmith = "~0.0.63"
+packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
-requests = ">=2,<3"
-tenacity = ">=8.1.0,<9.0.0"
+requests = "^2"
+tenacity = "^8.1.0"
 
 [package.extras]
 extended-testing = ["jinja2 (>=3,<4)"]
+
+[package.source]
+type = "directory"
+url = "../../libs/core"
 
 [[package]]
 name = "langserve"
@@ -1440,20 +1470,6 @@ typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""
 full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyaml"]
 
 [[package]]
-name = "tavily-python"
-version = "0.1.9"
-description = "Python wrapper for the Tavily API"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "tavily-python-0.1.9.tar.gz", hash = "sha256:6b43f151f49ad461e370e7b186e205fbeed11c1807e9b393d9aa0a239aa8f89f"},
-    {file = "tavily_python-0.1.9-py3-none-any.whl", hash = "sha256:600793dc7096468a3b1371a98e37d9ed9948a7331ee40285ae992838ae2cc9c2"},
-]
-
-[package.dependencies]
-requests = "*"
-
-[[package]]
 name = "tenacity"
 version = "8.2.3"
 description = "Retry code until it succeeds"
@@ -1689,4 +1705,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a8215469784c3957dea06e9efce4c231a42dcec4390575479d231296d7d7db3f"
+content-hash = "38bac4f610d930a0c463f5b08671d516df08b5705c8ee12db8898095bbbf8e0f"

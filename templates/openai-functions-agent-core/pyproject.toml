@@ -11,8 +11,8 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.325"
 openai = "<2"
-tavily-python = "^0.1.9"
-langchain-core = "^0.0.12"
+langchain-core = {path = "../../libs/core", develop = true}
+langchain-community = {path = "../../libs/community", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"

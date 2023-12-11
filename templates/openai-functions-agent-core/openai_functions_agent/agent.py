@@ -5,6 +5,7 @@ from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain_community.chat_models import ChatOpenAI
+from langchain_community.tools.render import format_tool_to_openai_function
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -39,6 +40,7 @@ def divide(a: float, b: float) -> float:
 
 @tool
 def exponentiate(a: float, b: float) -> float:
+    """Raise a to the power of b."""
     return a**b
 
 
@@ -62,7 +64,9 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-llm_with_tools = llm.bind_tools(functions=tools)
+llm_with_tools = llm.bind_functions(
+    functions=[format_tool_to_openai_function(t) for t in tools]
+)
 
 
 def _format_chat_history(chat_history: List[Tuple[str, str]]):
