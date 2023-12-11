@@ -21,7 +21,7 @@ extended_tests:
 integration_tests:
 	poetry run pytest tests/integration_tests
 
-check_imports: langchain_experimental/**/*.py
+check_imports: $(shell find langchain_experimental -name '*.py')
 	for f in $^ ; do \
 		python -c "from importlib.machinery import SourceFileLoader; SourceFileLoader('x', '$$f').load_module()" || exit 1; \
 	done
