@@ -190,11 +190,15 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
         chat = self._start_chat(history, **params)
         response = chat.send_message(question.content, **msg_params)
-        generations = [
-            ChatGeneration(message=AIMessage(content=r.text))
-            for r in response.candidates
-        ]
-        return ChatResult(generations=generations)
+        return ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=AIMessage(content=r.text),
+                    generation_info=r.raw_prediction_response,
+                )
+                for r in response.candidates
+            ]
+        )
 
     async def _agenerate(
         self,
@@ -232,11 +236,15 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             msg_params["candidate_count"] = params.pop("candidate_count")
         chat = self._start_chat(history, **params)
         response = await chat.send_message_async(question.content, **msg_params)
-        generations = [
-            ChatGeneration(message=AIMessage(content=r.text))
-            for r in response.candidates
-        ]
-        return ChatResult(generations=generations)
+        return ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=AIMessage(content=r.text),
+                    generation_info=r.raw_prediction_response,
+                )
+                for r in response.candidates
+            ]
+        )
 
     def _stream(
         self,
@@ -257,7 +265,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         for response in responses:
             if run_manager:
                 run_manager.on_llm_new_token(response.text)
-            yield ChatGenerationChunk(message=AIMessageChunk(content=response.text))
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(content=response.text),
+                generation_info=response.raw_prediction_response,
+            )
 
     def _start_chat(
         self, history: _ChatHistory, **kwargs: Any
