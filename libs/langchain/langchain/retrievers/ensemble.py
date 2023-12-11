@@ -159,7 +159,9 @@ class EnsembleRetriever(BaseRetriever):
         all_documents = set()
         for doc_list in doc_lists:
             for doc in doc_list:
-                all_documents.add(doc.page_content)
+                if isinstance(doc, Document):
+                    doc = doc.page_content
+                all_documents.add(doc)
 
         # Initialize the RRF score dictionary for each document
         rrf_score_dic = {doc: 0.0 for doc in all_documents}
@@ -168,7 +170,9 @@ class EnsembleRetriever(BaseRetriever):
         for doc_list, weight in zip(doc_lists, self.weights):
             for rank, doc in enumerate(doc_list, start=1):
                 rrf_score = weight * (1 / (rank + self.c))
-                rrf_score_dic[doc.page_content] += rrf_score
+                if isinstance(doc, Document):
+                    doc = doc.page_content
+                rrf_score_dic[doc] += rrf_score
 
         # Sort documents by their RRF scores in descending order
         sorted_documents = sorted(
@@ -176,9 +180,16 @@ class EnsembleRetriever(BaseRetriever):
         )
 
         # Map the sorted page_content back to the original document objects
-        page_content_to_doc_map = {
-            doc.page_content: doc for doc_list in doc_lists for doc in doc_list
-        }
+        page_content_to_doc_map = {}
+        for doc_list in doc_lists:
+            for doc in doc_list:
+                # Check if the doc is an instance of Document
+                if isinstance(doc, Document):
+                    page_content_to_doc_map[doc.page_content] = doc
+                else:
+                    # If it's a string, use the string itself as the key
+                    page_content_to_doc_map[doc] = doc
+
         sorted_docs = [
             page_content_to_doc_map[page_content] for page_content in sorted_documents
         ]
