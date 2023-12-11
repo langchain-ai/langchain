@@ -70,13 +70,13 @@ Install Poetry: **[documentation on how to install it](https://python-poetry.org
 ❗Note: If you use `Conda` or `Pyenv` as your environment/package manager, after installing Poetry,
 tell Poetry to use the virtualenv python environment (`poetry config virtualenvs.prefer-active-python true`)
 
-### Different projects
+### Different packages
 
-This repository contains multiple projects:
+This repository contains multiple packages:
 - `langchain_core`: Base interfaces for key abstractions as well as logic for combining them in chains (LangChain Expression Language).
-- `langchain-community`: Third-party integrations and implementations of various components.
+- `langchain-community`: Third-party integrations of various components.
 - `langchain`: Chains, agents, and retrieval logic that makes up the cognitive architecture of your applications.
-- `langchain_experimental`: Components or chains that are more experimental in nature or unsafe (contain CVEs).
+- `langchain-experimental`: Components and chains that are experimental, either in the sense that the techniques are novel and still being tested, or they require giving the LLM more access than would be possible in most production systems.
 
 Each of these has its own development environment. Docs are run from the top-level makefile, but development
 is split across separate test & release flows.
@@ -334,7 +334,7 @@ This preview is created by [Vercel](https://vercel.com/docs/getting-started-with
 ## 📕 Releases & Versioning
 
 As of now, LangChain has an ad hoc release process: releases are cut with high frequency by
-a developer and published to [PyPI](https://pypi.org/project/langchain/). 
+a maintainer and published to [PyPI](https://pypi.org/). 
 The different packages are versioned slightly differently.
 
 ### `langchain-core`
@@ -358,7 +358,7 @@ Patch version increases will occur for:
 
 `langchain` is currently on version `0.0.x`
 
-All changes will be accompanied by a patch version increase. Any changes to public interfaces are nearly always done in a backwards compatible way.
+All changes will be accompanied by a patch version increase. Any changes to public interfaces are nearly always done in a backwards compatible way and will be communicated ahead of time when they are not backwards compatible.
 
 We are targeting January 2024 for a release of `langchain` v0.1, at which point `langchain` will adopt the same versioning policy as `langchain-core`.
 
@@ -373,11 +373,6 @@ All changes will be accompanied by a patch version increase.
 `langchain-experimental` is currently on version `0.0.x`
 
 All changes will be accompanied by a patch version increase.
-
-
-## 🏭 Release Process
-
-
 
 ## 🌟 Recognition
 
