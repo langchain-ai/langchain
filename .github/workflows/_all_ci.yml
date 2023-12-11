@@ -48,13 +48,12 @@ jobs:
 
   compile-integration-tests:
     uses: ./.github/workflows/_compile_integration_test.yml
-    if: ${{ inputs.working-directory != 'libs/core' }}
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
-  pydantic-compatibility:
-    uses: ./.github/workflows/_pydantic_compatibility.yml
+  dependencies:
+    uses: ./.github/workflows/_dependencies.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
@@ -68,7 +67,6 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-    if: ${{ inputs.working-directory == 'libs/langchain' }}
     name: Python ${{ matrix.python-version }} extended tests
     defaults:
       run:
@@ -88,12 +86,7 @@ jobs:
         shell: bash
         run: |
           echo "Running extended tests, installing dependencies with poetry..."
-          poetry install -E extended_testing
-
-      - name: Install langchain core editable
-        shell: bash
-        run: |
-          poetry run pip install -e ../core
+          poetry install -E extended_testing --with test
 
       - name: Run extended tests
         run: make extended_tests

@@ -39,7 +39,6 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "PyYAML",
         "SQLAlchemy",
         "aiohttp",
-        "anyio",
         "async-timeout",
         "dataclasses-json",
         "jsonpatch",
