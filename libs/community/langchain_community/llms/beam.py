@@ -6,7 +6,6 @@ import textwrap
 import time
 from typing import Any, Dict, List, Mapping, Optional
 
-import makeitfail
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
