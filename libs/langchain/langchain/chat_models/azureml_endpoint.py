@@ -12,7 +12,8 @@ from langchain_core.messages import (
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
 from langchain.llms.azureml_endpoint import (
-    AzureMLBaseOnlineEndpoint,
+    AzureMLBaseEndpoint,
+    AzureMLEndpointType,
     ContentFormatterBase,
 )
 
@@ -66,6 +67,10 @@ class LlamaChatContentFormatter(ContentFormatterBase):
                 Supported roles for the LLaMa Foundation Model: {supported}"""
             )
 
+    @property
+    def supported_api_types(self) -> List[AzureMLEndpointType]:
+        return [AzureMLEndpointType.realtime, AzureMLEndpointType.paygo]
+
     def format_request_payload(
         self, api_type: str, messages: List[BaseMessage], model_kwargs: Dict
     ) -> str:
@@ -74,7 +79,7 @@ class LlamaChatContentFormatter(ContentFormatterBase):
             LlamaChatContentFormatter._convert_message_to_dict(message)
             for message in messages
         ]
-        if api_type == "realtime":
+        if api_type == AzureMLEndpointType.realtime:
             request_payload = json.dumps(
                 {
                     "input_data": {
@@ -83,7 +88,7 @@ class LlamaChatContentFormatter(ContentFormatterBase):
                     }
                 }
             )
-        elif api_type == "paygo":
+        elif api_type == AzureMLEndpointType.paygo:
             request_payload = json.dumps({"messages": chat_messages, **model_kwargs})
         else:
             raise ValueError(
@@ -93,14 +98,14 @@ class LlamaChatContentFormatter(ContentFormatterBase):
 
     def format_response_payload(self, api_type: str, output: bytes) -> str:
         """Formats response"""
-        if api_type == "realtime":
+        if api_type == AzureMLEndpointType.realtime:
             return json.loads(output)["output"]
-        if api_type == "paygo":
+        if api_type == AzureMLEndpointType.paygo:
             return json.loads(output)["choices"][0]["message"]["content"].strip()
         raise ValueError(f"`api_type` {api_type} is not supported by this formatter")
 
 
-class AzureMLChatOnlineEndpoint(SimpleChatModel, AzureMLBaseOnlineEndpoint):
+class AzureMLChatOnlineEndpoint(SimpleChatModel, AzureMLBaseEndpoint):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
@@ -134,10 +139,10 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel, AzureMLBaseOnlineEndpoint):
         _model_kwargs = self.model_kwargs or {}
 
         request_payload = self.content_formatter.format_request_payload(
-            self.endpoint_type, messages, _model_kwargs
+            self.endpoint_api_type, messages, _model_kwargs
         )
         response_payload = self.http_client.call(request_payload, **kwargs)
         generated_text = self.content_formatter.format_response_payload(
-            self.endpoint_type, response_payload
+            self.endpoint_api_type, response_payload
         )
         return generated_text

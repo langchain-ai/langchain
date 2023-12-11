@@ -2,6 +2,7 @@ import json
 import urllib.request
 import warnings
 from abc import abstractmethod
+from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
@@ -44,6 +45,16 @@ class AzureMLEndpointClient(object):
         response = urllib.request.urlopen(req, timeout=kwargs.get("timeout", 50))
         result = response.read()
         return result
+
+
+class AzureMLEndpointApiType(str, Enum):
+    """Azure ML endpoints API types. Use `realtime` for models deployed in hosted
+    infrastructure, or `serverless` for models deployed as a service with a
+    pay-as-you-go billing or PTU.
+    """
+
+    realtime = "realtime"
+    serverless = "serverless"
 
 
 class ContentFormatterBase:
@@ -101,6 +112,11 @@ class ContentFormatterBase:
 
         return prompt
 
+    @property
+    @abstractmethod
+    def supported_api_types(self) -> List[AzureMLEndpointApiType]:
+        """Supported APIs for the given formatter"""
+
     @abstractmethod
     def format_request_payload(
         self, api_type: str, prompt: str, model_kwargs: Dict
@@ -120,6 +136,10 @@ class ContentFormatterBase:
 
 class GPT2ContentFormatter(ContentFormatterBase):
     """Content handler for GPT2"""
+
+    @property
+    def supported_api_types(self) -> List[AzureMLEndpointApiType]:
+        return [AzureMLEndpointApiType.realtime]
 
     def format_request_payload(
         self, api_type: str, prompt: str, model_kwargs: Dict
@@ -153,6 +173,10 @@ class OSSContentFormatter(GPT2ContentFormatter):
 class HFContentFormatter(ContentFormatterBase):
     """Content handler for LLMs from the HuggingFace catalog."""
 
+    @property
+    def supported_api_types(self) -> List[AzureMLEndpointApiType]:
+        return [AzureMLEndpointApiType.realtime]
+
     def format_request_payload(
         self, api_type: str, prompt: str, model_kwargs: Dict
     ) -> bytes:
@@ -168,6 +192,10 @@ class HFContentFormatter(ContentFormatterBase):
 
 class DollyContentFormatter(ContentFormatterBase):
     """Content handler for the Dolly-v2-12b model"""
+
+    @property
+    def supported_api_types(self) -> List[AzureMLEndpointApiType]:
+        return [AzureMLEndpointApiType.realtime]
 
     def format_request_payload(
         self, api_type: str, prompt: str, model_kwargs: Dict
@@ -188,12 +216,16 @@ class DollyContentFormatter(ContentFormatterBase):
 class LlamaContentFormatter(ContentFormatterBase):
     """Content formatter for LLaMa"""
 
+    @property
+    def supported_api_types(self) -> List[AzureMLEndpointApiType]:
+        return [AzureMLEndpointApiType.realtime, AzureMLEndpointApiType.serverless]
+
     def format_request_payload(
         self, api_type: str, prompt: str, model_kwargs: Dict
     ) -> bytes:
         """Formats the request according to the chosen api"""
         prompt = ContentFormatterBase.escape_special_characters(prompt)
-        if api_type == "realtime":
+        if api_type == AzureMLEndpointApiType.realtime:
             request_payload = json.dumps(
                 {
                     "input_data": {
@@ -202,7 +234,7 @@ class LlamaContentFormatter(ContentFormatterBase):
                     }
                 }
             )
-        elif api_type == "paygo":
+        elif api_type == AzureMLEndpointApiType.serverless:
             request_payload = json.dumps({"prompt": prompt, **model_kwargs})
         else:
             raise ValueError(
@@ -212,28 +244,18 @@ class LlamaContentFormatter(ContentFormatterBase):
 
     def format_response_payload(self, api_type: str, output: bytes) -> str:
         """Formats response"""
-        if api_type == "realtime":
+        if api_type == AzureMLEndpointApiType.realtime:
             return json.loads(output)["output"]
-        if api_type == "paygo":
+        if api_type == AzureMLEndpointApiType.serverless:
             return json.loads(output)["choices"][0]["text"].strip()
         raise ValueError(f"`api_type` {api_type} is not supported by this formatter")
 
 
-class AzureMLBaseOnlineEndpoint(BaseModel):
-    """Azure ML Online Endpoint models.
+class AzureMLBaseEndpoint(BaseModel):
+    """Azure ML Online Endpoint models."""
 
-    Example:
-        .. code-block:: python
-
-            azure_llm = AzureMLOnlineEndpoint(
-                endpoint_url="https://<your-endpoint>.<your_region>.inference.ml.azure.com/score",
-                endpoint_api_key="my-api-key",
-                content_formatter=content_formatter,
-            )
-    """  # noqa: E501
-
-    endpoint_type: str = "realtime"
-    """Type of the endpoint being consumed. Possible values are `paygo` for 
+    endpoint_api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime
+    """Type of the endpoint being consumed. Possible values are `serverless` for 
         pay-as-you-go and `realtime` for real-time endpoints. """
 
     endpoint_url: str = ""
@@ -258,17 +280,12 @@ class AzureMLBaseOnlineEndpoint(BaseModel):
     model_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model."""
 
-    @validator("endpoint_type", pre=True)
-    @classmethod
-    def validate_endpoint_type(cls, v):
-        assert v in ["realtime", "paygo"]
-        return v
-
     @root_validator()
     @classmethod
-    def validate_endpoint_uri_type(cls, values: Dict) -> AzureMLEndpointClient:
-        endpoint_type, endpoint_url = (
-            values.get("endpoint_type"),
+    def validate_endpoint_api_type(cls, values: Dict) -> AzureMLEndpointClient:
+        content_formatter = values.get("content_formatter")
+        endpoint_api_type, endpoint_url = (
+            values.get("endpoint_api_type"),
             values.get("endpoint_url"),
         )
         if endpoint_url.endswith("inference.ml.azure.com") or endpoint_url.endswith(
@@ -276,22 +293,33 @@ class AzureMLBaseOnlineEndpoint(BaseModel):
         ):
             raise ValueError(
                 "`endpoint_url` should contain the full invocation URL including "
-                "`/score` for `endpoint_type='realtime'` or `/v1/chat/completions` "
-                "or `/v1/chat/completions` for `endpoint_type='paygo'`"
+                "`/score` for `endpoint_api_type='realtime'` or `/v1/completions` "
+                "or `/v1/chat/completions` for `endpoint_api_type='serverless'`"
             )
-        if endpoint_type == "realtime" and not endpoint_url.endswith("/score"):
+        if (
+            endpoint_api_type == AzureMLEndpointApiType.realtime
+            and not endpoint_url.endswith("/score")
+        ):
             raise ValueError(
                 "Endpoints of type `realtime` should follow the format "
-                "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/score`"
+                "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/score`."
+                " If your endpoint URL ends with `/v1/completions` or"
+                "`/v1/chat/completions`, use `endpoint_api_type='serverless'` instead."
             )
-        if endpoint_type == "paygo" and not (
+        if endpoint_api_type == AzureMLEndpointApiType.serverless and not (
             endpoint_url.endswith("/v1/completions")
             or endpoint_url.endswith("/v1/chat/completions")
         ):
             raise ValueError(
-                "Endpoints of type `paygo` should follow the format "
+                "Endpoints of type `serverless` should follow the format "
                 "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/v1/chat/completions`"
                 " or `https://<your-endpoint>.<your_region>.inference.ml.azure.com/v1/chat/completions`"
+            )
+
+        if endpoint_api_type not in content_formatter.supported_api_types:
+            raise ValueError(
+                f"Content formatter f{type(content_formatter)} is not supported by "
+                "this endpoint type."
             )
         return values
 
@@ -312,7 +340,19 @@ class AzureMLBaseOnlineEndpoint(BaseModel):
         return http_client
 
 
-class AzureMLOnlineEndpoint(LLM, AzureMLBaseOnlineEndpoint):
+class AzureMLOnlineEndpoint(LLM, AzureMLBaseEndpoint):
+    """Azure ML Online Endpoint models.
+
+    Example:
+        .. code-block:: python
+            azure_llm = AzureMLOnlineEndpoint(
+                endpoint_api_type=AzureML
+                endpoint_url="https://<your-endpoint>.<your_region>.inference.ml.azure.com/score",
+                endpoint_api_key="my-api-key",
+                content_formatter=content_formatter,
+            )
+    """  # noqa: E501
+
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
@@ -347,10 +387,10 @@ class AzureMLOnlineEndpoint(LLM, AzureMLBaseOnlineEndpoint):
         _model_kwargs = self.model_kwargs or {}
 
         request_payload = self.content_formatter.format_request_payload(
-            self.endpoint_type, prompt, _model_kwargs
+            self.endpoint_api_type, prompt, _model_kwargs
         )
         response_payload = self.http_client.call(request_payload, **kwargs)
         generated_text = self.content_formatter.format_response_payload(
-            self.endpoint_type, response_payload
+            self.endpoint_api_type, response_payload
         )
         return generated_text
