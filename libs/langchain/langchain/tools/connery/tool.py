@@ -8,12 +8,31 @@ from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_vali
 from langchain_core.tools import BaseTool
 from langchain.utils.env import get_from_dict_or_env
 from typing import Dict, List, Type, Optional
-from .models import Action, Parameter, Input, Output
+from .models import Action, Parameter
 
 class ConneryAction(BaseTool):
     """
     A LangChain Tool wrapping a Connery Action.
     """
+
+    name: str
+    description: str
+    args_schema: Type[BaseModel]
+
+    action: Action
+    connery_service: "ConneryService"
+    
+    def _run(self, **kwargs) -> Dict[str, str]:
+        """
+        Runs the Connery Action with the provided input.
+        Parameters:
+            kwargs (Dict[str, str]): The input dictionary expected by the action.
+        Returns:
+            Dict[str, str]: The output of the action.
+        """
+
+        self.connery_service.run_action(self.action.id, kwargs)
+
 
     @root_validator()
     def validate_attributes(cls, values: dict) -> dict:
@@ -26,13 +45,15 @@ class ConneryAction(BaseTool):
         """
 
         if not values.get('name'):
-            raise ValueError("The name of the action must be set.")
+            raise ValueError("The name attribute must be set.")
         if not values.get('description'):
-            raise ValueError("The description of the action must be set.")
+            raise ValueError("The description attribute must be set.")
         if not values.get('args_schema'):
-            raise ValueError("The args_schema of the action must be set.")
-        if not values.get('_run'):
-            raise ValueError("The _run function of the action must be set.")
+            raise ValueError("The args_schema attribute must be set.")
+        if not values.get('action'):
+            raise ValueError("The action attribute must be set.")
+        if not values.get('connery_service'):
+            raise ValueError("The connery_service attribute must be set.")
         
         return values
 
@@ -48,15 +69,20 @@ class ConneryAction(BaseTool):
             ConneryAction: The Connery Action Tool.
         """
 
+        ConneryAction.update_forward_refs()
+
         input_schema = cls.create_dynamic_input_schema(action.inputParameters)
         description = action.title + (": " + action.description if action.description else "")
 
-        return cls(
+        instance = cls(
             name=action.id,
             description=description,
             args_schema=input_schema,
-            _run=lambda input: connery_service.run_action(action.id, None, input)
+            action=action,
+            connery_service=connery_service
         )
+
+        return instance
     
     @classmethod
     def create_dynamic_input_schema(cls, inputParameters: List[Parameter]) -> Type[BaseModel]:
@@ -86,9 +112,9 @@ class ConneryAction(BaseTool):
             dynamic_input_fields[param.key] = (str, Field(**field_info))
 
         InputModel = create_model('InputModel', **dynamic_input_fields)
-        DynamicInputModel = create_model('DynamicInputModel', input=(InputModel, Field(..., description="The list of input parameters expected by the action to run.")))
+        #DynamicInputModel = create_model('DynamicInputModel', input=(InputModel, Field(..., description="The list of input parameters expected by the action to run.")))
 
-        return DynamicInputModel
+        return InputModel
     
 class ConneryService(BaseModel):
     """
@@ -141,14 +167,14 @@ class ConneryService(BaseModel):
 
         return ConneryAction.init(self._get_action(action_id), self)
 
-    def run_action(self, action_id: str, input: Input = None) -> Output:
+    def run_action(self, action_id: str, input: Dict[str, str]) -> Dict[str, str]:
         """
         Runs the specified Connery Action with the provided input.
         Parameters:
             action_id (str): The ID of the action to run.
-            input (Input): The input object expected by the action.
+            input (Dict[str, str]): The input object expected by the action.
         Returns:
-            Output: The output of the action.
+            Dict[str, str]: The output of the action.
         """
 
         return self._run_action(action_id, None, input)
@@ -185,15 +211,15 @@ class ConneryService(BaseModel):
             raise ValueError(f"The action with ID {action_id} was not found in the list of available actions in the Connery Runner.")
         return action
 
-    def _run_action(self, action_id: str, prompt: str = None, input: Input = None) -> Output:
+    def _run_action(self, action_id: str, prompt: str = None, input: Dict[str, str] = None) -> Dict[str, str]:
         """
         Runs the specified Connery Action with the provided input.
         Parameters:
             action_id (str): The ID of the action to run.
             prompt (str): This is a plain English prompt with all the information needed to run the action.
-            input (Input): The input object expected by the action. If provided together with the prompt, the input takes precedence over the input specified in the prompt.
+            input (Dict[str, str]): The input object expected by the action. If provided together with the prompt, the input takes precedence over the input specified in the prompt.
         Returns:
-            Output: The output of the action.
+            Dict[str, str]: The output of the action.
         """
 
         response = requests.post(
@@ -206,9 +232,9 @@ class ConneryService(BaseModel):
             raise ValueError(f"Failed to run action. Status code: {response.status_code}. Error message: {response.json()['error']['message']}")
 
         if not response.json()['data']['output']:
-            return Output(**{"__root__": {}})
+            return {}
         else:
-            return Output(**response.json()['data']['output'])
+            return response.json()['data']['output']
 
     def _get_headers(self) -> Dict[str, str]:
         """

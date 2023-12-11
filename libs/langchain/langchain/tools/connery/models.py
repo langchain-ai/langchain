@@ -27,11 +27,3 @@ class Action(BaseModel):
     inputParameters: List[Parameter]
     outputParameters: List[Parameter]
     pluginId: str
-
-class Input(BaseModel):
-    """Connery Action input model."""
-    __root__: Dict[str, str]
-
-class Output(BaseModel):
-    """Connery Action output model."""
-    __root__: Dict[str, str]
