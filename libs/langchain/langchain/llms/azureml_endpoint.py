@@ -116,11 +116,12 @@ class ContentFormatterBase:
         return prompt
 
     @property
-    @abstractmethod
     def supported_api_types(self) -> List[AzureMLEndpointApiType]:
         """Supported APIs for the given formatter. Azure ML supports
         deploying models using different hosting methods. Each method may have
         a different API structure."""
+
+        return [AzureMLEndpointApiType.realtime] 
 
     @abstractmethod
     def format_request_payload(
