@@ -5,6 +5,7 @@ ALL_DIRS = {
     "libs/core",
     "libs/langchain",
     "libs/experimental",
+    "libs/community",
 }
 
 if __name__ == "__main__":

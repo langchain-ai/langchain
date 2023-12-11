@@ -135,6 +135,7 @@ class TestResult(dict):
                     **{f"feedback.{f.key}": f.score for f in feedback},
                     "error": result.get("Error"),
                     "execution_time": result["execution_time"],
+                    "run_id": result.get("run_id"),
                 }
             )
             records.append(r)
@@ -1018,6 +1019,7 @@ def _collect_test_results(
     wait_for_all_evaluators()
     all_eval_results = {}
     all_execution_time = {}
+    all_run_ids = {}
     for c in configs:
         for callback in cast(list, c["callbacks"]):
             if isinstance(callback, EvaluatorCallbackHandler):
@@ -1028,12 +1030,14 @@ def _collect_test_results(
             elif isinstance(callback, LangChainTracer):
                 run = callback.latest_run
                 example_id = callback.example_id
+                run_id = str(run.id) if run else None
                 execution_time = (
                     (run.end_time - run.start_time).total_seconds()
                     if run and run.end_time
                     else None
                 )
                 all_execution_time[str(example_id)] = execution_time
+                all_run_ids[str(example_id)] = run_id
 
     results: dict = {}
     for example, output in zip(examples, batch_results):
@@ -1042,6 +1046,7 @@ def _collect_test_results(
             "input": example.inputs,
             "feedback": feedback,
             "execution_time": all_execution_time.get(str(example.id)),
+            "run_id": all_run_ids.get(str(example.id)),
         }
         if isinstance(output, EvalError):
             results[str(example.id)]["Error"] = output.Error
