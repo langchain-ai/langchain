@@ -35,11 +35,6 @@ from langchain_community.llms import OpenAI
 from langchain_community.tools.requests.tool import BaseRequestsTool
 from langchain_community.utilities.requests import RequestsWrapper
 
-if TYPE_CHECKING:
-    from langchain.agents.agent import AgentExecutor
-    from langchain.chains.llm import LLMChain
-    from langchain.memory import ReadOnlySharedMemory
-
 #
 # Requests tools with LLM-instructed extraction of truncated responses.
 #
@@ -50,7 +45,7 @@ MAX_RESPONSE_LENGTH = 5000
 """Maximum length of the response to be returned."""
 
 
-def _get_default_llm_chain(prompt: BasePromptTemplate) -> LLMChain:
+def _get_default_llm_chain(prompt: BasePromptTemplate) -> Any:
     from langchain.chains.llm import LLMChain
 
     return LLMChain(
@@ -61,7 +56,7 @@ def _get_default_llm_chain(prompt: BasePromptTemplate) -> LLMChain:
 
 def _get_default_llm_chain_factory(
     prompt: BasePromptTemplate,
-) -> Callable[[], LLMChain]:
+) -> Callable[[], Any]:
     """Returns a default LLMChain factory."""
     return partial(_get_default_llm_chain, prompt)
 
@@ -253,7 +248,7 @@ def _create_api_controller_agent(
     api_docs: str,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
-) -> AgentExecutor:
+) -> Any:
     from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
     from langchain.chains.llm import LLMChain
@@ -333,12 +328,12 @@ def create_openapi_agent(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
-    shared_memory: Optional[ReadOnlySharedMemory] = None,
+    shared_memory: Optional[Any] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = True,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
-) -> AgentExecutor:
+) -> Any:
     """Instantiate OpenAI API planner and controller for a given spec.
 
     Inject credentials via requests_wrapper.
