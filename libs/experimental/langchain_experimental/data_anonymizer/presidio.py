@@ -23,28 +23,62 @@ from langchain_experimental.data_anonymizer.faker_presidio_mapping import (
     get_pseudoanonymizer_mapping,
 )
 
-try:
-    from presidio_analyzer import AnalyzerEngine
+if TYPE_CHECKING:
+    from presidio_analyzer import AnalyzerEngine, EntityRecognizer
     from presidio_analyzer.nlp_engine import NlpEngineProvider
-
-except ImportError as e:
-    raise ImportError(
-        "Could not import presidio_analyzer, please install with "
-        "`pip install presidio-analyzer`. You will also need to download a "
-        "spaCy model to use the analyzer, e.g. "
-        "`python -m spacy download en_core_web_lg`."
-    ) from e
-try:
     from presidio_anonymizer import AnonymizerEngine
     from presidio_anonymizer.entities import OperatorConfig
-except ImportError as e:
-    raise ImportError(
-        "Could not import presidio_anonymizer, please install with "
-        "`pip install presidio-anonymizer`."
-    ) from e
 
-if TYPE_CHECKING:
-    from presidio_analyzer import EntityRecognizer
+
+def _import_analyzer_engine() -> "AnalyzerEngine":
+    try:
+        from presidio_analyzer import AnalyzerEngine
+
+    except ImportError as e:
+        raise ImportError(
+            "Could not import presidio_analyzer, please install with "
+            "`pip install presidio-analyzer`. You will also need to download a "
+            "spaCy model to use the analyzer, e.g. "
+            "`python -m spacy download en_core_web_lg`."
+        ) from e
+    return AnalyzerEngine
+
+
+def _import_nlp_engine_provider() -> "NlpEngineProvider":
+    try:
+        from presidio_analyzer.nlp_engine import NlpEngineProvider
+
+    except ImportError as e:
+        raise ImportError(
+            "Could not import presidio_analyzer, please install with "
+            "`pip install presidio-analyzer`. You will also need to download a "
+            "spaCy model to use the analyzer, e.g. "
+            "`python -m spacy download en_core_web_lg`."
+        ) from e
+    return NlpEngineProvider
+
+
+def _import_anonymizer_engine() -> "AnonymizerEngine":
+    try:
+        from presidio_anonymizer import AnonymizerEngine
+    except ImportError as e:
+        raise ImportError(
+            "Could not import presidio_anonymizer, please install with "
+            "`pip install presidio-anonymizer`."
+        ) from e
+    return AnonymizerEngine
+
+
+def _import_operator_config() -> "OperatorConfig":
+    try:
+        from presidio_anonymizer.entities import OperatorConfig
+    except ImportError as e:
+        raise ImportError(
+            "Could not import presidio_anonymizer, please install with "
+            "`pip install presidio-anonymizer`."
+        ) from e
+    return OperatorConfig
+
 
 # Configuring Anonymizer for multiple languages
 # Detailed description and examples can be found here:
@@ -89,6 +123,11 @@ class PresidioAnonymizerBase(AnonymizerBase):
                 Defaults to None, in which case faker will be seeded randomly
                 and provide random values.
         """
+        OperatorConfig = _import_operator_config()
+        AnalyzerEngine = _import_analyzer_engine()
+        NlpEngineProvider = _import_nlp_engine_provider()
+        AnonymizerEngine = _import_anonymizer_engine()
+
         self.analyzed_fields = (
             analyzed_fields
             if analyzed_fields is not None

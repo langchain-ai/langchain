@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import math
 import threading
 from collections import defaultdict
@@ -82,7 +83,7 @@ class RunLogPatch:
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
         if type(other) == RunLogPatch:
             ops = self.ops + other.ops
-            state = jsonpatch.apply_patch(None, ops)
+            state = jsonpatch.apply_patch(None, copy.deepcopy(ops))
             return RunLog(*ops, state=state)
 
         raise TypeError(

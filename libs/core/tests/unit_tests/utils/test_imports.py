@@ -17,6 +17,11 @@ EXPECTED_ALL = [
     "try_load_from_hub",
     "build_extra_kwargs",
     "image",
+    "get_from_dict_or_env",
+    "get_from_env",
+    "stringify_dict",
+    "comma_list",
+    "stringify_value",
 ]
 
 

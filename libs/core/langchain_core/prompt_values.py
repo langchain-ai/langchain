@@ -26,6 +26,11 @@ class PromptValue(Serializable, ABC):
         """Return whether this class is serializable."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "prompt"]
+
     @abstractmethod
     def to_string(self) -> str:
         """Return prompt value as string."""
@@ -41,6 +46,11 @@ class StringPromptValue(PromptValue):
     text: str
     """Prompt text."""
     type: Literal["StringPromptValue"] = "StringPromptValue"
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "base"]
 
     def to_string(self) -> str:
         """Return prompt as string."""
@@ -67,6 +77,11 @@ class ChatPromptValue(PromptValue):
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as a list of messages."""
         return list(self.messages)
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
 
 class ImageURL(TypedDict, total=False):
@@ -100,3 +115,8 @@ class ChatPromptValueConcrete(ChatPromptValue):
     messages: Sequence[AnyMessage]
 
     type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]

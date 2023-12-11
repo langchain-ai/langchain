@@ -45,6 +45,11 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         """Return whether or not the class is serializable."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs. Should return a list of BaseMessages.
@@ -83,6 +88,14 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
 
     variable_name: str
     """Name of variable to use as messages."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
+    def __init__(self, variable_name: str, **kwargs: Any):
+        return super().__init__(variable_name=variable_name, **kwargs)
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
@@ -130,6 +143,11 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     """String prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     @classmethod
     def from_template(
@@ -210,6 +228,11 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
     role: str
     """Role of the message."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
 
@@ -249,6 +272,11 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Additional keyword arguments to pass to the prompt template."""
 
     _msg_class: Type[BaseMessage]
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     @classmethod
     def from_template(
@@ -407,6 +435,23 @@ class AIMessagePromptTemplate(_StringImageMessagePromptTemplate):
 
     _msg_class: Type[BaseMessage] = AIMessage
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
+    def format(self, **kwargs: Any) -> BaseMessage:
+        """Format the prompt template.
+
+        Args:
+            **kwargs: Keyword arguments to use for formatting.
+
+        Returns:
+            Formatted message.
+        """
+        text = self.prompt.format(**kwargs)
+        return AIMessage(content=text, additional_kwargs=self.additional_kwargs)
+
 
 class SystemMessagePromptTemplate(_StringImageMessagePromptTemplate):
     """System message prompt template.
@@ -414,6 +459,23 @@ class SystemMessagePromptTemplate(_StringImageMessagePromptTemplate):
     """
 
     _msg_class: Type[BaseMessage] = SystemMessage
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
+    def format(self, **kwargs: Any) -> BaseMessage:
+        """Format the prompt template.
+
+        Args:
+            **kwargs: Keyword arguments to use for formatting.
+
+        Returns:
+            Formatted message.
+        """
+        text = self.prompt.format(**kwargs)
+        return SystemMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
@@ -496,6 +558,11 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     """List of messages consisting of either message prompt templates or messages."""
     validate_template: bool = False
     """Whether or not to try validating the template."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
