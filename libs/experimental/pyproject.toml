@@ -10,8 +10,8 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.0.12,<0.1"
-langchain = ">=0.0.348,<0.1"
+langchain-core = { version = ">=0.0.13-rc.2,<0.1", allow-prereleases = true }
+langchain = { version = ">=0.0.349-rc.2,<0.1", allow-prereleases = true }
 presidio-anonymizer = {version = "^2.2.33", optional = true}
 presidio-analyzer = {version = "^2.2.33", optional = true}
 faker = {version = "^19.3.1", optional = true}
@@ -34,6 +34,7 @@ types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 langchain = {path = "../langchain", develop = true}
 langchain-core = {path = "../core", develop = true}
+langchain-community = {path = "../community", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
@@ -41,6 +42,9 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
+langchain = {path = "../langchain", develop = true}
+langchain-core = {path = "../core", develop = true}
+langchain-community = {path = "../community", develop = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -53,6 +57,7 @@ pytest = "^7.3.0"
 pytest-asyncio = "^0.20.3"
 langchain = {path = "../langchain", develop = true}
 langchain-core = {path = "../core", develop = true}
+langchain-community = {path = "../community", develop = true}
 
 
 [tool.poetry.group.test_integration]
@@ -61,6 +66,7 @@ optional = true
 [tool.poetry.group.test_integration.dependencies]
 langchain = {path = "../langchain", develop = true}
 langchain-core = {path = "../core", develop = true}
+langchain-community = {path = "../community", develop = true}
 
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without

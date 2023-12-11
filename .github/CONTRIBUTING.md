@@ -73,7 +73,7 @@ tell Poetry to use the virtualenv python environment (`poetry config virtualenvs
 ### Different packages
 
 This repository contains multiple packages:
-- `langchain_core`: Base interfaces for key abstractions as well as logic for combining them in chains (LangChain Expression Language).
+- `langchain-core`: Base interfaces for key abstractions as well as logic for combining them in chains (LangChain Expression Language).
 - `langchain-community`: Third-party integrations of various components.
 - `langchain`: Chains, agents, and retrieval logic that makes up the cognitive architecture of your applications.
 - `langchain-experimental`: Components and chains that are experimental, either in the sense that the techniques are novel and still being tested, or they require giving the LLM more access than would be possible in most production systems.

@@ -11,6 +11,7 @@ rm -rf community/{langchain_community,tests}
 # make new dirs
 mkdir -p community/langchain_community
 touch community/langchain_community/__init__.py
+touch community/langchain_community/py.typed
 touch community/README.md
 mkdir -p community/tests
 touch community/tests/__init__.py
