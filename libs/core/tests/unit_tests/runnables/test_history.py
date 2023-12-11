@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Sequence, Union
+from typing import Any, Callable, Dict, List, Sequence, Union
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.pydantic_v1 import BaseModel
@@ -131,7 +131,7 @@ def test_output_messages() -> None:
     )
     get_session_history = _get_get_session_history()
     with_history = RunnableWithMessageHistory(
-        runnable,
+        runnable,  # type: ignore
         get_session_history,
         input_messages_key="input",
         history_messages_key="history",
@@ -245,7 +245,7 @@ def test_get_input_schema_input_messages() -> None:
 def test_using_custom_config_specs() -> None:
     """Test that we can configure which keys should be passed to the session factory."""
 
-    def _fake_llm(input: dict) -> List[BaseMessage]:
+    def _fake_llm(input: Dict[str, Any]) -> List[BaseMessage]:
         messages = input["messages"]
         return [
             AIMessage(
@@ -265,7 +265,7 @@ def test_using_custom_config_specs() -> None:
         return store[(user_id, conversation_id)]
 
     with_message_history = RunnableWithMessageHistory(
-        runnable,
+        runnable,  # type: ignore
         get_session_history=get_session_history,
         input_messages_key="messages",
         history_messages_key="history",
