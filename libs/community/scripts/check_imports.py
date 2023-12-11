@@ -1,20 +1,17 @@
 import sys
+import traceback
 from importlib.machinery import SourceFileLoader
 
 if __name__ == "__main__":
     files = sys.argv[1:]
-    failures = []
+    has_failure = False
     for file in files:
         try:
             SourceFileLoader("x", file).load_module()
-        except Exception as e:
-            failures.append((file, e))
+        except Exception:
+            has_faillure = True
+            print(file)
+            traceback.print_exc()
+            print()
 
-    if not failures:
-        sys.exit(0)
-
-    for file, ex in failures:
-        print(file)
-        print(ex)
-
-    sys.exit(1)
+    sys.exit(1 if has_failure else 0)
