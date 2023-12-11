@@ -16,7 +16,7 @@ test_watch:
 	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
 
 check_imports: $(shell find langchain_community -name '*.py')
-	python ./scripts/check_imports.py $^
+	poetry run python ./scripts/check_imports.py $^
 
 extended_tests:
 	poetry run pytest --only-extended tests/unit_tests
@@ -37,7 +37,7 @@ lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
 	./scripts/check_pydantic.sh .
-	./scripts/check_imports.sh
+	./scripts/lint_imports.sh
 	poetry run ruff .
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)

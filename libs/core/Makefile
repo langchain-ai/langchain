@@ -16,9 +16,7 @@ test_watch:
 	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
 
 check_imports: $(shell find langchain_core -name '*.py')
-	for f in $^ ; do \
-		python -c "from importlib.machinery import SourceFileLoader; SourceFileLoader('x', '$$f').load_module()" || exit 1; \
-	done
+	poetry run python ./scripts/check_imports.py $^
 
 extended_tests:
 	poetry run pytest --only-extended $(TEST_FILE)

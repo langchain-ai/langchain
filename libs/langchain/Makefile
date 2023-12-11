@@ -41,9 +41,7 @@ docker_tests:
 	docker run --rm my-langchain-image:test
 
 check_imports: $(shell find langchain -name '*.py')
-	for f in $^ ; do \
-		python -c "from importlib.machinery import SourceFileLoader; SourceFileLoader('x', '$$f').load_module()" || exit 1; \
-	done
+	poetry run python ./scripts/check_imports.py $^
 
 ######################
 # LINTING AND FORMATTING
