@@ -37,7 +37,7 @@ def get_db() -> GPUdb:
     return GPUdb(host=HOST, options=options)
 
 
-# @pytest.mark.skip(reason="Isolating ...")
+@pytest.mark.requires("gpudb")
 def test_kinetica(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
@@ -56,7 +56,7 @@ def test_kinetica(get_db: GPUdb) -> None:
     assert output[0].page_content == "foo"
 
 
-# @pytest.mark.skip(reason="Isolating ...")
+@pytest.mark.requires("gpudb")
 def test_kinetica_embeddings(get_db: GPUdb) -> None:
     """Test end to end construction with embeddings and search."""
     db = get_db
@@ -75,7 +75,7 @@ def test_kinetica_embeddings(get_db: GPUdb) -> None:
     assert output == [Document(page_content="foo")]
 
 
-# @pytest.mark.skip(reason="Isolating ...")
+@pytest.mark.requires("gpudb")
 def test_kinetica_with_metadatas(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
@@ -95,6 +95,7 @@ def test_kinetica_with_metadatas(get_db: GPUdb) -> None:
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
+@pytest.mark.requires("gpudb")
 def test_kinetica_with_metadatas_with_scores(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
@@ -114,6 +115,7 @@ def test_kinetica_with_metadatas_with_scores(get_db: GPUdb) -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
+@pytest.mark.requires("gpudb")
 def test_kinetica_with_filter_match(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
@@ -133,6 +135,7 @@ def test_kinetica_with_filter_match(get_db: GPUdb) -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
+@pytest.mark.requires("gpudb")
 def test_kinetica_with_filter_distant_match(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
@@ -153,6 +156,7 @@ def test_kinetica_with_filter_distant_match(get_db: GPUdb) -> None:
 
 
 @pytest.mark.skip(reason="Filter condition has IN clause")
+@pytest.mark.requires("gpudb")
 def test_kinetica_with_filter_in_set(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
@@ -177,6 +181,7 @@ def test_kinetica_with_filter_in_set(get_db: GPUdb) -> None:
     ]
 
 
+@pytest.mark.requires("gpudb")
 def test_kinetica_relevance_score(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
@@ -200,7 +205,7 @@ def test_kinetica_relevance_score(get_db: GPUdb) -> None:
     ]
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("openai", "gpudb")
 def test_kinetica_max_marginal_relevance_search(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
@@ -220,6 +225,7 @@ def test_kinetica_max_marginal_relevance_search(get_db: GPUdb) -> None:
     assert output == [Document(page_content="foo")]
 
 
+@pytest.mark.requires("gpudb")
 def test_kinetica_max_marginal_relevance_search_with_score(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
@@ -238,7 +244,7 @@ def test_kinetica_max_marginal_relevance_search_with_score(get_db: GPUdb) -> Non
     assert output == [(Document(page_content="foo"), 0.0)]
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("openai", "gpudb")
 def test_kinetica_with_openai_embeddings(get_db: GPUdb) -> None:
     """Test end to end construction and search."""
     db = get_db
