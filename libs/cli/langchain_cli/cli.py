@@ -4,7 +4,9 @@ import typer
 from typing_extensions import Annotated
 
 from langchain_cli.namespaces import app as app_namespace
+from langchain_cli.namespaces import integration as integration_namespace
 from langchain_cli.namespaces import template as template_namespace
+
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 __version__ = "0.0.19"
@@ -14,6 +16,7 @@ app.add_typer(
     template_namespace.package_cli, name="template", help=template_namespace.__doc__
 )
 app.add_typer(app_namespace.app_cli, name="app", help=app_namespace.__doc__)
+app.add_typer(integration_)
 
 
 def version_callback(show_version: bool) -> None:
