@@ -72,7 +72,8 @@ class LlamaChatContentFormatter(ContentFormatterBase):
         return [AzureMLEndpointApiType.realtime, AzureMLEndpointApiType.serverless]
 
     def format_request_payload(
-        self, api_type: str, messages: List[BaseMessage], model_kwargs: Dict
+        self, messages: List[BaseMessage], model_kwargs: Dict, 
+        api_type: AzureMLEndpointApiType
     ) -> str:
         """Formats the request according to the chosen api"""
         chat_messages = [
@@ -96,7 +97,9 @@ class LlamaChatContentFormatter(ContentFormatterBase):
             )
         return str.encode(request_payload)
 
-    def format_response_payload(self, api_type: str, output: bytes) -> str:
+    def format_response_payload(
+        self, output: bytes, api_type: AzureMLEndpointApiType
+    ) -> str:
         """Formats response"""
         if api_type == AzureMLEndpointApiType.realtime:
             return json.loads(output)["output"]
@@ -151,10 +154,10 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel, AzureMLBaseEndpoint):
         _model_kwargs = self.model_kwargs or {}
 
         request_payload = self.content_formatter.format_request_payload(
-            self.endpoint_api_type, messages, _model_kwargs
+            messages, _model_kwargs, self.endpoint_api_type
         )
         response_payload = self.http_client.call(request_payload, **kwargs)
         generated_text = self.content_formatter.format_response_payload(
-            self.endpoint_api_type, response_payload
+            response_payload, self.endpoint_api_type
         )
         return generated_text

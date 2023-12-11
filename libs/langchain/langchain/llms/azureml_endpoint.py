@@ -73,7 +73,8 @@ class ContentFormatterBase:
                 def format_request_payload(
                     self, 
                     prompt: str, 
-                    model_kwargs: Dict
+                    model_kwargs: Dict,
+                    api_type: AzureMLEndpointApiType,
                 ) -> bytes:
                     input_str = json.dumps(
                         {
@@ -83,7 +84,9 @@ class ContentFormatterBase:
                     )
                     return str.encode(input_str)
                     
-                def format_response_payload(self, output: str) -> str:
+                def format_response_payload(
+                        self, output: str, api_type: AzureMLEndpointApiType
+                    ) -> str:
                     response_json = json.loads(output)
                     return response_json[0]["0"]
     """
@@ -115,11 +118,14 @@ class ContentFormatterBase:
     @property
     @abstractmethod
     def supported_api_types(self) -> List[AzureMLEndpointApiType]:
-        """Supported APIs for the given formatter"""
+        """Supported APIs for the given formatter. Azure ML supports
+        deploying models using different hosting methods. Each method may have
+        a different API structure."""
 
     @abstractmethod
     def format_request_payload(
-        self, api_type: str, prompt: str, model_kwargs: Dict
+        self, prompt: str, model_kwargs: Dict, 
+        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime
     ) -> bytes:
         """Formats the request body according to the input schema of
         the model. Returns bytes or seekable file like object in the
@@ -127,7 +133,10 @@ class ContentFormatterBase:
         """
 
     @abstractmethod
-    def format_response_payload(self, api_type: str, output: bytes) -> str:
+    def format_response_payload(
+        self, output: bytes, 
+        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime
+    ) -> str:
         """Formats the response body according to the output
         schema of the model. Returns the data type that is
         received from the response.
@@ -142,7 +151,7 @@ class GPT2ContentFormatter(ContentFormatterBase):
         return [AzureMLEndpointApiType.realtime]
 
     def format_request_payload(
-        self, api_type: str, prompt: str, model_kwargs: Dict
+        self, prompt: str, model_kwargs: Dict, api_type: AzureMLEndpointApiType
     ) -> bytes:
         prompt = ContentFormatterBase.escape_special_characters(prompt)
         request_payload = json.dumps(
@@ -150,7 +159,9 @@ class GPT2ContentFormatter(ContentFormatterBase):
         )
         return str.encode(request_payload)
 
-    def format_response_payload(self, api_type: str, output: bytes) -> str:
+    def format_response_payload(
+        self, output: bytes, api_type: AzureMLEndpointApiType
+    ) -> str:
         return json.loads(output)[0]["0"]
 
 
@@ -178,7 +189,7 @@ class HFContentFormatter(ContentFormatterBase):
         return [AzureMLEndpointApiType.realtime]
 
     def format_request_payload(
-        self, api_type: str, prompt: str, model_kwargs: Dict
+        self, prompt: str, model_kwargs: Dict, api_type: AzureMLEndpointApiType
     ) -> bytes:
         ContentFormatterBase.escape_special_characters(prompt)
         request_payload = json.dumps(
@@ -186,7 +197,9 @@ class HFContentFormatter(ContentFormatterBase):
         )
         return str.encode(request_payload)
 
-    def format_response_payload(self, api_type: str, output: bytes) -> str:
+    def format_response_payload(
+        self, output: bytes, api_type: AzureMLEndpointApiType
+    ) -> str:
         return json.loads(output)[0]["generated_text"]
 
 
@@ -198,7 +211,7 @@ class DollyContentFormatter(ContentFormatterBase):
         return [AzureMLEndpointApiType.realtime]
 
     def format_request_payload(
-        self, api_type: str, prompt: str, model_kwargs: Dict
+        self, prompt: str, model_kwargs: Dict, api_type: AzureMLEndpointApiType
     ) -> bytes:
         prompt = ContentFormatterBase.escape_special_characters(prompt)
         request_payload = json.dumps(
@@ -209,7 +222,9 @@ class DollyContentFormatter(ContentFormatterBase):
         )
         return str.encode(request_payload)
 
-    def format_response_payload(self, api_type: str, output: bytes) -> str:
+    def format_response_payload(
+        self, output: bytes, api_type: AzureMLEndpointApiType
+    ) -> str:
         return json.loads(output)[0]
 
 
@@ -221,7 +236,7 @@ class LlamaContentFormatter(ContentFormatterBase):
         return [AzureMLEndpointApiType.realtime, AzureMLEndpointApiType.serverless]
 
     def format_request_payload(
-        self, api_type: str, prompt: str, model_kwargs: Dict
+        self, prompt: str, model_kwargs: Dict, api_type: AzureMLEndpointApiType
     ) -> bytes:
         """Formats the request according to the chosen api"""
         prompt = ContentFormatterBase.escape_special_characters(prompt)
@@ -242,10 +257,12 @@ class LlamaContentFormatter(ContentFormatterBase):
             )
         return str.encode(request_payload)
 
-    def format_response_payload(self, api_type: str, output: bytes) -> str:
+    def format_response_payload(
+        self, output: bytes, api_type: AzureMLEndpointApiType
+    ) -> str:
         """Formats response"""
         if api_type == AzureMLEndpointApiType.realtime:
-            return json.loads(output)["output"]
+            return json.loads(output)[0]["0"]
         if api_type == AzureMLEndpointApiType.serverless:
             return json.loads(output)["choices"][0]["text"].strip()
         raise ValueError(f"`api_type` {api_type} is not supported by this formatter")
@@ -387,10 +404,10 @@ class AzureMLOnlineEndpoint(LLM, AzureMLBaseEndpoint):
         _model_kwargs = self.model_kwargs or {}
 
         request_payload = self.content_formatter.format_request_payload(
-            self.endpoint_api_type, prompt, _model_kwargs
+            prompt, _model_kwargs, self.endpoint_api_type
         )
         response_payload = self.http_client.call(request_payload, **kwargs)
         generated_text = self.content_formatter.format_response_payload(
-            self.endpoint_api_type, response_payload
+            response_payload, self.endpoint_api_type
         )
         return generated_text
