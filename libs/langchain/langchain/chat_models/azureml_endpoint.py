@@ -13,7 +13,7 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
 from langchain.llms.azureml_endpoint import (
     AzureMLBaseEndpoint,
-    AzureMLEndpointType,
+    AzureMLEndpointApiType,
     ContentFormatterBase,
 )
 
@@ -68,8 +68,8 @@ class LlamaChatContentFormatter(ContentFormatterBase):
             )
 
     @property
-    def supported_api_types(self) -> List[AzureMLEndpointType]:
-        return [AzureMLEndpointType.realtime, AzureMLEndpointType.paygo]
+    def supported_api_types(self) -> List[AzureMLEndpointApiType]:
+        return [AzureMLEndpointApiType.realtime, AzureMLEndpointApiType.serverless]
 
     def format_request_payload(
         self, api_type: str, messages: List[BaseMessage], model_kwargs: Dict
@@ -79,7 +79,7 @@ class LlamaChatContentFormatter(ContentFormatterBase):
             LlamaChatContentFormatter._convert_message_to_dict(message)
             for message in messages
         ]
-        if api_type == AzureMLEndpointType.realtime:
+        if api_type == AzureMLEndpointApiType.realtime:
             request_payload = json.dumps(
                 {
                     "input_data": {
@@ -88,7 +88,7 @@ class LlamaChatContentFormatter(ContentFormatterBase):
                     }
                 }
             )
-        elif api_type == AzureMLEndpointType.paygo:
+        elif api_type == AzureMLEndpointApiType.serverless:
             request_payload = json.dumps({"messages": chat_messages, **model_kwargs})
         else:
             raise ValueError(
@@ -98,9 +98,9 @@ class LlamaChatContentFormatter(ContentFormatterBase):
 
     def format_response_payload(self, api_type: str, output: bytes) -> str:
         """Formats response"""
-        if api_type == AzureMLEndpointType.realtime:
+        if api_type == AzureMLEndpointApiType.realtime:
             return json.loads(output)["output"]
-        if api_type == AzureMLEndpointType.paygo:
+        if api_type == AzureMLEndpointApiType.serverless:
             return json.loads(output)["choices"][0]["message"]["content"].strip()
         raise ValueError(f"`api_type` {api_type} is not supported by this formatter")
 
