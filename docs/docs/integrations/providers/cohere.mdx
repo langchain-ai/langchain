@@ -11,28 +11,86 @@ pip install cohere
 
 Get a [Cohere api key](https://dashboard.cohere.ai/) and set it as an environment variable (`COHERE_API_KEY`)
 
+## Cohere langchain integrations
 
-## LLM
+|API|description|Endpoint docs|Import|Example usage|
+|---|---|---|---|---|
+|Chat|Build chat bots|[chat](https://docs.cohere.com/reference/chat)|`from langchain.chat_models import ChatCohere`|[cohere.ipynb](/docs/docs/integrations/chat/cohere.ipynb)|
+|LLM|Generate text|[generate](https://docs.cohere.com/reference/generate)|`from langchain.llms import Cohere`|[cohere.ipynb](/docs/docs/integrations/llms/cohere.ipynb)|
+|RAG Retriever|Connect to external data sources|[chat + rag](https://docs.cohere.com/reference/chat)|`from langchain.retrievers import CohereRagRetriever`|[cohere.ipynb](/docs/docs/integrations/retrievers/cohere.ipynb)|
+|Text Embedding|Embed strings to vectors|[embed](https://docs.cohere.com/reference/embed)|`from langchain.embeddings import CohereEmbeddings`|[cohere.ipynb](/docs/docs/integrations/text_embedding/cohere.ipynb)|
+|Rerank Retriever|Rank strings based on relevance|[rerank](https://docs.cohere.com/reference/rerank)|`from langchain.retrievers.document_compressors import CohereRerank`|[cohere.ipynb](/docs/docs/integrations/retrievers/cohere-reranker.ipynb)|
 
-There exists an Cohere LLM wrapper, which you can access with 
-See a [usage example](/docs/integrations/llms/cohere).
+## Quick copy examples
+
+### Chat
 
 ```python
-from langchain.llms import Cohere
+from langchain.chat_models import ChatCohere
+from langchain.schema import HumanMessage
+chat = ChatCohere()
+messages = [HumanMessage(content="knock knock")]
+chat(messages)
 ```
 
-## Text Embedding Model
+### LLM
 
-There exists an Cohere Embedding model, which you can access with 
+
+```python
+from langchain.chains import LLMChain
+from langchain.llms import Cohere
+from langchain.prompts import PromptTemplate
+
+template = """Question: {question}
+
+Answer: Let's think step by step."""
+
+prompt = PromptTemplate(template=template, input_variables=["question"])
+llm = Cohere()
+llm_chain = LLMChain(prompt=prompt, llm=llm)
+question = "What NFL team won the Super Bowl in the year Justin Beiber was born?"
+
+llm_chain.run(question)
+```
+
+
+### RAG Retriever
+
+```python
+from langchain.chat_models import ChatCohere
+from langchain.retrievers import CohereRagRetriever
+from langchain.schema.document import Document
+
+rag = CohereRagRetriever(llm=ChatCohere())
+rag.get_relevant_documents("What is cohere ai?")
+```
+
+### Text Embedding
+
 ```python
 from langchain.embeddings import CohereEmbeddings
+
+embeddings = CohereEmbeddings(model="embed-english-light-v3.0")
+text = "This is a test document."
 ```
-For a more detailed walkthrough of this, see [this notebook](/docs/integrations/text_embedding/cohere)
-
-## Retriever
-
-See a [usage example](/docs/integrations/retrievers/cohere-reranker).
+### Rerank Retriever
 
 ```python
-from langchain.retrievers.document_compressors import CohereRerank
+from langchain.chains import LLMChain
+from langchain.llms import Cohere
+from langchain.prompts import PromptTemplate
+
+docs = ['Carson City is the capital city of the American state of Nevada.',
+'The Commonwealth of the Northern Mariana Islands is a group of islands in the Pacific Ocean. Its capital is Saipan.',
+'Washington, D.C. (also known as simply Washington or D.C., and officially as the District of Columbia) is the capital of the United States. It is a federal district.',
+'Capital punishment (the death penalty) has existed in the United States since beforethe United States was a country. As of 2017, capital punishment is legal in 30 of the 50 states.']
+
+query = 'What is the capital of the United States?'
+
+retriever = FAISS.from_documents(texts, OpenAIEmbeddings()).as_retriever(
+    search_kwargs={"k": 20}
+)
+
+query = "What did the president say about Ketanji Brown Jackson"
+docs = retriever.get_relevant_documents(query)
 ```
