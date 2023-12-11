@@ -25,7 +25,7 @@ env:
 
 jobs:
   build:
-#    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     outputs:
