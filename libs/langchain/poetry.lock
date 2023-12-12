@@ -4248,35 +4248,24 @@ files = [
 ]
 
 [[package]]
-name = "keras"
-version = "2.11.0"
-description = "Deep learning for humans."
-optional = true
-python-versions = ">=3.7"
-files = [
-    {file = "keras-2.11.0-py2.py3-none-any.whl", hash = "sha256:38c6fff0ea9a8b06a2717736565c92a73c8cd9b1c239e7125ccb188b7848f65e"},
-]
-
-[[package]]
-name = "lancedb"
-version = "0.1.16"
-description = "lancedb"
-optional = true
-python-versions = ">=3.8"
-files = [
-    {file = "lancedb-0.1.16-py3-none-any.whl", hash = "sha256:ed5ff765c127fd8c8b193b448a127ae9de4afd458874e6d981edeafa09cf6a4a"},
-    {file = "lancedb-0.1.16.tar.gz", hash = "sha256:c22621635ca1b74f24983b8247886f93d23d7477fdbe5c67449a0939c19ef7bd"},
-]
+name = "langchain-community"
+version = "0.0.2"
+description = "Community contributed LangChain integrations."
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
 
 [package.dependencies]
-aiohttp = "*"
-attr = "*"
-pydantic = "*"
-pylance = "0.5.10"
-ratelimiter = "*"
-retry = "*"
-semver = "*"
-tqdm = "*"
+aiohttp = "^3.8.3"
+dataclasses-json = ">= 0.5.7, < 0.7"
+langchain-core = "^0.1"
+langsmith = "~0.0.63"
+numpy = "^1"
+PyYAML = ">=5.3"
+requests = "^2"
+SQLAlchemy = ">=1.4,<3"
+tenacity = "^8.1.0"
 
 [package.extras]
 dev = ["black", "pre-commit", "ruff"]
@@ -4285,7 +4274,7 @@ tests = ["pandas (>=1.4)", "pytest", "pytest-asyncio", "pytest-mock"]
 
 [[package]]
 name = "langchain-core"
-version = "0.0.9"
+version = "0.1.0"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -11518,4 +11507,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f4791327aca4bf3db1b46731d987347b537e638a1be85b2a6a771e52f95d3f29"
+content-hash = "0b232a037505cefcdf2203edc9d750e70e2e52a297475490022402994c3036a3"
