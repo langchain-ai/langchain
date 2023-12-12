@@ -31,7 +31,7 @@ Databricks External Models
 
 ```python
 from langchain.chat_models import ChatDatabricks
-from langchain.schema.messages import HumanMessage
+from langchain_core.messages import HumanMessage
 from mlflow.deployments import get_deploy_client
 
 
@@ -66,7 +66,7 @@ Databricks Foundation Model APIs
 [Databricks Foundation Model APIs](https://docs.databricks.com/machine-learning/foundation-models/index.html) allow you to access and query state-of-the-art open source models from dedicated serving endpoints. With Foundation Model APIs, developers can quickly and easily build applications that leverage a high-quality generative AI model without maintaining their own model deployment. The following example uses the `databricks-bge-large-en` endpoint to generate embeddings from  text:
 
 ```python
-from langchain.llms import DatabricksEmbeddings
+from langchain.embeddings import DatabricksEmbeddings
 
 
 embeddings = DatabricksEmbeddings(endpoint="databricks-bge-large-en")

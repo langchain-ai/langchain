@@ -21,10 +21,8 @@ extended_tests:
 integration_tests:
 	poetry run pytest tests/integration_tests
 
-check_imports: langchain_experimental/**/*.py
-	for f in $^ ; do \
-		python -c "from importlib.machinery import SourceFileLoader; SourceFileLoader('x', '$$f').load_module()" || exit 1; \
-	done
+check_imports: $(shell find langchain_experimental -name '*.py')
+	poetry run python ./scripts/check_imports.py $^
 
 
 ######################
@@ -33,16 +31,18 @@ check_imports: langchain_experimental/**/*.py
 
 # Define a variable for Python and notebook files.
 PYTHON_FILES=.
+MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/experimental --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
 lint_package: PYTHON_FILES=langchain_experimental
 lint_tests: PYTHON_FILES=tests
+lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
 	poetry run ruff .
 	poetry run ruff format $(PYTHON_FILES) --diff
 	poetry run ruff --select I $(PYTHON_FILES)
-	poetry run mypy $(PYTHON_FILES)
+	mkdir $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	poetry run ruff format $(PYTHON_FILES)
