@@ -6,7 +6,7 @@ from langchain.cache import CassandraCache
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import BaseMessage
-from langchain.schema.runnable import RunnableLambda
+from langchain_core.runnables import RunnableLambda
 
 use_cassandra = int(os.environ.get("USE_CASSANDRA_CLUSTER", "0"))
 if use_cassandra:
