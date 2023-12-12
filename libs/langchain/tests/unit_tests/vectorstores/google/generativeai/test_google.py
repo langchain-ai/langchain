@@ -17,7 +17,10 @@ if has_google:
 
     # Make sure the tests do not hit actual production servers.
     genaix.set_defaults(
-        genaix.Config(api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend")
+        genaix.Config(
+            api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",
+            testing=True,
+        )
     )
 
 

@@ -34,31 +34,34 @@ class SemanticRetriever(BaseModel):
     name: genaix.EntityName
     _client: genai.RetrieverServiceClient = PrivateAttr()
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, *, client: genai.RetrieverServiceClient, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self._client = genaix.build_semantic_retriever()
+        self._client = client
 
     @classmethod
     def from_ids(
         cls, corpus_id: str, document_id: Optional[str]
     ) -> "SemanticRetriever":
         name = genaix.EntityName(corpus_id=corpus_id, document_id=document_id)
+        client = genaix.build_semantic_retriever()
 
         # Check the entity exists on Google server.
         if name.is_corpus():
-            if genaix.get_corpus(corpus_id=corpus_id) is None:
+            if genaix.get_corpus(corpus_id=corpus_id, client=client) is None:
                 raise DoesNotExistsException(corpus_id=corpus_id)
         elif name.is_document():
             assert document_id is not None
             if (
-                genaix.get_document(corpus_id=corpus_id, document_id=document_id)
+                genaix.get_document(
+                    corpus_id=corpus_id, document_id=document_id, client=client
+                )
                 is None
             ):
                 raise DoesNotExistsException(
                     corpus_id=corpus_id, document_id=document_id
                 )
 
-        return cls(name=name)
+        return cls(name=name, client=client)
 
     def add_texts(
         self,
