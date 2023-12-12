@@ -2,7 +2,7 @@
 from __module_name__.chat_models import Chat__ModuleName__
 
 
-def test_integration_stream() -> None:
+def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = Chat__ModuleName__()
 
@@ -10,7 +10,7 @@ def test_integration_stream() -> None:
         assert isinstance(token.content, str)
 
 
-async def test_integration_astream() -> None:
+async def test_astream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = Chat__ModuleName__()
 
@@ -18,7 +18,7 @@ async def test_integration_astream() -> None:
         assert isinstance(token.content, str)
 
 
-async def test_integration_abatch() -> None:
+async def test_abatch() -> None:
     """Test streaming tokens from Chat__ModuleName__."""
     llm = Chat__ModuleName__()
 
@@ -27,7 +27,7 @@ async def test_integration_abatch() -> None:
         assert isinstance(token.content, str)
 
 
-async def test_integration_abatch_tags() -> None:
+async def test_abatch_tags() -> None:
     """Test batch tokens from Chat__ModuleName__."""
     llm = Chat__ModuleName__()
 
@@ -38,7 +38,7 @@ async def test_integration_abatch_tags() -> None:
         assert isinstance(token.content, str)
 
 
-def test_integration_batch() -> None:
+def test_batch() -> None:
     """Test batch tokens from Chat__ModuleName__."""
     llm = Chat__ModuleName__()
 
@@ -47,7 +47,7 @@ def test_integration_batch() -> None:
         assert isinstance(token.content, str)
 
 
-async def test_integration_ainvoke() -> None:
+async def test_ainvoke() -> None:
     """Test invoke tokens from Chat__ModuleName__."""
     llm = Chat__ModuleName__()
 
@@ -55,7 +55,7 @@ async def test_integration_ainvoke() -> None:
     assert isinstance(result.content, str)
 
 
-def test_integration_invoke() -> None:
+def test_invoke() -> None:
     """Test invoke tokens from Chat__ModuleName__."""
     llm = Chat__ModuleName__()
 

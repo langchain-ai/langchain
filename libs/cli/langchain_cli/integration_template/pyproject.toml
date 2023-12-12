@@ -57,7 +57,6 @@ select = [
 
 [tool.mypy]
 disallow_untyped_defs = "True"
-exclude = ["notebooks", "examples", "example_data", "langchain_core/pydantic"]
 
 [tool.coverage.run]
 omit = [

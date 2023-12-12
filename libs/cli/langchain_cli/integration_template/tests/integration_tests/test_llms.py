@@ -2,7 +2,7 @@
 from __module_name__.llms import __ModuleName__LLM
 
 
-def test_integration_stream() -> None:
+def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = __ModuleName__LLM()
 
@@ -10,7 +10,7 @@ def test_integration_stream() -> None:
         assert isinstance(token, str)
 
 
-async def test_integration_astream() -> None:
+async def test_astream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = __ModuleName__LLM()
 
@@ -18,7 +18,7 @@ async def test_integration_astream() -> None:
         assert isinstance(token, str)
 
 
-async def test_integration_abatch() -> None:
+async def test_abatch() -> None:
     """Test streaming tokens from __ModuleName__LLM."""
     llm = __ModuleName__LLM()
 
@@ -27,7 +27,7 @@ async def test_integration_abatch() -> None:
         assert isinstance(token, str)
 
 
-async def test_integration_abatch_tags() -> None:
+async def test_abatch_tags() -> None:
     """Test batch tokens from __ModuleName__LLM."""
     llm = __ModuleName__LLM()
 
@@ -38,7 +38,7 @@ async def test_integration_abatch_tags() -> None:
         assert isinstance(token, str)
 
 
-def test_integration_batch() -> None:
+def test_batch() -> None:
     """Test batch tokens from __ModuleName__LLM."""
     llm = __ModuleName__LLM()
 
@@ -47,7 +47,7 @@ def test_integration_batch() -> None:
         assert isinstance(token, str)
 
 
-async def test_integration_ainvoke() -> None:
+async def test_ainvoke() -> None:
     """Test invoke tokens from __ModuleName__LLM."""
     llm = __ModuleName__LLM()
 
@@ -55,7 +55,7 @@ async def test_integration_ainvoke() -> None:
     assert isinstance(result, str)
 
 
-def test_integration_invoke() -> None:
+def test_invoke() -> None:
     """Test invoke tokens from __ModuleName__LLM."""
     llm = __ModuleName__LLM()
 
