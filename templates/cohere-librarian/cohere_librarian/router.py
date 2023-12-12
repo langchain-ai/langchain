@@ -23,8 +23,10 @@ For example, if the message is about a book recommendation,respond with
     | StrOutputParser()
 )
 
+
 def extract_op_field(x):
     return x["output_text"]
+
 
 branch = RunnableBranch(
     (
