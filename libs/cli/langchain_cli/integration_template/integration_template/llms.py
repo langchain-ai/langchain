@@ -30,7 +30,7 @@ class __ModuleName__LLM(BaseLLM):
     @property
     def _llm_type(self) -> str:
         """Return type of LLM."""
-        return "__package_name_short__"
+        return "__package_name_short__-llm"
 
     def _generate(
         self,
