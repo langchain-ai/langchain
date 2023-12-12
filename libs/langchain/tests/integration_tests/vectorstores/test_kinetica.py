@@ -197,7 +197,7 @@ def test_kinetica_max_marginal_relevance_search(
     create_config: KineticaSettings,
 ) -> None:
     """Test end to end construction and search."""
-    openai = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+    openai = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
     texts = ["foo", "bar", "baz"]
     docsearch = Kinetica.from_texts(
         config=create_config,
@@ -239,7 +239,7 @@ def test_kinetica_with_openai_embeddings(create_config: KineticaSettings) -> Non
     if OPENAI_API_KEY == "":
         assert False
 
-    openai = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+    openai = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
     texts = ["foo", "bar", "baz"]
     metadatas = [{"text": text} for text in texts]
     docsearch = Kinetica.from_texts(
@@ -255,6 +255,3 @@ def test_kinetica_with_openai_embeddings(create_config: KineticaSettings) -> Non
     print(output)
     assert output[0].page_content == "foo"
 
-
-if __name__ == "__main__":
-    test_kinetica_max_marginal_relevance_search()

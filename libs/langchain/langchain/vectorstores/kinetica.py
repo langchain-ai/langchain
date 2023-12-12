@@ -88,6 +88,14 @@ class KineticaSettings(BaseSettings):
 class Kinetica(VectorStore):
     """Kinetica vector store class which extends the `VectorStore` class"""
 
+    try:
+        from gpudb import GPUdb, GPUdbTable
+    except ImportError:
+        raise ImportError(
+            "Could not import Kinetica python API. "
+            "Please install it with `pip install gpudb==7.2.0.0b`."
+        )
+
     def __init__(
         self,
         config: KineticaSettings,
@@ -166,7 +174,7 @@ class Kinetica(VectorStore):
         self.create_schema()
         self.EmbeddingStore: GPUdbTable = self.create_tables_if_not_exists()
 
-    def __get_db(self, config: KineticaSettings):
+    def __get_db(self, config: KineticaSettings) -> GPUdb:
         try:
             from gpudb import GPUdb
         except ImportError:
@@ -255,7 +263,7 @@ class Kinetica(VectorStore):
 
         return store
 
-    def create_tables_if_not_exists(self):
+    def create_tables_if_not_exists(self) -> GPUdbTable:
         """Create the table to store the texts and embeddings"""
 
         try:
@@ -731,7 +739,7 @@ class Kinetica(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        config: KineticaSettings = None,
+        config: KineticaSettings = KineticaSettings(),
         dimensions: int = Dimension.OPENAI,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
@@ -790,7 +798,7 @@ class Kinetica(VectorStore):
         text_embeddings: List[Tuple[str, List[float]]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        config: KineticaSettings = None,
+        config: KineticaSettings = KineticaSettings(),
         dimensions: int = Dimension.OPENAI,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
@@ -849,7 +857,7 @@ class Kinetica(VectorStore):
         cls: Type[Kinetica],
         documents: List[Document],
         embedding: Embeddings,
-        config: KineticaSettings = None,
+        config: KineticaSettings = KineticaSettings(),
         metadatas: Optional[List[dict]] = None,
         dimensions: int = Dimension.OPENAI,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
