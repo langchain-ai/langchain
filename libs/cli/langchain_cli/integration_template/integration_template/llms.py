@@ -29,8 +29,8 @@ class __ModuleName__LLM(BaseLLM):
 
     @property
     def _llm_type(self) -> str:
-        """Return type of chat model."""
-        return "integration"
+        """Return type of LLM."""
+        return "__package_name_short__"
 
     def _generate(
         self,

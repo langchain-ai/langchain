@@ -24,7 +24,7 @@ class Chat__ModuleName__(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "chat-integration"
+        return "chat-__package_name_short__"
 
     def _stream(
         self,
