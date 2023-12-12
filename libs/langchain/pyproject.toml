@@ -110,6 +110,7 @@ databricks-vectorsearch = {version = "^0.21", optional = true}
 couchbase = {version = "^4.1.9", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
+httpx = "^0.24.1"
 
 [tool.poetry.group.test]
 optional = true
