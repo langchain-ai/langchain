@@ -1,7 +1,8 @@
 import unittest
 
 import pytest
-from langchain.document_loaders.parsers.language.rust import RustSegmenter
+
+from langchain_community.document_loaders.parsers.language.rust import RustSegmenter
 
 
 @pytest.mark.requires("tree_sitter", "tree_sitter_languages")

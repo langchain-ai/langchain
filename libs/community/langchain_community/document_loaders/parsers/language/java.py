@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from langchain.document_loaders.parsers.language.tree_sitter_segmenter import (
+from langchain_community.document_loaders.parsers.language.tree_sitter_segmenter import (
     TreeSitterSegmenter,
 )
 

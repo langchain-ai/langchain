@@ -1,7 +1,10 @@
 import unittest
 
 import pytest
-from langchain.document_loaders.parsers.language.typescript import TypeScriptSegmenter
+
+from langchain_community.document_loaders.parsers.language.typescript import (
+    TypeScriptSegmenter,
+)
 
 
 @pytest.mark.requires("tree_sitter", "tree_sitter_languages")
