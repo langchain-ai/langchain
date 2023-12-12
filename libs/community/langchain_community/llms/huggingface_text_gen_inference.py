@@ -1,5 +1,7 @@
+from abc import ABC, abstractmethod
+from collections import UserString, deque
 import logging
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import Any, AsyncIterator, Deque, Dict, Iterator, List, Optional, Union
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -236,33 +238,22 @@ class HuggingFaceTextGenInference(LLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         invocation_params = self._invocation_params(stop, **kwargs)
-
+        streamer = _get_streamer(invocation_params["stop_sequences"])
         for res in self.client.generate_stream(prompt, **invocation_params):
-            # identify stop sequence in generated text, if any
-            stop_seq_found: Optional[str] = None
-            for stop_seq in invocation_params["stop_sequences"]:
-                if stop_seq in res.token.text:
-                    stop_seq_found = stop_seq
-
-            # identify text to yield
-            text: Optional[str] = None
-            if res.token.special:
-                text = None
-            elif stop_seq_found:
-                text = res.token.text[: res.token.text.index(stop_seq_found)]
-            else:
-                text = res.token.text
-
-            # yield text, if any
+            text = streamer(res.token.text, res.token.special)
             if text:
-                chunk = GenerationChunk(text=text)
-                yield chunk
-                if run_manager:
-                    run_manager.on_llm_new_token(chunk.text)
-
-            # break if stop sequence found
-            if stop_seq_found:
+                yield from self._yield_chunk(text, run_manager)
+            if streamer.end_reached():
                 break
+        if text := streamer.return_remaining_text():
+            yield from self._yield_chunk(text, run_manager)
+
+    def _yield_chunk(
+        self, text: str, run_manager: Optional[AsyncCallbackManagerForLLMRun] = None
+    ) -> Iterator[GenerationChunk]:
+        yield GenerationChunk(text=text)
+        if run_manager:
+            run_manager.on_llm_new_token(text)
 
     async def _astream(
         self,
@@ -272,30 +263,128 @@ class HuggingFaceTextGenInference(LLM):
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         invocation_params = self._invocation_params(stop, **kwargs)
-
+        streamer = _get_streamer(invocation_params["stop_sequences"])
         async for res in self.async_client.generate_stream(prompt, **invocation_params):
-            # identify stop sequence in generated text, if any
-            stop_seq_found: Optional[str] = None
-            for stop_seq in invocation_params["stop_sequences"]:
-                if stop_seq in res.token.text:
-                    stop_seq_found = stop_seq
-
-            # identify text to yield
-            text: Optional[str] = None
-            if res.token.special:
-                text = None
-            elif stop_seq_found:
-                text = res.token.text[: res.token.text.index(stop_seq_found)]
-            else:
-                text = res.token.text
-
-            # yield text, if any
-            if text:
-                chunk = GenerationChunk(text=text)
-                yield chunk
-                if run_manager:
-                    await run_manager.on_llm_new_token(chunk.text)
-
-            # break if stop sequence found
-            if stop_seq_found:
+            if text := streamer(res.token.text, res.token.special):
+                async for token in self._ayield_chunk(text, run_manager):
+                    yield token
+            if streamer.end_reached():
                 break
+        if text := streamer.return_remaining_text():
+            async for token in self._ayield_chunk(text, run_manager):
+                yield token
+
+    async def _ayield_chunk(
+        self, text: str, run_manager: Optional[AsyncCallbackManagerForLLMRun] = None
+    ) -> AsyncIterator[GenerationChunk]:
+        yield GenerationChunk(text=text)
+        if run_manager:
+            await run_manager.on_llm_new_token(text)
+
+
+###
+# Streamers
+###
+class Streamer(ABC):
+    """A class that tracks the state of a stream of tokens and yields text"""
+
+    @abstractmethod
+    def __call__(self, token: str, is_special_token: bool) -> Optional[str]:
+        """Returns the text to yield, if any, given the token that was just generated."""
+
+    @abstractmethod
+    def end_reached(self) -> bool:
+        """whether or not we have hit the end of the stream"""
+
+    @abstractmethod
+    def return_remaining_text(self) -> Optional[str]:
+        """Returns the remaining text to yield, if any"""
+
+
+class PassThroughStreamer(Streamer):
+    """A streamer that yields all tokens"""
+
+    def __call__(self, token: str, is_special_token: bool) -> Optional[str]:
+        return None if is_special_token else token
+
+    def end_reached(self) -> bool:
+        return False
+
+    def return_remaining_text(self) -> Optional[str]:
+        return None
+
+
+class StopSequenceAwareStreamer(Streamer):
+    """Tracks whether a stop sequence has been hit. If so, stops streaming."""
+
+    def __init__(self, stop_sequences: List[str]) -> None:
+        assert stop_sequences, "stop_sequences must be non-empty"
+        self._stop_seqs_by_len = sorted(stop_sequences, key=len, reverse=True)
+        self._buffer = TokenStreamBuffer()
+        self._end_reached = False
+
+    def __call__(self, token: str, is_special_token: bool) -> Optional[str]:
+        self._buffer.extend(token, is_special_token)
+        for stop_seq in self._stop_seqs_by_len:  # check for stop seq in buffer
+            if 0 < (stop_seq_idx := self._buffer.find(stop_seq)):
+                self._end_reached = True
+                return self._buffer.stream_chars(stop_seq_idx)  # stream up to stop seq
+        for stop_seq in self._stop_seqs_by_len:  # check potentially upcoming stop seqs
+            if has_overlapping_chars(self._buffer, stop_seq):
+                return None  # wait for next token to see if stop seq gets hit
+        return self._buffer.stream_chars()
+
+    def end_reached(self) -> bool:
+        return self._end_reached
+
+    def return_remaining_text(self) -> Optional[str]:
+        return self._buffer.stream_chars() or None
+
+
+def _get_streamer(stop_sequences: List[str]) -> "Streamer":
+    if not stop_sequences:
+        return PassThroughStreamer()
+    return StopSequenceAwareStreamer(stop_sequences)
+
+
+###
+# TokenStreamBuffer
+###
+class TokenStreamBuffer(UserString):
+    """A buffer that stores the last n (:=max_size) characters added to it."""
+
+    def __init__(self, max_size: Optional[int] = None):
+        super().__init__("")
+        self._string_buffer: Deque[str] = deque(maxlen=max_size)
+        self._stream_char_mask: Deque[bool] = deque(maxlen=max_size)
+
+    def extend(self, token: str, is_special: bool) -> None:
+        """Adds new_chars to the end of the buffer"""
+        for char in token:
+            self._string_buffer.append(char)  # append all chars to buffer
+            self._stream_char_mask.append(not is_special)  # don't stream special tokens
+        self._update_data()
+
+    def stream_chars(self, k: Optional[int] = None) -> str:
+        """Pops k characters from the beginning of the stringbuffer"""
+        chars_to_stream: List[str] = []
+        for _ in range(k or len(self)):
+            char = self._string_buffer.popleft()
+            if self._stream_char_mask.popleft():
+                chars_to_stream.append(char)
+        self._update_data()
+        return "".join(chars_to_stream)
+
+    def _update_data(self) -> None:
+        self.data = "".join(self._string_buffer)
+
+
+def has_overlapping_chars(left_str: Union[str, UserString], right_str: str) -> bool:
+    """Returns the number of overlapping characters between the end
+    of left_string and the beginning of right_string
+    """
+    idxs = reversed(range(1, len(right_str) + 1))
+    for idx in idxs:
+        if left_str.endswith(right_str[:idx]):
+            return True
+    return False
