@@ -1,11 +1,11 @@
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from .chat import chat
 from langchain.prompts import (
     ChatPromptTemplate,
-    SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
 )
+
+from .chat import chat
 
 librarian_prompt = ChatPromptTemplate.from_messages(
     [

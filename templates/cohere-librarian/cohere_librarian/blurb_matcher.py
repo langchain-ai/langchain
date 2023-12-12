@@ -4,8 +4,8 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.embeddings import CohereEmbeddings
 from langchain.prompts import PromptTemplate
 from langchain.vectorstores import Chroma
-from .chat import chat
 
+from .chat import chat
 
 csv_file = open("data/books_with_blurbs.csv", "r")
 csv_reader = csv.reader(csv_file)
