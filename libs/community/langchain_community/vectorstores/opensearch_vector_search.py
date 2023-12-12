@@ -81,14 +81,16 @@ def _validate_aoss_with_engines(is_aoss: bool, engine: str) -> None:
 
 
 def _is_aoss_enabled(http_auth: Any) -> bool:
-    """Check if the service is http_auth is set as `aoss`."""
-    if (
-        http_auth is not None
-        and hasattr(http_auth, "service")
-        and http_auth.service == "aoss"
-    ):
-        return True
-    return False
+    """Check if service attribute of http_auth is set to `aoss`."""
+    if http_auth is not None:
+        if hasattr(http_auth, "service") and http_auth.service == "aoss":
+            return True
+        elif hasattr(http_auth, "signer") and http_auth.signer.service == "aoss":
+            return True
+        else:
+            return False
+    else:
+        return False
 
 
 def _bulk_ingest_embeddings(

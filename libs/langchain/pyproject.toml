@@ -110,6 +110,8 @@ databricks-vectorsearch = {version = "^0.21", optional = true}
 couchbase = {version = "^4.1.9", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
+requests-aws4auth = {version = "^1.2.3", optional = true}
+opensearch-py = {version = "^2.4.2", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -294,6 +296,8 @@ extended_testing = [
  "couchbase",
  "dgml-utils",
  "cohere",
+ "opensearch-py",
+ "requests-aws4auth",
 ]
 
 [tool.ruff]
