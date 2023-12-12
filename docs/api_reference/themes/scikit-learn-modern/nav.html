@@ -32,10 +32,10 @@
     <div class="sk-navbar-collapse collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item">
-          <a class="sk-nav-link nav-link" href="{{ pathto('api_reference') }}">API</a>
+          <a class="sk-nav-link nav-link" href="{{ pathto('core_api_reference') }}">Core</a>
         </li>
         <li class="nav-item">
-          <a class="sk-nav-link nav-link" href="{{ pathto('core_api_reference') }}">Core</a>
+          <a class="sk-nav-link nav-link" href="{{ pathto('api_reference') }}">Langchain</a>
         </li>
         <li class="nav-item">
           <a class="sk-nav-link nav-link" href="{{ pathto('community_api_reference') }}">Community</a>
@@ -44,7 +44,7 @@
           <a class="sk-nav-link nav-link" href="{{ pathto('experimental_api_reference') }}">Experimental</a>
         </li>
         <li class="nav-item">
-          <a class="sk-nav-link nav-link" target="_blank" rel="noopener noreferrer" href="https://python.langchain.com/">Python Docs</a>
+          <a class="sk-nav-link nav-link" target="_blank" rel="noopener noreferrer" href="https://python.langchain.com/"><b>Docs</b></a>
         </li>
         {%- for title, link, link_attrs in drop_down_navigation %}
         <li class="nav-item">
