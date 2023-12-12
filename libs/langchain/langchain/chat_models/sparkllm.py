@@ -464,7 +464,7 @@ class _SparkLLMClient:
                     f"SparkLLMClient wait LLM api response timeout {timeout} seconds"
                 )
             if "error" in content:
-                raise SparkError(content["error"])
+                raise ConnectionError(content["error"])
             if "usage" in content:
                 yield content
                 continue
@@ -473,7 +473,3 @@ class _SparkLLMClient:
             if "data" not in content:
                 break
             yield content
-
-
-class SparkError(Exception):
-    pass
