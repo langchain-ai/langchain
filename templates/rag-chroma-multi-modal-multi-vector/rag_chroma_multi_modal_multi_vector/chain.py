@@ -107,8 +107,8 @@ vectorstore_mvr = Chroma(
 )
 
 # Load redis
-UPSTASH_URL = "xxx"
-UPSTASH_TOKEN = "xxx"
+UPSTASH_URL = "https://usw1-bright-beagle-34178.upstash.io"
+UPSTASH_TOKEN = "AYWCACQgNzk3OTJjZTItMGIxNy00MTEzLWIyZTAtZWI0ZmI1ZGY0NjFhNGRhMGZjNDE4YjgxNGE4MTkzOWYxMzllM2MzZThlOGY="
 store = UpstashRedisByteStore(url=UPSTASH_URL, token=UPSTASH_TOKEN)
 id_key = "doc_id"
 
