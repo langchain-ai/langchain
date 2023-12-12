@@ -194,6 +194,24 @@ def _is_b64(s: str) -> bool:
     return s.startswith("data:image")
 
 
+def _load_image_from_gcs(path: str, project: Optional[str] = None) -> "Image":
+    try:
+        from google.cloud import storage
+    except ImportError:
+        raise ImportError("Could not import google-cloud-storage python package.")
+    try:
+        from vertexai.preview.generative_models import Image
+    except ImportError:
+        raise ImportError("Could not import vertexai python package.")
+
+    gcs_client = storage.Client(project=project)
+    pieces = path.split("/")
+    blobs = list(gcs_client.list_blobs(pieces[2], prefix="/".join(pieces[3:])))
+    if len(blobs) > 1:
+        raise ValueError(f"Found more than one candidate for {path}!")
+    return Image.from_bytes(blobs[0].download_as_bytes())
+
+
 def _url_to_pil(image_source: str) -> Image:
     if PIL is None:
         raise ImportError(
@@ -204,6 +222,8 @@ def _url_to_pil(image_source: str) -> Image:
         if isinstance(image_source, (Image.Image, IPython.display.Image)):
             return image_source
         elif _is_url(image_source):
+            if image_source.startswith("gs://"):
+                return _load_image_from_gcs(image_source)
             response = requests.get(image_source)
             response.raise_for_status()
             return Image.open(BytesIO(response.content))
@@ -412,6 +432,10 @@ Supported examples:
     def _llm_type(self) -> str:
         return "chat-google-generative-ai"
 
+    @property
+    def _is_geminiai(self) -> bool:
+        return self.model is not None and "gemini" in self.model
+
     @classmethod
     def is_lc_serializable(self) -> bool:
         return True
@@ -465,7 +489,7 @@ Supported examples:
 
     @property
     def _async_generation_method(self) -> Awaitable:
-        # TODO :THIS IS BROKEN still...
+        # TODO Add support once Google uncomments the async client
         return self._generative_model.generate_content
 
     def _prepare_params(

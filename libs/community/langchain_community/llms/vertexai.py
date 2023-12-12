@@ -1,17 +1,22 @@
 from __future__ import annotations
 
 from concurrent.futures import Executor, ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Iterator, List, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+)
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import BaseLLM
-from langchain_core.messages import BaseMessage
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.prompt_values import StringPromptValue
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain_community.utilities.vertexai import (
@@ -28,44 +33,40 @@ if TYPE_CHECKING:
     )
     from google.cloud.aiplatform.models import Prediction
     from google.protobuf.struct_pb2 import Value
-    from langchain_core.runnables import RunnableConfig
     from vertexai.language_models._language_models import (
         TextGenerationResponse,
         _LanguageModel,
     )
-    from vertexai.preview.generative_models import Image
+
+
+def _response_to_generation(
+    response: TextGenerationResponse,
+) -> GenerationChunk:
+    """Convert a stream response to a generation chunk."""
+    try:
+        generation_info = {
+            "is_blocked": response.is_blocked,
+            "safety_attributes": response.safety_attributes,
+        }
+    except Exception:
+        generation_info = None
+    return GenerationChunk(text=response.text, generation_info=generation_info)
 
 
 def is_codey_model(model_name: str) -> bool:
-    """Returns True if the model name is a Codey model."""
+    """Returns True if the model name is a Codey model.
+
+    Args:
+        model_name: The model name to check.
+
+    Returns: True if the model name is a Codey model.
+    """
     return "code" in model_name
-
-
-def is_gemini_model(model_name: str) -> bool:
-    """Returns True if the model name is a Gemini model."""
-    return model_name is not None and "gemini" in model_name
-
-
-def _load_image_from_gcs(path: str, project: Optional[str] = None) -> "Image":
-    try:
-        from google.cloud import storage
-    except ImportError:
-        raise ImportError("Could not import google-cloud-storage python package.")
-    from vertexai.preview.generative_models import Image
-
-    gcs_client = storage.Client(project=project)
-    pieces = path.split("/")
-    blobs = list(gcs_client.list_blobs(pieces[2], prefix="/".join(pieces[3:])))
-    if len(blobs) > 1:
-        raise ValueError(f"Found more than one candidate for {path}!")
-    return Image.from_bytes(blobs[0].download_as_bytes())
 
 
 def completion_with_retry(
     llm: VertexAI,
-    prompt: List[Union[str, "Image"]],
-    stream: bool = False,
-    is_gemini: bool = False,
+    *args: Any,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
@@ -73,25 +74,33 @@ def completion_with_retry(
     retry_decorator = create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
-    def _completion_with_retry(
-        prompt: List[Union[str, "Image"]], is_gemini: bool = False, **kwargs: Any
-    ) -> Any:
-        if is_gemini:
-            return llm.client.generate_content(
-                prompt, stream=stream, generation_config=kwargs
-            )
-        else:
-            if stream:
-                return llm.client.predict_streaming(prompt[0], **kwargs)
-            return llm.client.predict(prompt[0], **kwargs)
+    def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
+        return llm.client.predict(*args, **kwargs)
 
-    return _completion_with_retry(prompt, is_gemini, **kwargs)
+    return _completion_with_retry(*args, **kwargs)
+
+
+def stream_completion_with_retry(
+    llm: VertexAI,
+    *args: Any,
+    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = create_retry_decorator(
+        llm, max_retries=llm.max_retries, run_manager=run_manager
+    )
+
+    @retry_decorator
+    def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
+        return llm.client.predict_streaming(*args, **kwargs)
+
+    return _completion_with_retry(*args, **kwargs)
 
 
 async def acompletion_with_retry(
     llm: VertexAI,
-    prompt: str,
-    is_gemini: bool = False,
+    *args: Any,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
@@ -99,16 +108,10 @@ async def acompletion_with_retry(
     retry_decorator = create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
-    async def _acompletion_with_retry(
-        prompt: str, is_gemini: bool = False, **kwargs: Any
-    ) -> Any:
-        if is_gemini:
-            return await llm.client.generate_content_async(
-                prompt, generation_config=kwargs
-            )
-        return await llm.client.predict_async(prompt, **kwargs)
+    async def _acompletion_with_retry(*args: Any, **kwargs: Any) -> Any:
+        return await llm.client.predict_async(*args, **kwargs)
 
-    return await _acompletion_with_retry(prompt, is_gemini, **kwargs)
+    return await _acompletion_with_retry(*args, **kwargs)
 
 
 class _VertexAIBase(BaseModel):
@@ -167,12 +170,8 @@ class _VertexAICommon(_VertexAIBase):
         return is_codey_model(self.model_name)
 
     @property
-    def _is_gemini_model(self) -> bool:
-        return is_gemini_model(self.model_name)
-
-    @property
     def _identifying_params(self) -> Dict[str, Any]:
-        """Gets the identifying parameters."""
+        """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **self._default_params}
 
     @property
@@ -192,7 +191,7 @@ class _VertexAICommon(_VertexAIBase):
         return params
 
     @classmethod
-    def _try_init_vertexai(cls, values: Dict, is_gemini: bool = False) -> None:
+    def _try_init_vertexai(cls, values: Dict) -> None:
         allowed_params = ["project", "location", "credentials"]
         params = {k: v for k, v in values.items() if k in allowed_params}
         init_vertexai(**params)
@@ -233,10 +232,9 @@ class VertexAI(_VertexAICommon, BaseLLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
+        cls._try_init_vertexai(values)
         tuned_model_name = values.get("tuned_model_name")
         model_name = values["model_name"]
-        is_gemini = is_gemini_model(values["model_name"])
-        cls._try_init_vertexai(values, is_gemini=is_gemini)
         try:
             from vertexai.language_models import (
                 CodeGenerationModel,
@@ -249,17 +247,9 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 TextGenerationModel as PreviewTextGenerationModel,
             )
 
-            if is_gemini:
-                from vertexai.preview.generative_models import (
-                    GenerativeModel,
-                )
-
             if is_codey_model(model_name):
                 model_cls = CodeGenerationModel
                 preview_model_cls = PreviewCodeGenerationModel
-            elif is_gemini:
-                model_cls = GenerativeModel
-                preview_model_cls = GenerativeModel
             else:
                 model_cls = TextGenerationModel
                 preview_model_cls = PreviewTextGenerationModel
@@ -270,14 +260,8 @@ class VertexAI(_VertexAICommon, BaseLLM):
                     tuned_model_name
                 )
             else:
-                if is_gemini:
-                    values["client"] = model_cls(model_name=model_name)
-                    values["client_preview"] = preview_model_cls(model_name=model_name)
-                else:
-                    values["client"] = model_cls.from_pretrained(model_name)
-                    values["client_preview"] = preview_model_cls.from_pretrained(
-                        model_name
-                    )
+                values["client"] = model_cls.from_pretrained(model_name)
+                values["client_preview"] = preview_model_cls.from_pretrained(model_name)
 
         except ImportError:
             raise_vertex_import_error()
@@ -304,19 +288,6 @@ class VertexAI(_VertexAICommon, BaseLLM):
 
         return result.total_tokens
 
-    def _response_to_generation(
-        self, response: TextGenerationResponse
-    ) -> GenerationChunk:
-        """Converts a stream response to a generation chunk."""
-        try:
-            generation_info = {
-                "is_blocked": response.is_blocked,
-                "safety_attributes": response.safety_attributes,
-            }
-        except Exception:
-            generation_info = None
-        return GenerationChunk(text=response.text, generation_info=generation_info)
-
     def _generate(
         self,
         prompts: List[str],
@@ -327,7 +298,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
     ) -> LLMResult:
         should_stream = stream if stream is not None else self.streaming
         params = self._prepare_params(stop=stop, stream=should_stream, **kwargs)
-        generations: List[List[Generation]] = []
+        generations = []
         for prompt in prompts:
             if should_stream:
                 generation = GenerationChunk(text="")
@@ -338,88 +309,10 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 generations.append([generation])
             else:
                 res = completion_with_retry(
-                    self,
-                    [prompt],
-                    stream=should_stream,
-                    is_gemini=self._is_gemini_model,
-                    run_manager=run_manager,
-                    **params,
+                    self, prompt, run_manager=run_manager, **params
                 )
-                generations.append(
-                    [self._response_to_generation(r) for r in res.candidates]
-                )
+                generations.append([_response_to_generation(r) for r in res.candidates])
         return LLMResult(generations=generations)
-
-    def invoke(
-        self,
-        input: LanguageModelInput,
-        config: Optional[RunnableConfig] = None,
-        *,
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> str:
-        vertex_input = self._convert_to_prompt(model_input=input)
-        if isinstance(vertex_input, str):
-            return super().invoke(input, config, stop=stop, **kwargs)
-        if not isinstance(vertex_input, list):
-            raise ValueError(
-                "Input for a multimodal model should be a str or a list of elements!"
-            )
-        params = self._prepare_params(stop=stop, stream=False, **kwargs)
-        res = completion_with_retry(
-            self,
-            vertex_input,
-            is_gemini=True,
-            run_manager=kwargs.get("run_manager"),
-            **params,
-        )
-
-        return res.text
-
-    def _convert_to_prompt(
-        self, model_input: LanguageModelInput
-    ) -> Union[str, StringPromptValue, List[Union[str, "Image"]]]:
-        if isinstance(model_input, str):
-            return model_input
-        elif isinstance(model_input, StringPromptValue):
-            return model_input.to_string()
-        elif isinstance(model_input, list):
-            if "vision" not in self.model_name:
-                raise ValueError(
-                    f"Multi-modal input is not supported by {self.model_name} model!"
-                )
-            first_message = model_input[0]
-            if len(model_input) > 1 and not isinstance(first_message, BaseMessage):
-                raise ValueError(
-                    "Multi-modal model expects only a single message as a input!"
-                )
-        else:
-            raise ValueError(
-                f"Invalid input type {type(model_input)}. "
-                "Must be a PromptValue, str, or list of BaseMessages."
-            )
-
-        from vertexai.preview.generative_models import Image
-
-        vertex_messages: List[Union[str, Image]] = []
-        for content in first_message.content:
-            if not isinstance(content, Dict):
-                raise ValueError(
-                    f"Message's content is expected to be a dict, got {type(content)}!"
-                )
-            if content["type"] == "text":
-                vertex_messages.append(content["text"])
-            elif content["type"] == "image_url":
-                path = content["image_url"]["url"]
-                if path.startswith("gs://"):
-                    vertex_messages.append(
-                        _load_image_from_gcs(path=path, project=self.project)
-                    )
-                else:
-                    vertex_messages.append(Image.load_from_file(path))
-            else:
-                raise ValueError("Only text and image_url types are supported!")
-        return vertex_messages
 
     async def _agenerate(
         self,
@@ -432,15 +325,9 @@ class VertexAI(_VertexAICommon, BaseLLM):
         generations = []
         for prompt in prompts:
             res = await acompletion_with_retry(
-                self,
-                prompt,
-                is_gemini=self._is_gemini_model,
-                run_manager=run_manager,
-                **params,
+                self, prompt, run_manager=run_manager, **params
             )
-            generations.append(
-                [self._response_to_generation(r) for r in res.candidates]
-            )
+            generations.append([_response_to_generation(r) for r in res.candidates])
         return LLMResult(generations=generations)
 
     def _stream(
@@ -451,15 +338,10 @@ class VertexAI(_VertexAICommon, BaseLLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         params = self._prepare_params(stop=stop, stream=True, **kwargs)
-        for stream_resp in completion_with_retry(
-            self,
-            [prompt],
-            stream=True,
-            is_gemini=self._is_gemini_model,
-            run_manager=run_manager,
-            **params,
+        for stream_resp in stream_completion_with_retry(
+            self, prompt, run_manager=run_manager, **params
         ):
-            chunk = self._response_to_generation(stream_resp)
+            chunk = _response_to_generation(stream_resp)
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
