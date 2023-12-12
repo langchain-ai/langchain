@@ -177,7 +177,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 `session_id` of type string and return a corresponding
                 chat message history instance.
                 .. code-block:: python
-                
+
                     def get_session_history(
                         session_id: str,
                         *,
@@ -190,7 +190,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 chat message history instance.
 
                 .. code-block:: python
-                
+
                     def get_session_history(
                         *,
                         user_id: str,
@@ -347,7 +347,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         # avoid adding duplicate messages to history.
         if not self.history_messages_key:
             historic_messages = config["configurable"]["message_history"].messages
-            input_messages = input_messages[len(historic_messages):]
+            input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
         output_val = load(run.outputs)
