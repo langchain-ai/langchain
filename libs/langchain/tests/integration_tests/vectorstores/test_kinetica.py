@@ -193,7 +193,8 @@ def test_kinetica_relevance_score(create_config: KineticaSettings) -> None:
 
 
 @pytest.mark.requires("openai", "gpudb")
-def test_kinetica_max_marginal_relevance_search(create_config: KineticaSettings) -> None:
+def test_kinetica_max_marginal_relevance_search(
+    create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
     openai = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
     texts = ["foo", "bar", "baz"]
@@ -212,7 +213,8 @@ def test_kinetica_max_marginal_relevance_search(create_config: KineticaSettings)
 
 
 @pytest.mark.requires("gpudb")
-def test_kinetica_max_marginal_relevance_search_with_score(create_config: KineticaSettings) -> None:
+def test_kinetica_max_marginal_relevance_search_with_score(
+    create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = Kinetica.from_texts(
