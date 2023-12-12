@@ -12,15 +12,9 @@ from langchain_core.agents import AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
-from opentelemetry import trace
-from opentelemetry.sdk.trace import Span, TracerProvider
-from opentelemetry.trace import set_span_in_context
-from packaging.version import parse
 
-if not trace.get_tracer_provider():
-    provider = TracerProvider()
-    trace.set_tracer_provider(provider)
-tracer = trace.get_tracer("lunary")
+
+from packaging.version import parse
 
 
 logger = logging.getLogger(__name__)
@@ -30,7 +24,7 @@ DEFAULT_API_URL = "https://app.lunary.ai"
 user_ctx = ContextVar[Union[str, None]]("user_ctx", default=None)
 user_props_ctx = ContextVar[Union[str, None]]("user_props_ctx", default=None)
 
-spans: Dict[str, Span] = {}
+spans: Dict[str, Any] = {}
 
 PARAMS_TO_CAPTURE = [
     "temperature",
@@ -233,6 +227,9 @@ class LunaryCallbackHandler(BaseCallbackHandler):
 
             self.__lunary_version = importlib.metadata.version("lunary")
             self.__track_event = lunary.track_event
+            self.__tracer = lunary.tracer
+            self.__set_span_in_context = lunary.trace.set_span_in_context
+            self.__trace = lunary.trace
 
         except ImportError:
             logger.warning(
@@ -304,12 +301,12 @@ class LunaryCallbackHandler(BaseCallbackHandler):
             run_id = str(run_id)
             if parent_run_id and spans.get(str(parent_run_id)):
                 parent = spans[str(parent_run_id)]
-                context = set_span_in_context(parent)
-                span = tracer.start_span("llm", context=context)
+                context = self.__set_span_in_context(parent)
+                span = self.__tracer.start_span("llm", context=context)
                 spans[run_id] = span
             else:
-                context = set_span_in_context(trace.get_current_span())
-                span = tracer.start_span("llm", context=context)
+                context = self.__set_span_in_context(self.__trace.get_current_span())
+                span = self.__tracer.start_span("llm", context=context)
                 parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
                 spans[run_id] = span
 
@@ -370,7 +367,7 @@ class LunaryCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> Any:
         try:
-            context = set_span_in_context(trace.get_current_span())
+            context = self.__set_span_in_context(self.__trace.get_current_span())
             run_id = str(run_id)
 
             # Sometimes parent_run_id is set by langchain, but the
@@ -380,12 +377,12 @@ class LunaryCallbackHandler(BaseCallbackHandler):
 
             if parent_run_id:
                 parent = spans[str(parent_run_id)]
-                context = set_span_in_context(parent)
-                span = tracer.start_span("llm", context=context)
+                context = self.__set_span_in_context(parent)
+                span = self.__tracer.start_span("llm", context=context)
                 spans[run_id] = span
             else:
-                context = set_span_in_context(trace.get_current_span())
-                span = tracer.start_span("llm", context=context)
+                context = self.__set_span_in_context(self.__trace.get_current_span())
+                span = self.__tracer.start_span("llm", context=context)
                 parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
                 spans[run_id] = span
 
@@ -485,12 +482,12 @@ class LunaryCallbackHandler(BaseCallbackHandler):
             run_id = str(run_id)
             if parent_run_id:
                 parent = spans[str(parent_run_id)]
-                context = set_span_in_context(parent)
-                span = tracer.start_span("tool", context=context)
+                context = self.__set_span_in_context(parent)
+                span = self.__tracer.start_span("tool", context=context)
                 spans[run_id] = span
             else:
-                context = set_span_in_context(trace.get_current_span())
-                span = tracer.start_span("tool", context=context)
+                context = self.__set_span_in_context(self.__trace.get_current_span())
+                span = self.__tracer.start_span("tool", context=context)
                 parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
                 spans[run_id] = span
 
@@ -553,12 +550,12 @@ class LunaryCallbackHandler(BaseCallbackHandler):
             run_id = str(run_id)
             if parent_run_id and spans.get(str(parent_run_id)):
                 parent = spans[str(parent_run_id)]
-                context = set_span_in_context(parent)
-                span = tracer.start_span("chain", context=context)
+                context = self.__set_span_in_context(parent)
+                span = self.__tracer.start_span("chain", context=context)
                 spans[run_id] = span
             else:
-                context = set_span_in_context(trace.get_current_span())
-                span = tracer.start_span("tool", context=context)
+                context = self.__set_span_in_context(self.__trace.get_current_span())
+                span = self.__tracer.start_span("tool", context=context)
                 parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
                 spans[run_id] = span
 
