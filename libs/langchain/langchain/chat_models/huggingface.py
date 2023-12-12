@@ -87,14 +87,6 @@ class ChatHuggingFace(BaseChatModel):
         if not messages:
             raise ValueError("at least one HumanMessage must be provided")
 
-        if not isinstance(messages[0], SystemMessage):
-            messages = [self.system_message] + messages
-
-        if not isinstance(messages[1], HumanMessage):
-            raise ValueError(
-                "messages list must start with a SystemMessage or UserMessage"
-            )
-
         if not isinstance(messages[-1], HumanMessage):
             raise ValueError("last message must be a HumanMessage")
 
