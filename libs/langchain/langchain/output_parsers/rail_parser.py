@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, TYPE_CHECKING
+import warnings
 
 from langchain_core.output_parsers import BaseOutputParser
+
+
+if TYPE_CHECKING:
+    from guardrails.guard import Guard
 
 
 class GuardrailsOutputParser(BaseOutputParser):
@@ -20,6 +25,23 @@ class GuardrailsOutputParser(BaseOutputParser):
     @property
     def _type(self) -> str:
         return "guardrails"
+
+    @classmethod
+    def from_guard(cls, guard: "Guard") -> GuardrailsOutputParser:
+        """Create a GuardrailsOutputParser from a Guard object.
+        See `guardrails.Guard` for more information.
+
+        Args:
+            guard: A guard object.
+
+        Returns:
+            GuardrailsOutputParser
+        """
+        return cls(
+            guard=guard,
+            args=(),
+            kwargs={},
+        )
 
     @classmethod
     def from_rail(
@@ -49,6 +71,13 @@ class GuardrailsOutputParser(BaseOutputParser):
                 "guardrails-ai package not installed. "
                 "Install it by running `pip install guardrails-ai`."
             )
+
+        warnings.warn(
+            "GuardrailsOutputParser.from_rail is deprecated. "
+            "Use GuardrailsOutputParser.from_guard instead.",
+            DeprecationWarning,
+        )
+
         return cls(
             guard=Guard.from_rail(rail_file, num_reasks=num_reasks),
             api=api,
@@ -72,6 +101,13 @@ class GuardrailsOutputParser(BaseOutputParser):
                 "guardrails-ai package not installed. "
                 "Install it by running `pip install guardrails-ai`."
             )
+
+        warnings.warn(
+            "GuardrailsOutputParser.from_rail_string is deprecated. "
+            "Use GuardrailsOutputParser.from_guard instead.",
+            DeprecationWarning,
+        )
+
         return cls(
             guard=Guard.from_rail_string(rail_str, num_reasks=num_reasks),
             api=api,
@@ -95,6 +131,13 @@ class GuardrailsOutputParser(BaseOutputParser):
                 "guardrails-ai package not installed. "
                 "Install it by running `pip install guardrails-ai`."
             )
+
+        warnings.warn(
+            "GuardrailsOutputParser.from_pydantic is deprecated. "
+            "Use GuardrailsOutputParser.from_guard instead.",
+            DeprecationWarning,
+        )
+
         return cls(
             guard=Guard.from_pydantic(output_class, "", num_reasks=num_reasks),
             api=api,
