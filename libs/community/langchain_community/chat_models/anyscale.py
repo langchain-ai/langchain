@@ -16,7 +16,7 @@ from langchain_community.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-from langchain_community.utils.openai import is_openai_v1
+from langchain_community.utils.openai import is_openai_v1, configure_http_client_by_proxy
 
 if TYPE_CHECKING:
     import tiktoken
@@ -142,14 +142,18 @@ class ChatAnyscale(ChatOpenAI):
                 client_params = {
                     "api_key": values["openai_api_key"],
                     "base_url": values["openai_api_base"],
+                    "http_client": values["http_client"],
                     # To do: future support
                     # "organization": values["openai_organization"],
                     # "timeout": values["request_timeout"],
                     # "max_retries": values["max_retries"],
                     # "default_headers": values["default_headers"],
                     # "default_query": values["default_query"],
-                    # "http_client": values["http_client"],
                 }
+                if values["openai_proxy"] and client_params["http_client"] is None:
+                    client_params["http_client"] = configure_http_client_by_proxy(
+                        values["openai_proxy"]
+                    )
                 values["client"] = openai.OpenAI(**client_params).chat.completions
             else:
                 values["client"] = openai.ChatCompletion

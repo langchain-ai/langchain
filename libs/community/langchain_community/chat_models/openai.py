@@ -53,7 +53,7 @@ from langchain_community.adapters.openai import (
     convert_dict_to_message,
     convert_message_to_dict,
 )
-from langchain_community.utils.openai import is_openai_v1
+from langchain_community.utils.openai import is_openai_v1, configure_http_async_client_by_proxy, configure_http_client_by_proxy
 
 if TYPE_CHECKING:
     import tiktoken
@@ -316,9 +316,19 @@ class ChatOpenAI(BaseChatModel):
                 "http_client": values["http_client"],
             }
 
+            has_custom_http_client = client_params["http_client"] is not None
+
             if not values.get("client"):
+                if values["openai_proxy"] and not has_custom_http_client:
+                    client_params["http_client"] = configure_http_client_by_proxy(
+                        values["openai_proxy"]
+                    )
                 values["client"] = openai.OpenAI(**client_params).chat.completions
             if not values.get("async_client"):
+                if values["openai_proxy"] and not has_custom_http_client:
+                    client_params["http_client"] = configure_http_async_client_by_proxy(
+                        values["openai_proxy"]
+                    )
                 values["async_client"] = openai.AsyncOpenAI(
                     **client_params
                 ).chat.completions

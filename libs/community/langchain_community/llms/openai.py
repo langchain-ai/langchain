@@ -31,7 +31,7 @@ from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 from langchain_core.utils.utils import build_extra_kwargs
 
-from langchain_community.utils.openai import is_openai_v1
+from langchain_community.utils.openai import is_openai_v1, configure_http_async_client_by_proxy, configure_http_client_by_proxy
 
 logger = logging.getLogger(__name__)
 
@@ -314,9 +314,18 @@ class BaseOpenAI(BaseLLM):
                 "default_query": values["default_query"],
                 "http_client": values["http_client"],
             }
+            has_custom_http_client = client_params["http_client"] is not None
             if not values.get("client"):
+                if values["openai_proxy"] and not has_custom_http_client:
+                    client_params["http_client"] = configure_http_client_by_proxy(
+                        values["openai_proxy"]
+                    )
                 values["client"] = openai.OpenAI(**client_params).completions
             if not values.get("async_client"):
+                if values["openai_proxy"] and not has_custom_http_client:
+                    client_params["http_client"] = configure_http_async_client_by_proxy(
+                        values["openai_proxy"]
+                    )
                 values["async_client"] = openai.AsyncOpenAI(**client_params).completions
         elif not values.get("client"):
             values["client"] = openai.Completion
@@ -911,7 +920,16 @@ class AzureOpenAI(BaseOpenAI):
                 "default_query": values["default_query"],
                 "http_client": values["http_client"],
             }
+            has_custom_http_client = client_params["http_client"] is not None
+            if values["openai_proxy"] and not has_custom_http_client:
+                client_params["http_client"] = configure_http_client_by_proxy(
+                    values["openai_proxy"]
+                )
             values["client"] = openai.AzureOpenAI(**client_params).completions
+            if values["openai_proxy"] and not has_custom_http_client:
+                client_params["http_client"] = configure_http_async_client_by_proxy(
+                    values["openai_proxy"]
+                )
             values["async_client"] = openai.AsyncAzureOpenAI(
                 **client_params
             ).completions

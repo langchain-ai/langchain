@@ -11,7 +11,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.chat_models.openai import ChatOpenAI
-from langchain_community.utils.openai import is_openai_v1
+from langchain_community.utils.openai import is_openai_v1, configure_http_async_client_by_proxy, configure_http_client_by_proxy
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +200,16 @@ class AzureChatOpenAI(ChatOpenAI):
                 "default_query": values["default_query"],
                 "http_client": values["http_client"],
             }
+            has_custom_http_client = client_params["http_client"] is not None
+            if values["openai_proxy"] and not has_custom_http_client:
+                client_params["http_client"] = configure_http_client_by_proxy(
+                    values["openai_proxy"]
+                )
             values["client"] = openai.AzureOpenAI(**client_params).chat.completions
+            if values["openai_proxy"] and not has_custom_http_client:
+                client_params["http_client"] = configure_http_async_client_by_proxy(
+                    values["openai_proxy"]
+                )
             values["async_client"] = openai.AsyncAzureOpenAI(
                 **client_params
             ).chat.completions
