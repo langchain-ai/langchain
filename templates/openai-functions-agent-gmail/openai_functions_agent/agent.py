@@ -44,7 +44,8 @@ current_user = (
     build_resource_service().users().getProfile(userId="me").execute()["emailAddress"]
 )
 assistant_system_message = """You are a helpful assistant aiding a user with their \
-emails. Use tools (only if necessary) to best answer the users questions.\n\nCurrent user: {user}"""
+emails. Use tools (only if necessary) to best answer \
+the users questions.\n\nCurrent user: {user}"""
 prompt = ChatPromptTemplate.from_messages(
     [
         ("system", assistant_system_message),
