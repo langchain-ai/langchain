@@ -24,7 +24,7 @@ lint_diff format_diff: PYTHON_FILES=$(shell git diff --name-only --diff-filter=d
 
 lint lint_diff:
 	./scripts/check_pydantic.sh .
-	./scripts/check_imports.sh
+	./scripts/lint_imports.sh
 	poetry run ruff .
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
 	[ "$(PYTHON_FILES)" = "" ] || poetry run mypy $(PYTHON_FILES)
