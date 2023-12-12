@@ -1,10 +1,10 @@
 import pytest
-from opensearchpy import RequestsAWSV4SignerAuth
 from pytest_mock import MockerFixture
-from requests_aws4auth import AWS4Auth
 
-from langchain_community.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
 from langchain_community.embeddings import FakeEmbeddings
+from langchain_community.vectorstores.opensearch_vector_search import (
+    OpenSearchVectorSearch,
+)
 
 
 @pytest.mark.requires("opensearchpy")
@@ -12,6 +12,8 @@ from langchain_community.embeddings import FakeEmbeddings
 def test_detect_aoss_using_signer_auth(
     mocker: MockerFixture, service: str, expected: bool
 ) -> None:
+    from opensearchpy import RequestsAWSV4SignerAuth
+
     mocker.patch.object(RequestsAWSV4SignerAuth, "_sign_request")
     http_auth = RequestsAWSV4SignerAuth(
         credentials="credentials", region="eu-central-1", service=service
@@ -30,6 +32,8 @@ def test_detect_aoss_using_signer_auth(
 @pytest.mark.requires("requests_aws4auth")
 @pytest.mark.parametrize(["service", "expected"], [("aoss", True), ("es", False)])
 def test_detect_aoss_using_aws4auth(service: str, expected: bool) -> None:
+    from requests_aws4auth import AWS4Auth
+
     http_auth = AWS4Auth("access_key_id", "secret_access_key", "eu-central-1", service)
     database = OpenSearchVectorSearch(
         opensearch_url="http://localhost:9200",
