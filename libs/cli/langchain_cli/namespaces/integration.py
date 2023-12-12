@@ -6,13 +6,47 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 import typer
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
 from langchain_cli.utils.find_replace import replace_glob
 
 integration_cli = typer.Typer(no_args_is_help=True, add_completion=False)
+
+Replacements = TypedDict(
+    "Replacements",
+    {
+        "__package_name__": str,
+        "__module_name__": str,
+        "__ModuleName__": str,
+        "__package_name_short__": str,
+    },
+)
+
+
+def _process_name(name: str):
+    preprocessed = name.replace("_", "-").lower()
+    if not re.match(r"^[a-z][a-z0-9-]*$", preprocessed):
+        raise ValueError(
+            "Name should only contain lowercase letters (a-z), numbers, and hyphens"
+            ", and start with a letter."
+        )
+    if preprocessed.endswith("-"):
+        raise ValueError("Name should not end with `-`.")
+    if preprocessed.find("--") != -1:
+        raise ValueError("Name should not contain consecutive hyphens.")
+    if preprocessed.startswith("langchain-"):
+        raise ValueError("Name should not start with `langchain-`.")
+    return Replacements(
+        {
+            "__package_name__": f"langchain-{preprocessed}",
+            "__module_name__": preprocessed.replace("-", "_"),
+            "__ModuleName__": preprocessed.title().replace("-", ""),
+            "__package_name_short__": preprocessed,
+        }
+    )
 
 
 @integration_cli.command()
@@ -21,23 +55,37 @@ def new(
         str,
         typer.Option(
             help="The name of the integration to create. "
-            "Do not include `langchain-`.",
+            "Do not include `langchain-`. e.g. `my-integration",
             prompt=True,
         ),
     ],
+    name_class: Annotated[
+        Optional[str],
+        typer.Option(
+            help="The name of the integration in PascalCase. e.g. `MyIntegration`."
+            " This is used to name classes like `MyIntegrationVectorStore`"
+        ),
+    ] = None,
 ):
     """
     Creates a new integration package.
 
     Should be run from libs/partners
     """
-    name = name.lower()
-
-    if name.startswith("langchain-"):
-        typer.echo("Name should not start with `langchain-`.")
+    try:
+        replacements = _process_name(name)
+    except ValueError as e:
+        typer.echo(e)
         raise typer.Exit(code=1)
 
-    destination_dir = Path.cwd() / name
+    if name_class:
+        replacements["__ModuleName__"] = name_class
+    else:
+        replacements["__ModuleName__"] = typer.prompt(
+            "Name of integration in PascalCase", default=replacements["__ModuleName__"]
+        )
+
+    destination_dir = Path.cwd() / replacements["__package_name_short__"]
     if destination_dir.exists():
         typer.echo(f"Folder {destination_dir} exists.")
         raise typer.Exit(code=1)
@@ -46,22 +94,11 @@ def new(
     project_template_dir = Path(__file__).parents[1] / "integration_template"
     shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=False)
 
-    package_name = f"langchain-{name}"
-    module_name = re.sub(
-        r"[^a-zA-Z0-9_]",
-        "_",
-        package_name,
-    )
-
     # folder movement
-    package_dir = destination_dir / module_name
+    package_dir = destination_dir / replacements["__module_name__"]
     shutil.move(destination_dir / "integration_template", package_dir)
 
     # replacements in files
-    replacements = {
-        "__package_name__": package_name,
-        "__module_name__": module_name,
-    }
     replace_glob(destination_dir, "**/*", replacements)
 
     # poetry install
