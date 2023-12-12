@@ -31,7 +31,7 @@ Databricks External Models
 
 ```python
 from langchain.chat_models import ChatDatabricks
-from langchain.schema.messages import HumanMessage
+from langchain_core.messages import HumanMessage
 from mlflow.deployments import get_deploy_client
 
 
