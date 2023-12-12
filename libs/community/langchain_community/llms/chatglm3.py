@@ -3,10 +3,9 @@ import logging
 from typing import Any, List, Optional, Union
 
 import httpx
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
-from langchain.llms.utils import enforce_stop_tokens
-from langchain.schema.messages import (
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models.llms import LLM
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     FunctionMessage,
@@ -14,6 +13,8 @@ from langchain.schema.messages import (
     SystemMessage,
 )
 from langchain_core.pydantic_v1 import Field
+
+from langchain_community.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
 HEADERS = {"Content-Type": "application/json"}
