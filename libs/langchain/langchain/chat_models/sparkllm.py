@@ -95,8 +95,8 @@ class ChatSparkLLM(BaseChatModel):
 
     To use, you should pass `app_id`, `api_key`, `api_secret`
     as a named parameter to the constructor OR set environment
-    variables ``SPARK_APP_ID``, ``SPARK_API_KEY`` and
-    ``SPARK_API_SECRET``
+    variables ``IFLYTEK_SPARK_APP_ID``, ``IFLYTEK_SPARK_API_KEY`` and
+    ``IFLYTEK_SPARK_API_SECRET``
 
     Example:
         .. code-block:: python
@@ -116,11 +116,11 @@ class ChatSparkLLM(BaseChatModel):
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {
-            "spark_app_id": "SPARK_APP_ID",
-            "spark_api_key": "SPARK_API_KEY",
-            "spark_api_secret": "SPARK_API_SECRET",
-            "spark_api_url": "SPARK_API_URL",
-            "spark_llm_domain": "SPARK_LLM_DOMAIN",
+            "spark_app_id": "IFLYTEK_SPARK_APP_ID",
+            "spark_api_key": "IFLYTEK_SPARK_API_KEY",
+            "spark_api_secret": "IFLYTEK_SPARK_API_SECRET",
+            "spark_api_url": "IFLYTEK_SPARK_API_URL",
+            "spark_llm_domain": "IFLYTEK_SPARK_LLM_DOMAIN",
         }
 
     client: Any = None  #: :meta private:
@@ -168,28 +168,28 @@ class ChatSparkLLM(BaseChatModel):
         values["spark_app_id"] = get_from_dict_or_env(
             values,
             "spark_app_id",
-            "SPARK_APP_ID",
+            "IFLYTEK_SPARK_APP_ID",
         )
         values["spark_api_key"] = get_from_dict_or_env(
             values,
             "spark_api_key",
-            "SPARK_API_KEY",
+            "IFLYTEK_SPARK_API_KEY",
         )
         values["spark_api_secret"] = get_from_dict_or_env(
             values,
             "spark_api_secret",
-            "SPARK_API_SECRET",
+            "IFLYTEK_SPARK_API_SECRET",
         )
         values["spark_app_url"] = get_from_dict_or_env(
             values,
             "spark_app_url",
-            "SPARK_APP_url",
+            "IFLYTEK_SPARK_APP_URL",
             "wss://spark-api.xf-yun.com/v3.1/chat",
         )
         values["spark_llm_domain"] = get_from_dict_or_env(
             values,
             "spark_llm_domain",
-            "SPARK_LLM_DOMAIN",
+            "IFLYTEK_SPARK_LLM_DOMAIN",
             "generalv3",
         )
         # put extra params into model_kwargs
