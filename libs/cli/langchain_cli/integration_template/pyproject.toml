@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "__package_name__"
 version = "0.0.1"
-description = "An integration package connecting __integration_name and LangChain"
+description = "An integration package connecting __integration_name__ and LangChain"
 authors = []
 readme = "README.md"
 

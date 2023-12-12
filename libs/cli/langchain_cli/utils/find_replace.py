@@ -14,8 +14,7 @@ def find_and_replace(source: str, replacements: Dict[str, str]) -> str:
 
 
 def replace_file(source: Path, replacements: Dict[str, str]) -> None:
-    with open(source, "r+") as f:
-        f.write(find_and_replace(f.read(), replacements))
+    source.write_text(find_and_replace(source.read_text(), replacements))
 
 
 def replace_glob(parent: Path, glob: str, replacements: Dict[str, str]) -> None:
