@@ -295,17 +295,17 @@ class LunaryCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         try:
-            run_id = str(run_id)
+            run_id_str = str(run_id)
             if parent_run_id and spans.get(str(parent_run_id)):
                 parent = spans[str(parent_run_id)]
                 context = self.__set_span_in_context(parent)
                 span = self.__tracer.start_span("llm", context=context)
-                spans[run_id] = span
+                spans[run_id_str] = span
             else:
                 context = self.__set_span_in_context(self.__trace.get_current_span())
                 span = self.__tracer.start_span("llm", context=context)
                 parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
-                spans[run_id] = span
+                spans[run_id_str] = span
 
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
@@ -336,7 +336,7 @@ class LunaryCallbackHandler(BaseCallbackHandler):
                 "llm",
                 "start",
                 user_id=user_id,
-                run_id=run_id,
+                run_id=run_id_str,
                 parent_run_id=parent_run_id,
                 name=name,
                 input=input,
@@ -365,7 +365,7 @@ class LunaryCallbackHandler(BaseCallbackHandler):
     ) -> Any:
         try:
             context = self.__set_span_in_context(self.__trace.get_current_span())
-            run_id = str(run_id)
+            run_id_str = str(run_id)
 
             # Sometimes parent_run_id is set by langchain, but the
             # corresponding callback handler method is not called
@@ -376,12 +376,12 @@ class LunaryCallbackHandler(BaseCallbackHandler):
                 parent = spans[str(parent_run_id)]
                 context = self.__set_span_in_context(parent)
                 span = self.__tracer.start_span("llm", context=context)
-                spans[run_id] = span
+                spans[run_id_str] = span
             else:
                 context = self.__set_span_in_context(self.__trace.get_current_span())
                 span = self.__tracer.start_span("llm", context=context)
                 parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
-                spans[run_id] = span
+                spans[run_id_str] = span
 
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
@@ -412,7 +412,7 @@ class LunaryCallbackHandler(BaseCallbackHandler):
                 "llm",
                 "start",
                 user_id=user_id,
-                run_id=run_id,
+                run_id=run_id_str,
                 parent_run_id=str(parent_run_id),
                 name=name,
                 input=input,
@@ -476,17 +476,17 @@ class LunaryCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         try:
-            run_id = str(run_id)
+            run_id_str = str(run_id)
             if parent_run_id:
                 parent = spans[str(parent_run_id)]
                 context = self.__set_span_in_context(parent)
                 span = self.__tracer.start_span("tool", context=context)
-                spans[run_id] = span
+                spans[run_id_str] = span
             else:
                 context = self.__set_span_in_context(self.__trace.get_current_span())
                 span = self.__tracer.start_span("tool", context=context)
                 parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
-                spans[run_id] = span
+                spans[run_id_str] = span
 
             user_id = _get_user_id(metadata)
             user_props = _get_user_props(metadata)
@@ -496,7 +496,7 @@ class LunaryCallbackHandler(BaseCallbackHandler):
                 "tool",
                 "start",
                 user_id=user_id,
-                run_id=run_id,
+                run_id=run_id_str,
                 parent_run_id=str(parent_run_id),
                 name=name,
                 input=input_str,
@@ -542,19 +542,18 @@ class LunaryCallbackHandler(BaseCallbackHandler):
         metadata: Union[Dict[str, Any], None] = None,
         **kwargs: Any,
     ) -> Any:
-        print(metadata)
         try:
-            run_id = str(run_id)
+            run_id_str = str(run_id)
             if parent_run_id and spans.get(str(parent_run_id)):
                 parent = spans[str(parent_run_id)]
                 context = self.__set_span_in_context(parent)
                 span = self.__tracer.start_span("chain", context=context)
-                spans[run_id] = span
+                spans[run_id_str] = span
             else:
                 context = self.__set_span_in_context(self.__trace.get_current_span())
                 span = self.__tracer.start_span("tool", context=context)
                 parent_run_id = getattr(getattr(span, "parent", None), "span_id", None)
-                spans[run_id] = span
+                spans[run_id_str] = span
 
             name = serialized.get("id", [None, None, None, None])[3]
             type = "chain"
@@ -580,7 +579,7 @@ class LunaryCallbackHandler(BaseCallbackHandler):
                 type,
                 "start",
                 user_id=user_id,
-                run_id=run_id,
+                run_id=run_id_str,
                 parent_run_id=parent_run_id,
                 name=name,
                 input=input,
