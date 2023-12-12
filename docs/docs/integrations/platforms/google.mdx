@@ -4,9 +4,23 @@ All functionality related to [Google Cloud Platform](https://cloud.google.com/) 
 
 ## LLMs
 
+### Google AI
+
+We need to install `google-generativeai` python package.
+
+```bash
+pip install google-generativeai
+```
+
+See a [usage example](/docs/integrations/llms/google_ai).
+
+```python
+from langchain.llms import GoogleGenerativeAI
+```
+
 ### Vertex AI
 
-Access `PaLM` LLMs like `text-bison` and `code-bison` via `Google Vertex AI`.
+Access to `Gemini` and `PaLM` LLMs (like `text-bison` and `code-bison`) via `Google Vertex AI`.
 
 We need to install `google-cloud-aiplatform` python package.
 
