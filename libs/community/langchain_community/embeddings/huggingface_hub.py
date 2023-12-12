@@ -19,7 +19,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain.embeddings import HuggingFaceHubEmbeddings
+            from langchain_community.embeddings import HuggingFaceHubEmbeddings
             model = "sentence-transformers/all-mpnet-base-v2"
             hf = HuggingFaceHubEmbeddings(
                 model=model,
