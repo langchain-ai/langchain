@@ -83,6 +83,8 @@ msal = {version = "^1.25.0", optional = true}
 databricks-vectorsearch = {version = "^0.21", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
+tree-sitter = {version = "^0.20.2", optional = true}
+tree-sitter-languages = {version = "^1.8.0", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -170,7 +172,7 @@ setuptools = "^67.6.1"
 langchain-core = {path = "../core", develop = true}
 
 [tool.poetry.extras]
-
+tree_sitter = ["tree-sitter", "tree-sitter-languages"]
 cli = ["typer"]
 
 # An extra used to be able to add extended testing.
@@ -241,6 +243,8 @@ extended_testing = [
  "databricks-vectorsearch",
  "dgml-utils",
  "cohere",
+ "tree-sitter",
+ "tree-sitter-languages",
 ]
 
 [tool.ruff]
