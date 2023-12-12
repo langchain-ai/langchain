@@ -65,4 +65,7 @@ def new(
     replace_glob(destination_dir, "**/*", replacements)
 
     # poetry install
-    subprocess.run(["poetry", "install"], cwd=destination_dir)
+    subprocess.run(
+        ["poetry", "install", "--with", "lint,test,typing,test_integration"],
+        cwd=destination_dir,
+    )

@@ -69,4 +69,5 @@ class Integration(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        raise NotImplementedError
+        yield GenerationChunk(text="Yield chunks")
+        yield GenerationChunk(text=" like this!")

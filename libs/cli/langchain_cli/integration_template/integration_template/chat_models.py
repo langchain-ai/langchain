@@ -5,9 +5,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    BaseMessage,
-)
+from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 
 
@@ -44,7 +42,12 @@ class ChatIntegration(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        raise NotImplementedError
+        yield ChatGenerationChunk(
+            message=BaseMessageChunk(content="Yield chunks", type="ai"),
+        )
+        yield ChatGenerationChunk(
+            message=BaseMessageChunk(content=" like this!", type="ai"),
+        )
 
     def _generate(
         self,
