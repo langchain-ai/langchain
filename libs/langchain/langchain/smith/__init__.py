@@ -97,6 +97,5 @@ from langchain.smith.evaluation import (
 __all__ = [
     "arun_on_dataset",
     "run_on_dataset",
-    "ChoicesOutputParser",
     "RunEvalConfig",
 ]
