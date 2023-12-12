@@ -28,6 +28,10 @@ Replacements = TypedDict(
 
 def _process_name(name: str):
     preprocessed = name.replace("_", "-").lower()
+
+    if preprocessed.startswith("langchain-"):
+        preprocessed = preprocessed[len("langchain-") :]
+
     if not re.match(r"^[a-z][a-z0-9-]*$", preprocessed):
         raise ValueError(
             "Name should only contain lowercase letters (a-z), numbers, and hyphens"
@@ -37,8 +41,6 @@ def _process_name(name: str):
         raise ValueError("Name should not end with `-`.")
     if preprocessed.find("--") != -1:
         raise ValueError("Name should not contain consecutive hyphens.")
-    if preprocessed.startswith("langchain-"):
-        raise ValueError("Name should not start with `langchain-`.")
     return Replacements(
         {
             "__package_name__": f"langchain-{preprocessed}",
@@ -54,8 +56,7 @@ def new(
     name: Annotated[
         str,
         typer.Option(
-            help="The name of the integration to create. "
-            "Do not include `langchain-`. e.g. `my-integration",
+            help="The name of the integration to create (e.g. `my-integration`)",
             prompt=True,
         ),
     ],
@@ -72,6 +73,14 @@ def new(
 
     Should be run from libs/partners
     """
+    # confirm that we are in the right directory
+    if not Path.cwd().name == "partners" or not Path.cwd().parent.name == "libs":
+        typer.echo(
+            "This command should be run from the `libs/partners` directory in the "
+            "langchain-ai/langchain monorepo. Continuing is NOT recommended."
+        )
+        typer.confirm("Are you sure you want to continue?", abort=True)
+
     try:
         replacements = _process_name(name)
     except ValueError as e:
