@@ -30,7 +30,7 @@ pip install langchain
 
 With conda:
 ```bash
-pip install langsmith && conda install langchain -c conda-forge
+conda install langchain -c conda-forge
 ```
 
 ## 🤔 What is LangChain?
@@ -45,7 +45,10 @@ This framework consists of several parts.
 - **[LangServe](https://github.com/langchain-ai/langserve)**: A library for deploying LangChain chains as a REST API.
 - **[LangSmith](https://smith.langchain.com)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
 
-**This repo contains the `langchain` ([here](libs/langchain)), `langchain-experimental` ([here](libs/experimental)), and `langchain-cli` ([here](libs/cli)) Python packages, as well as [LangChain Templates](templates).**
+The LangChain libraries themselves are made up of several different packages.
+- **[`langchain-core`](libs/core)**: Base abstractions and LangChain Expression Language.
+- **[`langchain-community`](libs/community)**: Third party integrations.
+- **[`langchain`](libs/langchain)**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 
 ![LangChain Stack](docs/static/img/langchain_stack.png)
 
@@ -104,3 +107,7 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
 For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).
+
+## 🌟 Contributors
+
+[![langchain contributors](https://contrib.rocks/image?repo=langchain-ai/langchain&max=2000)](https://github.com/langchain-ai/langchain/graphs/contributors)

@@ -140,6 +140,12 @@ def _import_dashvector() -> Any:
     return DashVector
 
 
+def _import_databricks_vector_search() -> Any:
+    from langchain.vectorstores.databricks_vector_search import DatabricksVectorSearch
+
+    return DatabricksVectorSearch
+
+
 def _import_deeplake() -> Any:
     from langchain.vectorstores.deeplake import DeepLake
 
@@ -410,6 +416,12 @@ def _import_weaviate() -> Any:
     return Weaviate
 
 
+def _import_yellowbrick() -> Any:
+    from langchain.vectorstores.yellowbrick import Yellowbrick
+
+    return Yellowbrick
+
+
 def _import_zep() -> Any:
     from langchain.vectorstores.zep import ZepVectorStore
 
@@ -461,6 +473,8 @@ def __getattr__(name: str) -> Any:
         return _import_clickhouse()
     elif name == "DashVector":
         return _import_dashvector()
+    elif name == "DatabricksVectorSearch":
+        return _import_databricks_vector_search()
     elif name == "DeepLake":
         return _import_deeplake()
     elif name == "Dingo":
@@ -549,6 +563,8 @@ def __getattr__(name: str) -> Any:
         return _import_vectara()
     elif name == "Weaviate":
         return _import_weaviate()
+    elif name == "Yellowbrick":
+        return _import_yellowbrick()
     elif name == "ZepVectorStore":
         return _import_zep()
     elif name == "Zilliz":
@@ -575,6 +591,7 @@ __all__ = [
     "Clickhouse",
     "ClickhouseSettings",
     "DashVector",
+    "DatabricksVectorSearch",
     "DeepLake",
     "Dingo",
     "DocArrayHnswSearch",
@@ -621,6 +638,7 @@ __all__ = [
     "Vectara",
     "VespaStore",
     "Weaviate",
+    "Yellowbrick",
     "ZepVectorStore",
     "Zilliz",
     "TencentVectorDB",

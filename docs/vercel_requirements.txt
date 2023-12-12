@@ -1,2 +1,3 @@
 -e ../libs/langchain
-nbdoc
+-e ../libs/core
+urllib3==1.26.18

@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List
 
+from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field
 from langchain_core.retrievers import BaseRetriever
 
@@ -11,7 +12,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
-from langchain.docstore.document import Document
 
 
 class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain):
