@@ -1,5 +1,5 @@
 """Test ChatGoogleGenerativeAI chat model."""
-from google.chat_models import ChatGoogleGenerativeAI
+from langchain_google.chat_models import ChatGoogleGenerativeAI
 
 
 def test_integration_stream() -> None:
