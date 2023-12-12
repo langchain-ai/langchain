@@ -2691,7 +2691,7 @@ tqdm = ["tqdm"]
 name = "future"
 version = "0.18.3"
 description = "Clean single-source support for Python 3 and 2"
-optional = false
+optional = true
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 files = [
     {file = "future-0.18.3.tar.gz", hash = "sha256:34a17436ed1e96697a86f9de3d15a3b0be01d8bc8de9c1dffd59fb8234ed5307"},
@@ -3220,7 +3220,7 @@ requests = "*"
 name = "gpudb"
 version = "7.2.0.0b0"
 description = "Python client for Kinetica DB"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "gpudb-7.2.0.0b0-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:1ce8a0369165c81f9e3b6334bcae0a8818fc6ea403a01e4fb66f0b56f9dab9a2"},
@@ -11807,4 +11807,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "d03f6e57317c291d527eb6c92e41eea1109fcb164fe3193fee41179a0e4dee9a"
+content-hash = "c5903d12569674b02e0cbedcdc83577dad925f2def3902142c394dda87fd42f2"

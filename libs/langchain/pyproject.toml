@@ -209,7 +209,6 @@ anthropic = "^0.3.11"
 fireworks-ai = "^0.9.0"
 boto3 = ">=1.28.57,<2"
 google-cloud-aiplatform = ">=1.37.0,<2"
-gpudb = "7.2.0.0b"
 
 [tool.poetry.group.lint]
 optional = true
