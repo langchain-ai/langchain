@@ -32,7 +32,7 @@ Rather than having to write multiple implementations for all of those, LCEL allo
 
 For more check out the [LCEL docs](https://python.langchain.com/docs/expression_language/).
 
-![LangChain Stack](docs/static/img/langchain_stack.png)
+![LangChain Stack](../../docs/static/img/langchain_stack.png)
 
 ## 📕 Releases & Versioning
 
@@ -55,4 +55,4 @@ Patch version increases will occur for:
 
 As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
-For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).
+For detailed information on how to contribute, see [here](../../.github/CONTRIBUTING.md).

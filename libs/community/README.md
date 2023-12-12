@@ -15,7 +15,7 @@ LangChain Community contains third-party integrations that implement the base in
 
 For full documentation see the [API reference](https://api.python.langchain.com/en/stable/community_api_reference.html).
 
-![LangChain Stack](docs/static/img/langchain_stack.png)
+![LangChain Stack](../../docs/static/img/langchain_stack.png)
 
 ## 📕 Releases & Versioning
 
@@ -27,4 +27,4 @@ All changes will be accompanied by a patch version increase.
 
 As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
-For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).# langchain-community
+For detailed information on how to contribute, see [here](../../.github/CONTRIBUTING.md).
