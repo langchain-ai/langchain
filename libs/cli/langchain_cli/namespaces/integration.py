@@ -44,7 +44,7 @@ def _process_name(name: str):
     return Replacements(
         {
             "__package_name__": f"langchain-{preprocessed}",
-            "__module_name__": preprocessed.replace("-", "_"),
+            "__module_name__": "langchain_" + preprocessed.replace("-", "_"),
             "__ModuleName__": preprocessed.title().replace("-", ""),
             "__package_name_short__": preprocessed,
         }
