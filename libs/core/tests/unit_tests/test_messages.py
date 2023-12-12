@@ -206,7 +206,7 @@ def test_message_chunk_to_message() -> None:
 
 
 def test_tool_calls_merge() -> None:
-    chunks = [
+    chunks: list[dict] = [
         dict(content=""),
         dict(
             content="",
