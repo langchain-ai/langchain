@@ -1,6 +1,8 @@
 from typing import List
+
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
+
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools.connery import ConneryService
 
@@ -28,7 +30,7 @@ class ConneryToolkit(BaseToolkit):
             dict: The validated arguments.
         """
 
-        if not values.get('tools'):
+        if not values.get("tools"):
             raise ValueError("The attribute 'tools' must be set.")
 
         return values
@@ -38,13 +40,12 @@ class ConneryToolkit(BaseToolkit):
         """
         Creates a Connery Toolkit using a Connery Service.
         Parameters:
-            connery_service (ConneryService): The Connery Service to to get the list of Connery Actions.
+            connery_service (ConneryService): The Connery Service
+            to to get the list of Connery Actions.
         Returns:
             ConneryToolkit: The Connery Toolkit.
         """
 
-        instance = cls(
-            tools=connery_service.list_actions()
-        )
+        instance = cls(tools=connery_service.list_actions())
 
         return instance
