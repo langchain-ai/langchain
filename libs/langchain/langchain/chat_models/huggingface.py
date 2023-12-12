@@ -104,9 +104,7 @@ class ChatHuggingFace(BaseChatModel):
             messages_dicts, tokenize=False, add_generation_prompt=True
         )
 
-    def _to_chatml_format(
-        self, message: BaseMessage
-    ) -> dict:
+    def _to_chatml_format(self, message: BaseMessage) -> dict:
         """Convert LangChain message to ChatML format."""
 
         if isinstance(message, SystemMessage):
