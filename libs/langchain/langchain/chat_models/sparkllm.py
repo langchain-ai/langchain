@@ -369,7 +369,7 @@ class _SparkLLMClient:
         ws.user_id = user_id
         ws.model_kwargs = self.model_kwargs if model_kwargs is None else model_kwargs
         ws.streaming = streaming
-        ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+        ws.run_forever()
 
     def arun(
         self,
