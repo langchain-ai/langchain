@@ -39,12 +39,16 @@ spell_check:
 spell_fix:
 	poetry run codespell --toml pyproject.toml -w
 
+check_imports: $(shell find __module_name__ -name '*.py')
+	poetry run python ./scripts/check_imports.py $^
+
 ######################
 # HELP
 ######################
 
 help:
 	@echo '----'
+	@echo 'check_imports				- check imports'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
 	@echo 'test                         - run unit tests'
