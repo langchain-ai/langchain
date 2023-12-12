@@ -20,7 +20,8 @@ Respond with just one word. For example, if the message is about a book recommen
     | StrOutputParser()
 )
 
-extract_op_field = lambda x: x["output_text"]
+def extract_op_field(x):
+    return x["output_text"]
 
 branch = RunnableBranch(
     (

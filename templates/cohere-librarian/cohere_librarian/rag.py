@@ -12,4 +12,5 @@ def get_docs_message(message):
     return message_doc.page_content
 
 
-librarian_rag = lambda x: get_docs_message(x["message"])
+def librarian_rag(x):
+    return get_docs_message(x["message"])
