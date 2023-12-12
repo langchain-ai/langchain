@@ -4,7 +4,6 @@ import os
 import traceback
 import warnings
 from contextvars import ContextVar
-from packaging.version import parse
 from typing import Any, Dict, List, Union, cast
 from uuid import UUID
 
@@ -13,7 +12,7 @@ from langchain_core.agents import AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
-
+from packaging.version import parse
 
 logger = logging.getLogger(__name__)
 
