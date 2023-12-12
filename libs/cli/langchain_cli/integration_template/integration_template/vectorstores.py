@@ -29,7 +29,7 @@ class IntegrationVectorStore(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_integration.vectorstores import IntegrationVectorStore
+            from __module_name__.vectorstores import IntegrationVectorStore
 
             vectorstore = IntegrationVectorStore(raise NotImplementedError)
     """

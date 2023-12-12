@@ -1,5 +1,5 @@
 """Test Integration Chat API wrapper."""
-from langchain_integration import Integration
+from __module_name__ import Integration
 
 
 def test_integration_initialization() -> None:

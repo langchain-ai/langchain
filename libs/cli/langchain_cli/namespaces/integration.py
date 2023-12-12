@@ -10,6 +10,8 @@ from pathlib import Path
 import typer
 from typing_extensions import Annotated
 
+from langchain_cli.utils import replace_glob
+
 integration_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
 
@@ -51,23 +53,16 @@ def new(
         package_name,
     )
 
-    # replace template strings
-    pyproject = destination_dir / "pyproject.toml"
-    pyproject_contents = pyproject.read_text()
-    pyproject.write_text(
-        pyproject_contents.replace("__package_name__", package_name).replace(
-            "__module_name__", module_name
-        )
-    )
-
-    # move module folder
+    # folder movement
     package_dir = destination_dir / module_name
     shutil.move(destination_dir / "integration_template", package_dir)
 
-    # update init
-    init = package_dir / "__init__.py"
-    init_contents = init.read_text()
-    init.write_text(init_contents.replace("__module_name__", module_name))
+    # replacements in files
+    replacements = {
+        "__package_name__": package_name,
+        "__module_name__": module_name,
+    }
+    replace_glob(destination_dir, "**/*.py", replacements)
 
     # poetry install
     subprocess.run(["poetry", "install"], cwd=destination_dir)

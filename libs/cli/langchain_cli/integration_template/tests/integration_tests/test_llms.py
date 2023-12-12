@@ -1,5 +1,5 @@
 """Test Integration llm."""
-from langchain_integration.llms import Integration
+from __module_name__.llms import Integration
 
 
 def test_integration_stream() -> None:

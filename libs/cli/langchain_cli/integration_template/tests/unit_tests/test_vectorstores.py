@@ -1,4 +1,4 @@
-from langchain_integration.vectorstores import IntegrationVectorStore
+from __module_name__.vectorstores import IntegrationVectorStore
 
 
 def test_integration_vectorstore_initialization() -> None:

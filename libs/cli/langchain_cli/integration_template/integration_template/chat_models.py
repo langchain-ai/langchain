@@ -17,7 +17,7 @@ class ChatIntegration(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain_integration import ChatIntegration
+            from __module_name__ import ChatIntegration
 
 
             model = ChatIntegration(raise NotImplementedError)

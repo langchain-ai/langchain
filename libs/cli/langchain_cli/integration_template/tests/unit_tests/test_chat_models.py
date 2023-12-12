@@ -1,7 +1,7 @@
 """Test chat model integration."""
 
 
-from langchain_integration.chat_models import ChatIntegration
+from __module_name__.chat_models import ChatIntegration
 
 
 def test_integration_initialization() -> None:

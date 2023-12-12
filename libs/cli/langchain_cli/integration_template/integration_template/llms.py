@@ -22,7 +22,7 @@ class Integration(BaseLLM):
     Example:
         .. code-block:: python
 
-            from langchain_integration import Integration
+            from __module_name__ import Integration
 
             model = Integration(raise NotImplementedError)
     """

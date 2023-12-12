@@ -1,4 +1,4 @@
-from langchain_integration import __all__
+from __module_name__ import __all__
 
 EXPECTED_ALL = ["Integration", "ChatIntegration", "IntegrationVectorStore"]
 
