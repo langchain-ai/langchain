@@ -22,8 +22,8 @@ export_attr = "chain"
 
 [tool.templates-hub]
 use-case = "chatbot"
-author = "LangChain"
-integrations = ["OpenAI"]
+author = "Cohere"
+integrations = ["Cohere"]
 tags = ["getting-started"]
 
 [build-system]
