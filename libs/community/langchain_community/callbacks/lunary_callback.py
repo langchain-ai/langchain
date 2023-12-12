@@ -14,9 +14,6 @@ from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
 
 
-from packaging.version import parse
-
-
 logger = logging.getLogger(__name__)
 
 DEFAULT_API_URL = "https://app.lunary.ai"
