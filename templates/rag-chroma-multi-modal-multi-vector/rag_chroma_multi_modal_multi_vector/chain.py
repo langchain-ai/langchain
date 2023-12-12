@@ -1,18 +1,17 @@
 import base64
 import io
-import json 
+import json
 from pathlib import Path
 
-from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.chat_models import ChatOpenAI
+from langchain.embeddings import OpenAIEmbeddings
 from langchain.pydantic_v1 import BaseModel
-from langchain.schema.document import Document
+from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.schema.messages import HumanMessage
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.storage import UpstashRedisByteStore
+from langchain.vectorstores import Chroma
 from PIL import Image
 
 
@@ -41,7 +40,7 @@ def get_resized_images(docs):
     """
     b64_images = []
     for doc in docs:
-        doc = json.loads(doc.decode('utf-8'))['kwargs']['page_content']
+        doc = json.loads(doc.decode("utf-8"))["kwargs"]["page_content"]
         resized_image = resize_base64_image(doc, size=(1280, 720))
         b64_images.append(resized_image)
     return {"images": b64_images}
@@ -104,14 +103,13 @@ def multi_modal_rag_chain(retriever):
 vectorstore_mvr = Chroma(
     collection_name="image_summaries",
     persist_directory=str(Path(__file__).parent.parent / "chroma_db_multi_modal"),
-    embedding_function=OpenAIEmbeddings()
+    embedding_function=OpenAIEmbeddings(),
 )
 
 # Load redis
-UPSTASH_URL = "https://usw1-bright-beagle-34178.upstash.io"
-UPSTASH_TOKEN = "AYWCACQgNzk3OTJjZTItMGIxNy00MTEzLWIyZTAtZWI0ZmI1ZGY0NjFhNGRhMGZjNDE4YjgxNGE4MTkzOWYxMzllM2MzZThlOGY="
-store = UpstashRedisByteStore(url=UPSTASH_URL,
-                            token=UPSTASH_TOKEN)
+UPSTASH_URL = "xxx"
+UPSTASH_TOKEN = "xxx"
+store = UpstashRedisByteStore(url=UPSTASH_URL, token=UPSTASH_TOKEN)
 id_key = "doc_id"
 
 # Create the multi-vector retriever
@@ -124,8 +122,10 @@ retriever = MultiVectorRetriever(
 # Create RAG chain
 chain = multi_modal_rag_chain(retriever)
 
+
 # Add typing for input
 class Question(BaseModel):
     __root__: str
+
 
 chain = chain.with_types(input_type=Question)

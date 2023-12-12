@@ -1,28 +1,18 @@
-import os
-from pathlib import Path
-
 import base64
 import io
+import uuid
 from io import BytesIO
-
-from PIL import Image
-
+from pathlib import Path
 
 import pypdfium2 as pdfium
-from langchain.vectorstores import Chroma
-from langchain_experimental.open_clip import OpenCLIPEmbeddings
-
-import uuid
-
+from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.schema.document import Document
-from langchain.schema.output_parser import StrOutputParser
-from langchain.storage import UpstashRedisByteStore
-
-
-from langchain.chat_models import ChatOpenAI
 from langchain.schema.messages import HumanMessage
+from langchain.storage import UpstashRedisByteStore
+from langchain.vectorstores import Chroma
+from PIL import Image
 
 
 def image_summarize(img_base64, prompt):
@@ -80,12 +70,11 @@ def generate_img_summaries(img_base64_list):
     return image_summaries, processed_images
 
 
-def get_images_from_pdf(pdf_path, img_dump_path):
+def get_images_from_pdf(pdf_path):
     """
     Extract images from each page of a PDF document and save as JPEG files.
 
     :param pdf_path: A string representing the path to the PDF file.
-    :param img_dump_path: A string representing the path to dummp images.
     """
     pdf = pdfium.PdfDocument(pdf_path)
     n_pages = len(pdf)
@@ -94,7 +83,6 @@ def get_images_from_pdf(pdf_path, img_dump_path):
         page = pdf.get_page(page_number)
         bitmap = page.render(scale=1, rotation=0, crop=(0, 0, 0, 0))
         pil_image = bitmap.to_pil()
-        pil_image.save(f"{img_dump_path}/img_{page_number + 1}.jpg", format="JPEG")
         pil_images.append(pil_image)
     return pil_images
 
@@ -136,6 +124,7 @@ def convert_to_base64(pil_image):
     img_str = resize_base64_image(img_str, size=(960, 540))
     return img_str
 
+
 def create_multi_vector_retriever(vectorstore, image_summaries, images):
     """
     Create retriever that indexes summaries, but returns raw images or texts
@@ -147,10 +136,9 @@ def create_multi_vector_retriever(vectorstore, image_summaries, images):
     """
 
     # Initialize the storage layer for images
-    UPSTASH_URL = "https://usw1-bright-beagle-34178.upstash.io"
-    UPSTASH_TOKEN = "AYWCACQgNzk3OTJjZTItMGIxNy00MTEzLWIyZTAtZWI0ZmI1ZGY0NjFhNGRhMGZjNDE4YjgxNGE4MTkzOWYxMzllM2MzZThlOGY="
-    store = UpstashRedisByteStore(url=UPSTASH_URL,
-                                token=UPSTASH_TOKEN)
+    UPSTASH_URL = "xxx"
+    UPSTASH_TOKEN = "xxx"
+    store = UpstashRedisByteStore(url=UPSTASH_URL, token=UPSTASH_TOKEN)
     id_key = "doc_id"
 
     # Create the multi-vector retriever
@@ -174,6 +162,7 @@ def create_multi_vector_retriever(vectorstore, image_summaries, images):
 
     return retriever
 
+
 # Load PDF
 doc_path = Path(__file__).parent / "docs/DDOG_Q3_earnings_deck.pdf"
 img_dump_path = Path(__file__).parent / "docs/"
@@ -193,11 +182,13 @@ image_summaries, images_base_64_processed = generate_img_summaries(images_base_6
 vectorstore_mvr = Chroma(
     collection_name="image_summaries",
     persist_directory=str(Path(__file__).parent / "chroma_db_multi_modal"),
-    embedding_function=OpenAIEmbeddings()
+    embedding_function=OpenAIEmbeddings(),
 )
 
 # Create documents
-images_base_64_processed_documents = [Document(page_content=i) for i in images_base_64_processed]
+images_base_64_processed_documents = [
+    Document(page_content=i) for i in images_base_64_processed
+]
 
 # Create retriever
 retriever_multi_vector_img = create_multi_vector_retriever(
