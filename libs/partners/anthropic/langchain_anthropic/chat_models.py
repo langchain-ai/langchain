@@ -1,4 +1,21 @@
-from typing import  cast
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    cast,
+)
+
+import anthropic
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -13,23 +30,6 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-import anthropic
-from typing import (
-    Any,
-    AsyncIterator,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-)
-
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompt_values import PromptValue
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
@@ -38,6 +38,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
+
 
 class _AnthropicCommon(BaseLanguageModel):
     client: Any = None  #: :meta private:
