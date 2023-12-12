@@ -165,11 +165,9 @@ def create_multi_vector_retriever(vectorstore, image_summaries, images):
 
 # Load PDF
 doc_path = Path(__file__).parent / "docs/DDOG_Q3_earnings_deck.pdf"
-img_dump_path = Path(__file__).parent / "docs/"
 rel_doc_path = doc_path.relative_to(Path.cwd())
-rel_img_dump_path = img_dump_path.relative_to(Path.cwd())
 print("Extract slides as images")
-pil_images = get_images_from_pdf(rel_doc_path, rel_img_dump_path)
+pil_images = get_images_from_pdf(rel_doc_path)
 
 # Convert to b64
 images_base_64 = [convert_to_base64(i) for i in pil_images]

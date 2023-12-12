@@ -11,6 +11,7 @@ from langchain.schema.messages import HumanMessage
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.storage import UpstashRedisByteStore
+from langchain.schema.document import Document
 from langchain.vectorstores import Chroma
 from PIL import Image
 
@@ -40,7 +41,9 @@ def get_resized_images(docs):
     """
     b64_images = []
     for doc in docs:
-        doc = json.loads(doc.decode("utf-8"))["kwargs"]["page_content"]
+        if isinstance(doc, Document):
+            doc = doc.page_content
+        # doc = json.loads(doc.decode("utf-8"))["kwargs"]["page_content"]
         resized_image = resize_base64_image(doc, size=(1280, 720))
         b64_images.append(resized_image)
     return {"images": b64_images}
@@ -115,7 +118,7 @@ id_key = "doc_id"
 # Create the multi-vector retriever
 retriever = MultiVectorRetriever(
     vectorstore=vectorstore_mvr,
-    docstore=store,
+    byte_store=store,
     id_key=id_key,
 )
 
