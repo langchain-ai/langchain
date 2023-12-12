@@ -2,14 +2,10 @@ import os
 from pathlib import Path
 
 from langchain import chat_models, llms
-from langchain.chat_models.base import BaseChatModel, SimpleChatModel
-from langchain.llms.base import BaseLLM, LLM
+from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
+from langchain_core.language_models.llms import LLM, BaseLLM
 
-INTEGRATIONS_DIR = (
-    Path(os.path.abspath(__file__)).parents[1]
-    / "docs"
-    / "integrations"
-)
+INTEGRATIONS_DIR = Path(os.path.abspath(__file__)).parents[1] / "docs" / "integrations"
 LLM_IGNORE = ("FakeListLLM", "OpenAIChat", "PromptLayerOpenAIChat")
 LLM_FEAT_TABLE_CORRECTION = {
     "TextGen": {"_astream": False, "_agenerate": False},
@@ -27,7 +23,7 @@ CHAT_MODEL_FEAT_TABLE_CORRECTION = {
 
 LLM_TEMPLATE = """\
 ---
-sidebar_position: 0
+sidebar_position: 1
 sidebar_class_name: hidden
 ---
 
@@ -43,11 +39,11 @@ Each LLM integration can optionally provide native implementations for async, st
 
 {table}
 
-"""
+"""  # noqa: E501
 
 CHAT_MODEL_TEMPLATE = """\
 ---
-sidebar_position: 1
+sidebar_position: 0
 sidebar_class_name: hidden
 ---
 
@@ -64,7 +60,7 @@ The table shows, for each integration, which features have been implemented with
 
 {table}
 
-"""
+"""  # noqa: E501
 
 
 def get_llm_table():

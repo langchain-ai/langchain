@@ -5,9 +5,10 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import CohereRerank
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.vectorstores import Pinecone
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
 if os.environ.get("PINECONE_API_KEY", None) is None:
     raise Exception("Missing `PINECONE_API_KEY` environment variable.")
@@ -62,3 +63,11 @@ chain = (
     | model
     | StrOutputParser()
 )
+
+
+# Add typing for input
+class Question(BaseModel):
+    __root__: str
+
+
+chain = chain.with_types(input_type=Question)

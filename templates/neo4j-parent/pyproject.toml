@@ -1,19 +1,34 @@
 [tool.poetry]
-name = "neo4j_parent"
+name = "neo4j-parent"
 version = "0.1.0"
-description = ""
-authors = ["Tomaz Bratanic <tomaz.bratanic@neo4j.com>"]
+description = "Balance precise embeddings and context retention with Neo4j hybrid search"
+authors = [
+    "Tomaz Bratanic <tomaz.bratanic@neo4j.com>",
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.320"
+langchain = ">=0.0.325"
 tiktoken = "^0.5.1"
+openai = "<2"
+neo4j = "^5.14.0"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
 
 [tool.langserve]
 export_module = "neo4j_parent"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "rag"
+author = "Neo4j"
+integrations = ["Neo4j", "OpenAI"]
+tags = ["hybrid-search", "graph-database"]
+
 [build-system]
-requires = ["poetry-core"]
+requires = [
+    "poetry-core",
+]
 build-backend = "poetry.core.masonry.api"

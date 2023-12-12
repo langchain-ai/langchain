@@ -21,6 +21,8 @@ and retrieve the data that are 'most similar' to the embedded query.
 
 from typing import Any
 
+from langchain_core.vectorstores import VectorStore
+
 
 def _import_alibaba_cloud_open_search() -> Any:
     from langchain.vectorstores.alibabacloud_opensearch import AlibabaCloudOpenSearch
@@ -102,6 +104,12 @@ def _import_cassandra() -> Any:
     return Cassandra
 
 
+def _import_astradb() -> Any:
+    from langchain.vectorstores.astradb import AstraDB
+
+    return AstraDB
+
+
 def _import_chroma() -> Any:
     from langchain.vectorstores.chroma import Chroma
 
@@ -130,6 +138,12 @@ def _import_dashvector() -> Any:
     from langchain.vectorstores.dashvector import DashVector
 
     return DashVector
+
+
+def _import_databricks_vector_search() -> Any:
+    from langchain.vectorstores.databricks_vector_search import DatabricksVectorSearch
+
+    return DatabricksVectorSearch
 
 
 def _import_deeplake() -> Any:
@@ -348,6 +362,12 @@ def _import_tencentvectordb() -> Any:
     return TencentVectorDB
 
 
+def _import_tiledb() -> Any:
+    from langchain.vectorstores.tiledb import TileDB
+
+    return TileDB
+
+
 def _import_tigris() -> Any:
     from langchain.vectorstores.tigris import Tigris
 
@@ -396,6 +416,12 @@ def _import_weaviate() -> Any:
     return Weaviate
 
 
+def _import_yellowbrick() -> Any:
+    from langchain.vectorstores.yellowbrick import Yellowbrick
+
+    return Yellowbrick
+
+
 def _import_zep() -> Any:
     from langchain.vectorstores.zep import ZepVectorStore
 
@@ -435,6 +461,8 @@ def __getattr__(name: str) -> Any:
         return _import_baiducloud_vector_search()
     elif name == "Cassandra":
         return _import_cassandra()
+    elif name == "AstraDB":
+        return _import_astradb()
     elif name == "Chroma":
         return _import_chroma()
     elif name == "Clarifai":
@@ -445,6 +473,8 @@ def __getattr__(name: str) -> Any:
         return _import_clickhouse()
     elif name == "DashVector":
         return _import_dashvector()
+    elif name == "DatabricksVectorSearch":
+        return _import_databricks_vector_search()
     elif name == "DeepLake":
         return _import_deeplake()
     elif name == "Dingo":
@@ -515,6 +545,8 @@ def __getattr__(name: str) -> Any:
         return _import_tair()
     elif name == "TencentVectorDB":
         return _import_tencentvectordb()
+    elif name == "TileDB":
+        return _import_tiledb()
     elif name == "Tigris":
         return _import_tigris()
     elif name == "TimescaleVector":
@@ -531,6 +563,8 @@ def __getattr__(name: str) -> Any:
         return _import_vectara()
     elif name == "Weaviate":
         return _import_weaviate()
+    elif name == "Yellowbrick":
+        return _import_yellowbrick()
     elif name == "ZepVectorStore":
         return _import_zep()
     elif name == "Zilliz":
@@ -551,11 +585,13 @@ __all__ = [
     "AzureSearch",
     "Bagel",
     "Cassandra",
+    "AstraDB",
     "Chroma",
     "Clarifai",
     "Clickhouse",
     "ClickhouseSettings",
     "DashVector",
+    "DatabricksVectorSearch",
     "DeepLake",
     "Dingo",
     "DocArrayHnswSearch",
@@ -592,6 +628,7 @@ __all__ = [
     "StarRocks",
     "SupabaseVectorStore",
     "Tair",
+    "TileDB",
     "Tigris",
     "TimescaleVector",
     "Typesense",
@@ -601,8 +638,10 @@ __all__ = [
     "Vectara",
     "VespaStore",
     "Weaviate",
+    "Yellowbrick",
     "ZepVectorStore",
     "Zilliz",
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
+    "VectorStore",
 ]

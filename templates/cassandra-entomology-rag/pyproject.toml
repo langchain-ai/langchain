@@ -1,22 +1,34 @@
 [tool.poetry]
-name = "cassandra_entomology_rag"
+name = "cassandra-entomology-rag"
 version = "0.0.1"
-description = ""
-authors = ["Stefano Lottini <stefano.lottini@datastax.com>"]
+description = "RAG using Apache Cassandra® or Astra DB"
+authors = [
+    "Stefano Lottini <stefano.lottini@datastax.com>",
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-langchain = ">=0.0.313"
-openai = "^0.28.1"
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.325"
+openai = "<2"
 tiktoken = "^0.5.1"
 cassio = "^0.1.3"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
 
 [tool.langserve]
 export_module = "cassandra_entomology_rag"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "rag"
+author = "DataStax"
+integrations = ["OpenAI", "Cassandra"]
+tags = ["vectordbs"]
 
 [build-system]
-requires = ["poetry-core"]
+requires = [
+    "poetry-core",
+]
 build-backend = "poetry.core.masonry.api"

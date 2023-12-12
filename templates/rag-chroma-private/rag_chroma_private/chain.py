@@ -1,13 +1,13 @@
-from langchain.chat_models import ChatOllama
-
 # Load
+from langchain.chat_models import ChatOllama
 from langchain.document_loaders import WebBaseLoader
 from langchain.embeddings import GPT4AllEmbeddings
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
 loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
 data = loader.load()
@@ -39,7 +39,7 @@ prompt = ChatPromptTemplate.from_template(template)
 
 # LLM
 # Select the LLM that you downloaded
-ollama_llm = "llama2:13b-chat"
+ollama_llm = "llama2:7b-chat"
 model = ChatOllama(model=ollama_llm)
 
 # RAG chain
@@ -49,3 +49,11 @@ chain = (
     | model
     | StrOutputParser()
 )
+
+
+# Add typing for input
+class Question(BaseModel):
+    __root__: str
+
+
+chain = chain.with_types(input_type=Question)

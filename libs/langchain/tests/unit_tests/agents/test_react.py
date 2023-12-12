@@ -2,13 +2,14 @@
 
 from typing import Union
 
+from langchain_core.agents import AgentAction
+from langchain_core.documents import Document
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.tools import Tool
+
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
-from langchain.agents.tools import Tool
 from langchain.docstore.base import Docstore
-from langchain.docstore.document import Document
 from langchain.llms.fake import FakeListLLM
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AgentAction
 
 _PAGE_CONTENT = """This is a page about LangChain.
 

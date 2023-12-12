@@ -1,34 +1,31 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import (
+    BaseMessage,
+    SystemMessage,
+)
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.prompts.chat import (
+    BaseMessagePromptTemplate,
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+)
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.tools import BaseTool
+
 from langchain.agents import BaseSingleActionAgent
 from langchain.agents.format_scratchpad.openai_functions import (
-    format_to_openai_functions,
+    format_to_openai_function_messages,
 )
 from langchain.agents.output_parsers.openai_functions import (
     OpenAIFunctionsAgentOutputParser,
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.prompts.chat import (
-    BaseMessagePromptTemplate,
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-)
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    BasePromptTemplate,
-)
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import (
-    BaseMessage,
-    SystemMessage,
-)
-from langchain.tools.base import BaseTool
 from langchain.tools.render import format_tool_to_openai_function
 
 
@@ -51,12 +48,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     def get_allowed_tools(self) -> List[str]:
         """Get allowed tools."""
         return [t.name for t in self.tools]
-
-    @root_validator
-    def validate_llm(cls, values: dict) -> dict:
-        if not isinstance(values["llm"], ChatOpenAI):
-            raise ValueError("Only supported with ChatOpenAI models.")
-        return values
 
     @root_validator
     def validate_prompt(cls, values: dict) -> dict:
@@ -93,7 +84,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        agent_scratchpad = format_to_openai_functions(intermediate_steps)
+        agent_scratchpad = format_to_openai_function_messages(intermediate_steps)
         selected_inputs = {
             k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
         }
@@ -132,7 +123,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        agent_scratchpad = format_to_openai_functions(intermediate_steps)
+        agent_scratchpad = format_to_openai_function_messages(intermediate_steps)
         selected_inputs = {
             k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"
         }
@@ -164,7 +155,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             agent_decision = self.plan(
                 intermediate_steps, with_functions=False, **kwargs
             )
-            if type(agent_decision) == AgentFinish:
+            if isinstance(agent_decision, AgentFinish):
                 return agent_decision
             else:
                 raise ValueError(
@@ -224,8 +215,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools."""
-        if not isinstance(llm, ChatOpenAI):
-            raise ValueError("Only supported with ChatOpenAI models.")
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message,

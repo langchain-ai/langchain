@@ -6,11 +6,12 @@ from langchain.cache import CassandraCache
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import BaseMessage
-from langchain.schema.runnable import RunnableLambda
+from langchain_core.runnables import RunnableLambda
 
 use_cassandra = int(os.environ.get("USE_CASSANDRA_CLUSTER", "0"))
 if use_cassandra:
     from .cassandra_cluster_init import get_cassandra_connection
+
     session, keyspace = get_cassandra_connection()
     cassio.init(
         session=session,
@@ -27,13 +28,11 @@ else:
 langchain.llm_cache = CassandraCache(session=None, keyspace=None)
 llm = ChatOpenAI()
 
+
 # custom runnables
 def msg_splitter(msg: BaseMessage):
-    return [
-        w.strip()
-        for w in msg.content.split(",")
-        if w.strip()
-    ]
+    return [w.strip() for w in msg.content.split(",") if w.strip()]
+
 
 # synonym-route preparation
 synonym_prompt = ChatPromptTemplate.from_template(

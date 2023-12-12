@@ -8,11 +8,31 @@ sidebar_position: 0
 - **Are context-aware**: connect a language model to sources of context (prompt instructions, few shot examples, content to ground its response in, etc.)
 - **Reason**: rely on a language model to reason (about how to answer based on provided context, what actions to take, etc.)
 
-The main value props of LangChain are:
-1. **Components**: abstractions for working with language models, along with a collection of implementations for each abstraction. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not
-2. **Off-the-shelf chains**: a structured assembly of components for accomplishing specific higher-level tasks
+This framework consists of several parts.
+- **LangChain Libraries**: The Python and JavaScript libraries. Contains interfaces and integrations for a myriad of components, a basic run time for combining these components into chains and agents, and off-the-shelf implementations of chains and agents.
+- **[LangChain Templates](/docs/templates)**: A collection of easily deployable reference architectures for a wide variety of tasks.
+- **[LangServe](/docs/langserve)**: A library for deploying LangChain chains as a REST API.
+- **[LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
 
-Off-the-shelf chains make it easy to get started. For complex applications, components make it easy to customize existing chains and build new ones.
+![LangChain Diagram](/svg/langchain_stack.svg)
+
+Together, these products simplify the entire application lifecycle:
+- **Develop**: Write your applications in LangChain/LangChain.js. Hit the ground running using Templates for reference.
+- **Productionize**: Use LangSmith to inspect, test and monitor your chains, so that you can constantly improve and deploy with confidence.
+- **Deploy**: Turn any chain into an API with LangServe.
+
+## LangChain Libraries
+
+The main value props of the LangChain packages are:
+1. **Components**: composable tools and integrations for working with language models. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not
+2. **Off-the-shelf chains**: built-in assemblages of components for accomplishing higher-level tasks
+
+Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones.
+
+The LangChain libraries themselves are made up of several different packages.
+- **`langchain-core`**: Base abstractions and LangChain Expression Language.
+- **`langchain-community`**: Third party integrations.
+- **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 
 ## Get started
 
@@ -20,45 +40,59 @@ Off-the-shelf chains make it easy to get started. For complex applications, comp
 
 We recommend following our [Quickstart](/docs/get_started/quickstart) guide to familiarize yourself with the framework by building your first LangChain application.
 
-_**Note**: These docs are for the LangChain [Python package](https://github.com/langchain-ai/langchain). For documentation on [LangChain.js](https://github.com/langchain-ai/langchainjs), the JS/TS version, [head here](https://js.langchain.com/docs)._
+Read up on our [Security](/docs/security) best practices to make sure you're developing safely with LangChain.
+
+:::note
+
+These docs focus on the Python LangChain library. [Head here](https://js.langchain.com) for docs on the JavaScript LangChain library.
+
+:::
+
+## LangChain Expression Language (LCEL)
+
+LCEL is a declarative way to compose chains. LCEL was designed from day 1 to support putting prototypes in production, with no code changes, from the simplest “prompt + LLM” chain to the most complex chains.
+
+- **[Overview](/docs/expression_language/)**: LCEL and its benefits
+- **[Interface](/docs/expression_language/interface)**: The standard interface for LCEL objects
+- **[How-to](/docs/expression_language/how_to)**: Key features of LCEL
+- **[Cookbook](/docs/expression_language/cookbook)**: Example code for accomplishing common tasks
+
 
 ## Modules
 
-LangChain provides standard, extendable interfaces and external integrations for the following modules, listed from least to most complex:
+LangChain provides standard, extendable interfaces and integrations for the following modules:
 
 #### [Model I/O](/docs/modules/model_io/)
 Interface with language models
+
 #### [Retrieval](/docs/modules/data_connection/)
 Interface with application-specific data
-#### [Chains](/docs/modules/chains/)
-Construct sequences of calls
+
 #### [Agents](/docs/modules/agents/)
-Let chains choose which tools to use given high-level directives
-#### [Memory](/docs/modules/memory/)
-Persist application state between runs of a chain
-#### [Callbacks](/docs/modules/callbacks/)
-Log and stream intermediate steps of any chain
+Let models choose which tools to use given high-level directives
+
 
 ## Examples, ecosystem, and resources
+
 ### [Use cases](/docs/use_cases/question_answering/)
-Walkthroughs and best-practices for common end-to-end use cases, like:
+Walkthroughs and techniques for common end-to-end use cases, like:
 - [Document question answering](/docs/use_cases/question_answering/)
 - [Chatbots](/docs/use_cases/chatbots/)
 - [Analyzing structured data](/docs/use_cases/qa_structured/sql/)
 - and much more...
 
-### [Guides](/docs/guides/)
-Learn best practices for developing with LangChain.
+### [Integrations](/docs/integrations/providers/)
+LangChain is part of a rich ecosystem of tools that integrate with our framework and build on top of it. Check out our growing list of [integrations](/docs/integrations/providers/).
 
-### [Ecosystem](/docs/integrations/providers/)
-LangChain is part of a rich ecosystem of tools that integrate with our framework and build on top of it. Check out our growing list of [integrations](/docs/integrations/providers/) and [dependent repos](/docs/additional_resources/dependents).
+### [Guides](/docs/guides/guides/debugging)
+Best practices for developing with LangChain.
 
-### [Additional resources](/docs/additional_resources/)
-Our community is full of prolific developers, creative builders, and fantastic teachers. Check out [YouTube tutorials](/docs/additional_resources/youtube) for great tutorials from folks in the community, and [Gallery](https://github.com/kyrolabs/awesome-langchain) for a list of awesome LangChain projects, compiled by the folks at [KyroLabs](https://kyrolabs.com).
+### [API reference](https://api.python.langchain.com)
+Head to the reference section for full documentation of all classes and methods in the LangChain and LangChain Experimental Python packages.
+
+### [Developer's guide](/docs/contributing)
+Check out the developer's guide for guidelines on contributing and help getting your dev environment set up.
 
 ### [Community](/docs/community)
 Head to the [Community navigator](/docs/community) to find places to ask questions, share feedback, meet other developers, and dream about the future of LLM’s.
 
-## API reference
-
-Head to the [reference](https://api.python.langchain.com) section for full documentation of all classes and methods in the LangChain Python package.

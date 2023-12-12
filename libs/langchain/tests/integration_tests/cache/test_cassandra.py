@@ -4,11 +4,11 @@ import time
 from typing import Any, Iterator, Tuple
 
 import pytest
+from langchain_core.outputs import Generation, LLMResult
 
 from langchain.cache import CassandraCache, CassandraSemanticCache
 from langchain.globals import get_llm_cache, set_llm_cache
-from langchain.schema import Generation, LLMResult
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from tests.integration_tests.cache.fake_embeddings import FakeEmbeddings
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

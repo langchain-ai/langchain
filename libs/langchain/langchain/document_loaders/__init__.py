@@ -34,6 +34,9 @@ from langchain.document_loaders.arxiv import ArxivLoader
 from langchain.document_loaders.assemblyai import AssemblyAIAudioTranscriptLoader
 from langchain.document_loaders.async_html import AsyncHtmlLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
+from langchain.document_loaders.azure_ai_data import (
+    AzureAIDataLoader,
+)
 from langchain.document_loaders.azure_blob_storage_container import (
     AzureBlobStorageContainerLoader,
 )
@@ -59,6 +62,7 @@ from langchain.document_loaders.college_confidential import CollegeConfidentialL
 from langchain.document_loaders.concurrent import ConcurrentLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
+from langchain.document_loaders.couchbase import CouchbaseLoader
 from langchain.document_loaders.csv_loader import CSVLoader, UnstructuredCSVLoader
 from langchain.document_loaders.cube_semantic import CubeSemanticLoader
 from langchain.document_loaders.datadog_logs import DatadogLogsLoader
@@ -67,13 +71,13 @@ from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
 from langchain.document_loaders.docugami import DocugamiLoader
+from langchain.document_loaders.docusaurus import DocusaurusLoader
 from langchain.document_loaders.dropbox import DropboxLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
     OutlookMessageLoader,
     UnstructuredEmailLoader,
 )
-from langchain.document_loaders.embaas import EmbaasBlobLoader, EmbaasLoader
 from langchain.document_loaders.epub import UnstructuredEPubLoader
 from langchain.document_loaders.etherscan import EtherscanLoader
 from langchain.document_loaders.evernote import EverNoteLoader
@@ -101,6 +105,7 @@ from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.iugu import IuguLoader
 from langchain.document_loaders.joplin import JoplinLoader
 from langchain.document_loaders.json_loader import JSONLoader
+from langchain.document_loaders.lakefs import LakeFSLoader
 from langchain.document_loaders.larksuite import LarkSuiteDocLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.mastodon import MastodonTootsLoader
@@ -224,6 +229,7 @@ __all__ = [
     "ArxivLoader",
     "AssemblyAIAudioTranscriptLoader",
     "AsyncHtmlLoader",
+    "AzureAIDataLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
@@ -242,6 +248,7 @@ __all__ = [
     "CollegeConfidentialLoader",
     "ConcurrentLoader",
     "ConfluenceLoader",
+    "CouchbaseLoader",
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
@@ -249,11 +256,10 @@ __all__ = [
     "DirectoryLoader",
     "DiscordChatLoader",
     "DocugamiLoader",
+    "DocusaurusLoader",
     "Docx2txtLoader",
     "DropboxLoader",
     "DuckDBLoader",
-    "EmbaasBlobLoader",
-    "EmbaasLoader",
     "EtherscanLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
@@ -280,6 +286,7 @@ __all__ = [
     "JSONLoader",
     "JoplinLoader",
     "LarkSuiteDocLoader",
+    "LakeFSLoader",
     "MHTMLLoader",
     "MWDumpLoader",
     "MastodonTootsLoader",
