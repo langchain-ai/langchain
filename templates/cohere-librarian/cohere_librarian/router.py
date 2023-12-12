@@ -9,11 +9,14 @@ from .rag import librarian_rag
 
 chain = (
     ChatPromptTemplate.from_template(
-        """Given the user message below, classify it as either being about `recommendation`, `library` or `other`.
+        """Given the user message below,
+classify it as either being about `recommendation`, `library` or `other`.
 
 '{message}'
 
-Respond with just one word. For example, if the message is about a book recommendation, respond with `recommendation`.
+Respond with just one word.
+For example, if the message is about a book recommendation,respond with 
+`recommendation`.
 """
     )
     | chat
