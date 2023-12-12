@@ -10,7 +10,7 @@ from langchain_core.outputs import ChatGenerationChunk, ChatResult
 
 
 class Chat__ModuleName__(BaseChatModel):
-    """{integration} chat model.
+    """Chat__ModuleName__ chat model.
 
     Example:
         .. code-block:: python
@@ -18,7 +18,7 @@ class Chat__ModuleName__(BaseChatModel):
             from __module_name__ import Chat__ModuleName__
 
 
-            model = Chat__ModuleName__(raise NotImplementedError)
+            model = Chat__ModuleName__()
     """
 
     @property

@@ -17,14 +17,14 @@ from langchain_core.outputs import GenerationChunk, LLMResult
 
 
 class __ModuleName__LLM(BaseLLM):
-    """{integration} large language models.
+    """__ModuleName__LLM large language models.
 
     Example:
         .. code-block:: python
 
             from __module_name__ import __ModuleName__LLM
 
-            model = __ModuleName__LLM(raise NotImplementedError)
+            model = __ModuleName__LLM()
     """
 
     @property

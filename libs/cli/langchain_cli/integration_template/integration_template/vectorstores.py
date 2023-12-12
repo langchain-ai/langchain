@@ -31,7 +31,7 @@ class __ModuleName__VectorStore(VectorStore):
 
             from __module_name__.vectorstores import __ModuleName__VectorStore
 
-            vectorstore = __ModuleName__VectorStore(raise NotImplementedError)
+            vectorstore = __ModuleName__VectorStore()
     """
 
     def add_texts(
