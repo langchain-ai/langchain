@@ -1,7 +1,6 @@
 import importlib.metadata
 import logging
 import os
-import packaging
 import traceback
 import warnings
 from contextvars import ContextVar
