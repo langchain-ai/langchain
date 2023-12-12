@@ -111,7 +111,7 @@ class ChatSparkLLM(BaseChatModel):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
-        return True
+        return False
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
