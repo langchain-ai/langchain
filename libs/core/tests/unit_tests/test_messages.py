@@ -1,3 +1,4 @@
+from typing import List
 import unittest
 
 import pytest
@@ -206,7 +207,7 @@ def test_message_chunk_to_message() -> None:
 
 
 def test_tool_calls_merge() -> None:
-    chunks: list[dict] = [
+    chunks: List[dict] = [
         dict(content=""),
         dict(
             content="",
