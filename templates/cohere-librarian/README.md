@@ -1,9 +1,9 @@
 
 # cohere-librarian
 
-This template converts turns cohere into a librarian.
+This template turns Cohere into a librarian.
 
-It demonstrates the use of a router to switch between chains that can handle different things.
+It demonstrates the use of a router to switch between chains that can handle different things: a vector database with Cohere embeddings; a chat bot that has a prompt with some information about the library; and finally a RAG chatbot that has access to the internet.
 
 For a fuller demo of the book recomendation, consider replacing books_with_blurbs.csv with a larger sample from the following dataset: https://www.kaggle.com/datasets/jdobrow/57000-books-with-metadata-and-blurbs/ .
 
