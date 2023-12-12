@@ -251,6 +251,6 @@ def test_kinetica_with_openai_embeddings(create_config: KineticaSettings) -> Non
         collection_name="kinetica_openai_test",
         pre_delete_collection=False,
     )
+
     output = docsearch.similarity_search("foo", k=1)
     assert output[0].page_content == "foo"
-
