@@ -16,7 +16,7 @@ from unstructured.partition.pdf import partition_pdf
 # Path to docs
 path = "docs"
 raw_pdf_elements = partition_pdf(
-    filename=path + "LLaMA2.pdf",
+    filename=path + "/LLaVA.pdf",
     # Unstructured first finds embedded image blocks
     extract_images_in_pdf=False,
     # Use layout model (YOLOX) to get bounding boxes (for tables) and find titles
