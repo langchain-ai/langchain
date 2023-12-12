@@ -3447,7 +3447,7 @@ files = [
 
 [[package]]
 name = "langchain-community"
-version = "0.0.1-rc.2"
+version = "0.0.1"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3457,7 +3457,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain-core = ">=0.0.13-rc.2,<0.1"
+langchain-core = ">=0.0.13,<0.1"
 langsmith = "~0.0.63"
 numpy = "^1"
 PyYAML = ">=5.3"
@@ -3475,7 +3475,7 @@ url = "../community"
 
 [[package]]
 name = "langchain-core"
-version = "0.0.13-rc.2"
+version = "0.0.13"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -9103,4 +9103,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "07297e86baac812299fd99f00e3e7e699f176eb6974608f285c8ca76f886299c"
+content-hash = "ef04ae95bce50580df3bc8df24d6ab273c01f968622b4c85a89e6b4e64ac8cd1"
