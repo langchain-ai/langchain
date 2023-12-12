@@ -12,6 +12,7 @@ from langchain_community.tools.gmail import (
     GmailSearch,
     GmailSendMessage,
 )
+from langchain_community.tools.gmail.utils import build_resource_service
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -39,9 +40,11 @@ tools = [
     GmailSendMessage(),
     search_engine,
 ]
-
+current_user = (
+    build_resource_service().users().getProfile(userId="me").execute()["emailAddress"]
+)
 assistant_system_message = """You are a helpful assistant aiding a user with their \
-emails.Use tools (only if necessary) to best answer the users questions."""
+emails. Use tools (only if necessary) to best answer the users questions.\n\nCurrent user: {user}"""
 prompt = ChatPromptTemplate.from_messages(
     [
         ("system", assistant_system_message),
@@ -49,7 +52,7 @@ prompt = ChatPromptTemplate.from_messages(
         ("user", "{input}"),
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ]
-)
+).partial(user=current_user)
 
 
 llm = ChatOpenAI(model="gpt-4-1106-preview", temperature=0)
