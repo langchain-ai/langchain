@@ -7,7 +7,7 @@
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
 		"ghcr.io/devcontainers-contrib/features/poetry:2": {
-			"version": "1.4.2" // Matches version of unit tests
+			"version": "1.6.1" // Matches version mentioned in lock files.
 		}
 	},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
