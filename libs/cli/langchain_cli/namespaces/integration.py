@@ -88,6 +88,12 @@ def new(
         raise typer.Exit(code=1)
 
     if name_class:
+        if not re.match(r"^[A-Z][a-zA-Z0-9]*$", name_class):
+            typer.echo(
+                "Name should only contain letters (a-z, A-Z), numbers, and underscores"
+                ", and start with a capital letter."
+            )
+            raise typer.Exit(code=1)
         replacements["__ModuleName__"] = name_class
     else:
         replacements["__ModuleName__"] = typer.prompt(
