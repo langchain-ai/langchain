@@ -1708,6 +1708,7 @@ develop = true
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
+httpx = "^0.24.1"
 jsonpatch = "^1.33"
 langchain-community = ">=0.0.2,<0.1"
 langchain-core = "^0.1"
@@ -1750,6 +1751,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
+httpx = "^0.24.1"
 langchain-core = "^0.1"
 langsmith = "~0.0.63"
 numpy = "^1"
@@ -5021,4 +5023,4 @@ extended-testing = ["faker", "jinja2", "presidio-analyzer", "presidio-anonymizer
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "32aaaa76754e1b05c3b212e23f0a2d4eca8c09da3a4ef70521cadfdc52518aaf"
+content-hash = "efe8a58cc572da7115fadb6765915a52a0bbb17b7a35669bf1b4ef9e1f51e354"
