@@ -17,6 +17,7 @@ _EXPECTED = [
     "Clickhouse",
     "ClickhouseSettings",
     "DashVector",
+    "DatabricksVectorSearch",
     "DeepLake",
     "Dingo",
     "DocArrayHnswSearch",

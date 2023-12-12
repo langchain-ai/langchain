@@ -53,7 +53,7 @@ class CohereRerank(BaseDocumentCompressor):
         cohere_api_key = get_from_dict_or_env(
             values, "cohere_api_key", "COHERE_API_KEY"
         )
-        client_name = values["user_agent"]
+        client_name = values.get("user_agent", "langchain")
         values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
         return values
 

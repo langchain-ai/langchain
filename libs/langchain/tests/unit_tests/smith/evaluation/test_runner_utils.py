@@ -248,6 +248,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         owner_id="owner",
         created_at=_CREATED_AT,
         tenant_id=_TENANT_ID,
+        _host_url="http://localhost:1984",
     )
     uuids = [
         "0c193153-2309-4704-9a47-17aee4fb25c8",
@@ -344,6 +345,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
                 "feedback": [],
                 # No run since we mock the call to the llm above
                 "execution_time": None,
+                "run_id": None,
             }
             for example in examples
         }

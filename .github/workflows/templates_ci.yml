@@ -33,5 +33,4 @@ jobs:
       ./.github/workflows/_lint.yml
     with:
       working-directory: templates
-      langchain-location: ../libs/langchain
     secrets: inherit
