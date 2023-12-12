@@ -1,7 +1,3 @@
-"""
-This module contains the ConneryService.
-"""
-
 import json
 from typing import List, Optional, Dict
 from langchain_core.pydantic_v1 import BaseModel, root_validator
@@ -50,7 +46,7 @@ class ConneryService(BaseModel):
             List[ConneryAction]: The list of actions available in the Connery Runner.
         """
 
-        return [ConneryAction.init(action, self) for action in self._list_actions()]
+        return [ConneryAction.create_instance(action, self) for action in self._list_actions()]
 
     def get_action(self, action_id: str) -> ConneryAction:
         """
@@ -61,7 +57,7 @@ class ConneryService(BaseModel):
             ConneryAction: The action with the specified ID.
         """
 
-        return ConneryAction.init(self._get_action(action_id), self)
+        return ConneryAction.create_instance(self._get_action(action_id), self)
 
     def run_action(self, action_id: str, input: Dict[str, str]) -> Dict[str, str]:
         """

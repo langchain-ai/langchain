@@ -1,7 +1,3 @@
-"""
-This module contains the ConneryAction Tool.
-"""
-
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain_core.tools import BaseTool
 from typing import Any, Dict, List, Type
@@ -53,29 +49,29 @@ class ConneryAction(BaseTool):
         # Import ConneryService here and check if it is an instance of ConneryService to avoid circular imports
         from .service import ConneryService
         if not isinstance(values.get('connery_service'), ConneryService):
-            raise ValueError("The connery_service must be an instance of ConneryService.")
+            raise ValueError("The attribute 'connery_service' must be an instance of ConneryService.")
 
         if not values.get('name'):
-            raise ValueError("The name attribute must be set.")
+            raise ValueError("The attribute 'name' must be set.")
         if not values.get('description'):
-            raise ValueError("The description attribute must be set.")
+            raise ValueError("The attribute 'description' must be set.")
         if not values.get('args_schema'):
-            raise ValueError("The args_schema attribute must be set.")
+            raise ValueError("The attribute 'args_schema' must be set.")
         if not values.get('action'):
-            raise ValueError("The action attribute must be set.")
+            raise ValueError("The attribute 'action' must be set.")
         if not values.get('connery_service'):
-            raise ValueError("The connery_service attribute must be set.")
+            raise ValueError("The attribute 'connery_service' must be set.")
         
         return values
 
 
     @classmethod
-    def init(cls, action: Action, connery_service: Any):
+    def create_instance(cls, action: Action, connery_service: Any):
         """
-        Initialize a Connery Action Tool.
+        Creates a Connery Action Tool from a Connery Action.
         Parameters:
-            action (Action): The Connery Action to wrap.
-            connery_service (ConneryService): The Connery API Wrapper. We use Any here to avoid circular imports.
+            action (Action): The Connery Action to wrap in a Connery Action Tool.
+            connery_service (ConneryService): The Connery Service to run the Connery Action. We use Any here to avoid circular imports.
         Returns:
             ConneryAction: The Connery Action Tool.
         """
@@ -114,7 +110,7 @@ class ConneryAction(BaseTool):
             field_info = {}
             
             field_info['title'] = param.title
-            field_info['description'] = param.description if param.description else ""
+            field_info['description'] = param.title + (": " + param.description if param.description else "")
             field_info['type'] = param.type
             field_info['default'] = ... if param.validation and param.validation.required else None
             
