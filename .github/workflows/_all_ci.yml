@@ -104,3 +104,48 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    name: Python ${{ matrix.python-version }} unit tests
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    if: startsWith(inputs.working-directory, 'libs/partners/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: unit
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          echo "Running unit tests, installing dependencies with poetry..."
+          poetry install --with test
+
+      - name: Run unit tests
+        run: make test
+
+      - name: Ensure the tests did not create any additional files
+        shell: bash
+        run: |
+          set -eu
+
+          STATUS="$(git status)"
+          echo "$STATUS"
+
+          # grep will exit non-zero if the target message isn't found,
+          # and `set -e` above will cause the step to fail.
+          echo "$STATUS" | grep 'nothing to commit, working tree clean'
