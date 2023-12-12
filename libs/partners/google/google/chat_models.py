@@ -1,14 +1,3 @@
-from typing import Any, AsyncIterator, Iterator, List, Optional
-
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import BaseMessage, BaseMessageChunk
-from langchain_core.outputs import ChatGenerationChunk, ChatResult
-
-
 from __future__ import annotations
 
 import asyncio
@@ -33,12 +22,10 @@ from typing import (
 from urllib.parse import urlparse
 
 import requests
-from langchain.callbacks.manager import (
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.utils import get_from_dict_or_env
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -50,6 +37,8 @@ from langchain_core.messages import (
     HumanMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.utils import get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -62,7 +51,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import google.generativeai as genai
-    import proto
 
 try:
     import PIL.Image
@@ -234,7 +222,7 @@ def _url_to_pil(image_source: str) -> Image:
 
 
 def _convert_to_parts(
-    content: Sequence[Union[str, dict]]
+    content: Sequence[Union[str, dict]],
 ) -> List[genai.types.PartType]:
     """Converts a list of LangChain messages into a google parts."""
     import google.generativeai as genai
@@ -420,6 +408,10 @@ Supported examples:
     def lc_secrets(self) -> Dict[str, str]:
         return {"google_api_key": "GOOGLE_API_KEY"}
 
+    @property
+    def _llm_type(self) -> str:
+        return "chat-google-generative-ai"
+
     @classmethod
     def is_lc_serializable(self) -> bool:
         return True
@@ -475,10 +467,6 @@ Supported examples:
     def _async_generation_method(self) -> Awaitable:
         # TODO :THIS IS BROKEN still...
         return self._generative_model.generate_content
-
-    @property
-    def _llm_type(self) -> str:
-        return "chat-google-generative-ai"
 
     def _prepare_params(
         self, messages: Sequence[BaseMessage], stop: Optional[List[str]]

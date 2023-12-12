@@ -1,6 +1,10 @@
 from google import __all__
 
-EXPECTED_ALL = ["GoogleGenerativeAIChatLLM", "ChatGoogleGenerativeAIChat", "GoogleGenerativeAIChatVectorStore"]
+EXPECTED_ALL = [
+    "GoogleGenerativeAIChatLLM",
+    "ChatGoogleGenerativeAIChat",
+    "GoogleGenerativeAIChatVectorStore",
+]
 
 
 def test_all_imports() -> None:
