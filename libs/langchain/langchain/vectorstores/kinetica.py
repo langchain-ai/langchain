@@ -46,6 +46,7 @@ _LANGCHAIN_DEFAULT_COLLECTION_NAME = (
     "langchain_kinetica_embeddings"  ## Default Kinetica table name
 )
 
+
 class KineticaSettings(BaseSettings):
     """`Kinetica` client configuration.
 
