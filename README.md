@@ -45,7 +45,10 @@ This framework consists of several parts.
 - **[LangServe](https://github.com/langchain-ai/langserve)**: A library for deploying LangChain chains as a REST API.
 - **[LangSmith](https://smith.langchain.com)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
 
-**This repo contains the `langchain` ([here](libs/langchain)), `langchain-experimental` ([here](libs/experimental)), and `langchain-cli` ([here](libs/cli)) Python packages, as well as [LangChain Templates](templates).**
+The LangChain libraries themselves are made up of several different packages.
+- **[`langchain-core`](libs/core)**: Base abstractions and LangChain Expression Language.
+- **[`langchain-community`](libs/community)**: Third party integrations.
+- **[`langchain`](libs/langchain)**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 
 ![LangChain Stack](docs/static/img/langchain_stack.png)
 
