@@ -48,6 +48,7 @@ optional = true
 
 [tool.poetry.group.dev.dependencies]
 langchain-core = {path = "../../core", develop = true}
+pillow = "^10.1.0"
 
 [tool.ruff]
 select = [
