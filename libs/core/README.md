@@ -16,6 +16,8 @@ These abstractions are designed to be as modular and simple as possible.
 Examples of these abstractions include those for language models, document loaders, embedding models, vectorstores, retrievers, and more. 
 The benefit of having these abstractions is that any provider can implement the required interface and then easily be used in the rest of the LangChain ecosystem.
 
+For full documentation see the [API reference](https://api.python.langchain.com/en/stable/core_api_reference.html).
+
 ## What is LangChain Expression Language?
 
 LangChain Core also contains LangChain Expression Language, or LCEL, a runtime that allows users to compose arbitrary sequences together and get several benefits that are important when building LLM applications. 

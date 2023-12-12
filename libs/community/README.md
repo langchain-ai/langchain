@@ -13,6 +13,8 @@ pip install langchain-community
 
 LangChain Community contains third-party integrations that implement the base interfaces defined in LangChain Core, making them ready-to-use in any LangChain application.
 
+For full documentation see the [API reference](https://api.python.langchain.com/en/stable/community_api_reference.html).
+
 ![LangChain Stack](docs/static/img/langchain_stack.png)
 
 ## 📕 Releases & Versioning
