@@ -38,7 +38,7 @@ chat_prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder(variable_nam
 
 
 ```python
-from langchain.schema.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage
 
 human_message = HumanMessage(content="What is the best way to learn programming?")
 ai_message = AIMessage(content="""\

@@ -4,9 +4,9 @@ from typing import List, Optional, Tuple
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.schema import BaseMessage, format_document
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from pydantic import BaseModel, Field
 
 from .connection import es_connection_details
