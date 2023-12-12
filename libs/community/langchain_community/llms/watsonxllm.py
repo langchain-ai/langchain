@@ -225,7 +225,7 @@ class WatsonxLLM(BaseLLM):
 
     @staticmethod
     def _extract_token_usage(
-        response: Optional[List[Dict[str, Any]]] = None
+        response: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         if response is None:
             return {"generated_token_count": 0, "input_token_count": 0}
