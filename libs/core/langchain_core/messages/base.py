@@ -112,13 +112,14 @@ class BaseMessageChunk(BaseMessage):
             elif isinstance(merged[k], dict):
                 merged[k] = self._merge_kwargs_dict(merged[k], v)
             elif isinstance(merged[k], list):
+                merged[k] = merged[k].copy()
                 for i, e in enumerate(v):
                     if isinstance(e, dict) and isinstance(e.get("index"), int):
                         i = e["index"]
                     if i < len(merged[k]):
                         merged[k][i] = self._merge_kwargs_dict(merged[k][i], e)
                     else:
-                        merged[k].append(e)
+                        merged[k] = merged[k] + [e]
             else:
                 raise TypeError(
                     f"Additional kwargs key {k} already exists in this message."
