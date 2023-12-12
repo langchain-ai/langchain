@@ -6,12 +6,9 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain.llms import (
-    HuggingFaceEndpoint,
-    HuggingFaceHub,
-    HuggingFaceTextGenInference,
-)
-from langchain.llms.base import LLM
+from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
+from langchain.llms.huggingface_hub import HuggingFaceHub
+from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -39,22 +36,15 @@ class ChatHuggingFace(BaseChatModel):
     Adapted from: https://python.langchain.com/docs/integrations/chat/llama2_chat
     """
 
-    llm: LLM
+    llm: Union[HuggingFaceTextGenInference, HuggingFaceEndpoint, HuggingFaceHub]
     system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
-    tokenizer: None
+    tokenizer: Any = None
     model_id: str = None  # type: ignore
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
         from transformers import AutoTokenizer
-
-        if not isinstance(
-            self.llm, (HuggingFaceEndpoint, HuggingFaceTextGenInference, HuggingFaceHub)
-        ):
-            raise ValueError(
-                f"LLM type not supported for ChatHuggingFace: {type(self.llm)}"
-            )
 
         self._resolve_model_id()
         self.tokenizer = (
@@ -108,14 +98,14 @@ class ChatHuggingFace(BaseChatModel):
         if not isinstance(messages[-1], HumanMessage):
             raise ValueError("last message must be a HumanMessage")
 
-        messages = [self._to_chatml_format(m) for m in messages]
+        messages_dicts = [self._to_chatml_format(m) for m in messages]
 
         return self.tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
+            messages_dicts, tokenize=False, add_generation_prompt=True
         )
 
     def _to_chatml_format(
-        self, message: Union[AIMessage, SystemMessage, HumanMessage]
+        self, message: BaseMessage
     ) -> dict:
         """Convert LangChain message to ChatML format."""
 
@@ -173,7 +163,7 @@ class ChatHuggingFace(BaseChatModel):
             raise ValueError(
                 "Failed to resolve model_id"
                 f"Could not find model id for inference server provided: {endpoint_url}"
-                "Check to ensure the Hugging Face token you're using has access to the endpoint."
+                "Make sure that your Hugging Face token has access to the endpoint."
             )
 
     @property
