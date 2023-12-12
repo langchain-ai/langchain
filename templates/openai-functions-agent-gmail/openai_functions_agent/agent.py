@@ -3,6 +3,7 @@ from typing import List, Tuple
 from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
+from langchain.tools.render import format_tool_to_openai_function
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.tools.gmail import (
     GmailCreateDraft,
@@ -11,8 +12,6 @@ from langchain_community.tools.gmail import (
     GmailSearch,
     GmailSendMessage,
 )
-from langchain_community.tools.render import format_tool_to_openai_function
-from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -21,20 +20,15 @@ from langchain_core.tools import tool
 
 
 @tool
-def ask_for_input(self, question: str) -> str:
-    """Ask the user for input if you need clarification."""
-    return input(question)
-
-
-# Create the tool
-search = TavilySearchAPIWrapper()
-description = """"A search engine optimized for comprehensive, accurate, \
+def search_engine(query: str, max_results: int = 5) -> str:
+    """"A search engine optimized for comprehensive, accurate, \
 and trusted results. Useful for when you need to answer questions \
 about current events or about recent information. \
 Input should be a search query. \
 If the user is asking about something that you don't know about, \
 you should probably use this tool to see if that can provide any information."""
-tavily_tool = TavilySearchResults(api_wrapper=search, description=description)
+    return TavilySearchAPIWrapper().results(query, max_results=max_results)
+
 
 # Create the tools
 tools = [
@@ -43,12 +37,11 @@ tools = [
     GmailGetThread(),
     GmailSearch(),
     GmailSendMessage(),
-    ask_for_input,
-    tavily_tool,
+    search_engine,
 ]
 
 assistant_system_message = """You are a helpful assistant aiding a user with their \
-emails. Use tools (only if necessary) to best answer the users questions."""
+emails.Use tools (only if necessary) to best answer the users questions."""
 prompt = ChatPromptTemplate.from_messages(
     [
         ("system", assistant_system_message),
