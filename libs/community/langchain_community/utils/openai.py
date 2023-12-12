@@ -13,7 +13,7 @@ def is_openai_v1() -> bool:
 
 
 def configure_http_client_by_proxy(
-    proxies: Optional[str] = None
+    proxies: Optional[str] = None,
 ) -> Union[httpx.Client, None]:
     if proxies is None or not is_openai_v1():
         return None
@@ -21,7 +21,7 @@ def configure_http_client_by_proxy(
 
 
 def configure_http_async_client_by_proxy(
-    proxies: Optional[str] = None
+    proxies: Optional[str] = None,
 ) -> Union[httpx.AsyncClient, None]:
     if proxies is None or not is_openai_v1():
         return None

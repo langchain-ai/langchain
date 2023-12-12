@@ -53,7 +53,11 @@ from langchain_community.adapters.openai import (
     convert_dict_to_message,
     convert_message_to_dict,
 )
-from langchain_community.utils.openai import is_openai_v1, configure_http_async_client_by_proxy, configure_http_client_by_proxy
+from langchain_community.utils.openai import (
+    configure_http_async_client_by_proxy,
+    configure_http_client_by_proxy,
+    is_openai_v1,
+)
 
 if TYPE_CHECKING:
     import tiktoken

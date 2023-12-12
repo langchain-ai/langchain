@@ -32,6 +32,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+
 from langchain_community.utils.openai import (
     configure_http_async_client_by_proxy,
     configure_http_client_by_proxy,

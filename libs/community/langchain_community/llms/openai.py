@@ -31,7 +31,11 @@ from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 from langchain_core.utils.utils import build_extra_kwargs
 
-from langchain_community.utils.openai import is_openai_v1, configure_http_async_client_by_proxy, configure_http_client_by_proxy
+from langchain_community.utils.openai import (
+    configure_http_async_client_by_proxy,
+    configure_http_client_by_proxy,
+    is_openai_v1,
+)
 
 logger = logging.getLogger(__name__)
 

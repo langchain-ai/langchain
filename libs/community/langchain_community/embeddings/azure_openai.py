@@ -9,7 +9,11 @@ from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.embeddings.openai import OpenAIEmbeddings
-from langchain_community.utils.openai import is_openai_v1, configure_http_async_client_by_proxy, configure_http_client_by_proxy
+from langchain_community.utils.openai import (
+    configure_http_async_client_by_proxy,
+    configure_http_client_by_proxy,
+    is_openai_v1,
+)
 
 
 class AzureOpenAIEmbeddings(OpenAIEmbeddings):

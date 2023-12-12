@@ -16,7 +16,10 @@ from langchain_community.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-from langchain_community.utils.openai import is_openai_v1, configure_http_client_by_proxy
+from langchain_community.utils.openai import (
+    configure_http_client_by_proxy,
+    is_openai_v1,
+)
 
 if TYPE_CHECKING:
     import tiktoken
