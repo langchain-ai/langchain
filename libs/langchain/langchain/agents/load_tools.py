@@ -30,7 +30,7 @@ from langchain.utilities.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.golden_query.tool import GoldenQueryRun
 from langchain.tools.pubmed.tool import PubmedQueryRun
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool

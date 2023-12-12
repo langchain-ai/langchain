@@ -197,8 +197,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
             else:
                 fields["__root__"] = (Sequence[BaseMessage], ...)
-            if self.history_messages_key:
-                fields[self.history_messages_key] = (Sequence[BaseMessage], ...)
             return create_model(  # type: ignore[call-overload]
                 "RunnableWithChatHistoryInput",
                 **fields,

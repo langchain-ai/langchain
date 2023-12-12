@@ -26,10 +26,6 @@ from langchain_core.runnables.config import (
     get_callback_manager_for_config,
     patch_config,
 )
-from langchain_core.runnables.context import (
-    CONTEXT_CONFIG_PREFIX,
-    CONTEXT_CONFIG_SUFFIX_SET,
-)
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Input,
@@ -152,6 +148,11 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
+        from langchain_core.beta.runnables.context import (
+            CONTEXT_CONFIG_PREFIX,
+            CONTEXT_CONFIG_SUFFIX_SET,
+        )
+
         specs = get_unique_config_specs(
             spec
             for step in (
