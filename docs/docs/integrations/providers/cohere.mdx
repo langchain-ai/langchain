@@ -30,27 +30,17 @@ from langchain.chat_models import ChatCohere
 from langchain.schema import HumanMessage
 chat = ChatCohere()
 messages = [HumanMessage(content="knock knock")]
-chat(messages)
+print(chat(messages))
 ```
 
 ### LLM
 
 
 ```python
-from langchain.chains import LLMChain
 from langchain.llms import Cohere
-from langchain.prompts import PromptTemplate
 
-template = """Question: {question}
-
-Answer: Let's think step by step."""
-
-prompt = PromptTemplate(template=template, input_variables=["question"])
-llm = Cohere()
-llm_chain = LLMChain(prompt=prompt, llm=llm)
-question = "What NFL team won the Super Bowl in the year Justin Beiber was born?"
-
-llm_chain.run(question)
+llm = Cohere(model="command")
+print(llm.invoke("Come up with a pet name"))
 ```
 
 
@@ -62,35 +52,16 @@ from langchain.retrievers import CohereRagRetriever
 from langchain.schema.document import Document
 
 rag = CohereRagRetriever(llm=ChatCohere())
-rag.get_relevant_documents("What is cohere ai?")
+print(rag.get_relevant_documents("What is cohere ai?"))
 ```
 
 ### Text Embedding
 
 ```python
-from langchain.embeddings import CohereEmbeddings
+from langchain.chat_models import ChatCohere
+from langchain.retrievers import CohereRagRetriever
+from langchain.schema.document import Document
 
-embeddings = CohereEmbeddings(model="embed-english-light-v3.0")
-text = "This is a test document."
-```
-### Rerank Retriever
-
-```python
-from langchain.chains import LLMChain
-from langchain.llms import Cohere
-from langchain.prompts import PromptTemplate
-
-docs = ['Carson City is the capital city of the American state of Nevada.',
-'The Commonwealth of the Northern Mariana Islands is a group of islands in the Pacific Ocean. Its capital is Saipan.',
-'Washington, D.C. (also known as simply Washington or D.C., and officially as the District of Columbia) is the capital of the United States. It is a federal district.',
-'Capital punishment (the death penalty) has existed in the United States since beforethe United States was a country. As of 2017, capital punishment is legal in 30 of the 50 states.']
-
-query = 'What is the capital of the United States?'
-
-retriever = FAISS.from_documents(texts, OpenAIEmbeddings()).as_retriever(
-    search_kwargs={"k": 20}
-)
-
-query = "What did the president say about Ketanji Brown Jackson"
-docs = retriever.get_relevant_documents(query)
+rag = CohereRagRetriever(llm=ChatCohere())
+print(rag.get_relevant_documents("What is cohere ai?"))
 ```
