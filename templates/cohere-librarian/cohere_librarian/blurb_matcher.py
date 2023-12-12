@@ -10,7 +10,6 @@ from .chat import chat
 csv_file = open("data/books_with_blurbs.csv", "r")
 csv_reader = csv.reader(csv_file)
 csv_data = list(csv_reader)
-csv_data = csv_data[1:10]
 parsed_data = [
     {
         "id": x[0],

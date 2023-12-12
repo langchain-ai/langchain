@@ -18,8 +18,6 @@ librarian_prompt = ChatPromptTemplate.from_messages(
             The library opens at 8am and closes at 9pm daily. It is closed on
             Sundays.
 
-            If people speak too loud, you should tell them to shh
-
             Please answer the following message:
             """
         ),

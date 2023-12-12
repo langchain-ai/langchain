@@ -3,6 +3,10 @@
 
 This template converts turns cohere into a librarian.
 
+It demonstrates the use of a router to switch between chains that can handle different things.
+
+For a fuller demo of the book recomendation, consider replacing books_with_blurbs.csv with a larger sample from the following dataset: https://www.kaggle.com/datasets/jdobrow/57000-books-with-metadata-and-blurbs/ .
+
 ## Environment Setup
 
 Set the `COHERE_API_KEY` environment variable to access the Cohere models.
