@@ -1,9 +1,7 @@
 from google import __all__
 
 EXPECTED_ALL = [
-    "GoogleGenerativeAIChatLLM",
-    "ChatGoogleGenerativeAIChat",
-    "GoogleGenerativeAIChatVectorStore",
+    "ChatGoogleGenerativeAI",
 ]
 
 

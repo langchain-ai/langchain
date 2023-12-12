@@ -1,3 +1,3 @@
-from google.chat_models import ChatGoogleGenerativeAIChat
+from google.chat_models import ChatGoogleGenerativeAI
 
-__all__ = ["ChatGoogleGenerativeAIChat"]
+__all__ = ["ChatGoogleGenerativeAI"]
