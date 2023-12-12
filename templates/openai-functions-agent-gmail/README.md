@@ -1,10 +1,16 @@
 # OpenAI Functions Agent - Gmail
 
-This template implements a simple agent using OpenAI function calling imports directly from [langchain-core](https://pypi.org/project/langchain-core/) and [`langchain-community`](https://pypi.org/project/langchain-community/).
+Ever struggled to reach inbox zero? 
 
-This template creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take. 
+Using this template, you can create and customize your very own AI assistant to manage your Gmail account. Using the default Gmail tools, it can read, search through, and draft emails to respond on your behalf. It also has access to a Tavily search engine so it can search for relevant information about any topics or people in the email thread before writing, ensuring the drafts include all the relevant information needed to sound well-informed.
 
-This example creates an agent that can optionally look up information on the internet using Tavily's search engine.
+![Gmail Agent Playground](./static/gmail-agent-playground.gif)
+
+## The details
+
+This assistant uses OpenAI's [function calling](https://python.langchain.com/docs/modules/chains/how_to/openai_functions) support to reliably select and invoke the tools you've provided
+
+This template also imports directly from [langchain-core](https://pypi.org/project/langchain-core/) and [`langchain-community`](https://pypi.org/project/langchain-community/) where appropriate. We have restructured LangChain to let you select the specific integrations needed for your use case. While you can still import from `langchain` (we are making this transition backwards-compatible), we have separated the homes of most of the classes to reflect ownership and to make your dependency lists lighter. Most of the integrations you need can be found in the `langchain-community` package, and if you are just using the core expression language API's, you can even build solely based on `langchain-core`.
 
 ## Environment Setup
 
@@ -12,9 +18,14 @@ The following environment variables need to be set:
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
+Set the `TAVILY_API_KEY` environment variable to access Tavily search.
+
 Create a [`credentials.json`](https://developers.google.com/gmail/api/quickstart/python#authorize_credentials_for_a_desktop_application) file containing your OAuth client ID from Gmail. To customize authentication, see the [Customize Auth](#customize-auth) section below.
 
 _*Note:* The first time you run this app, it will force you to go through a user authentication flow._
+
+(Optional): Set `GMAIL_AGENT_ENABLE_SEND`  to `true` (or modify the `agent.py` file in this template) to give it access to the "Send" tool. This will give your assistant permissions to send emails on your behalf without your explicit review, which is not recommended.
+
 
 ## Usage
 

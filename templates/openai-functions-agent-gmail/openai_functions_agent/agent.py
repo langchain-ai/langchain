@@ -1,3 +1,4 @@
+import os
 from typing import List, Tuple
 
 from langchain.agents import AgentExecutor
@@ -37,9 +38,10 @@ tools = [
     GmailGetMessage(),
     GmailGetThread(),
     GmailSearch(),
-    GmailSendMessage(),
     search_engine,
 ]
+if os.environ.get("GMAIL_AGENT_ENABLE_SEND") == "true":
+    tools.append(GmailSendMessage())
 current_user = (
     build_resource_service().users().getProfile(userId="me").execute()["emailAddress"]
 )
