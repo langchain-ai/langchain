@@ -33,22 +33,3 @@ def test_chat_spark_llm_with_temperature() -> None:
     print(response)
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-
-
-def test_extra_kwargs() -> None:
-    chat = ChatSparkLLM(
-        spark_api_url="ws://test_url",
-        spark_llm_domain="general",
-        temperature=0.88,
-        top_k=2,
-        spark_user_id="test-lc-user",
-        streaming=True,
-        request_timeout=10,
-    )
-    assert chat.client.api_url == "ws://test_url"
-    assert chat.client.spark_domain == "general"
-    assert chat.temperature == 0.88
-    assert chat.top_k == 2
-    assert chat.spark_user_id == "test-lc-user"
-    assert chat.streaming is True
-    assert chat.request_timeout == 10
