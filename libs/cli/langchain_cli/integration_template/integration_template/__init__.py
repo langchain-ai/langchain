@@ -1,5 +1,5 @@
-from __module_name__.chat_models import ChatIntegration
-from __module_name__.llms import Integration
-from __module_name__.vectorstores import IntegrationVectorStore
+from __module_name__.chat_models import Chat__ModuleName__
+from __module_name__.llms import __ModuleName__LLM
+from __module_name__.vectorstores import __ModuleName__VectorStore
 
-__all__ = ["Integration", "ChatIntegration", "IntegrationVectorStore"]
+__all__ = ["__ModuleName__LLM", "Chat__ModuleName__", "__ModuleName__VectorStore"]

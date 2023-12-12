@@ -9,16 +9,16 @@ from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 
 
-class ChatIntegration(BaseChatModel):
+class Chat__ModuleName__(BaseChatModel):
     """{integration} chat model.
 
     Example:
         .. code-block:: python
 
-            from __module_name__ import ChatIntegration
+            from __module_name__ import Chat__ModuleName__
 
 
-            model = ChatIntegration(raise NotImplementedError)
+            model = Chat__ModuleName__(raise NotImplementedError)
     """
 
     @property

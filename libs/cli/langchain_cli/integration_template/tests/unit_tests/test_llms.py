@@ -1,7 +1,7 @@
-"""Test Integration Chat API wrapper."""
-from __module_name__ import Integration
+"""Test __ModuleName__ Chat API wrapper."""
+from __module_name__ import __ModuleName__LLM
 
 
 def test_integration_initialization() -> None:
     """Test integration initialization."""
-    Integration()
+    __ModuleName__LLM()

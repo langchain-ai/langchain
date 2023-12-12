@@ -1,6 +1,6 @@
-from __module_name__.vectorstores import IntegrationVectorStore
+from __module_name__.vectorstores import __ModuleName__VectorStore
 
 
 def test_integration_vectorstore_initialization() -> None:
     """Test integration vectorstore initialization."""
-    IntegrationVectorStore()
+    __ModuleName__VectorStore()

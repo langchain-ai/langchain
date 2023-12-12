@@ -23,15 +23,15 @@ if TYPE_CHECKING:
 VST = TypeVar("VST", bound=VectorStore)
 
 
-class IntegrationVectorStore(VectorStore):
+class __ModuleName__VectorStore(VectorStore):
     """Interface for vector store.
 
     Example:
         .. code-block:: python
 
-            from __module_name__.vectorstores import IntegrationVectorStore
+            from __module_name__.vectorstores import __ModuleName__VectorStore
 
-            vectorstore = IntegrationVectorStore(raise NotImplementedError)
+            vectorstore = __ModuleName__VectorStore(raise NotImplementedError)
     """
 
     def add_texts(
