@@ -67,7 +67,7 @@ class ConneryService(BaseModel):
 
         return ConneryAction.create_instance(self._get_action(action_id), self)
 
-    def run_action(self, action_id: str, input: Dict[str, str]) -> Dict[str, str]:
+    def run_action(self, action_id: str, input: Dict[str, str] = {}) -> Dict[str, str]:
         """
         Runs the specified Connery Action with the provided input.
         Parameters:
@@ -77,7 +77,7 @@ class ConneryService(BaseModel):
             Dict[str, str]: The output of the action.
         """
 
-        return self._run_action(action_id, None, input)
+        return self._run_action(action_id, input)
 
     def _list_actions(self) -> List[Action]:
         """
@@ -121,9 +121,7 @@ class ConneryService(BaseModel):
             )
         return action
 
-    def _run_action(
-        self, action_id: str, prompt: str = None, input: Dict[str, str] = None
-    ) -> Dict[str, str]:
+    def _run_action(self, action_id: str, input: Dict[str, str] = {}) -> Dict[str, str]:
         """
         Runs the specified Connery Action with the provided input.
         Parameters:
@@ -140,7 +138,7 @@ class ConneryService(BaseModel):
         response = requests.post(
             f"{self.runner_url}/v1/actions/{action_id}/run",
             headers=self._get_headers(),
-            data=json.dumps({"prompt": prompt, "input": input}),
+            data=json.dumps({"input": input}),
         )
 
         if not response.ok:
@@ -165,4 +163,4 @@ class ConneryService(BaseModel):
             Dict[str, str]: The standard set of HTTP headers.
         """
 
-        return {"Content-Type": "application/json", "x-api-key": self.api_key}
+        return {"Content-Type": "application/json", "x-api-key": self.api_key or ""}

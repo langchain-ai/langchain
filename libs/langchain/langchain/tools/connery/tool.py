@@ -18,7 +18,7 @@ class ConneryAction(BaseTool):
     action: Action
     connery_service: Any
 
-    def _run(self, **kwargs) -> Dict[str, str]:
+    def _run(self, **kwargs: Dict[str, str]) -> Dict[str, str]:
         """
         Runs the Connery Action with the provided input.
         Parameters:
@@ -72,7 +72,7 @@ class ConneryAction(BaseTool):
         return values
 
     @classmethod
-    def create_instance(cls, action: Action, connery_service: Any):
+    def create_instance(cls, action: Action, connery_service: Any) -> "ConneryAction":
         """
         Creates a Connery Action Tool from a Connery Action.
         Parameters:
@@ -118,21 +118,20 @@ class ConneryAction(BaseTool):
             Type[BaseModel]: The input schema for the Connery Action Tool.
         """
 
-        dynamic_input_fields = {}
+        dynamic_input_fields: Dict[str, Any] = {}
 
         for param in inputParameters:
-            field_info = {}
-
-            field_info["title"] = param.title
-            field_info["description"] = param.title + (
+            default = ... if param.validation and param.validation.required else None
+            title = param.title
+            description = param.title + (
                 ": " + param.description if param.description else ""
             )
-            field_info["type"] = param.type
-            field_info["default"] = (
-                ... if param.validation and param.validation.required else None
-            )
+            type = param.type
 
-            dynamic_input_fields[param.key] = (str, Field(**field_info))
+            dynamic_input_fields[param.key] = (
+                str,
+                Field(default, title=title, description=description, type=type),
+            )
 
         InputModel = create_model("InputSchema", **dynamic_input_fields)
         return InputModel

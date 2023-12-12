@@ -36,7 +36,7 @@ class ConneryToolkit(BaseToolkit):
         return values
 
     @classmethod
-    def create_instance(cls, connery_service: ConneryService):
+    def create_instance(cls, connery_service: ConneryService) -> "ConneryToolkit":
         """
         Creates a Connery Toolkit using a Connery Service.
         Parameters:
