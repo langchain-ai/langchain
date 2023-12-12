@@ -2,11 +2,10 @@ import os
 from typing import List
 
 import pytest
-from gpudb import GPUdb
 
 from langchain.docstore.document import Document
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores.kinetica import DistanceStrategy, Kinetica
+from langchain.vectorstores.kinetica import DistanceStrategy, Kinetica, KineticaSettings
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 DIMENSIONS = 3
@@ -29,22 +28,17 @@ class FakeEmbeddingsWithAdaDimension(FakeEmbeddings):
 
 
 @pytest.fixture
-def get_db() -> GPUdb:
-    options = GPUdb.Options()
-    options.username = USERNAME
-    options.password = PASSWORD
-    options.skip_ssl_cert_verification = True
-    return GPUdb(host=HOST, options=options)
+def create_config() -> KineticaSettings:
+    return KineticaSettings(host=HOST, username=USERNAME, password=PASSWORD)
 
 
 @pytest.mark.requires("gpudb")
-def test_kinetica(get_db: GPUdb) -> None:
+def test_kinetica(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
-    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"text": text} for text in texts]
     docsearch = Kinetica.from_texts(
-        db=db,
+        config=create_config,
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -57,14 +51,13 @@ def test_kinetica(get_db: GPUdb) -> None:
 
 
 @pytest.mark.requires("gpudb")
-def test_kinetica_embeddings(get_db: GPUdb) -> None:
+def test_kinetica_embeddings(create_config: KineticaSettings) -> None:
     """Test end to end construction with embeddings and search."""
-    db = get_db
     texts = ["foo", "bar", "baz"]
     text_embeddings = FakeEmbeddingsWithAdaDimension().embed_documents(texts)
     text_embedding_pairs = list(zip(texts, text_embeddings))
     docsearch = Kinetica.from_embeddings(
-        db=db,
+        config=create_config,
         text_embeddings=text_embedding_pairs,
         embedding=FakeEmbeddingsWithAdaDimension(),
         dimensions=3,
@@ -76,13 +69,12 @@ def test_kinetica_embeddings(get_db: GPUdb) -> None:
 
 
 @pytest.mark.requires("gpudb")
-def test_kinetica_with_metadatas(get_db: GPUdb) -> None:
+def test_kinetica_with_metadatas(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
-    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Kinetica.from_texts(
-        db=db,
+        config=create_config,
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -96,13 +88,12 @@ def test_kinetica_with_metadatas(get_db: GPUdb) -> None:
 
 
 @pytest.mark.requires("gpudb")
-def test_kinetica_with_metadatas_with_scores(get_db: GPUdb) -> None:
+def test_kinetica_with_metadatas_with_scores(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
-    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Kinetica.from_texts(
-        db=db,
+        config=create_config,
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -116,13 +107,12 @@ def test_kinetica_with_metadatas_with_scores(get_db: GPUdb) -> None:
 
 
 @pytest.mark.requires("gpudb")
-def test_kinetica_with_filter_match(get_db: GPUdb) -> None:
+def test_kinetica_with_filter_match(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
-    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Kinetica.from_texts(
-        db=db,
+        config=create_config,
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -136,13 +126,12 @@ def test_kinetica_with_filter_match(get_db: GPUdb) -> None:
 
 
 @pytest.mark.requires("gpudb")
-def test_kinetica_with_filter_distant_match(get_db: GPUdb) -> None:
+def test_kinetica_with_filter_distant_match(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
-    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Kinetica.from_texts(
-        db=db,
+        config=create_config,
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -157,13 +146,12 @@ def test_kinetica_with_filter_distant_match(get_db: GPUdb) -> None:
 
 @pytest.mark.skip(reason="Filter condition has IN clause")
 @pytest.mark.requires("gpudb")
-def test_kinetica_with_filter_in_set(get_db: GPUdb) -> None:
+def test_kinetica_with_filter_in_set(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
-    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Kinetica.from_texts(
-        db=db,
+        config=create_config,
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -182,13 +170,12 @@ def test_kinetica_with_filter_in_set(get_db: GPUdb) -> None:
 
 
 @pytest.mark.requires("gpudb")
-def test_kinetica_relevance_score(get_db: GPUdb) -> None:
+def test_kinetica_relevance_score(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
-    db = get_db
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Kinetica.from_texts(
-        db=db,
+        config=create_config,
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -206,13 +193,12 @@ def test_kinetica_relevance_score(get_db: GPUdb) -> None:
 
 
 @pytest.mark.requires("openai", "gpudb")
-def test_kinetica_max_marginal_relevance_search(get_db: GPUdb) -> None:
+def test_kinetica_max_marginal_relevance_search(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
-    db = get_db
     openai = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
     texts = ["foo", "bar", "baz"]
     docsearch = Kinetica.from_texts(
-        db=db,
+        config=create_config,
         texts=texts,
         embedding=openai,
         dimensions=1536,
@@ -226,12 +212,11 @@ def test_kinetica_max_marginal_relevance_search(get_db: GPUdb) -> None:
 
 
 @pytest.mark.requires("gpudb")
-def test_kinetica_max_marginal_relevance_search_with_score(get_db: GPUdb) -> None:
+def test_kinetica_max_marginal_relevance_search_with_score(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
-    db = get_db
     texts = ["foo", "bar", "baz"]
     docsearch = Kinetica.from_texts(
-        db=db,
+        config=create_config,
         texts=texts,
         embedding=FakeEmbeddingsWithAdaDimension(),
         dimensions=3,
@@ -245,9 +230,8 @@ def test_kinetica_max_marginal_relevance_search_with_score(get_db: GPUdb) -> Non
 
 
 @pytest.mark.requires("openai", "gpudb")
-def test_kinetica_with_openai_embeddings(get_db: GPUdb) -> None:
+def test_kinetica_with_openai_embeddings(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
-    db = get_db
     if OPENAI_API_KEY == "":
         assert False
 
@@ -255,7 +239,7 @@ def test_kinetica_with_openai_embeddings(get_db: GPUdb) -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"text": text} for text in texts]
     docsearch = Kinetica.from_texts(
-        db=db,
+        config=create_config,
         texts=texts,
         metadatas=metadatas,
         embedding=openai,

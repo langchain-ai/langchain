@@ -11,9 +11,8 @@ from enum import Enum
 from functools import partial
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
-# import gpudb
 import numpy as np
-from gpudb import GPUdb, GPUdbTable
+from langchain_core.pydantic_v1 import BaseSettings
 
 from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
@@ -47,13 +46,50 @@ _LANGCHAIN_DEFAULT_COLLECTION_NAME = (
     "langchain_kinetica_embeddings"  ## Default Kinetica table name
 )
 
+class KineticaSettings(BaseSettings):
+    """`Kinetica` client configuration.
+
+    Attribute:
+        host (str) : An URL to connect to MyScale backend.
+                             Defaults to 'localhost'.
+        port (int) : URL port to connect with HTTP. Defaults to 8443.
+        username (str) : Username to login. Defaults to None.
+        password (str) : Password to login. Defaults to None.
+        database (str) : Database name to find the table. Defaults to 'default'.
+        table (str) : Table name to operate on.
+                      Defaults to 'vector_table'.
+        metric (str) : Metric to compute distance,
+                       supported are ('angular', 'euclidean', 'manhattan', 'hamming',
+                       'dot'). Defaults to 'angular'.
+                       https://github.com/spotify/annoy/blob/main/src/annoymodule.cc#L149-L169
+
+    """
+
+    host: str = "http://127.0.0.1"
+    port: int = 9191
+
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+    database: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME
+    table: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME
+    metric: str = DEFAULT_DISTANCE_STRATEGY.value
+
+    def __getitem__(self, item: str) -> Any:
+        return getattr(self, item)
+
+    class Config:
+        env_file = ".env"
+        env_prefix = "kinetica_"
+        env_file_encoding = "utf-8"
+
 
 class Kinetica(VectorStore):
     """Kinetica vector store class which extends the `VectorStore` class"""
 
     def __init__(
         self,
-        db: GPUdb,
+        config: KineticaSettings,
         embedding_function: Embeddings,
         dimensions: int,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
@@ -66,7 +102,7 @@ class Kinetica(VectorStore):
         """Constructor for the Kinetica class
 
         Args:
-            db (GPUdb): a `GPUdb` instance
+            config (KineticaSettings): a `KineticaSettings` instance
             embedding_function (Embeddings): embedding function to use
             dimensions (int): number of dimensions in the vector
             collection_name (str, optional): the Kinetica table name.
@@ -79,13 +115,14 @@ class Kinetica(VectorStore):
             logger (Optional[logging.Logger], optional): _description_.
                             Defaults to None.
         """
+
         self.dimensions = (
             int(Dimension.OPENAI)
             if dimensions is None or not isinstance(dimensions, int) or dimensions <= 0
             else dimensions
         )
 
-        self._db = db
+        self._config = config
         self.embedding_function = embedding_function
         self.dimensions = dimensions
         self.collection_name = collection_name
@@ -94,12 +131,21 @@ class Kinetica(VectorStore):
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
+        self._db = self.__get_db(self._config)
         self.__post_init__(dimensions)
 
     def __post_init__(self, dimensions: int) -> None:
         """
         Initialize the store.
         """
+        try:
+            from gpudb import GPUdbTable
+        except ImportError:
+            raise ImportError(
+                "Could not import Kinetica python API. "
+                "Please install it with `pip install gpudb==7.2.0.0b`."
+            )
+
         dimension_field = f"vector({dimensions})"
 
         if self.pre_delete_collection:
@@ -119,6 +165,21 @@ class Kinetica(VectorStore):
         self.create_schema()
         self.EmbeddingStore: GPUdbTable = self.create_tables_if_not_exists()
 
+    def __get_db(self, config: KineticaSettings):
+        try:
+            from gpudb import GPUdb
+        except ImportError:
+            raise ImportError(
+                "Could not import Kinetica python API. "
+                "Please install it with `pip install gpudb==7.2.0.0b`."
+            )
+
+        options = GPUdb.Options()
+        options.username = config.username
+        options.password = config.password
+        options.skip_ssl_cert_verification = True
+        return GPUdb(host=config.host, options=options)
+
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
@@ -126,7 +187,7 @@ class Kinetica(VectorStore):
     @classmethod
     def __from(
         cls,
-        db: GPUdb,
+        config: KineticaSettings,
         texts: List[str],
         embeddings: List[List[float]],
         embedding: Embeddings,
@@ -143,9 +204,9 @@ class Kinetica(VectorStore):
             using different combinations of parameters
 
         Args:
-            db (GPUdb): a GPUdb instance
+            config (KineticaSettings): a `KineticaSettings` instance
             texts (List[str]): The list of texts to generate embeddings for and store
-            embeddings (List[List[float]]): _description_
+            embeddings (List[List[float]]): List of embeddings
             embedding (Embeddings): the Embedding function
             dimensions (int): The number of dimensions the embeddings have
             metadatas (Optional[List[dict]], optional): List of JSON data associated
@@ -177,7 +238,7 @@ class Kinetica(VectorStore):
             metadatas = [{} for _ in texts]
 
         store = cls(
-            db=db,
+            config=config,
             collection_name=collection_name,
             embedding_function=embedding,
             dimensions=dimensions,
@@ -193,9 +254,16 @@ class Kinetica(VectorStore):
 
         return store
 
-    def create_tables_if_not_exists(self) -> GPUdbTable:
+    def create_tables_if_not_exists(self):
         """Create the table to store the texts and embeddings"""
 
+        try:
+            from gpudb import GPUdbTable
+        except ImportError:
+            raise ImportError(
+                "Could not import Kinetica python API. "
+                "Please install it with `pip install gpudb==7.2.0.0b`."
+            )
         return GPUdbTable(
             _type=self.table_schema,
             name=self.table_name,
@@ -662,7 +730,7 @@ class Kinetica(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        db: GPUdb = None,
+        config: KineticaSettings = None,
         dimensions: int = Dimension.OPENAI,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
@@ -706,7 +774,7 @@ class Kinetica(VectorStore):
             embeddings=embeddings,
             embedding=embedding,
             dimensions=dimensions,
-            db=db,
+            config=config,
             metadatas=metadatas,
             ids=ids,
             collection_name=collection_name,
@@ -721,7 +789,7 @@ class Kinetica(VectorStore):
         text_embeddings: List[Tuple[str, List[float]]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        db: GPUdb = None,
+        config: KineticaSettings = None,
         dimensions: int = Dimension.OPENAI,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
@@ -766,7 +834,7 @@ class Kinetica(VectorStore):
             embeddings=embeddings,
             embedding=embedding,
             dimensions=dimensions,
-            db=db,
+            config=config,
             metadatas=metadatas,
             ids=ids,
             collection_name=collection_name,
@@ -780,7 +848,7 @@ class Kinetica(VectorStore):
         cls: Type[Kinetica],
         documents: List[Document],
         embedding: Embeddings,
-        db: GPUdb = None,
+        config: KineticaSettings = None,
         metadatas: Optional[List[dict]] = None,
         dimensions: int = Dimension.OPENAI,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
@@ -826,7 +894,7 @@ class Kinetica(VectorStore):
             embedding=embedding,
             metadatas=metadatas,
             dimensions=dimensions,
-            db=db,
+            config=config,
             collection_name=collection_name,
             distance_strategy=distance_strategy,
             ids=ids,
