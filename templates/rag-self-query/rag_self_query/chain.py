@@ -8,8 +8,8 @@ from langchain.retrievers import SelfQueryRetriever
 from langchain.schema import format_document
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-from pydantic.v1 import BaseModel, Field
 
 from .prompts import CONDENSE_QUESTION_PROMPT, DOCUMENT_PROMPT, LLM_CONTEXT_PROMPT
 
