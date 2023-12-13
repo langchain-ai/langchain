@@ -4,30 +4,55 @@ import base64
 import logging
 import os
 from io import BytesIO
-from typing import (Any, AsyncIterator, Callable, Dict,
-                    Iterator, List, Mapping, Optional, Sequence, Tuple, Type,
-                    Union, cast)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 from urllib.parse import urlparse
 
-import google.generativeai as genai
 import requests
-from langchain_core.callbacks.manager import (AsyncCallbackManagerForLLMRun,
-                                              CallbackManagerForLLMRun)
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
-                                     ChatMessage, ChatMessageChunk,
-                                     HumanMessage, HumanMessageChunk)
-from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
-                                    ChatResult)
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    ChatMessage,
+    ChatMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_google_genai._common import (GoogleGenerativeAIError,
-                                            configure_genai)
-from tenacity import (before_sleep_log, retry, retry_if_exception_type,
-                      stop_after_attempt, wait_exponential)
+from langchain_core.utils import get_from_dict_or_env
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 logger = logging.getLogger(__name__)
 
-
+if TYPE_CHECKING:
+    # TODO: remove ignore once the google package is published with types
+    import google.generativeai as genai  # type: ignore[import]
 IMAGE_TYPES: Tuple = ()
 try:
     import PIL
@@ -37,7 +62,51 @@ try:
 except ImportError:
     PIL = None  # type: ignore
     Image = None  # type: ignore
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
+from urllib.parse import urlparse
 
+import google.generativeai as genai
+import requests
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    ChatMessage,
+    ChatMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_google_genai._common import GoogleGenerativeAIError, configure_genai
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+logger = logging.getLogger(__name__)
 
 from langchain_core.utils import get_from_dict_or_env
 
@@ -460,7 +529,9 @@ Supported examples:
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        google_api_key = get_from_dict_or_env(values, "google_api_key", "GOOGLE_API_KEY")
+        google_api_key = get_from_dict_or_env(
+            values, "google_api_key", "GOOGLE_API_KEY"
+        )
         genai.configure(api_key=google_api_key)
         values["client"] = genai
         if (

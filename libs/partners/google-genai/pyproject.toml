@@ -4,10 +4,11 @@ version = "0.0.1"
 description = "An integration package connecting Google's genai package and LangChain"
 authors = []
 readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain/blob/master/libs/partners/google-genai"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = ">=0.0.12"
+langchain-core = "^0.1"
 google-generativeai = "^0.3.1"
 
 [tool.poetry.group.test]
@@ -16,11 +17,11 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
 freezegun = "^1.2.2"
-pytest-mock  = "^3.10.0"
+pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true
@@ -41,7 +42,7 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 types-requests = "^2.28.11.5"
 types-google-cloud-ndb = "^2.2.0.1"
 types-pillow = "^10.1.0.2"
@@ -50,7 +51,7 @@ types-pillow = "^10.1.0.2"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 pillow = "^10.1.0"
 types-requests = "^2.31.0.10"
 types-pillow = "^10.1.0.2"
@@ -58,9 +59,9 @@ types-google-cloud-ndb = "^2.2.0.1"
 
 [tool.ruff]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
+  "E", # pycodestyle
+  "F", # pyflakes
+  "I", # isort
 ]
 
 [tool.mypy]
@@ -68,9 +69,7 @@ disallow_untyped_defs = "True"
 exclude = ["notebooks", "examples", "example_data", "langchain_core/pydantic"]
 
 [tool.coverage.run]
-omit = [
-    "tests/*",
-]
+omit = ["tests/*"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
