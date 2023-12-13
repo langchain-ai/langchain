@@ -117,6 +117,7 @@ def _import_brave_search_tool() -> Any:
 
     return BraveSearch
 
+
 def _import_connery_tool() -> Any:
     from langchain_community.tools.connery import ConneryAction
 
