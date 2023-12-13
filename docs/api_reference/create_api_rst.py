@@ -192,7 +192,9 @@ def _load_package_modules(
 
 
 def _construct_doc(
-    package_namespace: str, members_by_namespace: Dict[str, ModuleMembers], package_version: str
+    package_namespace: str,
+    members_by_namespace: Dict[str, ModuleMembers],
+    package_version: str,
 ) -> str:
     """Construct the contents of the reference.rst file for the given package.
 
@@ -291,7 +293,9 @@ def _build_rst_file(package_name: str = "langchain") -> None:
     with open(_out_file_path(package_name), "w") as f:
         f.write(
             _doc_first_line(package_name)
-            + _construct_doc(_package_namespace(package_name), package_members, package_version)
+            + _construct_doc(
+                _package_namespace(package_name), package_members, package_version
+            )
         )
 
 
