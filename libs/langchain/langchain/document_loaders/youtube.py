@@ -1,4 +1,5 @@
 from langchain_community.document_loaders.youtube import (
+    GoogleApiClient,
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
@@ -6,4 +7,5 @@ from langchain_community.document_loaders.youtube import (
 __all__ = [
     "YoutubeLoader",
     "GoogleApiYoutubeLoader",
+    "GoogleApiClient",
 ]
