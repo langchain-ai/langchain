@@ -31,6 +31,11 @@ if TYPE_CHECKING:
     )
     from vertexai.preview.generative_models import Image
 
+# (WFH) We will remove in the next release.
+_response_to_generation = None
+completion_with_retry = None
+stream_completion_with_retry = None
+
 
 def is_codey_model(model_name: str) -> bool:
     """Returns True if the model name is a Codey model."""
