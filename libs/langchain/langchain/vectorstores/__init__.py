@@ -503,6 +503,8 @@ def __getattr__(name: str) -> Any:
         return _import_faiss()
     elif name == "Hologres":
         return _import_hologres()
+    elif name == "KineticaSettings":
+        return _import_kinetica_settings()
     elif name == "Kinetica":
         return _import_kinetica()
     elif name == "LanceDB":
@@ -617,6 +619,7 @@ __all__ = [
     "FAISS",
     "Hologres",
     "Kinetica",
+    "KineticaSettings",
     "LanceDB",
     "LLMRails",
     "Marqo",
