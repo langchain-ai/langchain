@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.llms.llamacpp import LlamaCpp
 
 
 class LlamaCppEmbeddings(BaseModel, Embeddings):
@@ -11,15 +12,24 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     path to the Llama model as a named parameter to the constructor.
     Check out: https://github.com/abetlen/llama-cpp-python
 
+    Alternatively, to share the client, you can use a LLamaCpp directly by providing the model
+    as the `model` parameter.
+
     Example:
         .. code-block:: python
 
-            from langchain_community.embeddings import LlamaCppEmbeddings
+            # Using llama-cpp-python library
+            from langchain.embeddings import LlamaCppEmbeddings
             llama = LlamaCppEmbeddings(model_path="/path/to/model.bin")
+
+            # Using LLamaCpp directly
+            from langchain.embeddings import LlamaCppEmbeddings
+            llama_direct = LlamaCppEmbeddings(model=my_llama_model)
     """
 
     client: Any  #: :meta private:
-    model_path: str
+    model_path: str = Field(None, alias="model_path", required=False)
+    model: LlamaCpp = Field(None, alias="model", required=False)
 
     n_ctx: int = Field(512, alias="n_ctx")
     """Token context window."""
@@ -65,7 +75,14 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
-        model_path = values["model_path"]
+        model_path = values["model_path"] if "model_path" in values else None
+        model = values["model"] if "model" in values else None
+
+        if model_path is None and model is None:
+            raise ValueError(
+                "You must provide either a model_path or a model to use the LlamaCppEmbeddings model."
+            )
+
         model_param_names = [
             "n_ctx",
             "n_parts",
@@ -86,7 +103,10 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         try:
             from llama_cpp import Llama
 
-            values["client"] = Llama(model_path, embedding=True, **model_params)
+            if model is not None:
+                values["client"] = model.client
+            else:
+                values["client"] = Llama(model_path, embedding=True, **model_params)
         except ImportError:
             raise ModuleNotFoundError(
                 "Could not import llama-cpp-python library. "
