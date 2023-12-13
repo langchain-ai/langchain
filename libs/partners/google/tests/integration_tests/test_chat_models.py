@@ -1,6 +1,6 @@
 """Test ChatGoogleGenerativeAI chat model."""
-from langchain_core.messages import AIMessage, HumanMessage
 import pytest
+from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain_google.chat_models import (
     ChatGoogleGenerativeAI,
@@ -75,7 +75,7 @@ def test_chat_google_genai_invoke() -> None:
 
 
 def test_chat_google_genai_invoke_multimodal() -> None:
-    messages = [
+    messages: list = [
         HumanMessage(
             content=[
                 {
@@ -103,7 +103,7 @@ def test_chat_google_genai_invoke_multimodal() -> None:
 
 def test_chat_google_genai_invoke_multimodal_too_many_messages() -> None:
     # Only supports 1 turn...
-    messages = [
+    messages: list = [
         HumanMessage(content="Hi there"),
         AIMessage(content="Hi, how are you?"),
         HumanMessage(
@@ -126,7 +126,7 @@ def test_chat_google_genai_invoke_multimodal_too_many_messages() -> None:
 
 def test_chat_google_genai_invoke_multimodal_invalid_model() -> None:
     # need the vision model to support this.
-    messages = [
+    messages: list = [
         HumanMessage(
             content=[
                 {

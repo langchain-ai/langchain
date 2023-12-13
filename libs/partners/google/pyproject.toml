@@ -49,6 +49,9 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 langchain-core = {path = "../../core", develop = true}
 pillow = "^10.1.0"
+types-requests = "^2.31.0.10"
+types-pillow = "^10.1.0.2"
+types-google-cloud-ndb = "^2.2.0.1"
 
 [tool.ruff]
 select = [

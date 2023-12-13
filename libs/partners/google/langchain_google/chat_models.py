@@ -16,8 +16,10 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
+    cast,
 )
 from urllib.parse import urlparse
 
@@ -50,23 +52,17 @@ from tenacity import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import google.generativeai as genai
-IMAGE_TYPES = ()
+    # TODO: remove ignore once the google package is published with types
+    import google.generativeai as genai  # type: ignore[import]
+IMAGE_TYPES: Tuple = ()
 try:
-    import PIL.Image
-    from PIL import Image
+    import PIL
+    from PIL.Image import Image
 
-    IMAGE_TYPES = IMAGE_TYPES + (PIL.Image.Image,)
+    IMAGE_TYPES = IMAGE_TYPES + (Image,)
 except ImportError:
-    PIL = None
-    Image = None
-
-try:
-    import IPython.display
-
-    IMAGE_TYPES = IMAGE_TYPES + (IPython.display.Image,)
-except ImportError:
-    pass
+    PIL = None  # type: ignore
+    Image = None  # type: ignore
 
 
 class ChatGoogleGenerativeAIError(Exception):
@@ -168,7 +164,7 @@ def _is_openai_parts_format(part: dict) -> bool:
     return "type" in part
 
 
-def _is_vision_model(model: str):
+def _is_vision_model(model: str) -> bool:
     return "vision" in model
 
 
@@ -185,22 +181,27 @@ def _is_b64(s: str) -> bool:
     return s.startswith("data:image")
 
 
-def _load_image_from_gcs(path: str, project: Optional[str] = None) -> "Image":
+def _load_image_from_gcs(path: str, project: Optional[str] = None) -> Image:
     try:
-        from google.cloud import storage
+        from google.cloud import storage  # type: ignore[attr-defined]
     except ImportError:
-        raise ImportError("Could not import google-cloud-storage python package.")
-    try:
-        from vertexai.preview.generative_models import Image
-    except ImportError:
-        raise ImportError("Could not import vertexai python package.")
+        raise ImportError(
+            "google-cloud-storage is required to load images from GCS."
+            " Install it with `pip install google-cloud-storage`"
+        )
+    if PIL is None:
+        raise ImportError(
+            "PIL is required to load images. Please install it "
+            "with `pip install pillow`"
+        )
 
     gcs_client = storage.Client(project=project)
     pieces = path.split("/")
     blobs = list(gcs_client.list_blobs(pieces[2], prefix="/".join(pieces[3:])))
     if len(blobs) > 1:
         raise ValueError(f"Found more than one candidate for {path}!")
-    return Image.from_bytes(blobs[0].download_as_bytes())
+    img_bytes = blobs[0].download_as_bytes()
+    return PIL.Image.open(BytesIO(img_bytes))
 
 
 def _url_to_pil(image_source: str) -> Image:
@@ -211,19 +212,19 @@ def _url_to_pil(image_source: str) -> Image:
         )
     try:
         if isinstance(image_source, IMAGE_TYPES):
-            return image_source
+            return image_source  # type: ignore[return-value]
         elif _is_url(image_source):
             if image_source.startswith("gs://"):
                 return _load_image_from_gcs(image_source)
             response = requests.get(image_source)
             response.raise_for_status()
-            return Image.open(BytesIO(response.content))
+            return PIL.Image.open(BytesIO(response.content))
         elif _is_b64(image_source):
             _, encoded = image_source.split(",", 1)
             data = base64.b64decode(encoded)
-            return Image.open(BytesIO(data))
+            return PIL.Image.open(BytesIO(data))
         elif os.path.exists(image_source):
-            return Image.open(image_source)
+            return PIL.Image.open(image_source)
         else:
             raise ValueError(
                 "The provided string is not a valid URL, base64, or file path."
@@ -274,7 +275,7 @@ def _convert_to_parts(
 
 
 def _messages_to_genai_contents(
-    input_messages: List[BaseMessage],
+    input_messages: Sequence[BaseMessage],
 ) -> List[genai.types.ContentDict]:
     """Converts a list of messages into a Gemini API google content dicts."""
 
@@ -413,6 +414,8 @@ Supported examples:
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
 
+    _generative_model: Any  #: :meta private:
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"google_api_key": "GOOGLE_API_KEY"}
@@ -547,7 +550,7 @@ Supported examples:
                 chat_msg_t=ChatMessageChunk,
                 generation_t=ChatGenerationChunk,
             )
-            gen = _chat_result.generations[0]
+            gen = cast(ChatGenerationChunk, _chat_result.generations[0])
             yield gen
             if run_manager:
                 run_manager.on_llm_new_token(gen.text)

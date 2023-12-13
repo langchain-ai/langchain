@@ -1117,6 +1117,42 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
+name = "types-google-cloud-ndb"
+version = "2.2.0.1"
+description = "Typing stubs for google-cloud-ndb"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-google-cloud-ndb-2.2.0.1.tar.gz", hash = "sha256:3dd5f7437d3f4192a32b69e9b21da582d897303680f2eaac5d070749fd866586"},
+    {file = "types_google_cloud_ndb-2.2.0.1-py3-none-any.whl", hash = "sha256:88b4800f4c6421a34894bd9f61aee562605d5cc151d454d4d97241fd680b1cb1"},
+]
+
+[[package]]
+name = "types-pillow"
+version = "10.1.0.2"
+description = "Typing stubs for Pillow"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "types-Pillow-10.1.0.2.tar.gz", hash = "sha256:525c1c5ee67b0ac1721c40d2bc618226ef2123c347e527e14e05b920721a13b9"},
+    {file = "types_Pillow-10.1.0.2-py3-none-any.whl", hash = "sha256:131078ffa547bf9a201d39ffcdc65633e108148085f4f1b07d4647fcfec6e923"},
+]
+
+[[package]]
+name = "types-requests"
+version = "2.31.0.10"
+description = "Typing stubs for requests"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "types-requests-2.31.0.10.tar.gz", hash = "sha256:dc5852a76f1eaf60eafa81a2e50aefa3d1f015c34cf0cba130930866b1b22a92"},
+    {file = "types_requests-2.31.0.10-py3-none-any.whl", hash = "sha256:b32b9a86beffa876c0c3ac99a4cd3b8b51e973fb8e3bd4e0a6bb32c7efad80fc"},
+]
+
+[package.dependencies]
+urllib3 = ">=2"
+
+[[package]]
 name = "typing-extensions"
 version = "4.9.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -1185,4 +1221,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "aa580aee265cab253286e06adb5b142c1750e0de7e5869789f3cc122e5b1c868"
+content-hash = "7f4567ef8043f358939cb2fd0350087f5e48396da972a172ce4bc9459050e309"
