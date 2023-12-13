@@ -57,7 +57,5 @@ def test_uses_actual_secret_value_from_secret_str() -> None:
         qianfan_ak="test-api-key",
         qianfan_sk="test-secret-key",
     )
-    api_key = chat.qianfan_ak.get_secret_value() if chat.qianfan_ak else ""
-    secret_key = chat.qianfan_sk.get_secret_value() if chat.qianfan_sk else ""
-    assert api_key == "test-api-key"
-    assert secret_key == "test-secret-key"
+    assert chat.qianfan_ak.get_secret_value() == "test-api-key"
+    assert chat.qianfan_sk.get_secret_value() == "test-secret-key"
