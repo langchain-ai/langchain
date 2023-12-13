@@ -31,7 +31,8 @@ if TYPE_CHECKING:
     )
     from vertexai.preview.generative_models import Image
 
-# (WFH) We will remove in the next release.
+# This is for backwards compatability
+# We can remove after `langchain` stops importing it
 _response_to_generation = None
 completion_with_retry = None
 stream_completion_with_retry = None
