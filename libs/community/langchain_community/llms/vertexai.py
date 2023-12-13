@@ -7,11 +7,8 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import BaseLLM
-from langchain_core.messages import BaseMessage
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.prompt_values import StringPromptValue
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain_community.utilities.vertexai import (
@@ -28,7 +25,6 @@ if TYPE_CHECKING:
     )
     from google.cloud.aiplatform.models import Prediction
     from google.protobuf.struct_pb2 import Value
-    from langchain_core.runnables import RunnableConfig
     from vertexai.language_models._language_models import (
         TextGenerationResponse,
         _LanguageModel,
@@ -44,21 +40,6 @@ def is_codey_model(model_name: str) -> bool:
 def is_gemini_model(model_name: str) -> bool:
     """Returns True if the model name is a Gemini model."""
     return model_name is not None and "gemini" in model_name
-
-
-def _load_image_from_gcs(path: str, project: Optional[str] = None) -> "Image":
-    try:
-        from google.cloud import storage
-    except ImportError:
-        raise ImportError("Could not import google-cloud-storage python package.")
-    from vertexai.preview.generative_models import Image
-
-    gcs_client = storage.Client(project=project)
-    pieces = path.split("/")
-    blobs = list(gcs_client.list_blobs(pieces[2], prefix="/".join(pieces[3:])))
-    if len(blobs) > 1:
-        raise ValueError(f"Found more than one candidate for {path}!")
-    return Image.from_bytes(blobs[0].download_as_bytes())
 
 
 def completion_with_retry(
@@ -192,7 +173,7 @@ class _VertexAICommon(_VertexAIBase):
         return params
 
     @classmethod
-    def _try_init_vertexai(cls, values: Dict, is_gemini: bool = False) -> None:
+    def _try_init_vertexai(cls, values: Dict) -> None:
         allowed_params = ["project", "location", "credentials"]
         params = {k: v for k, v in values.items() if k in allowed_params}
         init_vertexai(**params)
@@ -236,7 +217,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         tuned_model_name = values.get("tuned_model_name")
         model_name = values["model_name"]
         is_gemini = is_gemini_model(values["model_name"])
-        cls._try_init_vertexai(values, is_gemini=is_gemini)
+        cls._try_init_vertexai(values)
         try:
             from vertexai.language_models import (
                 CodeGenerationModel,
@@ -349,77 +330,6 @@ class VertexAI(_VertexAICommon, BaseLLM):
                     [self._response_to_generation(r) for r in res.candidates]
                 )
         return LLMResult(generations=generations)
-
-    def invoke(
-        self,
-        input: LanguageModelInput,
-        config: Optional[RunnableConfig] = None,
-        *,
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> str:
-        vertex_input = self._convert_to_prompt(model_input=input)
-        if isinstance(vertex_input, str):
-            return super().invoke(input, config, stop=stop, **kwargs)
-        if not isinstance(vertex_input, list):
-            raise ValueError(
-                "Input for a multimodal model should be a str or a list of elements!"
-            )
-        params = self._prepare_params(stop=stop, stream=False, **kwargs)
-        res = completion_with_retry(
-            self,
-            vertex_input,
-            is_gemini=True,
-            run_manager=kwargs.get("run_manager"),
-            **params,
-        )
-
-        return res.text
-
-    def _convert_to_prompt(
-        self, model_input: LanguageModelInput
-    ) -> Union[str, StringPromptValue, List[Union[str, "Image"]]]:
-        if isinstance(model_input, str):
-            return model_input
-        elif isinstance(model_input, StringPromptValue):
-            return model_input.to_string()
-        elif isinstance(model_input, list):
-            if "vision" not in self.model_name:
-                raise ValueError(
-                    f"Multi-modal input is not supported by {self.model_name} model!"
-                )
-            first_message = model_input[0]
-            if len(model_input) > 1 and not isinstance(first_message, BaseMessage):
-                raise ValueError(
-                    "Multi-modal model expects only a single message as a input!"
-                )
-        else:
-            raise ValueError(
-                f"Invalid input type {type(model_input)}. "
-                "Must be a PromptValue, str, or list of BaseMessages."
-            )
-
-        from vertexai.preview.generative_models import Image
-
-        vertex_messages: List[Union[str, Image]] = []
-        for content in first_message.content:
-            if not isinstance(content, Dict):
-                raise ValueError(
-                    f"Message's content is expected to be a dict, got {type(content)}!"
-                )
-            if content["type"] == "text":
-                vertex_messages.append(content["text"])
-            elif content["type"] == "image_url":
-                path = content["image_url"]["url"]
-                if path.startswith("gs://"):
-                    vertex_messages.append(
-                        _load_image_from_gcs(path=path, project=self.project)
-                    )
-                else:
-                    vertex_messages.append(Image.load_from_file(path))
-            else:
-                raise ValueError("Only text and image_url types are supported!")
-        return vertex_messages
 
     async def _agenerate(
         self,

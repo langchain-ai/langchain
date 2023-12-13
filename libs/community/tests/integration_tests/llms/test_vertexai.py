@@ -9,7 +9,6 @@ import os
 from typing import Optional
 
 import pytest
-from langchain_core.messages import HumanMessage
 from langchain_core.outputs import LLMResult
 
 from langchain_community.llms import VertexAI, VertexAIModelGarden
@@ -42,25 +41,6 @@ def test_vertex_call(model_name: str) -> None:
         else VertexAI(temperature=0.0)
     )
     output = llm("Say foo:")
-    assert isinstance(output, str)
-
-
-def test_invoke_multimodal() -> None:
-    llm = VertexAI(model_name="gemini-ultra-vision")
-    gcs_url = (
-        "gs://cloud-samples-data/generative-ai/image/"
-        "320px-Felis_catus-cat_on_snow.jpg"
-    )
-    image_message = {
-        "type": "image_url",
-        "image_url": {"url": gcs_url},
-    }
-    text_message = {
-        "type": "text",
-        "text": "What is shown in this image?",
-    }
-    message = HumanMessage(content=[text_message, image_message])
-    output = llm.invoke([message])
     assert isinstance(output, str)
 
 
