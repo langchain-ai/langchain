@@ -100,7 +100,7 @@ def _parse_chat_history_gemini(
                 f"Message's content is expected to be a dict, got {type(part)}!"
             )
         if part["type"] == "text":
-            return Part.from_text("text")
+            return Part.from_text(part["text"])
         elif part["type"] == "image_url":
             path = part["image_url"]["url"]
             if path.startswith("gs://"):
