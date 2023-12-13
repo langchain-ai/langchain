@@ -1,14 +1,23 @@
 # DataForSEO
 
+>[DataForSeo](https://dataforseo.com/) provides comprehensive SEO and digital marketing data solutions via API.
+
 This page provides instructions on how to use the DataForSEO search APIs within LangChain.
 
 ## Installation and Setup
 
-- Get a DataForSEO API Access login and password, and set them as environment variables (`DATAFORSEO_LOGIN` and `DATAFORSEO_PASSWORD` respectively). You can find it in your dashboard.
+Get a [DataForSEO API Access login and password](https://app.dataforseo.com/register), and set them as environment variables 
+(`DATAFORSEO_LOGIN` and `DATAFORSEO_PASSWORD` respectively).
 
-## Wrappers
+```python
+import os
 
-### Utility
+os.environ["DATAFORSEO_LOGIN"] = "your_login"
+os.environ["DATAFORSEO_PASSWORD"] = "your_password"
+```
+
+
+## Utility
 
 The DataForSEO utility wraps the API. To import this utility, use:
 
@@ -16,9 +25,9 @@ The DataForSEO utility wraps the API. To import this utility, use:
 from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 ```
 
-For a detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/dataforseo.ipynb).
+For a detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/dataforseo).
 
-### Tool
+## Tool
 
 You can also load this wrapper as a Tool to use with an Agent:
 
@@ -32,20 +41,5 @@ tools = load_tools(["dataforseo-api-search"])
 ```python
 dataforseo = DataForSeoAPIWrapper(api_login="your_login", api_password="your_password")
 result = dataforseo.run("Bill Gates")
-print(result)
-```
-
-## Environment Variables
-
-You can store your DataForSEO API Access login and password as environment variables. The wrapper will automatically check for these environment variables if no values are provided:
-
-```python
-import os
-
-os.environ["DATAFORSEO_LOGIN"] = "your_login"
-os.environ["DATAFORSEO_PASSWORD"] = "your_password"
-
-dataforseo = DataForSeoAPIWrapper()
-result = dataforseo.run("weather in Los Angeles")
 print(result)
 ```

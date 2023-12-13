@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import List, Literal
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Field
@@ -21,3 +21,8 @@ class Document(Serializable):
     def is_lc_serializable(cls) -> bool:
         """Return whether this class is serializable."""
         return True
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "document"]
