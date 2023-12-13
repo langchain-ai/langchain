@@ -1,4 +1,4 @@
-"""Chat Model Components Derived from ChatModel/NVAIPlay"""
+"""Embeddings Components Derived from ChatModel/NVAIPlay"""
 
 import asyncio
 from collections import abc

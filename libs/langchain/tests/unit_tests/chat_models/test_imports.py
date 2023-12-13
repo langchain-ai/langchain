@@ -30,11 +30,7 @@ EXPECTED_ALL = [
     "ChatBaichuan",
     "ChatHunyuan",
     "GigaChat",
-<<<<<<< HEAD
-    "NVAIPlayChat",
-=======
     "VolcEngineMaasChat",
->>>>>>> master
 ]
 
 

@@ -318,12 +318,6 @@ def _import_nlpcloud() -> Any:
     return NLPCloud
 
 
-def _import_nv_aiplay() -> Any:
-    from langchain.llms.nv_aiplay import NVAIPlayLLM
-
-    return NVAIPlayLLM
-
-
 def _import_octoai_endpoint() -> Any:
     from langchain.llms.octoai_endpoint import OctoAIEndpoint
 
@@ -635,8 +629,6 @@ def __getattr__(name: str) -> Any:
         return _import_mosaicml()
     elif name == "NLPCloud":
         return _import_nlpcloud()
-    elif name == "NVAIPlayLLM":
-        return _import_nv_aiplay()
     elif name == "OctoAIEndpoint":
         return _import_octoai_endpoint()
     elif name == "Ollama":
@@ -767,7 +759,6 @@ __all__ = [
     "Nebula",
     "NIBittensorLLM",
     "NLPCloud",
-    "NVAIPlayLLM",
     "Ollama",
     "OpenAI",
     "OpenAIChat",
@@ -855,7 +846,6 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nebula": _import_symblai_nebula,
         "nibittensor": _import_bittensor,
         "nlpcloud": _import_nlpcloud,
-        "nv_aiplay": _import_nv_aiplay,
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,

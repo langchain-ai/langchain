@@ -57,7 +57,6 @@ from langchain.embeddings.mlflow_gateway import MlflowAIGatewayEmbeddings
 from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
 from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 from langchain.embeddings.nlpcloud import NLPCloudEmbeddings
-from langchain.embeddings.nv_aiplay import NVAIPlayEmbeddings
 from langchain.embeddings.octoai_embeddings import OctoAIEmbeddings
 from langchain.embeddings.ollama import OllamaEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -118,7 +117,6 @@ __all__ = [
     "OctoAIEmbeddings",
     "SpacyEmbeddings",
     "NLPCloudEmbeddings",
-    "NVAIPlayEmbeddings",
     "GPT4AllEmbeddings",
     "XinferenceEmbeddings",
     "LocalAIEmbeddings",
