@@ -5,7 +5,7 @@ This partner package contains the newer Google LangChain integrations.
 ## Installation
 
 ```python
-pip install -U langchain-google
+pip install -U langchain-google-genai
 ```
 
 ## Chat Models
