@@ -1034,18 +1034,17 @@ class AgentExecutor(Chain):
         intermediate_steps: List[Tuple[AgentAction, str]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
-        return self._consume_next_step(
-            [
-                a
-                for a in self._iter_next_step(
-                    name_to_tool_map,
-                    color_mapping,
-                    inputs,
-                    intermediate_steps,
-                    run_manager,
-                )
-            ]
+        """Take a single step."""
+        next_steps = list(
+            self._iter_next_step(
+                name_to_tool_map,
+                color_mapping,
+                inputs,
+                intermediate_steps,
+                run_manager,
+            )
         )
+        return self._consume_next_step(next_steps)
 
     def _iter_next_step(
         self,

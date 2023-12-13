@@ -14,6 +14,11 @@ from langchain.chains.llm import LLMChain
 class XMLAgent(BaseSingleActionAgent):
     """Agent that uses XML tags.
 
+    This agent only works with LLMs not chat models!
+
+    Ability of agent to invoke tools varies a lot depending on how good the underlying
+    LLM is!
+
     Args:
         tools: list of tools the agent can choose from
         llm_chain: The LLMChain to call to predict the next action
@@ -22,13 +27,25 @@ class XMLAgent(BaseSingleActionAgent):
 
         .. code-block:: python
 
-            from langchain.agents import XMLAgent
-            from langchain
+            from langchain.agents import AgentExecutor, XMLAgent
+            from langchain.chains import LLMChain
 
-            tools = ...
-            model =
+            chain = LLMChain(
+                llm=model,
+                prompt=XMLAgent.get_default_prompt(),
+                output_parser=XMLAgent.get_default_output_parser(),
+            )
 
+            agent = XMLAgent(tools=tools, llm_chain=chain)
 
+            agent_executor = AgentExecutor(
+                agent=agent,
+                tools=tools,
+                verbose=True,
+                handle_parsing_errors=True
+            )
+
+            agent_executor.invoke({"input": "what's the weather in New york?"})
     """
 
     tools: List[BaseTool]
@@ -38,6 +55,7 @@ class XMLAgent(BaseSingleActionAgent):
 
     @property
     def input_keys(self) -> List[str]:
+        """Get the input keys."""
         return ["input"]
 
     @staticmethod
@@ -48,7 +66,26 @@ class XMLAgent(BaseSingleActionAgent):
 
     @staticmethod
     def get_default_output_parser() -> XMLAgentOutputParser:
+        """Get the default output parser."""
         return XMLAgentOutputParser()
+
+    def _format_intermediate_steps(
+        self, intermediate_steps: List[Tuple[AgentAction, str]]
+    ) -> str:
+        """Format the steps."""
+        log = ""
+        for action, observation in intermediate_steps:
+            if action.tool == "_Exception":
+                # This only works correctly when handle_parsing_errors=True
+                log += action.log  # Will contain the llm output from the exception
+                log += "\n{observation}\n"
+                pass
+            else:
+                log += (
+                    f"<tool>{action.tool}</tool><tool_input>{action.tool_input}"
+                    f"</tool_input>\n<observation>{observation}</observation>\n"
+                )
+        return log
 
     def plan(
         self,
@@ -56,17 +93,11 @@ class XMLAgent(BaseSingleActionAgent):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
-        log = ""
-        for action, observation in intermediate_steps:
-            log += (
-                f"<tool>{action.tool}</tool><tool_input>{action.tool_input}"
-                f"</tool_input><observation>{observation}</observation>"
-            )
         tools = ""
         for tool in self.tools:
             tools += f"{tool.name}: {tool.description}\n"
         inputs = {
-            "intermediate_steps": log,
+            "intermediate_steps": self._format_intermediate_steps(intermediate_steps),
             "tools": tools,
             "question": kwargs["input"],
             "stop": ["</tool_input>", "</final_answer>"],
@@ -80,17 +111,11 @@ class XMLAgent(BaseSingleActionAgent):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
-        log = ""
-        for action, observation in intermediate_steps:
-            log += (
-                f"<tool>{action.tool}</tool><tool_input>{action.tool_input}"
-                f"</tool_input><observation>{observation}</observation>"
-            )
         tools = ""
         for tool in self.tools:
             tools += f"{tool.name}: {tool.description}\n"
         inputs = {
-            "intermediate_steps": log,
+            "intermediate_steps": self._format_intermediate_steps(intermediate_steps),
             "tools": tools,
             "question": kwargs["input"],
             "stop": ["</tool_input>", "</final_answer>"],
