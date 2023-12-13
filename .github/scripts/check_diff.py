@@ -24,11 +24,11 @@ if __name__ == "__main__":
             )
         ):
             dirs_to_run.update(LANGCHAIN_DIRS)
-        elif "libs/community" in file:
+        elif file.startswith("libs/community"):
             dirs_to_run.update(
                 ("libs/community", "libs/langchain", "libs/experimental")
             )
-        elif "libs/partners" in file:
+        elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
             dirs_to_run.update(
                 (f"libs/partners/{partner_dir}", "libs/langchain", "libs/experimental")
@@ -36,9 +36,9 @@ if __name__ == "__main__":
         elif file.startswith("templates/"):
             template = file.split("/")[1]
             dirs_to_run.add(f"templates/{template}")
-        elif "libs/langchain" in file:
+        elif file.startswith("libs/langchain"):
             dirs_to_run.update(("libs/langchain", "libs/experimental"))
-        elif "libs/experimental" in file:
+        elif file.startswith("libs/experimental"):
             dirs_to_run.add("libs/experimental")
         elif file.startswith("libs/"):
             dirs_to_run.update(LANGCHAIN_DIRS)
