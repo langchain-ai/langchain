@@ -10,12 +10,6 @@ class GoogleGenerativeAIEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""
-        cls._try_init_vertexai(values)
-        try:
-            from vertexai.language_models import TextEmbeddingModel
-        except ImportError:
-            raise_vertex_import_error()
-        values["client"] = TextEmbeddingModel.from_pretrained(values["model_name"])
         return values
 
     def embed_documents(

@@ -533,7 +533,6 @@ Supported examples:
             values, "google_api_key", "GOOGLE_API_KEY"
         )
         genai.configure(api_key=google_api_key)
-        values["client"] = genai
         if (
             values.get("temperature") is not None
             and not 0 <= values["temperature"] <= 1
