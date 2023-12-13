@@ -1,5 +1,5 @@
-from typing import List
 import unittest
+from typing import List
 
 import pytest
 
