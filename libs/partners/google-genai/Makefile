@@ -12,6 +12,9 @@ test:
 tests:
 	poetry run pytest $(TEST_FILE)
 
+check_imports: $(shell find langchain_google_genai -name '*.py')
+	poetry run python ./scripts/check_imports.py $^
+
 
 ######################
 # LINTING AND FORMATTING
