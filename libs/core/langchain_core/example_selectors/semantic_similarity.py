@@ -28,8 +28,8 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
     input_keys: Optional[List[str]] = None
     """Optional keys to filter input to. If provided, the search is based on
     the input variables instead of all variables."""
-    vectorstore_kwargs: Optional[Dict[str, Any]]
-    """extra arguments passed to similarity_search function of the vectorstore"""
+    vectorstore_kwargs: Optional[Dict[str, Any]] = None
+    """Extra arguments passed to similarity_search function of the vectorstore."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -53,8 +53,9 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         # Get the docs with the highest similarity.
         if self.input_keys:
             input_variables = {key: input_variables[key] for key in self.input_keys}
+        vectorstore_kwargs = self.vectorstore_kwargs or {}
         query = " ".join(sorted_values(input_variables))
-        example_docs = self.vectorstore.similarity_search(query, k=self.k, **self.vectorstore_kwargs)
+        example_docs = self.vectorstore.similarity_search(query, k=self.k, **vectorstore_kwargs)
         # Get the examples from the metadata.
         # This assumes that examples are stored in metadata.
         examples = [dict(e.metadata) for e in example_docs]
