@@ -223,6 +223,7 @@ class ChatLiteLLM(BaseChatModel):
         creds: Dict[str, Any] = {
             "model": set_model_value,
             "force_timeout": self.request_timeout,
+            "api_base": self.api_base,
         }
         return {**self._default_params, **creds}
 
