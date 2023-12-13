@@ -1,7 +1,7 @@
 """Test ChatNVAIPlay chat model."""
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
-from langchain_nvidia_aiplay.chat_models import GeneralChat, ChatNVAIPlay
+from langchain_nvidia_aiplay.chat_models import ChatNVAIPlay, GeneralChat
 
 
 def test_chat_aiplay() -> None:

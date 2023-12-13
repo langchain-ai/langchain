@@ -48,6 +48,7 @@ optional = true
 
 [tool.poetry.group.dev.dependencies]
 langchain-core = {path = "../../core", develop = true}
+types-requests = "^2.31.0.10"
 
 [tool.ruff]
 select = [
