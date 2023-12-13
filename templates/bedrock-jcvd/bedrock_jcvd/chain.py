@@ -7,14 +7,14 @@ from langchain.schema.runnable import ConfigurableField
 # For a description of each inference parameter, see
 # https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-claude.html
 _model_kwargs = {
-	"temperature":
-	    float(os.getenv("BEDROCK_JCVD_TEMPERATURE", "0.1")),
-	"top_p":
-	    float(os.getenv("BEDROCK_JCVD_TOP_P", "1")),
-	"top_k":
-	    int(os.getenv("BEDROCK_JCVD_TOP_K", "250")),
-	"max_tokens_to_sample":
-	    int(os.getenv("BEDROCK_JCVD_MAX_TOKENS_TO_SAMPLE", "300"))
+    "temperature":
+        float(os.getenv("BEDROCK_JCVD_TEMPERATURE", "0.1")),
+    "top_p":
+        float(os.getenv("BEDROCK_JCVD_TOP_P", "1")),
+    "top_k":
+        int(os.getenv("BEDROCK_JCVD_TOP_K", "250")),
+    "max_tokens_to_sample":
+        int(os.getenv("BEDROCK_JCVD_MAX_TOKENS_TO_SAMPLE", "300"))
 }
 
 # Full list of base model IDs is available at
@@ -42,16 +42,16 @@ _prompt = ChatPromptTemplate.from_messages([
 ])
 
 _model = BedrockChat(
-	model_id='anthropic.claude-v2',
-	model_kwargs=_model_kwargs
+    model_id='anthropic.claude-v2',
+    model_kwargs=_model_kwargs
 ).configurable_alternatives(
-	which=ConfigurableField(
-		id='model',
-		name='Model',
-		description='The model that will be used'
+    which=ConfigurableField(
+        id='model',
+        name='Model',
+        description='The model that will be used'
     ),
-	default_key='Claude 2',
-	**_model_alts
+    default_key='Claude 2',
+    **_model_alts
 )
 
 chain = _prompt | _model
