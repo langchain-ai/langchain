@@ -1,5 +1,5 @@
 
-# rag-chroma-multi-modal
+# rag-chroma-multi-modal-multi-vector
 
 Presentations (slide decks, etc) contain visual content that challenges conventional RAG.
 
@@ -7,24 +7,24 @@ Multi-modal LLMs unlock new ways to build apps over visual content like presenta
  
 This template performs multi-modal RAG using Chroma with the multi-vector retriever (see [blog](https://blog.langchain.dev/multi-modal-rag-template/)):
 
-* Extract the slides as images
-* Use GPT-4V to summarize each image
-* Embed the image summaries with a link to the original images
-* Retrieve relevant image based on similarity between the image summary and the user input
+* Extracts the slides as images
+* Uses GPT-4V to summarize each image
+* Embeds the image summaries with a link to the original images
+* Retrieves relevant image based on similarity between the image summary and the user input
 * Finally pass those images to GPT-4V for answer synthesis
 
 ## Storage
 
-We will use Upstash to store the images.
+We will use Upstash to store the images, which offers Redis with a REST API.
 
 Simply login [here](https://upstash.com/) and create a database.
 
-This will give you: 
+This will give you a REST API with:
 
 * UPSTASH_URL
 * UPSTASH_TOKEN
 
-Set these in chain.py (***TODO: Update this? Env var?***)
+Set `UPSTASH_URL` and `UPSTASH_TOKEN` as environment variables to access your database.
 
 We will use Chroma to store and index the image summaries, which will be created locally in the template directory.
 
@@ -46,6 +46,8 @@ The app will retrieve images using multi-modal embeddings, and pass them to GPT-
 ## Environment Setup
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI GPT-4V.
+
+Set `UPSTASH_URL` and `UPSTASH_TOKEN` as environment variables to access your database.
 
 ## Usage
 

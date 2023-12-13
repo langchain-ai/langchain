@@ -1,17 +1,17 @@
 import base64
 import io
-import json
+import os
 from pathlib import Path
 
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.pydantic_v1 import BaseModel
 from langchain.retrievers.multi_vector import MultiVectorRetriever
+from langchain.schema.document import Document
 from langchain.schema.messages import HumanMessage
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.storage import UpstashRedisByteStore
-from langchain.schema.document import Document
 from langchain.vectorstores import Chroma
 from PIL import Image
 
@@ -43,7 +43,6 @@ def get_resized_images(docs):
     for doc in docs:
         if isinstance(doc, Document):
             doc = doc.page_content
-        # doc = json.loads(doc.decode("utf-8"))["kwargs"]["page_content"]
         resized_image = resize_base64_image(doc, size=(1280, 720))
         b64_images.append(resized_image)
     return {"images": b64_images}
@@ -110,8 +109,8 @@ vectorstore_mvr = Chroma(
 )
 
 # Load redis
-UPSTASH_URL = "https://usw1-bright-beagle-34178.upstash.io"
-UPSTASH_TOKEN = "AYWCACQgNzk3OTJjZTItMGIxNy00MTEzLWIyZTAtZWI0ZmI1ZGY0NjFhNGRhMGZjNDE4YjgxNGE4MTkzOWYxMzllM2MzZThlOGY="
+UPSTASH_URL = os.getenv("UPSTASH_URL")
+UPSTASH_TOKEN = os.getenv("UPSTASH_TOKEN")
 store = UpstashRedisByteStore(url=UPSTASH_URL, token=UPSTASH_TOKEN)
 id_key = "doc_id"
 

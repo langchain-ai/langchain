@@ -1,5 +1,6 @@
 import base64
 import io
+import os
 import uuid
 from io import BytesIO
 from pathlib import Path
@@ -64,8 +65,8 @@ def generate_img_summaries(img_base64_list):
         try:
             image_summaries.append(image_summarize(base64_image, prompt))
             processed_images.append(base64_image)
-        except:
-            print(f"BadRequestError with image {i+1}")
+        except Exception as e:
+            print(f"Error with image {i+1}: {e}")
 
     return image_summaries, processed_images
 
@@ -136,8 +137,8 @@ def create_multi_vector_retriever(vectorstore, image_summaries, images):
     """
 
     # Initialize the storage layer for images
-    UPSTASH_URL = "https://usw1-bright-beagle-34178.upstash.io"
-    UPSTASH_TOKEN = "AYWCACQgNzk3OTJjZTItMGIxNy00MTEzLWIyZTAtZWI0ZmI1ZGY0NjFhNGRhMGZjNDE4YjgxNGE4MTkzOWYxMzllM2MzZThlOGY="
+    UPSTASH_URL = os.getenv("UPSTASH_URL")
+    UPSTASH_TOKEN = os.getenv("UPSTASH_TOKEN")
     store = UpstashRedisByteStore(url=UPSTASH_URL, token=UPSTASH_TOKEN)
     id_key = "doc_id"
 
