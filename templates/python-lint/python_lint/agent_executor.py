@@ -1,9 +1,8 @@
-"""langchain python coder-- requires black, ruff, and mypy."""
-
 import os
 import re
 import subprocess  # nosec
 import tempfile
+
 
 from langchain.agents import initialize_agent, AgentType
 from langchain.agents.tools import Tool
@@ -68,7 +67,10 @@ def check_ruff(filepath: str):
 
 def check_mypy(filepath: str, strict: bool = True, follow_imports: str = "skip"):
     """Run mypy on a file."""
-    cmd = f"mypy {'--strict' if strict else ''} --follow-imports={follow_imports} {filepath}"
+    cmd = (
+        f"mypy {'--strict' if strict else ''} "
+        f"--follow-imports={follow_imports} {filepath}"
+    )
 
     subprocess.check_output(  # nosec
         cmd,
@@ -81,7 +83,8 @@ def check_mypy(filepath: str, strict: bool = True, follow_imports: str = "skip")
 
 class PythonCode(BaseModel):
     code: str = Field(
-        description="Python code conforming to ruff, black, and *strict* mypy standards.",
+        description="Python code conforming to "
+                    "ruff, black, and *strict* mypy standards.",
     )
 
     @validator("code")
@@ -135,7 +138,11 @@ class PythonCode(BaseModel):
 def check_code(code: str) -> str:
     try:
         code_obj = PythonCode(code=code)
-        return f"# LGTM\n# use the `submit` tool to submit this code:\n\n```python\n{code_obj.code}\n```"
+        return (
+            f"# LGTM\n"
+            f"# use the `submit` tool to submit this code:\n\n"
+            f"```python\n{code_obj.code}\n```"
+        )
     except ValidationError as e:
         return e.errors()[0]["msg"]
 
@@ -144,9 +151,12 @@ prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a world class Python coder who uses black, ruff, and *strict* mypy for all of your code. "
-            "Provide complete, end-to-end Python code to meet the user's description/requirements. "
-            "Always `check` your code. When you're done, you must ALWAYS use the `submit` tool.",
+            "You are a world class Python coder who uses "
+            "black, ruff, and *strict* mypy for all of your code. "
+            "Provide complete, end-to-end Python code "
+            "to meet the user's description/requirements. "
+            "Always `check` your code. When you're done, "
+            "you must ALWAYS use the `submit` tool.",
         ),
         (
             "human",
