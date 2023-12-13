@@ -27,6 +27,7 @@ _EXPECTED = [
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "DocumentDBVectorSearch",
+    "EcloudESVectorStore",
     "ElasticKnnSearch",
     "ElasticVectorSearch",
     "ElasticsearchStore",

@@ -49,6 +49,7 @@ _module_lookup = {
     "DocArrayHnswSearch": "langchain_community.vectorstores.docarray",
     "DocArrayInMemorySearch": "langchain_community.vectorstores.docarray",
     "DocumentDBVectorSearch": "langchain_community.vectorstores.documentdb",
+    "EcloudESVectorStore": "langchain_community.vectorstores.ecloud_vector_search",
     "ElasticKnnSearch": "langchain_community.vectorstores.elastic_vector_search",
     "ElasticVectorSearch": "langchain_community.vectorstores.elastic_vector_search",
     "ElasticsearchStore": "langchain_community.vectorstores.elasticsearch",
