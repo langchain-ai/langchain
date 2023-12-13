@@ -7,6 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
+import toml
 from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
@@ -191,7 +192,9 @@ def _load_package_modules(
 
 
 def _construct_doc(
-    package_namespace: str, members_by_namespace: Dict[str, ModuleMembers]
+    package_namespace: str,
+    members_by_namespace: Dict[str, ModuleMembers],
+    package_version: str,
 ) -> str:
     """Construct the contents of the reference.rst file for the given package.
 
@@ -206,7 +209,7 @@ def _construct_doc(
     """
     full_doc = f"""\
 =======================
-``{package_namespace}`` API Reference
+``{package_namespace}`` {package_version}
 =======================
 
 """
@@ -284,11 +287,15 @@ def _build_rst_file(package_name: str = "langchain") -> None:
     Args:
         package_name: Can be either "langchain" or "core" or "experimental".
     """
-    package_members = _load_package_modules(_package_dir(package_name))
+    package_dir = _package_dir(package_name)
+    package_members = _load_package_modules(package_dir)
+    package_version = _get_package_version(package_dir)
     with open(_out_file_path(package_name), "w") as f:
         f.write(
             _doc_first_line(package_name)
-            + _construct_doc(_package_namespace(package_name), package_members)
+            + _construct_doc(
+                _package_namespace(package_name), package_members, package_version
+            )
         )
 
 
@@ -312,6 +319,12 @@ def _package_dir(package_name: str = "langchain") -> Path:
             / package_name
             / _package_namespace(package_name)
         )
+
+
+def _get_package_version(package_dir: Path) -> str:
+    with open(package_dir.parent / "pyproject.toml", "r") as f:
+        pyproject = toml.load(f)
+    return pyproject["tool"]["poetry"]["version"]
 
 
 def _out_file_path(package_name: str = "langchain") -> Path:
