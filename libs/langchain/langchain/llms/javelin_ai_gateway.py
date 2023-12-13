@@ -1,3 +1,3 @@
-from langchain_community.llms.javelin_ai_gateway import JavelinAIGateway, Params
+from langchain_community.llms.javelin_ai_gateway import JavelinAIGateway
 
-__all__ = ["Params", "JavelinAIGateway"]
+__all__ = ["JavelinAIGateway"]

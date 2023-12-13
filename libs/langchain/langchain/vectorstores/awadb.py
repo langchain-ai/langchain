@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.awadb import DEFAULT_TOPN, AwaDB
+from langchain_community.vectorstores.awadb import AwaDB
 
-__all__ = ["DEFAULT_TOPN", "AwaDB"]
+__all__ = ["AwaDB"]

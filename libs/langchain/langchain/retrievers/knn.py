@@ -1,3 +1,3 @@
-from langchain_community.retrievers.knn import KNNRetriever, create_index
+from langchain_community.retrievers.knn import KNNRetriever
 
-__all__ = ["create_index", "KNNRetriever"]
+__all__ = ["KNNRetriever"]

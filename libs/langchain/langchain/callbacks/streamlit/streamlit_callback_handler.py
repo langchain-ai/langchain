@@ -8,11 +8,9 @@ from langchain_community.callbacks.streamlit.streamlit_callback_handler import (
     LLMThoughtState,
     StreamlitCallbackHandler,
     ToolRecord,
-    _convert_newlines,
 )
 
 __all__ = [
-    "_convert_newlines",
     "CHECKMARK_EMOJI",
     "THINKING_EMOJI",
     "HISTORY_EMOJI",

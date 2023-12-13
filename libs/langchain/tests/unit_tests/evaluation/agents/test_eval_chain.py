@@ -114,7 +114,7 @@ Score: One"""
 
 
 def test_trajectory_eval_chain(
-    intermediate_steps: List[Tuple[AgentAction, str]]
+    intermediate_steps: List[Tuple[AgentAction, str]],
 ) -> None:
     llm = _FakeTrajectoryChatModel(
         queries={
@@ -142,7 +142,7 @@ def test_trajectory_eval_chain(
 
 
 def test_trajectory_eval_chain_no_tools(
-    intermediate_steps: List[Tuple[AgentAction, str]]
+    intermediate_steps: List[Tuple[AgentAction, str]],
 ) -> None:
     llm = _FakeTrajectoryChatModel(
         queries={

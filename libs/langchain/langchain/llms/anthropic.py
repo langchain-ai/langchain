@@ -1,3 +1,3 @@
-from langchain_community.llms.anthropic import Anthropic, _AnthropicCommon
+from langchain_community.llms.anthropic import Anthropic
 
-__all__ = ["_AnthropicCommon", "Anthropic"]
+__all__ = ["Anthropic"]

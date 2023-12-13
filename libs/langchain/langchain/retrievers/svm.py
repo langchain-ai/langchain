@@ -1,3 +1,3 @@
-from langchain_community.retrievers.svm import SVMRetriever, create_index
+from langchain_community.retrievers.svm import SVMRetriever
 
-__all__ = ["create_index", "SVMRetriever"]
+__all__ = ["SVMRetriever"]

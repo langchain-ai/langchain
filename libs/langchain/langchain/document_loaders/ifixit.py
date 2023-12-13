@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.ifixit import IFIXIT_BASE_URL, IFixitLoader
+from langchain_community.document_loaders.ifixit import IFixitLoader
 
-__all__ = ["IFIXIT_BASE_URL", "IFixitLoader"]
+__all__ = ["IFixitLoader"]

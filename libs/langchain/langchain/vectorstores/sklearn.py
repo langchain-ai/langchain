@@ -1,6 +1,4 @@
 from langchain_community.vectorstores.sklearn import (
-    DEFAULT_FETCH_K,
-    DEFAULT_K,
     BaseSerializer,
     BsonSerializer,
     JsonSerializer,
@@ -10,8 +8,6 @@ from langchain_community.vectorstores.sklearn import (
 )
 
 __all__ = [
-    "DEFAULT_K",
-    "DEFAULT_FETCH_K",
     "BaseSerializer",
     "JsonSerializer",
     "BsonSerializer",

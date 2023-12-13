@@ -1,3 +1,3 @@
-from langchain_community.graphs.neptune_graph import NeptuneGraph, NeptuneQueryException
+from langchain_community.graphs.neptune_graph import NeptuneGraph
 
-__all__ = ["NeptuneQueryException", "NeptuneGraph"]
+__all__ = ["NeptuneGraph"]

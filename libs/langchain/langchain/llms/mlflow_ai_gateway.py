@@ -1,3 +1,3 @@
-from langchain_community.llms.mlflow_ai_gateway import MlflowAIGateway, Params
+from langchain_community.llms.mlflow_ai_gateway import MlflowAIGateway
 
-__all__ = ["Params", "MlflowAIGateway"]
+__all__ = ["MlflowAIGateway"]
