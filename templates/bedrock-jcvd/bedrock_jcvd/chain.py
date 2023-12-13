@@ -16,11 +16,11 @@ _model_kwargs = {
 # Full list of base model IDs is available at
 # https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids-arns.html
 _model_alts = {
-    "Claude 2.1": BedrockChat(
+    "claude_2_1": BedrockChat(
         model_id="anthropic.claude-v2:1", model_kwargs=_model_kwargs
     ),
-    "Claude 1": BedrockChat(model_id="anthropic.claude-v1", model_kwargs=_model_kwargs),
-    "Claude Instant 1": BedrockChat(
+    "claude_1": BedrockChat(model_id="anthropic.claude-v1", model_kwargs=_model_kwargs),
+    "claude_instant_1": BedrockChat(
         model_id="anthropic.claude-instant-v1", model_kwargs=_model_kwargs
     ),
 }
@@ -40,7 +40,7 @@ _model = BedrockChat(
     which=ConfigurableField(
         id="model", name="Model", description="The model that will be used"
     ),
-    default_key="Claude 2",
+    default_key="claude_2",
     **_model_alts,
 )
 

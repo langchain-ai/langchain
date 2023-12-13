@@ -15,6 +15,15 @@ langserve = {extras = ["server"], version = ">=0.0.30"}
 pydantic = "<2"
 boto3 = "^1.33.10"
 
+[tool.langserve]
+export_module = "bedrock_jcvd.chain"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "chatbot"
+author = "LangChain"
+integrations = ["AWS"]
+tags = ["conversation"]
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"
