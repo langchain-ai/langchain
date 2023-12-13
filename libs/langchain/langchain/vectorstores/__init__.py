@@ -194,18 +194,6 @@ def _import_hologres() -> Any:
     return Hologres
 
 
-def _import_kinetica() -> Any:
-    from langchain.vectorstores.kinetica import Kinetica
-
-    return Kinetica
-
-
-def _import_kinetica_settings() -> Any:
-    from langchain.vectorstores.kinetica import KineticaSettings
-
-    return KineticaSettings
-
-
 def _import_lancedb() -> Any:
     from langchain.vectorstores.lancedb import LanceDB
 
@@ -503,10 +491,10 @@ def __getattr__(name: str) -> Any:
         return _import_faiss()
     elif name == "Hologres":
         return _import_hologres()
-    elif name == "KineticaSettings":
-        return _import_kinetica_settings()
-    elif name == "Kinetica":
-        return _import_kinetica()
+    # elif name == "KineticaSettings":
+    #     return _import_kinetica_settings()
+    # elif name == "Kinetica":
+    #     return _import_kinetica()
     elif name == "LanceDB":
         return _import_lancedb()
     elif name == "LLMRails":
@@ -618,8 +606,6 @@ __all__ = [
     "Epsilla",
     "FAISS",
     "Hologres",
-    "Kinetica",
-    "KineticaSettings",
     "LanceDB",
     "LLMRails",
     "Marqo",
