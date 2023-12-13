@@ -50,7 +50,7 @@ _SUPPORTED_CRITERIA = {
 
 
 def resolve_pairwise_criteria(
-    criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]]
+    criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]],
 ) -> dict:
     """Resolve the criteria for the pairwise evaluator.
 
@@ -187,6 +187,10 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     output_parser: BaseOutputParser = Field(
         default_factory=PairwiseStringResultOutputParser
     )
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     class Config:
         """Configuration for the PairwiseStringEvalChain."""

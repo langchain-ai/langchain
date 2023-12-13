@@ -20,7 +20,7 @@ class OpenAIToolAgentAction(AgentActionMessageLog):
 
 
 def parse_ai_message_to_openai_tool_action(
-    message: BaseMessage
+    message: BaseMessage,
 ) -> Union[List[AgentAction], AgentFinish]:
     """Parse an AI message potentially containing tool_calls."""
     if not isinstance(message, AIMessage):

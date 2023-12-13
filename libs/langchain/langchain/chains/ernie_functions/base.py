@@ -136,7 +136,7 @@ def convert_python_function_to_ernie_function(
 
 
 def convert_to_ernie_function(
-    function: Union[Dict[str, Any], Type[BaseModel], Callable]
+    function: Union[Dict[str, Any], Type[BaseModel], Callable],
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an Ernie function.
 

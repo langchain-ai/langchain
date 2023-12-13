@@ -90,7 +90,7 @@ def test__validate_example_inputs_for_language_model(inputs: Dict[str, Any]) -> 
     _INVALID_PROMPTS,
 )
 def test__validate_example_inputs_for_language_model_invalid(
-    inputs: Dict[str, Any]
+    inputs: Dict[str, Any],
 ) -> None:
     mock_ = mock.MagicMock()
     mock_.inputs = inputs
@@ -345,6 +345,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
                 "feedback": [],
                 # No run since we mock the call to the llm above
                 "execution_time": None,
+                "run_id": None,
             }
             for example in examples
         }
