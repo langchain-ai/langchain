@@ -4,9 +4,9 @@ import asyncio
 from collections import abc
 from typing import Any, List, Literal, Sequence
 
-from langchain.llms.nv_aiplay import ClientModel, NVCRModel
-from langchain.pydantic_v1 import Field
-from langchain.schema.embeddings import Embeddings
+from langchain_nvidia_aiplay.common import ClientModel, NVCRModel
+from langchain_core.pydantic_v1 import Field
+from langchain_core.embeddings import Embeddings
 
 
 class NVAIPlayEmbeddings(ClientModel, Embeddings):
