@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional, TYPE_CHECKING
+import importlib.metadata
 import warnings
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from langchain_core.output_parsers import BaseOutputParser
-
 
 if TYPE_CHECKING:
     from guardrails.guard import Guard
@@ -149,4 +149,11 @@ class GuardrailsOutputParser(BaseOutputParser):
         return self.guard.raw_prompt.format_instructions
 
     def parse(self, text: str) -> Dict:
-        return self.guard.parse(text, llm_api=self.api, *self.args, **self.kwargs)
+        result = self.guard.parse(text, llm_api=self.api, *self.args, **self.kwargs)
+
+        guardrails_version = importlib.metadata.version("guardrails-ai")
+        if guardrails_version >= "0.3.0":
+            # unpack validation outcome object
+            result = result.validated_output
+
+        return result
