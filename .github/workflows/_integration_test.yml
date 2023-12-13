@@ -39,15 +39,7 @@ jobs:
         shell: bash
         run: poetry install --with test,test_integration
 
-      - name: Install langchain editable
-        working-directory: ${{ inputs.working-directory }}
-        if: ${{ inputs.langchain-location }}
-        env:
-          LANGCHAIN_LOCATION: ${{ inputs.langchain-location }}
-        run: |
-          poetry run pip install -e "$LANGCHAIN_LOCATION"
-
-      - name: Run core tests
+      - name: Run integration tests
         shell: bash
         run: |
           make integration_tests
