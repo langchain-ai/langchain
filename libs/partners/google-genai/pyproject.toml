@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-google-genai"
-version = "0.0.1"
+version = "0.0.2"
 description = "An integration package connecting Google's genai package and LangChain"
 authors = []
 readme = "README.md"
@@ -22,6 +22,7 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
+numpy = "^1.26.2"
 
 [tool.poetry.group.codespell]
 optional = true

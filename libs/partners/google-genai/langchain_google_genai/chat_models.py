@@ -5,64 +5,6 @@ import logging
 import os
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncIterator,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
-from urllib.parse import urlparse
-
-import requests
-from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    ChatMessage,
-    ChatMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-)
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
-
-logger = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-    # TODO: remove ignore once the google package is published with types
-    import google.generativeai as genai  # type: ignore[import]
-IMAGE_TYPES: Tuple = ()
-try:
-    import PIL
-    from PIL.Image import Image
-
-    IMAGE_TYPES = IMAGE_TYPES + (Image,)
-except ImportError:
-    PIL = None  # type: ignore
-    Image = None  # type: ignore
-from typing import (
     Any,
     AsyncIterator,
     Callable,
@@ -96,8 +38,8 @@ from langchain_core.messages import (
     HumanMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_google_genai._common import GoogleGenerativeAIError, configure_genai
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -106,9 +48,19 @@ from tenacity import (
     wait_exponential,
 )
 
-logger = logging.getLogger(__name__)
+from langchain_google_genai._common import GoogleGenerativeAIError
 
-from langchain_core.utils import get_from_dict_or_env
+IMAGE_TYPES: Tuple = ()
+try:
+    import PIL
+    from PIL.Image import Image
+
+    IMAGE_TYPES = IMAGE_TYPES + (Image,)
+except ImportError:
+    PIL = None  # type: ignore
+    Image = None  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 
 class ChatGoogleGenerativeAIError(GoogleGenerativeAIError):
@@ -153,7 +105,7 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
     )
 
 
-def chat_with_retry(*, generation_method: Callable, **kwargs: Any) -> Any:
+def _chat_with_retry(*, generation_method: Callable, **kwargs: Any) -> Any:
     """
     Executes a chat generation method with retry logic using tenacity.
 
@@ -186,7 +138,7 @@ def chat_with_retry(*, generation_method: Callable, **kwargs: Any) -> Any:
     return _chat_with_retry(**kwargs)
 
 
-async def achat_with_retry(*, generation_method: Callable, **kwargs: Any) -> Any:
+async def _achat_with_retry(*, generation_method: Callable, **kwargs: Any) -> Any:
     """
     Executes a chat generation method with retry logic using tenacity.
 
@@ -480,7 +432,7 @@ Supported examples:
     max_output_tokens: int = Field(default=None, description="Max output tokens")
 
     client: Any  #: :meta private:
-    google_api_key: Optional[str] = None
+    google_api_key: Optional[SecretStr] = None
     temperature: Optional[float] = None
     """Run inference with this temperature. Must by in the closed
        interval [0.0, 1.0]."""
@@ -532,6 +484,8 @@ Supported examples:
         google_api_key = get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY"
         )
+        if isinstance(google_api_key, SecretStr):
+            google_api_key = google_api_key.get_secret_value()
         genai.configure(api_key=google_api_key)
         if (
             values.get("temperature") is not None
@@ -595,7 +549,7 @@ Supported examples:
         **kwargs: Any,
     ) -> ChatResult:
         params = self._prepare_params(messages, stop, **kwargs)
-        response: genai.types.GenerateContentResponse = chat_with_retry(
+        response: genai.types.GenerateContentResponse = _chat_with_retry(
             **params,
             generation_method=self._generation_method,
         )
@@ -609,7 +563,7 @@ Supported examples:
         **kwargs: Any,
     ) -> ChatResult:
         params = self._prepare_params(messages, stop, **kwargs)
-        response: genai.types.GenerateContentResponse = await achat_with_retry(
+        response: genai.types.GenerateContentResponse = await _achat_with_retry(
             **params,
             generation_method=self._async_generation_method,
         )
@@ -623,7 +577,7 @@ Supported examples:
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         params = self._prepare_params(messages, stop, **kwargs)
-        response: genai.types.GenerateContentResponse = chat_with_retry(
+        response: genai.types.GenerateContentResponse = _chat_with_retry(
             **params,
             generation_method=self._generation_method,
             stream=True,
@@ -649,7 +603,7 @@ Supported examples:
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         params = self._prepare_params(messages, stop, **kwargs)
-        async for chunk in await achat_with_retry(
+        async for chunk in await _achat_with_retry(
             **params,
             generation_method=self._async_generation_method,
             stream=True,
