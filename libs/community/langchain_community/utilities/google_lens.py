@@ -1,9 +1,13 @@
 """Util that calls Google Lens Search."""
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import (
+    convert_to_secret_str,
+    extract_secret_value,
+    get_from_dict_or_env,
+)
 
 
 class GoogleLensAPIWrapper(BaseModel):
@@ -45,11 +49,9 @@ class GoogleLensAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run query through Google Trends with Serpapi"""
-        serpapi_api_key = cast(SecretStr, self.serp_api_key)
-
         params = {
             "engine": "google_lens",
-            "api_key": serpapi_api_key.get_secret_value(),
+            "api_key": extract_secret_value(self.serpapi_api_key),
             "url": query,
         }
         queryURL = f"https://serpapi.com/search?engine={params['engine']}&api_key={params['api_key']}&url={params['url']}"

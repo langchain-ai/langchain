@@ -1,8 +1,12 @@
 """Util that calls Google Finance Search."""
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import (
+    convert_to_secret_str,
+    extract_secret_value,
+    get_from_dict_or_env,
+)
 
 
 class GoogleFinanceAPIWrapper(BaseModel):
@@ -51,10 +55,9 @@ class GoogleFinanceAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run query through Google Finance with Serpapi"""
-        serpapi_api_key = cast(SecretStr, self.serp_api_key)
         params = {
             "engine": "google_finance",
-            "api_key": serpapi_api_key.get_secret_value(),
+            "api_key": extract_secret_value(self.serpapi_api_key),
             "q": query,
         }
 

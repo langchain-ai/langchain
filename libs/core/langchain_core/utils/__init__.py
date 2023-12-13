@@ -17,8 +17,8 @@ from langchain_core.utils.strings import comma_list, stringify_dict, stringify_v
 from langchain_core.utils.utils import (
     build_extra_kwargs,
     check_package_version,
-    get_secret_value,
     convert_to_secret_str,
+    extract_secret_value,
     get_pydantic_field_names,
     guard_import,
     mock_now,
@@ -29,7 +29,7 @@ from langchain_core.utils.utils import (
 __all__ = [
     "StrictFormatter",
     "check_package_version",
-    "get_secret_value",
+    "extract_secret_value",
     "convert_to_secret_str",
     "formatter",
     "get_bolded_text",

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Iterator, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, SecretStr
 
 
 def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
@@ -38,7 +38,7 @@ class JavelinAIGatewayEmbeddings(Embeddings, BaseModel):
     gateway_uri: Optional[str] = None
     """The URI for the Javelin AI Gateway API."""
 
-    javelin_api_key: Optional[str] = None
+    javelin_api_key: Optional[SecretStr] = None
     """The API key for the Javelin AI Gateway API."""
 
     def __init__(self, **kwargs: Any):

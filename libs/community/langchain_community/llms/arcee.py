@@ -1,9 +1,13 @@
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import (
+    convert_to_secret_str,
+    extract_secret_value,
+    get_from_dict_or_env,
+)
 
 from langchain_community.utilities.arcee import ArceeWrapper, DALMFilter
 
@@ -66,7 +70,7 @@ class Arcee(LLM):
         """Initializes private fields."""
 
         super().__init__(**data)
-        api_key = cast(SecretStr, self.arcee_api_key)
+        api_key = extract_secret_value(self.arcee_api_key)
         self._client = ArceeWrapper(
             arcee_api_key=api_key,
             arcee_api_url=self.arcee_api_url,

@@ -1,10 +1,14 @@
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import (
+    convert_to_secret_str,
+    extract_secret_value,
+    get_from_dict_or_env,
+)
 
 
 class AI21PenaltyData(BaseModel):
@@ -142,10 +146,12 @@ class AI21(LLM):
             else:
                 base_url = "https://api.ai21.com/studio/v1"
         params = {**self._default_params, **kwargs}
-        self.ai21_api_key = cast(SecretStr, self.ai21_api_key)
+        self.ai21_api_key = convert_to_secret_str(self.ai21_api_key)
         response = requests.post(
             url=f"{base_url}/{self.model}/complete",
-            headers={"Authorization": f"Bearer {self.ai21_api_key.get_secret_value()}"},
+            headers={
+                "Authorization": f"Bearer {extract_secret_value(self.ai21_api_key)}"
+            },
             json={"prompt": prompt, "stopSequences": stop, **params},
         )
         if response.status_code != 200:

@@ -10,13 +10,16 @@ from typing import (
     Optional,
     Tuple,
     Union,
-    cast,
 )
 
 import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import (
+    convert_to_secret_str,
+    extract_secret_value,
+    get_from_dict_or_env,
+)
 from tenacity import (
     before_sleep_log,
     retry,
@@ -103,7 +106,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
     def _invocation_params(
         self, input: List[str], input_type: Optional[str] = None
     ) -> Dict:
-        api_key = cast(SecretStr, self.voyage_api_key).get_secret_value()
+        api_key = extract_secret_value(self.voyage_api_key)
         params = {
             "url": self.voyage_api_base,
             "headers": {"Authorization": f"Bearer {api_key}"},
