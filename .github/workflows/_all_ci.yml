@@ -48,6 +48,7 @@ jobs:
     secrets: inherit
 
   compile-integration-tests:
+    if: ${{ ! startsWith(inputs.working-directory, 'templates/') }}
     uses: ./.github/workflows/_compile_integration_test.yml
     with:
       working-directory: ${{ inputs.working-directory }}
@@ -72,7 +73,7 @@ jobs:
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
-    if: ${{ ! startsWith(inputs.working-directory, 'libs/partners/') }}
+    if: ${{ ! startsWith(inputs.working-directory, 'libs/partners/') && ! startsWith(inputs.working-directory, 'templates/') }}
     steps:
       - uses: actions/checkout@v4
 

@@ -33,6 +33,9 @@ if __name__ == "__main__":
             dirs_to_run.update(
                 (f"libs/partners/{partner_dir}", "libs/langchain", "libs/experimental")
             )
+        elif file.startswith("templates/"):
+            template = file.split("/")[1]
+            dirs_to_run.add(f"templates/{template}")
         elif "libs/langchain" in file:
             dirs_to_run.update(("libs/langchain", "libs/experimental"))
         elif "libs/experimental" in file:
