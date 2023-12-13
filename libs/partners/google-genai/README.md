@@ -1,6 +1,6 @@
-# langchain-google
+# langchain-google-genai
 
-This partner package contains the newer Google LangChain integrations.
+This package contains the LangChain integrations for Gemini through their generative-ai SDK.
 
 ## Installation
 
