@@ -177,7 +177,7 @@ def convert_to_secret_str(value: Union[SecretStr, str, None]) -> SecretStr:
     """Convert a string to a SecretStr if needed."""
     if isinstance(value, SecretStr):
         return value
-    return SecretStr(value)
+    return SecretStr(str(value))
 
 
 def extract_secret_value(secret: Union[SecretStr, str, None]) -> str:
