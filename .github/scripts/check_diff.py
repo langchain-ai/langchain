@@ -23,7 +23,7 @@ if __name__ == "__main__":
                 ".github/scripts/check_diff.py",
             )
         ):
-            dirs_to_run = ALL_DIRS
+            dirs_to_run.update(ALL_DIRS)
             break
         elif "libs/community" in file:
             dirs_to_run.update(
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         elif "libs/experimental" in file:
             dirs_to_run.add("libs/experimental")
         elif file.startswith("libs/"):
-            dirs_to_run = ALL_DIRS
+            dirs_to_run.update(ALL_DIRS)
             break
         else:
             pass
