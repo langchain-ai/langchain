@@ -196,6 +196,24 @@ def _import_faiss() -> Any:
     return FAISS
 
 
+def _import_kinetica() -> Any:
+    from langchain.vectorstores.kinetica import Kinetica
+
+    return Kinetica
+
+
+def _import_kinetica_settings() -> Any:
+    from langchain.vectorstores.kinetica import KineticaSettings
+
+    return KineticaSettings
+
+
+def _import_distance_strategy() -> Any:
+    from langchain.vectorstores.kinetica import DistanceStrategy
+
+    return DistanceStrategy
+
+
 def _import_hologres() -> Any:
     from langchain_community.vectorstores.hologres import Hologres
 
@@ -501,6 +519,12 @@ def __getattr__(name: str) -> Any:
         return _import_faiss()
     elif name == "Hologres":
         return _import_hologres()
+    elif name == "DistanceStrategy":
+        return _import_distance_strategy()
+    elif name == "KineticaSettings":
+        return _import_kinetica_settings()
+    elif name == "Kinetica":
+        return _import_kinetica()
     elif name == "LanceDB":
         return _import_lancedb()
     elif name == "LLMRails":
@@ -612,6 +636,9 @@ __all__ = [
     "Epsilla",
     "FAISS",
     "Hologres",
+    "DistanceStrategy",
+    "Kinetica",
+    "KineticaSettings",
     "LanceDB",
     "LLMRails",
     "Marqo",

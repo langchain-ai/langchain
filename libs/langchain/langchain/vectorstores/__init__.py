@@ -194,6 +194,24 @@ def _import_hologres() -> Any:
     return Hologres
 
 
+# def _import_kinetica() -> Any:
+#     from langchain.vectorstores.kinetica import Kinetica
+
+#     return Kinetica
+
+
+# def _import_kinetica_settings() -> Any:
+#     from langchain.vectorstores.kinetica import KineticaSettings
+
+#     return KineticaSettings
+
+
+# def _import_distance_strategy() -> Any:
+#     from langchain.vectorstores.kinetica import DistanceStrategy
+
+#     return DistanceStrategy
+
+
 def _import_lancedb() -> Any:
     from langchain.vectorstores.lancedb import LanceDB
 

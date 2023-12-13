@@ -2,10 +2,14 @@ import os
 from typing import List
 
 import pytest
-
 from langchain.docstore.document import Document
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores.kinetica import DistanceStrategy, Kinetica, KineticaSettings
+
+from langchain_community.vectorstores import (
+    DistanceStrategy,
+    Kinetica,
+    KineticaSettings,
+)
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 DIMENSIONS = 3
