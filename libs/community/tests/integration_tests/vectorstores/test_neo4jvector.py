@@ -4,7 +4,11 @@ from typing import List
 
 from langchain_core.documents import Document
 
-from langchain_community.vectorstores.neo4j_vector import Neo4jVector, SearchType
+from langchain_community.vectorstores.neo4j_vector import (
+    Neo4jVector,
+    SearchType,
+    _get_search_index_query,
+)
 from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
@@ -14,7 +18,7 @@ password = os.environ.get("NEO4J_PASSWORD", "pleaseletmein")
 
 OS_TOKEN_COUNT = 1536
 
-texts = ["foo", "bar", "baz"]
+texts = ["foo", "bar", "baz", "It is the end of the world. Take shelter!"]
 
 """
 cd tests/integration_tests/vectorstores/docker-compose
@@ -615,3 +619,62 @@ def test_neo4jvector_from_existing_graph_multiple_properties_hybrid() -> None:
     assert output == [Document(page_content="\nname: Foo\nname2: Fooz")]
 
     drop_vector_indexes(existing)
+
+
+def test_neo4jvector_special_character() -> None:
+    """Test removing lucene."""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+        search_type=SearchType.HYBRID,
+    )
+    output = docsearch.similarity_search(
+        "It is the end of the world. Take shelter!", k=1
+    )
+    assert output == [
+        Document(page_content="It is the end of the world. Take shelter!", metadata={})
+    ]
+
+    drop_vector_indexes(docsearch)
+
+
+def test_hybrid_score_normalization() -> None:
+    """Test if we can get two 1.0 documents with RRF"""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(["foo"], text_embeddings))
+    docsearch = Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+        search_type=SearchType.HYBRID,
+    )
+    # Remove deduplication part of the query
+    rrf_query = (
+        _get_search_index_query(SearchType.HYBRID)
+        .rstrip("WITH node, max(score) AS score ORDER BY score DESC LIMIT $k")
+        .replace("UNION", "UNION ALL")
+        + "RETURN node.text AS text, score LIMIT 2"
+    )
+
+    output = docsearch.query(
+        rrf_query,
+        params={
+            "index": "vector",
+            "k": 1,
+            "embedding": FakeEmbeddingsWithOsDimension().embed_query("foo"),
+            "query": "foo",
+            "keyword_index": "keyword",
+        },
+    )
+    # Both FT and Vector must return 1.0 score
+    assert output == [{"text": "foo", "score": 1.0}, {"text": "foo", "score": 1.0}]
+    drop_vector_indexes(docsearch)
