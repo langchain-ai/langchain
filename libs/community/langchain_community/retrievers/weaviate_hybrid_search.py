@@ -32,7 +32,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
     create_schema_if_missing: bool = True
     """Whether to create the schema if it doesn't exist."""
     embeddings: Optional[Embeddings] = None
-    """Embeddings model to use for vectorizing queries. If not specified, vectorizing 
+    """Embeddings model to use for vectorizing content. If not specified, vectorizing 
         will be handled by Weaviate.
     """
 
@@ -80,8 +80,13 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         """Upload documents to Weaviate."""
         from weaviate.util import get_valid_uuid
 
+        ids = []
+        if self.embeddings:
+            texts = [doc.page_content for doc in docs]
+            vectors: Optional[list] = self.embeddings.embed_documents(texts)
+        else:
+            vectors = None
         with self.client.batch as batch:
-            ids = []
             for i, doc in enumerate(docs):
                 metadata = doc.metadata or {}
                 data_properties = {self.text_key: doc.page_content, **metadata}
@@ -94,9 +99,10 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
                     _id = get_valid_uuid(uuid4())
 
                 batch.add_data_object(data_properties, self.index_name, _id)
-                if self.embeddings:
-                    vector = self.embeddings.embed_query(doc.page_content)
-                    batch.add_data_object(data_properties, self.index_name, _id, vector)
+                if vectors:
+                    batch.add_data_object(
+                        data_properties, self.index_name, _id, vectors[i]
+                    )
                 else:
                     batch.add_data_object(data_properties, self.index_name, _id)
                 ids.append(_id)
