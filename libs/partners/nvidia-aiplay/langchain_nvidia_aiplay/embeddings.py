@@ -1,23 +1,26 @@
 """Embeddings Components Derived from ChatModel/NVAIPlay"""
-from typing import Any, List, Literal, Sequence
+from typing import Any, List, Literal
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 import langchain_nvidia_aiplay._common as nvaiplay_common
 
 
-class NVAIPlayEmbeddings(Embeddings):
+class NVAIPlayEmbeddings(BaseModel, Embeddings):
     """NVIDIA's AI Playground NVOLVE Question-Answer Asymmetric Model."""
 
     client: nvaiplay_common.NVCRModel = Field(nvaiplay_common.NVCRModel)
-    model: str = Field("nvolveqa")
+    model: str = Field(
+        ..., description="The embedding model to use. Example: nvolveqa_40k"
+    )
     max_length: int = Field(2048, ge=1, le=2048)
 
-    def __init__(self, *args: Sequence, **kwargs: Any):
-        if "client" not in kwargs:
-            kwargs["client"] = nvaiplay_common.NVCRModel(**kwargs)
-        super().__init__(*args, **kwargs)
+    @root_validator(pre=True)
+    def _validate_client(cls, values: Any) -> Any:
+        if "client" not in values:
+            values["client"] = nvaiplay_common.NVCRModel()
+        return values
 
     def _embed(self, text: str, model_type: Literal["passage", "query"]) -> List[float]:
         """Embed a single text entry to either passage or query type"""

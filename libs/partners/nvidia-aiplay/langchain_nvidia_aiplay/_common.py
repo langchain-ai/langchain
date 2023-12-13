@@ -559,11 +559,14 @@ class NVAIPlayBaseModel(_NVAIPlayClient):
         messages: List[BaseMessage],
         stop: Optional[Sequence[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        labels: Optional[dict] = None,
         **kwargs: Any,
     ) -> str:
         """Invoke on a single list of chat messages."""
         inputs = self.custom_preprocess(messages)
-        responses = self.get_generation(inputs=inputs, stop=stop, **kwargs)
+        responses = self.get_generation(
+            inputs=inputs, stop=stop, labels=labels, **kwargs
+        )
         outputs = self.custom_postprocess(responses)
         return outputs
 
@@ -578,11 +581,14 @@ class NVAIPlayBaseModel(_NVAIPlayClient):
         messages: List[BaseMessage],
         stop: Optional[Sequence[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        labels: Optional[dict] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Allows streaming to model!"""
         inputs = self.custom_preprocess(messages)
-        for response in self.get_stream(inputs=inputs, stop=stop, **kwargs):
+        for response in self.get_stream(
+            inputs=inputs, stop=stop, labels=labels, **kwargs
+        ):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
@@ -593,10 +599,13 @@ class NVAIPlayBaseModel(_NVAIPlayClient):
         messages: List[BaseMessage],
         stop: Optional[Sequence[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        labels: Optional[dict] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         inputs = self.custom_preprocess(messages)
-        async for response in self.get_astream(inputs=inputs, stop=stop, **kwargs):
+        async for response in self.get_astream(
+            inputs=inputs, stop=stop, labels=labels, **kwargs
+        ):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
