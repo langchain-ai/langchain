@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.jaguar import Jaguar, JaguarRetriever
+from langchain_community.vectorstores.jaguar import Jaguar
 
-__all__ = ["Jaguar", "JaguarRetriever"]
+__all__ = ["Jaguar"]

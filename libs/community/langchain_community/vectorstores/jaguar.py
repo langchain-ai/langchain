@@ -7,8 +7,7 @@ from typing import Any, List, Optional, Tuple
 from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field
-from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from langchain_core.vectorstores import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -302,6 +301,9 @@ class Jaguar(VectorStore):
         Returns:
             List of Documents most similar to the query
         """
+        ### jyue todo
+        self.prt(f"similarity_search called k={k}  where={where}")
+
         docs_and_scores = self.similarity_search_with_score(
             query, k=k, where=where, metadatas=metadatas, **kwargs
         )
@@ -358,11 +360,6 @@ class Jaguar(VectorStore):
         jagstore.clear()
         jagstore.add_texts(texts, metadatas, **kwargs)
         return jagstore
-
-    def as_retriever(self, **kwargs: Any) -> JaguarRetriever:
-        tags = kwargs.pop("tags", None) or []
-        tags.extend(self._get_retriever_tags())
-        return JaguarRetriever(vectorstore=self, search_kwargs=kwargs, tags=tags)
 
     def clear(self) -> None:
         """
@@ -443,32 +440,3 @@ class Jaguar(VectorStore):
                     vvec.append(v)
 
         return nvec, vvec, filepath
-
-
-class JaguarRetriever(VectorStoreRetriever):
-    """Retriever class for `Jaguar`."""
-
-    vectorstore: Jaguar
-    """Jaguar vectorstore."""
-    search_kwargs: dict = Field(
-        default_factory=lambda: {
-            "k": 3,
-            "where": "",
-        }
-    )
-    """
-        Search params.
-        k: Number of Documents to return. Defaults to 3.
-        filter: where clause
-    """
-
-    def add_texts(
-        self, texts: List[str], metadatas: Optional[List[dict]] = None
-    ) -> None:
-        """
-        Add text to the Jaguar vectorstore
-        Args:
-            texts (List[str]): The text
-            metadatas (List[dict]): Metadata dicts, must line up with existing store
-        """
-        self.vectorstore.add_texts(texts, metadatas)
