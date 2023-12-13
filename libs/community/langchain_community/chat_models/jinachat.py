@@ -41,6 +41,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
+    get_secret_value,
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
@@ -397,8 +398,7 @@ class JinaChat(BaseChatModel):
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
         jinachat_creds: Dict[str, Any] = {
-            "api_key": self.jinachat_api_key
-            and self.jinachat_api_key.get_secret_value(),
+            "api_key": get_secret_value(self.jinachat_api_key),
             "api_base": "https://api.chat.jina.ai/v1",
             "model": "jinachat",
         }
