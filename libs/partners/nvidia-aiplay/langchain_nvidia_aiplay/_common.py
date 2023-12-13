@@ -40,7 +40,6 @@ from langchain_core.utils import get_from_dict_or_env
 from requests.models import Response
 import logging
 import urllib.parse
-from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -326,6 +325,20 @@ class NVCRModel(BaseModel):
     ####################################################################################
     ## Generation interface to allow users to generate new values from endpoints
 
+    def get_req(
+        self,
+        model_name: Optional[str] = None,
+        payload: dict = {},
+        invoke_url: Optional[str] = None,
+        stop: Optional[Sequence[str]] = None,
+    ) -> dict:
+        """Post to the API."""
+        invoke_url = self._get_invoke_url(model_name, invoke_url)
+        if payload.get("stream", False) is True:
+            payload = {**payload, "stream": False}
+        response, session = self._post(invoke_url, payload)
+        return self._wait(response, session)
+
     def get_req_generation(
         self,
         model_name: Optional[str] = None,
@@ -334,11 +347,7 @@ class NVCRModel(BaseModel):
         stop: Optional[Sequence[str]] = None,
     ) -> dict:
         """Method for an end-to-end post query with NVCR post-processing."""
-        invoke_url = self._get_invoke_url(model_name, invoke_url)
-        if payload.get("stream", False) is True:
-            payload = {**payload, "stream": False}
-        response, session = self._post(invoke_url, payload)
-        response = self._wait(response, session)
+        response = self.get_req(model_name, payload, invoke_url)
         output, _ = self.postprocess(response, stop=stop)
         return output
 
