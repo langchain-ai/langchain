@@ -197,19 +197,19 @@ def _import_faiss() -> Any:
 
 
 def _import_kinetica() -> Any:
-    from langchain.vectorstores.kinetica import Kinetica
+    from langchain_community.vectorstores.kinetica import Kinetica
 
     return Kinetica
 
 
 def _import_kinetica_settings() -> Any:
-    from langchain.vectorstores.kinetica import KineticaSettings
+    from langchain_community.vectorstores.kinetica import KineticaSettings
 
     return KineticaSettings
 
 
 def _import_distance_strategy() -> Any:
-    from langchain.vectorstores.kinetica import DistanceStrategy
+    from langchain_community.vectorstores.kinetica import DistanceStrategy
 
     return DistanceStrategy
 
