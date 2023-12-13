@@ -13,4 +13,5 @@ __all__ = [
     "_DocumentWithState",
     "get_stateful_documents",
     "_get_embeddings_from_stateful_docs",
+    "_filter_similar_embeddings",
 ]
