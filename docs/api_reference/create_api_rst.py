@@ -14,9 +14,10 @@ HERE = Path(__file__).parent
 PKG_DIR = ROOT_DIR / "libs" / "langchain" / "langchain"
 EXP_DIR = ROOT_DIR / "libs" / "experimental" / "langchain_experimental"
 CORE_DIR = ROOT_DIR / "libs" / "core" / "langchain_core"
+COMMUNITY_DIR = ROOT_DIR / "libs" / "core" / "langchain_community"
 WRITE_FILE = HERE / "api_reference.rst"
 EXP_WRITE_FILE = HERE / "experimental_api_reference.rst"
-CORE_WRITE_FILE = HERE / "core_api_reference.rst"
+COMMUNITY_WRITE_FILE = HERE / "community_api_reference.rst"
 
 
 ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum"]
@@ -302,6 +303,7 @@ package_namespace = {
     "langchain": "langchain",
     "experimental": "langchain_experimental",
     "core": "langchain_core",
+    "community": "langchain_community",
 }
 
 
@@ -316,6 +318,7 @@ def _out_file_path(package_name: str = "langchain") -> Path:
         "langchain": "",
         "experimental": "experimental_",
         "core": "core_",
+        "community": "community_",
     }
     return HERE / f"{name_prefix[package_name]}api_reference.rst"
 
@@ -326,6 +329,7 @@ def _doc_first_line(package_name: str = "langchain") -> str:
         "langchain": "",
         "experimental": "experimental",
         "core": "core",
+        "community": "community",
     }
     return f".. {prefix[package_name]}_api_reference:\n\n"
 
@@ -335,6 +339,7 @@ def main() -> None:
     _build_rst_file(package_name="core")
     _build_rst_file(package_name="langchain")
     _build_rst_file(package_name="experimental")
+    _build_rst_file(package_name="community")
 
 
 if __name__ == "__main__":

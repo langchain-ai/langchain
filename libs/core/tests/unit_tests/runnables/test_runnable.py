@@ -2029,7 +2029,7 @@ async def test_prompt_with_llm(
             ):
                 del op["value"]["id"]
 
-    assert stream_log == [
+    expected = [
         RunLogPatch(
             {
                 "op": "replace",
@@ -2113,6 +2113,7 @@ async def test_prompt_with_llm(
             {"op": "replace", "path": "/final_output", "value": "foo"},
         ),
     ]
+    assert stream_log == expected
 
 
 @freeze_time("2023-01-01")
