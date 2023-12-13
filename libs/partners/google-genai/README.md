@@ -21,7 +21,7 @@ export GOOGLE_API_KEY=your-api-key
 Then initialize
 
 ```python
-from langchain_google import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 llm = ChatGoogleGenerativeAI(model="gemini-pro")
 llm.invoke("Sing a ballad of LangChain.")
@@ -32,16 +32,21 @@ llm.invoke("Sing a ballad of LangChain.")
 Gemini vision model supports image inputs when providing a single chat message. Example:
 
 ```
-from langchain_google import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
+# example
 message = HumanMessage(
-    contents = []
-    {"type": "text", "text": "What's in this image?"}
-    {"type": "image_url": "image_url": "data:image/png;base64,abcd124"}
+    content=[
+        {
+            "type": "text",
+            "text": "What's in this image?",
+        },  # You can optionally provide text parts
+        {"type": "image_url", "image_url": "https://picsum.photos/seed/picsum/200/300"},
+    ]
 )
-llm.invoke(message)
+llm.invoke([message])
 ```
 
 The value of `image_url` can be any of the following:
