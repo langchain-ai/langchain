@@ -361,7 +361,7 @@ def test_agent_iterator_failing_tool() -> None:
 
     agent_iter = agent.iter(inputs="when was langchain made")
     assert isinstance(agent_iter, AgentExecutorIterator)
-    # initialise iterator
+    # initialize iterator
     iterator = iter(agent_iter)
 
     with pytest.raises(ZeroDivisionError):
