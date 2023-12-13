@@ -1,3 +1,5 @@
+import asyncio
+from functools import partial
 from typing import Any, Dict, List, Type
 
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
@@ -28,6 +30,18 @@ class ConneryAction(BaseTool):
         """
 
         return self.connery_service.run_action(self.action.id, kwargs)
+
+    async def _arun(self, **kwargs: Dict[str, str]) -> Dict[str, str]:
+        """
+        Runs the Connery Action asynchronously with the provided input.
+        Parameters:
+            kwargs (Dict[str, str]): The input dictionary expected by the action.
+        Returns:
+            Dict[str, str]: The output of the action.
+        """
+
+        func = partial(self._run, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def get_schema_json(self) -> str:
         """
