@@ -293,7 +293,11 @@ def _build_rst_file(package_name: str = "langchain") -> None:
 
 
 def _package_namespace(package_name: str) -> str:
-    return package_name if package_name == "langchain" else f"langchain_{package_name.replace('-', '_')}"
+    return (
+        package_name
+        if package_name == "langchain"
+        else f"langchain_{package_name.replace('-', '_')}"
+    )
 
 
 def _package_dir(package_name: str = "langchain") -> Path:
@@ -301,7 +305,13 @@ def _package_dir(package_name: str = "langchain") -> Path:
     if package_name in ("langchain", "experimental", "community", "core", "cli"):
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
-        return ROOT_DIR / "libs" / "partners" / package_name / _package_namespace(package_name)
+        return (
+            ROOT_DIR
+            / "libs"
+            / "partners"
+            / package_name
+            / _package_namespace(package_name)
+        )
 
 
 def _out_file_path(package_name: str = "langchain") -> Path:
