@@ -3,12 +3,12 @@ import io
 from pathlib import Path
 
 from langchain.chat_models import ChatOpenAI
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.document import Document
-from langchain.schema.messages import HumanMessage
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.vectorstores import Chroma
+from langchain_core.documents import Document
+from langchain_core.messages import HumanMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_experimental.open_clip import OpenCLIPEmbeddings
 from PIL import Image
 
