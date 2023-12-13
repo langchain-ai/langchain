@@ -3,8 +3,8 @@ from typing import List, Optional
 
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel
 from langchain.utils.openai_functions import convert_pydantic_to_openai_function
+from langchain_core.pydantic_v1 import BaseModel
 
 template = """A article will be passed to you. Extract from it all papers that are mentioned by this article. 
 

@@ -1,4 +1,5 @@
-"""HuggingFace sentence_transformer embedding models."""
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.sentence_transformer import (
+    SentenceTransformerEmbeddings,
+)
 
-SentenceTransformerEmbeddings = HuggingFaceEmbeddings
+__all__ = ["SentenceTransformerEmbeddings"]
