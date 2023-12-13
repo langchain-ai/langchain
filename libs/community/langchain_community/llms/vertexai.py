@@ -52,6 +52,11 @@ def _response_to_generation(
         generation_info = None
     return GenerationChunk(text=response.text, generation_info=generation_info)
 
+# (WFH) We will remove in the next release.
+_response_to_generation = None
+completion_with_retry = None
+stream_completion_with_retry = None
+
 
 def is_codey_model(model_name: str) -> bool:
     """Returns True if the model name is a Codey model.
