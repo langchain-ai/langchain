@@ -9,8 +9,22 @@ from langchain_google_genai._common import GoogleGenerativeAIError
 
 
 class GoogleGenerativeAIEmbeddings(BaseModel, Embeddings):
-    """Google Cloud VertexAI embedding models."""
+    """`Google Generative AI Embeddings`.
 
+    To use, you must have either:
+
+        1. The ``GOOGLE_API_KEY``` environment variable set with your API key, or
+        2. Pass your API key using the google_api_key kwarg to the ChatGoogle
+           constructor.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_google_genai import GoogleGenerativeAIEmbeddings
+            chat = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+            chat.embed_query("What's our Q1 revenue?")
+
+    """
     model: str = Field(
         ...,
         description="The name of the embedding model to use. "
