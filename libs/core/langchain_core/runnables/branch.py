@@ -26,10 +26,6 @@ from langchain_core.runnables.config import (
     get_callback_manager_for_config,
     patch_config,
 )
-from langchain_core.runnables.context import (
-    CONTEXT_CONFIG_PREFIX,
-    CONTEXT_CONFIG_SUFFIX_SET,
-)
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Input,
@@ -132,8 +128,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """The namespace of a RunnableBranch is the namespace of its default branch."""
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
@@ -152,6 +148,11 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
+        from langchain_core.beta.runnables.context import (
+            CONTEXT_CONFIG_PREFIX,
+            CONTEXT_CONFIG_SUFFIX_SET,
+        )
+
         specs = get_unique_config_specs(
             spec
             for step in (

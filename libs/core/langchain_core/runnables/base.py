@@ -1349,6 +1349,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     last: Runnable[Any, Output]
     """The last runnable in the sequence."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
+
     @property
     def steps(self) -> List[Runnable[Any, Any]]:
         """All the runnables that make up the sequence in order."""
@@ -1357,10 +1362,6 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
 
     class Config:
         arbitrary_types_allowed = True
@@ -1402,7 +1403,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
-        from langchain_core.runnables.context import CONTEXT_CONFIG_PREFIX, _key_from_id
+        from langchain_core.beta.runnables.context import (
+            CONTEXT_CONFIG_PREFIX,
+            _key_from_id,
+        )
 
         # get all specs
         all_specs = [
@@ -1494,7 +1498,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             )
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-        from langchain_core.runnables.context import config_with_context
+        from langchain_core.beta.runnables.context import config_with_context
 
         # setup callbacks and context
         config = config_with_context(ensure_config(config), self.steps)
@@ -1528,7 +1532,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        from langchain_core.runnables.context import aconfig_with_context
+        from langchain_core.beta.runnables.context import aconfig_with_context
 
         # setup callbacks and context
         config = aconfig_with_context(ensure_config(config), self.steps)
@@ -1564,8 +1568,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
+        from langchain_core.beta.runnables.context import config_with_context
         from langchain_core.callbacks.manager import CallbackManager
-        from langchain_core.runnables.context import config_with_context
 
         if not inputs:
             return []
@@ -1687,8 +1691,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
+        from langchain_core.beta.runnables.context import aconfig_with_context
         from langchain_core.callbacks.manager import AsyncCallbackManager
-        from langchain_core.runnables.context import aconfig_with_context
 
         if not inputs:
             return []
@@ -1811,7 +1815,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> Iterator[Output]:
-        from langchain_core.runnables.context import config_with_context
+        from langchain_core.beta.runnables.context import config_with_context
 
         steps = [self.first] + self.middle + [self.last]
         config = config_with_context(config, self.steps)
@@ -1838,7 +1842,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> AsyncIterator[Output]:
-        from langchain_core.runnables.context import aconfig_with_context
+        from langchain_core.beta.runnables.context import aconfig_with_context
 
         steps = [self.first] + self.middle + [self.last]
         config = aconfig_with_context(config, self.steps)
@@ -1939,7 +1943,8 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     class Config:
         arbitrary_types_allowed = True
@@ -2705,7 +2710,8 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     def _invoke(
         self,
@@ -2745,6 +2751,11 @@ class RunnableEach(RunnableEachBase[Input, Output]):
     A runnable that delegates calls to another runnable
     with each element of the input sequence.
     """
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
         return RunnableEach(bound=self.bound.bind(**kwargs))
@@ -2910,7 +2921,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
         config = merge_configs(self.config, *configs)
@@ -3085,6 +3097,11 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             )
             runnable_binding.invoke('Say "Parrot-MAGIC"') # Should return `Parrot`
     """
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """Bind additional kwargs to a Runnable, returning a new Runnable.
