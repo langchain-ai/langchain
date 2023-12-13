@@ -1,11 +1,11 @@
 """Test ChatNVAIPlay chat model."""
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
-from langchain_nvidia_aiplay.chat_models import GeneralChat, NVAIPlayChat
+from langchain_nvidia_aiplay.chat_models import GeneralChat, ChatNVAIPlay
 
 
 def test_chat_aiplay() -> None:
-    """Test NVAIPlayChat wrapper."""
+    """Test ChatNVAIPlay wrapper."""
     chat = GeneralChat(
         temperature=0.7,
     )
@@ -17,7 +17,7 @@ def test_chat_aiplay() -> None:
 
 def test_chat_aiplay_model() -> None:
     """Test GeneralChat wrapper handles model."""
-    chat = NVAIPlayChat(model="mistral")
+    chat = ChatNVAIPlay(model="mistral")
     assert chat.model == "mistral"
 
 

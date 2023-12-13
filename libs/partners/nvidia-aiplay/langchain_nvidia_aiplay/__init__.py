@@ -1,4 +1,4 @@
 from langchain_nvidia_aiplay.chat_models import ChatNVAIPlay
-from langchain_nvidia_aiplay.llms import NVAIPlayLLM
+from langchain_nvidia_aiplay.embeddings import NVAIPlayEmbeddings
 
-__all__ = ["NVAIPlayLLM", "ChatNVAIPlay"]
+__all__ = ["ChatNVAIPlay", "NVAIPlayEmbeddings"]

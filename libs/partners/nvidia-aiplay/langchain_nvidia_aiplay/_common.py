@@ -38,24 +38,24 @@ from requests.models import Response
 logger = logging.getLogger(__name__)
 
 
-class ClientModel(BaseModel):
+class _ClientModel(BaseModel):
     """
     Custom BaseModel subclass with some desirable properties for subclassing
     """
 
-    saved_parent: Optional[ClientModel] = None
+    saved_parent: Optional[_ClientModel] = None
 
     def __init__(self, *args: Sequence, **kwargs: Any[str, Any]):
         super().__init__(*args, **kwargs)
 
     def subscope(self, *args: Sequence, **kwargs: Any) -> Any:
-        """Create a new ClientModel with the same values but new arguments"""
+        """Create a new _ClientModel with the same values but new arguments"""
         named_args = dict({k: v for k, v in zip(getattr(self, "arg_keys", []), args)})
         named_args = {**named_args, **kwargs}
         out = self.copy(update=named_args)
         out.validate(dict(out._iter(to_dict=False, by_alias=False, exclude_unset=True)))
         for k, v in self.__dict__.items():
-            if isinstance(v, ClientModel):
+            if isinstance(v, _ClientModel):
                 setattr(out, k, v.subscope(*args, **kwargs))
         out.saved_parent = self
         return out
@@ -68,11 +68,11 @@ class ClientModel(BaseModel):
         return out
 
     def get(self, key: str) -> Any:
-        """Get a value from the ClientModel, using it like a dictionary"""
+        """Get a value from the _ClientModel, using it like a dictionary"""
         return getattr(self, key)
 
-    def transfer_state(self, other: Optional[ClientModel]) -> None:
-        """Transfer state from one ClientModel to another"""
+    def transfer_state(self, other: Optional[_ClientModel]) -> None:
+        """Transfer state from one _ClientModel to another"""
         if other is None:
             return
         for k, v in self.__dict__.items():
@@ -86,7 +86,7 @@ class ClientModel(BaseModel):
     @staticmethod
     def desecretize(v: Any) -> Any:
         """Desecretize a collection of values"""
-        recurse = ClientModel.desecretize
+        recurse = _ClientModel.desecretize
         if isinstance(v, SecretStr):
             return v.get_secret_value()
         if isinstance(v, str):
@@ -99,7 +99,7 @@ class ClientModel(BaseModel):
             return tuple(recurse(subv) for subv in v)
         return v
 
-    def __enter__(self) -> ClientModel:
+    def __enter__(self) -> _ClientModel:
         return self
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
@@ -107,7 +107,7 @@ class ClientModel(BaseModel):
         self.saved_parent = None
 
 
-class NVCRModel(ClientModel):
+class NVCRModel(_ClientModel):
 
     """
     Underlying Client for interacting with the AI Playground API.
@@ -158,7 +158,7 @@ class NVCRModel(ClientModel):
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate and update model arguments, including API key and formatting"""
         values["nvapi_key"] = get_from_dict_or_env(
-            ClientModel.desecretize(values),
+            _ClientModel.desecretize(values),
             "nvapi_key",
             "NVAPI_KEY",
         )
@@ -167,7 +167,7 @@ class NVCRModel(ClientModel):
         values["is_staging"] = "nvapi-stg-" in values["nvapi_key"]
         for header in values["headers"].values():
             if "{nvapi_key}" in header["Authorization"]:
-                nvapi_key = ClientModel.desecretize(values["nvapi_key"])
+                nvapi_key = _ClientModel.desecretize(values["nvapi_key"])
                 header["Authorization"] = SecretStr(
                     header["Authorization"].format(nvapi_key=nvapi_key),
                 )
@@ -205,7 +205,7 @@ class NVCRModel(ClientModel):
             stream=False,
         )
         session = self.get_session_fn()
-        self.last_response = session.post(**ClientModel.desecretize(self.last_inputs))
+        self.last_response = session.post(**_ClientModel.desecretize(self.last_inputs))
         self._try_raise(self.last_response)
         return self.last_response, session
 
@@ -218,7 +218,7 @@ class NVCRModel(ClientModel):
             stream=False,
         )
         session = self.get_session_fn()
-        self.last_response = session.get(**ClientModel.desecretize(self.last_inputs))
+        self.last_response = session.get(**_ClientModel.desecretize(self.last_inputs))
         self._try_raise(self.last_response)
         return self.last_response, session
 
@@ -229,7 +229,7 @@ class NVCRModel(ClientModel):
             request_id = response.headers.get("NVCF-REQID", "")
             response = session.get(
                 self.fetch_url_format + request_id,
-                headers=ClientModel.desecretize(self.headers["call"]),
+                headers=_ClientModel.desecretize(self.headers["call"]),
             )
             if response.status_code == 202:
                 try:
@@ -396,7 +396,7 @@ class NVCRModel(ClientModel):
             json=payload,
             stream=True,
         )
-        raw_inputs = ClientModel.desecretize(self.last_inputs)
+        raw_inputs = _ClientModel.desecretize(self.last_inputs)
         response = self.get_session_fn().post(**raw_inputs)
         self.last_response = response
         self._try_raise(response)
@@ -433,7 +433,7 @@ class NVCRModel(ClientModel):
             json=payload,
         )
         async with self.get_asession_fn() as session:
-            raw_inputs = ClientModel.desecretize(self.last_inputs)
+            raw_inputs = _ClientModel.desecretize(self.last_inputs)
             async with session.post(**raw_inputs) as self.last_response:
                 self._try_raise(self.last_response)
                 async for line in self.last_response.content.iter_any():
@@ -445,10 +445,10 @@ class NVCRModel(ClientModel):
                             break
 
 
-class NVAIPlayClient(ClientModel):
+class _NVAIPlayClient(_ClientModel):
     """
     Higher-Level Client for interacting with AI Playground API with argument defaults.
-    Is subclassed by NVAIPlayLLM/NVAIPlayChat to provide a simple LangChain interface.
+    Is subclassed by NVAIPlayLLM/ChatNVAIPlay to provide a simple LangChain interface.
     """
 
     client: NVCRModel = Field(NVCRModel)
@@ -468,7 +468,7 @@ class NVAIPlayClient(ClientModel):
     arg_keys: Sequence[str] = Field(["inputs", "stop"])
     valid_roles: Sequence[str] = Field(["user", "system", "assistant"])
 
-    class LabelModel(ClientModel):
+    class LabelModel(_ClientModel):
         creativity: int = Field(0, ge=0, le=9)
         complexity: int = Field(0, ge=0, le=9)
         verbosity: int = Field(0, ge=0, le=9)
@@ -526,7 +526,7 @@ class NVAIPlayClient(ClientModel):
         return out
 
     def get_payload(self, *args: Sequence, **kwargs: Any) -> dict:
-        """Generates payload for the NVAIPlayClient API to send to service."""
+        """Generates payload for the _NVAIPlayClient API to send to service."""
 
         def k_map(k: str) -> str:
             return k if k != "streaming" else "stream"
@@ -561,10 +561,10 @@ class NVAIPlayClient(ClientModel):
         raise ValueError(f"Unknown message received: {msg} of type {type(msg)}")
 
 
-class NVAIPlayBaseModel(NVAIPlayClient):
+class NVAIPlayBaseModel(_NVAIPlayClient):
     """
-    Base class for NVIDIA AI Playground models which can interface with NVAIPlayClient.
-    To be subclassed by NVAIPlayLLM/NVAIPlayChat by combining with LLM/SimpleChatModel.
+    Base class for NVIDIA AI Playground models which can interface with _NVAIPlayClient.
+    To be subclassed by NVAIPlayLLM/ChatNVAIPlay by combining with LLM/SimpleChatModel.
     """
 
     @property
@@ -706,14 +706,6 @@ class GeneralBase(NVAIPlayBaseModel):
     model: str = Field("llama2_13b")
 
 
-class CodeBase(NVAIPlayBaseModel):
-    model: str = Field("llama2_code_13b")
-
-
-class InstructBase(NVAIPlayBaseModel):
-    model: str = Field("mistral")
-
-
 class SteerBase(NVAIPlayBaseModel):
     model: str = Field("steerlm")
     arg_keys: Sequence[str] = Field(["inputs", "labels", "stop"])
@@ -730,34 +722,3 @@ class ImageBase(NVAIPlayBaseModel):
     model: str = Field("neva")
     arg_keys: Sequence[str] = Field(["inputs", "labels", "stop"])
     labels: dict = Field({"creativity": 0, "complexity": 9, "verbosity": 9})
-
-
-####################################################################################
-
-
-class NVAIPlayLLM(NVAIPlayBaseModel, LLM):
-    pass
-
-
-class GeneralLLM(GeneralBase, LLM):
-    pass
-
-
-class CodeLLM(CodeBase, LLM):
-    pass
-
-
-class InstructLLM(InstructBase, LLM):
-    pass
-
-
-class SteerLLM(SteerBase, LLM):
-    pass
-
-
-class ContextLLM(ContextBase, LLM):
-    pass
-
-
-class ImageLLM(ImageBase, LLM):
-    pass
