@@ -30,6 +30,9 @@ class YamlOutputParser(BaseOutputParser[T]):
             yaml_str = ""
             if match:
                 yaml_str = match.group("yaml")
+            else:
+                # If no backticks were present, try to parse the entire output as yaml.
+                yaml_str = text
 
             json_object = yaml.safe_load(yaml_str)
             return self.pydantic_object.parse_obj(json_object)
@@ -37,7 +40,7 @@ class YamlOutputParser(BaseOutputParser[T]):
         except (yaml.YAMLError, ValidationError) as e:
             name = self.pydantic_object.__name__
             msg = f"Failed to parse {name} from completion {text}. Got: {e}"
-            raise OutputParserException(msg, llm_output=text)
+            raise OutputParserException(msg, llm_output=text) from e
 
     def get_format_instructions(self) -> str:
         schema = self.pydantic_object.schema()
