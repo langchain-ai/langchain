@@ -2,10 +2,12 @@
 ##  demonstrative purposes and to make it function as a simple standalone file.
 
 from __future__ import annotations
+
 import base64
 import json
-import os
 import logging
+import os
+import urllib.parse
 from typing import (
     Any,
     AsyncIterator,
@@ -14,11 +16,11 @@ from typing import (
     Generator,
     Iterator,
     List,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
     Union,
-    Mapping,
 )
 
 import aiohttp
@@ -27,7 +29,7 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.messages import BaseMessage, ChatMessageChunk, ChatMessage
+from langchain_core.messages import BaseMessage, ChatMessage, ChatMessageChunk
 from langchain_core.outputs import ChatGenerationChunk
 from langchain_core.pydantic_v1 import (
     BaseModel,
@@ -38,8 +40,6 @@ from langchain_core.pydantic_v1 import (
 )
 from langchain_core.utils import get_from_dict_or_env
 from requests.models import Response
-import logging
-import urllib.parse
 
 logger = logging.getLogger(__name__)
 
@@ -331,7 +331,7 @@ class NVCRModel(BaseModel):
         payload: dict = {},
         invoke_url: Optional[str] = None,
         stop: Optional[Sequence[str]] = None,
-    ) -> dict:
+    ) -> Response:
         """Post to the API."""
         invoke_url = self._get_invoke_url(model_name, invoke_url)
         if payload.get("stream", False) is True:
@@ -651,10 +651,10 @@ class NVAIPlayBaseModel(_NVAIPlayClient):
         # but I'm just going to assume it's a list
         return [self.preprocess_msg(m) for m in msg_list]
 
-    def _process_content(self, content: Union[str, List[dict]]) -> str:
+    def _process_content(self, content: Union[str, List[Union[dict, str]]]) -> str:
         if isinstance(content, str):
             return content
-        string_array = []
+        string_array: list = []
 
         for part in content:
             if isinstance(part, str):
@@ -663,7 +663,7 @@ class NVAIPlayBaseModel(_NVAIPlayClient):
                 # OpenAI Format
                 if _is_openai_parts_format(part):
                     if part["type"] == "text":
-                        string_array.append(part["text"])
+                        string_array.append(str(part["text"]))
                     elif part["type"] == "image_url":
                         img_url = part["image_url"]
                         if isinstance(img_url, dict):

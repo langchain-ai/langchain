@@ -1,10 +1,10 @@
 """Embeddings Components Derived from ChatModel/NVAIPlay"""
-from typing import Any, List, Literal, Optional, Sequence, Tuple, Union
+from typing import Any, List, Literal, Optional
 
-import langchain_nvidia_aiplay._common as nvaiplay_common
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from requests.models import Response
+
+import langchain_nvidia_aiplay._common as nvaiplay_common
 
 
 class NVAIPlayEmbeddings(BaseModel, Embeddings):
@@ -30,13 +30,6 @@ class NVAIPlayEmbeddings(BaseModel, Embeddings):
     def available_models(self) -> dict:
         """Map the available models that can be invoked."""
         return self.client.available_models
-
-    def postprocess(
-        self, response: Union[str, Response], stop: Optional[Sequence[str]] = None
-    ) -> Tuple[dict, bool]:
-        """Postprocess the response from the model."""
-        # This inheritance is not a good idea.
-        return response.json(), True
 
     def _embed(
         self, texts: List[str], model_type: Literal["passage", "query"]
