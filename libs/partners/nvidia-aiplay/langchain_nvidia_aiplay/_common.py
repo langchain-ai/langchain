@@ -2,8 +2,9 @@
 ##  demonstrative purposes and to make it function as a simple standalone file.
 
 from __future__ import annotations
-
+import base64
 import json
+import os
 import logging
 from typing import (
     Any,
@@ -17,6 +18,7 @@ from typing import (
     Sequence,
     Tuple,
     Union,
+    Mapping,
 )
 
 import aiohttp
@@ -25,7 +27,7 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.messages import BaseMessage, ChatMessageChunk
+from langchain_core.messages import BaseMessage, ChatMessageChunk, ChatMessage
 from langchain_core.outputs import ChatGenerationChunk
 from langchain_core.pydantic_v1 import (
     BaseModel,
@@ -36,8 +38,50 @@ from langchain_core.pydantic_v1 import (
 )
 from langchain_core.utils import get_from_dict_or_env
 from requests.models import Response
+import logging
+import urllib.parse
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
+
+
+def _is_url(s: str) -> bool:
+    try:
+        result = urllib.parse.urlparse(s)
+        return all([result.scheme, result.netloc])
+    except Exception as e:
+        logger.debug(f"Unable to parse URL: {e}")
+        return False
+
+
+def _is_b64(s: str) -> bool:
+    return s.startswith("data:image")
+
+
+def _url_to_b64_string(image_source: str) -> str:
+    b64_template = "data:image/png;base64,{b64_string}"
+    try:
+        if _is_url(image_source):
+            response = requests.get(image_source)
+            response.raise_for_status()
+            encoded = base64.b64encode(response.content).decode("utf-8")
+            return b64_template.format(b64_string=encoded)
+        elif _is_b64(image_source):
+            return image_source
+        elif os.path.exists(image_source):
+            with open(image_source, "rb") as f:
+                encoded = base64.b64encode(f.read()).decode("utf-8")
+                return b64_template.format(b64_string=encoded)
+        else:
+            raise ValueError(
+                "The provided string is not a valid URL, base64, or file path."
+            )
+    except Exception as e:
+        raise ValueError(f"Unable to process the provided image source: {e}")
+
+
+def _is_openai_parts_format(part: dict) -> bool:
+    return "type" in part
 
 
 class NVCRModel(BaseModel):
@@ -426,8 +470,6 @@ class _NVAIPlayClient(BaseModel):
     top_p: float = Field(0.7, le=1.0, ge=0.0)
     max_tokens: int = Field(1024, le=1024, ge=32)
 
-    valid_roles: Sequence[str] = Field(["user", "system", "assistant"])
-
     ####################################################################################
 
     @root_validator(pre=True)
@@ -519,8 +561,6 @@ class _NVAIPlayClient(BaseModel):
             # it's a Chesterton's fence I'm unwilling to touch
             return dict(role="user", content=msg)
         if isinstance(msg, dict):
-            if msg.get("role", "") not in self.valid_roles:
-                raise ValueError(f"Unknown message role \"{msg.get('role', '')}\"")
             if msg.get("content", None) is None:
                 raise ValueError(f"Message {msg} has no content")
             return msg
@@ -602,18 +642,50 @@ class NVAIPlayBaseModel(_NVAIPlayClient):
         # but I'm just going to assume it's a list
         return [self.preprocess_msg(m) for m in msg_list]
 
+    def _process_content(self, content: Union[str, List[dict]]) -> str:
+        if isinstance(content, str):
+            return content
+        string_array = []
+
+        for part in content:
+            if isinstance(part, str):
+                string_array.append(part)
+            elif isinstance(part, Mapping):
+                # OpenAI Format
+                if _is_openai_parts_format(part):
+                    if part["type"] == "text":
+                        string_array.append(part["text"])
+                    elif part["type"] == "image_url":
+                        img_url = part["image_url"]
+                        if isinstance(img_url, dict):
+                            if "url" not in img_url:
+                                raise ValueError(
+                                    f"Unrecognized message image format: {img_url}"
+                                )
+                            img_url = img_url["url"]
+                        b64_string = _url_to_b64_string(img_url)
+                        string_array.append(f'<img src="{b64_string}" />')
+                    else:
+                        raise ValueError(
+                            f"Unrecognized message part type: {part['type']}"
+                        )
+                else:
+                    raise ValueError(f"Unrecognized message part format: {part}")
+        return "".join(string_array)
+
     def preprocess_msg(self, msg: BaseMessage) -> Dict[str, str]:
         ## (WFH): Previous author added a bunch of
         # custom processing here, but I'm just going to support
         # the LCEL api.
         if isinstance(msg, BaseMessage):
-            role_convert = {"ai": "assistant", "system": "system"}
-            role = getattr(msg, "type")
-            cont = getattr(msg, "content")
-            role = role_convert.get(role, "user")
-            if hasattr(msg, "role"):
-                cont = f"{getattr(msg, 'role')}: {cont}"
-            return {"role": role, "content": cont}
+            role_convert = {"ai": "assistant", "human": "user"}
+            if isinstance(msg, ChatMessage):
+                role = msg.role
+            else:
+                role = msg.type
+            role = role_convert.get(role, role)
+            content = self._process_content(msg.content)
+            return {"role": role, "content": content}
         raise ValueError(f"Invalid message: {repr(msg)} of type {type(msg)}")
 
     def custom_postprocess(self, msg: dict) -> str:
