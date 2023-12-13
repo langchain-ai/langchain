@@ -1,6 +1,6 @@
 from langchain_nvidia_aiplay import __all__
 
-EXPECTED_ALL = ["NVAIPlayLLM", "ChatNVAIPlay", "NVAIPlayVectorStore"]
+EXPECTED_ALL = ["ChatNVAIPlay", "NVAIPlayEmbeddings"]
 
 
 def test_all_imports() -> None:

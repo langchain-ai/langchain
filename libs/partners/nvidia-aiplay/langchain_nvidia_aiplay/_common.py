@@ -3,10 +3,9 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
-import re
+from functools import lru_cache
 from typing import (
     Any,
     AsyncIterator,
@@ -24,13 +23,11 @@ from typing import (
 import aiohttp
 import requests
 from langchain_core.callbacks.manager import (
-    AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
-    CallbackManager,
+    CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.llms import LLM
 from langchain_core.messages import BaseMessage, ChatMessageChunk
-from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+from langchain_core.outputs import ChatGenerationChunk
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from requests.models import Response
@@ -38,76 +35,7 @@ from requests.models import Response
 logger = logging.getLogger(__name__)
 
 
-class _ClientModel(BaseModel):
-    """
-    Custom BaseModel subclass with some desirable properties for subclassing
-    """
-
-    saved_parent: Optional[_ClientModel] = None
-
-    def __init__(self, *args: Sequence, **kwargs: Any[str, Any]):
-        super().__init__(*args, **kwargs)
-
-    def subscope(self, *args: Sequence, **kwargs: Any) -> Any:
-        """Create a new _ClientModel with the same values but new arguments"""
-        named_args = dict({k: v for k, v in zip(getattr(self, "arg_keys", []), args)})
-        named_args = {**named_args, **kwargs}
-        out = self.copy(update=named_args)
-        out.validate(dict(out._iter(to_dict=False, by_alias=False, exclude_unset=True)))
-        for k, v in self.__dict__.items():
-            if isinstance(v, _ClientModel):
-                setattr(out, k, v.subscope(*args, **kwargs))
-        out.saved_parent = self
-        return out
-
-    def dict(self, *args: Sequence, **kwargs: Any) -> dict:
-        """Handle saved_parent bleeding into dict"""
-        out = super().dict(*args, **kwargs)
-        if "saved_parent" in out:
-            out.pop("saved_parent")
-        return out
-
-    def get(self, key: str) -> Any:
-        """Get a value from the _ClientModel, using it like a dictionary"""
-        return getattr(self, key)
-
-    def transfer_state(self, other: Optional[_ClientModel]) -> None:
-        """Transfer state from one _ClientModel to another"""
-        if other is None:
-            return
-        for k, v in self.__dict__.items():
-            if k in getattr(self, "state_vars", []):
-                setattr(other, k, v)
-            elif hasattr(v, "transfer_state"):
-                other_sub = getattr(other, k, None)
-                if other_sub is not None:
-                    v.transfer_state(other_sub)
-
-    @staticmethod
-    def desecretize(v: Any) -> Any:
-        """Desecretize a collection of values"""
-        recurse = _ClientModel.desecretize
-        if isinstance(v, SecretStr):
-            return v.get_secret_value()
-        if isinstance(v, str):
-            return v
-        if isinstance(v, dict):
-            return {k: recurse(v) for k, v in v.items()}
-        if isinstance(v, list):
-            return [recurse(subv) for subv in v]
-        if isinstance(v, tuple):
-            return tuple(recurse(subv) for subv in v)
-        return v
-
-    def __enter__(self) -> _ClientModel:
-        return self
-
-    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
-        self.transfer_state(self.saved_parent)
-        self.saved_parent = None
-
-
-class NVCRModel(_ClientModel):
+class NVCRModel(BaseModel):
 
     """
     Underlying Client for interacting with the AI Playground API.
@@ -125,8 +53,7 @@ class NVCRModel(_ClientModel):
 
     ## Populated on construction/validation
     nvapi_key: Optional[SecretStr]
-    is_staging: Optional[bool]
-    available_models: Optional[Dict[str, str]]
+    is_staging: bool = Field(False, description="Whether to use staging API")
 
     ## Generation arguments
     max_tries: int = Field(5, ge=1)
@@ -139,57 +66,70 @@ class NVCRModel(_ClientModel):
             "content-type": "application/json",
         },
     )
-
-    ## Status Tracking Variables. Updated Progressively
-    last_inputs: Optional[dict] = Field(None)
-    last_response: Optional[Any] = Field(None)
-    last_msg: dict = Field({})
     available_functions: List[dict] = Field([{}])
-    state_vars: Sequence[str] = Field(
-        [
-            "last_inputs",
-            "last_response",
-            "last_msg",
-            "available_functions",
-        ]
-    )
+
+    @staticmethod
+    def desecretize(v: Any) -> Any:
+        """Desecretize a collection of values"""
+        recurse = NVCRModel.desecretize
+        if isinstance(v, SecretStr):
+            return v.get_secret_value()
+        if isinstance(v, str):
+            return v
+        if isinstance(v, dict):
+            return {k: recurse(v) for k, v in v.items()}
+        if isinstance(v, list):
+            return [recurse(subv) for subv in v]
+        if isinstance(v, tuple):
+            return tuple(recurse(subv) for subv in v)
+        return v
 
     @root_validator()
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate and update model arguments, including API key and formatting"""
         values["nvapi_key"] = get_from_dict_or_env(
-            _ClientModel.desecretize(values),
+            NVCRModel.desecretize(values),
             "nvapi_key",
             "NVAPI_KEY",
         )
         if "nvapi-" not in values.get("nvapi_key", ""):
             raise ValueError("Invalid NVAPI key detected. Should start with `nvapi-`")
-        values["is_staging"] = "nvapi-stg-" in values["nvapi_key"]
+        is_staging = "nvapi-stg-" in values["nvapi_key"]
+        values["is_staging"] = is_staging
         for header in values["headers"].values():
             if "{nvapi_key}" in header["Authorization"]:
-                nvapi_key = _ClientModel.desecretize(values["nvapi_key"])
+                nvapi_key = NVCRModel.desecretize(values["nvapi_key"])
                 header["Authorization"] = SecretStr(
                     header["Authorization"].format(nvapi_key=nvapi_key),
                 )
         if isinstance(values["stop"], str):
             values["stop"] = [values["stop"]]
+        values["fetch_url_format"] = cls._stagify(
+            is_staging,
+            values.get(
+                "fetch_url_format", "https://api.nvcf.nvidia.com/v2/nvcf/pexec/status/"
+            ),
+        )
+        values["call_invoke_base"] = cls._stagify(
+            is_staging,
+            values.get(
+                "call_invoke_base",
+                "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions",
+            ),
+        )
         return values
 
-    def __init__(self, *args: Sequence, **kwargs: Any):
-        """Useful to define custom operations on construction after validation"""
-        super().__init__(*args, **kwargs)
-        self.fetch_url_format = self._stagify(self.fetch_url_format)
-        self.call_invoke_base = self._stagify(self.call_invoke_base)
-        try:
-            self.available_models = self.get_available_models()
-        except Exception as e:
-            raise Exception("Error retrieving model list. Verify your NVAPI key") from e
+    @property
+    def available_models(self) -> dict:
+        """List the available models that can be invoked"""
+        return self._get_available_models(self.is_staging)
 
-    def _stagify(self, path: str) -> str:
+    @classmethod
+    def _stagify(cls, is_staging: bool, path: str) -> str:
         """Helper method to switch between staging and production endpoints"""
-        if self.is_staging and "stg.api" not in path:
+        if is_staging and "stg.api" not in path:
             return path.replace("api", "stg.api")
-        if not self.is_staging and "stg.api" in path:
+        if not is_staging and "stg.api" in path:
             return path.replace("stg.api", "api")
         return path
 
@@ -205,7 +145,7 @@ class NVCRModel(_ClientModel):
             stream=False,
         )
         session = self.get_session_fn()
-        self.last_response = session.post(**_ClientModel.desecretize(self.last_inputs))
+        self.last_response = session.post(**NVCRModel.desecretize(self.last_inputs))
         self._try_raise(self.last_response)
         return self.last_response, session
 
@@ -218,7 +158,7 @@ class NVCRModel(_ClientModel):
             stream=False,
         )
         session = self.get_session_fn()
-        self.last_response = session.get(**_ClientModel.desecretize(self.last_inputs))
+        self.last_response = session.get(**NVCRModel.desecretize(self.last_inputs))
         self._try_raise(self.last_response)
         return self.last_response, session
 
@@ -229,7 +169,7 @@ class NVCRModel(_ClientModel):
             request_id = response.headers.get("NVCF-REQID", "")
             response = session.get(
                 self.fetch_url_format + request_id,
-                headers=_ClientModel.desecretize(self.headers["call"]),
+                headers=NVCRModel.desecretize(self.headers["call"]),
             )
             if response.status_code == 202:
                 try:
@@ -287,9 +227,12 @@ class NVCRModel(_ClientModel):
             return msg_list
         raise ValueError(f"Received ill-formed response: {response}")
 
-    def get_available_models(self) -> dict:
+    @lru_cache(maxsize=1)
+    def _get_available_models(self) -> dict:
         """Get a dictionary of available models from the AI Playground API."""
-        invoke_url = self._stagify("https://api.nvcf.nvidia.com/v2/nvcf/functions")
+        invoke_url = self._stagify(
+            self.is_staging, "https://api.nvcf.nvidia.com/v2/nvcf/functions"
+        )
         self.available_functions = self.query(invoke_url)["functions"]
         live_fns = [v for v in self.available_functions if v.get("status") == "ACTIVE"]
         return {v["name"]: v["id"] for v in live_fns}
@@ -301,16 +244,14 @@ class NVCRModel(_ClientModel):
         if not invoke_url:
             if not model_name:
                 raise ValueError("URL or model name must be specified to invoke")
-            available_models = self.available_models or self.get_available_models()
-            if model_name in available_models:
-                invoke_url = available_models.get(model_name)
+            if model_name in self.available_models:
+                invoke_url = self.available_models[model_name]
             else:
-                for key in sorted(available_models.keys()):
-                    if model_name in key:
-                        invoke_url = available_models[key]
-                        break
+                raise ValueError(f"Unknown model name {model_name} specified")
         if not invoke_url:
-            raise ValueError(f"Unknown model name {model_name} specified")
+            # For mypy
+            raise ValueError("URL or model name must be specified to invoke")
+        # Why is this even needed?
         if "http" not in invoke_url:
             invoke_url = f"{self.call_invoke_base}/{invoke_url}"
         return invoke_url
@@ -396,7 +337,7 @@ class NVCRModel(_ClientModel):
             json=payload,
             stream=True,
         )
-        raw_inputs = _ClientModel.desecretize(self.last_inputs)
+        raw_inputs = NVCRModel.desecretize(self.last_inputs)
         response = self.get_session_fn().post(**raw_inputs)
         self.last_response = response
         self._try_raise(response)
@@ -433,7 +374,7 @@ class NVCRModel(_ClientModel):
             json=payload,
         )
         async with self.get_asession_fn() as session:
-            raw_inputs = _ClientModel.desecretize(self.last_inputs)
+            raw_inputs = NVCRModel.desecretize(self.last_inputs)
             async with session.post(**raw_inputs) as self.last_response:
                 self._try_raise(self.last_response)
                 async for line in self.last_response.content.iter_any():
@@ -445,7 +386,7 @@ class NVCRModel(_ClientModel):
                             break
 
 
-class _NVAIPlayClient(_ClientModel):
+class _NVAIPlayClient(NVCRModel):
     """
     Higher-Level Client for interacting with AI Playground API with argument defaults.
     Is subclassed by NVAIPlayLLM/ChatNVAIPlay to provide a simple LangChain interface.
@@ -453,22 +394,17 @@ class _NVAIPlayClient(_ClientModel):
 
     client: NVCRModel = Field(NVCRModel)
 
-    model: str = Field("llama")
-    labels: dict = Field({})
+    model: str = Field(..., description="Name of the model to invoke")
 
     temperature: float = Field(0.2, le=1.0, gt=0.0)
     top_p: float = Field(0.7, le=1.0, ge=0.0)
     max_tokens: int = Field(1024, le=1024, ge=32)
-    streaming: bool = Field(False)
 
-    inputs: Any = Field([])
     stop: Union[Sequence[str], str] = Field([])
 
-    gen_keys: Sequence[str] = Field(["temperature", "top_p", "max_tokens", "streaming"])
-    arg_keys: Sequence[str] = Field(["inputs", "stop"])
     valid_roles: Sequence[str] = Field(["user", "system", "assistant"])
 
-    class LabelModel(_ClientModel):
+    class LabelModel(NVCRModel):
         creativity: int = Field(0, ge=0, le=9)
         complexity: int = Field(0, ge=0, le=9)
         verbosity: int = Field(0, ge=0, le=9)
@@ -480,20 +416,18 @@ class _NVAIPlayClient(_ClientModel):
             kwargs["client"] = NVCRModel(**kwargs)
         super().__init__(*args, **kwargs)
 
-    @root_validator()
-    def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if values.get("labels"):
-            values["labels"] = cls.LabelModel(**values["labels"]).dict()
-        return values
+    def _validate_labels(cls, labels: Optional[dict] = None) -> None:
+        if labels:
+            cls.LabelModel(**labels)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
 
     @property
-    def available_models(self) -> List[str]:
-        """List the available models that can be invoked"""
-        return list(getattr(self.client, "available_models", {}).keys())
+    def available_models(self) -> dict:
+        """Map the available models that can be invoked."""
+        return self.client.available_models
 
     def get_model_details(self, model: Optional[str] = None) -> dict:
         """Get more meta-details about a model retrieved by a given name"""
@@ -504,53 +438,54 @@ class _NVAIPlayClient(_ClientModel):
         fn_spec = [f for f in known_fns if f.get("id") == model_key][0]
         return fn_spec
 
-    def get_generation(self, *args: Sequence, **kwargs: Any) -> dict:
+    def get_generation(
+        self, inputs: Sequence[Dict], labels: Optional[dict] = None, **kwargs: Any
+    ) -> dict:
         """Call to client generate method with call scope"""
-        with self.subscope(*args, **kwargs) as call:
-            payload = call.get_payload(stream=False)
-            out = call.client.get_req_generation(call.model, payload=payload)
+        payload = self.get_payload(stream=False, labels=labels, **kwargs)
+        out = self.client.get_req_generation(self.model, payload=payload)
         return out
 
-    def get_stream(self, *args: Sequence, **kwargs: Any) -> Iterator:
+    def get_stream(
+        self, inputs: Sequence[Dict], labels: Optional[dict] = None, **kwargs: Any
+    ) -> Iterator:
         """Call to client stream method with call scope"""
-        with self.subscope(*args, **kwargs) as call:
-            payload = call.get_payload(stream=True)
-            out = call.client.get_req_stream(call.model, payload=payload)
-        return out
+        payload = self.get_payload(stream=True, labels=labels, **kwargs)
+        return self.client.get_req_stream(self.model, payload=payload)
 
-    def get_astream(self, *args: Sequence, **kwargs: Any) -> AsyncIterator:
-        """Call to client astream method with call scope"""
-        with self.subscope(*args, **kwargs) as call:
-            payload = call.get_payload(stream=True)
-            out = call.client.get_req_astream(call.model, payload=payload)
-        return out
+    def get_astream(
+        self, inputs: Sequence[Dict], labels: Optional[dict] = None, **kwargs: Any
+    ) -> AsyncIterator:
+        """Call to client astream methods with call scope"""
+        payload = self.get_payload(stream=True, labels=labels, **kwargs)
+        return self.client.get_req_astream(self.model, payload=payload)
 
-    def get_payload(self, *args: Sequence, **kwargs: Any) -> dict:
+    def get_payload(
+        self, inputs: Sequence[Dict], labels: Optional[dict] = None, **kwargs: Any
+    ) -> dict:
         """Generates payload for the _NVAIPlayClient API to send to service."""
-
-        def k_map(k: str) -> str:
-            return k if k != "streaming" else "stream"
-
-        out = {**self.preprocess(), **{k_map(k): self.get(k) for k in self.gen_keys}}
+        # (WFH): This is a strange mix of stateful and stateless
+        out = {
+            **self.preprocess(inputs=inputs, labels=labels),
+            **kwargs,
+        }
         return out
 
-    def preprocess(self) -> dict:
+    def preprocess(self, inputs: Sequence[Dict], labels: Optional[dict] = None) -> dict:
         """Prepares a message or list of messages for the payload"""
-        if (
-            isinstance(self.inputs, str)
-            or not hasattr(self.inputs, "__iter__")
-            or isinstance(self.inputs, BaseMessage)
-        ):
-            self.inputs = [self.inputs]
-        messages = [self.prep_msg(m) for m in self.inputs]
-        labels = self.labels
+        messages = [self.prep_msg(m) for m in inputs]
         if labels:
+            self._validate_labels(labels)
+            # (WFH) Labels are currently (?) always passed as an assistant
+            # suffix message, but this API seems less stable.
             messages += [{"labels": labels, "role": "assistant"}]
         return {"messages": messages}
 
     def prep_msg(self, msg: Union[str, dict, BaseMessage]) -> dict:
         """Helper Method: Ensures a message is a dictionary with a role and content."""
         if isinstance(msg, str):
+            # (WFH) this shouldn't ever be reached but leaving this here bcs
+            # it's a Chesterton's fence I'm unwilling to touch
             return dict(role="user", content=msg)
         if isinstance(msg, dict):
             if msg.get("role", "") not in self.valid_roles:
@@ -567,6 +502,11 @@ class NVAIPlayBaseModel(_NVAIPlayClient):
     To be subclassed by NVAIPlayLLM/ChatNVAIPlay by combining with LLM/SimpleChatModel.
     """
 
+    labels: Optional[_NVAIPlayClient.LabelModel] = Field(
+        default=None,
+        description="Labels to add to the chat messages.",
+    )
+
     @property
     def _llm_type(self) -> str:
         """Return type of NVIDIA AI Playground Interface."""
@@ -574,113 +514,70 @@ class NVAIPlayBaseModel(_NVAIPlayClient):
 
     def _call(
         self,
-        messages: Union[List[BaseMessage], str],
+        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManager] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """hook for LLM/SimpleChatModel. Allows for easy standard/streaming calls"""
+        """Invoke on a single list of chat messages."""
         kwargs["labels"] = kwargs.get("labels", self.labels)
         kwargs["stop"] = stop if stop else getattr(self.client, "stop")
-        if kwargs.get("streaming", self.streaming) or kwargs["stop"]:
-            buffer = ""
-            for chunk in self._stream(messages, run_manager=run_manager, **kwargs):
-                buffer += chunk if isinstance(chunk, str) else chunk.text
-            responses = {"content": buffer}
-        else:
-            inputs = self.custom_preprocess(messages)
-            responses = self.get_generation(inputs, **kwargs)
+        inputs = self.custom_preprocess(messages)
+        responses = self.get_generation(inputs=inputs, **kwargs)
         outputs = self.custom_postprocess(responses)
         return outputs
 
     def _get_filled_chunk(
         self, text: str, role: Optional[str] = "assistant"
-    ) -> Union[GenerationChunk, ChatGenerationChunk]:
-        """LLM and BasicChatModel have different streaming chunk specifications"""
-        if isinstance(self, LLM):
-            return GenerationChunk(text=text)
+    ) -> ChatGenerationChunk:
+        """Fill the generation chunk."""
         return ChatGenerationChunk(message=ChatMessageChunk(content=text, role=role))
 
     def _stream(
         self,
-        messages: Union[List[BaseMessage], str],
+        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManager] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[Union[GenerationChunk, ChatGenerationChunk]]:
+    ) -> Iterator[ChatGenerationChunk]:
         """Allows streaming to model!"""
         inputs = self.custom_preprocess(messages)
         kwargs["labels"] = kwargs.get("labels", self.labels)
         kwargs["stop"] = stop if stop else getattr(self.client, "stop")
-        for response in self.get_stream(inputs, **kwargs):
+        for response in self.get_stream(inputs=inputs, **kwargs):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
-                async_mtypes = (AsyncCallbackManager, AsyncCallbackManagerForLLMRun)
-                if isinstance(run_manager, async_mtypes):
-                    ## Edge case from LLM/SimpleChatModel default async methods
-                    asyncio.run(run_manager.on_llm_new_token(chunk.text, chunk=chunk))
-                else:
-                    run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     async def _astream(
         self,
-        messages: Union[List[BaseMessage], str],
+        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManager] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Union[GenerationChunk, ChatGenerationChunk]]:
+    ) -> AsyncIterator[ChatGenerationChunk]:
         inputs = self.custom_preprocess(messages)
         kwargs["labels"] = kwargs.get("labels", self.labels)
         kwargs["stop"] = stop if stop else getattr(self.client, "stop")
-        async for response in self.get_astream(inputs, **kwargs):
+        async for response in self.get_astream(inputs=inputs, **kwargs):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
-    def custom_preprocess(self, msgs: Union[str, Sequence]) -> List[Dict[str, str]]:
-        is_one = isinstance(msgs, (str, BaseMessage))
-        is_list = not is_one and hasattr(msgs, "__iter__")
-        is_solo = is_list and len(msgs) == 1 and isinstance(msgs[0], (str, BaseMessage))
-        msg_list: Sequence[Any] = []
-        if is_one or is_solo:
-            msg_val: Union[str, BaseMessage] = msgs if not is_list else msgs[0]
-            msg_str: str = getattr(msg_val, "content", msg_val)
-            msg_list = re.split("///ROLE ", msg_str.strip())
-            msg_list = [m for m in msg_list if m.strip()]
-        elif not is_list:
-            msg_list = [msgs]
-        elif is_list:
-            msg_list = msgs
-        out = [self.preprocess_msg(m) for m in msg_list]
-        return out
+    def custom_preprocess(
+        self, msg_list: Sequence[BaseMessage]
+    ) -> List[Dict[str, str]]:
+        # The previous author had a lot of custom preprocessing here
+        # but I'm just going to assume it's a list
+        return [self.preprocess_msg(m) for m in msg_list]
 
-    def preprocess_msg(
-        self, msg: Union[str, Sequence[str], dict, BaseMessage]
-    ) -> Dict[str, str]:
-        ## Support for just simple string inputs of ///ROLE SYS etc. inputs
-        if isinstance(msg, str):
-            msg_split = re.split("SYS: |USER: |AGENT: |CONTEXT:", msg)
-            if len(msg_split) == 1:
-                return {"role": "user", "content": msg}
-            role_convert = {
-                "agent": "assistant",
-                "sys": "system",
-                "context": "context",
-            }
-            role, _, content = msg.partition(": ")
-            role = role_convert.get(role.strip().lower(), "user")
-            return {"role": role, "content": content}
-        ## Support for tuple inputs
-        if type(msg) in (list, tuple):
-            return {"role": msg[0], "content": msg[1]}
-        ## Support for manually-specified default inputs to AI Playground
-        if isinstance(msg, dict) and msg.get("content"):
-            msg["role"] = msg.get("role", "user")
-            return msg
-        ## Support for LangChain Messages
-        if hasattr(msg, "content"):
+    def preprocess_msg(self, msg: BaseMessage) -> Dict[str, str]:
+        ## (WFH): Previous author added a bunch of
+        # custom processing here, but I'm just going to support
+        # the LCEL api.
+        if isinstance(msg, BaseMessage):
             role_convert = {"ai": "assistant", "system": "system"}
             role = getattr(msg, "type")
             cont = getattr(msg, "content")
@@ -701,24 +598,10 @@ class NVAIPlayBaseModel(_NVAIPlayClient):
 
 ####################################################################################
 
-
-class GeneralBase(NVAIPlayBaseModel):
-    model: str = Field("llama2_13b")
-
-
-class SteerBase(NVAIPlayBaseModel):
-    model: str = Field("steerlm")
-    arg_keys: Sequence[str] = Field(["inputs", "labels", "stop"])
-    labels: dict = Field({"creativity": 0, "complexity": 9, "verbosity": 9})
+# TODO: This isn't that useful.
 
 
 class ContextBase(NVAIPlayBaseModel):
     model: str = Field("_qa_")
     valid_roles: Sequence[str] = Field(["user", "context"])
     max_tokens: int = Field(512, ge=32, le=512)
-
-
-class ImageBase(NVAIPlayBaseModel):
-    model: str = Field("neva")
-    arg_keys: Sequence[str] = Field(["inputs", "labels", "stop"])
-    labels: dict = Field({"creativity": 0, "complexity": 9, "verbosity": 9})

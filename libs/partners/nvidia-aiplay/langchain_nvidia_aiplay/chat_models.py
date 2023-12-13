@@ -16,19 +16,3 @@ class ChatNVAIPlay(nv_aiplay.NVAIPlayBaseModel, SimpleChatModel):
             model = ChatNVAIPlay(model="mistral")
             response = model.invoke("Hello")
     """
-
-
-class GeneralChat(nv_aiplay.GeneralBase, SimpleChatModel):
-    pass
-
-
-class SteerChat(nv_aiplay.SteerBase, SimpleChatModel):
-    pass
-
-
-class ContextChat(nv_aiplay.ContextBase, SimpleChatModel):
-    pass
-
-
-class ImageChat(nv_aiplay.ImageBase, SimpleChatModel):
-    pass
