@@ -110,12 +110,6 @@ def _import_brave_search_tool() -> Any:
     return BraveSearch
 
 
-def _import_connery_tool() -> Any:
-    from langchain.tools.connery import ConneryAction
-
-    return ConneryAction
-
-
 def _import_ddg_search_tool_DuckDuckGoSearchResults() -> Any:
     from langchain.tools.ddg_search.tool import DuckDuckGoSearchResults
 
@@ -779,8 +773,6 @@ def __getattr__(name: str) -> Any:
         return _import_bing_search_tool_BingSearchRun()
     elif name == "BraveSearch":
         return _import_brave_search_tool()
-    elif name == "ConneryAction":
-        return _import_connery_tool()
     elif name == "DuckDuckGoSearchResults":
         return _import_ddg_search_tool_DuckDuckGoSearchResults()
     elif name == "DuckDuckGoSearchRun":
@@ -1017,7 +1009,6 @@ __all__ = [
     "BingSearchRun",
     "BraveSearch",
     "ClickTool",
-    "ConneryAction",
     "CopyFileTool",
     "CurrentWebPageTool",
     "DeleteFileTool",

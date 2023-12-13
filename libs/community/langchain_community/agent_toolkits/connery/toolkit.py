@@ -4,7 +4,7 @@ from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.tools.connery import ConneryService
+from langchain_community.tools.connery import ConneryService
 
 
 class ConneryToolkit(BaseToolkit):

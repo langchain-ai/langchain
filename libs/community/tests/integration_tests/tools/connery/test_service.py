@@ -1,5 +1,5 @@
 """Integration test for Connery API Wrapper."""
-from langchain.tools.connery import ConneryService
+from langchain_community.tools.connery import ConneryService
 
 
 def test_list_actions() -> None:

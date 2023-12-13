@@ -23,7 +23,6 @@ from langchain.agents.agent_toolkits.amadeus.toolkit import AmadeusToolkit
 from langchain.agents.agent_toolkits.azure_cognitive_services import (
     AzureCognitiveServicesToolkit,
 )
-from langchain.agents.agent_toolkits.connery import ConneryToolkit
 from langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import (
     create_conversational_retrieval_agent,
 )
@@ -90,7 +89,6 @@ __all__ = [
     "AINetworkToolkit",
     "AmadeusToolkit",
     "AzureCognitiveServicesToolkit",
-    "ConneryToolkit",
     "FileManagementToolkit",
     "GmailToolkit",
     "JiraToolkit",
