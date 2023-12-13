@@ -173,8 +173,13 @@ def build_extra_kwargs(
     return extra_kwargs
 
 
-def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:
+def convert_to_secret_str(value: Union[SecretStr, str, None]) -> SecretStr:
     """Convert a string to a SecretStr if needed."""
     if isinstance(value, SecretStr):
         return value
     return SecretStr(value)
+
+
+def get_secret_value(secret: Union[SecretStr, str, None]) -> str:
+    """Extract the SecretStr from all types."""
+    return convert_to_secret_str(secret).get_secret_value()
