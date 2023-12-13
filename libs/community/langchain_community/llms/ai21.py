@@ -5,7 +5,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import (
-    convert_to_secret_str,
+    convert_to_secretstr,
     extract_secret_value,
     get_from_dict_or_env,
 )
@@ -80,7 +80,7 @@ class AI21(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        ai21_api_key = convert_to_secret_str(
+        ai21_api_key = convert_to_secretstr(
             get_from_dict_or_env(values, "ai21_api_key", "AI21_API_KEY")
         )
         values["ai21_api_key"] = ai21_api_key
@@ -146,7 +146,7 @@ class AI21(LLM):
             else:
                 base_url = "https://api.ai21.com/studio/v1"
         params = {**self._default_params, **kwargs}
-        self.ai21_api_key = convert_to_secret_str(self.ai21_api_key)
+        self.ai21_api_key = convert_to_secretstr(self.ai21_api_key)
         response = requests.post(
             url=f"{base_url}/{self.model}/complete",
             headers={

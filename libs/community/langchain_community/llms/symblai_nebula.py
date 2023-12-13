@@ -6,7 +6,7 @@ import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secretstr, get_from_dict_or_env
 from requests import ConnectTimeout, ReadTimeout, RequestException
 from tenacity import (
     before_sleep_log,
@@ -80,7 +80,7 @@ class Nebula(LLM):
             "NEBULA_SERVICE_PATH",
             DEFAULT_NEBULA_SERVICE_PATH,
         )
-        nebula_api_key = convert_to_secret_str(
+        nebula_api_key = convert_to_secretstr(
             get_from_dict_or_env(values, "nebula_api_key", "NEBULA_API_KEY", None)
         )
 

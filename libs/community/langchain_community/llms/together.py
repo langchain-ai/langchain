@@ -9,7 +9,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secretstr, get_from_dict_or_env
 
 from langchain_community.utilities.requests import Requests
 
@@ -69,7 +69,7 @@ class Together(LLM):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        values["together_api_key"] = convert_to_secret_str(
+        values["together_api_key"] = convert_to_secretstr(
             get_from_dict_or_env(values, "together_api_key", "TOGETHER_API_KEY")
         )
         return values

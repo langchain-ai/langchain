@@ -6,7 +6,7 @@ from pytest import CaptureFixture, MonkeyPatch
 from langchain_community.llms.forefrontai import ForefrontAI
 
 
-def test_forefrontai_api_key_is_secret_string() -> None:
+def test_forefrontai_api_key_is_secretstr() -> None:
     """Test that the API key is stored as a SecretStr."""
     llm = ForefrontAI(forefrontai_api_key="secret-api-key", temperature=0.2)
     assert isinstance(llm.forefrontai_api_key, SecretStr)

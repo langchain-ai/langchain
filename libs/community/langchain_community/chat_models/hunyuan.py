@@ -26,7 +26,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
-    convert_to_secret_str,
+    convert_to_secretstr,
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
@@ -208,7 +208,7 @@ class ChatHunyuan(BaseChatModel):
             "hunyuan_secret_id",
             "HUNYUAN_SECRET_ID",
         )
-        values["hunyuan_secret_key"] = convert_to_secret_str(
+        values["hunyuan_secret_key"] = convert_to_secretstr(
             get_from_dict_or_env(
                 values,
                 "hunyuan_secret_key",

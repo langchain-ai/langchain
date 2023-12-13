@@ -6,7 +6,7 @@ from pytest import CaptureFixture, MonkeyPatch
 from langchain_community.llms.minimax import Minimax
 
 
-def test_api_key_is_secret_string() -> None:
+def test_api_key_is_secretstr() -> None:
     llm = Minimax(minimax_api_key="secret-api-key", minimax_group_id="group_id")
     assert isinstance(llm.minimax_api_key, SecretStr)
 

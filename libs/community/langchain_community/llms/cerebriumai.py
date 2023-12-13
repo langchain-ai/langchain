@@ -6,7 +6,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
 from langchain_core.utils import (
-    convert_to_secret_str,
+    convert_to_secretstr,
     extract_secret_value,
     get_from_dict_or_env,
 )
@@ -69,7 +69,7 @@ class CerebriumAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        cerebriumai_api_key = convert_to_secret_str(
+        cerebriumai_api_key = convert_to_secretstr(
             get_from_dict_or_env(values, "cerebriumai_api_key", "CEREBRIUMAI_API_KEY")
         )
         values["cerebriumai_api_key"] = cerebriumai_api_key

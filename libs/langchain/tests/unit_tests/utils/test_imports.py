@@ -4,7 +4,7 @@ EXPECTED_ALL = [
     "StrictFormatter",
     "check_package_version",
     "comma_list",
-    "convert_to_secret_str",
+    "convert_to_secretstr",
     "cosine_similarity",
     "cosine_similarity_top_k",
     "formatter",

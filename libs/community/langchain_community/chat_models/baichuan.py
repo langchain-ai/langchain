@@ -23,7 +23,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
-    convert_to_secret_str,
+    convert_to_secretstr,
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
@@ -161,14 +161,14 @@ class ChatBaichuan(BaseChatModel):
             "BAICHUAN_API_BASE",
             DEFAULT_API_BASE,
         )
-        values["baichuan_api_key"] = convert_to_secret_str(
+        values["baichuan_api_key"] = convert_to_secretstr(
             get_from_dict_or_env(
                 values,
                 "baichuan_api_key",
                 "BAICHUAN_API_KEY",
             )
         )
-        values["baichuan_secret_key"] = convert_to_secret_str(
+        values["baichuan_secret_key"] = convert_to_secretstr(
             get_from_dict_or_env(
                 values,
                 "baichuan_secret_key",

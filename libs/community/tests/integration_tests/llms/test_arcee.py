@@ -7,7 +7,7 @@ from langchain_community.llms.arcee import Arcee
 
 
 @patch("langchain.utilities.arcee.requests.get")
-def test_arcee_api_key_is_secret_string(mock_get: MagicMock) -> None:
+def test_arcee_api_key_is_secretstr(mock_get: MagicMock) -> None:
     mock_response = mock_get.return_value
     mock_response.status_code = 200
     mock_response.json.return_value = {

@@ -6,7 +6,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secretstr, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -111,11 +111,11 @@ class WatsonxLLM(BaseLLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that credentials and python package exists in environment."""
-        values["url"] = convert_to_secret_str(
+        values["url"] = convert_to_secretstr(
             get_from_dict_or_env(values, "url", "WATSONX_URL")
         )
         if "cloud.ibm.com" in values.get("url", "").get_secret_value():
-            values["apikey"] = convert_to_secret_str(
+            values["apikey"] = convert_to_secretstr(
                 get_from_dict_or_env(values, "apikey", "WATSONX_APIKEY")
             )
         else:
@@ -136,25 +136,25 @@ class WatsonxLLM(BaseLLM):
                     " as a named parameter."
                 )
             elif values["token"] or "WATSONX_TOKEN" in os.environ:
-                values["token"] = convert_to_secret_str(
+                values["token"] = convert_to_secretstr(
                     get_from_dict_or_env(values, "token", "WATSONX_TOKEN")
                 )
             elif values["password"] or "WATSONX_PASSWORD" in os.environ:
-                values["password"] = convert_to_secret_str(
+                values["password"] = convert_to_secretstr(
                     get_from_dict_or_env(values, "password", "WATSONX_PASSWORD")
                 )
-                values["username"] = convert_to_secret_str(
+                values["username"] = convert_to_secretstr(
                     get_from_dict_or_env(values, "username", "WATSONX_USERNAME")
                 )
             elif values["apikey"] or "WATSONX_APIKEY" in os.environ:
-                values["apikey"] = convert_to_secret_str(
+                values["apikey"] = convert_to_secretstr(
                     get_from_dict_or_env(values, "apikey", "WATSONX_APIKEY")
                 )
-                values["username"] = convert_to_secret_str(
+                values["username"] = convert_to_secretstr(
                     get_from_dict_or_env(values, "username", "WATSONX_USERNAME")
                 )
             if not values["instance_id"] or "WATSONX_INSTANCE_ID" not in os.environ:
-                values["instance_id"] = convert_to_secret_str(
+                values["instance_id"] = convert_to_secretstr(
                     get_from_dict_or_env(values, "instance_id", "WATSONX_INSTANCE_ID")
                 )
 

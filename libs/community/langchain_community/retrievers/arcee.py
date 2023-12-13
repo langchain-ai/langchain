@@ -4,7 +4,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secretstr, get_from_dict_or_env
 
 from langchain_community.utilities.arcee import ArceeWrapper, DALMFilter
 
@@ -75,7 +75,7 @@ class ArceeRetriever(BaseRetriever):
         """Validate Arcee environment variables."""
 
         # validate env vars
-        values["arcee_api_key"] = convert_to_secret_str(
+        values["arcee_api_key"] = convert_to_secretstr(
             get_from_dict_or_env(
                 values,
                 "arcee_api_key",

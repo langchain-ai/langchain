@@ -6,7 +6,7 @@ from pytest import CaptureFixture, MonkeyPatch
 from langchain_community.llms.ai21 import AI21
 
 
-def test_api_key_is_secret_string() -> None:
+def test_api_key_is_secretstr() -> None:
     llm = AI21(ai21_api_key="secret-api-key")
     assert isinstance(llm.ai21_api_key, SecretStr)
 

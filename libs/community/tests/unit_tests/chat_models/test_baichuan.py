@@ -137,7 +137,7 @@ def test_baichuan_key_masked_when_passed_via_constructor(
     assert captured.out == "**********"
 
 
-def test_uses_actual_secret_value_from_secret_str() -> None:
+def test_uses_actual_secret_value_from_secretstr() -> None:
     """Test that actual secret is retrieved using `.get_secret_value()`."""
     chat = ChatBaichuan(
         baichuan_api_key="test-api-key", baichuan_secret_key="test-secret-key"

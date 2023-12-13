@@ -16,7 +16,7 @@ import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import (
-    convert_to_secret_str,
+    convert_to_secretstr,
     extract_secret_value,
     get_from_dict_or_env,
 )
@@ -98,7 +98,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["voyage_api_key"] = convert_to_secret_str(
+        values["voyage_api_key"] = convert_to_secretstr(
             get_from_dict_or_env(values, "voyage_api_key", "VOYAGE_API_KEY")
         )
         return values

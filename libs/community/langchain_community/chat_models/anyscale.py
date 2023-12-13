@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Set
 import requests
 from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secretstr, get_from_dict_or_env
 
 from langchain_community.adapters.openai import convert_message_to_dict
 from langchain_community.chat_models.openai import (
@@ -110,7 +110,7 @@ class ChatAnyscale(ChatOpenAI):
             "anyscale_api_key",
             "ANYSCALE_API_KEY",
         )
-        values["anyscale_api_key"] = convert_to_secret_str(
+        values["anyscale_api_key"] = convert_to_secretstr(
             get_from_dict_or_env(
                 values,
                 "anyscale_api_key",

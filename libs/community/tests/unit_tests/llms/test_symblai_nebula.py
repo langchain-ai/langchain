@@ -6,7 +6,7 @@ from pytest import CaptureFixture, MonkeyPatch
 from langchain_community.llms.symblai_nebula import Nebula
 
 
-def test_api_key_is_secret_string() -> None:
+def test_api_key_is_secretstr() -> None:
     llm = Nebula(nebula_api_key="secret-api-key")
     assert isinstance(llm.nebula_api_key, SecretStr)
     assert llm.nebula_api_key.get_secret_value() == "secret-api-key"

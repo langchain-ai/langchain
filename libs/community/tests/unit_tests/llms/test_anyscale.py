@@ -7,7 +7,7 @@ from langchain_community.llms.anyscale import Anyscale
 
 
 @pytest.mark.requires("openai")
-def test_api_key_is_secret_string() -> None:
+def test_api_key_is_secretstr() -> None:
     llm = Anyscale(
         anyscale_api_key="secret-api-key", anyscale_api_base="test", model_name="test"
     )

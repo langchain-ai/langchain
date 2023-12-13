@@ -6,7 +6,7 @@ from langchain_community.chat_models.baidu_qianfan_endpoint import (
 )
 
 
-def test_api_key_is_secret_string() -> None:
+def test_api_key_is_secretstr() -> None:
     """Test that actual secret is the s`."""
     chat = QianfanChatEndpoint(
         qianfan_ak="test-api-key",
@@ -51,7 +51,7 @@ def test_qianfan_key_masked_when_passed_via_constructor(
     assert captured.out == "**********"
 
 
-def test_uses_actual_secret_value_from_secret_str() -> None:
+def test_uses_actual_secret_value_from_secretstr() -> None:
     """Test that actual secret is retrieved using `.get_secret_value()`."""
     chat = QianfanChatEndpoint(
         qianfan_ak="test-api-key",

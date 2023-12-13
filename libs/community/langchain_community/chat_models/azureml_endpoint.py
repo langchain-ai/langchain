@@ -11,7 +11,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.pydantic_v1 import SecretStr, validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secretstr, get_from_dict_or_env
 
 from langchain_community.llms.azureml_endpoint import (
     AzureMLEndpointClient,
@@ -98,7 +98,7 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
     """URL of pre-existing Endpoint. Should be passed to constructor or specified as 
         env var `AZUREML_ENDPOINT_URL`."""
 
-    endpoint_api_key: SecretStr = convert_to_secret_str("")
+    endpoint_api_key: SecretStr = convert_to_secretstr("")
     """Authentication Key for Endpoint. Should be passed to constructor or specified as
         env var `AZUREML_ENDPOINT_API_KEY`."""
 
@@ -116,7 +116,7 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
     @classmethod
     def validate_client(cls, field_value: Any, values: Dict) -> AzureMLEndpointClient:
         """Validate that api key and python package exist in environment."""
-        values["endpoint_api_key"] = convert_to_secret_str(
+        values["endpoint_api_key"] = convert_to_secretstr(
             get_from_dict_or_env(values, "endpoint_api_key", "AZUREML_ENDPOINT_API_KEY")
         )
         endpoint_url = get_from_dict_or_env(

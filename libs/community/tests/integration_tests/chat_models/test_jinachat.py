@@ -11,7 +11,7 @@ from langchain_community.chat_models.jinachat import JinaChat
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-def test_jinachat_api_key_is_secret_string() -> None:
+def test_jinachat_api_key_is_secretstr() -> None:
     llm = JinaChat(jinachat_api_key="secret-api-key")
     assert isinstance(llm.jinachat_api_key, SecretStr)
 

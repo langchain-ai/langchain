@@ -37,7 +37,7 @@ def api_passed_via_constructor_fixture() -> AzureMLChatOnlineEndpoint:
     ["api_passed_via_constructor_fixture", "api_passed_via_environment_fixture"],
 )
 class TestAzureMLChatOnlineEndpoint:
-    def test_api_key_is_secret_string(
+    def test_api_key_is_secretstr(
         self, fixture_name: str, request: FixtureRequest
     ) -> None:
         """Test that the API key is a SecretStr instance"""

@@ -18,7 +18,7 @@ from langchain_core.callbacks import (
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
-    convert_to_secret_str,
+    convert_to_secretstr,
     extract_secret_value,
     get_from_dict_or_env,
 )
@@ -102,7 +102,7 @@ class Anyscale(BaseOpenAI):
         values["anyscale_api_base"] = get_from_dict_or_env(
             values, "anyscale_api_base", "ANYSCALE_API_BASE"
         )
-        values["anyscale_api_key"] = convert_to_secret_str(
+        values["anyscale_api_key"] = convert_to_secretstr(
             get_from_dict_or_env(values, "anyscale_api_key", "ANYSCALE_API_KEY")
         )
 

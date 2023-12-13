@@ -25,7 +25,7 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
-from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
+from langchain_core.utils.utils import build_extra_kwargs, convert_to_secretstr
 
 
 class _AnthropicCommon(BaseLanguageModel):
@@ -73,7 +73,7 @@ class _AnthropicCommon(BaseLanguageModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["anthropic_api_key"] = convert_to_secret_str(
+        values["anthropic_api_key"] = convert_to_secretstr(
             get_from_dict_or_env(values, "anthropic_api_key", "ANTHROPIC_API_KEY")
         )
         # Get custom api url from environment.

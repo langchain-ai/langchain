@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secretstr, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ class GooseAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        gooseai_api_key = convert_to_secret_str(
+        gooseai_api_key = convert_to_secretstr(
             get_from_dict_or_env(values, "gooseai_api_key", "GOOSEAI_API_KEY")
         )
         values["gooseai_api_key"] = gooseai_api_key

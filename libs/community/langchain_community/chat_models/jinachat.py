@@ -41,7 +41,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
-    convert_to_secret_str,
+    convert_to_secretstr,
     extract_secret_value,
     get_from_dict_or_env,
     get_pydantic_field_names,
@@ -221,7 +221,7 @@ class JinaChat(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["jinachat_api_key"] = convert_to_secret_str(
+        values["jinachat_api_key"] = convert_to_secretstr(
             get_from_dict_or_env(values, "jinachat_api_key", "JINACHAT_API_KEY")
         )
         try:

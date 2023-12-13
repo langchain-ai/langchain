@@ -7,7 +7,7 @@ from langchain_community.chat_models import ChatJavelinAIGateway
 
 
 @pytest.mark.requires("javelin_sdk")
-def test_api_key_is_secret_string() -> None:
+def test_api_key_is_secretstr() -> None:
     llm = ChatJavelinAIGateway(
         gateway_uri="<javelin-ai-gateway-uri>",
         route="<javelin-ai-gateway-chat-route>",

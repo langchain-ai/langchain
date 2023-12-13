@@ -7,7 +7,7 @@ from pytest import CaptureFixture, MonkeyPatch
 from langchain_community.llms.cerebriumai import CerebriumAI
 
 
-def test_api_key_is_secret_string() -> None:
+def test_api_key_is_secretstr() -> None:
     llm = CerebriumAI(cerebriumai_api_key="test-cerebriumai-api-key")
     assert isinstance(llm.cerebriumai_api_key, SecretStr)
 

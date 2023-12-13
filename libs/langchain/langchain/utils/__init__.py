@@ -13,7 +13,7 @@ from langchain_core.utils.input import (
 )
 from langchain_core.utils.utils import (
     check_package_version,
-    convert_to_secret_str,
+    convert_to_secretstr,
     get_pydantic_field_names,
     guard_import,
     mock_now,
@@ -29,7 +29,7 @@ __all__ = [
     "StrictFormatter",
     "check_package_version",
     "comma_list",
-    "convert_to_secret_str",
+    "convert_to_secretstr",
     "cosine_similarity",
     "cosine_similarity_top_k",
     "formatter",

@@ -8,7 +8,7 @@ from langchain_community.llms.aleph_alpha import AlephAlpha
 
 
 @pytest.mark.requires("aleph_alpha_client")
-def test_api_key_is_secret_string() -> None:
+def test_api_key_is_secretstr() -> None:
     llm = AlephAlpha(aleph_alpha_api_key="secret-api-key")
     assert isinstance(llm.aleph_alpha_api_key, SecretStr)
 

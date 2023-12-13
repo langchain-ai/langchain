@@ -16,7 +16,7 @@ def _openai_v1_installed() -> bool:
 
 
 @pytest.mark.requires("openai")
-def test_api_key_is_secret_string() -> None:
+def test_api_key_is_secretstr() -> None:
     llm = GooseAI(gooseai_api_key="secret-api-key")
     assert isinstance(llm.gooseai_api_key, SecretStr)
     assert llm.gooseai_api_key.get_secret_value() == "secret-api-key"
