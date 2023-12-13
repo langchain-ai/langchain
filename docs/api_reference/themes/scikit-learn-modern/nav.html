@@ -48,9 +48,6 @@
         <li class="nav-item">
           <a class="sk-nav-link nav-link" href="{{ pathto('experimental_api_reference') }}">Experimental</a>
         </li>
-        <li class="nav-item">
-          <a class="sk-nav-link nav-link" target="_blank" rel="noopener noreferrer" href="https://python.langchain.com/">Python Docs</a>
-        </li>
         {%- for title, link, link_attrs in drop_down_navigation %}
         <li class="nav-item">
           <a class="sk-nav-link nav-link nav-more-item-mobile-items" href="{{ link }}" {{ link_attrs }}>{{ title }}</a>
@@ -63,6 +60,9 @@
               <a class="sk-nav-dropdown-item dropdown-item" href="{{ link }}" {{ link_attrs }}>{{ title}}</a>
             {%- endfor %}
           </div>
+        </li>
+        <li class="nav-item">
+          <a class="sk-nav-link nav-link" target="_blank" rel="noopener noreferrer" href="https://python.langchain.com/">Python Docs</a>
         </li>
       </ul>
       {%- if pagename != "search"%}
