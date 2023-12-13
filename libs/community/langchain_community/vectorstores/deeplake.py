@@ -912,7 +912,7 @@ class DeepLake(VectorStore):
 
             if unsupported_items:
                 raise TypeError(
-                    f"`{unsupported_items}` is/are not a valid argument to {method_name} method"
+                    f"`{unsupported_items}` are not a valid argument to {method_name} method"
                 )
 
     @classmethod
