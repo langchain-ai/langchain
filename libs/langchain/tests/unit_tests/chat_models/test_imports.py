@@ -9,7 +9,9 @@ EXPECTED_ALL = [
     "ChatEverlyAI",
     "ChatAnthropic",
     "ChatCohere",
+    "ChatDatabricks",
     "ChatGooglePalm",
+    "ChatMlflow",
     "ChatMLflowAIGateway",
     "ChatOllama",
     "ChatVertexAI",
@@ -28,7 +30,11 @@ EXPECTED_ALL = [
     "ChatBaichuan",
     "ChatHunyuan",
     "GigaChat",
+<<<<<<< HEAD
     "NVAIPlayChat",
+=======
+    "VolcEngineMaasChat",
+>>>>>>> master
 ]
 
 

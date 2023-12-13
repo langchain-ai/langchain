@@ -57,10 +57,6 @@
       "destination": "/cookbook"
     },
     {
-      "source": "/docs/expression_language/why",
-      "destination": "/docs/expression_language/"
-    },
-    {
       "source": "/docs/modules/model_io/chat/llm_chain",
       "destination":  "/docs/modules/chains/foundational/llm_chain"
     },
@@ -309,6 +305,10 @@
       "destination": "/docs/integrations/platforms/aws"
     },
     {
+      "source":  "/docs/integrations/providers/huggingface",
+      "destination": "/docs/integrations/platforms/huggingface"
+    },
+    {
       "source":  "/docs/integrations/providers/azure_blob_storage",
       "destination": "/docs/integrations/platforms/microsoft"
     },
@@ -493,6 +493,10 @@
       "destination": "/docs/integrations/providers/astradb"
     },
     {
+      "source": "/docs/integrations/providers/providers/semadb",
+      "destination": "/docs/integrations/providers/semadb"
+    },
+    {
       "source": "/docs/integrations/vectorstores/vectorstores/semadb",
       "destination": "/docs/integrations/vectorstores/semadb"
     },
@@ -503,6 +507,10 @@
     {
       "source": "/docs/integrations/vectorstores/async_faiss",
       "destination": "/docs/integrations/vectorstores/faiss_async"
+    },
+    {
+      "source": "/docs/integrations/vectorstores/matchingengine",
+      "destination": "/docs/integrations/vectorstores/google_vertex_ai_vector_search"
     },
     {
       "source": "/docs/integrations/cerebriumai",
@@ -1049,6 +1057,10 @@
       "destination": "/docs/modules/agents/how_to/custom_agent"
     },
     {
+      "source": "/docs/integrations/toolkits/vectorstore",
+      "destination": "/docs/modules/agents/how_to/vectorstore"
+    },
+    {
       "source": "/en/latest/modules/agents/agents/custom_agent_with_tool_retrieval.html",
       "destination": "/docs/modules/agents/how_to/custom_agent_with_tool_retrieval"
     },
@@ -1567,6 +1579,10 @@
     {
       "source": "/en/latest/modules/chains/generic/serialization.html",
       "destination": "/docs/modules/chains/how_to/serialization"
+    },
+    {
+      "source": "/docs/integrations/document_loaders/pdf-amazonTextractPDFLoader",
+      "destination": "/docs/integrations/document_loaders/amazon_textract"
     },
     {
       "source": "/en/latest/modules/indexes/document_loaders/examples/acreom.html",

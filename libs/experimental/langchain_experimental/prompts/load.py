@@ -1,12 +1,12 @@
 # Susceptible to arbitrary code execution: https://github.com/langchain-ai/langchain/issues/4849
-import importlib
+import importlib.util
 import json
 from pathlib import Path
 from typing import Union
 
 import yaml
 from langchain.prompts.loading import load_prompt_from_config, try_load_from_hub
-from langchain.schema.prompts import BasePromptTemplate
+from langchain_core.prompts import BasePromptTemplate
 
 
 def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
