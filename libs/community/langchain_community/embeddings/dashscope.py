@@ -47,9 +47,9 @@ def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
     def _embed_with_retry(**kwargs: Any) -> Any:
         result = []
         i = 0
-        input_data = kwargs['input']
+        input_data = kwargs["input"]
         while i < len(input_data):
-            kwargs['input'] = input_data[i:i + 25]
+            kwargs["input"] = input_data[i : i + 25]
             resp = embeddings.client.call(**kwargs)
             if resp.status_code == 200:
                 result += resp.output["embeddings"]
