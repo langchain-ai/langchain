@@ -69,7 +69,11 @@ def test_chat_google_genai_invoke() -> None:
     """Test invoke tokens from ChatGoogleGenerativeAI."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke(
+        "I'm Pickle Rick",
+        config=dict(tags=["foo"]),
+        generation_config=dict(top_k=2, top_p=1, temperature=0.7),
+    )
     assert isinstance(result.content, str)
     assert not result.content.startswith(" ")
 

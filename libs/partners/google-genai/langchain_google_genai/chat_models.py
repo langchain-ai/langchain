@@ -442,11 +442,29 @@ Supported examples:
     top_k: Optional[int] = None
     """Decode using top-k sampling: consider the set of top_k most probable tokens.
        Must be positive."""
-    n: int = 1
+    top_p: Optional[int] = None
+    """The maximum cumulative probability of tokens to consider when sampling.
+
+        The model uses combined Top-k and nucleus sampling.
+
+        Tokens are sorted based on their assigned probabilities so
+        that only the most likely tokens are considered. Top-k
+        sampling directly limits the maximum number of tokens to
+        consider, while Nucleus sampling limits number of tokens
+        based on the cumulative probability.
+
+        Note: The default value varies by model, see the
+        `Model.top_p` attribute of the `Model` returned the
+        `genai.get_model` function.
+    """
+    n: int = Field(default=1, alias="candidate_count")
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
 
     _generative_model: Any  #: :meta private:
+
+    class Config:
+        allow_population_by_field_name = True
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -514,7 +532,7 @@ Supported examples:
         return self._generative_model.generate_content_async
 
     def _prepare_params(
-        self, messages: Sequence[BaseMessage], stop: Optional[List[str]]
+        self, messages: Sequence[BaseMessage], stop: Optional[List[str]], **kwargs: Any
     ) -> Dict[str, Any]:
         contents = _messages_to_genai_contents(messages)
         gen_config = {
@@ -524,13 +542,14 @@ Supported examples:
                 "temperature": self.temperature,
                 "stop_sequences": stop,
                 "max_output_tokens": self.max_output_tokens,
+                "top_k": self.top_k,
+                "top_p": self.top_p,
             }.items()
             if v is not None
         }
-        params = {
-            "generation_config": gen_config,
-            "contents": contents,
-        }
+        if "generation_config" in kwargs:
+            gen_config = {**gen_config, **kwargs.pop("generation_config")}
+        params = {"generation_config": gen_config, "contents": contents, **kwargs}
         return params
 
     def _generate(
@@ -540,11 +559,10 @@ Supported examples:
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params = self._prepare_params(messages, stop)
+        params = self._prepare_params(messages, stop, **kwargs)
         response: genai.types.GenerateContentResponse = chat_with_retry(
             **params,
             generation_method=self._generation_method,
-            **kwargs,
         )
         return _response_to_result(response)
 
@@ -555,11 +573,10 @@ Supported examples:
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params = self._prepare_params(messages, stop)
+        params = self._prepare_params(messages, stop, **kwargs)
         response: genai.types.GenerateContentResponse = await achat_with_retry(
             **params,
             generation_method=self._async_generation_method,
-            **kwargs,
         )
         return _response_to_result(response)
 
@@ -570,11 +587,10 @@ Supported examples:
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        params = self._prepare_params(messages, stop)
+        params = self._prepare_params(messages, stop, **kwargs)
         response: genai.types.GenerateContentResponse = chat_with_retry(
             **params,
             generation_method=self._generation_method,
-            **kwargs,
             stream=True,
         )
         for chunk in response:
@@ -597,11 +613,10 @@ Supported examples:
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        params = self._prepare_params(messages, stop)
+        params = self._prepare_params(messages, stop, **kwargs)
         async for chunk in await achat_with_retry(
             **params,
             generation_method=self._async_generation_method,
-            **kwargs,
             stream=True,
         ):
             _chat_result = _response_to_result(
