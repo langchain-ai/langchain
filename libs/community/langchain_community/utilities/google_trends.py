@@ -60,9 +60,10 @@ class GoogleTrendsAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run query through Google Trends with Serpapi"""
+        api_key = extract_secret_value(self.serpapi_api_key)
         params = {
             "engine": "google_trends",
-            "api_key": extract_secret_value(self.serpapi_api_key),
+            "api_key": api_key,
             "q": query,
         }
 
@@ -89,7 +90,7 @@ class GoogleTrendsAPIWrapper(BaseModel):
 
         params = {
             "engine": "google_trends",
-            "api_key": serpapi_api_key.get_secret_value(),
+            "api_key": api_key,
             "data_type": "RELATED_QUERIES",
             "q": query,
         }
