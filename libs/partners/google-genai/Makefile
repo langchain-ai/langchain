@@ -1,4 +1,4 @@
-.PHONY: all format lint test tests integration_tests docker_tests help extended_tests
+.PHONY: all format lint test tests integration_tests help
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -15,6 +15,8 @@ tests:
 check_imports: $(shell find langchain_google_genai -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
+integration_tests:
+	poetry run pytest tests/integration_tests
 
 ######################
 # LINTING AND FORMATTING

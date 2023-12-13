@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import base64
 import logging
 import os
@@ -8,7 +7,7 @@ from io import BytesIO
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
+    AsyncIterator,
     Callable,
     Dict,
     Iterator,
@@ -138,6 +137,39 @@ def chat_with_retry(*, generation_method: Callable, **kwargs: Any) -> Any:
             raise e
 
     return _chat_with_retry(**kwargs)
+
+
+async def achat_with_retry(*, generation_method: Callable, **kwargs: Any) -> Any:
+    """
+    Executes a chat generation method with retry logic using tenacity.
+
+    This function is a wrapper that applies a retry mechanism to a provided
+    chat generation function. It is useful for handling intermittent issues
+    like network errors or temporary service unavailability.
+
+    Args:
+        generation_method (Callable): The chat generation method to be executed.
+        **kwargs (Any): Additional keyword arguments to pass to the generation method.
+
+    Returns:
+        Any: The result from the chat generation method.
+    """
+    retry_decorator = _create_retry_decorator()
+    from google.api_core.exceptions import InvalidArgument  # type: ignore
+
+    @retry_decorator
+    async def _achat_with_retry(**kwargs: Any) -> Any:
+        try:
+            return await generation_method(**kwargs)
+        except InvalidArgument as e:
+            # Do not retry for these errors.
+            raise ChatGoogleGenerativeAIError(
+                f"Invalid argument provided to Gemini: {e}"
+            ) from e
+        except Exception as e:
+            raise e
+
+    return await _achat_with_retry(**kwargs)
 
 
 def _get_role(message: BaseMessage) -> str:
@@ -478,9 +510,8 @@ Supported examples:
         return self._generative_model.generate_content
 
     @property
-    def _async_generation_method(self) -> Awaitable:
-        # TODO Add support once Google uncomments the async client
-        return self._generative_model.generate_content
+    def _async_generation_method(self) -> Callable:
+        return self._generative_model.generate_content_async
 
     def _prepare_params(
         self, messages: Sequence[BaseMessage], stop: Optional[List[str]]
@@ -524,9 +555,13 @@ Supported examples:
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self._generate, messages, stop, run_manager, **kwargs
+        params = self._prepare_params(messages, stop)
+        response: genai.types.GenerateContentResponse = await achat_with_retry(
+            **params,
+            generation_method=self._async_generation_method,
+            **kwargs,
         )
+        return _response_to_result(response)
 
     def _stream(
         self,
@@ -554,3 +589,29 @@ Supported examples:
             yield gen
             if run_manager:
                 run_manager.on_llm_new_token(gen.text)
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        params = self._prepare_params(messages, stop)
+        async for chunk in await achat_with_retry(
+            **params,
+            generation_method=self._async_generation_method,
+            **kwargs,
+            stream=True,
+        ):
+            _chat_result = _response_to_result(
+                chunk,
+                ai_msg_t=AIMessageChunk,
+                human_msg_t=HumanMessageChunk,
+                chat_msg_t=ChatMessageChunk,
+                generation_t=ChatGenerationChunk,
+            )
+            gen = cast(ChatGenerationChunk, _chat_result.generations[0])
+            yield gen
+            if run_manager:
+                await run_manager.on_llm_new_token(gen.text)
