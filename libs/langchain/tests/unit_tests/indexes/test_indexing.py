@@ -15,11 +15,11 @@ from unittest.mock import patch
 import pytest
 import pytest_asyncio
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
 
 import langchain.vectorstores
 from langchain.document_loaders.base import BaseLoader
-from langchain.embeddings.base import Embeddings
 from langchain.indexes import aindex, index
 from langchain.indexes._api import _abatch
 from langchain.indexes._sql_record_manager import SQLRecordManager
@@ -80,7 +80,7 @@ class InMemoryVectorStore(VectorStore):
         *,
         ids: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> List[str]:
         """Add the given documents to the store (insert behavior)."""
         if ids and len(ids) != len(documents):
             raise ValueError(
@@ -96,6 +96,8 @@ class InMemoryVectorStore(VectorStore):
                     f"Document with uid {_id} already exists in the store."
                 )
             self.store[_id] = document
+
+        return list(ids)
 
     async def aadd_documents(
         self,
@@ -1123,6 +1125,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Cassandra",
         "Chroma",
         "DashVector",
+        "DatabricksVectorSearch",
         "DeepLake",
         "Dingo",
         "ElasticVectorSearch",

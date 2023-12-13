@@ -58,6 +58,10 @@ class _HashedDocument(Document):
     metadata_hash: str
     """The hash of the document metadata."""
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     @root_validator(pre=True)
     def calculate_hashes(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Root validator to calculate content and metadata hash."""
@@ -303,14 +307,18 @@ def index(
         # Filter out documents that already exist in the record store.
         uids = []
         docs_to_index = []
+        uids_to_refresh = []
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
-                # Must be updated to refresh timestamp.
-                record_manager.update([hashed_doc.uid], time_at_least=index_start_dt)
-                num_skipped += 1
+                uids_to_refresh.append(hashed_doc.uid)
                 continue
             uids.append(hashed_doc.uid)
             docs_to_index.append(hashed_doc.to_document())
+
+        # Update refresh timestamp
+        if uids_to_refresh:
+            record_manager.update(uids_to_refresh, time_at_least=index_start_dt)
+            num_skipped += len(uids_to_refresh)
 
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
@@ -499,17 +507,19 @@ async def aindex(
         # Filter out documents that already exist in the record store.
         uids: list[str] = []
         docs_to_index: list[Document] = []
+        uids_to_refresh = []
 
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
-                # Must be updated to refresh timestamp.
-                await record_manager.aupdate(
-                    [hashed_doc.uid], time_at_least=index_start_dt
-                )
-                num_skipped += 1
+                uids_to_refresh.append(hashed_doc.uid)
                 continue
             uids.append(hashed_doc.uid)
             docs_to_index.append(hashed_doc.to_document())
+
+        if uids_to_refresh:
+            # Must be updated to refresh timestamp.
+            await record_manager.aupdate(uids_to_refresh, time_at_least=index_start_dt)
+            num_skipped += len(uids_to_refresh)
 
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store

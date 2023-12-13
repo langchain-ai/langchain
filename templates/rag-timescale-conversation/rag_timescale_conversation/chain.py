@@ -9,15 +9,15 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AIMessage, HumanMessage, format_document
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import (
+from langchain.vectorstores.timescalevector import TimescaleVector
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import (
     RunnableBranch,
     RunnableLambda,
-    RunnableMap,
+    RunnableParallel,
     RunnablePassthrough,
 )
-from langchain.vectorstores.timescalevector import TimescaleVector
-from pydantic import BaseModel, Field
 
 from .load_sample_dataset import load_ts_git_dataset
 
@@ -136,7 +136,7 @@ def get_retriever_with_metadata(x):
 
 _retriever = RunnableLambda(get_retriever_with_metadata)
 
-_inputs = RunnableMap(
+_inputs = RunnableParallel(
     {
         "question": lambda x: x["question"],
         "chat_history": lambda x: _format_chat_history(x["chat_history"]),

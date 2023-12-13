@@ -257,6 +257,7 @@ class ConfigurableField(NamedTuple):
     name: Optional[str] = None
     description: Optional[str] = None
     annotation: Optional[Any] = None
+    is_shared: bool = False
 
     def __hash__(self) -> int:
         return hash((self.id, self.annotation))
@@ -271,6 +272,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
 
     name: Optional[str] = None
     description: Optional[str] = None
+    is_shared: bool = False
 
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), self.default))
@@ -285,6 +287,7 @@ class ConfigurableFieldMultiOption(NamedTuple):
 
     name: Optional[str] = None
     description: Optional[str] = None
+    is_shared: bool = False
 
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), tuple(self.default)))
@@ -299,18 +302,22 @@ class ConfigurableFieldSpec(NamedTuple):
     """A field that can be configured by the user. It is a specification of a field."""
 
     id: str
-    name: Optional[str]
-    description: Optional[str]
-
-    default: Any
     annotation: Any
+
+    name: Optional[str] = None
+    description: Optional[str] = None
+    default: Any = None
+    is_shared: bool = False
+    dependencies: Optional[List[str]] = None
 
 
 def get_unique_config_specs(
     specs: Iterable[ConfigurableFieldSpec],
 ) -> List[ConfigurableFieldSpec]:
     """Get the unique config specs from a sequence of config specs."""
-    grouped = groupby(sorted(specs, key=lambda s: s.id), lambda s: s.id)
+    grouped = groupby(
+        sorted(specs, key=lambda s: (s.id, *(s.dependencies or []))), lambda s: s.id
+    )
     unique: List[ConfigurableFieldSpec] = []
     for id, dupes in grouped:
         first = next(dupes)

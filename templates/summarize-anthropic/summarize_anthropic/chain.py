@@ -1,6 +1,6 @@
 from langchain import hub
 from langchain.chat_models import ChatAnthropic
-from langchain.schema.output_parser import StrOutputParser
+from langchain_core.output_parsers import StrOutputParser
 
 # Create chain
 prompt = hub.pull("hwchase17/anthropic-paper-qa")

@@ -27,6 +27,8 @@ EXPECTED_ALL = [
     "ahandle_event",
     "env_var_is_set",
     "Callbacks",
+    "get_openai_callback",
+    "wandb_tracing_enabled",
 ]
 
 
