@@ -43,7 +43,7 @@ YAML_FORMAT_INSTRUCTIONS = """The output should be formatted as a YAML instance 
 
 ## Schema
 ```
-{{"type": "object", "properties": {{"habit": {{ "description": "A common daily habit", "type": "string" }}, "sustainable_alternative": {{ "description": "An environmentally friendly alternative to the habit", "type": "string"}}}}, "required": ["habit", "sustainable_alternative"]}}
+{{"properties": {{"habit": {{ "description": "A common daily habit", "type": "string" }}, "sustainable_alternative": {{ "description": "An environmentally friendly alternative to the habit", "type": "string"}}}}, "required": ["habit", "sustainable_alternative"]}}
 ```
 ## Well formatted instance
 ```
