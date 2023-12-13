@@ -244,7 +244,7 @@ class ChildTool(BaseTool):
         else:
             if input_args is not None:
                 result = input_args.parse_obj(tool_input)
-                return {k: v for k, v in result.dict().items() if k in tool_input}
+                return {k: v for k, v in result.dict(by_alias=True).items() if k in tool_input}
         return tool_input
 
     @root_validator()
