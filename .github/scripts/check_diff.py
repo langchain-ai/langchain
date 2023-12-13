@@ -24,7 +24,6 @@ if __name__ == "__main__":
             )
         ):
             dirs_to_run.update(LANGCHAIN_DIRS)
-            break
         elif "libs/community" in file:
             dirs_to_run.update(
                 ("libs/community", "libs/langchain", "libs/experimental")
