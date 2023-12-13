@@ -11,13 +11,13 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AIMessage, HumanMessage, format_document
 from langchain.vectorstores.timescalevector import TimescaleVector
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import (
     RunnableBranch,
     RunnableLambda,
     RunnableParallel,
     RunnablePassthrough,
 )
-from pydantic import BaseModel, Field
 
 from .load_sample_dataset import load_ts_git_dataset
 
