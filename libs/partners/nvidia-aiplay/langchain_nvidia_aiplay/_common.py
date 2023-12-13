@@ -56,44 +56,38 @@ class NVCRModel(BaseModel):
     get_session_fn: Callable = Field(requests.Session)
     get_asession_fn: Callable = Field(aiohttp.ClientSession)
 
-    ## Populated on construction/validation
-    nvapi_key: Optional[SecretStr]
+    nvapi_key: SecretStr = Field(
+        ...,
+        description="API key for NVIDIA AI Playground. Should start with `nvapi-`",
+    )
     is_staging: bool = Field(False, description="Whether to use staging API")
 
     ## Generation arguments
     max_tries: int = Field(5, ge=1)
-    headers = dict(
-        call={"Authorization": "Bearer {nvapi_key}", "Accept": "application/json"},
-        stream={
-            "Authorization": "Bearer {nvapi_key}",
-            "Accept": "text/event-stream",
-            "content-type": "application/json",
-        },
+    headers_tmpl: dict = Field(
+        ...,
+        description="Headers template for API calls."
+        " Should contain `call` and `stream` keys.",
     )
     _available_functions: Optional[List[dict]] = PrivateAttr(default=None)
     _available_models: Optional[dict] = PrivateAttr(default=None)
 
-    @staticmethod
-    def desecretize(v: Any) -> Any:
-        """Desecretize a collection of values"""
-        recurse = NVCRModel.desecretize
-        if isinstance(v, SecretStr):
-            return v.get_secret_value()
-        if isinstance(v, str):
-            return v
-        if isinstance(v, dict):
-            return {k: recurse(v) for k, v in v.items()}
-        if isinstance(v, list):
-            return [recurse(subv) for subv in v]
-        if isinstance(v, tuple):
-            return tuple(recurse(subv) for subv in v)
-        return v
+    @property
+    def headers(self) -> dict:
+        """Return headers with API key injected"""
+        headers_ = self.headers_tmpl.copy()
+        for header in headers_.values():
+            if "{nvapi_key}" in header["Authorization"]:
+                header["Authorization"] = header["Authorization"].format(
+                    nvapi_key=self.nvapi_key.get_secret_value(),
+                )
+        return headers_
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate and update model arguments, including API key and formatting"""
         values["nvapi_key"] = get_from_dict_or_env(
-            NVCRModel.desecretize(values),
+            values,
             "nvapi_key",
             "NVAPI_KEY",
         )
@@ -101,12 +95,19 @@ class NVCRModel(BaseModel):
             raise ValueError("Invalid NVAPI key detected. Should start with `nvapi-`")
         is_staging = "nvapi-stg-" in values["nvapi_key"]
         values["is_staging"] = is_staging
-        for header in values["headers"].values():
-            if "{nvapi_key}" in header["Authorization"]:
-                nvapi_key = NVCRModel.desecretize(values["nvapi_key"])
-                header["Authorization"] = SecretStr(
-                    header["Authorization"].format(nvapi_key=nvapi_key),
-                )
+        if "headers_tmpl" not in values:
+            values["headers_tmpl"] = {
+                "call": {
+                    "Authorization": "Bearer {nvapi_key}",
+                    "Accept": "application/json",
+                },
+                "stream": {
+                    "Authorization": "Bearer {nvapi_key}",
+                    "Accept": "text/event-stream",
+                    "content-type": "application/json",
+                },
+            }
+
         values["fetch_url_format"] = cls._stagify(
             is_staging,
             values.get(
@@ -151,9 +152,9 @@ class NVCRModel(BaseModel):
     def _stagify(cls, is_staging: bool, path: str) -> str:
         """Helper method to switch between staging and production endpoints"""
         if is_staging and "stg.api" not in path:
-            return path.replace("api", "stg.api")
+            return path.replace("api.", "stg.api.")
         if not is_staging and "stg.api" in path:
-            return path.replace("stg.api", "api")
+            return path.replace("stg.api.", "api.")
         return path
 
     ####################################################################################
@@ -161,14 +162,14 @@ class NVCRModel(BaseModel):
 
     def _post(self, invoke_url: str, payload: dict = {}) -> Tuple[Response, Any]:
         """Method for posting to the AI Playground API."""
-        call_iputs = {
+        call_inputs = {
             "url": invoke_url,
             "headers": self.headers["call"],
             "json": payload,
             "stream": False,
         }
         session = self.get_session_fn()
-        response = session.post(**NVCRModel.desecretize(call_iputs))
+        response = session.post(**call_inputs)
         self._try_raise(response)
         return response, session
 
@@ -181,7 +182,7 @@ class NVCRModel(BaseModel):
             "stream": False,
         }
         session = self.get_session_fn()
-        last_response = session.get(**NVCRModel.desecretize(last_inputs))
+        last_response = session.get(**last_inputs)
         self._try_raise(last_response)
         return last_response, session
 
@@ -192,7 +193,7 @@ class NVCRModel(BaseModel):
             request_id = response.headers.get("NVCF-REQID", "")
             response = session.get(
                 self.fetch_url_format + request_id,
-                headers=NVCRModel.desecretize(self.headers["call"]),
+                headers=self.headers["call"],
             )
             if response.status_code == 202:
                 try:
@@ -364,8 +365,7 @@ class NVCRModel(BaseModel):
             "json": payload,
             "stream": True,
         }
-        raw_inputs = NVCRModel.desecretize(last_inputs)
-        response = self.get_session_fn().post(**raw_inputs)
+        response = self.get_session_fn().post(**last_inputs)
         self._try_raise(response)
         call = self.copy()
 
@@ -401,8 +401,7 @@ class NVCRModel(BaseModel):
             "json": payload,
         }
         async with self.get_asession_fn() as session:
-            raw_inputs = NVCRModel.desecretize(last_inputs)
-            async with session.post(**raw_inputs) as response:
+            async with session.post(**last_inputs) as response:
                 self._try_raise(response)
                 async for line in response.content.iter_any():
                     if line and line.strip() != b"data: [DONE]":
@@ -429,21 +428,14 @@ class _NVAIPlayClient(BaseModel):
 
     valid_roles: Sequence[str] = Field(["user", "system", "assistant"])
 
-    class LabelModel(NVCRModel):
-        creativity: int = Field(0, ge=0, le=9)
-        complexity: int = Field(0, ge=0, le=9)
-        verbosity: int = Field(0, ge=0, le=9)
-
     ####################################################################################
 
-    def __init__(self, *args: Sequence, **kwargs: Any):
-        if "client" not in kwargs:
-            kwargs["client"] = NVCRModel(**kwargs)
-        super().__init__(*args, **kwargs)
-
-    def _validate_labels(cls, labels: Optional[dict] = None) -> None:
-        if labels:
-            cls.LabelModel(**labels)
+    @root_validator(pre=True)
+    def validate_client(cls, values: Any) -> Any:
+        """Validate and update client arguments, including API key and formatting"""
+        if not values.get("client"):
+            values["client"] = NVCRModel(**values)
+        return values
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -506,18 +498,15 @@ class _NVAIPlayClient(BaseModel):
         self, inputs: Sequence[Dict], labels: Optional[dict] = None, **kwargs: Any
     ) -> dict:
         """Generates payload for the _NVAIPlayClient API to send to service."""
-        # (WFH): This is a strange mix of stateful and stateless
-        out = {
+        return {
             **self.preprocess(inputs=inputs, labels=labels),
             **kwargs,
         }
-        return out
 
     def preprocess(self, inputs: Sequence[Dict], labels: Optional[dict] = None) -> dict:
         """Prepares a message or list of messages for the payload"""
         messages = [self.prep_msg(m) for m in inputs]
         if labels:
-            self._validate_labels(labels)
             # (WFH) Labels are currently (?) always passed as an assistant
             # suffix message, but this API seems less stable.
             messages += [{"labels": labels, "role": "assistant"}]
@@ -543,11 +532,6 @@ class NVAIPlayBaseModel(_NVAIPlayClient):
     Base class for NVIDIA AI Playground models which can interface with _NVAIPlayClient.
     To be subclassed by NVAIPlayLLM/ChatNVAIPlay by combining with LLM/SimpleChatModel.
     """
-
-    labels: Optional[_NVAIPlayClient.LabelModel] = Field(
-        default=None,
-        description="Labels to add to the chat messages.",
-    )
 
     @property
     def _llm_type(self) -> str:
@@ -639,14 +623,3 @@ class NVAIPlayBaseModel(_NVAIPlayClient):
             f"Got ambiguous message in postprocessing; returning as-is: msg = {msg}"
         )
         return str(msg)
-
-
-####################################################################################
-
-# TODO: This isn't that useful.
-
-
-class ContextBase(NVAIPlayBaseModel):
-    model: str = Field("_qa_")
-    valid_roles: Sequence[str] = Field(["user", "context"])
-    max_tokens: int = Field(512, ge=32, le=512)
