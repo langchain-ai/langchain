@@ -18,6 +18,7 @@ on:
         - libs/langchain
         - libs/core
         - libs/experimental
+        - libs/community
 
 
 # If another push to the same PR or branch happens while this workflow is still running,
