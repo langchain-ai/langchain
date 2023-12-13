@@ -1,6 +1,7 @@
 """Script for auto-generating api_reference.rst."""
 import importlib
 import inspect
+import os
 import typing
 from enum import Enum
 from pathlib import Path
@@ -10,14 +11,6 @@ from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 HERE = Path(__file__).parent
-
-PKG_DIR = ROOT_DIR / "libs" / "langchain" / "langchain"
-EXP_DIR = ROOT_DIR / "libs" / "experimental" / "langchain_experimental"
-CORE_DIR = ROOT_DIR / "libs" / "core" / "langchain_core"
-COMMUNITY_DIR = ROOT_DIR / "libs" / "core" / "langchain_community"
-WRITE_FILE = HERE / "api_reference.rst"
-EXP_WRITE_FILE = HERE / "experimental_api_reference.rst"
-COMMUNITY_WRITE_FILE = HERE / "community_api_reference.rst"
 
 
 ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum"]
@@ -295,51 +288,51 @@ def _build_rst_file(package_name: str = "langchain") -> None:
     with open(_out_file_path(package_name), "w") as f:
         f.write(
             _doc_first_line(package_name)
-            + _construct_doc(package_namespace[package_name], package_members)
+            + _construct_doc(_package_namespace(package_name), package_members)
         )
 
 
-package_namespace = {
-    "langchain": "langchain",
-    "experimental": "langchain_experimental",
-    "core": "langchain_core",
-    "community": "langchain_community",
-}
+def _package_namespace(package_name: str) -> str:
+    return (
+        package_name
+        if package_name == "langchain"
+        else f"langchain_{package_name.replace('-', '_')}"
+    )
 
 
 def _package_dir(package_name: str = "langchain") -> Path:
     """Return the path to the directory containing the documentation."""
-    return ROOT_DIR / "libs" / package_name / package_namespace[package_name]
+    if package_name in ("langchain", "experimental", "community", "core", "cli"):
+        return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
+    else:
+        return (
+            ROOT_DIR
+            / "libs"
+            / "partners"
+            / package_name
+            / _package_namespace(package_name)
+        )
 
 
 def _out_file_path(package_name: str = "langchain") -> Path:
     """Return the path to the file containing the documentation."""
-    name_prefix = {
-        "langchain": "",
-        "experimental": "experimental_",
-        "core": "core_",
-        "community": "community_",
-    }
-    return HERE / f"{name_prefix[package_name]}api_reference.rst"
+    return HERE / f"{package_name.replace('-', '_')}_api_reference.rst"
 
 
 def _doc_first_line(package_name: str = "langchain") -> str:
     """Return the path to the file containing the documentation."""
-    prefix = {
-        "langchain": "",
-        "experimental": "experimental",
-        "core": "core",
-        "community": "community",
-    }
-    return f".. {prefix[package_name]}_api_reference:\n\n"
+    return f".. {package_name.replace('-', '_')}_api_reference:\n\n"
 
 
 def main() -> None:
     """Generate the api_reference.rst file for each package."""
-    _build_rst_file(package_name="core")
-    _build_rst_file(package_name="langchain")
-    _build_rst_file(package_name="experimental")
-    _build_rst_file(package_name="community")
+    for dir in os.listdir(ROOT_DIR / "libs"):
+        if dir in ("cli", "partners"):
+            continue
+        else:
+            _build_rst_file(package_name=dir)
+    for dir in os.listdir(ROOT_DIR / "libs" / "partners"):
+        _build_rst_file(package_name=dir)
 
 
 if __name__ == "__main__":
