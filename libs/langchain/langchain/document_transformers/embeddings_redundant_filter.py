@@ -2,6 +2,7 @@ from langchain_community.document_transformers.embeddings_redundant_filter impor
     EmbeddingsClusteringFilter,
     EmbeddingsRedundantFilter,
     _DocumentWithState,
+    _get_embeddings_from_stateful_docs,
     get_stateful_documents,
 )
 
@@ -10,4 +11,5 @@ __all__ = [
     "EmbeddingsClusteringFilter",
     "_DocumentWithState",
     "get_stateful_documents",
+    "_get_embeddings_from_stateful_docs",
 ]
