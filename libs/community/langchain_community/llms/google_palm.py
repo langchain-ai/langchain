@@ -1,39 +1,16 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import BaseMessage
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.prompt_values import StringPromptValue
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.llms import BaseLLM
 from langchain_community.utilities.vertexai import create_retry_decorator
-
-if TYPE_CHECKING:
-    from google.ai.generativelanguage import Blob
-    from langchain_core.runnables import RunnableConfig
-
-
-def _image_to_blob(img_path: str, mime_type: Optional[str] = None) -> "Blob":
-    from google.ai.generativelanguage import Blob
-
-    if img_path.startswith("gs://"):
-        from google.cloud import storage
-
-        gcs_client = storage.Client()
-        pieces = img_path.split("/")
-        blobs = list(gcs_client.list_blobs(pieces[2], prefix="/".join(pieces[3:])))
-        if len(blobs) > 1:
-            raise ValueError(f"Found more than one candidate for {img_path}!")
-        raw_bytes = blobs[0].download_as_bytes()
-    else:
-        with open(img_path, "rb") as input_file:
-            raw_bytes = input_file.read()
-    return Blob(data=raw_bytes, mime_type=mime_type)
 
 
 def completion_with_retry(
@@ -267,71 +244,6 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
                     verbose=self.verbose,
                 )
 
-    def invoke(
-        self,
-        input: LanguageModelInput,
-        config: Optional[RunnableConfig] = None,
-        *,
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> str:
-        generation_config = {
-            "stop_sequences": stop,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "top_k": self.top_k,
-            "max_output_tokens": self.max_output_tokens,
-            "candidate_count": self.n,
-        }
-        if isinstance(input, str):
-            return super().invoke(input, config, stop=stop, **generation_config)
-        elif isinstance(input, StringPromptValue):
-            return super().invoke(
-                input.to_string(), config, stop=stop, **generation_config
-            )
-        elif isinstance(input, list):
-            if "vision" not in self.model_name:
-                raise ValueError(
-                    f"Multi-modal input is not supported by {self.model_name} model!"
-                )
-            first_message = input[0]
-            if len(input) > 1 or not isinstance(first_message, BaseMessage):
-                raise ValueError(
-                    "Multi-modal model expects only a single message as a input!"
-                )
-        else:
-            raise ValueError(
-                f"Invalid input type {type(input)}. "
-                "Must be a PromptValue, str, or list of BaseMessages."
-            )
-
-        messages = []
-        for content in first_message.content:
-            if not isinstance(content, Dict):
-                raise ValueError(
-                    f"Message's content is expected to be a dict, got {type(content)}!"
-                )
-            if content["type"] == "text":
-                messages.append(content["text"])
-            elif content["type"] == "image_url":
-                path = content["image_url"]["url"]
-                mime_type = content["image_url"].get("mime_type")
-                blob = _image_to_blob(img_path=path, mime_type=mime_type)
-                messages.append(blob)
-            else:
-                raise ValueError("Only text and image_url types are supported!")
-
-        res = completion_with_retry(
-            self,
-            prompt=messages,
-            is_gemini=True,
-            stream=False,
-            run_manager=kwargs.get("run_manager"),
-            **generation_config,
-        )
-
-        return res.text
-
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
@@ -354,6 +266,7 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
         return result["token_count"]
 
 
+@deprecated("0.0.350", alternative="GoogleGenerativeAI")
 class GooglePalm(GoogleGenerativeAI):
     """`GooglePalm` retriever alias for backwards compatibility.
     DEPRECATED: Use `GoogleGenerativeAI` instead.

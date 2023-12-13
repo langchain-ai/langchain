@@ -7,7 +7,6 @@ Note: This test must be run with the GOOGLE_API_KEY environment variable set to 
 from pathlib import Path
 
 import pytest
-from langchain_core.messages import HumanMessage
 from langchain_core.outputs import LLMResult
 
 from langchain_community.llms.google_palm import GoogleGenerativeAI
@@ -75,22 +74,3 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
     llm.save(file_path=tmp_path / "google_palm.yaml")
     loaded_llm = load_llm(tmp_path / "google_palm.yaml")
     assert loaded_llm == llm
-
-
-def test_invoke_multimodal() -> None:
-    llm = GoogleGenerativeAI(model_name="gemini-pro-vision")
-    gcs_url = (
-        "gs://cloud-samples-data/generative-ai/image/"
-        "320px-Felis_catus-cat_on_snow.jpg"
-    )
-    image_message = {
-        "type": "image_url",
-        "image_url": {"url": gcs_url, "mime_type": "image/jpeg"},
-    }
-    text_message = {
-        "type": "text",
-        "text": "What is shown in this image?",
-    }
-    message = HumanMessage(content=[text_message, image_message])
-    output = llm.invoke([message])
-    assert isinstance(output, str)
