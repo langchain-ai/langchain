@@ -1,4 +1,4 @@
-from nvidia_aiplay import __all__
+from langchain_nvidia_aiplay import __all__
 
 EXPECTED_ALL = ["NVAIPlayLLM", "ChatNVAIPlay", "NVAIPlayVectorStore"]
 

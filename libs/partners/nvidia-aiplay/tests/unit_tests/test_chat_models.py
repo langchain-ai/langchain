@@ -1,7 +1,7 @@
 """Test chat model integration."""
 
 
-from nvidia_aiplay.chat_models import ChatNVAIPlay
+from langchain_nvidia_aiplay.chat_models import ChatNVAIPlay
 
 
 def test_integration_initialization() -> None:

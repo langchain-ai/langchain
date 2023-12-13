@@ -1,5 +1,5 @@
 """Test NVAIPlayLLM llm."""
-from nvidia_aiplay.llms import NVAIPlayLLM
+from langchain_nvidia_aiplay.llms import NVAIPlayLLM
 
 
 def test_integration_stream() -> None:
