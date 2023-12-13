@@ -2125,6 +2125,16 @@ ssh = ["paramiko"]
 tqdm = ["tqdm"]
 
 [[package]]
+name = "future"
+version = "0.18.3"
+description = "Clean single-source support for Python 3 and 2"
+optional = true
+python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+files = [
+    {file = "future-0.18.3.tar.gz", hash = "sha256:34a17436ed1e96697a86f9de3d15a3b0be01d8bc8de9c1dffd59fb8234ed5307"},
+]
+
+[[package]]
 name = "geomet"
 version = "0.2.1.post1"
 description = "GeoJSON <-> WKT/WKB conversion utilities"
@@ -2294,6 +2304,55 @@ protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.1 || >4.21.1,<4
 
 [package.extras]
 grpc = ["grpcio (>=1.44.0,<2.0.0.dev0)"]
+
+[[package]]
+name = "gpudb"
+version = "7.2.0.0b0"
+description = "Python client for Kinetica DB"
+optional = true
+python-versions = "*"
+files = [
+    {file = "gpudb-7.2.0.0b0-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:1ce8a0369165c81f9e3b6334bcae0a8818fc6ea403a01e4fb66f0b56f9dab9a2"},
+    {file = "gpudb-7.2.0.0b0-cp27-cp27m-manylinux1_x86_64.whl", hash = "sha256:01eb9dfc3fe77d4ad90c51d2bd4384cf02dba09e9c551d6d9de750e767a5dd28"},
+    {file = "gpudb-7.2.0.0b0-cp27-cp27m-win32.whl", hash = "sha256:987276e2e06cab1973ac7cea96f33557a3ac6f20e9113691f1fe2f6e9e04e9cc"},
+    {file = "gpudb-7.2.0.0b0-cp27-cp27m-win_amd64.whl", hash = "sha256:482be9ebad4c3ae8c6672559bac696292a2a2deeb42f093bf91cf2b484f567a4"},
+    {file = "gpudb-7.2.0.0b0-cp27-cp27mu-manylinux1_i686.whl", hash = "sha256:6aad0aca127ebdb5deb022b4da332d1f6d3d4b876dadcee893370993fa4753dc"},
+    {file = "gpudb-7.2.0.0b0-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:3a79ab89a9e6048d32e903cbe69ddfca245b4f989e7d296ad02355aedbc579ff"},
+    {file = "gpudb-7.2.0.0b0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:77b6c7957ac0435f344787f19ea16efbcbc7e45ab84a5dc88670efa4f62741ff"},
+    {file = "gpudb-7.2.0.0b0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2cfbf71ab3d688cf7b5c9d895358c4eb8b5e4346f1a1715641049b314918f4c1"},
+    {file = "gpudb-7.2.0.0b0-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2a311c91d08c2fa21bcc7e0a1f8792d927005e15c2302dd8a84d894fd13b3df4"},
+    {file = "gpudb-7.2.0.0b0-cp310-cp310-win32.whl", hash = "sha256:a20f2aadcd656dc584ba5b317e188de9fc32b3f746a7de514589f68243b7081a"},
+    {file = "gpudb-7.2.0.0b0-cp310-cp310-win_amd64.whl", hash = "sha256:ae43925bf5c008a2aaa8bde367ca3d268d75b3d8af392a06a9f5978816837fe9"},
+    {file = "gpudb-7.2.0.0b0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:3ff47de9b22377af77f7ef80f9c805e2d1076c2ca90483f853de535a6ee2dc7d"},
+    {file = "gpudb-7.2.0.0b0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1c13dab71bf5a0d539d23112009e068e7f7277889960904ba7e7ae6fa9eada42"},
+    {file = "gpudb-7.2.0.0b0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:0f2dd1e717628fd00472520d09a9be574970ae223009370f082f632e82f0a336"},
+    {file = "gpudb-7.2.0.0b0-cp34-cp34m-manylinux1_i686.whl", hash = "sha256:cbc114ab2797ee80d8b040e743b59ee48288a60787dc4e2fc156545e004f0a73"},
+    {file = "gpudb-7.2.0.0b0-cp34-cp34m-manylinux1_x86_64.whl", hash = "sha256:2fe4dc329eb601bdb56688a10c8daa484f90ed0fea2e229751a9b0c8fe515a98"},
+    {file = "gpudb-7.2.0.0b0-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:3f7ddda3f7c1a92f5b0a27a62814904efd3a2f49e8f73a5fe8f84eb51f6f9c87"},
+    {file = "gpudb-7.2.0.0b0-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:c6f864dd39bd61860c19de06bea8a45b02aacaa9a771eaa257957bcbc5f934bb"},
+    {file = "gpudb-7.2.0.0b0-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8a6f6c1dee18e578e4ac18cfc272a8be2a6cca95c693717bf2395308f17885fb"},
+    {file = "gpudb-7.2.0.0b0-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2e7b361fb55dd948a82a80267ed7f21abd28746ee7d89822499d80d6e173f7fc"},
+    {file = "gpudb-7.2.0.0b0-cp36-cp36m-win32.whl", hash = "sha256:d9768017588e6251f306ca21bdd57b2e5502118ec04bde4b2061d9941c0ef0eb"},
+    {file = "gpudb-7.2.0.0b0-cp36-cp36m-win_amd64.whl", hash = "sha256:1714fe89eb2209b518b0dc20cde8830d1b276763fd62b1c13b0e2f247e371ea2"},
+    {file = "gpudb-7.2.0.0b0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fa7cc6848548a18e4fa896a7fc30b7ee7775a167597aefc45efe131896f19915"},
+    {file = "gpudb-7.2.0.0b0-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a4dde9034571aba26a341904fc8d958633c3e4384ac1a090fd229149a0b5ac1e"},
+    {file = "gpudb-7.2.0.0b0-cp37-cp37m-win32.whl", hash = "sha256:3dc2911fbb6c39bd6b8f8efba16cccfc2e0602dede45fc46be57404dcad4cf0a"},
+    {file = "gpudb-7.2.0.0b0-cp37-cp37m-win_amd64.whl", hash = "sha256:523b5a8a24a8195a390112f9d0f110c86f3a62cd73fbfcdc6ed8ec574c9cf847"},
+    {file = "gpudb-7.2.0.0b0-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:efc959259bc5fe458f8f6a0bfc5478b09571fa8cf2d74fb5466762c68c2676b8"},
+    {file = "gpudb-7.2.0.0b0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:861e308521e93b1790d4a36dcadb3044f51f548c229fab12f944221783c7cea4"},
+    {file = "gpudb-7.2.0.0b0-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1bb6a6ebeb68e779e6142939fe5905adfad3548287a7501d4344d06850041091"},
+    {file = "gpudb-7.2.0.0b0-cp38-cp38-win32.whl", hash = "sha256:4ea9533cb81ebfc63b25c41593748348cced0a76211c97b11612c994d2646021"},
+    {file = "gpudb-7.2.0.0b0-cp38-cp38-win_amd64.whl", hash = "sha256:ffb8f8521a0c3e73e105c2029aba1a5264d11a3a0705231cdcaca15263ca4b98"},
+    {file = "gpudb-7.2.0.0b0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:d2a8755d8efd7349154eeae971f4a7356c72aa6531d9a7b7bae89649d8196629"},
+    {file = "gpudb-7.2.0.0b0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eee0796cccafbbd1904cccea96014269e3a141b55c3c8c294860984c62e1e60f"},
+    {file = "gpudb-7.2.0.0b0-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:d8fd9a5df4e70fd081d5bf47d2dd4cc5745ad203d2b93db3e3db32799a08627a"},
+    {file = "gpudb-7.2.0.0b0-cp39-cp39-win32.whl", hash = "sha256:063ae60c1b5f0e48e102290d864c94d03b920771da55061a41332c4973ea0661"},
+    {file = "gpudb-7.2.0.0b0-cp39-cp39-win_amd64.whl", hash = "sha256:9c1745231e4a322d02827850aa3a99459c16a455d806d4a4707f6807c1f24596"},
+]
+
+[package.dependencies]
+future = "*"
+pyzmq = "*"
 
 [[package]]
 name = "gql"
@@ -3727,16 +3786,6 @@ files = [
     {file = "MarkupSafe-2.1.3-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:5bbe06f8eeafd38e5d0a4894ffec89378b6c6a625ff57e3028921f8ff59318ac"},
     {file = "MarkupSafe-2.1.3-cp311-cp311-win32.whl", hash = "sha256:dd15ff04ffd7e05ffcb7fe79f1b98041b8ea30ae9234aed2a9168b5797c3effb"},
     {file = "MarkupSafe-2.1.3-cp311-cp311-win_amd64.whl", hash = "sha256:134da1eca9ec0ae528110ccc9e48041e0828d79f24121a1a146161103c76e686"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:f698de3fd0c4e6972b92290a45bd9b1536bffe8c6759c62471efaa8acb4c37bc"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:aa57bd9cf8ae831a362185ee444e15a93ecb2e344c8e52e4d721ea3ab6ef1823"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ffcc3f7c66b5f5b7931a5aa68fc9cecc51e685ef90282f4a82f0f5e9b704ad11"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:47d4f1c5f80fc62fdd7777d0d40a2e9dda0a05883ab11374334f6c4de38adffd"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1f67c7038d560d92149c060157d623c542173016c4babc0c1913cca0564b9939"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:9aad3c1755095ce347e26488214ef77e0485a3c34a50c5a5e2471dff60b9dd9c"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:14ff806850827afd6b07a5f32bd917fb7f45b046ba40c57abdb636674a8b559c"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8f9293864fe09b8149f0cc42ce56e3f0e54de883a9de90cd427f191c346eb2e1"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-win32.whl", hash = "sha256:715d3562f79d540f251b99ebd6d8baa547118974341db04f5ad06d5ea3eb8007"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-win_amd64.whl", hash = "sha256:1b8dd8c3fd14349433c79fa8abeb573a55fc0fdd769133baac1f5e07abf54aeb"},
     {file = "MarkupSafe-2.1.3-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:8e254ae696c88d98da6555f5ace2279cf7cd5b3f52be2b5cf97feafe883b58d2"},
     {file = "MarkupSafe-2.1.3-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cb0932dc158471523c9637e807d9bfb93e06a95cbf010f1a38b98623b929ef2b"},
     {file = "MarkupSafe-2.1.3-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9402b03f1a1b4dc4c19845e5c749e3ab82d5078d16a2a4c2cd2df62d57bb0707"},
@@ -9098,4 +9147,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "0b232a037505cefcdf2203edc9d750e70e2e52a297475490022402994c3036a3"
+content-hash = "3290d8ea2f84e0cd72422ce92d33fb6b8af211bf55e0ebe8a173ca2a3c90e35d"
