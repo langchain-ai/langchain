@@ -260,12 +260,17 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Returns:
             List of documents most similar to the query and their scores.
         """
+        additional = kwargs.get("additional")
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
         )
+
+        if additional and "similarity_score" in additional:
+            for doc, score in docs_and_scores:
+                doc.metadata["score"] = score
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search(
