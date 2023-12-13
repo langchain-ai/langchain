@@ -88,14 +88,6 @@ class KineticaSettings(BaseSettings):
 class Kinetica(VectorStore):
     """Kinetica vector store class which extends the `VectorStore` class"""
 
-    try:
-        from gpudb import GPUdb, GPUdbTable
-    except ImportError:
-        raise ImportError(
-            "Could not import Kinetica python API. "
-            "Please install it with `pip install gpudb==7.2.0.0b`."
-        )
-
     def __init__(
         self,
         config: KineticaSettings,
@@ -174,7 +166,7 @@ class Kinetica(VectorStore):
         self.create_schema()
         self.EmbeddingStore: GPUdbTable = self.create_tables_if_not_exists()
 
-    def __get_db(self, config: KineticaSettings) -> GPUdb:
+    def __get_db(self, config: KineticaSettings) -> Any:
         try:
             from gpudb import GPUdb
         except ImportError:
@@ -263,7 +255,7 @@ class Kinetica(VectorStore):
 
         return store
 
-    def create_tables_if_not_exists(self) -> GPUdbTable:
+    def create_tables_if_not_exists(self) -> Any:
         """Create the table to store the texts and embeddings"""
 
         try:
