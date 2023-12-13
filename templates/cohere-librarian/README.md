@@ -59,8 +59,8 @@ langchain serve
 This will start the FastAPI app with a server is running locally at 
 [http://localhost:8000](http://localhost:8000)
 
-We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/cohere-librarian/playground](http://127.0.0.1:8000/cohere-librarian/playground)  
+We can see all templates at [http://localhost:8000/docs](http://localhost:8000/docs)
+We can access the playground at [http://localhost:8000/cohere-librarian/playground](http://localhost:8000/cohere-librarian/playground)  
 
 We can access the template from code with:
 
