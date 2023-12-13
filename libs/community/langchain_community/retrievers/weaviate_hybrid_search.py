@@ -158,10 +158,6 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         if self.embeddings and "vector" not in hybrid_search_kwargs:
             hybrid_search_kwargs["vector"] = self.embeddings.embed_query(query)
 
-        query_obj = query_obj.with_hybrid(
-            query, alpha=self.alpha, **hybrid_search_kwargs
-        )
-
         result = (
             query_obj.with_hybrid(query, alpha=self.alpha, **hybrid_search_kwargs)
             .with_limit(self.k)
