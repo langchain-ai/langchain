@@ -35,21 +35,24 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         package_name for package_name, required in is_required.items() if required
     ]
 
-    assert sorted(required_dependencies) == [
-        "PyYAML",
-        "SQLAlchemy",
-        "aiohttp",
-        "async-timeout",
-        "dataclasses-json",
-        "jsonpatch",
-        "langchain-core",
-        "langsmith",
-        "numpy",
-        "pydantic",
-        "python",
-        "requests",
-        "tenacity",
-    ]
+    assert sorted(required_dependencies) == sorted(
+        [
+            "PyYAML",
+            "SQLAlchemy",
+            "aiohttp",
+            "async-timeout",
+            "dataclasses-json",
+            "jsonpatch",
+            "langchain-core",
+            "langsmith",
+            "numpy",
+            "pydantic",
+            "python",
+            "requests",
+            "tenacity",
+            "langchain-community",
+        ]
+    )
 
     unrequired_dependencies = [
         package_name for package_name, required in is_required.items() if not required
