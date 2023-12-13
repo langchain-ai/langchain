@@ -191,7 +191,6 @@ def copy_repo(
     Raises FileNotFound error if it can't find source
     """
 
-    def ignore_func(_, files):
-        return [f for f in files if f == ".git"]
-
-    shutil.copytree(source, destination, ignore=ignore_func)
+    shutil.copytree(
+        source, destination, ignore=shutil.ignore_patterns(".git", "Makefile")
+    )
