@@ -15,6 +15,6 @@ class ChatResult(BaseModel):
     """For arbitrary LLM provider specific output."""
 
     @root_validator(pre=True)
-    def validate_environment(self, values: dict) -> dict:
+    def validate_environment(cls, values: dict) -> dict:
         values["generations"] = list(values.get("generations", ()))
         return values

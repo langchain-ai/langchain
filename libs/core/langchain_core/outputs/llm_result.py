@@ -20,7 +20,7 @@ class LLMResult(BaseModel):
     """List of metadata info for model call for each input."""
 
     @root_validator(pre=True)
-    def validate_environment(self, values: dict) -> dict:
+    def validate_environment(cls, values: dict) -> dict:
         values["generations"] = [list(g) for g in values.get("generations", ())]
         return values
 

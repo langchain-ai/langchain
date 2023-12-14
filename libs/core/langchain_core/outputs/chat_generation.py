@@ -18,7 +18,7 @@ class ChatGeneration(Generation):
     type: Literal["ChatGeneration"] = "ChatGeneration"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
-    @root_validator
+    @root_validator()
     def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Set the text attribute to be the contents of the message."""
         try:
