@@ -107,8 +107,6 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
        not return the full n completions if duplicates are generated."""
     max_retries: int = 6
     """The maximum number of retries to make when generating."""
-    streaming: bool = False
-    """Whether to stream the results or not."""
 
     @property
     def is_gemini(self) -> bool:
@@ -144,11 +142,6 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
                 values["client"] = genai.GenerativeModel(model_name=model_name)
             else:
                 values["client"] = genai
-                if values["streaming"]:
-                    raise ValueError(
-                        "Streaming is not supported for Palm2 models. Use "
-                        "langchain.llms.VertexAI if you need streaming!"
-                    )
         except ImportError:
             raise ImportError(
                 "Could not import google-generativeai python package. "
@@ -177,8 +170,6 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        should_stream = stream if stream is not None else self.streaming
-
         generations: List[List[Generation]] = []
         generation_config = {
             "stop_sequences": stop,
@@ -189,7 +180,7 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
             "candidate_count": self.n,
         }
         for prompt in prompts:
-            if should_stream:
+            if stream:
                 if not self.is_gemini:
                     raise ValueError(
                         "Streaming is not supported for Palm2 models. Use "
@@ -211,7 +202,7 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
                     res = completion_with_retry(
                         self,
                         prompt=prompt,
-                        stream=should_stream,
+                        stream=stream or False,
                         is_gemini=True,
                         run_manager=run_manager,
                         generation_config=generation_config,
@@ -226,7 +217,7 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
                         self,
                         model=self.model_name,
                         prompt=prompt,
-                        stream=should_stream,
+                        stream=stream or False,
                         is_gemini=False,
                         run_manager=run_manager,
                         **generation_config,

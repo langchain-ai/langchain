@@ -14,7 +14,7 @@ from langchain_community.utilities.vertexai import create_retry_decorator
 
 
 def completion_with_retry(
-    llm: GoogleGenerativeAI,
+    llm: GooglePalm,
     prompt: LanguageModelInput,
     is_gemini: bool = False,
     stream: bool = False,
@@ -59,8 +59,13 @@ def _strip_erroneous_leading_spaces(text: str) -> str:
         return text
 
 
-class GoogleGenerativeAI(BaseLLM, BaseModel):
-    """Google GenerativeAI models."""
+@deprecated("0.0.350", alternative="langchain_google_genai.GoogleGenerativeAI")
+class GooglePalm(BaseLLM, BaseModel):
+    """
+    DEPRECATED: Use `langchain_google_genai.GoogleGenerativeAI` instead.
+
+    Google PaLM models.
+    """
 
     client: Any  #: :meta private:
     google_api_key: Optional[str]
@@ -83,8 +88,6 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
        not return the full n completions if duplicates are generated."""
     max_retries: int = 6
     """The maximum number of retries to make when generating."""
-    streaming: bool = False
-    """Whether to stream the results or not."""
 
     @property
     def is_gemini(self) -> bool:
@@ -120,11 +123,6 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
                 values["client"] = genai.GenerativeModel(model_name=model_name)
             else:
                 values["client"] = genai
-                if values["streaming"]:
-                    raise ValueError(
-                        "Streaming is not supported for Palm2 models. Use "
-                        "langchain.llms.VertexAI if you need streaming!"
-                    )
         except ImportError:
             raise ImportError(
                 "Could not import google-generativeai python package. "
@@ -153,8 +151,6 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        should_stream = stream if stream is not None else self.streaming
-
         generations: List[List[Generation]] = []
         generation_config = {
             "stop_sequences": stop,
@@ -165,7 +161,7 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
             "candidate_count": self.n,
         }
         for prompt in prompts:
-            if should_stream:
+            if stream:
                 if not self.is_gemini:
                     raise ValueError(
                         "Streaming is not supported for Palm2 models. Use "
@@ -187,7 +183,7 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
                     res = completion_with_retry(
                         self,
                         prompt=prompt,
-                        stream=should_stream,
+                        stream=stream,
                         is_gemini=True,
                         run_manager=run_manager,
                         generation_config=generation_config,
@@ -202,7 +198,7 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
                         self,
                         model=self.model_name,
                         prompt=prompt,
-                        stream=should_stream,
+                        stream=stream,
                         is_gemini=False,
                         run_manager=run_manager,
                         **generation_config,
@@ -264,10 +260,3 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
             raise ValueError("Counting tokens is not yet supported!")
         result = self.client.count_text_tokens(model=self.model_name, prompt=text)
         return result["token_count"]
-
-
-@deprecated("0.0.350", alternative="GoogleGenerativeAI")
-class GooglePalm(GoogleGenerativeAI):
-    """`GooglePalm` retriever alias for backwards compatibility.
-    DEPRECATED: Use `GoogleGenerativeAI` instead.
-    """
