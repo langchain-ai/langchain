@@ -101,11 +101,15 @@ jobs:
       # - Tests pass, because the dependency is present even though it wasn't specified.
       # - The package is published, and it breaks on the missing dependency when
       #   used in the real world.
-      - uses: actions/setup-python@v4
+
+      - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
 
-      - name: Test published package
+      - name: Import published package
         shell: bash
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
@@ -118,7 +122,6 @@ jobs:
         #   (https://test.pypi.org/simple). This will include the PKG_NAME==VERSION
         #   package because VERSION will not have been uploaded to regular PyPI yet.
         #
-        # TODO: add more in-depth pre-publish tests after testing that importing works
         run: |
           pip install \
             --extra-index-url https://test.pypi.org/simple/ \
@@ -129,6 +132,31 @@ jobs:
           IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g)"
 
           python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
+
+      - name: Import test dependencies
+        if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
+        run: poetry install --with test,test_integration
+        working-directory: ${{ inputs.working-directory }}
+
+      # Overwrite the local version of the package with the test PyPI version.
+      - name: Import published package (again)
+        if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
+        shell: bash
+        env:
+          PKG_NAME: ${{ needs.build.outputs.pkg-name }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          poetry run pip install \
+            --extra-index-url https://test.pypi.org/simple/ \
+            "$PKG_NAME==$VERSION"
+
+      - name: Run integration tests
+        if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: make integration_tests
+        working-directory: ${{ inputs.working-directory }}
+
 
   publish:
     needs:
