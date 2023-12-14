@@ -12,7 +12,6 @@ import numpy as np
 
 # Add the import ignore since we are missing type-stubs for these
 import tritonclient.grpc as grpcclient  # type: ignore[import]
-import tritonclient.http as httpclient  # type: ignore[import]
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
@@ -158,6 +157,7 @@ class TritonTensorRTLLM(BaseLLM):
             # TODO: Verify this is actually a string result
             result: str = self._request(
                 self.model_name,
+                stop_words=stop,
                 **invoc_params,
             )
             generations.append([Generation(text=result, generation_info={})])
@@ -208,6 +208,7 @@ class TritonTensorRTLLM(BaseLLM):
     def _request(
         self,
         model_name: str,
+        prompt: Sequence[Sequence[str]],
         **params: Any,
     ) -> str:
         """Request inferencing from the triton server."""
@@ -215,7 +216,7 @@ class TritonTensorRTLLM(BaseLLM):
             raise RuntimeError("Cannot request streaming, model is not loaded")
 
         # create model inputs and outputs
-        inputs = self._generate_inputs(stream=False, **params)
+        inputs = self._generate_inputs(stream=False, prompt=prompt, **params)
         outputs = self._generate_outputs()
 
         # call the model for inference
@@ -227,13 +228,13 @@ class TritonTensorRTLLM(BaseLLM):
 
     def _generate_outputs(
         self,
-    ) -> List[Union[grpcclient.InferRequestedOutput, httpclient.InferRequestedOutput]]:
+    ) -> List[grpcclient.InferRequestedOutput]:
         """Generate the expected output structure."""
         return [grpcclient.InferRequestedOutput("text_output")]
 
     def _prepare_tensor(
         self, name: str, input_data: np.ndarray
-    ) -> Union[grpcclient.InferInput, httpclient.InferInput]:
+    ) -> grpcclient.InferInput:
         """Prepare an input data structure."""
 
         t = grpcclient.InferInput(
@@ -253,7 +254,7 @@ class TritonTensorRTLLM(BaseLLM):
         repetition_penalty: float = 1,
         length_penalty: float = 1.0,
         stream: bool = True,
-    ) -> List[Union[grpcclient.InferInput, httpclient.InferInput]]:
+    ) -> List[grpcclient.InferRequestedOutput]:
         """Create the input for the triton inference server."""
         query = np.array(prompt).astype(object)
         request_output_len = np.array([tokens]).astype(np.uint32).reshape((1, -1))
