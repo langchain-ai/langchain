@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "cohere-librarian"
+version = "0.0.1"
+description = "Get started with a simple template that acts as a librarian"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.325"
+cohere = "^4.37"
+chromadb = "^0.4.18"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+fastapi = "^0.104.0"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "cohere_librarian"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "chatbot"
+author = "Cohere"
+integrations = ["Cohere"]
+tags = ["getting-started"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

@@ -136,7 +136,7 @@ html_theme_path = ["themes"]
 # redirects dictionary maps from old links to new links
 html_additional_pages = {}
 redirects = {
-    "index": "api_reference",
+    "index": "langchain_api_reference",
 }
 for old_link in redirects:
     html_additional_pages[old_link] = "redirects.html"

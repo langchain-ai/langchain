@@ -12,15 +12,15 @@ from langchain.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
 )
-from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import Document
-from langchain.schema.messages import AIMessage, HumanMessage
-from langchain.schema.runnable import Runnable, RunnableLambda, RunnableParallel
-from langchain.tools.base import BaseTool
 from langchain.tools.render import format_tool_to_openai_function
 from langchain.tools.tavily_search import TavilySearchResults
 from langchain.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain.vectorstores import FAISS
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import Runnable, RunnableLambda, RunnableParallel
+from langchain_core.tools import BaseTool
 
 # Create the tools
 search = TavilySearchAPIWrapper()

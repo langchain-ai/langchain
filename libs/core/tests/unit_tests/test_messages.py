@@ -1,4 +1,5 @@
 import unittest
+from typing import List
 
 import pytest
 
@@ -203,3 +204,227 @@ def test_message_chunk_to_message() -> None:
     assert message_chunk_to_message(
         FunctionMessageChunk(name="hello", content="I am")
     ) == FunctionMessage(name="hello", content="I am")
+
+
+def test_tool_calls_merge() -> None:
+    chunks: List[dict] = [
+        dict(content=""),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": "call_CwGAsESnXehQEjiAIWzinlva",
+                        "function": {"arguments": "", "name": "person"},
+                        "type": "function",
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": '{"na', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": 'me": ', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": '"jane"', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": ', "a', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": 'ge": ', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": "2}", "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": "call_zXSIylHvc5x3JUAPcHZR5GZI",
+                        "function": {"arguments": "", "name": "person"},
+                        "type": "function",
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": '{"na', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": 'me": ', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": '"bob",', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": ' "ag', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": 'e": 3', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": "}", "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(content=""),
+    ]
+
+    final = None
+
+    for chunk in chunks:
+        msg = AIMessageChunk(**chunk)
+        if final is None:
+            final = msg
+        else:
+            final = final + msg
+
+    assert final == AIMessageChunk(
+        content="",
+        additional_kwargs={
+            "tool_calls": [
+                {
+                    "index": 0,
+                    "id": "call_CwGAsESnXehQEjiAIWzinlva",
+                    "function": {
+                        "arguments": '{"name": "jane", "age": 2}',
+                        "name": "person",
+                    },
+                    "type": "function",
+                },
+                {
+                    "index": 1,
+                    "id": "call_zXSIylHvc5x3JUAPcHZR5GZI",
+                    "function": {
+                        "arguments": '{"name": "bob", "age": 3}',
+                        "name": "person",
+                    },
+                    "type": "function",
+                },
+            ]
+        },
+    )

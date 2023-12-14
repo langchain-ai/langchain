@@ -11,28 +11,57 @@ pip install cohere
 
 Get a [Cohere api key](https://dashboard.cohere.ai/) and set it as an environment variable (`COHERE_API_KEY`)
 
+## Cohere langchain integrations
 
-## LLM
+|API|description|Endpoint docs|Import|Example usage|
+|---|---|---|---|---|
+|Chat|Build chat bots|[chat](https://docs.cohere.com/reference/chat)|`from langchain.chat_models import ChatCohere`|[cohere.ipynb](/docs/docs/integrations/chat/cohere.ipynb)|
+|LLM|Generate text|[generate](https://docs.cohere.com/reference/generate)|`from langchain.llms import Cohere`|[cohere.ipynb](/docs/docs/integrations/llms/cohere.ipynb)|
+|RAG Retriever|Connect to external data sources|[chat + rag](https://docs.cohere.com/reference/chat)|`from langchain.retrievers import CohereRagRetriever`|[cohere.ipynb](/docs/docs/integrations/retrievers/cohere.ipynb)|
+|Text Embedding|Embed strings to vectors|[embed](https://docs.cohere.com/reference/embed)|`from langchain.embeddings import CohereEmbeddings`|[cohere.ipynb](/docs/docs/integrations/text_embedding/cohere.ipynb)|
+|Rerank Retriever|Rank strings based on relevance|[rerank](https://docs.cohere.com/reference/rerank)|`from langchain.retrievers.document_compressors import CohereRerank`|[cohere.ipynb](/docs/docs/integrations/retrievers/cohere-reranker.ipynb)|
 
-There exists an Cohere LLM wrapper, which you can access with 
-See a [usage example](/docs/integrations/llms/cohere).
+## Quick copy examples
+
+### Chat
+
+```python
+from langchain.chat_models import ChatCohere
+from langchain.schema import HumanMessage
+chat = ChatCohere()
+messages = [HumanMessage(content="knock knock")]
+print(chat(messages))
+```
+
+### LLM
+
 
 ```python
 from langchain.llms import Cohere
+
+llm = Cohere(model="command")
+print(llm.invoke("Come up with a pet name"))
 ```
 
-## Text Embedding Model
 
-There exists an Cohere Embedding model, which you can access with 
+### RAG Retriever
+
 ```python
-from langchain.embeddings import CohereEmbeddings
+from langchain.chat_models import ChatCohere
+from langchain.retrievers import CohereRagRetriever
+from langchain.schema.document import Document
+
+rag = CohereRagRetriever(llm=ChatCohere())
+print(rag.get_relevant_documents("What is cohere ai?"))
 ```
-For a more detailed walkthrough of this, see [this notebook](/docs/integrations/text_embedding/cohere)
 
-## Retriever
-
-See a [usage example](/docs/integrations/retrievers/cohere-reranker).
+### Text Embedding
 
 ```python
-from langchain.retrievers.document_compressors import CohereRerank
+from langchain.chat_models import ChatCohere
+from langchain.retrievers import CohereRagRetriever
+from langchain.schema.document import Document
+
+rag = CohereRagRetriever(llm=ChatCohere())
+print(rag.get_relevant_documents("What is cohere ai?"))
 ```
