@@ -280,6 +280,26 @@ documents = docai_wh_retriever.get_relevant_documents(
 
 ## Tools
 
+### Google Cloud Text-to-Speech
+
+>[Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech) enables developers to 
+> synthesize natural-sounding speech with 100+ voices, available in multiple languages and variants. 
+> It applies DeepMind’s groundbreaking research in WaveNet and Google’s powerful neural networks 
+> to deliver the highest fidelity possible.
+
+We need to install a python package.
+
+```bash
+pip install google-cloud-text-to-speech
+```
+
+See a [usage example and authorization instructions](/docs/integrations/tools/google_cloud_texttospeech).
+
+```python
+from langchain.tools import GoogleCloudTextToSpeechTool
+```
+
+
 ### Google Drive
 
 We need to install several python packages.
@@ -396,6 +416,7 @@ See a [usage example and authorization instructions](/docs/integrations/tools/go
 from langchain.tools.google_trends import GoogleTrendsQueryRun
 from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
 ```
+
 
 ## Document Transformers
 

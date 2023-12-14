@@ -42,7 +42,8 @@ from typing import (
     cast,
 )
 
-from sqlalchemy import Column, Integer, Row, String, create_engine, select
+from sqlalchemy import Column, Integer, String, create_engine, select
+from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 

@@ -63,13 +63,6 @@
             <a href="#" role="button" class="btn sk-btn-rellink py-1 disabled"">Next</a>
           {%- endif %}
         </div>
-        {%- if pagename != "install" %}
-        <div class="alert alert-warning p-1 mb-2" role="alert">
-          <p class="text-center mb-0">
-          <strong>LangChain {{ release }}</strong><br/>
-          </p>
-        </div>
-        {%- endif %}
             {%- if meta and meta['parenttoc']|tobool %}
             <div class="sk-sidebar-toc">
             {% set nav = get_nav_object(maxdepth=3, collapse=True, numbered=True) %}
