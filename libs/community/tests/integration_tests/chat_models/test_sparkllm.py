@@ -1,5 +1,6 @@
-from langchain.chat_models.sparkllm import ChatSparkLLM
-from langchain.schema.messages import AIMessage, AIMessageChunk, HumanMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
+
+from langchain_community.chat_models.sparkllm import ChatSparkLLM
 
 
 def test_chat_spark_llm() -> None:
