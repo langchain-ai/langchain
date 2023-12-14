@@ -186,7 +186,7 @@ Supported examples:
                 res = completion_with_retry(
                     self,
                     prompt=prompt,
-                    stream=stream or False,
+                    stream=False,
                     is_gemini=True,
                     run_manager=run_manager,
                     generation_config=generation_config,
