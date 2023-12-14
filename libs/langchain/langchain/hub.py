@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
+from langchain_core.runnables import Runnable
 
 if TYPE_CHECKING:
     from langchainhub import Client
@@ -78,4 +79,7 @@ def pull(
     """
     client = _get_client(api_url=api_url, api_key=api_key)
     resp: str = client.pull(owner_repo_commit)
-    return loads(resp)
+    loaded = loads(resp)
+    if isinstance(loaded, Runnable):
+        return loaded.with_config(metadata={"hub_owner_repo_commit": owner_repo_commit})
+    return loaded
