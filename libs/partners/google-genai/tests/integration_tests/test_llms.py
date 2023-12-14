@@ -4,8 +4,6 @@ Note: This test must be run with the GOOGLE_API_KEY environment variable set to 
       valid API key.
 """
 
-from pathlib import Path
-
 import pytest
 from langchain_core.outputs import LLMResult
 
