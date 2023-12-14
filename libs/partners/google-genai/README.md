@@ -56,3 +56,16 @@ The value of `image_url` can be any of the following:
 - A local file path
 - A base64 encoded image (e.g., `data:image/png;base64,abcd124`)
 - A PIL image
+
+
+
+## Embeddings
+
+This package also adds support for google's embeddings models.
+
+```
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+embeddings.embed_query("hello, world!")
+```
