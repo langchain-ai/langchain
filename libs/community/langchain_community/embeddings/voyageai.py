@@ -1,61 +1,18 @@
 from __future__ import annotations
 
-import json
 import logging
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
     Optional,
-    Tuple,
-    Union,
-    cast,
 )
 
-import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from tenacity import (
-    before_sleep_log,
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-)
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
-
-
-def _create_retry_decorator(embeddings: VoyageEmbeddings) -> Callable[[Any], Any]:
-    min_seconds = 4
-    max_seconds = 10
-    # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    return retry(
-        reraise=True,
-        stop=stop_after_attempt(embeddings.max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
-
-
-def _check_response(response: dict) -> dict:
-    if "data" not in response:
-        raise RuntimeError(f"Voyage API Error. Message: {json.dumps(response)}")
-    return response
-
-
-def embed_with_retry(embeddings: VoyageEmbeddings, **kwargs: Any) -> Any:
-    """Use tenacity to retry the embedding call."""
-    retry_decorator = _create_retry_decorator(embeddings)
-
-    @retry_decorator
-    def _embed_with_retry(**kwargs: Any) -> Any:
-        response = requests.post(**kwargs)
-        return _check_response(response.json())
-
-    return _embed_with_retry(**kwargs)
 
 
 class VoyageEmbeddings(BaseModel, Embeddings):
@@ -74,15 +31,12 @@ class VoyageEmbeddings(BaseModel, Embeddings):
             query_result = voyage.embed_query(text)
     """
 
+    client: Any
+
     model: str = "voyage-01"
-    voyage_api_base: str = "https://api.voyageai.com/v1/embeddings"
-    voyage_api_key: Optional[SecretStr] = None
-    batch_size: int = 8
-    """Maximum number of texts to embed in each API request."""
-    max_retries: int = 6
-    """Maximum number of retries to make when generating."""
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
-    """Timeout in seconds for the API request."""
+    voyage_api_key: Optional[str] = None
+    batch_size: int = 64
+    """Maximum number of texts to embed in each request."""
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding. Must have tqdm installed if set 
         to True."""
@@ -95,22 +49,21 @@ class VoyageEmbeddings(BaseModel, Embeddings):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["voyage_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "voyage_api_key", "VOYAGE_API_KEY")
+        values["voyage_api_key"] = get_from_dict_or_env(
+            values, "voyage_api_key", "VOYAGE_API_KEY"
         )
-        return values
 
-    def _invocation_params(
-        self, input: List[str], input_type: Optional[str] = None
-    ) -> Dict:
-        api_key = cast(SecretStr, self.voyage_api_key).get_secret_value()
-        params = {
-            "url": self.voyage_api_base,
-            "headers": {"Authorization": f"Bearer {api_key}"},
-            "json": {"model": self.model, "input": input, "input_type": input_type},
-            "timeout": self.request_timeout,
-        }
-        return params
+        try:
+            import voyageai
+
+            values["client"] = voyageai
+            voyageai.api_key = values["voyage_api_key"]
+        except ImportError:
+            raise ImportError(
+                "Could not import voyageai python package. "
+                "Please install it with `pip install voyageai`."
+            )
+        return values
 
     def _get_embeddings(
         self,
@@ -143,13 +96,12 @@ class VoyageEmbeddings(BaseModel, Embeddings):
             )
 
         for i in _iter:
-            response = embed_with_retry(
-                self,
-                **self._invocation_params(
-                    input=texts[i : i + batch_size], input_type=input_type
-                ),
+            response = self.client.get_embeddings(
+                texts[i : i + batch_size],
+                model=self.model,
+                input_type=input_type,
             )
-            embeddings.extend(r["embedding"] for r in response["data"])
+            embeddings.extend(response)
 
         return embeddings
 
