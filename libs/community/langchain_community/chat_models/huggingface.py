@@ -2,22 +2,24 @@
 import os
 from typing import Any, List, Optional, Union
 
+from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
+from langchain_community.llms.huggingface_hub import HuggingFaceHub
+from langchain_community.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
-from langchain_community.llms.huggingface_hub import HuggingFaceHub
-from langchain_community.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
-from langchain.schema import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
-    HumanMessage,
     LLMResult,
-    SystemMessage,
 )
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
