@@ -202,12 +202,6 @@ def _import_google_palm() -> Any:
     return GooglePalm
 
 
-def _import_google_generativeai() -> Any:
-    from langchain.llms.google_palm import GoogleGenerativeAI
-
-    return GoogleGenerativeAI
-
-
 def _import_gooseai() -> Any:
     from langchain.llms.gooseai import GooseAI
 
@@ -597,8 +591,6 @@ def __getattr__(name: str) -> Any:
         return _import_forefrontai()
     elif name == "GigaChat":
         return _import_gigachat()
-    elif name == "GoogleGenerativeAI":
-        return _import_google_generativeai()
     elif name == "GooglePalm":
         return _import_google_palm()
     elif name == "GooseAI":
@@ -748,7 +740,6 @@ __all__ = [
     "ForefrontAI",
     "GigaChat",
     "GPT4All",
-    "GoogleGenerativeAI",
     "GooglePalm",
     "GooseAI",
     "GradientLLM",

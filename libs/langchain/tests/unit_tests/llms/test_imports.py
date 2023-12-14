@@ -30,7 +30,6 @@ EXPECT_ALL = [
     "ForefrontAI",
     "GigaChat",
     "GPT4All",
-    "GoogleGenerativeAI",
     "GooglePalm",
     "GooseAI",
     "GradientLLM",
