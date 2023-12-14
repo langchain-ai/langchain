@@ -1,5 +1,4 @@
 """Hugging Face Chat Wrapper."""
-import os
 from typing import Any, List, Optional, Union
 
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
