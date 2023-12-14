@@ -11,7 +11,7 @@ from typing import (
     Optional,
     Tuple,
     TypeVar,
-    Union,
+    Union, Callable,
 )
 
 import numpy as np
@@ -60,6 +60,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         index_name: str = "default",
         text_key: str = "text",
         embedding_key: str = "embedding",
+        relevance_score_fn: str = "cosine"
     ):
         """
         Args:
@@ -70,16 +71,28 @@ class MongoDBAtlasVectorSearch(VectorStore):
             embedding_key: MongoDB field that will contain the embedding for
                 each document.
             index_name: Name of the Atlas Search index.
+            relevance_score_fn: The similarity score used for the index. Currently supported: Euclidean, cosine, and dot product.
         """
         self._collection = collection
         self._embedding = embedding
         self._index_name = index_name
         self._text_key = text_key
         self._embedding_key = embedding_key
+        self._relevance_score_fn = relevance_score_fn
 
     @property
     def embeddings(self) -> Embeddings:
         return self._embedding
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        if self._relevance_score_fn == "euclidean":
+            return self._euclidean_relevance_score_fn
+        elif self._relevance_score_fn == "dotProduct":
+            return self._max_inner_product_relevance_score_fn
+        elif self._relevance_score_fn == "cosine":
+            return self._cosine_relevance_score_fn
+        else:
+            raise NotImplementedError(f"No relevance score function for ${self._relevance_score_fn}")
 
     @classmethod
     def from_connection_string(
