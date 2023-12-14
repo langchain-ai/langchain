@@ -212,7 +212,7 @@ class PromptTemplate(StringPromptTemplate):
         cls,
         template: str,
         *,
-        template_format: str = "f-string",
+        template_format: Literal["f-string", "jinja2"] = "f-string",
         partial_variables: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> PromptTemplate:

@@ -112,7 +112,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        name: Optional[str] = None,
+        name: str = "",
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run."""
@@ -237,7 +237,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_type: Optional[str] = None,
-        name: Optional[str] = None,
+        name: str = "",
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a chain run."""
@@ -314,7 +314,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        name: Optional[str] = None,
+        name: str = "",
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a tool run."""

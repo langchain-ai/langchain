@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import BaseChatPromptTemplate
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 
 
 def _get_inputs(inputs: dict, input_variables: List[str]) -> dict:
@@ -27,6 +27,8 @@ class PipelinePromptTemplate(BasePromptTemplate):
     """The final prompt that is returned."""
     pipeline_prompts: List[Tuple[str, BasePromptTemplate]]
     """A list of tuples, consisting of a string (`name`) and a Prompt Template."""
+    input_variables: List[str] = Field(default_factory=list)
+    """A list of the names of the variables the prompt template expects."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

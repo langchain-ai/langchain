@@ -110,7 +110,7 @@ class LangChainTracer(BaseTracer):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        name: Optional[str] = None,
+        name: str = "",
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""

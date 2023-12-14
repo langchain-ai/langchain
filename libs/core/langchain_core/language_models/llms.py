@@ -143,7 +143,7 @@ def update_cache(
     """Update the cache and get the LLM output."""
     llm_cache = get_llm_cache()
     for i, result in enumerate(new_results.generations):
-        existing_prompts[missing_prompt_idxs[i]] = result
+        existing_prompts[missing_prompt_idxs[i]] = list(result)
         prompt = prompts[missing_prompt_idxs[i]]
         if llm_cache is not None:
             llm_cache.update(prompt, llm_string, result)
@@ -819,7 +819,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            run_managers = await asyncio.gather(
+            run_managers_gather = await asyncio.gather(
                 *[
                     callback_manager.on_llm_start(
                         dumpd(self),
@@ -834,13 +834,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     )
                 ]
             )
-            run_managers = [r[0] for r in run_managers]
+            run_managers = [r[0] for r in run_managers_gather]
             output = await self._agenerate_helper(
                 prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
             return output
         if len(missing_prompts) > 0:
-            run_managers = await asyncio.gather(
+            run_managers_gather = await asyncio.gather(
                 *[
                     callback_managers[idx].on_llm_start(
                         dumpd(self),
@@ -853,7 +853,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     for idx in missing_prompt_idxs
                 ]
             )
-            run_managers = [r[0] for r in run_managers]
+            run_managers = [r[0] for r in run_managers_gather]
             new_results = await self._agenerate_helper(
                 missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )

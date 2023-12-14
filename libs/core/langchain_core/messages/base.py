@@ -39,7 +39,7 @@ class BaseMessage(Serializable):
     def __add__(self, other: Any) -> ChatPromptTemplate:
         from langchain_core.prompts.chat import ChatPromptTemplate
 
-        prompt = ChatPromptTemplate(messages=[self])
+        prompt = ChatPromptTemplate(messages=[self], input_variables=[])
         return prompt + other
 
 
@@ -136,6 +136,7 @@ class BaseMessageChunk(BaseMessage):
                 additional_kwargs=self._merge_kwargs_dict(
                     self.additional_kwargs, other.additional_kwargs
                 ),
+                type=self.type,
             )
         else:
             raise TypeError(

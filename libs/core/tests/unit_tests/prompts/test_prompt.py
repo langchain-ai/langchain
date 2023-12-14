@@ -118,8 +118,11 @@ def test_prompt_invalid_template_format() -> None:
     template = "This is a {foo} test."
     input_variables = ["foo"]
     with pytest.raises(ValueError):
+        # Intentional bad argument.
         PromptTemplate(
-            input_variables=input_variables, template=template, template_format="bar"
+            input_variables=input_variables,
+            template=template,
+            template_format="bar",  # type: ignore[arg-type]
         )
 
 

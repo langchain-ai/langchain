@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Set,
@@ -151,7 +152,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     def from_template(
         cls: Type[MessagePromptTemplateT],
         template: str,
-        template_format: str = "f-string",
+        template_format: Literal["f-string", "jinja2"] = "f-string",
         partial_variables: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> MessagePromptTemplateT:
@@ -396,9 +397,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             )
     """
 
-    input_variables: List[str]
+    input_variables: List[str] = Field(default_factory=list)
     """List of input variables in template messages. Used for validation."""
-    messages: List[MessageLike]
+    messages: Sequence[MessageLike]
     """List of messages consisting of either message prompt templates or messages."""
     validate_template: bool = False
     """Whether or not to try validating the template."""
@@ -418,18 +419,19 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             Combined prompt template.
         """
         # Allow for easy combining
+        messages = list(self.messages)
         if isinstance(other, ChatPromptTemplate):
-            return ChatPromptTemplate(messages=self.messages + other.messages)
+            return ChatPromptTemplate(messages=messages + list(other.messages))
         elif isinstance(
             other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
         ):
-            return ChatPromptTemplate(messages=self.messages + [other])
+            return ChatPromptTemplate(messages=messages + [other])
         elif isinstance(other, (list, tuple)):
             _other = ChatPromptTemplate.from_messages(other)
-            return ChatPromptTemplate(messages=self.messages + _other.messages)
+            return ChatPromptTemplate(messages=messages + list(_other.messages))
         elif isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
-            return ChatPromptTemplate(messages=self.messages + [prompt])
+            return ChatPromptTemplate(messages=messages + [prompt])
         else:
             raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
 
@@ -446,7 +448,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             Validated values.
         """
-        messages = values["messages"]
+        messages = list(values["messages"])
         input_vars = set()
         input_types: Dict[str, Any] = values.get("input_types", {})
         for message in messages:
@@ -656,11 +658,13 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Args:
             message: representation of a message to append.
         """
-        self.messages.append(_convert_to_message(message))
+        self.messages = list(self.messages) + [_convert_to_message(message)]
 
     def extend(self, messages: Sequence[MessageLikeRepresentation]) -> None:
         """Extend the chat template with a sequence of messages."""
-        self.messages.extend([_convert_to_message(message) for message in messages])
+        self.messages = list(self.messages) + [
+            _convert_to_message(message) for message in messages
+        ]
 
     @overload
     def __getitem__(self, index: int) -> MessageLike:

@@ -2245,12 +2245,12 @@ class RunnableGenerator(Runnable[Input, Output]):
         ] = None,
     ) -> None:
         if atransform is not None:
-            self._atransform = atransform
+            self._atransform: Callable = atransform
 
         if inspect.isasyncgenfunction(transform):
             self._atransform = transform
         elif inspect.isgeneratorfunction(transform):
-            self._transform = transform
+            self._transform: Callable = transform
         else:
             raise TypeError(
                 "Expected a generator function type for `transform`."

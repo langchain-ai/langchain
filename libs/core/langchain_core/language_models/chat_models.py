@@ -377,7 +377,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     run_managers[i].on_llm_error(e, response=LLMResult(generations=[]))
                 raise e
         flattened_outputs = [
-            LLMResult(generations=[res.generations], llm_output=res.llm_output)
+            LLMResult(
+                generations=[res.generations],
+                llm_output=res.llm_output,
+            )
             for res in results
         ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
@@ -451,7 +454,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     *[
                         run_manager.on_llm_end(
                             LLMResult(
-                                generations=[res.generations], llm_output=res.llm_output
+                                generations=[
+                                    cast(ChatResult, res).generations,
+                                ],
+                                llm_output=cast(ChatResult, res).llm_output,
                             )
                         )
                         for run_manager, res in zip(run_managers, results)
@@ -461,10 +467,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             raise exceptions[0]
         flattened_outputs = [
             LLMResult(generations=[res.generations], llm_output=res.llm_output)
-            for res in results
+            for res in cast(List[ChatResult], results)
         ]
-        llm_output = self._combine_llm_outputs([res.llm_output for res in results])
-        generations = [res.generations for res in results]
+        llm_output = self._combine_llm_outputs(
+            [res.llm_output for res in cast(List[ChatResult], results)]
+        )
+        generations = [res.generations for res in cast(List[ChatResult], results)]
         output = LLMResult(generations=generations, llm_output=llm_output)
         await asyncio.gather(
             *[

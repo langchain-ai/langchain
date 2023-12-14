@@ -1,23 +1,28 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from langchain_core.outputs.generation import Generation
 from langchain_core.outputs.run_info import RunInfo
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 class LLMResult(BaseModel):
     """Class that contains all results for a batched LLM call."""
 
-    generations: List[List[Generation]]
+    generations: Sequence[Sequence[Generation]]
     """List of generated outputs. This is a List[List[]] because
     each input could have multiple candidate generations."""
     llm_output: Optional[dict] = None
     """Arbitrary LLM provider-specific output."""
     run: Optional[List[RunInfo]] = None
     """List of metadata info for model call for each input."""
+
+    @root_validator(pre=True)
+    def validate_environment(self, values: dict) -> dict:
+        values["generations"] = [list(g) for g in values.get("generations", ())]
+        return values
 
     def flatten(self) -> List[LLMResult]:
         """Flatten generations into a single list.
