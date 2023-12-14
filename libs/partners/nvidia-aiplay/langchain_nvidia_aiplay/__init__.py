@@ -1,11 +1,11 @@
 """
-**LangChain NVIDIA AI Playground Integration**
+**LangChain NVIDIA AI Foundation Model Playground Integration**
 
-This comprehensive module integrates NVIDIA's state-of-the-art AI Playground, featuring advanced models for conversational AI and semantic embeddings, into the LangChain framework. It provides robust classes for seamless interaction with NVIDIA's AI models, particularly tailored for enriching conversational experiences and enhancing semantic understanding in various applications.
+This comprehensive module integrates NVIDIA's state-of-the-art AI Foundation Models, featuring advanced models for conversational AI and semantic embeddings, into the LangChain framework. It provides robust classes for seamless interaction with NVIDIA's AI models, particularly tailored for enriching conversational experiences and enhancing semantic understanding in various applications.
 
 **Features:**
 
-1. **Chat Models (`ChatNVAIPlay`):** This class serves as the primary interface for interacting with NVIDIA AI Playground's chat models. Users can effortlessly utilize NVIDIA's advanced models like 'Mistral' to engage in rich, context-aware conversations, applicable across diverse domains from customer support to interactive storytelling.
+1. **Chat Models (`ChatNVAIPlay`):** This class serves as the primary interface for interacting with NVIDIA's Foundation chat models. Users can effortlessly utilize NVIDIA's advanced models like 'Mistral' to engage in rich, context-aware conversations, applicable across diverse domains from customer support to interactive storytelling.
 
 2. **Semantic Embeddings (`NVAIPlayEmbeddings`):** The module offers capabilities to generate sophisticated embeddings using NVIDIA's AI models. These embeddings are instrumental for tasks like semantic analysis, text similarity assessments, and contextual understanding, significantly enhancing the depth of NLP applications.
 
@@ -19,7 +19,7 @@ pip install langchain-nvidia-aiplay
 
 ## Utilizing Chat Models:
 
-After setting up the environment, interact with NVIDIA AI Playground models:
+After setting up the environment, interact with NVIDIA AI Foundation models:
 ```python
 from langchain_nvidia_aiplay import ChatNVAIPlay
 

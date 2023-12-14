@@ -8,7 +8,7 @@ import langchain_nvidia_aiplay._common as nvaiplay_common
 
 
 class NVAIPlayEmbeddings(BaseModel, Embeddings):
-    """NVIDIA's AI Playground NVOLVE Question-Answer Asymmetric Model."""
+    """NVIDIA's AI Foundation Retriever Question-Answering Asymmetric Model."""
 
     client: nvaiplay_common.NVCRModel = Field(nvaiplay_common.NVCRModel)
     model: str = Field(

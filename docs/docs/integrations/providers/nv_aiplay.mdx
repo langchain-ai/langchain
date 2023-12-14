@@ -1,7 +1,6 @@
-# NVIDIA AI Playground
+# NVIDIA AI Foundation Model Playground
 
-> [NVIDIA AI Playground](https://www.nvidia.com/en-us/research/ai-playground/) gives users easy access to hosted endpoints for generative AI models like Llama-2, Mistral, etc. This example demonstrates how to use LangChain to interact with supported AI Playground models.
-
+> [NVIDIA AI Foundation Models](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) give users easy access to hosted endpoints for generative AI models like Llama-2, SteerLM, Mistral, etc. Using the API, you can query NVCR (NVIDIA Container Registry) function endpoints available on the [NVIDIA GPU Cloud (NGC)](https://catalog.ngc.nvidia.com/ai-foundation-models) to get quick results from a DGX-hosted cloud compute environment. All models are source-accessible and can be deployed on your own compute cluster.
 These models are provided via the `langchain-nvidia-aiplay` package.
 
 ## Installation
@@ -12,7 +11,7 @@ pip install -U langchain-nvidia-aiplay
 
 ## Setup and Authentication
 
-- Create a free account at [NVIDIA GPU Cloud](https://catalog.ngc.nvidia.com/).
+- Create a free account at [NVIDIA GPU Cloud (NGC)](https://catalog.ngc.nvidia.com/).
 - Navigate to `Catalog > AI Foundation Models > (Model with API endpoint)`.
 - Select `API` and generate the key `NVIDIA_API_KEY`.
 
@@ -28,9 +27,9 @@ result = llm.invoke("Write a ballad about LangChain.")
 print(result.content)
 ```
 
-## Using NVIDIA AI Playground Models
+## Using NVIDIA AI Foundation Models
 
-A selection of NVIDIA AI Playground models are supported directly in LangChain with familiar APIs.
+A selection of NVIDIA AI Foundation models are supported directly in LangChain with familiar APIs.
 
 The active models which are supported can be found [in NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/). In addition, a selection of models can be retrieved from `langchain.<llms/chat_models>.nv_aiplay` which pull in default model options based on their use cases. 
 

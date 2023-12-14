@@ -85,7 +85,7 @@ class ChatNVAIPlay(nv_aiplay._NVAIPlayClient, SimpleChatModel):
 
     @property
     def _llm_type(self) -> str:
-        """Return type of NVIDIA AI Playground Interface."""
+        """Return type of NVIDIA AI Foundation Model Interface."""
         return "chat-nvidia-ai-playground"
 
     def _call(

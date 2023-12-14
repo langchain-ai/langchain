@@ -1,4 +1,4 @@
-"""Test NVIDIA AI Playground Embeddings.
+"""Test NVIDIA AI Foundation Model Embeddings.
 
 Note: These tests are designed to validate the functionality of NVAIPlayEmbeddings.
 """

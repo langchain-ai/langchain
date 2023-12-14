@@ -35,11 +35,11 @@ logger = logging.getLogger(__name__)
 class NVCRModel(BaseModel):
 
     """
-    Underlying Client for interacting with the AI Playground API.
+    Underlying Client for interacting with the AI Foundation Model Function API.
     Leveraged by the NVAIPlayBaseModel to provide a simple requests-oriented interface.
     Direct abstraction over NGC-recommended streaming/non-streaming Python solutions.
 
-    NOTE: AI Playground does not currently support raw text continuation.
+    NOTE: Models in the playground does not currently support raw text continuation.
     """
 
     ## Core defaults. These probably should not be changed
@@ -50,7 +50,7 @@ class NVCRModel(BaseModel):
 
     nvidia_api_key: SecretStr = Field(
         ...,
-        description="API key for NVIDIA AI Playground. Should start with `nvapi-`",
+        description="API key for NVIDIA Foundation Models. Should start with `nvapi-`",
     )
     is_staging: bool = Field(False, description="Whether to use staging API")
 
@@ -153,7 +153,7 @@ class NVCRModel(BaseModel):
     ## Core utilities for posting and getting from NVCR
 
     def _post(self, invoke_url: str, payload: dict = {}) -> Tuple[Response, Any]:
-        """Method for posting to the AI Playground API."""
+        """Method for posting to the AI Foundation Model Function API."""
         call_inputs = {
             "url": invoke_url,
             "headers": self.headers["call"],
@@ -166,7 +166,7 @@ class NVCRModel(BaseModel):
         return response, session
 
     def _get(self, invoke_url: str, payload: dict = {}) -> Tuple[Response, Any]:
-        """Method for getting from the AI Playground API."""
+        """Method for getting from the AI Foundation Model Function API."""
         last_inputs = {
             "url": invoke_url,
             "headers": self.headers["call"],
@@ -208,7 +208,7 @@ class NVCRModel(BaseModel):
                 rd = response.__dict__
                 rd = rd.get("_content", rd)
                 if isinstance(rd, bytes):
-                    rd = rd.decode("utf-8")[5:]  ## lop of data: prefix ??
+                    rd = rd.decode("utf-8")[5:]  ## remove "data:" prefix
                 try:
                     rd = json.loads(rd)
                 except Exception:
@@ -303,7 +303,7 @@ class NVCRModel(BaseModel):
     def postprocess(
         self, response: Union[str, Response], stop: Optional[Sequence[str]] = None
     ) -> Tuple[dict, bool]:
-        """Parses a response from the AI Playground API.
+        """Parses a response from the AI Foundation Model Function API.
         Strongly assumes that the API will return a single response.
         """
         msg_list = self._process_response(response)
@@ -416,8 +416,8 @@ class NVCRModel(BaseModel):
 
 class _NVAIPlayClient(BaseModel):
     """
-    Higher-Level Client for interacting with AI Playground API with argument defaults.
-    Is subclassed by NVAIPlayLLM/ChatNVAIPlay to provide a simple LangChain interface.
+    Higher-Level AI Foundation Model Function API Client with argument defaults.
+    Is subclassed by ChatNVAIPlay to provide a simple LangChain interface.
     """
 
     client: NVCRModel = Field(NVCRModel)
