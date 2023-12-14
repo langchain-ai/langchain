@@ -186,7 +186,7 @@ class GooglePalm(BaseLLM, BaseModel):
                     res = completion_with_retry(
                         self,
                         prompt=prompt,
-                        stream=stream,
+                        stream=stream or False,
                         is_gemini=True,
                         run_manager=run_manager,
                         generation_config=generation_config,
@@ -201,7 +201,7 @@ class GooglePalm(BaseLLM, BaseModel):
                         self,
                         model=self.model_name,
                         prompt=prompt,
-                        stream=stream,
+                        stream=stream or False,
                         is_gemini=False,
                         run_manager=run_manager,
                         **generation_config,
