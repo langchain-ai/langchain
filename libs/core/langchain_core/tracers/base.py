@@ -112,7 +112,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        name: str = "",
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run."""
@@ -133,7 +133,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             run_type="llm",
             tags=tags or [],
-            name=name,
+            name=name,  # type: ignore[arg-type]  # TODO: Fix typing
         )
         self._start_trace(llm_run)
         self._on_llm_start(llm_run)
@@ -237,7 +237,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_type: Optional[str] = None,
-        name: str = "",
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a chain run."""
@@ -258,7 +258,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             child_runs=[],
             run_type=run_type or "chain",
-            name=name,
+            name=name,  # type: ignore[arg-type]  # TODO: fix typing
             tags=tags or [],
         )
         self._start_trace(chain_run)
@@ -314,7 +314,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        name: str = "",
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a tool run."""
@@ -336,7 +336,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_runs=[],
             run_type="tool",
             tags=tags or [],
-            name=name,
+            name=name,  # type: ignore[arg-type]  # TODO: fix typing
         )
         self._start_trace(tool_run)
         self._on_tool_start(tool_run)

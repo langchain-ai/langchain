@@ -110,7 +110,7 @@ class LangChainTracer(BaseTracer):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        name: str = "",
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
@@ -131,7 +131,7 @@ class LangChainTracer(BaseTracer):
             child_execution_order=execution_order,
             run_type="llm",
             tags=tags,
-            name=name,
+            name=name,  # type: ignore[arg-type]  # TODO: fix typing
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
