@@ -1271,7 +1271,10 @@ files = [
 [package.extras]
 watchmedo = ["PyYAML (>=3.10)"]
 
+[extras]
+images = ["pillow"]
+
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "244abbf391006cf1cd49dfe203a2659ea433f754f222129c9ad3301a3b44d3a0"
+content-hash = "f3b43f02c7300c3003347dbdfa9c07ddba988aab1387eda3efa02b2351c868d9"
