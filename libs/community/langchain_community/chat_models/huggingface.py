@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Union
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_community.llms.huggingface_hub import HuggingFaceHub
 from langchain_community.llms.huggingface_text_gen_inference import (
-  HuggingFaceTextGenInference
+  HuggingFaceTextGenInference,
 )
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
