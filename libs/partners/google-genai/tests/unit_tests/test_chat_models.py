@@ -30,9 +30,7 @@ def test_api_key_is_string() -> None:
     assert isinstance(chat.google_api_key, SecretStr)
 
 
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     chat = ChatGoogleGenerativeAI(model="gemini-nano", google_api_key="secret-api-key")
     print(chat.google_api_key, end="")
     captured = capsys.readouterr()

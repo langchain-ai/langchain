@@ -26,9 +26,7 @@ def test_api_key_is_string() -> None:
     assert isinstance(embeddings.google_api_key, SecretStr)
 
 
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     embeddings = GoogleGenerativeAIEmbeddings(
         model="models/embedding-001",
         google_api_key="secret-api-key",
