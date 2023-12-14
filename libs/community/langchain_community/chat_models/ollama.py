@@ -74,7 +74,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        images: Optional[List[str]] = None, 
+        images: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -97,8 +97,12 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
 
         prompt = self._format_messages_as_text(messages)
         final_chunk = super()._stream_with_aggregation(
-            prompt, stop=stop, images=images, run_manager=run_manager, 
-            verbose=self.verbose, **kwargs
+            prompt,
+            stop=stop,
+            images=images,
+            run_manager=run_manager,
+            verbose=self.verbose,
+            **kwargs,
         )
         chat_generation = ChatGeneration(
             message=AIMessage(content=final_chunk.text),
