@@ -140,11 +140,12 @@ class OCIModelDeploymentLLM(BaseOCILLM):
                 response = oci_md("Tell me a joke.")
 
         """
+        requests_kwargs = kwargs.pop("requests_kwargs", {})
         params = self._invocation_params(stop, **kwargs)
         body = self._construct_json_body(prompt, params)
         logger.info(f"LLM API Request:\n{prompt}")
         response = self.send_request(
-            data=body, endpoint=self.endpoint, **kwargs.pop("requests_kwargs", {})
+            data=body, endpoint=self.endpoint, **requests_kwargs
         )
         completion = self._process_response(response)
         logger.info(f"LLM API Completion:\n{completion}")
