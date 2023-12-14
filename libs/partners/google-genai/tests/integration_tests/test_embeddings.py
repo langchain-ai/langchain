@@ -15,7 +15,7 @@ _MODEL = "models/embedding-001"
         " model against the pickle rick?",
     ],
 )
-def test_embed_query_different_lengths(query) -> None:
+def test_embed_query_different_lengths(query: str) -> None:
     """Test embedding queries of different lengths."""
     model = GoogleGenerativeAIEmbeddings(model=_MODEL)
     result = model.embed_query(query)
@@ -30,7 +30,7 @@ def test_embed_query_different_lengths(query) -> None:
         " model against the pickle rick?",
     ],
 )
-async def test_aembed_query_different_lengths(query) -> None:
+async def test_aembed_query_different_lengths(query: str) -> None:
     """Test embedding queries of different lengths."""
     model = GoogleGenerativeAIEmbeddings(model=_MODEL)
     result = await model.aembed_query(query)

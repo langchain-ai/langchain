@@ -21,7 +21,8 @@ from typing import (
 )
 from urllib.parse import urlparse
 
-import google.generativeai as genai
+# TODO: remove ignore once the google package is published with types
+import google.generativeai as genai  # type: ignore[import]
 import requests
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

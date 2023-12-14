@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional
 
-import google.generativeai as genai
+# TODO: remove ignore once the google package is published with types
+import google.generativeai as genai  # type: ignore[import]
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
