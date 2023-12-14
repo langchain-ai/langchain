@@ -21,7 +21,7 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
     """volcano secret key
     learn more from: https://www.volcengine.com/docs/6459/76491#ak-sk"""
 
-    host: str = 'maas-api.ml-platform-cn-beijing.volces.com'
+    host: str = "maas-api.ml-platform-cn-beijing.volces.com"
     """host
     learn more from https://www.volcengine.com/docs/82379/1174746"""
     region: str = "cn-beijing"
@@ -79,6 +79,7 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
 
         try:
             from volcengine.maas import MaasService
+
             client = MaasService(values["host"], values["region"])
             client.set_ak(values["volcano_ak"])
             client.set_sk(values["volcano_sk"])
@@ -105,7 +106,7 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
                             Each embedding is represented as a list of float values.
         """
         text_in_chunks = [
-            texts[i: i + self.chunk_size]
+            texts[i : i + self.chunk_size]
             for i in range(0, len(texts), self.chunk_size)
         ]
         lst = []
@@ -119,6 +120,7 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
             }
             try:
                 from volcengine.maas import MaasException
+
                 resp = self.client.embeddings(req)
                 lst.extend([res["embedding"] for res in resp["data"]])
             except MaasException as err:

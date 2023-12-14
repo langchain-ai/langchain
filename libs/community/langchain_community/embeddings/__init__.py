@@ -25,6 +25,7 @@ from langchain_community.embeddings.baidu_qianfan_endpoint import (
 )
 from langchain_community.embeddings.bedrock import BedrockEmbeddings
 from langchain_community.embeddings.bookend import BookendEmbeddings
+from langchain_community.embeddings.bytedance_volcano import VolcanoEmbeddings
 from langchain_community.embeddings.clarifai import ClarifaiEmbeddings
 from langchain_community.embeddings.cohere import CohereEmbeddings
 from langchain_community.embeddings.dashscope import DashScopeEmbeddings
@@ -78,7 +79,6 @@ from langchain_community.embeddings.sentence_transformer import (
 from langchain_community.embeddings.spacy_embeddings import SpacyEmbeddings
 from langchain_community.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain_community.embeddings.vertexai import VertexAIEmbeddings
-from langchain_community.embeddings.bytedance_volcano import VolcanoEmbeddings
 from langchain_community.embeddings.voyageai import VoyageEmbeddings
 from langchain_community.embeddings.xinference import XinferenceEmbeddings
 
