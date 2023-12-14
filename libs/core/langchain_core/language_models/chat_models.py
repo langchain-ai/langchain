@@ -440,53 +440,29 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             ],
             return_exceptions=True,
         )
-        enumerated_results = [
-            (i, r)
-            for i, r in enumerate(results_and_exceptions)
-            if not isinstance(r, BaseException)
-        ]
-        enumerated_exceptions = [
-            (i, r)
-            for i, r in enumerate(results_and_exceptions)
-            if isinstance(r, BaseException)
-        ]
-        for i, res in enumerated_exceptions:
-            if run_managers:
-                await run_managers[i].on_llm_error(
-                    res, response=LLMResult(generations=[])
+        # report results and errors
+        if run_managers:
+            jobs = [
+                run_manager.on_llm_error(res, response=LLMResult(generations=[]))
+                if isinstance(res, BaseException)
+                else run_manager.on_llm_end(
+                    LLMResult(generations=[res.generations], llm_output=res.llm_output)
                 )
-        if enumerated_exceptions:
-            if run_managers:
-                await asyncio.gather(
-                    *[
-                        run_managers[i].on_llm_end(
-                            LLMResult(
-                                generations=[
-                                    res.generations,
-                                ],
-                                llm_output=res.llm_output,
-                            )
-                        )
-                        for i, res in enumerated_results
-                    ]
-                )
-            raise enumerated_exceptions[0][1]
-        flattened_outputs = [
-            LLMResult(generations=[res.generations], llm_output=res.llm_output)
-            for _, res in enumerated_results
-        ]
-        llm_output = self._combine_llm_outputs(
-            [res.llm_output for _, res in enumerated_results]
-        )
-        generations = [res.generations for _, res in enumerated_results]
-        output = LLMResult(generations=generations, llm_output=llm_output)
-        await asyncio.gather(
-            *[
-                run_manager.on_llm_end(flattened_output)
-                for run_manager, flattened_output in zip(
-                    run_managers, flattened_outputs
-                )
+                for run_manager, res in zip(run_managers, results_and_exceptions)
             ]
+            await asyncio.gather(*jobs)
+
+        # raise first exception, if any
+        for res in results_and_exceptions:
+            if isinstance(res, BaseException):
+                raise res
+
+        # compute return value
+        results = cast(List[ChatResult], results_and_exceptions)
+
+        output = LLMResult(
+            generations=[res.generations for res in results],
+            llm_output=self._combine_llm_outputs([res.llm_output for res in results]),
         )
         if run_managers:
             output.run = [
