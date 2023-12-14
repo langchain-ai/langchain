@@ -21,9 +21,9 @@ class GoogleGenerativeAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_google_genai import GoogleGenerativeAIEmbeddings
-            embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-            chat.embed_query("What's our Q1 revenue?")
 
+            embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+            embeddings.embed_query("What's our Q1 revenue?")
     """
 
     model: str = Field(
@@ -51,7 +51,6 @@ class GoogleGenerativeAIEmbeddings(BaseModel, Embeddings):
         )
         if isinstance(google_api_key, SecretStr):
             google_api_key = google_api_key.get_secret_value()
-
         genai.configure(api_key=google_api_key)
         return values
 
