@@ -63,8 +63,8 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
             volcano_ak and volcano_sk will be returned.
         Raises:
 
-            ValueError: volcengine package not found, please install it with `pip install
-            volcengine`
+            ValueError: volcengine package not found, please install it with
+            `pip install volcengine`
         """
         values["volcano_ak"] = get_from_dict_or_env(
             values,
