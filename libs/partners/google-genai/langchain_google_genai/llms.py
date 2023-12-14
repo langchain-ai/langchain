@@ -139,7 +139,7 @@ Supported examples:
         google_api_key = get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY"
         )
-        model_name = values["model_name"]
+        model_name = values["model"]
 
         if isinstance(google_api_key, SecretStr):
             google_api_key = google_api_key.get_secret_value()
@@ -170,7 +170,6 @@ Supported examples:
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> LLMResult:
         generations: List[List[Generation]] = []
@@ -183,54 +182,35 @@ Supported examples:
             "candidate_count": self.n,
         }
         for prompt in prompts:
-            if stream:
-                if not self.is_gemini:
-                    raise ValueError(
-                        "Streaming is not supported for Palm2 models. Use "
-                        "langchain.llms.VertexAI if you need streaming!"
-                    )
-                generation = GenerationChunk(text="")
-                for chunk in self._stream(
-                    prompt,
-                    stream=True,
-                    stop=stop,
+            if self.is_gemini:
+                res = completion_with_retry(
+                    self,
+                    prompt=prompt,
+                    stream=stream or False,
+                    is_gemini=True,
                     run_manager=run_manager,
                     generation_config=generation_config,
-                    **kwargs,
-                ):
-                    generation += chunk
-                generations.append([generation])
+                )
+                candidates = [
+                    "".join([p.text for p in c.content.parts]) for c in res.candidates
+                ]
+                generations.append([Generation(text=c) for c in candidates])
             else:
-                if self.is_gemini:
-                    res = completion_with_retry(
-                        self,
-                        prompt=prompt,
-                        stream=stream or False,
-                        is_gemini=True,
-                        run_manager=run_manager,
-                        generation_config=generation_config,
-                    )
-                    candidates = [
-                        "".join([p.text for p in c.content.parts])
-                        for c in res.candidates
-                    ]
-                    generations.append([Generation(text=c) for c in candidates])
-                else:
-                    res = completion_with_retry(
-                        self,
-                        model=self.model,
-                        prompt=prompt,
-                        stream=stream or False,
-                        is_gemini=False,
-                        run_manager=run_manager,
-                        **generation_config,
-                    )
-                    prompt_generations = []
-                    for candidate in res.candidates:
-                        raw_text = candidate["output"]
-                        stripped_text = _strip_erroneous_leading_spaces(raw_text)
-                        prompt_generations.append(Generation(text=stripped_text))
-                    generations.append(prompt_generations)
+                res = completion_with_retry(
+                    self,
+                    model=self.model,
+                    prompt=prompt,
+                    stream=False,
+                    is_gemini=False,
+                    run_manager=run_manager,
+                    **generation_config,
+                )
+                prompt_generations = []
+                for candidate in res.candidates:
+                    raw_text = candidate["output"]
+                    stripped_text = _strip_erroneous_leading_spaces(raw_text)
+                    prompt_generations.append(Generation(text=stripped_text))
+                generations.append(prompt_generations)
 
         return LLMResult(generations=generations)
 
