@@ -151,6 +151,8 @@ jobs:
 
       - name: Run integration tests
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
