@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
+import google.api_core
+import google.generativeai as genai  # type: ignore[import]
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -22,7 +24,6 @@ def _create_retry_decorator(
     ] = None,
 ) -> Callable[[Any], Any]:
     """Creates a retry decorator for Vertex / Palm LLMs."""
-    import google.api_core
 
     errors = [
         google.api_core.exceptions.ResourceExhausted,
@@ -139,23 +140,16 @@ Supported examples:
             values, "google_api_key", "GOOGLE_API_KEY"
         )
         model_name = values["model_name"]
-        try:
-            import google.generativeai as genai
 
-            if isinstance(google_api_key, SecretStr):
-                google_api_key = google_api_key.get_secret_value()
+        if isinstance(google_api_key, SecretStr):
+            google_api_key = google_api_key.get_secret_value()
 
-            genai.configure(api_key=google_api_key)
+        genai.configure(api_key=google_api_key)
 
-            if _is_gemini_model(model_name):
-                values["client"] = genai.GenerativeModel(model_name=model_name)
-            else:
-                values["client"] = genai
-        except ImportError:
-            raise ImportError(
-                "Could not import google-generativeai python package. "
-                "Please install it with `pip install google-generativeai`."
-            )
+        if _is_gemini_model(model_name):
+            values["client"] = genai.GenerativeModel(model_name=model_name)
+        else:
+            values["client"] = genai
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")
