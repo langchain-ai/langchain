@@ -24,15 +24,15 @@ jinja2 = {version = "^3", optional = true}
 optional = true
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
+ruff = "^0.1.8"
 
 [tool.poetry.group.typing]
 optional = true
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
-types-pyyaml = "^6.0.12.2"
-types-requests = "^2.28.11.5"
+mypy = "^1.7.1"
+types-pyyaml = ">=5.3"
+types-requests = "^2"
 types-jinja2 = "^2.11.9"
 
 [tool.poetry.group.dev]
