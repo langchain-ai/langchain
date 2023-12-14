@@ -1,161 +1,192 @@
 """Hugging Face Chat Wrapper."""
-from typing import Any, List, Optional, Union
+from typing import Any, Iterator, List, Optional, Union
+
+from langchain_core.messages import AIMessageChunk
+from langchain_core.outputs import ChatGenerationChunk
 
 from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
+	AsyncCallbackManagerForLLMRun,
+	CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
+from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatGeneration,
-    ChatResult,
-    HumanMessage,
-    LLMResult,
-    SystemMessage,
+	AIMessage,
+	BaseMessage,
+	ChatGeneration,
+	ChatResult,
+	HumanMessage,
+	LLMResult,
+	SystemMessage,
 )
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
 
 class ChatHuggingFace(BaseChatModel):
-    """
-    Wrapper for using Hugging Face LLM's as ChatModels.
+	"""
+	Wrapper for using Hugging Face LLM's as ChatModels.
 
-    Works with `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`,
-    and `HuggingFaceHub` LLMs.
+	Works with `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`,
+	and `HuggingFaceHub` LLMs.
 
-    Upon instantiating this class, the model_id is resolved from the url
-    provided to the LLM, and the appropriate tokenizer is loaded from
-    the HuggingFace Hub.
+	Upon instantiating this class, the model_id is resolved from the url
+	provided to the LLM, and the appropriate tokenizer is loaded from
+	the HuggingFace Hub.
 
-    Adapted from: https://python.langchain.com/docs/integrations/chat/llama2_chat
-    """
+	Adapted from: https://python.langchain.com/docs/integrations/chat/llama2_chat
+	"""
 
-    llm: Union[HuggingFaceTextGenInference, HuggingFaceEndpoint, HuggingFaceHub]
-    system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
-    tokenizer: Any = None
-    model_id: str = None  # type: ignore
+	llm: Union[HuggingFaceEndpoint,
+	HuggingFacePipeline,
+	HuggingFaceTextGenInference, 
+	HuggingFaceHub ]
+	system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
+	tokenizer: Any = None
+	model_id: str = None  # type: ignore
 
-    def __init__(self, **kwargs: Any):
-        super().__init__(**kwargs)
+	def __init__(self, **kwargs: Any):
+		super().__init__(**kwargs)
 
-        from transformers import AutoTokenizer
+		from transformers import AutoTokenizer
 
-        self._resolve_model_id()
-        self.tokenizer = (
-            AutoTokenizer.from_pretrained(self.model_id)
-            if self.tokenizer is None
-            else self.tokenizer
-        )
+		self._resolve_model_id()
+		self.tokenizer = (
+			AutoTokenizer.from_pretrained(self.model_id)
+			if self.tokenizer is None
+			else self.tokenizer
+		)
 
-    def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        llm_input = self._to_chat_prompt(messages)
-        llm_result = self.llm._generate(
-            prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
-        )
-        return self._to_chat_result(llm_result)
+	def _generate(
+		self,
+		messages: List[BaseMessage],
+		stop: Optional[List[str]] = None,
+		run_manager: Optional[CallbackManagerForLLMRun] = None,
+		**kwargs: Any,
+	) -> ChatResult:
+		llm_input = self._to_chat_prompt(messages)
+		llm_result = self.llm._generate(
+			prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
+		)
+		return self._to_chat_result(llm_result)
 
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        llm_input = self._to_chat_prompt(messages)
-        llm_result = await self.llm._agenerate(
-            prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
-        )
-        return self._to_chat_result(llm_result)
+	async def _agenerate(
+		self,
+		messages: List[BaseMessage],
+		stop: Optional[List[str]] = None,
+		run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+		**kwargs: Any,
+	) -> ChatResult:
+		llm_input = self._to_chat_prompt(messages)
+		llm_result = await self.llm._agenerate(
+			prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
+		)
+		return self._to_chat_result(llm_result)
 
-    def _to_chat_prompt(
-        self,
-        messages: List[BaseMessage],
-    ) -> str:
-        """Convert a list of messages into a prompt format expected by wrapped LLM."""
-        if not messages:
-            raise ValueError("at least one HumanMessage must be provided")
+	def _stream(
+		self,
+		messages: List[BaseMessage],
+		stop: Optional[List[str]] = None,
+		run_manager: Optional[CallbackManagerForLLMRun] = None,
+		**kwargs: Any,
+	) -> Iterator[ChatGenerationChunk]:
+		
+		llm_input = self._to_chat_prompt(messages)
+		llm_result=""
+		for chunk in self.llm._stream(
+		prompt=llm_input, 
+		stop=stop, 
+		run_manager=run_manager, 
+		**kwargs
+		):
+			if run_manager:
+				run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+				llm_result+=chunk.text
+			yield ChatGenerationChunk(message=AIMessageChunk(content=chunk.text))
 
-        if not isinstance(messages[-1], HumanMessage):
-            raise ValueError("last message must be a HumanMessage")
+	def _to_chat_prompt(
+		self,
+		messages: List[BaseMessage],
+	) -> str:
+		"""Convert a list of messages into a prompt format expected by wrapped LLM."""
+		if not messages:
+			raise ValueError("at least one HumanMessage must be provided")
 
-        messages_dicts = [self._to_chatml_format(m) for m in messages]
+		if not isinstance(messages[-1], HumanMessage):
+			raise ValueError("last message must be a HumanMessage")
 
-        return self.tokenizer.apply_chat_template(
-            messages_dicts, tokenize=False, add_generation_prompt=True
-        )
+		messages_dicts = [self._to_chatml_format(m) for m in messages]
 
-    def _to_chatml_format(self, message: BaseMessage) -> dict:
-        """Convert LangChain message to ChatML format."""
+		return self.tokenizer.apply_chat_template(
+			messages_dicts, tokenize=False, add_generation_prompt=True
+		)
 
-        if isinstance(message, SystemMessage):
-            role = "system"
-        elif isinstance(message, AIMessage):
-            role = "assistant"
-        elif isinstance(message, HumanMessage):
-            role = "user"
-        else:
-            raise ValueError(f"Unknown message type: {type(message)}")
+	def _to_chatml_format(self, message: BaseMessage) -> dict:
+		"""Convert LangChain message to ChatML format."""
 
-        return {"role": role, "content": message.content}
+		if isinstance(message, SystemMessage):
+			role = "system"
+		elif isinstance(message, AIMessage):
+			role = "assistant"
+		elif isinstance(message, HumanMessage):
+			role = "user"
+		else:
+			raise ValueError(f"Unknown message type: {type(message)}")
 
-    @staticmethod
-    def _to_chat_result(llm_result: LLMResult) -> ChatResult:
-        chat_generations = []
+		return {"role": role, "content": message.content}
 
-        for g in llm_result.generations[0]:
-            chat_generation = ChatGeneration(
-                message=AIMessage(content=g.text), generation_info=g.generation_info
-            )
-            chat_generations.append(chat_generation)
+	@staticmethod
+	def _to_chat_result(llm_result: LLMResult) -> ChatResult:
+		chat_generations = []
 
-        return ChatResult(
-            generations=chat_generations, llm_output=llm_result.llm_output
-        )
+		for g in llm_result.generations[0]:
+			chat_generation = ChatGeneration(
+				message=AIMessage(content=g.text), generation_info=g.generation_info
+			)
+			chat_generations.append(chat_generation)
 
-    def _resolve_model_id(self) -> None:
-        """Resolve the model_id from the LLM's inference_server_url"""
+		return ChatResult(
+			generations=chat_generations, llm_output=llm_result.llm_output
+		)
 
-        from huggingface_hub import list_inference_endpoints
+	def _resolve_model_id(self) -> None:
+			"""Resolve the model_id from the LLM's inference_server_url"""
+	
+			if isinstance(self.llm, HuggingFacePipeline):
+				self.model_id = self.llm.model_id
+				return
+			else:
+				from huggingface_hub import list_inference_endpoints
+				available_endpoints = list_inference_endpoints("*")
+	
+				if isinstance(self.llm, HuggingFaceTextGenInference):
+					endpoint_url = self.llm.inference_server_url
+	
+				elif isinstance(self.llm, HuggingFaceEndpoint):
+					endpoint_url = self.llm.endpoint_url
+	
+				elif isinstance(self.llm, HuggingFaceHub):
+					# no need to look up model_id for HuggingFaceHub LLM
+					self.model_id = self.llm.repo_id
+					return
+	
+				else:
+					raise ValueError(f"Unknown LLM type: {type(self.llm)}")
+	
+				for endpoint in available_endpoints:
+					if endpoint.url == endpoint_url:
+						self.model_id = endpoint.repository
+	
+			if not self.model_id:
+				raise ValueError(
+	"Failed to resolve model_id"
+	f"Could not find model id for inference server provided: {endpoint_url}"
+	"Check to ensure the Hugging Face token you're using has access to the endpoint."
+				)
 
-        available_endpoints = list_inference_endpoints("*")
-
-        if isinstance(self.llm, HuggingFaceTextGenInference):
-            endpoint_url = self.llm.inference_server_url
-
-        elif isinstance(self.llm, HuggingFaceEndpoint):
-            endpoint_url = self.llm.endpoint_url
-
-        elif isinstance(self.llm, HuggingFaceHub):
-            # no need to look up model_id for HuggingFaceHub LLM
-            self.model_id = self.llm.repo_id
-            return
-
-        else:
-            raise ValueError(f"Unknown LLM type: {type(self.llm)}")
-
-        for endpoint in available_endpoints:
-            if endpoint.url == endpoint_url:
-                self.model_id = endpoint.repository
-
-        if not self.model_id:
-            raise ValueError(
-                "Failed to resolve model_id"
-                f"Could not find model id for inference server provided: {endpoint_url}"
-                "Make sure that your Hugging Face token has access to the endpoint."
-            )
-
-    @property
-    def _llm_type(self) -> str:
-        return f"{self.model_id.lower()}-style"
+	@property
+	def _llm_type(self) -> str:
+		return f"{self.model_id.lower()}-style"

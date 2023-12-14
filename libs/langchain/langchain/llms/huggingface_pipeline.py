@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import importlib.util
 import logging
-from typing import Any, List, Mapping, Optional
+from threading import Thread
+from typing import Any, Iterator, List, Mapping, Optional
 
-from langchain_core.outputs import Generation, LLMResult
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Extra
+from transformers import TextIteratorStreamer
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
@@ -59,7 +61,7 @@ class HuggingFacePipeline(BaseLLM):
     """Keyword arguments passed to the pipeline."""
     batch_size: int = DEFAULT_BATCH_SIZE
     """Batch size to use when passing multiple documents to generate."""
-
+    streamer: Optional[TextIteratorStreamer] = None
     class Config:
         """Configuration for this pydantic object."""
 
@@ -75,6 +77,7 @@ class HuggingFacePipeline(BaseLLM):
         model_kwargs: Optional[dict] = None,
         pipeline_kwargs: Optional[dict] = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
+        
         **kwargs: Any,
     ) -> HuggingFacePipeline:
         """Construct the pipeline object from model_id and task."""
@@ -94,7 +97,7 @@ class HuggingFacePipeline(BaseLLM):
 
         _model_kwargs = model_kwargs or {}
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
-
+        
         try:
             if task == "text-generation":
                 model = AutoModelForCausalLM.from_pretrained(model_id, **_model_kwargs)
@@ -245,3 +248,44 @@ class HuggingFacePipeline(BaseLLM):
         return LLMResult(
             generations=[[Generation(text=text)] for text in text_generations]
         )
+    
+    
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        
+        full_prompt = prompt
+        
+        inputs = self.pipeline.tokenizer(full_prompt, return_tensors="pt")
+        inputs = inputs.to(self.pipeline.model.device)
+        generation_kwargs = dict(
+            inputs,
+            streamer=self.streamer,
+            **self.pipeline_kwargs,
+        ) 
+        if self.streamer is None:
+            self.streamer = TextIteratorStreamer(
+                self.pipeline.tokenizer,
+                skip_prompt=True,
+                decode_kwargs={"skip_special_tokens": True},
+            )
+            generation_kwargs['streamer'] = self.streamer
+
+        
+        # generate in background thread
+        # NOTE/TODO: token counting doesn't work with streaming
+        thread = Thread(target=self.pipeline.model.generate, kwargs=generation_kwargs)
+        thread.start()
+
+               
+        # create generator based off of streamer
+        def gen(streamer) -> Iterator[GenerationChunk]:
+            for x in streamer:
+                chunk = GenerationChunk(text=x)
+                yield chunk
+
+        return gen(self.streamer)
