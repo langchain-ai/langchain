@@ -67,5 +67,5 @@ This package also adds support for google's embeddings models.
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-embedding.embed_query("hello, world!")
+embeddings.embed_query("hello, world!")
 ```

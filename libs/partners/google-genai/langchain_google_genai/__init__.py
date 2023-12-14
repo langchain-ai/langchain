@@ -37,7 +37,7 @@ The package also supports creating embeddings with Google's models, useful for t
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-embedding.embed_query("hello, world!")
+embeddings.embed_query("hello, world!")
 ```
 """  # noqa: E501
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI

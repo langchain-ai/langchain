@@ -21,10 +21,11 @@ class GoogleGenerativeAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_google_genai import GoogleGenerativeAIEmbeddings
-            chat = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+            embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
             chat.embed_query("What's our Q1 revenue?")
 
     """
+
     model: str = Field(
         ...,
         description="The name of the embedding model to use. "
