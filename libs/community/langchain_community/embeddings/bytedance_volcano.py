@@ -78,7 +78,7 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
         )
 
         try:
-            from volcengine.maas import MaasService, MaasException
+            from volcengine.maas import MaasService
             client = MaasService(values["host"], values["region"])
             client.set_ak(values["volcano_ak"])
             client.set_sk(values["volcano_sk"])
