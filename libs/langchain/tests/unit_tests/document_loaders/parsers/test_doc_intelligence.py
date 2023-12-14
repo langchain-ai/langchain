@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from langchain.document_loaders.parsers import DocumentIntelligenceParser
+from langchain.document_loaders.parsers import AzureAIDocumentIntelligenceParser
 
 
 @pytest.mark.requires("azure", "azure.ai", "azure.ai.documentintelligence")
@@ -13,7 +13,7 @@ def test_doc_intelligence(mock_credential: MagicMock, mock_client: MagicMock) ->
     endpoint = "endpoint"
     key = "key"
 
-    parser = DocumentIntelligenceParser(api_endpoint=endpoint, api_key=key)
+    parser = AzureAIDocumentIntelligenceParser(api_endpoint=endpoint, api_key=key)
     mock_credential.assert_called_once_with(key)
     mock_client.assert_called_once_with(
         endpoint=endpoint,
