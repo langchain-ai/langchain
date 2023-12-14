@@ -2,41 +2,56 @@
 
 All functionality related to [Google Cloud Platform](https://cloud.google.com/) and other `Google` products.
 
-## LLMs
-
-### Vertex AI
-
-Access `PaLM` LLMs like `text-bison` and `code-bison` via `Google Vertex AI`.
-
-We need to install `google-cloud-aiplatform` python package.
-
-```bash
-pip install google-cloud-aiplatform
-```
-
-See a [usage example](/docs/integrations/llms/google_vertex_ai_palm).
-
-```python
-from langchain.llms import VertexAI
-```
-
-### Model Garden
-
-Access PaLM and hundreds of OSS models via `Vertex AI Model Garden`.
-
-We need to install `google-cloud-aiplatform` python package.
-
-```bash
-pip install google-cloud-aiplatform
-```
-
-See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
-
-```python
-from langchain.llms import VertexAIModelGarden
-```
-
 ## Chat models
+
+### ChatGoogleGenerativeAI
+
+Access `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `ChatGoogleGenerativeAI` class.
+
+```bash
+pip install -U langchain-google-genai
+```
+
+Configure your API key.
+
+```bash
+export GOOGLE_API_KEY=your-api-key
+```
+
+```python
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+llm = ChatGoogleGenerativeAI(model="gemini-pro")
+llm.invoke("Sing a ballad of LangChain.")
+```
+
+Gemini vision model supports image inputs when providing a single chat message. Example:
+
+```python
+from langchain_core.messages import HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
+# example
+message = HumanMessage(
+    content=[
+        {
+            "type": "text",
+            "text": "What's in this image?",
+        },  # You can optionally provide text parts
+        {"type": "image_url", "image_url": "https://picsum.photos/seed/picsum/200/300"},
+    ]
+)
+llm.invoke([message])
+```
+
+The value of image_url can be any of the following:
+
+- A public image URL
+- A gcs file (e.g., "gcs://path/to/file.png")
+- A local file path
+- A base64 encoded image (e.g., data:image/png;base64,abcd124)
+- A PIL image
 
 ### Vertex AI
 
@@ -71,6 +86,41 @@ See a [usage example](/docs/integrations/document_loaders/google_bigquery).
 ```python
 from langchain.document_loaders import BigQueryLoader
 ```
+
+## LLMs
+
+### Vertex AI
+
+Access to `Gemini` and `PaLM` LLMs (like `text-bison` and `code-bison`) via `Google Vertex AI`.
+
+We need to install `google-cloud-aiplatform` python package.
+
+```bash
+pip install google-cloud-aiplatform
+```
+
+See a [usage example](/docs/integrations/llms/google_vertex_ai_palm).
+
+```python
+from langchain.llms import VertexAI
+```
+
+### Model Garden
+
+Access PaLM and hundreds of OSS models via `Vertex AI Model Garden`.
+
+We need to install `google-cloud-aiplatform` python package.
+
+```bash
+pip install google-cloud-aiplatform
+```
+
+See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
+
+```python
+from langchain.llms import VertexAIModelGarden
+```
+
 
 ### Google Cloud Storage
 
@@ -230,6 +280,26 @@ documents = docai_wh_retriever.get_relevant_documents(
 
 ## Tools
 
+### Google Cloud Text-to-Speech
+
+>[Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech) enables developers to 
+> synthesize natural-sounding speech with 100+ voices, available in multiple languages and variants. 
+> It applies DeepMind’s groundbreaking research in WaveNet and Google’s powerful neural networks 
+> to deliver the highest fidelity possible.
+
+We need to install a python package.
+
+```bash
+pip install google-cloud-text-to-speech
+```
+
+See a [usage example and authorization instructions](/docs/integrations/tools/google_cloud_texttospeech).
+
+```python
+from langchain.tools import GoogleCloudTextToSpeechTool
+```
+
+
 ### Google Drive
 
 We need to install several python packages.
@@ -346,6 +416,7 @@ See a [usage example and authorization instructions](/docs/integrations/tools/go
 from langchain.tools.google_trends import GoogleTrendsQueryRun
 from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
 ```
+
 
 ## Document Transformers
 

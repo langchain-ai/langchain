@@ -72,6 +72,7 @@ jobs:
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
+    if: ${{ ! startsWith(inputs.working-directory, 'libs/partners/') }}
     steps:
       - uses: actions/checkout@v4
 

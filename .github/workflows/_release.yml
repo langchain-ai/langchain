@@ -18,6 +18,7 @@ on:
           - libs/core
           - libs/experimental
           - libs/community
+          - libs/partners/google-genai
 
 env:
   PYTHON_VERSION: "3.10"
