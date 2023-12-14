@@ -22,7 +22,6 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 langchain-core = {path = "../../core", develop = true}
-types-requests = "^2.31.0.10"
 
 [tool.poetry.group.codespell]
 optional = true
@@ -44,13 +43,13 @@ ruff = "^0.1.5"
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
 langchain-core = {path = "../../core", develop = true}
+types-requests = "^2.31.0.10"
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
 langchain-core = {path = "../../core", develop = true}
-types-requests = "^2.31.0.10"
 
 [tool.ruff]
 select = [
