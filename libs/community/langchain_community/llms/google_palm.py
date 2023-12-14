@@ -6,7 +6,7 @@ from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.llms import BaseLLM
@@ -68,7 +68,7 @@ class GooglePalm(BaseLLM, BaseModel):
     """
 
     client: Any  #: :meta private:
-    google_api_key: Optional[str]
+    google_api_key: Optional[SecretStr]
     model_name: str = "models/text-bison-001"
     """Model name to use."""
     temperature: float = 0.7
@@ -116,6 +116,9 @@ class GooglePalm(BaseLLM, BaseModel):
         model_name = values["model_name"]
         try:
             import google.generativeai as genai
+
+            if isinstance(google_api_key, SecretStr):
+                google_api_key = google_api_key.get_secret_value()
 
             genai.configure(api_key=google_api_key)
 

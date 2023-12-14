@@ -9,7 +9,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator, Field, SecretStr
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -87,9 +87,15 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
     """Google GenerativeAI models."""
 
     client: Any  #: :meta private:
-    google_api_key: Optional[str]
-    model_name: str = "models/text-bison-001"
+    model: str = Field(
+        ...,
+        description="""The name of the model to use.
+Supported examples:
+    - gemini-pro
+    - models/text-bison-001""",
+    )
     """Model name to use."""
+    google_api_key: Optional[SecretStr] = None
     temperature: float = 0.7
     """Run inference with this temperature. Must by in the closed interval
        [0.0, 1.0]."""
@@ -111,7 +117,7 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
     @property
     def is_gemini(self) -> bool:
         """Returns whether a model is belongs to a Gemini family or not."""
-        return _is_gemini_model(self.model_name)
+        return _is_gemini_model(self.model)
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -135,6 +141,9 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
         model_name = values["model_name"]
         try:
             import google.generativeai as genai
+
+            if isinstance(google_api_key, SecretStr):
+                google_api_key = google_api_key.get_secret_value()
 
             genai.configure(api_key=google_api_key)
 
@@ -215,7 +224,7 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
                 else:
                     res = completion_with_retry(
                         self,
-                        model=self.model_name,
+                        model=self.model,
                         prompt=prompt,
                         stream=stream or False,
                         is_gemini=False,
@@ -277,5 +286,5 @@ class GoogleGenerativeAI(BaseLLM, BaseModel):
         """
         if self.is_gemini:
             raise ValueError("Counting tokens is not yet supported!")
-        result = self.client.count_text_tokens(model=self.model_name, prompt=text)
+        result = self.client.count_text_tokens(model=self.model, prompt=text)
         return result["token_count"]
