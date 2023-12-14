@@ -213,7 +213,7 @@ for txt in chain.stream({"input": "Why is a PB&J?"}):
 
 ## Multimodal
 
-NVidia also supports multimodal inputs, meaning you can provide both images and text for the model to reason over.
+NVIDIA also supports multimodal inputs, meaning you can provide both images and text for the model to reason over.
 
 These models also accept `labels`, similar to the Steering LLMs above. In addition to `creativity`, `complexity`, and `verbosity`, these models support a `quality` toggle.
 
