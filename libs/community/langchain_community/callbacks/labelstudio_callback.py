@@ -2,7 +2,7 @@ import os
 import warnings
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from uuid import UUID
 
 from langchain_core.agents import AgentAction, AgentFinish
@@ -224,7 +224,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
             raise ValueError(error_message)
 
     def add_prompts_generations(
-        self, run_id: str, generations: List[List[Generation]]
+        self, run_id: str, generations: Sequence[Sequence[Generation]]
     ) -> None:
         # Create tasks in Label Studio
         tasks = []

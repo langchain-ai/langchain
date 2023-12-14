@@ -1,7 +1,7 @@
 import asyncio
 import json
 from json import JSONDecodeError
-from typing import List, Union
+from typing import List, Sequence, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -85,7 +85,7 @@ class OpenAIToolsAgentOutputParser(MultiActionAgentOutputParser):
         return "openai-tools-agent-output-parser"
 
     def parse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self, result: Sequence[Generation], *, partial: bool = False
     ) -> Union[List[AgentAction], AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             raise ValueError("This output parser only works on ChatGeneration output")
@@ -93,7 +93,7 @@ class OpenAIToolsAgentOutputParser(MultiActionAgentOutputParser):
         return parse_ai_message_to_openai_tool_action(message)
 
     async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self, result: Sequence[Generation], *, partial: bool = False
     ) -> Union[List[AgentAction], AgentFinish]:
         return await asyncio.get_running_loop().run_in_executor(
             None, self.parse_result, result

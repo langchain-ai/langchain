@@ -8,8 +8,8 @@ from typing import (
     Any,
     Dict,
     Generic,
-    List,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -31,7 +31,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
+    def parse_result(self, result: Sequence[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -43,7 +43,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
         """
 
     async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self, result: Sequence[Generation], *, partial: bool = False
     ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
@@ -206,7 +206,7 @@ class BaseOutputParser(
                 run_type="parser",
             )
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
+    def parse_result(self, result: Sequence[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -233,7 +233,7 @@ class BaseOutputParser(
         """
 
     async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self, result: Sequence[Generation], *, partial: bool = False
     ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 

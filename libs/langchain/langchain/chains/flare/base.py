@@ -48,7 +48,7 @@ class _ResponseChain(LLMChain):
 
     @abstractmethod
     def _extract_tokens_and_log_probs(
-        self, generations: List[Generation]
+        self, generations: Sequence[Generation]
     ) -> Tuple[Sequence[str], Sequence[float]]:
         """Extract tokens and log probs from response."""
 
@@ -63,7 +63,7 @@ class _OpenAIResponseChain(_ResponseChain):
     )
 
     def _extract_tokens_and_log_probs(
-        self, generations: List[Generation]
+        self, generations: Sequence[Generation]
     ) -> Tuple[Sequence[str], Sequence[float]]:
         tokens = []
         log_probs = []

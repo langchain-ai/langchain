@@ -1,6 +1,6 @@
 import copy
 import json
-from typing import Any, List, Type
+from typing import Any, List, Sequence, Type
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import (
@@ -13,7 +13,9 @@ from langchain_core.pydantic_v1 import BaseModel
 class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
     """Parse tools from OpenAI response."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Sequence[Generation], *, partial: bool = False
+    ) -> Any:
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             raise OutputParserException(
@@ -45,7 +47,9 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
     key_name: str
     """The type of tools to return."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Sequence[Generation], *, partial: bool = False
+    ) -> Any:
         results = super().parse_result(result)
         return [res["args"] for res in results if results["type"] == self.key_name]
 
@@ -55,7 +59,9 @@ class PydanticToolsParser(JsonOutputToolsParser):
 
     tools: List[Type[BaseModel]]
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Sequence[Generation], *, partial: bool = False
+    ) -> Any:
         results = super().parse_result(result)
         name_dict = {tool.__name__: tool for tool in self.tools}
         return [name_dict[res["type"]](**res["args"]) for res in results]
