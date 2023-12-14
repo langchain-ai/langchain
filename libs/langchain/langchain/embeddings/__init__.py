@@ -23,6 +23,7 @@ from langchain.embeddings.azure_openai import AzureOpenAIEmbeddings
 from langchain.embeddings.baidu_qianfan_endpoint import QianfanEmbeddingsEndpoint
 from langchain.embeddings.bedrock import BedrockEmbeddings
 from langchain.embeddings.bookend import BookendEmbeddings
+from langchain.embeddings.bytedance_volcano import VolcanoEmbeddings
 from langchain.embeddings.cache import CacheBackedEmbeddings
 from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
@@ -70,7 +71,6 @@ from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddi
 from langchain.embeddings.spacy_embeddings import SpacyEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain.embeddings.vertexai import VertexAIEmbeddings
-from langchain.embeddings.bytedance_volcano import VolcanoEmbeddings
 from langchain.embeddings.voyageai import VoyageEmbeddings
 from langchain.embeddings.xinference import XinferenceEmbeddings
 
