@@ -20,9 +20,8 @@ from langchain_community.callbacks.infino_callback import InfinoCallbackHandler
 from langchain_community.callbacks.labelstudio_callback import (
     LabelStudioCallbackHandler,
 )
-from langchain_community.callbacks.lunary_callback import (
-    LunaryCallbackHandler,
-)
+from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler
+from langchain_community.callbacks.lunary_callback import LunaryCallbackHandler
 from langchain_community.callbacks.manager import (
     get_openai_callback,
     wandb_tracing_enabled,
@@ -53,7 +52,8 @@ __all__ = [
     "HumanApprovalCallbackHandler",
     "InfinoCallbackHandler",
     "MlflowCallbackHandler",
-    "LunaryCallbackHandler",
+    "LLMonitorCallbackHandler",
+    "LunaryCallbackHandler",  
     "OpenAICallbackHandler",
     "LLMThoughtLabeler",
     "StreamlitCallbackHandler",

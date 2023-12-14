@@ -19,7 +19,7 @@ export LUNARY_APP_ID="..."
 If you'd prefer not to set an environment variable, you can pass the key directly when initializing the callback handler:
 
 ```python
-from langchain.callbacks import LunaryCallbackHandler
+from langchain_community.callbacks.lunary_callback import LunaryCallbackHandler
 
 handler = LunaryCallbackHandler(app_id="...")
 ```
@@ -29,7 +29,7 @@ handler = LunaryCallbackHandler(app_id="...")
 ```python
 from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
-from langchain.callbacks import LunaryCallbackHandler
+from langchain_community.callbacks.lunary_callback import LunaryCallbackHandler
 
 handler = LunaryCallbackHandler()
 
@@ -55,7 +55,7 @@ Example:
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
 from langchain.agents import OpenAIFunctionsAgent, AgentExecutor, tool
-from langchain.callbacks import LunaryCallbackHandler
+from langchain_community.callbacks.lunary_callback import LunaryCallbackHandler
 
 llm = ChatOpenAI(temperature=0)
 
@@ -90,7 +90,7 @@ Another example:
 ```python
 from langchain.agents import load_tools, initialize_agent, AgentType
 from langchain.llms import OpenAI
-from langchain.callbacks import LunaryCallbackHandler
+from langchain_community.callbacks.lunary_callback import LunaryCallbackHandler
 
 handler = LunaryCallbackHandler()
 
@@ -115,7 +115,7 @@ User tracking allows you to identify your users, track their cost, conversations
 ```python
 from langchain.agents import load_tools, initialize_agent, AgentType
 from langchain.llms import OpenAI
-from langchain.callbacks import LunaryCallbackHandler, identify
+from langchain_community.callbacks.lunary_callback import LunaryCallbackHandler
 
 handler = LunaryCallbackHandler()
 

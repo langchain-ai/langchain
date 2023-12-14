@@ -705,3 +705,5 @@ class LunaryCallbackHandler(BaseCallbackHandler):
             )
         except Exception as e:
             logger.error(f"[Lunary] An error occurred in on_llm_error: {e}")
+
+__all__ = ["LunaryCallbackHandler", "identify"]

@@ -16,6 +16,16 @@ from langchain_community.callbacks.lunary_callback import (
     user_props_ctx,
 )
 
+class LLMonitorCallbackHandler(LunaryCallbackHandler):
+    """LLMonitorCallbackHandler is deprecated, use LunaryCallbackHandler instead.
+      ```
+      from langchain_community.callbacks.lunary_callback import LunaryCallbackHandler
+      ```
+    """
+
+    pass
+
+
 __all__ = [
     "DEFAULT_API_URL",
     "user_ctx",
@@ -31,5 +41,8 @@ __all__ = [
     "_get_user_props",
     "_parse_lc_message",
     "_parse_lc_messages",
-    "LunaryCallbackHandler",
+    "LLMonitorCallbackHandler",
 ]
+
+
+
