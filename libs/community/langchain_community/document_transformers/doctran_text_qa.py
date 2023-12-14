@@ -53,9 +53,7 @@ class DoctranQATransformer(BaseDocumentTransformer):
                 "Install doctran to use this parser. (pip install doctran)"
             )
         for d in documents:
-            doctran_doc = (
-                doctran.parse(content=d.page_content).interrogate().execute()
-            )
+            doctran_doc = doctran.parse(content=d.page_content).interrogate().execute()
             questions_and_answers = doctran_doc.extracted_properties.get(
                 "questions_and_answers"
             )
