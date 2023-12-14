@@ -2,6 +2,8 @@
 
 This template demonstrates the multi-vector indexing strategy proposed by Chen, et. al.'s [Dense X Retrieval: What Retrieval Granularity Should We Use?](https://arxiv.org/abs/2312.06648). The prompt, which you can [try out on the hub](https://smith.langchain.com/hub/wfh/proposal-indexing?organizationId=1e2cbcd1-8b43-44aa-88ae-73b64f4afbd3), directs an LLM to generate de-contextualized "propositions" which can be vectorized to increase the retrieval accuracy. You can see the full definition in `proposal_chain.py`.
 
+![Retriever Diagram](./_images/retriever_diagram.png)
+
 ## Storage
 
 For this demo, we index a simple academic paper using the RecursiveUrlLoader, and store all retriever information locally (using chroma and a bytestore stored on the local filesystem). You can modify the storage layer in `storage.py`.
