@@ -1,4 +1,4 @@
-name: integration test
+name: Integration tests
 
 on:
   workflow_dispatch:
@@ -41,6 +41,8 @@ jobs:
 
       - name: Run integration tests
         shell: bash
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           make integration_tests
 
