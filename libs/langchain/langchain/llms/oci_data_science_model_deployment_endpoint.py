@@ -24,18 +24,6 @@ class BaseOCILLM(LLM):
     or `ads.common.auth.resource_principal()`. If this is not
     provided then the `ads.common.default_signer()` will be used."""
 
-    max_tokens: int = 256
-    """Denotes the number of tokens to predict per generation."""
-
-    temperature: float = 0.2
-    """A non-negative float that tunes the degree of randomness in generation."""
-
-    k: int = 0
-    """Number of most likely tokens to consider at each step."""
-
-    p: float = 0.75
-    """Total probability mass of tokens to consider at each step."""
-
     stop: Optional[List[str]] = None
     """Stop words to use when generating. Model output is cut off
     at the first occurrence of any of these substrings."""
@@ -48,6 +36,18 @@ class BaseOCILLM(LLM):
 
 class OCIModelDeploymentLLM(BaseOCILLM):
     """Base class for LLM deployed on OCI Data Science Model Deployment."""
+
+    max_tokens: int = 256
+    """Denotes the number of tokens to predict per generation."""
+
+    temperature: float = 0.2
+    """A non-negative float that tunes the degree of randomness in generation."""
+
+    k: int = 0
+    """Number of most likely tokens to consider at each step."""
+
+    p: float = 0.75
+    """Total probability mass of tokens to consider at each step."""
 
     endpoint: str = ""
     """The uri of the endpoint from the deployed Model Deployment model."""
