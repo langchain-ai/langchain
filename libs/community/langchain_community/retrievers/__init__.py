@@ -25,6 +25,7 @@ from langchain_community.retrievers.azure_cognitive_search import (
 )
 from langchain_community.retrievers.bedrock import AmazonKnowledgeBasesRetriever
 from langchain_community.retrievers.bm25 import BM25Retriever
+from langchain_community.retrievers.breebs import BreebsKnowledgeRetriever
 from langchain_community.retrievers.chaindesk import ChaindeskRetriever
 from langchain_community.retrievers.chatgpt_plugin_retriever import (
     ChatGPTPluginRetriever,
@@ -75,6 +76,7 @@ __all__ = [
     "ArceeRetriever",
     "ArxivRetriever",
     "AzureCognitiveSearchRetriever",
+    "BreebsKnowledgeRetriever",
     "ChatGPTPluginRetriever",
     "ChaindeskRetriever",
     "CohereRagRetriever",
