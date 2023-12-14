@@ -32,6 +32,7 @@ from langchain_community.chat_models.fireworks import ChatFireworks
 from langchain_community.chat_models.gigachat import GigaChat
 from langchain_community.chat_models.google_palm import ChatGooglePalm
 from langchain_community.chat_models.human import HumanInputChatModel
+from langchain_community.chat_models.huggingface import ChatHuggingFace
 from langchain_community.chat_models.hunyuan import ChatHunyuan
 from langchain_community.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
 from langchain_community.chat_models.jinachat import JinaChat
@@ -65,6 +66,7 @@ __all__ = [
     "ChatVertexAI",
     "JinaChat",
     "HumanInputChatModel",
+    "ChatHuggingFace",
     "MiniMaxChat",
     "ChatAnyscale",
     "ChatLiteLLM",

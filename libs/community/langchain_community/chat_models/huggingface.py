@@ -1,14 +1,15 @@
 """Hugging Face Chat Wrapper."""
+import os
 from typing import Any, List, Optional, Union
 
-from langchain.callbacks.manager import (
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import BaseChatModel
-from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
-from langchain.llms.huggingface_hub import HuggingFaceHub
-from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
+from langchain_community.llms.huggingface_hub import HuggingFaceHub
+from langchain_community.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.schema import (
     AIMessage,
     BaseMessage,
