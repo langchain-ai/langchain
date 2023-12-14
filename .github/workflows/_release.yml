@@ -89,6 +89,8 @@ jobs:
       - test-pypi-publish
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       # We explicitly *don't* set up caching here. This ensures our tests are
       # maximally sensitive to catching breakage.
       #
