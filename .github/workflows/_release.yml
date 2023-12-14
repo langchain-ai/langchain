@@ -19,7 +19,7 @@ on:
           - libs/experimental
           - libs/community
           - libs/partners/google-genai
-          - libs/partners/nvidia-aiplay
+          - libs/partners/*
 
 env:
   PYTHON_VERSION: "3.10"
