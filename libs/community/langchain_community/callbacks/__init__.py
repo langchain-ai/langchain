@@ -53,7 +53,7 @@ __all__ = [
     "InfinoCallbackHandler",
     "MlflowCallbackHandler",
     "LLMonitorCallbackHandler",
-    "LunaryCallbackHandler",  
+    "LunaryCallbackHandler",
     "OpenAICallbackHandler",
     "LLMThoughtLabeler",
     "StreamlitCallbackHandler",
