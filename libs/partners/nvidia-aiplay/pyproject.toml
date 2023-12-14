@@ -8,7 +8,7 @@ repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partner
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.0.12"
+langchain-core = "^0.1.0"
 aiohttp = "^3.9.1"
 
 [tool.poetry.group.test]

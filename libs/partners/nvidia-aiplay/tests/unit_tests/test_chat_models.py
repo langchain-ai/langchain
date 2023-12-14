@@ -6,4 +6,11 @@ from langchain_nvidia_aiplay.chat_models import ChatNVAIPlay
 
 def test_integration_initialization() -> None:
     """Test chat model initialization."""
-    ChatNVAIPlay(model="mistral")
+    ChatNVAIPlay(
+        model="llama2_13b",
+        nvapi_key="nvapi-...",
+        temperature=0.5,
+        top_p=0.9,
+        max_tokens=50,
+    )
+    ChatNVAIPlay(model="mistral", nvapi_key="nvapi-...")
