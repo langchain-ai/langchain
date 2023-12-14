@@ -133,6 +133,7 @@ class _OllamaCommon(BaseLanguageModel):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
+        images: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[str]:
         if self.stop is not None and stop is not None:
@@ -156,10 +157,14 @@ class _OllamaCommon(BaseLanguageModel):
                 **kwargs,
             }
 
+        request_payload = {"prompt": prompt, **params}
+        if images is not None:
+            request_payload["images"] = images
+
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
             headers={"Content-Type": "application/json"},
-            json={"prompt": prompt, **params},
+            json=request_payload,
             stream=True,
             timeout=self.timeout,
         )
@@ -225,6 +230,7 @@ class Ollama(BaseLLM, _OllamaCommon):
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
+        images: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -248,6 +254,7 @@ class Ollama(BaseLLM, _OllamaCommon):
             final_chunk = super()._stream_with_aggregation(
                 prompt,
                 stop=stop,
+                images=images,
                 run_manager=run_manager,
                 verbose=self.verbose,
                 **kwargs,
