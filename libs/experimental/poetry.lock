@@ -1642,7 +1642,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.0.349"
+version = "0.0.350"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1654,8 +1654,8 @@ aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
 jsonpatch = "^1.33"
-langchain-community = ">=0.0.1,<0.1"
-langchain-core = ">=0.0.13,<0.1"
+langchain-community = ">=0.0.2,<0.1"
+langchain-core = "^0.1"
 langsmith = "~0.0.63"
 numpy = "^1"
 pydantic = ">=1,<3"
@@ -1685,7 +1685,7 @@ url = "../langchain"
 
 [[package]]
 name = "langchain-community"
-version = "0.0.1"
+version = "0.0.2"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1695,7 +1695,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain-core = ">=0.0.13,<0.1"
+langchain-core = "^0.1"
 langsmith = "~0.0.63"
 numpy = "^1"
 PyYAML = ">=5.3"
@@ -1713,7 +1713,7 @@ url = "../community"
 
 [[package]]
 name = "langchain-core"
-version = "0.0.13"
+version = "0.1.0"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -4966,4 +4966,4 @@ extended-testing = ["faker", "jinja2", "presidio-analyzer", "presidio-anonymizer
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6d5bdccfdbd44b564813ac0b1ef65f616515f880ff0bd9b9441301153cdd6ab3"
+content-hash = "fa6e98d24fbc70725b680ae05593488f3a53f27622b40a036029701c7a831370"
