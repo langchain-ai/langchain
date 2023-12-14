@@ -31,7 +31,7 @@ repo_dict = {
 }
 
 
-def repo_lookup(owner_repo_commit: str, **kwargs: Any) -> ChatPromptTemplate:
+def repo_lookup(owner_repo_commit: str, **kwargs: Any) -> str:
     return dumps(repo_dict[owner_repo_commit])
 
 
@@ -48,7 +48,8 @@ def test_hub_pull_metadata(mock_get_client: Mock) -> None:
     assert result.messages[1].content == "1"
     assert len(tracer.runs) == 1
     run = tracer.runs[0]
-    assert run.extra["metadata"]["hub_owner_repo_commit"] == "wfh/my-prompt-1"
+    assert run.extra is not None
+    assert run.extra["metadata"]["hub_owner_repo_commit"] == "wfh/my-prompt-1"  # type: ignore
 
 
 @patch("langchain.hub._get_client")
