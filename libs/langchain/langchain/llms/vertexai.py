@@ -484,3 +484,38 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
             endpoint=self.endpoint_path, instances=instances
         )
         return self._parse_response(response)
+
+
+class VertexAIModelGardenLlama2(VertexAIModelGarden):
+    """Llama2-7b models served from Vertex AI Model Garden."""
+    allowed_model_args: Optional[List[str]] = [
+        "max_tokens",
+        "temperature",
+        "top_p",
+        "top_k",
+    ]
+    max_tokens: Optional[int]
+    temperature: Optional[float]
+    top_p: Optional[float]
+    top_k: Optional[int]
+
+    def _prepare_request(self, *args, **kwargs):
+        if self.allowed_model_args:
+            for possible_kwarg in self.allowed_model_args:
+                if hasattr(self, possible_kwarg):
+                    if (val := getattr(self, possible_kwarg)) is not None:
+                        kwargs[possible_kwarg] = val
+
+        res = super()._prepare_request(*args, **kwargs)
+        return res
+
+    def _parse_response(self, predictions) -> LLMResult:
+        generations: List[List[Generation]] = []
+        for result in predictions.predictions:
+            if isinstance(result, str):
+                _, output = result.split("Output:", 1)
+                generations.append([Generation(text=self._parse_prediction(output))])
+            else:
+                generations.append([Generation(text=self._parse_prediction(prediction)) for prediction in result])
+
+        return LLMResult(generations=generations)
