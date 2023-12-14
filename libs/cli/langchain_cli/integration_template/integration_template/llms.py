@@ -1,5 +1,4 @@
-import asyncio
-from functools import partial
+"""__ModuleName__ large language models."""
 from typing import (
     Any,
     AsyncIterator,
@@ -25,6 +24,7 @@ class __ModuleName__LLM(BaseLLM):
             from __module_name__ import __ModuleName__LLM
 
             model = __ModuleName__LLM()
+            model.invoke("Come up with 10 names for a song about parrots")
     """
 
     @property
@@ -41,6 +41,8 @@ class __ModuleName__LLM(BaseLLM):
     ) -> LLMResult:
         raise NotImplementedError
 
+    # TODO: Implement if __model_name__ supports async generation. Otherwise
+    # delete method.
     async def _agenerate(
         self,
         prompts: List[str],
@@ -48,11 +50,9 @@ class __ModuleName__LLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        # Change implementation if integration natively supports async generation.
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._generate, **kwargs), prompts, stop, run_manager
-        )
+        raise NotImplementedError
 
+    # TODO: Implement if __model_name__ supports streaming. Otherwise delete method.
     def _stream(
         self,
         prompt: str,
@@ -62,6 +62,8 @@ class __ModuleName__LLM(BaseLLM):
     ) -> Iterator[GenerationChunk]:
         raise NotImplementedError
 
+    # TODO: Implement if __model_name__ supports async streaming. Otherwise delete
+    # method.
     async def _astream(
         self,
         prompt: str,
@@ -69,5 +71,4 @@ class __ModuleName__LLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        yield GenerationChunk(text="Yield chunks")
-        yield GenerationChunk(text=" like this!")
+        raise NotImplementedError

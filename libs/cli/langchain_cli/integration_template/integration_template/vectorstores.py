@@ -1,3 +1,4 @@
+"""__ModuleName__ vector stores."""
 from __future__ import annotations
 
 import asyncio
@@ -24,7 +25,7 @@ VST = TypeVar("VST", bound=VectorStore)
 
 
 class __ModuleName__VectorStore(VectorStore):
-    """Interface for vector store.
+    """__ModuleName__ vector store.
 
     Example:
         .. code-block:: python
