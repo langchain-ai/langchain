@@ -19,17 +19,17 @@ Below is an example on how to use some common chat model functionality.
 1. Create a free account with the [NVIDIA GPU Cloud](https://catalog.ngc.nvidia.com/) service, which hosts AI solution catalogs, containers, models, etc.
 2. Navigate to `Catalog > AI Foundation Models > (Model with API endpoint)`.
 3. Select the `API` option and click `Generate Key`.
-4. Save the generated key as `NVAPI_KEY`. From there, you should have access to the endpoints.
+4. Save the generated key as `NVIDIA_API_KEY`. From there, you should have access to the endpoints.
 
 
 ```python
 import getpass
 import os
 
-if not os.environ.get("NVAPI_KEY", "").startswith("nvapi-"):
-    nvapi_key = getpass.getpass("Enter your NVIDIA AIPLAY API key: ")
-    assert nvapi_key.startswith("nvapi-"), f"{nvapi_key[:5]}... is not a valid key"
-    os.environ["NVAPI_KEY"] = nvapi_key
+if not os.environ.get("NVIDIA_API_KEY", "").startswith("nvapi-"):
+    nvidia_api_key = getpass.getpass("Enter your NVIDIA AIPLAY API key: ")
+    assert nvidia_api_key.startswith("nvapi-"), f"{nvidia_api_key[:5]}... is not a valid key"
+    os.environ["NVIDIA_API_KEY"] = nvidia_api_key
 ```
 
 

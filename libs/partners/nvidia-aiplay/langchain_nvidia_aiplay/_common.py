@@ -99,7 +99,7 @@ class NVCRModel(BaseModel):
     get_session_fn: Callable = Field(requests.Session)
     get_asession_fn: Callable = Field(aiohttp.ClientSession)
 
-    nvapi_key: SecretStr = Field(
+    nvidia_api_key: SecretStr = Field(
         ...,
         description="API key for NVIDIA AI Playground. Should start with `nvapi-`",
     )
@@ -120,32 +120,32 @@ class NVCRModel(BaseModel):
         """Return headers with API key injected"""
         headers_ = self.headers_tmpl.copy()
         for header in headers_.values():
-            if "{nvapi_key}" in header["Authorization"]:
+            if "{nvidia_api_key}" in header["Authorization"]:
                 header["Authorization"] = header["Authorization"].format(
-                    nvapi_key=self.nvapi_key.get_secret_value(),
+                    nvidia_api_key=self.nvidia_api_key.get_secret_value(),
                 )
         return headers_
 
     @root_validator(pre=True)
     def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate and update model arguments, including API key and formatting"""
-        values["nvapi_key"] = get_from_dict_or_env(
+        values["nvidia_api_key"] = get_from_dict_or_env(
             values,
-            "nvapi_key",
-            "NVAPI_KEY",
+            "nvidia_api_key",
+            "NVIDIA_API_KEY",
         )
-        if "nvapi-" not in values.get("nvapi_key", ""):
+        if "nvapi-" not in values.get("nvidia_api_key", ""):
             raise ValueError("Invalid NVAPI key detected. Should start with `nvapi-`")
-        is_staging = "nvapi-stg-" in values["nvapi_key"]
+        is_staging = "nvapi-stg-" in values["nvidia_api_key"]
         values["is_staging"] = is_staging
         if "headers_tmpl" not in values:
             values["headers_tmpl"] = {
                 "call": {
-                    "Authorization": "Bearer {nvapi_key}",
+                    "Authorization": "Bearer {nvidia_api_key}",
                     "Accept": "application/json",
                 },
                 "stream": {
-                    "Authorization": "Bearer {nvapi_key}",
+                    "Authorization": "Bearer {nvidia_api_key}",
                     "Accept": "text/event-stream",
                     "content-type": "application/json",
                 },
