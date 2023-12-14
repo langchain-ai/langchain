@@ -32,7 +32,7 @@ lint_package: PYTHON_FILES=langchain_nvidia_aiplay
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
-lint lint_diff:
+lint lint_diff lint_package lint_tests:
 	./scripts/check_pydantic.sh .
 	./scripts/lint_imports.sh
 	poetry run ruff .
