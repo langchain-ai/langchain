@@ -9,15 +9,13 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Union
 
 import google.protobuf.json_format
 import numpy as np
-
-# Add the import ignore since we are missing type-stubs for these
-import tritonclient.grpc as grpcclient  # type: ignore[import]
+import tritonclient.grpc as grpcclient
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, root_validator
-from tritonclient.grpc.service_pb2 import ModelInferResponse  # type: ignore[import]
-from tritonclient.utils import np_to_triton_dtype  # type: ignore[import]
+from tritonclient.grpc.service_pb2 import ModelInferResponse
+from tritonclient.utils import np_to_triton_dtype
 
 
 class TritonTensorRTError(Exception):
@@ -245,7 +243,7 @@ class TritonTensorRTLLM(BaseLLM):
 
     def _generate_inputs(
         self,
-        prompt: str,
+        prompt: Sequence[Sequence[str]],
         tokens: int = 300,
         temperature: float = 1.0,
         top_k: float = 1,
