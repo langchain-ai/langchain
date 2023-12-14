@@ -13,7 +13,7 @@ EXPECTED_ALL = [
     "HumanApprovalCallbackHandler",
     "InfinoCallbackHandler",
     "MlflowCallbackHandler",
-    "LunaryCallbackHandler",
+    "LLMonitorCallbackHandler",
     "OpenAICallbackHandler",
     "StdOutCallbackHandler",
     "AsyncIteratorCallbackHandler",

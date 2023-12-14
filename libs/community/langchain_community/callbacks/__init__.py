@@ -21,7 +21,6 @@ from langchain_community.callbacks.labelstudio_callback import (
     LabelStudioCallbackHandler,
 )
 from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler
-from langchain_community.callbacks.lunary_callback import LunaryCallbackHandler
 from langchain_community.callbacks.manager import (
     get_openai_callback,
     wandb_tracing_enabled,
@@ -53,7 +52,6 @@ __all__ = [
     "InfinoCallbackHandler",
     "MlflowCallbackHandler",
     "LLMonitorCallbackHandler",
-    "LunaryCallbackHandler",
     "OpenAICallbackHandler",
     "LLMThoughtLabeler",
     "StreamlitCallbackHandler",
