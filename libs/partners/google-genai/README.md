@@ -4,8 +4,15 @@ This package contains the LangChain integrations for Gemini through their genera
 
 ## Installation
 
-```python
+```bash
 pip install -U langchain-google-genai
+```
+
+### Image utilities
+To use image utility methods, like loading images from GCS urls, install with extras group 'images':
+
+```bash
+pip install -e "langchain-google-genai[images]"
 ```
 
 ## Chat Models
@@ -56,3 +63,16 @@ The value of `image_url` can be any of the following:
 - A local file path
 - A base64 encoded image (e.g., `data:image/png;base64,abcd124`)
 - A PIL image
+
+
+
+## Embeddings
+
+This package also adds support for google's embeddings models.
+
+```
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+embeddings.embed_query("hello, world!")
+```
