@@ -460,7 +460,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                                 llm_output=res.llm_output,
                             )
                         )
-                        for run_manager, res in zip(run_managers, results)
+                        for run_manager, res in zip(
+                            run_managers, results_and_exceptions
+                        )
                         if not isinstance(res, Exception)
                     ]
                 )
@@ -470,9 +472,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             LLMResult(generations=[res.generations], llm_output=res.llm_output)
             for res in results
         ]
-        llm_output = self._combine_llm_outputs(
-            [res.llm_output for res in results]
-        )
+        llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
         await asyncio.gather(
