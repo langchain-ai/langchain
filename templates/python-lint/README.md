@@ -1,8 +1,13 @@
 # python-lint
 
-This agent writes Python code that is formatted and linted using `black`, `ruff`, and `mypy`. 
+This agent specializes in generating high-quality Python code with a focus on proper formatting and linting. It uses `black`, `ruff`, and `mypy` to ensure the code meets standard quality checks.
 
-It does not execute any code.
+This streamlines the coding process by integrating and responding to these checks, resulting in reliable and consistent code output.
+
+It cannot actually execute the code it writes, as code execution may introduce additional dependencies and potential security vulnerabilities.
+This makes the agent both a secure and efficient solution for code generation tasks.
+
+You can use it to generate Python code directly, or network it with planning and execution agents.
 
 ## Environment Setup
 

@@ -22,6 +22,12 @@ sse-starlette = "^1.6.5"
 export_module = "python_lint"
 export_attr = "agent_executor"
 
+[tool.templates-hub]
+use-case = "code-generation"
+author = "Joshua Sundance Bailey"
+integrations = ["OpenAI"]
+tags = ["python", "agent"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

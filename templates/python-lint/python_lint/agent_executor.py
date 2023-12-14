@@ -3,13 +3,13 @@ import re
 import subprocess  # nosec
 import tempfile
 
-
-from langchain.agents import initialize_agent, AgentType
+from langchain.agents import AgentType, initialize_agent
 from langchain.agents.tools import Tool
 from langchain.chat_models import ChatOpenAI
 from langchain.llms.base import BaseLLM
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel, validator, Field, ValidationError
+from langchain.schema.runnable import ConfigurableField, Runnable
 
 
 def strip_python_markdown_tags(text: str) -> str:
@@ -84,7 +84,7 @@ def check_mypy(filepath: str, strict: bool = True, follow_imports: str = "skip")
 class PythonCode(BaseModel):
     code: str = Field(
         description="Python code conforming to "
-                    "ruff, black, and *strict* mypy standards.",
+        "ruff, black, and *strict* mypy standards.",
     )
 
     @validator("code")
@@ -172,29 +172,45 @@ check_code_tool = Tool.from_function(
 )
 
 submit_code_tool = Tool.from_function(
-    lambda s: strip_python_markdown_tags(s),
+    strip_python_markdown_tags,
     name="submit-code",
     description="THIS TOOL is the most important. "
-                "use it to submit your code to the user who requested it... "
-                "but be sure to `check` it first!",
+    "use it to submit your code to the user who requested it... "
+    "but be sure to `check` it first!",
     return_direct=True,
 )
 
 tools = [check_code_tool, submit_code_tool]
 
 
-def get_agent(llm: BaseLLM, agent_type: AgentType = AgentType.OPENAI_FUNCTIONS):
-    return initialize_agent(
+def get_agent_executor(
+    llm: BaseLLM,
+    agent_type: AgentType = AgentType.OPENAI_FUNCTIONS,
+) -> Runnable:
+    _agent_executor = initialize_agent(
         tools,
         llm,
         agent=agent_type,
         verbose=True,
         handle_parsing_errors=True,
         prompt=prompt,
-        # return_intermediate_steps=True,
-    ) | (lambda output: output["output"])
+    )
+    return _agent_executor | (lambda output: output["output"])
 
 
-agent_executor = get_agent(
-    ChatOpenAI(model_name="gpt-4-1106-preview", temperature=0.0)
+class Instruction(BaseModel):
+    __root__: str
+
+
+agent_executor = (
+    get_agent_executor(ChatOpenAI(model_name="gpt-4-1106-preview", temperature=0.0))
+    .configurable_alternatives(
+        ConfigurableField("model_name"),
+        default_key="gpt4turbo",
+        gpt4=get_agent_executor(ChatOpenAI(model_name="gpt-4", temperature=0.0)),
+        gpt35t=get_agent_executor(
+            ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.0),
+        ),
+    )
+    .with_types(input_type=Instruction, output_type=str)
 )
