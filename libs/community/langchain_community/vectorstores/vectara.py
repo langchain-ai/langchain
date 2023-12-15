@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
@@ -71,8 +71,8 @@ class VectaraQueryConfig:
     filter: str = ""
     score_threshold: Optional[float] = None
     n_sentence_context: int = 2
-    mmr_config: MMRConfig = MMRConfig()
-    summary_config: SummaryConfig = SummaryConfig()
+    mmr_config: MMRConfig = field(default_factory=MMRConfig)
+    summary_config: SummaryConfig = field(default_factory=SummaryConfig)
 
 
 class Vectara(VectorStore):
@@ -326,7 +326,7 @@ class Vectara(VectorStore):
             A list of k Documents matching the given query
             If summary is enabled, last document is the summary text with 'summary'=True
         """
-        if isinstance(config.mmr_configm, dict):
+        if isinstance(config.mmr_config, dict):
             config.mmr_config = MMRConfig(**config.mmr_config)
         if isinstance(config.summary_config, dict):
             config.summary_config = SummaryConfig(**config.summary_config)
