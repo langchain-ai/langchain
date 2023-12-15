@@ -20,6 +20,10 @@ def _stream_response_to_generation_chunk(
     )
 
 
+class OllamaEndpointNotFoundError(Exception):
+    """Raised when the Ollama endpoint is not found."""
+
+
 class _OllamaCommon(BaseLanguageModel):
     base_url: str = "http://localhost:11434"
     """Base url the model is hosted under."""
@@ -128,12 +132,30 @@ class _OllamaCommon(BaseLanguageModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {**{"model": self.model, "format": self.format}, **self._default_params}
+        
+    def _create_generate_stream(
+      self,
+      prompt: str,
+      stop: Optional[List[str]] = None,
+      images: Optional[List[str]] = None,
+      **kwargs: Any
+    ) -> Iterator[str]:
+        payload = {
+          "prompt": prompt,
+          "images": images
+        }
+        yield from self._create_stream(
+          payload=payload, 
+          stop=stop, 
+          api_url=f"{self.base_url}/api/generate/", 
+          **kwargs
+        )
 
     def _create_stream(
         self,
-        prompt: str,
+        api_url: str,
+        payload: Any,
         stop: Optional[List[str]] = None,
-        images: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[str]:
         if self.stop is not None and stop is not None:
@@ -157,12 +179,17 @@ class _OllamaCommon(BaseLanguageModel):
                 **kwargs,
             }
 
-        request_payload = {"prompt": prompt, **params}
-        if images is not None:
-            request_payload["images"] = images
+        if payload.get("messages"):
+            request_payload = {"messages": payload.get("messages", []), **params}
+        else:
+            request_payload = {
+                "prompt": payload.get("prompt"),
+                "images": payload.get("images", []),
+                **params
+            }
 
         response = requests.post(
-            url=f"{self.base_url}/api/generate/",
+            url=api_url,
             headers={"Content-Type": "application/json"},
             json=request_payload,
             stream=True,
@@ -170,11 +197,16 @@ class _OllamaCommon(BaseLanguageModel):
         )
         response.encoding = "utf-8"
         if response.status_code != 200:
-            optional_detail = response.json().get("error")
-            raise ValueError(
-                f"Ollama call failed with status code {response.status_code}."
-                f" Details: {optional_detail}"
-            )
+            if response.status_code == 404:
+                raise OllamaEndpointNotFoundError(
+                  "Ollama call failed with status code 404."
+                )
+            else:
+                optional_detail = response.json().get("error")
+                raise ValueError(
+                    f"Ollama call failed with status code {response.status_code}."
+                    f" Details: {optional_detail}"
+                )
         return response.iter_lines(decode_unicode=True)
 
     def _stream_with_aggregation(
@@ -186,7 +218,7 @@ class _OllamaCommon(BaseLanguageModel):
         **kwargs: Any,
     ) -> GenerationChunk:
         final_chunk: Optional[GenerationChunk] = None
-        for stream_resp in self._create_stream(prompt, stop, **kwargs):
+        for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
                 if final_chunk is None:
