@@ -1,4 +1,4 @@
-from typing import Any, List, Literal
+from typing import Any, List, Literal, Optional
 
 from langchain_core.messages.base import (
     BaseMessage,
