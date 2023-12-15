@@ -132,23 +132,20 @@ class _OllamaCommon(BaseLanguageModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {**{"model": self.model, "format": self.format}, **self._default_params}
-        
+
     def _create_generate_stream(
-      self,
-      prompt: str,
-      stop: Optional[List[str]] = None,
-      images: Optional[List[str]] = None,
-      **kwargs: Any
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        images: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> Iterator[str]:
-        payload = {
-          "prompt": prompt,
-          "images": images
-        }
+        payload = {"prompt": prompt, "images": images}
         yield from self._create_stream(
-          payload=payload, 
-          stop=stop, 
-          api_url=f"{self.base_url}/api/generate/", 
-          **kwargs
+            payload=payload,
+            stop=stop,
+            api_url=f"{self.base_url}/api/generate/",
+            **kwargs,
         )
 
     def _create_stream(
@@ -185,7 +182,7 @@ class _OllamaCommon(BaseLanguageModel):
             request_payload = {
                 "prompt": payload.get("prompt"),
                 "images": payload.get("images", []),
-                **params
+                **params,
             }
 
         response = requests.post(
@@ -199,7 +196,7 @@ class _OllamaCommon(BaseLanguageModel):
         if response.status_code != 200:
             if response.status_code == 404:
                 raise OllamaEndpointNotFoundError(
-                  "Ollama call failed with status code 404."
+                    "Ollama call failed with status code 404."
                 )
             else:
                 optional_detail = response.json().get("error")

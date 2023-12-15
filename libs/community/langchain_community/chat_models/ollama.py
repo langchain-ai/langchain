@@ -40,7 +40,7 @@ def _chat_stream_response_to_chat_generation_chunk(
     generation_info = parsed_response if parsed_response.get("done") is True else None
     return ChatGenerationChunk(
         message=AIMessageChunk(
-          content=parsed_response.get("message", {}).get("content", "")
+            content=parsed_response.get("message", {}).get("content", "")
         ),
         generation_info=generation_info,
     )
@@ -91,8 +91,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         )
 
     def _convert_messages_to_ollama_messages(
-        self, 
-        messages: List[BaseMessage]
+        self, messages: List[BaseMessage]
     ) -> List[Dict[str, Union[str, List[str]]]]:
         ollama_messages = []
         for message in messages:
@@ -105,7 +104,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                 role = "system"
             else:
                 raise ValueError("Received unsupported message type for Ollama.")
-            
+
             content = ""
             images = []
             if isinstance(message.content, str):
@@ -116,17 +115,16 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "image_url":
                         if isinstance(content_part.get("image_url"), str):
-                          image_url_components = content_part["image_url"].split(",")
-                          # Support data:image/jpeg;base64,<image> format
-                          # and base64 strings
-                          if len(image_url_components) > 1:
-                              images.append(image_url_components[1])
-                          else:
-                              images.append(image_url_components[0])
+                            image_url_components = content_part["image_url"].split(",")
+                            # Support data:image/jpeg;base64,<image> format
+                            # and base64 strings
+                            if len(image_url_components) > 1:
+                                images.append(image_url_components[1])
+                            else:
+                                images.append(image_url_components[0])
                         else:
                             raise ValueError(
-                                "Only string image_url "
-                                "content parts are supported."
+                                "Only string image_url " "content parts are supported."
                             )
                     else:
                         raise ValueError(
@@ -135,30 +133,28 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                             "with a string 'image_url' field."
                         )
 
-            ollama_messages.append({
-                "role": role,
-                "content": content,
-                "images": images,
-            })
+            ollama_messages.append(
+                {
+                    "role": role,
+                    "content": content,
+                    "images": images,
+                }
+            )
 
         return ollama_messages
-        
+
     def _create_chat_stream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Iterator[str]:
         payload = {
-          "messages": self._convert_messages_to_ollama_messages(messages),
+            "messages": self._convert_messages_to_ollama_messages(messages),
         }
         yield from self._create_stream(
-          payload=payload,
-          stop=stop, 
-          api_url=f"{self.base_url}/api/chat/", 
-          **kwargs
+            payload=payload, stop=stop, api_url=f"{self.base_url}/api/chat/", **kwargs
         )
-
 
     def _chat_stream_with_aggregation(
         self,
@@ -185,7 +181,6 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
             raise ValueError("No data received from Ollama stream.")
 
         return final_chunk
-
 
     def _generate(
         self,
@@ -224,7 +219,6 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         )
         return ChatResult(generations=[chat_generation])
 
-
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -244,7 +238,6 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                         )
         except OllamaEndpointNotFoundError:
             yield from self._legacy_stream(messages, stop, **kwargs)
-
 
     @deprecated("0.0.3", alternative="_stream")
     def _legacy_stream(
