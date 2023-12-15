@@ -1,6 +1,6 @@
+import logging
 from abc import ABC, abstractmethod
 from collections import UserString, deque
-import logging
 from typing import Any, AsyncIterator, Deque, Dict, Iterator, List, Optional, Union
 
 from langchain_core.callbacks import (
@@ -290,7 +290,7 @@ class Streamer(ABC):
 
     @abstractmethod
     def __call__(self, token: str, is_special_token: bool) -> Optional[str]:
-        """Returns the text to yield, if any, given the token that was just generated."""
+        """Returns the text to yield, if any, given the token."""
 
     @abstractmethod
     def end_reached(self) -> bool:
