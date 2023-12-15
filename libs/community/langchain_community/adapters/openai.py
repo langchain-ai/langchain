@@ -89,7 +89,14 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "function":
         return FunctionMessage(content=_dict["content"], name=_dict["name"])
     elif role == "tool":
-        return ToolMessage(content=_dict["content"], tool_call_id=_dict["tool_call_id"])
+        additional_kwargs = {}
+        if "name" in _dict:
+            additional_kwargs["name"] = _dict["name"]
+        return ToolMessage(
+            content=_dict["content"],
+            tool_call_id=_dict["tool_call_id"],
+            additional_kwargs=additional_kwargs,
+        )
     else:
         return ChatMessage(content=_dict["content"], role=role)
 
