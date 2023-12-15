@@ -42,6 +42,7 @@ jobs:
     secrets: inherit
 
   test:
+    if: ${{ ! startsWith(inputs.working-directory, 'templates/') }}
     uses: ./.github/workflows/_test.yml
     with:
       working-directory: ${{ inputs.working-directory }}

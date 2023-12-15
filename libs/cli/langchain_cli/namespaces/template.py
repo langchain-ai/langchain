@@ -9,11 +9,21 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 package_cli = typer.Typer(no_args_is_help=True, add_completion=False)
+
+Replacements = TypedDict(
+    "Replacements",
+    {
+        "__package_name__": str,
+        "__module_name__": str,
+        "__ModuleName__": str,
+        "__package_name_short__": str,
+    },
+)
 
 
 @package_cli.command()
