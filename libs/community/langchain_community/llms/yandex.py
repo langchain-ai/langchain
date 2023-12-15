@@ -159,12 +159,15 @@ class YandexGPT(_BaseYandexGPT, LLM):
 
             import grpc
             from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-            from yandex.cloud.ai.llm.v1alpha.llm_pb2 import GenerationOptions
-            from yandex.cloud.ai.llm.v1alpha.llm_service_pb2 import (
-                InstructRequest,
-                InstructResponse,
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+                CompletionOptions,
+                Message,
             )
-            from yandex.cloud.ai.llm.v1alpha.llm_service_pb2_grpc import (
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+                CompletionResponse,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
                 TextGenerationAsyncServiceStub,
             )
             from yandex.cloud.operation.operation_service_pb2 import GetOperationRequest
@@ -178,20 +181,20 @@ class YandexGPT(_BaseYandexGPT, LLM):
         operation_api_url = "operation.api.cloud.yandex.net:443"
         channel_credentials = grpc.ssl_channel_credentials()
         async with grpc.aio.secure_channel(self.url, channel_credentials) as channel:
-            request = InstructRequest(
-                model=self.model_name,
-                request_text=prompt,
-                generation_options=GenerationOptions(
+            request = CompletionRequest(
+                model_uri=self.model_uri,
+                completion_options=CompletionOptions(
                     temperature=DoubleValue(value=self.temperature),
                     max_tokens=Int64Value(value=self.max_tokens),
                 ),
+                messages=[Message(role="user", text=prompt)],
             )
             stub = TextGenerationAsyncServiceStub(channel)
             if self.iam_token:
                 metadata = (("authorization", f"Bearer {self.iam_token}"),)
             else:
                 metadata = (("authorization", f"Api-Key {self.api_key}"),)
-            operation = await stub.Instruct(request, metadata=metadata)
+            operation = await stub.Completion(request, metadata=metadata)
             async with grpc.aio.secure_channel(
                 operation_api_url, channel_credentials
             ) as operation_channel:
@@ -203,7 +206,7 @@ class YandexGPT(_BaseYandexGPT, LLM):
                         operation_request, metadata=metadata
                     )
 
-            instruct_response = InstructResponse()
+            instruct_response = CompletionResponse()
             operation.response.Unpack(instruct_response)
             text = instruct_response.alternatives[0].text
             if stop is not None:
