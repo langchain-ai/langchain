@@ -6,6 +6,11 @@
   {%- set top_container_cls = "sk-landing-container" %}
 {%- endif %}
 
+{# title, link, link_attrs #}
+{%- set drop_down_navigation = [
+  ('Google Generative AI', pathto('google_genai_api_reference'), ''),]
+-%}
+
 <nav id="navbar" class="{{ nav_bar_class }} navbar navbar-expand-md navbar-light bg-light py-0">
   <div class="container-fluid {{ top_container_cls }} px-0">
     {%- if logo_url %}
@@ -32,7 +37,7 @@
     <div class="sk-navbar-collapse collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item">
-          <a class="sk-nav-link nav-link" href="{{ pathto('api_reference') }}">API</a>
+          <a class="sk-nav-link nav-link" href="{{ pathto('langchain_api_reference') }}">LangChain</a>
         </li>
         <li class="nav-item">
           <a class="sk-nav-link nav-link" href="{{ pathto('core_api_reference') }}">Core</a>
@@ -43,14 +48,22 @@
         <li class="nav-item">
           <a class="sk-nav-link nav-link" href="{{ pathto('experimental_api_reference') }}">Experimental</a>
         </li>
-        <li class="nav-item">
-          <a class="sk-nav-link nav-link" target="_blank" rel="noopener noreferrer" href="https://python.langchain.com/">Python Docs</a>
-        </li>
         {%- for title, link, link_attrs in drop_down_navigation %}
         <li class="nav-item">
           <a class="sk-nav-link nav-link nav-more-item-mobile-items" href="{{ link }}" {{ link_attrs }}>{{ title }}</a>
         </li>
         {%- endfor %}
+        <li class="nav-item dropdown nav-more-item-dropdown">
+          <a class="sk-nav-link nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Partner libs</a>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            {%- for title, link, link_attrs in drop_down_navigation %}
+              <a class="sk-nav-dropdown-item dropdown-item" href="{{ link }}" {{ link_attrs }}>{{ title}}</a>
+            {%- endfor %}
+          </div>
+        </li>
+        <li class="nav-item">
+          <a class="sk-nav-link nav-link" target="_blank" rel="noopener noreferrer" href="https://python.langchain.com/">Docs</a>
+        </li>
       </ul>
       {%- if pagename != "search"%}
       <div id="searchbox" role="search">
