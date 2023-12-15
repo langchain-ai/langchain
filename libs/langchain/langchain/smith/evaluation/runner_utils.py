@@ -34,11 +34,12 @@ from langchain_core.tracers.evaluation import (
 )
 from langchain_core.tracers.langchain import LangChainTracer
 from langsmith.client import Client
-from langsmith.evaluation import RunEvaluator
+from langsmith.evaluation import EvaluationResult, RunEvaluator
 from langsmith.run_helpers import as_runnable, is_traceable_function
 from langsmith.schemas import Dataset, DataType, Example, TracerSession
 from langsmith.utils import LangSmithError
 from requests import HTTPError
+from typing_extensions import TypedDict
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.base import Chain
@@ -924,6 +925,9 @@ def _prepare_eval_run(
 ) -> Tuple[MCF, TracerSession, Dataset, List[Example]]:
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
+    examples = list(client.list_examples(dataset_id=dataset.id))
+    if not examples:
+        raise ValueError(f"Dataset {dataset_name} has no example rows.")
 
     try:
         project_extra: dict = {"metadata": project_metadata} if project_metadata else {}
@@ -955,10 +959,15 @@ run_on_dataset(
         f"View all tests for Dataset {dataset_name} at:\n{dataset.url}",
         flush=True,
     )
-    examples = list(client.list_examples(dataset_id=dataset.id))
-    if not examples:
-        raise ValueError(f"Dataset {dataset_name} has no example rows.")
     return wrapped_model, project, dataset, examples
+
+
+class _RowResult(TypedDict):
+    """A dictionary of the results for a single example row."""
+
+    feedback: List[EvaluationResult]
+    execution_time: Optional[float]
+    run_id: Optional[str]
 
 
 @dataclasses.dataclass
@@ -974,32 +983,16 @@ class _DatasetRunContainer:
     def _merge_test_outputs(
         self,
         batch_results: list,
-        all_eval_results: dict,
-        all_execution_time: dict,
-        all_run_ids: dict,
+        all_eval_results: Dict[str, _RowResult],
     ) -> dict:
         results: dict = {}
         for example, output in zip(self.examples, batch_results):
-            feedback = all_eval_results.get(str(example.id), [])
+            row_result = all_eval_results.get(str(example.id), {})
             results[str(example.id)] = {
                 "input": example.inputs,
-                "feedback": feedback,
-                "execution_time": all_execution_time.get(str(example.id)),
-                "run_id": all_run_ids.get(str(example.id)),
-            }
-            if isinstance(output, EvalError):
-                results[str(example.id)]["Error"] = output.Error
-            else:
-                results[str(example.id)]["output"] = output
-            if example.outputs:
-                results[str(example.id)]["reference"] = example.outputs
-        results: dict = {}
-        for example, output in zip(self.examples, batch_results):
-            feedback = all_eval_results.get(str(example.id), [])
-            results[str(example.id)] = {
-                "input": example.inputs,
-                "feedback": feedback,
-                "execution_time": all_execution_time.get(str(example.id)),
+                "feedback": row_result.get("feedback", []),
+                "execution_time": row_result.get("execution_time"),
+                "run_id": row_result.get("run_id"),
             }
             if isinstance(output, EvalError):
                 results[str(example.id)]["Error"] = output.Error
@@ -1009,17 +1002,16 @@ class _DatasetRunContainer:
                 results[str(example.id)]["reference"] = example.outputs
         return results
 
-    def _collect_metrics(self) -> Tuple[dict, dict]:
-        all_eval_results = {}
-        all_execution_time = {}
-        all_run_ids = {}
+    def _collect_metrics(self) -> Dict[str, _RowResult]:
+        all_eval_results: dict = {}
         for c in self.configs:
             for callback in cast(list, c["callbacks"]):
                 if isinstance(callback, EvaluatorCallbackHandler):
                     eval_results = callback.logged_eval_results
-                    all_eval_results.update(
-                        {example_id: v for (_, example_id), v in eval_results.items()}
-                    )
+                    for (_, example_id), v in eval_results.items():
+                        all_eval_results.setdefault(str(example_id), {}).update(
+                            {"feedback": v}
+                        )
                 elif isinstance(callback, LangChainTracer):
                     run = callback.latest_run
                     example_id = callback.example_id
@@ -1028,20 +1020,22 @@ class _DatasetRunContainer:
                         if run and run.end_time
                         else None
                     )
-                    all_execution_time[str(example_id)] = execution_time
                     run_id = str(run.id) if run else None
-                    all_run_ids[str(example_id)] = run_id
-        return all_eval_results, all_execution_time
+                    all_eval_results.setdefault(str(example_id), {}).update(
+                        {
+                            "execution_time": execution_time,
+                            "run_id": run_id,
+                        }
+                    )
+        return cast(Dict[str, _RowResult], all_eval_results)
 
     def _collect_test_results(
         self,
         batch_results: List[Union[dict, str, LLMResult, ChatResult]],
     ) -> TestResult:
         wait_for_all_evaluators()
-        all_eval_results, all_execution_time = self._collect_metrics()
-        results = self._merge_test_outputs(
-            batch_results, all_eval_results, all_execution_time
-        )
+        all_eval_results = self._collect_metrics()
+        results = self._merge_test_outputs(batch_results, all_eval_results)
         return TestResult(
             project_name=self.project.name,
             results=results,
