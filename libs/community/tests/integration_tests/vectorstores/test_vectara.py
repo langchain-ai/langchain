@@ -3,6 +3,7 @@ import urllib.request
 
 from langchain_core.documents import Document
 
+#from langchain_community.vectorstores.vectara import Vectara, SummaryConfig
 from langchain_community.vectorstores.vectara import Vectara, SummaryConfig
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
@@ -90,7 +91,6 @@ def test_vectara_add_documents(vectara1) -> None:
     assert len(output3) == 1
     assert output3[0][0].page_content == "large language model"
     assert output3[0][0].metadata["abbr"] == "llm"
-
 
 def test_vectara_from_files() -> None:
     """Test end to end construction and search."""
@@ -208,12 +208,7 @@ def vectara3():
     for doc_id in doc_ids:
         vectara3._delete_doc(doc_id)
 
-
 def test_vectara_mmr(vectara3) -> None:
-
-    print(f"DEBUG qualname 1 = {vectara3.max_marginal_relevance_search.__qualname__}")
-    print(f"DEBUG qualname 2 = {vectara3.similarity_search.__qualname__}")
-
     # test max marginal relevance
     output1 = vectara3.max_marginal_relevance_search(
         "generative AI", 
@@ -237,7 +232,6 @@ def test_vectara_mmr(vectara3) -> None:
 
 def test_vectara_with_summary(vectara3) -> None:
     """Test vectara summary."""
-
     # test summarization
     num_results = 10
     output1 = vectara3.similarity_search(query="what is generative AI?", k=num_results, 
