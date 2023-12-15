@@ -185,6 +185,10 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
         extra = Extra.ignore
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     @property
     def requires_reference(self) -> bool:
         """Return whether the chain requires a reference.

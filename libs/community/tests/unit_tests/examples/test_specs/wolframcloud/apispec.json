@@ -1,0 +1,218 @@
+{
+   "openapi": "3.1.0",
+   "info": {
+      "title": "WolframAlpha",
+      "version": "v1.7"
+   },
+   "servers": [
+      {
+         "url": "https://www.wolframalpha.com",
+         "description": "The WolframAlpha server"
+      }
+   ],
+   "paths": {
+      "/api/v1/spoken.jsp": {
+         "get": {
+            "operationId": "getSpokenResult",
+            "externalDocs": "https://products.wolframalpha.com/spoken-results-api/documentation",
+            "summary": "Data results from the WolframAlpha Spoken Results API",
+            "responses": {
+               "200": {
+                  "description": "the answer to the user's data query",
+                  "content": {
+                     "text/plain": {}
+                  }
+               },
+               "501": {
+                  "description": "WolframAlpha was unable to form an answer to the query"
+               },
+               "400": {
+                  "description": "The request is missing the i parameter whose value is the query"
+               },
+               "403": {
+                  "description": "Unauthorized"
+               }
+            },
+            "parameters": [
+               {
+                  "name": "i",
+                  "in": "query",
+                  "description": "the user's query",
+                  "required": true,
+                  "schema": {
+                     "type": "string"
+                  }
+               },
+               {
+                  "name": "geolocation",
+                  "in": "query",
+                  "description": "comma-separated latitude and longitude of the user",
+                  "required": false,
+                  "style": "form",
+                  "explode": false,
+                  "schema": {
+                     "type": "array",
+                     "items": {
+                        "type": "number"
+                     }
+                  }
+               }
+            ]
+         }
+      },
+      "/api/v1/result.jsp": {
+         "get": {
+            "operationId": "getShortAnswer",
+            "externalDocs": "https://products.wolframalpha.com/short-answers-api/documentation",
+            "summary": "Math results from the WolframAlpha Short Answers API",
+            "responses": {
+               "200": {
+                  "description": "the answer to the user's math query",
+                  "content": {
+                     "text/plain": {}
+                  }
+               },
+               "501": {
+                  "description": "WolframAlpha was unable to form an answer to the query"
+               },
+               "400": {
+                  "description": "The request is missing the i parameter whose value is the query"
+               },
+               "403": {
+                  "description": "Unauthorized"
+               }
+            },
+            "parameters": [
+               {
+                  "name": "i",
+                  "in": "query",
+                  "description": "the user's query",
+                  "required": true,
+                  "schema": {
+                     "type": "string"
+                  }
+               },
+               {
+                  "name": "geolocation",
+                  "in": "query",
+                  "description": "comma-separated latitude and longitude of the user",
+                  "required": false,
+                  "style": "form",
+                  "explode": false,
+                  "schema": {
+                     "type": "array",
+                     "items": {
+                        "type": "number"
+                     }
+                  }
+               }
+            ]
+         }
+      },
+      "/api/v1/query.jsp": {
+         "get": {
+            "operationId": "getFullResults",
+            "externalDocs": "https://products.wolframalpha.com/api/documentation",
+            "summary": "Information from the WolframAlpha Full Results API",
+            "responses": {
+               "200": {
+                  "description": "The results of the query, or an error code",
+                  "content": {
+                     "text/xml": {},
+                     "application/json": {}
+                  }
+               }
+            },
+            "parameters": [
+               {
+                  "name": "assumptionsversion",
+                  "in": "query",
+                  "description": "which version to use for structuring assumptions in the output and in requests",
+                  "required": true,
+                  "schema": {
+                     "type": "integer",
+                     "enum": [
+                        2
+                     ]
+                  }
+               },
+               {
+                  "name": "input",
+                  "in": "query",
+                  "description": "the user's query",
+                  "required": true,
+                  "schema": {
+                     "type": "string"
+                  }
+               },
+               {
+                  "name": "latlong",
+                  "in": "query",
+                  "description": "comma-separated latitude and longitude of the user",
+                  "required": false,
+                  "style": "form",
+                  "explode": false,
+                  "schema": {
+                     "type": "array",
+                     "items": {
+                        "type": "number"
+                     }
+                  }
+               },
+               {
+                  "name": "output",
+                  "in": "query",
+                  "description": "the response content type",
+                  "required": true,
+                  "schema": {
+                     "type": "string",
+                     "enum": [
+                        "json"
+                     ]
+                  }
+               },
+               {
+                  "name": "assumption",
+                  "in": "query",
+                  "description": "the assumption to use, passed back from input in the values array of the assumptions object in the output of a previous query with the same input.",
+                  "required": false,
+                  "explode": true,
+                  "style": "form",
+                  "schema": {
+                     "type": "array",
+                     "items": {
+                        "type": "string"
+                     }
+                  }
+               },
+               {
+                  "name": "format",
+                  "in": "query",
+                  "description": "comma-separated elements to include in the response when available.",
+                  "required": false,
+                  "explode": false,
+                  "style": "form",
+                  "schema": {
+                     "type": "array",
+                     "items": {
+                        "type": "string",
+                        "enum": [
+                           "csv",
+                           "tsv",
+                           "image",
+                           "imagemap",
+                           "plaintext",
+                           "sound",
+                           "wav",
+                           "minput",
+                           "moutput",
+                           "cell"
+                        ]
+                     }
+                  }
+               }
+            ]
+         }
+      }
+   }
+}
