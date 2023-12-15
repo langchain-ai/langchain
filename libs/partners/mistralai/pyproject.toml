@@ -15,10 +15,6 @@ optional = true
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
-freezegun = "^1.2.2"
-pytest-mock  = "^3.10.0"
-syrupy = "^4.0.2"
-pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 langchain-core = {path = "../../core", develop = true}
 
@@ -76,9 +72,7 @@ build-backend = "poetry.core.masonry.api"
 # --strict-config       any warnings encountered while parsing the `pytest`
 #                       section of the configuration file raise errors.
 #
-# https://github.com/tophat/syrupy
-# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
+addopts = "--strict-markers --strict-config --durations=5"
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
