@@ -14,13 +14,19 @@ from langchain_community.llms.utils import enforce_stop_tokens
 
 class _BaseYandexGPT(Serializable):
     iam_token: str = ""
-    """Yandex Cloud IAM token for service account
+    """Yandex Cloud IAM token for service or user account
     with the `ai.languageModels.user` role"""
     api_key: str = ""
     """Yandex Cloud Api Key for service account
     with the `ai.languageModels.user` role"""
+    folder_id: str = ""
+    """Yandex Cloud folder ID"""
     model_uri: str = ""
     """Model uri to use."""
+    model_name: str = "yandexgpt-lite"
+    """Model name to use."""
+    model_version: str = "latest"
+    """Model version to use."""
     temperature: float = 0.6
     """What sampling temperature to use.
     Should be a double number between 0 (inclusive) and 1 (inclusive)."""
@@ -45,8 +51,27 @@ class _BaseYandexGPT(Serializable):
         values["iam_token"] = iam_token
         api_key = get_from_dict_or_env(values, "api_key", "YC_API_KEY", "")
         values["api_key"] = api_key
+        folder_id = get_from_dict_or_env(values, "folder_id", "YC_FOLDER_ID", "")
+        values["folder_id"] = folder_id
         if api_key == "" and iam_token == "":
             raise ValueError("Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided.")
+
+        if values.get("iam_token"):
+            values["_grpc_metadata"] = [
+                ("authorization", f"Bearer {values['iam_token']}")
+            ]
+            if values.get("folder_id"):
+                values["_grpc_metadata"].append(("x-folder-id", values["folder_id"]))
+        else:
+            values["_grpc_metadata"] = (
+                ("authorization", f"Api-Key {values['api_key']}"),
+            )
+        if values.get("model_uri") is None and values.get("folder_id") is None:
+            raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
+        if not values.get("model_uri"):
+            values[
+                "model_uri"
+            ] = f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
         return values
 
 
@@ -62,11 +87,16 @@ class YandexGPT(_BaseYandexGPT, LLM):
         - You can specify the key in a constructor parameter `api_key`
         or in an environment variable `YC_API_KEY`.
 
+    To use the default model specify the folder ID in a parameter `folder_id`
+    or in an environment variable `YC_FOLDER_ID`.
+
+    Or specify the model URI in a constructor parameter `model_uri`
+
     Example:
         .. code-block:: python
 
             from langchain_community.llms import YandexGPT
-            yandex_gpt = YandexGPT(iam_token="t1.9eu...")
+            yandex_gpt = YandexGPT(iam_token="t1.9eu...", folder_id="b1g...")
     """
 
     @property
@@ -190,11 +220,7 @@ class YandexGPT(_BaseYandexGPT, LLM):
                 messages=[Message(role="user", text=prompt)],
             )
             stub = TextGenerationAsyncServiceStub(channel)
-            if self.iam_token:
-                metadata = (("authorization", f"Bearer {self.iam_token}"),)
-            else:
-                metadata = (("authorization", f"Api-Key {self.api_key}"),)
-            operation = await stub.Completion(request, metadata=metadata)
+            operation = await stub.Completion(request, metadata=self._grpc_metadata)
             async with grpc.aio.secure_channel(
                 operation_api_url, channel_credentials
             ) as operation_channel:
@@ -203,7 +229,7 @@ class YandexGPT(_BaseYandexGPT, LLM):
                     await asyncio.sleep(1)
                     operation_request = GetOperationRequest(operation_id=operation.id)
                     operation = await operation_stub.Get(
-                        operation_request, metadata=metadata
+                        operation_request, metadata=self._grpc_metadata
                     )
 
             instruct_response = CompletionResponse()
