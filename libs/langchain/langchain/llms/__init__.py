@@ -557,6 +557,10 @@ def __getattr__(name: str) -> Any:
         return _import_anthropic()
     elif name == "Anyscale":
         return _import_anyscale()
+    elif name == "Aphrodite":
+        return _import_aphrodite()
+    elif name == "AphroditeOpenAI":
+        return _import_aphrodite_openai()
     elif name == "Arcee":
         return _import_arcee()
     elif name == "Aviary":
@@ -816,6 +820,8 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "amazon_bedrock": _import_bedrock,
         "anthropic": _import_anthropic,
         "anyscale": _import_anyscale,
+        "aphrodite": _import_aphrodite,
+        "aphrodite_openai": _import_aphrodite_openai,
         "arcee": _import_arcee,
         "aviary": _import_aviary,
         "azure": _import_azure_openai,

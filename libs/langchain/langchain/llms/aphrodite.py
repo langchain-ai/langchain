@@ -172,9 +172,9 @@ class Aphrodite(BaseLLM):
                 "Please install it with `pip install aphrodite-engine`."
             )
 
-        aphrodite_kwargs = values["aphrodite_kwargs"]
-        if values.get("quantization"):
-            aphrodite_kwargs["quantization"] = values["quantization"]
+        # aphrodite_kwargs = values["aphrodite_kwargs"]
+        # if values.get("quantization"):
+        #     aphrodite_kwargs["quantization"] = values["quantization"]
 
         values["client"] = AphroditeModel(
             model=values["model"],
@@ -182,7 +182,7 @@ class Aphrodite(BaseLLM):
             trust_remote_code=values["trust_remote_code"],
             dtype=values["dtype"],
             download_dir=values["download_dir"],
-            **aphrodite_kwargs,
+            **values["aphrodite_kwargs"],
         )
 
         return values
@@ -234,6 +234,8 @@ class Aphrodite(BaseLLM):
 
         # build sampling parameters
         params = {**self._default_params, **kwargs, "stop": stop}
+        if 'logit_bias' in params:
+            del params['logit_bias']
         sampling_params = SamplingParams(**params)
         # call the model
         outputs = self.client.generate(prompts, sampling_params)
@@ -249,30 +251,3 @@ class Aphrodite(BaseLLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "aphrodite"
-
-
-class AphroditeOpenAI(BaseOpenAI):
-    """Aphrodite OpenAI-compatible API client"""
-
-    @property
-    def _invocation_params(self) -> Dict[str, Any]:
-        """Get the parameters used to invoke the model."""
-
-        params: Dict[str, Any] = {
-            "model": self.model_name,
-            **self._default_params,
-        }
-        if not is_openai_v1():
-            params.update(
-                {
-                    "api_key": self.openai_api_key,
-                    "api_base": self.openai_api_base,
-                }
-            )
-
-        return params
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "aphrodite-openai"
