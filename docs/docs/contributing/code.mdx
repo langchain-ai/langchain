@@ -49,22 +49,23 @@ This repository contains multiple packages:
 - `langchain-community`: Third-party integrations of various components.
 - `langchain`: Chains, agents, and retrieval logic that makes up the cognitive architecture of your applications.
 - `langchain-experimental`: Components and chains that are experimental, either in the sense that the techniques are novel and still being tested, or they require giving the LLM more access than would be possible in most production systems.
+- Partner integrations: Partner packages in `libs/partners` that are independently verison controlled.
 
 Each of these has its own development environment. Docs are run from the top-level makefile, but development
 is split across separate test & release flows.
 
-For this quickstart, start with langchain:
+For this quickstart, start with langchain-community:
 
 ```bash
-cd libs/langchain
+cd libs/community
 ```
 
 ### Local Development Dependencies
 
-Install langchain development requirements (for running langchain, running examples, linting, formatting, tests, and coverage):
+Install langchain-community development requirements (for running langchain, running examples, linting, formatting, tests, and coverage):
 
 ```bash
-poetry install --with test
+poetry install --with lint,typing,test,integration_tests
 ```
 
 Then verify dependency installation:
@@ -72,8 +73,6 @@ Then verify dependency installation:
 ```bash
 make test
 ```
-
-If the tests don't pass, you may need to pip install additional dependencies, such as `numexpr` and `openapi_schema_pydantic`.
 
 If during installation you receive a `WheelFileValidationError` for `debugpy`, please make sure you are running
 Poetry v1.6.1+. This bug was present in older versions of Poetry (e.g. 1.4.1) and has been resolved in newer releases.
@@ -83,7 +82,7 @@ See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for
 
 ### Testing
 
-_some test dependencies are optional; see section about optional dependencies_.
+_In `langchain`, `langchain-community`, and `langchain-experimental`, some test dependencies are optional; see section about optional dependencies_.
 
 Unit tests cover modular logic that does not require calls to outside APIs.
 If you add new logic, please add a unit test.
@@ -100,7 +99,7 @@ To run unit tests in Docker:
 make docker_tests
 ```
 
-There are also [integration tests and code-coverage](https://github.com/langchain-ai/langchain/tree/master/libs/langchain/tests/README.md) available.
+There are also [integration tests and code-coverage](./reference/testing) available.
 
 ### Only develop langchain_core or langchain_experimental
 
@@ -204,7 +203,9 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 ## Working with Optional Dependencies
 
-Langchain relies heavily on optional dependencies to keep the Langchain package lightweight.
+`langchain`, `langchain-community`, and `langchain-experimental` rely on optional dependencies to keep these packages lightweight.
+
+`langchain-core` and partner packages **do not use** optional dependencies in this way.
 
 You only need to add a new dependency if a **unit test** relies on the package.
 If your package is only required for **integration tests**, then you can skip these
@@ -248,14 +249,3 @@ poetry run jupyter notebook
 ```
 
 When you run `poetry install`, the `langchain` package is installed as editable in the virtualenv, so your new logic can be imported into the notebook.
-
-## Documentation
-
-While the code is split between `langchain` and `langchain.experimental`, the documentation is one holistic thing.
-This covers how to get started contributing to documentation.
-
-From the top-level of this repo, install documentation dependencies:
-
-```bash
-poetry install
-```
