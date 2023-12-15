@@ -110,15 +110,6 @@ class TritonTensorRTLLM(BaseLLM):
         res = self.client.get_model_repository_index(as_json=True)
         return [model["name"] for model in res["models"]]
 
-    def _get_model_concurrency(self, model_name: str, timeout: int = 1000) -> int:
-        """Get the model concurrency."""
-        # (WFH): This isn't used anywhere...
-        self._load_model(model_name, timeout)
-        instances = self.client.get_model_config(model_name, as_json=True)["config"][
-            "instance_group"
-        ]
-        return sum(instance["count"] * len(instance["gpus"]) for instance in instances)
-
     def _load_model(self, model_name: str, timeout: int = 1000) -> None:
         """Load a model into the server."""
         if self.client.is_model_ready(model_name):
@@ -201,7 +192,7 @@ class TritonTensorRTLLM(BaseLLM):
             if run_manager:
                 run_manager.on_llm_new_token(token)
 
-    ##### BELOW ARE METHOD SPREVIOUSLY ONLY THE GRPC CLIENT
+    ##### BELOW ARE METHODS PREVIOUSLY ONLY IN THE GRPC CLIENT
 
     def _request(
         self,
