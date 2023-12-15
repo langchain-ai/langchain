@@ -1,6 +1,6 @@
 """Wrapper around YandexGPT chat models."""
 import logging
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, cast
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
