@@ -12,7 +12,7 @@ test:
 tests:
 	poetry run pytest $(TEST_FILE)
 
-check_imports: $(shell find langchain_nvidia_aiplay -name '*.py')
+check_imports: $(shell find langchain_nvidia_ai_endpoints -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
 integration_tests:
@@ -28,7 +28,7 @@ PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
-lint_package: PYTHON_FILES=langchain_nvidia_aiplay
+lint_package: PYTHON_FILES=langchain_nvidia_ai_endpoints
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
