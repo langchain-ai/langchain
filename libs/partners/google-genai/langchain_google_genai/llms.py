@@ -38,7 +38,7 @@ def _create_retry_decorator(
     return decorator
 
 
-def completion_with_retry(
+def _completion_with_retry(
     llm: GoogleGenerativeAI,
     prompt: LanguageModelInput,
     is_gemini: bool = False,
@@ -85,7 +85,14 @@ def _strip_erroneous_leading_spaces(text: str) -> str:
 
 
 class GoogleGenerativeAI(BaseLLM, BaseModel):
-    """Google GenerativeAI models."""
+    """Google GenerativeAI models.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_google_genai import GoogleGenerativeAI
+            llm = GoogleGenerativeAI(model="gemini-pro")
+    """
 
     client: Any  #: :meta private:
     model: str = Field(
@@ -123,15 +130,6 @@ Supported examples:
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"google_api_key": "GOOGLE_API_KEY"}
-
-    @classmethod
-    def is_lc_serializable(self) -> bool:
-        return True
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "llms", "google_palm"]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -183,7 +181,7 @@ Supported examples:
         }
         for prompt in prompts:
             if self.is_gemini:
-                res = completion_with_retry(
+                res = _completion_with_retry(
                     self,
                     prompt=prompt,
                     stream=False,
@@ -196,7 +194,7 @@ Supported examples:
                 ]
                 generations.append([Generation(text=c) for c in candidates])
             else:
-                res = completion_with_retry(
+                res = _completion_with_retry(
                     self,
                     model=self.model,
                     prompt=prompt,
@@ -224,7 +222,7 @@ Supported examples:
         generation_config = kwargs.get("generation_config", {})
         if stop:
             generation_config["stop_sequences"] = stop
-        for stream_resp in completion_with_retry(
+        for stream_resp in _completion_with_retry(
             self,
             prompt,
             stream=True,
