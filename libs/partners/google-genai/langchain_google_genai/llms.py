@@ -1,20 +1,45 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
-from langchain_core._api.deprecation import deprecated
-from langchain_core.callbacks import CallbackManagerForLLMRun
+import google.api_core
+import google.generativeai as genai  # type: ignore[import]
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-from langchain_community.llms import BaseLLM
-from langchain_community.utilities.vertexai import create_retry_decorator
+
+def _create_retry_decorator(
+    llm: BaseLLM,
+    *,
+    max_retries: int = 1,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
+    """Creates a retry decorator for Vertex / Palm LLMs."""
+
+    errors = [
+        google.api_core.exceptions.ResourceExhausted,
+        google.api_core.exceptions.ServiceUnavailable,
+        google.api_core.exceptions.Aborted,
+        google.api_core.exceptions.DeadlineExceeded,
+        google.api_core.exceptions.GoogleAPIError,
+    ]
+    decorator = create_base_retry_decorator(
+        error_types=errors, max_retries=max_retries, run_manager=run_manager
+    )
+    return decorator
 
 
-def completion_with_retry(
-    llm: GooglePalm,
+def _completion_with_retry(
+    llm: GoogleGenerativeAI,
     prompt: LanguageModelInput,
     is_gemini: bool = False,
     stream: bool = False,
@@ -22,7 +47,7 @@ def completion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = create_retry_decorator(
+    retry_decorator = _create_retry_decorator(
         llm, max_retries=llm.max_retries, run_manager=run_manager
     )
 
@@ -59,18 +84,26 @@ def _strip_erroneous_leading_spaces(text: str) -> str:
         return text
 
 
-@deprecated("0.0.351", alternative="langchain_google_genai.GoogleGenerativeAI")
-class GooglePalm(BaseLLM, BaseModel):
-    """
-    DEPRECATED: Use `langchain_google_genai.GoogleGenerativeAI` instead.
+class GoogleGenerativeAI(BaseLLM, BaseModel):
+    """Google GenerativeAI models.
 
-    Google PaLM models.
+    Example:
+        .. code-block:: python
+
+            from langchain_google_genai import GoogleGenerativeAI
+            llm = GoogleGenerativeAI(model="gemini-pro")
     """
 
     client: Any  #: :meta private:
-    google_api_key: Optional[SecretStr]
-    model_name: str = "models/text-bison-001"
+    model: str = Field(
+        ...,
+        description="""The name of the model to use.
+Supported examples:
+    - gemini-pro
+    - models/text-bison-001""",
+    )
     """Model name to use."""
+    google_api_key: Optional[SecretStr] = None
     temperature: float = 0.7
     """Run inference with this temperature. Must by in the closed interval
        [0.0, 1.0]."""
@@ -92,20 +125,11 @@ class GooglePalm(BaseLLM, BaseModel):
     @property
     def is_gemini(self) -> bool:
         """Returns whether a model is belongs to a Gemini family or not."""
-        return _is_gemini_model(self.model_name)
+        return _is_gemini_model(self.model)
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"google_api_key": "GOOGLE_API_KEY"}
-
-    @classmethod
-    def is_lc_serializable(self) -> bool:
-        return True
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "llms", "google_palm"]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -113,24 +137,17 @@ class GooglePalm(BaseLLM, BaseModel):
         google_api_key = get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY"
         )
-        model_name = values["model_name"]
-        try:
-            import google.generativeai as genai
+        model_name = values["model"]
 
-            if isinstance(google_api_key, SecretStr):
-                google_api_key = google_api_key.get_secret_value()
+        if isinstance(google_api_key, SecretStr):
+            google_api_key = google_api_key.get_secret_value()
 
-            genai.configure(api_key=google_api_key)
+        genai.configure(api_key=google_api_key)
 
-            if _is_gemini_model(model_name):
-                values["client"] = genai.GenerativeModel(model_name=model_name)
-            else:
-                values["client"] = genai
-        except ImportError:
-            raise ImportError(
-                "Could not import google-generativeai python package. "
-                "Please install it with `pip install google-generativeai`."
-            )
+        if _is_gemini_model(model_name):
+            values["client"] = genai.GenerativeModel(model_name=model_name)
+        else:
+            values["client"] = genai
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")
@@ -164,7 +181,7 @@ class GooglePalm(BaseLLM, BaseModel):
         }
         for prompt in prompts:
             if self.is_gemini:
-                res = completion_with_retry(
+                res = _completion_with_retry(
                     self,
                     prompt=prompt,
                     stream=False,
@@ -177,9 +194,9 @@ class GooglePalm(BaseLLM, BaseModel):
                 ]
                 generations.append([Generation(text=c) for c in candidates])
             else:
-                res = completion_with_retry(
+                res = _completion_with_retry(
                     self,
-                    model=self.model_name,
+                    model=self.model,
                     prompt=prompt,
                     stream=False,
                     is_gemini=False,
@@ -205,7 +222,7 @@ class GooglePalm(BaseLLM, BaseModel):
         generation_config = kwargs.get("generation_config", {})
         if stop:
             generation_config["stop_sequences"] = stop
-        for stream_resp in completion_with_retry(
+        for stream_resp in _completion_with_retry(
             self,
             prompt,
             stream=True,
@@ -241,5 +258,5 @@ class GooglePalm(BaseLLM, BaseModel):
         """
         if self.is_gemini:
             raise ValueError("Counting tokens is not yet supported!")
-        result = self.client.count_text_tokens(model=self.model_name, prompt=text)
+        result = self.client.count_text_tokens(model=self.model, prompt=text)
         return result["token_count"]
