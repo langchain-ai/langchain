@@ -11,7 +11,8 @@ from typing import (
     Optional,
     Tuple,
     TypeVar,
-    Union, Callable,
+    Union,
+    Callable,
 )
 
 import numpy as np
@@ -60,7 +61,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         index_name: str = "default",
         text_key: str = "text",
         embedding_key: str = "embedding",
-        relevance_score_fn: str = "cosine"
+        relevance_score_fn: str = "cosine",
     ):
         """
         Args:
@@ -92,7 +93,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
         elif self._relevance_score_fn == "cosine":
             return self._cosine_relevance_score_fn
         else:
-            raise NotImplementedError(f"No relevance score function for ${self._relevance_score_fn}")
+            raise NotImplementedError(
+                f"No relevance score function for ${self._relevance_score_fn}"
+            )
 
     @classmethod
     def from_connection_string(
@@ -211,7 +214,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
-        *,
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
