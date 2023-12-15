@@ -153,7 +153,7 @@ jobs:
             "$PKG_NAME==$VERSION"
 
       - name: Run unit tests
-        run: make integration_tests
+        run: make tests
         working-directory: ${{ inputs.working-directory }}
 
       - name: Run integration tests
