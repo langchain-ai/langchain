@@ -32,11 +32,22 @@ class BreebsKnowledgeRetriever(BaseRetriever):
                 "query": query,
             },
         )
-        chunks = r.json()
-        return [
-            Document(
-                page_content=chunk["content"],
-                metadata={"source": chunk["source_url"], "score": 1},
-            )
-            for chunk in chunks
-        ]
+        if r.status_code != 200:
+            return []
+        else:
+            chunks = r.json()
+            return [
+                Document(
+                    page_content=chunk["content"],
+                    metadata={"source": chunk["source_url"], "score": 1},
+                )
+                for chunk in chunks
+            ]
+
+
+# breeb_key = "Node21Docs"
+# retriever = BreebsKnowledgeRetriever(breeb_key)
+# documents = retriever._get_relevant_documents(
+#     "How promises work in the last documentation of Node js?",
+#     run_manager=CallbackManagerForRetrieverRun,
+# )
