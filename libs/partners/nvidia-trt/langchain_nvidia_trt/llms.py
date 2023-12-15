@@ -146,7 +146,7 @@ class TritonTensorRTLLM(BaseLLM):
             # TODO: Verify this is actually a string result
             result: str = self._request(
                 self.model_name,
-                stop_words=stop,
+                # stop_words=stop,
                 **invoc_params,
             )
             generations.append([Generation(text=result, generation_info={})])
@@ -204,15 +204,43 @@ class TritonTensorRTLLM(BaseLLM):
         if not self.client.is_model_ready(model_name):
             raise RuntimeError("Cannot request streaming, model is not loaded")
 
+        request_id = str(random.randint(1, 9999999))  # nosec
+        result_queue = StreamingResponseGenerator(
+            self,
+            request_id,
+            force_batch=False,
+            stop_words=self.stop,
+        )
+
         # create model inputs and outputs
         inputs = self._generate_inputs(stream=False, prompt=prompt, **params)
         outputs = self._generate_outputs()
 
-        # call the model for inference
-        result = self.client.infer(model_name, inputs=inputs, outputs=outputs)
-        result_str = "".join(
-            [val.decode("utf-8") for val in result.as_numpy("text_output").tolist()]
+        self.client.start_stream(
+            callback=partial(
+                self._stream_callback,
+                result_queue,
+                force_batch=False,
+                stop_words=self.stop,
+            )
         )
+
+        # call the model for inference
+        self.client.async_stream_infer(
+            model_name=self.model_name,
+            inputs=inputs,
+            outputs=outputs,
+            request_id=request_id,
+        )
+
+        result_str = ""
+        for token in result_queue:
+            result_str += token
+
+        # result = self.client.infer(model_name, inputs=inputs, outputs=outputs)
+        # result_str = "".join(
+        #     [val.decode("utf-8") for val in result.as_numpy("text_output").tolist()]
+        # )
         return self._trim_batch_response(result_str)
 
     def _generate_outputs(
