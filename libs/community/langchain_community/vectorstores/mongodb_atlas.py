@@ -4,6 +4,7 @@ import logging
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Generator,
     Iterable,
@@ -12,7 +13,6 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    Callable,
 )
 
 import numpy as np
@@ -72,7 +72,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
             embedding_key: MongoDB field that will contain the embedding for
                 each document.
             index_name: Name of the Atlas Search index.
-            relevance_score_fn: The similarity score used for the index. Currently supported: Euclidean, cosine, and dot product.
+            relevance_score_fn: The similarity score used for the index.
+            Currently supported: Euclidean, cosine, and dot product.
         """
         self._collection = collection
         self._embedding = embedding
