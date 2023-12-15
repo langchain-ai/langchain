@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
+from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.llms import BaseLLM
@@ -13,7 +15,9 @@ from langchain_community.utilities.vertexai import create_retry_decorator
 
 def completion_with_retry(
     llm: GooglePalm,
-    *args: Any,
+    prompt: LanguageModelInput,
+    is_gemini: bool = False,
+    stream: bool = False,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
@@ -23,10 +27,23 @@ def completion_with_retry(
     )
 
     @retry_decorator
-    def _completion_with_retry(*args: Any, **kwargs: Any) -> Any:
-        return llm.client.generate_text(*args, **kwargs)
+    def _completion_with_retry(
+        prompt: LanguageModelInput, is_gemini: bool, stream: bool, **kwargs: Any
+    ) -> Any:
+        generation_config = kwargs.get("generation_config", {})
+        if is_gemini:
+            return llm.client.generate_content(
+                contents=prompt, stream=stream, generation_config=generation_config
+            )
+        return llm.client.generate_text(prompt=prompt, **kwargs)
 
-    return _completion_with_retry(*args, **kwargs)
+    return _completion_with_retry(
+        prompt=prompt, is_gemini=is_gemini, stream=stream, **kwargs
+    )
+
+
+def _is_gemini_model(model_name: str) -> bool:
+    return "gemini" in model_name
 
 
 def _strip_erroneous_leading_spaces(text: str) -> str:
@@ -42,11 +59,16 @@ def _strip_erroneous_leading_spaces(text: str) -> str:
         return text
 
 
+@deprecated("0.0.351", alternative="langchain_google_genai.GoogleGenerativeAI")
 class GooglePalm(BaseLLM, BaseModel):
-    """Google PaLM models."""
+    """
+    DEPRECATED: Use `langchain_google_genai.GoogleGenerativeAI` instead.
+
+    Google PaLM models.
+    """
 
     client: Any  #: :meta private:
-    google_api_key: Optional[str]
+    google_api_key: Optional[SecretStr]
     model_name: str = "models/text-bison-001"
     """Model name to use."""
     temperature: float = 0.7
@@ -68,6 +90,11 @@ class GooglePalm(BaseLLM, BaseModel):
     """The maximum number of retries to make when generating."""
 
     @property
+    def is_gemini(self) -> bool:
+        """Returns whether a model is belongs to a Gemini family or not."""
+        return _is_gemini_model(self.model_name)
+
+    @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"google_api_key": "GOOGLE_API_KEY"}
 
@@ -86,17 +113,24 @@ class GooglePalm(BaseLLM, BaseModel):
         google_api_key = get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY"
         )
+        model_name = values["model_name"]
         try:
             import google.generativeai as genai
 
+            if isinstance(google_api_key, SecretStr):
+                google_api_key = google_api_key.get_secret_value()
+
             genai.configure(api_key=google_api_key)
+
+            if _is_gemini_model(model_name):
+                values["client"] = genai.GenerativeModel(model_name=model_name)
+            else:
+                values["client"] = genai
         except ImportError:
             raise ImportError(
                 "Could not import google-generativeai python package. "
                 "Please install it with `pip install google-generativeai`."
             )
-
-        values["client"] = genai
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")
@@ -119,29 +153,75 @@ class GooglePalm(BaseLLM, BaseModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        generations = []
+        generations: List[List[Generation]] = []
+        generation_config = {
+            "stop_sequences": stop,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+            "max_output_tokens": self.max_output_tokens,
+            "candidate_count": self.n,
+        }
         for prompt in prompts:
-            completion = completion_with_retry(
-                self,
-                model=self.model_name,
-                prompt=prompt,
-                stop_sequences=stop,
-                temperature=self.temperature,
-                top_p=self.top_p,
-                top_k=self.top_k,
-                max_output_tokens=self.max_output_tokens,
-                candidate_count=self.n,
-                **kwargs,
-            )
-
-            prompt_generations = []
-            for candidate in completion.candidates:
-                raw_text = candidate["output"]
-                stripped_text = _strip_erroneous_leading_spaces(raw_text)
-                prompt_generations.append(Generation(text=stripped_text))
-            generations.append(prompt_generations)
+            if self.is_gemini:
+                res = completion_with_retry(
+                    self,
+                    prompt=prompt,
+                    stream=False,
+                    is_gemini=True,
+                    run_manager=run_manager,
+                    generation_config=generation_config,
+                )
+                candidates = [
+                    "".join([p.text for p in c.content.parts]) for c in res.candidates
+                ]
+                generations.append([Generation(text=c) for c in candidates])
+            else:
+                res = completion_with_retry(
+                    self,
+                    model=self.model_name,
+                    prompt=prompt,
+                    stream=False,
+                    is_gemini=False,
+                    run_manager=run_manager,
+                    **generation_config,
+                )
+                prompt_generations = []
+                for candidate in res.candidates:
+                    raw_text = candidate["output"]
+                    stripped_text = _strip_erroneous_leading_spaces(raw_text)
+                    prompt_generations.append(Generation(text=stripped_text))
+                generations.append(prompt_generations)
 
         return LLMResult(generations=generations)
+
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        generation_config = kwargs.get("generation_config", {})
+        if stop:
+            generation_config["stop_sequences"] = stop
+        for stream_resp in completion_with_retry(
+            self,
+            prompt,
+            stream=True,
+            is_gemini=True,
+            run_manager=run_manager,
+            generation_config=generation_config,
+            **kwargs,
+        ):
+            chunk = GenerationChunk(text=stream_resp.text)
+            yield chunk
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    stream_resp.text,
+                    chunk=chunk,
+                    verbose=self.verbose,
+                )
 
     @property
     def _llm_type(self) -> str:
@@ -159,5 +239,7 @@ class GooglePalm(BaseLLM, BaseModel):
         Returns:
             The integer number of tokens in the text.
         """
+        if self.is_gemini:
+            raise ValueError("Counting tokens is not yet supported!")
         result = self.client.count_text_tokens(model=self.model_name, prompt=text)
         return result["token_count"]
