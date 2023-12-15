@@ -113,6 +113,7 @@ jobs:
 
       - name: Import published package
         shell: bash
+        working-directory: ${{ inputs.working-directory }}
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
@@ -125,7 +126,7 @@ jobs:
         #   package because VERSION will not have been uploaded to regular PyPI yet.
         #
         run: |
-          pip install \
+          poetry run pip install \
             --extra-index-url https://test.pypi.org/simple/ \
             "$PKG_NAME==$VERSION"
 
@@ -133,16 +134,15 @@ jobs:
           # since that's how Python imports packages with dashes in the name.
           IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g)"
 
-          python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
+          poetry run python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
 
       - name: Import test dependencies
-        if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
         run: poetry install --with test,test_integration
         working-directory: ${{ inputs.working-directory }}
 
       # Overwrite the local version of the package with the test PyPI version.
       - name: Import published package (again)
-        if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
+        working-directory: ${{ inputs.working-directory }}
         shell: bash
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
@@ -151,6 +151,10 @@ jobs:
           poetry run pip install \
             --extra-index-url https://test.pypi.org/simple/ \
             "$PKG_NAME==$VERSION"
+
+      - name: Run unit tests
+        run: make tests
+        working-directory: ${{ inputs.working-directory }}
 
       - name: Run integration tests
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
