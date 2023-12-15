@@ -13,6 +13,7 @@ Required to run this test:
 import json
 import os
 import uuid
+from random import randrange
 
 import pytest
 
@@ -27,7 +28,7 @@ def _has_env_vars() -> bool:
     return all([ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_API_ENDPOINT])
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def astra_db_collection():
     from astrapy.db import AstraDB
 
@@ -46,34 +47,60 @@ def astra_db_collection():
 
 @pytest.mark.requires("astrapy")
 @pytest.mark.skipif(not _has_env_vars(), reason="Missing Astra DB env. vars")
-def test_astradb_loader(astra_db_collection) -> None:
-    astra_db_collection.insert_many([{"foo": "bar", "baz": "qux"}] * 20)
-    astra_db_collection.insert_many(
-        [{"foo": "bar2", "baz": "qux"}] * 4 + [{"foo": "bar", "baz": "qux"}] * 4
-    )
+class TestAstraDB:
+    def test_astradb_loader(self, astra_db_collection) -> None:
+        astra_db_collection.insert_many([{"foo": "bar", "baz": "qux"}] * 20)
+        astra_db_collection.insert_many(
+            [{"foo": "bar2", "baz": "qux"}] * 4 + [{"foo": "bar", "baz": "qux"}] * 4
+        )
 
-    loader = AstraDBLoader(
-        astra_db_collection.collection_name,
-        token=ASTRA_DB_APPLICATION_TOKEN,
-        api_endpoint=ASTRA_DB_API_ENDPOINT,
-        namespace=ASTRA_DB_KEYSPACE,
-        nb_prefetched=1,
-        projection={"foo": 1},
-        find_options={"limit": 22},
-        filter_criteria={"foo": "bar"},
-    )
-    docs = loader.load()
+        loader = AstraDBLoader(
+            astra_db_collection.collection_name,
+            token=ASTRA_DB_APPLICATION_TOKEN,
+            api_endpoint=ASTRA_DB_API_ENDPOINT,
+            namespace=ASTRA_DB_KEYSPACE,
+            nb_prefetched=1,
+            projection={"foo": 1},
+            find_options={"limit": 22},
+            sort={"foo": 1},
+            filter_criteria={"foo": "bar"},
+        )
+        docs = loader.load()
 
-    assert len(docs) == 22
-    ids = set()
-    for doc in docs:
-        content = json.loads(doc.page_content)
-        assert content["foo"] == "bar"
-        assert "baz" not in content
-        assert content["_id"] not in ids
-        ids.add(content["_id"])
-        assert doc.metadata == {
-            "namespace": astra_db_collection.astra_db.namespace,
-            "api_endpoint": astra_db_collection.astra_db.base_url,
-            "collection": astra_db_collection.collection_name,
-        }
+        assert len(docs) == 22
+        ids = set()
+        for doc in docs:
+            content = json.loads(doc.page_content)
+            assert content["foo"] == "bar"
+            assert "baz" not in content
+            assert content["_id"] not in ids
+            ids.add(content["_id"])
+            assert doc.metadata == {
+                "namespace": astra_db_collection.astra_db.namespace,
+                "api_endpoint": astra_db_collection.astra_db.base_url,
+                "collection": astra_db_collection.collection_name,
+            }
+
+    def test_sort(self, astra_db_collection) -> None:
+        for _ in range(2):
+            astra_db_collection.insert_many(
+                [{"foo": randrange(1000)} for _ in range(20)]
+            )
+
+        loader = AstraDBLoader(
+            astra_db_collection.collection_name,
+            token=ASTRA_DB_APPLICATION_TOKEN,
+            api_endpoint=ASTRA_DB_API_ENDPOINT,
+            namespace=ASTRA_DB_KEYSPACE,
+            sort={"foo": 1},
+            find_options={"limit": 30},
+        )
+        docs = loader.load()
+
+        assert len(docs) == 30
+
+        i = 0
+        for doc in docs:
+            content = json.loads(doc.page_content)
+            assert content["foo"] >= i
+            i = content["foo"]
