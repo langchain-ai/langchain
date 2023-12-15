@@ -962,10 +962,10 @@ run_on_dataset(
     return wrapped_model, project, dataset, examples
 
 
-class _RowResult(TypedDict):
+class _RowResult(TypedDict, total=False):
     """A dictionary of the results for a single example row."""
 
-    feedback: List[EvaluationResult]
+    feedback: Optional[List[EvaluationResult]]
     execution_time: Optional[float]
     run_id: Optional[str]
 
@@ -987,7 +987,7 @@ class _DatasetRunContainer:
     ) -> dict:
         results: dict = {}
         for example, output in zip(self.examples, batch_results):
-            row_result: _RowResult = all_eval_results.get(str(example.id), {})
+            row_result = cast(_RowResult, all_eval_results.get(str(example.id), {}))
             results[str(example.id)] = {
                 "input": example.inputs,
                 "feedback": row_result.get("feedback", []),
