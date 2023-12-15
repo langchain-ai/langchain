@@ -91,7 +91,7 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "tool":
         additional_kwargs = {}
         if "name" in _dict:
-            additional_kwargs["name"] = _dict.get("name")
+            additional_kwargs["name"] = _dict["name"]
         return ToolMessage(
             content=_dict.get("content", ""),
             tool_call_id=_dict.get("tool_call_id"),
