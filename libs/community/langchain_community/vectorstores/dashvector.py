@@ -309,6 +309,7 @@ class DashVector(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         dashvector_api_key: Optional[str] = None,
+        dashvector_endpoint: Optional[str] = None,
         collection_name: str = "langchain",
         text_field: str = "text",
         batch_size: int = 25,
@@ -345,7 +346,14 @@ class DashVector(VectorStore):
             "dashvector_api_key", "DASHVECTOR_API_KEY"
         )
 
-        dashvector_client = dashvector.Client(api_key=dashvector_api_key)
+        dashvector_endpoint = dashvector_endpoint or get_from_env(
+            "dashvector_endpoint",
+            "DASHVECTOR_ENDPOINT",
+            default="dashvector.cn-hangzhou.aliyuncs.com",
+        )
+        dashvector_client = dashvector.Client(
+            api_key=dashvector_api_key, endpoint=dashvector_endpoint
+        )
         dashvector_client.delete(collection_name)
         collection = dashvector_client.get(collection_name)
         if not collection:

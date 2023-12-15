@@ -2,6 +2,7 @@
 -e libs/langchain
 -e libs/core
 -e libs/community
+-e libs/partners/google-genai
 pydantic<2
 autodoc_pydantic==1.8.0
 myst_parser
