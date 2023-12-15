@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import root_validator
@@ -11,6 +11,9 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
     """Google Cloud VertexAI embedding models."""
 
     model_name: str = "textembedding-gecko"
+    # https://cloud.google.com/python/docs/reference/aiplatform/latest/vertexai.language_models.TextEmbeddingInput
+    task_type: Optional[str] = None
+    auto_truncate: bool = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -36,10 +39,20 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        try:
+            from vertexai.language_models import TextEmbeddingInput
+        except ImportError:
+            raise_vertex_import_error()
+
         embeddings = []
         for batch in range(0, len(texts), batch_size):
-            text_batch = texts[batch : batch + batch_size]
-            embeddings_batch = self.client.get_embeddings(text_batch)
+            text_batch = [
+                TextEmbeddingInput(text=text, task_type=self.task_type)
+                for text in texts[batch : batch + batch_size]
+            ]
+            embeddings_batch = self.client.get_embeddings(
+                texts=text_batch, auto_truncate=self.auto_truncate
+            )
             embeddings.extend([el.values for el in embeddings_batch])
         return embeddings
 
@@ -52,5 +65,13 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         Returns:
             Embedding for the text.
         """
-        embeddings = self.client.get_embeddings([text])
+        try:
+            from vertexai.language_models import TextEmbeddingInput
+        except ImportError:
+            raise_vertex_import_error()
+
+        embeddings = self.client.get_embeddings(
+            texts=[TextEmbeddingInput(text=text, task_type=self.task_type)],
+            auto_truncate=self.auto_truncate,
+        )
         return embeddings[0].values
