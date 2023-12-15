@@ -645,6 +645,7 @@ __all__ = [
     "SQLiteVSS",
     "StarRocks",
     "SupabaseVectorStore",
+    "SurrealDBStore",
     "Tair",
     "TileDB",
     "Tigris",
