@@ -29,6 +29,20 @@ If you want to install from source, you can do so by cloning the repo and be sur
 pip install -e .
 ```
 
+## LangChain community
+The `langchain-community` package contains third-party integrations. It is automatically installed by `langchain`, but can also be used separately. Install with:
+
+```bash
+pip install langchain-community
+```
+
+## GigaChain core
+The `gigachain-core` package contains base abstractions that the rest of the LangChain ecosystem uses, along with the LangChain Expression Language. It is automatically installed by `langchain`, but can also be used separately. Install with:
+
+```bash
+pip install gigachain-core
+```
+
 ## GigaChain experimental
 The `langchain-experimental` package holds experimental LangChain code, intended for research and experimental uses.
 Install with:
@@ -37,7 +51,7 @@ Install with:
 pip install gigachain-experimental
 ```
 
-## LangServe
+## GigaServe
 LangServe helps developers deploy LangChain runnables and chains as a REST API.
 LangServe is automatically installed by LangChain CLI.
 If not using LangChain CLI, install with:
@@ -60,5 +74,5 @@ The LangSmith SDK is automatically installed by LangChain.
 If not using LangChain, install with:
 
 ```bash
-pip install gigasmith
+pip install langsmith
 ```

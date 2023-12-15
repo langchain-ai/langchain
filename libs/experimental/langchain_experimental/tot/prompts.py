@@ -9,30 +9,32 @@ from langchain.schema import BaseOutputParser
 
 from langchain_experimental.tot.thought import ThoughtValidity
 
-COT_PROMPT = PromptTemplate(
-    template_format="jinja2",
-    input_variables=["problem_description", "thoughts"],
-    template=dedent(
-        """
-        Ты - интеллектуальный агент, который генерирует одну мысль за раз в
-        древовидной структуре мыслей.
 
-        ПРОБЛЕМА 
-        
-        {{problem_description}}
-        
-        {% if thoughts %}
-        МЫСЛИ
-        
-        {% for thought in thoughts %}
-        {{ thought }}
-        {% endfor %}
-        {% endif %}
-        
-        Давайте думать шаг за шагом.
-        """
-    ).strip(),
-)
+def get_cot_prompt() -> PromptTemplate:
+    return PromptTemplate(
+        template_format="jinja2",
+        input_variables=["problem_description", "thoughts"],
+        template=dedent(
+            """
+            Ты - интеллектуальный агент, который генерирует одну мысль за раз в
+            древовидной структуре мыслей.
+
+            ПРОБЛЕМА 
+            
+            {{problem_description}}
+            
+            {% if thoughts %}
+            МЫСЛИ
+            
+            {% for thought in thoughts %}
+            {{ thought }}
+            {% endfor %}
+            {% endif %}
+            
+            Давайте думать шаг за шагом.
+            """
+        ).strip(),
+    )
 
 
 class JSONListOutputParser(BaseOutputParser):
@@ -52,45 +54,45 @@ class JSONListOutputParser(BaseOutputParser):
             return []
 
 
-PROPOSE_PROMPT = PromptTemplate(
-    template_format="jinja2",
-    input_variables=["problem_description", "thoughts", "n"],
-    output_parser=JSONListOutputParser(),
-    template=dedent(
+def get_propose_prompt() -> PromptTemplate:
+    return PromptTemplate(
+        template_format="jinja2",
+        input_variables=["problem_description", "thoughts", "n"],
+        output_parser=JSONListOutputParser(),
+        template=dedent("""
+            Ты - интеллектуальный агент, который генерирует мысли в древовидной
+            структуре мыслей.
+
+            Вывод должен быть оформлен в виде фрагмента кода на markdown, отформатированного как JSON-список
+            строк, включая ведущие и замыкающие "```json" и "```":
+
+            ```json
+            [
+                "<мысль-1>",
+                "<мысль-2>",
+                "<мысль-3>"
+            ]
+            ```
+
+            ПРОБЛЕМА
+
+            {{ problem_description }}
+
+            {% if thoughts %}
+            ВАЛИДНЫЕ МЫСЛИ
+
+            {% for thought in thoughts %}
+            {{ thought }}
+            {% endfor %}
+
+            Возможные следующие {{ n }} валидные мысли на основе последней валидной мысли:
+            {% else %}
+
+            Возможные следующие {{ n }} валидные мысли на основе ПРОБЛЕМЫ:
+            {%- endif -%}
         """
-        Ты - интеллектуальный агент, который генерирует мысли в древовидной
-        структуре мыслей.
-
-        Вывод должен быть оформлен в виде фрагмента кода на markdown, отформатированного как JSON-список
-        строк, включая ведущие и замыкающие "```json" и "```":
-
-        ```json
-        [
-            "<мысль-1>",
-            "<мысль-2>",
-            "<мысль-3>"
-        ]
-        ```
-
-        ПРОБЛЕМА
-
-        {{ problem_description }}
-
-        {% if thoughts %}
-        ВАЛИДНЫЕ МЫСЛИ
-
-        {% for thought in thoughts %}
-        {{ thought }}
-        {% endfor %}
-
-        Возможные следующие {{ n }} валидные мысли на основе последней валидной мысли:
-        {% else %}
-
-        Возможные следующие {{ n }} валидные мысли на основе ПРОБЛЕМЫ:
-        {%- endif -%}
-        """
-    ).strip(),
-)
+        ).strip(),
+    )
 
 
 class CheckerOutputParser(BaseOutputParser):

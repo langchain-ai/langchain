@@ -1,4 +1,4 @@
-[![CI](https://github.com/ai-forever/gigachain/actions/workflows/langchain_ci.yml/badge.svg)](https://github.com/ai-forever/gigachain/actions/workflows/langchain_ci.yml)
+[![CI](https://github.com//ai-forever/gigachain/actions/workflows/check_diffs.yml/badge.svg)](https://github.com//ai-forever/gigachain/actions/workflows/check_diffs.yml)
 [![Downloads](https://static.pepy.tech/badge/gigachain/month)](https://pepy.tech/project/gigachain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -42,9 +42,8 @@
 Также фреймворк совместим со сторонним сервисом LangSmith.
 - **[LangSmith](https://smith.langchain.com)**: Платформа для разработчиков, которая позволяет отлаживать, тестировать, оценивать и отслеживать цепочки, построенные на любой платформе LLM, и легко интегрируется с LangChain и GigaChain.
 
-**Этот репозитарий содержит `gigachain` ([ссылка](libs/langchain)), `gigachain-experimental` ([ссылка](libs/experimental)), и `gigachain-cli` ([ссылка](libs/cli)) пакеты Python и [GigaChain Templates](templates).**
-
-# ![GigaChain Stack](docs/static/img/langchain_stack.png)
+**Этот репозитарий содержит `gigachain` ([ссылка](libs/langchain)), `gigachain-core` ([ссылка](libs/core)), `gigachain-community` ([ссылка](libs/cimmunity))`gigachain-experimental` ([ссылка](libs/experimental)), и `gigachain-cli` ([ссылка](libs/cli)) пакеты Python и [GigaChain Templates](templates).**
+<!--# ![GigaChain Stack](docs/static/img/langchain_stack.png)-->
 
 > [!WARNING]
 > GigaChain находится в состоянии альфа-версии: мы заняты переводом библиотеки и ее адаптацией для работы с GigaChat. Будьте осторожны при использовании GigaChain в своих проектах, так как далеко не все компоненты оригинальной библиотеки проверены на совместимость с GigaChat.

@@ -43,6 +43,10 @@ class APIRequesterChain(LLMChain):
     """Get the request parser."""
 
     @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
+    @classmethod
     def from_llm_and_typescript(
         cls,
         llm: BaseLanguageModel,
