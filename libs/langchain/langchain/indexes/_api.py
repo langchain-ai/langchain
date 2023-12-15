@@ -58,6 +58,10 @@ class _HashedDocument(Document):
     metadata_hash: str
     """The hash of the document metadata."""
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     @root_validator(pre=True)
     def calculate_hashes(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Root validator to calculate content and metadata hash."""

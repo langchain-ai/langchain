@@ -53,7 +53,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     @property
     def InputType(self) -> Type[Input]:
@@ -217,6 +218,11 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
     fields: Dict[str, AnyConfigurableField]
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
+
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
@@ -317,6 +323,11 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     """Whether to prefix configurable fields of each alternative with a namespace
     of the form <which.id>==<alternative_key>, eg. a key named "temperature" used by 
     the alternative named "gpt3" becomes "model==gpt3/temperature"."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:

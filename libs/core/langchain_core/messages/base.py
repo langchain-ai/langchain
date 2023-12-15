@@ -31,6 +31,11 @@ class BaseMessage(Serializable):
         """Return whether this class is serializable."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]
+
     def __add__(self, other: Any) -> ChatPromptTemplate:
         from langchain_core.prompts.chat import ChatPromptTemplate
 
@@ -68,6 +73,11 @@ def merge_content(
 class BaseMessageChunk(BaseMessage):
     """A Message chunk, which can be concatenated with other Message chunks."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]
+
     def _merge_kwargs_dict(
         self, left: Dict[str, Any], right: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -88,8 +98,12 @@ class BaseMessageChunk(BaseMessage):
                 merged[k] = v
             elif merged[k] is None and v:
                 merged[k] = v
+            elif v is None:
+                continue
+            elif merged[k] == v:
+                continue
             elif type(merged[k]) != type(v):
-                raise ValueError(
+                raise TypeError(
                     f'additional_kwargs["{k}"] already exists in this message,'
                     " but with a different type."
                 )
@@ -97,8 +111,17 @@ class BaseMessageChunk(BaseMessage):
                 merged[k] += v
             elif isinstance(merged[k], dict):
                 merged[k] = self._merge_kwargs_dict(merged[k], v)
+            elif isinstance(merged[k], list):
+                merged[k] = merged[k].copy()
+                for i, e in enumerate(v):
+                    if isinstance(e, dict) and isinstance(e.get("index"), int):
+                        i = e["index"]
+                    if i < len(merged[k]):
+                        merged[k][i] = self._merge_kwargs_dict(merged[k][i], e)
+                    else:
+                        merged[k] = merged[k] + [e]
             else:
-                raise ValueError(
+                raise TypeError(
                     f"Additional kwargs key {k} already exists in this message."
                 )
         return merged

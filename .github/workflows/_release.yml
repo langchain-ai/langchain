@@ -7,6 +7,18 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
+  workflow_dispatch:
+    inputs:
+      working-directory:
+        required: true
+        type: choice
+        default: 'libs/langchain'
+        options:
+          - libs/langchain
+          - libs/core
+          - libs/experimental
+          - libs/community
+          - libs/partners/google-genai
 
 env:
   PYTHON_VERSION: "3.10"

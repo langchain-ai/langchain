@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import List, Literal
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
@@ -13,6 +13,11 @@ class HumanMessage(BaseMessage):
 
     type: Literal["human"] = "human"
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]
+
 
 HumanMessage.update_forward_refs()
 
@@ -24,3 +29,8 @@ class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["HumanMessageChunk"] = "HumanMessageChunk"  # type: ignore[assignment] # noqa: E501
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]

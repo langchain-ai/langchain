@@ -4,10 +4,10 @@ from typing import List, Tuple
 from google.cloud import dlp_v2
 from langchain.chat_models import ChatVertexAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema.messages import AIMessage, HumanMessage
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableLambda, RunnableParallel
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import RunnableLambda, RunnableParallel
 
 
 # Formatting for chat history

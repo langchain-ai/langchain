@@ -623,6 +623,9 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
         Args:
             error (Exception or KeyboardInterrupt): The error.
+            kwargs (Any): Additional keyword arguments.
+                - response (LLMResult): The response which was generated before
+                    the error occurred.
         """
         handle_event(
             self.handlers,
@@ -689,6 +692,12 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
         Args:
             error (Exception or KeyboardInterrupt): The error.
+            kwargs (Any): Additional keyword arguments.
+                - response (LLMResult): The response which was generated before
+                    the error occurred.
+
+
+
         """
         await ahandle_event(
             self.handlers,

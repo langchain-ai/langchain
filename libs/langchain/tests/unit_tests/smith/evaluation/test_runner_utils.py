@@ -345,6 +345,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
                 "feedback": [],
                 # No run since we mock the call to the llm above
                 "execution_time": None,
+                "run_id": None,
             }
             for example in examples
         }

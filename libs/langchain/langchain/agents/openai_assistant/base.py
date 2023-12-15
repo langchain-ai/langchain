@@ -9,9 +9,9 @@ from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.load import dumpd
 from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.tools import BaseTool
 
 from langchain.callbacks.manager import CallbackManager
-from langchain.tools.base import BaseTool
 from langchain.tools.render import format_tool_to_openai_tool
 
 if TYPE_CHECKING:
@@ -28,6 +28,10 @@ class OpenAIAssistantFinish(AgentFinish):
     run_id: str
     thread_id: str
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
 
 class OpenAIAssistantAction(AgentAction):
     """AgentAction with info needed to submit custom tool output to existing run."""
@@ -35,6 +39,10 @@ class OpenAIAssistantAction(AgentAction):
     tool_call_id: str
     run_id: str
     thread_id: str
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
 
 def _get_openai_client() -> openai.OpenAI:
