@@ -71,27 +71,30 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     Returns:
         The LangChain message.
     """
-    role = _dict["role"]
+    role = _dict.get("role")
     if role == "user":
-        return HumanMessage(content=_dict["content"])
+        return HumanMessage(content=_dict.get("content"))
     elif role == "assistant":
         # Fix for azure
         # Also OpenAI returns None for tool invocations
-        content = _dict.get("content", "") or ""
+        content = _dict.get("content", "")
         additional_kwargs: Dict = {}
-        if _dict.get("function_call"):
-            additional_kwargs["function_call"] = dict(_dict["function_call"])
-        if _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = _dict["tool_calls"]
+        if function_call := _dict.get("function_call"):
+            additional_kwargs["function_call"] = dict(function_call)
+        if tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = tool_calls
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
-        return SystemMessage(content=_dict["content"])
+        return SystemMessage(content=_dict.get("content", ""))
     elif role == "function":
-        return FunctionMessage(content=_dict["content"], name=_dict["name"])
+        return FunctionMessage(content=_dict.get("content", ""), name=_dict.get("name"))
     elif role == "tool":
-        return ToolMessage(content=_dict["content"], tool_call_id=_dict["tool_call_id"])
+        return ToolMessage(
+            content=_dict.get("content", ""),
+            tool_call_id=_dict.get("tool_call_id"),
+        )
     else:
-        return ChatMessage(content=_dict["content"], role=role)
+        return ChatMessage(content=_dict.get("content", ""), role=role)
 
 
 def convert_message_to_dict(message: BaseMessage) -> dict:
