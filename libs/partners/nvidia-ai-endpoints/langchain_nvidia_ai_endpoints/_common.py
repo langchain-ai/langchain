@@ -50,7 +50,7 @@ class NVEModel(BaseModel):
 
     nvidia_api_key: SecretStr = Field(
         ...,
-        description="API key for NVIDIA Foundation Models. Should start with `nvapi-`",
+        description="API key for NVIDIA Foundation Endpoints. Starts with `nvapi-`",
     )
     is_staging: bool = Field(False, description="Whether to use staging API")
 
