@@ -137,6 +137,7 @@ class TestResult(dict):
                     **{f"feedback.{f.key}": f.score for f in feedback},
                     "error": result.get("Error"),
                     "execution_time": result["execution_time"],
+                    "run_id": result.get("run_id"),
                 }
             )
             records.append(r)
@@ -971,8 +972,27 @@ class _DatasetRunContainer:
     configs: List[RunnableConfig]
 
     def _merge_test_outputs(
-        self, batch_results: list, all_eval_results: dict, all_execution_time: dict
+        self,
+        batch_results: list,
+        all_eval_results: dict,
+        all_execution_time: dict,
+        all_run_ids: dict,
     ) -> dict:
+        results: dict = {}
+        for example, output in zip(self.examples, batch_results):
+            feedback = all_eval_results.get(str(example.id), [])
+            results[str(example.id)] = {
+                "input": example.inputs,
+                "feedback": feedback,
+                "execution_time": all_execution_time.get(str(example.id)),
+                "run_id": all_run_ids.get(str(example.id)),
+            }
+            if isinstance(output, EvalError):
+                results[str(example.id)]["Error"] = output.Error
+            else:
+                results[str(example.id)]["output"] = output
+            if example.outputs:
+                results[str(example.id)]["reference"] = example.outputs
         results: dict = {}
         for example, output in zip(self.examples, batch_results):
             feedback = all_eval_results.get(str(example.id), [])
@@ -992,6 +1012,7 @@ class _DatasetRunContainer:
     def _collect_metrics(self) -> Tuple[dict, dict]:
         all_eval_results = {}
         all_execution_time = {}
+        all_run_ids = {}
         for c in self.configs:
             for callback in cast(list, c["callbacks"]):
                 if isinstance(callback, EvaluatorCallbackHandler):
@@ -1008,6 +1029,8 @@ class _DatasetRunContainer:
                         else None
                     )
                     all_execution_time[str(example_id)] = execution_time
+                    run_id = str(run.id) if run else None
+                    all_run_ids[str(example_id)] = run_id
         return all_eval_results, all_execution_time
 
     def _collect_test_results(
