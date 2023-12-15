@@ -13,6 +13,8 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
         )
     out = schema
     for component in components[1:]:
+        if component.isdigit():
+            component = int(component)
         out = out[component]
     return deepcopy(out)
 
