@@ -9,11 +9,13 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from mistralai.models.chat_completion import (
+
+# TODO: Remove 'type: ignore' once mistralai has stubs or py.typed marker.
+from mistralai.models.chat_completion import (  # type: ignore[import]
     ChatMessage as MistralChatMessage,
 )
 
-from langchain_community.chat_models.mistralai import (
+from langchain_mistralai.chat_models.mistralai import (  # type: ignore[import]
     ChatMistralAI,
     _convert_message_to_mistral_chat_message,
 )

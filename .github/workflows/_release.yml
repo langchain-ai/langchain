@@ -20,6 +20,7 @@ on:
           - libs/community
           - libs/partners/google-genai
           - libs/partners/nvidia-ai-endpoints
+          - libs/partners/mistralai
 
 env:
   PYTHON_VERSION: "3.10"

@@ -44,21 +44,25 @@ from langchain_core.outputs import (
 )
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_from_dict_or_env
-from mistralai.async_client import MistralAsyncClient
-from mistralai.client import MistralClient
-from mistralai.constants import ENDPOINT as DEFAULT_MISTRAL_ENDPOINT
-from mistralai.exceptions import (
+
+# TODO: Remove 'type: ignore' once mistralai has stubs or py.typed marker.
+from mistralai.async_client import MistralAsyncClient  # type: ignore[import]
+from mistralai.client import MistralClient  # type: ignore[import]
+from mistralai.constants import (  # type: ignore[import]
+    ENDPOINT as DEFAULT_MISTRAL_ENDPOINT,
+)
+from mistralai.exceptions import (  # type: ignore[import]
     MistralAPIException,
     MistralConnectionException,
     MistralException,
 )
-from mistralai.models.chat_completion import (
+from mistralai.models.chat_completion import (  # type: ignore[import]
     ChatCompletionResponse as MistralChatCompletionResponse,
 )
-from mistralai.models.chat_completion import (
+from mistralai.models.chat_completion import (  # type: ignore[import]
     ChatMessage as MistralChatMessage,
 )
-from mistralai.models.chat_completion import (
+from mistralai.models.chat_completion import (  # type: ignore[import]
     DeltaMessage as MistralDeltaMessage,
 )
 
@@ -161,15 +165,15 @@ class ChatMistralAI(BaseChatModel):
 
     client: Any  #: :meta private:
     mistral_api_key: Optional[str] = None
-    endpoint: Optional[str] = DEFAULT_MISTRAL_ENDPOINT
-    max_retries: Optional[int] = 5
-    timeout: Optional[int] = 120
-    max_concurrent_requests: Optional[int] = 64
+    endpoint: str = DEFAULT_MISTRAL_ENDPOINT
+    max_retries: int = 5
+    timeout: int = 120
+    max_concurrent_requests: int = 64
 
     model: str = "mistral-small"
-    temperature: Optional[float] = 0.7
+    temperature: float = 0.7
     max_tokens: Optional[int] = None
-    top_p: Optional[float] = 1
+    top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
        probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
     random_seed: Optional[int] = None

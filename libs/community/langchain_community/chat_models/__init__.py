@@ -38,7 +38,6 @@ from langchain_community.chat_models.jinachat import JinaChat
 from langchain_community.chat_models.konko import ChatKonko
 from langchain_community.chat_models.litellm import ChatLiteLLM
 from langchain_community.chat_models.minimax import MiniMaxChat
-from langchain_community.chat_models.mistralai import ChatMistralAI
 from langchain_community.chat_models.mlflow import ChatMlflow
 from langchain_community.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
 from langchain_community.chat_models.ollama import ChatOllama
@@ -80,5 +79,4 @@ __all__ = [
     "ChatHunyuan",
     "GigaChat",
     "VolcEngineMaasChat",
-    "ChatMistralAI",
 ]
