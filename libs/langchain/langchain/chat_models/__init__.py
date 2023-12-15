@@ -38,6 +38,7 @@ from langchain.chat_models.jinachat import JinaChat
 from langchain.chat_models.konko import ChatKonko
 from langchain.chat_models.litellm import ChatLiteLLM
 from langchain.chat_models.minimax import MiniMaxChat
+from langchain.chat_models.mistralai import ChatMistralAI
 from langchain.chat_models.mlflow import ChatMlflow
 from langchain.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
 from langchain.chat_models.ollama import ChatOllama
