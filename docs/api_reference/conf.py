@@ -72,8 +72,8 @@ def setup(app):
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2023, Harrison Chase"
-author = "Harrison Chase"
+copyright = "2023, LangChain, Inc."
+author = "LangChain, Inc."
 
 version = data["tool"]["poetry"]["version"]
 release = version
@@ -143,11 +143,14 @@ for old_link in redirects:
 
 html_context = {
     "display_github": True,  # Integrate GitHub
-    "github_user": "hwchase17",  # Username
+    "github_user": "langchain-ai",  # Username
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
     "redirects": redirects,
+    "drop_down_navigation": [
+        ("Google Generative AI", "https://python.langchain.com", "")
+    ],
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
