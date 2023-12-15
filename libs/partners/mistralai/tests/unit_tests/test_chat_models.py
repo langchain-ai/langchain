@@ -15,7 +15,7 @@ from mistralai.models.chat_completion import (  # type: ignore[import]
     ChatMessage as MistralChatMessage,
 )
 
-from langchain_mistralai.chat_models.mistralai import (  # type: ignore[import]
+from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
     _convert_message_to_mistral_chat_message,
 )
