@@ -1124,6 +1124,7 @@ def test_indexing_force_update(
     }
 
 
+@pytest.mark.requires("aiosqlite")
 async def test_aindexing_force_update(
     arecord_manager: SQLRecordManager, upserting_vector_store: VectorStore
 ) -> None:
