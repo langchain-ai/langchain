@@ -74,12 +74,6 @@ class TritonTensorRTLLM(BaseLLM):
             Certain Triton configurations do not allow for this operation.",
     )
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        if self.load_model:
-            self._load_model(self.model_name)
-
     def __del__(self):
         """Ensure the client streaming connection is properly shutdown"""
         self.client.close()
@@ -148,6 +142,8 @@ class TritonTensorRTLLM(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
+        self._load_model(self.model_name)
+
         invocation_params = self._get_invocation_params(**kwargs)
         stop_words = stop if stop is not None else self.stop
         generations = []
@@ -172,7 +168,8 @@ class TritonTensorRTLLM(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
-        """Request inferencing from the triton server."""
+        self._load_model(self.model_name)
+        
         invocation_params = self._get_invocation_params(**kwargs, prompt=[[prompt]])
         stop_words = stop if stop is not None else self.stop
 
