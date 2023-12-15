@@ -386,12 +386,6 @@ def _import_office365_send_message() -> Any:
     return O365SendMessage
 
 
-def _import_office365_utils() -> Any:
-    from langchain.tools.office365.utils import authenticate
-
-    return authenticate
-
-
 def _import_openapi_utils_api_models() -> Any:
     from langchain.tools.openapi.utils.api_models import APIOperation
 
@@ -865,8 +859,6 @@ def __getattr__(name: str) -> Any:
         return _import_office365_send_event()
     elif name == "O365SendMessage":
         return _import_office365_send_message()
-    elif name == "authenticate":
-        return _import_office365_utils()
     elif name == "APIOperation":
         return _import_openapi_utils_api_models()
     elif name == "OpenAPISpec":
@@ -1103,7 +1095,6 @@ __all__ = [
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "authenticate",
     "format_tool_to_openai_function",
     "tool",
 ]

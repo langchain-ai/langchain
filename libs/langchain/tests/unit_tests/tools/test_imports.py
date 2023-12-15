@@ -117,7 +117,6 @@ EXPECTED_ALL = [
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "authenticate",
     "format_tool_to_openai_function",
     "tool",
     "MerriamWebsterQueryRun",
