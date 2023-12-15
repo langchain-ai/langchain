@@ -4,7 +4,7 @@
 all: help
 
 # Define a variable for the test file path.
-TEST_FILE ?= tests/unit_tests/
+TEST_FILE ?= tests/
 
 test:
 	poetry run pytest $(TEST_FILE)
@@ -32,9 +32,6 @@ spell_check:
 
 spell_fix:
 	poetry run codespell --toml pyproject.toml -w
-
-check_imports: $(shell find pirate_speak -name '*.py')
-	poetry run python ../../scripts/check_imports.py $^
 
 ######################
 # HELP
