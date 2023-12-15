@@ -19,8 +19,8 @@ class _BaseYandexGPT(Serializable):
     api_key: str = ""
     """Yandex Cloud Api Key for service account
     with the `ai.languageModels.user` role"""
-    model_name: str = "general"
-    """Model name to use."""
+    model_uri: str = ""
+    """Model uri to use."""
     temperature: float = 0.6
     """What sampling temperature to use.
     Should be a double number between 0 (inclusive) and 1 (inclusive)."""
@@ -73,7 +73,7 @@ class YandexGPT(_BaseYandexGPT, LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            "model_name": self.model_name,
+            "model_uri": self.model_uri,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
             "stop": self.stop,
@@ -103,9 +103,14 @@ class YandexGPT(_BaseYandexGPT, LLM):
         try:
             import grpc
             from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-            from yandex.cloud.ai.llm.v1alpha.llm_pb2 import GenerationOptions
-            from yandex.cloud.ai.llm.v1alpha.llm_service_pb2 import InstructRequest
-            from yandex.cloud.ai.llm.v1alpha.llm_service_pb2_grpc import (
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
                 TextGenerationServiceStub,
             )
         except ImportError as e:
@@ -114,21 +119,21 @@ class YandexGPT(_BaseYandexGPT, LLM):
             ) from e
         channel_credentials = grpc.ssl_channel_credentials()
         channel = grpc.secure_channel(self.url, channel_credentials)
-        request = InstructRequest(
-            model=self.model_name,
-            request_text=prompt,
-            generation_options=GenerationOptions(
+        request = CompletionRequest(
+            model_uri=self.model_uri,
+            completion_options=CompletionOptions(
                 temperature=DoubleValue(value=self.temperature),
                 max_tokens=Int64Value(value=self.max_tokens),
             ),
+            messages=[Message(role="user", text=prompt)],
         )
         stub = TextGenerationServiceStub(channel)
         if self.iam_token:
             metadata = (("authorization", f"Bearer {self.iam_token}"),)
         else:
             metadata = (("authorization", f"Api-Key {self.api_key}"),)
-        res = stub.Instruct(request, metadata=metadata)
-        text = list(res)[0].alternatives[0].text
+        res = stub.Completion(request, metadata=metadata)
+        text = list(res)[0].alternatives[0].message.text
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         return text
