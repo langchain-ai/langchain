@@ -29,6 +29,11 @@ langchain-core = {path = "../../libs/core", develop = true}
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+
 [tool.ruff]
 select = [
   "E",  # pycodestyle
