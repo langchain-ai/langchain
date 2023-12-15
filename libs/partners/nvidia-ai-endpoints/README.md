@@ -1,16 +1,16 @@
-# langchain-nvidia-aiplay
+# langchain-nvidia-ai-endpoints
 
-The `langchain-nvidia-aiplay` package contains LangChain integrations for chat models and embeddings powered by the NVIDIA AI Playground.
+The `langchain-nvidia-ai-endpoints` package contains LangChain integrations for chat models and embeddings powered by the [NVIDIA AI Foundation Model](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) playground environment. 
 
->[NVIDIA AI Playground](https://www.nvidia.com/en-us/research/ai-playground/) gives users easy access to hosted endpoints for generative AI models like Llama-2, SteerLM, Mistral, etc. Using the API, you can query NVCR (NVIDIA Container Registry) function endpoints and get quick results from a DGX-hosted cloud compute environment. All models are source-accessible and can be deployed on your own compute cluster.
+> [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) give users easy access to hosted endpoints for generative AI models like Llama-2, SteerLM, Mistral, etc. Using the API, you can query live endpoints available on the [NVIDIA GPU Cloud (NGC)](https://catalog.ngc.nvidia.com/ai-foundation-models) to get quick results from a DGX-hosted cloud compute environment. All models are source-accessible and can be deployed on your own compute cluster.
 
-Below is an example on how to use some common chat model functionality.
+Below is an example on how to use some common functionality surrounding text-generative and embedding models
 
 ## Installation
 
 
 ```python
-%pip install -U --quiet langchain-nvidia-aiplay
+%pip install -U --quiet langchain-nvidia-ai-endpoints
 ```
 
 ## Setup
@@ -35,9 +35,9 @@ if not os.environ.get("NVIDIA_API_KEY", "").startswith("nvapi-"):
 
 ```python
 ## Core LC Chat Interface
-from langchain_nvidia_aiplay import ChatNVAIPlay
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
-llm = ChatNVAIPlay(model="mixtral_8x7b")
+llm = ChatNVIDIA(model="mixtral_8x7b")
 result = llm.invoke("Write a ballad about LangChain.")
 print(result.content)
 ```
@@ -98,12 +98,12 @@ list(llm.available_models)
 
 ## Model types
 
-All of these models above are supported and can be accessed via `ChatNVAIPlay`. 
+All of these models above are supported and can be accessed via `ChatNVIDIA`. 
 
 Some model types support unique prompting techniques and chat messages. We will review a few important ones below.
 
 
-**To find out more about a specific model, please navigate to the API section of an AI Playground model [as linked here](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/codellama-13b/api).**
+**To find out more about a specific model, please navigate to the API section of an AI Foundation Model [as linked here](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/codellama-13b/api).**
 
 ### General Chat
 
@@ -111,7 +111,7 @@ Models such as `llama2_13b` and `mixtral_8x7b` are good all-around models that y
 
 
 ```python
-from langchain_nvidia_aiplay import ChatNVAIPlay
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
@@ -123,7 +123,7 @@ prompt = ChatPromptTemplate.from_messages(
 )
 chain = (
     prompt
-    | ChatNVAIPlay(model="llama2_13b")
+    | ChatNVIDIA(model="llama2_13b")
     | StrOutputParser()
 )
 
@@ -146,7 +146,7 @@ prompt = ChatPromptTemplate.from_messages(
 )
 chain = (
     prompt
-    | ChatNVAIPlay(model="llama2_code_13b")
+    | ChatNVIDIA(model="llama2_code_13b")
     | StrOutputParser()
 )
 
@@ -164,9 +164,9 @@ The "steer" models support this type of input, such as `steerlm_llama_70b`
 
 
 ```python
-from langchain_nvidia_aiplay import ChatNVAIPlay
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
-llm = ChatNVAIPlay(model="steerlm_llama_70b")
+llm = ChatNVIDIA(model="steerlm_llama_70b")
 # Try making it uncreative and not verbose
 complex_result = llm.invoke(
     "What's a PB&J?",
@@ -191,7 +191,7 @@ The labels are passed as invocation params. You can `bind` these to the LLM usin
 
 
 ```python
-from langchain_nvidia_aiplay import ChatNVAIPlay
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
@@ -203,7 +203,7 @@ prompt = ChatPromptTemplate.from_messages(
 )
 chain = (
     prompt
-    | ChatNVAIPlay(model="steerlm_llama_70b").bind(labels={"creativity": 9, "complexity": 0, "verbosity": 9})
+    | ChatNVIDIA(model="steerlm_llama_70b").bind(labels={"creativity": 9, "complexity": 0, "verbosity": 9})
     | StrOutputParser()
 )
 
@@ -213,7 +213,7 @@ for txt in chain.stream({"input": "Why is a PB&J?"}):
 
 ## Multimodal
 
-NVidia also supports multimodal inputs, meaning you can provide both images and text for the model to reason over.
+NVIDIA also supports multimodal inputs, meaning you can provide both images and text for the model to reason over.
 
 These models also accept `labels`, similar to the Steering LLMs above. In addition to `creativity`, `complexity`, and `verbosity`, these models support a `quality` toggle.
 
@@ -232,9 +232,9 @@ image_content = requests.get(image_url).content
 Initialize the model like so:
 
 ```python
-from langchain_nvidia_aiplay import ChatNVAIPlay
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
-llm = ChatNVAIPlay(model="playground_neva_22b")
+llm = ChatNVIDIA(model="playground_neva_22b")
 ```
 
 #### Passing an image as a URL
@@ -315,7 +315,7 @@ The `_qa_` models like `nemotron_qa_8b` support this.
 
 
 ```python
-from langchain_nvidia_aiplay import ChatNVAIPlay
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.messages import ChatMessage
@@ -325,7 +325,7 @@ prompt = ChatPromptTemplate.from_messages(
         ("user", "{input}")
     ]
 )
-llm = ChatNVAIPlay(model="nemotron_qa_8b")
+llm = ChatNVIDIA(model="nemotron_qa_8b")
 chain = (
     prompt
     | llm
@@ -339,9 +339,9 @@ chain.invoke({"input": "What was signed?"})
 You can also connect to embeddings models through this package. Below is an example:
 
 ```
-from langchain_nvidia_aiplay import NVAIPlayEmbeddings
+from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 
-embedder = NVAIPlayEmbeddings(model="nvolveqa_40k")
+embedder = NVIDIAEmbeddings(model="nvolveqa_40k")
 embedder.embed_query("What's the temperature today?")
 embedder.embed_documents([
     "The temperature is 42 degrees.",
@@ -352,7 +352,7 @@ embedder.embed_documents([
 By default the embedding model will use the "passage" type for documents and "query" type for queries, but you can fix this on the instance.
 
 ```python
-query_embedder = NVAIPlayEmbeddings(model="nvolveqa_40k", model_type="query")
-doc_embeddder = NVAIPlayEmbeddings(model="nvolveqa_40k", model_type="passage")
+query_embedder = NVIDIAEmbeddings(model="nvolveqa_40k", model_type="query")
+doc_embeddder = NVIDIAEmbeddings(model="nvolveqa_40k", model_type="passage")
 ```
 
