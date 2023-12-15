@@ -56,19 +56,19 @@ class _BaseYandexGPT(Serializable):
         if api_key == "" and iam_token == "":
             raise ValueError("Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided.")
 
-        if values.get("iam_token"):
+        if values["iam_token"]:
             values["_grpc_metadata"] = [
                 ("authorization", f"Bearer {values['iam_token']}")
             ]
-            if values.get("folder_id"):
+            if values["folder_id"]:
                 values["_grpc_metadata"].append(("x-folder-id", values["folder_id"]))
         else:
             values["_grpc_metadata"] = (
                 ("authorization", f"Api-Key {values['api_key']}"),
             )
-        if values.get("model_uri") is None and values.get("folder_id") is None:
+        if values["model_uri"] == "" and values["folder_id"] == "":
             raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
-        if not values.get("model_uri"):
+        if not values["model_uri"]:
             values[
                 "model_uri"
             ] = f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
@@ -234,7 +234,7 @@ class YandexGPT(_BaseYandexGPT, LLM):
 
             instruct_response = CompletionResponse()
             operation.response.Unpack(instruct_response)
-            text = instruct_response.alternatives[0].text
+            text = instruct_response.alternatives[0].message.text
             if stop is not None:
                 text = enforce_stop_tokens(text, stop)
             return text

@@ -25,11 +25,11 @@ def _parse_message(role: str, text: str) -> Dict:
     return {"role": role, "text": text}
 
 
-def _parse_chat_history(history: List[BaseMessage]) -> Tuple[List[Dict[str, str]], str]:
+def _parse_chat_history(history: List[BaseMessage]) -> List[Dict[str, str]]:
     """Parse a sequence of messages into history.
 
     Returns:
-        A tuple of a list of parsed messages and an instruction message for the model.
+        A list of parsed messages.
     """
     chat_history = []
     for message in history:
@@ -194,7 +194,7 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
 
             instruct_response = CompletionResponse()
             operation.response.Unpack(instruct_response)
-            text = instruct_response.alternatives[0].text
+            text = instruct_response.alternatives[0].message.text
             if stop is not None:
                 text = enforce_stop_tokens(text, stop)
             return text
