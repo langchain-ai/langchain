@@ -1,16 +1,16 @@
-"""Embeddings Components Derived from ChatModel/NVAIPlay"""
+"""Embeddings Components Derived from NVEModel/Embeddings"""
 from typing import Any, List, Literal, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
-import langchain_nvidia_aiplay._common as nvaiplay_common
+import langchain_nvidia_ai_endpoints._common as nvai_common
 
 
-class NVAIPlayEmbeddings(BaseModel, Embeddings):
+class NVIDIAEmbeddings(BaseModel, Embeddings):
     """NVIDIA's AI Foundation Retriever Question-Answering Asymmetric Model."""
 
-    client: nvaiplay_common.NVCRModel = Field(nvaiplay_common.NVCRModel)
+    client: nvai_common.NVEModel = Field(nvai_common.NVEModel)
     model: str = Field(
         ..., description="The embedding model to use. Example: nvolveqa_40k"
     )
@@ -23,7 +23,7 @@ class NVAIPlayEmbeddings(BaseModel, Embeddings):
     @root_validator(pre=True)
     def _validate_client(cls, values: Any) -> Any:
         if "client" not in values:
-            values["client"] = nvaiplay_common.NVCRModel()
+            values["client"] = nvai_common.NVEModel()
         return values
 
     @property

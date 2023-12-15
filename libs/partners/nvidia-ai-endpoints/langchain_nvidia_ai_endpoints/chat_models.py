@@ -1,4 +1,4 @@
-"""Chat Model Components Derived from ChatModel/NVAIPlay"""
+"""Chat Model Components Derived from ChatModel/NVIDIA"""
 from __future__ import annotations
 
 import base64
@@ -26,7 +26,7 @@ from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import BaseMessage, ChatMessage, ChatMessageChunk
 from langchain_core.outputs import ChatGenerationChunk
 
-from langchain_nvidia_aiplay import _common as nv_aiplay
+from langchain_nvidia_ai_endpoints import _common as nvidia_ai_endpoints
 
 logger = logging.getLogger(__name__)
 
@@ -70,16 +70,16 @@ def _url_to_b64_string(image_source: str) -> str:
         raise ValueError(f"Unable to process the provided image source: {e}")
 
 
-class ChatNVAIPlay(nv_aiplay._NVAIPlayClient, SimpleChatModel):
-    """NVAIPlay chat model.
+class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
+    """NVIDIA chat model.
 
     Example:
         .. code-block:: python
 
-            from langchain_nvidia_aiplay import ChatNVAIPlay
+            from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
 
-            model = ChatNVAIPlay(model="llama2_13b")
+            model = ChatNVIDIA(model="llama2_13b")
             response = model.invoke("Hello")
     """
 

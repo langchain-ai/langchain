@@ -32,11 +32,11 @@ from requests.models import Response
 logger = logging.getLogger(__name__)
 
 
-class NVCRModel(BaseModel):
+class NVEModel(BaseModel):
 
     """
     Underlying Client for interacting with the AI Foundation Model Function API.
-    Leveraged by the NVAIPlayBaseModel to provide a simple requests-oriented interface.
+    Leveraged by the NVIDIABaseModel to provide a simple requests-oriented interface.
     Direct abstraction over NGC-recommended streaming/non-streaming Python solutions.
 
     NOTE: Models in the playground does not currently support raw text continuation.
@@ -150,7 +150,7 @@ class NVCRModel(BaseModel):
         return path
 
     ####################################################################################
-    ## Core utilities for posting and getting from NVCR
+    ## Core utilities for posting and getting from NV Endpoints
 
     def _post(self, invoke_url: str, payload: dict = {}) -> Tuple[Response, Any]:
         """Method for posting to the AI Foundation Model Function API."""
@@ -295,7 +295,7 @@ class NVCRModel(BaseModel):
         invoke_url: Optional[str] = None,
         stop: Optional[Sequence[str]] = None,
     ) -> dict:
-        """Method for an end-to-end post query with NVCR post-processing."""
+        """Method for an end-to-end post query with NVE post-processing."""
         response = self.get_req(model_name, payload, invoke_url)
         output, _ = self.postprocess(response, stop=stop)
         return output
@@ -414,13 +414,13 @@ class NVCRModel(BaseModel):
                             break
 
 
-class _NVAIPlayClient(BaseModel):
+class _NVIDIAClient(BaseModel):
     """
     Higher-Level AI Foundation Model Function API Client with argument defaults.
-    Is subclassed by ChatNVAIPlay to provide a simple LangChain interface.
+    Is subclassed by ChatNVIDIA to provide a simple LangChain interface.
     """
 
-    client: NVCRModel = Field(NVCRModel)
+    client: NVEModel = Field(NVEModel)
 
     model: str = Field(..., description="Name of the model to invoke")
 
@@ -434,7 +434,7 @@ class _NVAIPlayClient(BaseModel):
     def validate_client(cls, values: Any) -> Any:
         """Validate and update client arguments, including API key and formatting"""
         if not values.get("client"):
-            values["client"] = NVCRModel(**values)
+            values["client"] = NVEModel(**values)
         return values
 
     @classmethod
@@ -497,7 +497,7 @@ class _NVAIPlayClient(BaseModel):
     def get_payload(
         self, inputs: Sequence[Dict], labels: Optional[dict] = None, **kwargs: Any
     ) -> dict:
-        """Generates payload for the _NVAIPlayClient API to send to service."""
+        """Generates payload for the _NVIDIAClient API to send to service."""
         return {
             **self.preprocess(inputs=inputs, labels=labels),
             **kwargs,
