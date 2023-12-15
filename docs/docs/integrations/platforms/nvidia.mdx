@@ -1,15 +1,19 @@
 # NVIDIA
 
-> [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) give users easy access to hosted endpoints for generative AI models like Llama-2, SteerLM, Mistral, etc. Using the API, you can query live endpoints available on the [NVIDIA GPU Cloud (NGC)](https://catalog.ngc.nvidia.com/ai-foundation-models) to get quick results from a DGX-hosted cloud compute environment. All models are source-accessible and can be deployed on your own compute cluster.
+All functionality related to [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/).
+
+## NVIDIA AI Foundation Models and Endpoints
+
+> [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) give users easy access to hosted foundation model endpoints for generative AI models like Llama-2, SteerLM, Mistral, etc. Using the API, you can query live endpoints available on the [NVIDIA GPU Cloud (NGC)](https://catalog.ngc.nvidia.com/ai-foundation-models) to get quick results from a DGX-hosted cloud compute environment. All models are source-accessible and can be deployed on your own compute cluster.
 These models are provided via the `langchain-nvidia-ai-endpoints` package.
 
-## Installation
+### Installation
 
 ```bash
 pip install -U langchain-nvidia-ai-endpoints
 ```
 
-## Setup and Authentication
+### Setup and Authentication
 
 - Create a free account at [NVIDIA GPU Cloud (NGC)](https://catalog.ngc.nvidia.com/).
 - Navigate to `Catalog > AI Foundation Models > (Model with API endpoint)`.
@@ -27,7 +31,7 @@ result = llm.invoke("Write a ballad about LangChain.")
 print(result.content)
 ```
 
-## Using NVIDIA AI Foundation Endpoints
+### Using NVIDIA AI Foundation Endpoints
 
 A selection of NVIDIA AI Foundation models are supported directly in LangChain with familiar APIs.
 
