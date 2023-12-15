@@ -40,7 +40,7 @@ def _parse_chat_history(history: List[BaseMessage]) -> Tuple[List[Dict[str, str]
         if isinstance(message, AIMessage):
             chat_history.append(_parse_message("assistant", content))
         if isinstance(message, SystemMessage):
-            instruction = content
+            chat_history.append(_parse_message("system", content))
     return chat_history, instruction
 
 
@@ -84,9 +84,14 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         try:
             import grpc
             from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-            from yandex.cloud.ai.llm.v1alpha.llm_pb2 import GenerationOptions, Message
-            from yandex.cloud.ai.llm.v1alpha.llm_service_pb2 import ChatRequest
-            from yandex.cloud.ai.llm.v1alpha.llm_service_pb2_grpc import (
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
                 TextGenerationServiceStub,
             )
         except ImportError as e:
@@ -100,13 +105,12 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         message_history, instruction = _parse_chat_history(messages)
         channel_credentials = grpc.ssl_channel_credentials()
         channel = grpc.secure_channel(self.url, channel_credentials)
-        request = ChatRequest(
-            model=self.model_name,
-            generation_options=GenerationOptions(
+        request = CompletionRequest(
+            model_uri=self.model_uri,
+            completion_options=CompletionOptions(
                 temperature=DoubleValue(value=self.temperature),
                 max_tokens=Int64Value(value=self.max_tokens),
             ),
-            instruction_text=instruction,
             messages=[Message(**message) for message in message_history],
         )
         stub = TextGenerationServiceStub(channel)
@@ -114,8 +118,8 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
             metadata = (("authorization", f"Bearer {self.iam_token}"),)
         else:
             metadata = (("authorization", f"Api-Key {self.api_key}"),)
-        res = stub.Chat(request, metadata=metadata)
-        text = list(res)[0].message.text
+        res = stub.Completion(request, metadata=metadata)
+        text = list(res)[0].alternatives[0].message.text
         text = text if stop is None else enforce_stop_tokens(text, stop)
         message = AIMessage(content=text)
         return ChatResult(generations=[ChatGeneration(message=message)])
