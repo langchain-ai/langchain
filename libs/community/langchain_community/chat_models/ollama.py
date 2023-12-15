@@ -76,8 +76,11 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
     def _extract_images(self, messages: List[BaseMessage]) -> List[str]:
         images = []
         for message in messages:
-            if isinstance(message, (ChatMessage, HumanMessage)) and message.content[0].get("type") == "image_url":
-                images.append(message.content[0]["image_url"]["url"])
+            if isinstance(message, 
+                          (ChatMessage, HumanMessage)) and message.content[0].get("type") == "image_url":
+                images.append(message.content[0]["image_url"]["url"].split(",")[1])
+        print("IMG!")
+        print(images)
         return images
 
     def _generate(
