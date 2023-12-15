@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rag-chroma-dense-retrieval"
+name = "propositional-retrieval"
 version = "0.1.0"
 description = "Dense retrieval using vectorized propositions."
 authors = [

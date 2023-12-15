@@ -5,8 +5,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnablePassthrough
 
-from rag_chroma_dense_retrieval.constants import DOCSTORE_ID_KEY
-from rag_chroma_dense_retrieval.storage import get_multi_vector_retriever
+from propositional_retrieval.constants import DOCSTORE_ID_KEY
+from propositional_retrieval.storage import get_multi_vector_retriever
 
 
 def format_docs(docs: list) -> str:
