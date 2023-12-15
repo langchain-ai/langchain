@@ -15,6 +15,7 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
 )
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.tools import BaseTool
 
 from langchain.agents import BaseSingleActionAgent
 from langchain.agents.format_scratchpad.openai_functions import (
@@ -25,8 +26,6 @@ from langchain.agents.output_parsers.openai_functions import (
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.tools.base import BaseTool
 from langchain.tools.render import format_tool_to_openai_function
 
 
@@ -49,12 +48,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     def get_allowed_tools(self) -> List[str]:
         """Get allowed tools."""
         return [t.name for t in self.tools]
-
-    @root_validator
-    def validate_llm(cls, values: dict) -> dict:
-        if not isinstance(values["llm"], ChatOpenAI):
-            raise ValueError("Only supported with ChatOpenAI models.")
-        return values
 
     @root_validator
     def validate_prompt(cls, values: dict) -> dict:
@@ -222,8 +215,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools."""
-        if not isinstance(llm, ChatOpenAI):
-            raise ValueError("Only supported with ChatOpenAI models.")
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message,
