@@ -4,7 +4,7 @@ from langchain_core.documents import Document
 from langchain_community.retrievers.breebs import BreebsRetriever
 
 
-class TestBreebsKnowledgeRetriever:
+class TestBreebsRetriever:
     def test_breeb_query(self) -> None:
         breeb_key = "Parivoyage"
         query = "What are the best churches to visit in Paris?"

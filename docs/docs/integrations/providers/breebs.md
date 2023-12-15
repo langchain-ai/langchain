@@ -10,16 +10,10 @@ To get the full list of Breebs, including their key (breeb_key) and description 
 https://breebs.promptbreeders.com/web/listbreebs.
 
 
-## Installation and Setup
-```python
-pip install langchain
-```
-- Get a breeb key.
-
 ## Retriever
 ```python
 from langchain.retrievers import BreebsRetriever
 ```
 
 # Example
-[Integration with langchain](https://python.langchain.com/docs/integrations/retrievers/breebs)
+[See usage example (Retrieval & ConversationalRetrievalChain)](https://python.langchain.com/docs/integrations/retrievers/breebs)
