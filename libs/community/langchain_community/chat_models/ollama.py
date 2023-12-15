@@ -56,7 +56,10 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         if isinstance(message, ChatMessage):
             message_text = f"\n\n{message.role.capitalize()}: {message.content}"
         elif isinstance(message, HumanMessage):
-            message_text = f"[INST] {message.content} [/INST]"
+            if message.content[0].get("type") == "text":
+                message_text = f"[INST] {message.content[0]['text']} [/INST]"
+            elif message.content[0].get("type") == "image_url":
+                message_text = message.content[0]["image_url"]["url"]
         elif isinstance(message, AIMessage):
             message_text = f"{message.content}"
         elif isinstance(message, SystemMessage):
@@ -70,11 +73,17 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
             [self._format_message_as_text(message) for message in messages]
         )
 
+    def _extract_images(self, messages: List[BaseMessage]) -> List[str]:
+        images = []
+        for message in messages:
+            if isinstance(message, (ChatMessage, HumanMessage)) and message.content[0].get("type") == "image_url":
+                images.append(message.content[0]["image_url"]["url"])
+        return images
+
     def _generate(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        images: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -96,6 +105,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         """
 
         prompt = self._format_messages_as_text(messages)
+        images = self._extract_images(messages)
         final_chunk = super()._stream_with_aggregation(
             prompt,
             stop=stop,
@@ -119,6 +129,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         prompt = self._format_messages_as_text(messages)
+        images = self._extract_images(messages)
         for stream_resp in self._create_stream(prompt, stop, images, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_chat_generation_chunk(stream_resp)
