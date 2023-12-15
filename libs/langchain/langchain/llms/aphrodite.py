@@ -5,8 +5,6 @@ from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
-from langchain.llms.openai import BaseOpenAI
-from langchain.utils.openai import is_openai_v1
 
 
 class Aphrodite(BaseLLM):
@@ -234,8 +232,8 @@ class Aphrodite(BaseLLM):
 
         # build sampling parameters
         params = {**self._default_params, **kwargs, "stop": stop}
-        if 'logit_bias' in params:
-            del params['logit_bias']
+        if "logit_bias" in params:
+            del params["logit_bias"]
         sampling_params = SamplingParams(**params)
         # call the model
         outputs = self.client.generate(prompts, sampling_params)
