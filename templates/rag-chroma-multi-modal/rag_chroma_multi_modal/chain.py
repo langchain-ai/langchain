@@ -3,12 +3,12 @@ import io
 from pathlib import Path
 
 from langchain.chat_models import ChatOpenAI
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.document import Document
-from langchain.schema.messages import HumanMessage
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.vectorstores import Chroma
+from langchain_core.documents import Document
+from langchain_core.messages import HumanMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_experimental.open_clip import OpenCLIPEmbeddings
 from PIL import Image
 
@@ -101,7 +101,7 @@ def multi_modal_rag_chain(retriever):
 # Load chroma
 vectorstore_mmembd = Chroma(
     collection_name="multi-modal-rag",
-    persist_directory=str(Path(__file__).parent / "chroma_db_multi_modal"),
+    persist_directory=str(Path(__file__).parent.parent / "chroma_db_multi_modal"),
     embedding_function=OpenCLIPEmbeddings(
         model_name="ViT-H-14", checkpoint="laion2b_s32b_b79k"
     ),
