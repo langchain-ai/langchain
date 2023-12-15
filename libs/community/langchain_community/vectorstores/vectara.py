@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from dataclasses import dataclass
 from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
@@ -12,25 +13,25 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
-from dataclasses import dataclass
-
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class SummaryConfig:
-    '''
+    """
     is_enabled: True if summary is enabled, False otherwise
     max_results: maximum number of results to summarize
     response_lang: requested language for the summary
-    '''
+    """
+
     is_enabled: bool = False
     max_results: int = 7
-    response_lang: str = 'eng'
+    response_lang: str = "eng"
+
 
 @dataclass
 class MMRConfig:
-    '''
+    """
     is_enabled: True if MMR is enabled, False otherwise
     mmr_k: number of results to fetch for MMR, defaults to 50
     diversity_bias: number between 0 and 1 that determines the degree
@@ -40,14 +41,16 @@ class MMRConfig:
         Note: diversity_bias is equivalent 1-lambda_mult
         where lambda_mult is the value often used in max_marginal_relevance_search()
         We chose to use that since we believe it's more intuitive to the user.
-    '''
+    """
+
     is_enabled: bool = False
     mmr_k: int = 50
     diversity_bias: float = 0.3
 
+
 @dataclass
 class VectaraQueryConfig:
-    '''
+    """
     k: Number of Documents to return. Defaults to 10.
     lambda_val: lexical match parameter for hybrid search.
     filter Dictionary of argument(s) to filter on metadata. For example a
@@ -61,7 +64,8 @@ class VectaraQueryConfig:
         to add, defaults to 2
     mmr_config: MMRConfig configuration dataclass
     summary_config: SummaryConfig configuration dataclass
-    '''
+    """
+
     k: int = 10
     lambda_val: float = 0.0
     filter: str = ""
@@ -69,6 +73,7 @@ class VectaraQueryConfig:
     n_sentence_context: int = 2
     mmr_config: MMRConfig = MMRConfig()
     summary_config: SummaryConfig = SummaryConfig()
+
 
 class Vectara(VectorStore):
     """`Vectara API` vector store.
@@ -172,7 +177,11 @@ class Vectara(VectorStore):
         request["corpus_id"] = self._vectara_corpus_id
         request["document"] = doc
 
-        api_endpoint = "https://api.vectara.io/v1/core/index" if use_core_api else "https://api.vectara.io/v1/index"
+        api_endpoint = (
+            "https://api.vectara.io/v1/core/index"
+            if use_core_api
+            else "https://api.vectara.io/v1/index"
+        )
         response = self._session.post(
             headers=self._get_post_headers(),
             url=api_endpoint,
@@ -280,7 +289,7 @@ class Vectara(VectorStore):
             doc_metadata = {"source": "langchain"}
 
         use_core_api = kwargs.get("use_core_api", False)
-        section_key = 'parts' if use_core_api else 'section'
+        section_key = "parts" if use_core_api else "section"
         doc = {
             "document_id": doc_id,
             "metadataJson": json.dumps(doc_metadata),
@@ -317,9 +326,9 @@ class Vectara(VectorStore):
             A list of k Documents matching the given query
             If summary is enabled, last document is the summary text with 'summary'=True
         """
-        if type(config.mmr_config) is dict:
+        if isinstance(config.mmr_configm, dict):
             config.mmr_config = MMRConfig(**config.mmr_config)
-        if type(config.summary_config) is dict:
+        if isinstance(config.summary_config, dict):
             config.summary_config = SummaryConfig(**config.summary_config)
 
         data = {
@@ -327,8 +336,9 @@ class Vectara(VectorStore):
                 {
                     "query": query,
                     "start": 0,
-                    "numResults": 
-                        config.mmr_config.mmr_k if config.mmr_config.is_enabled else config.k,
+                    "numResults": config.mmr_config.mmr_k
+                    if config.mmr_config.is_enabled
+                    else config.k,
                     "contextConfig": {
                         "sentencesBefore": config.n_sentence_context,
                         "sentencesAfter": config.n_sentence_context,
@@ -345,17 +355,17 @@ class Vectara(VectorStore):
             ]
         }
         if config.mmr_config.is_enabled:
-            data['query'][0]['rerankingConfig'] = {
-                'rerankerId': 272725718,
-                'mmrConfig': {
-                    'diversityBias': config.mmr_config.diversity_bias
-                }
+            data["query"][0]["rerankingConfig"] = {
+                "rerankerId": 272725718,
+                "mmrConfig": {"diversityBias": config.mmr_config.diversity_bias},
             }
         if config.summary_config.is_enabled:
-            data['query'][0]['summary'] = [{
-                'maxSummarizedResults': config.summary_config.max_results,
-                'responseLang': config.summary_config.response_lang
-            }]
+            data["query"][0]["summary"] = [
+                {
+                    "maxSummarizedResults": config.summary_config.max_results,
+                    "responseLang": config.summary_config.response_lang,
+                }
+            ]
 
         response = self._session.post(
             headers=self._get_post_headers(),
@@ -389,8 +399,8 @@ class Vectara(VectorStore):
             md = {m["name"]: m["value"] for m in x["metadata"]}
             doc_num = x["documentIndex"]
             doc_md = {m["name"]: m["value"] for m in documents[doc_num]["metadata"]}
-            if 'source' not in doc_md:
-                doc_md['source'] = 'vectara'
+            if "source" not in doc_md:
+                doc_md["source"] = "vectara"
             md.update(doc_md)
             metadatas.append(md)
 
@@ -406,10 +416,12 @@ class Vectara(VectorStore):
         ]
 
         if config.mmr_config.is_enabled:
-            res = res[:config.k]
+            res = res[: config.k]
         if config.summary_config.is_enabled:
             summary = result["responseSet"][0]["summary"][0]["text"]
-            res.append((Document(page_content=summary, metadata={'summary': True}), 0.0))
+            res.append(
+                (Document(page_content=summary, metadata={"summary": True}), 0.0)
+            )
 
         return res
 
@@ -429,7 +441,7 @@ class Vectara(VectorStore):
             - score_threshold: minimal score threshold for the result.
             - n_sentence_context: number of sentences before/after the matching segment
             - mmr_config: optional configuration for MMR (see MMRConfig dataclass)
-            - summary_config: optional configuration for summary 
+            - summary_config: optional configuration for summary
               (see SummaryConfig dataclass)
         Returns:
             List of Documents most similar to the query and score for each.
@@ -482,8 +494,9 @@ class Vectara(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        kwargs['mmr_config'] = MMRConfig(is_enabled=True, mmr_k=fetch_k, 
-                                         diversity_bias=1-lambda_mult)
+        kwargs["mmr_config"] = MMRConfig(
+            is_enabled=True, mmr_k=fetch_k, diversity_bias=1 - lambda_mult
+        )
         return self.similarity_search(query, **kwargs)
 
     @classmethod
