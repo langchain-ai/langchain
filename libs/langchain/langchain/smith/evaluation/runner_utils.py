@@ -987,7 +987,7 @@ class _DatasetRunContainer:
     ) -> dict:
         results: dict = {}
         for example, output in zip(self.examples, batch_results):
-            row_result = all_eval_results.get(str(example.id), {})
+            row_result: _RowResult = all_eval_results.get(str(example.id), {})
             results[str(example.id)] = {
                 "input": example.inputs,
                 "feedback": row_result.get("feedback", []),
@@ -1014,14 +1014,13 @@ class _DatasetRunContainer:
                         )
                 elif isinstance(callback, LangChainTracer):
                     run = callback.latest_run
-                    example_id = callback.example_id
                     execution_time = (
                         (run.end_time - run.start_time).total_seconds()
                         if run and run.end_time
                         else None
                     )
                     run_id = str(run.id) if run else None
-                    all_eval_results.setdefault(str(example_id), {}).update(
+                    all_eval_results.setdefault(str(callback.example_id), {}).update(
                         {
                             "execution_time": execution_time,
                             "run_id": run_id,
