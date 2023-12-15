@@ -10,29 +10,6 @@ python = ">=3.8.1,<4.0"
 langchain = ">=0.0.350,<0.2"
 openai = "<2"
 
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7.3.0"
-freezegun = "^1.2.2"
-pytest-mock  = "^3.10.0"
-syrupy = "^4.0.2"
-pytest-watcher = "^0.3.4"
-pytest-asyncio = "^0.21.1"
-langchain-core = {path = "../../libs/core", develop = true}
-
-[tool.poetry.group.codespell]
-optional = true
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
-
 [tool.poetry.group.lint]
 optional = true
 
@@ -51,6 +28,16 @@ langchain-cli = {path = "../../libs/cli", develop = true}
 langchain-core = {path = "../../libs/core", develop = true}
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
+
+[tool.ruff]
+select = [
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+]
+
+[tool.mypy]
+disallow_untyped_defs = "True"
 
 [tool.langserve]
 export_module = "pirate_speak.chain"
