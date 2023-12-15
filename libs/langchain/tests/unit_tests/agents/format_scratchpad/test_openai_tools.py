@@ -49,6 +49,10 @@ def test_calls_convert_agent_action_to_messages() -> None:
     }
     message3 = AIMessage(content="", additional_kwargs=additional_kwargs3)
     actions3 = parse_ai_message_to_openai_tool_action(message3)
+    # for mypy
+    assert isinstance(actions1, list)
+    assert isinstance(actions2, list)
+    assert isinstance(actions3, list)
 
     intermediate_steps = [
         (actions1[0], "observation1"),
