@@ -134,13 +134,13 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                             "Must either have type 'text' or type 'image_url' "
                             "with a string 'image_url' field."
                         )
-            
+
             ollama_messages.append({
                 "role": role,
                 "content": content,
                 "images": images,
             })
-        
+
         return ollama_messages
         
     def _create_chat_stream(
