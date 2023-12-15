@@ -80,6 +80,7 @@ from langchain_community.embeddings.tensorflow_hub import TensorflowHubEmbedding
 from langchain_community.embeddings.vertexai import VertexAIEmbeddings
 from langchain_community.embeddings.voyageai import VoyageEmbeddings
 from langchain_community.embeddings.xinference import XinferenceEmbeddings
+from langchain_community.embeddings.yandex import YandexGPTEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -136,6 +137,7 @@ __all__ = [
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
     "BookendEmbeddings",
+    "YandexGPTEmbeddings"
 ]
 
 
