@@ -58,12 +58,6 @@ def _import_aphrodite() -> Any:
     return Aphrodite
 
 
-def _import_aphrodite_openai() -> Any:
-    from langchain.llms.aphrodite import AphroditeOpenAI
-
-    return AphroditeOpenAI
-
-
 def _import_arcee() -> Any:
     from langchain.llms.arcee import Arcee
 
@@ -559,8 +553,6 @@ def __getattr__(name: str) -> Any:
         return _import_anyscale()
     elif name == "Aphrodite":
         return _import_aphrodite()
-    elif name == "AphroditeOpenAI":
-        return _import_aphrodite_openai()
     elif name == "Arcee":
         return _import_arcee()
     elif name == "Aviary":
@@ -733,6 +725,7 @@ __all__ = [
     "AmazonAPIGateway",
     "Anthropic",
     "Anyscale",
+    "Aphrodite",
     "Arcee",
     "Aviary",
     "AzureMLOnlineEndpoint",
@@ -821,7 +814,6 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "anthropic": _import_anthropic,
         "anyscale": _import_anyscale,
         "aphrodite": _import_aphrodite,
-        "aphrodite_openai": _import_aphrodite_openai,
         "arcee": _import_arcee,
         "aviary": _import_aviary,
         "azure": _import_azure_openai,
