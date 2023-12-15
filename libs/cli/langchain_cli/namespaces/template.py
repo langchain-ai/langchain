@@ -11,6 +11,7 @@ from typing import Optional
 import typer
 from typing_extensions import Annotated, TypedDict
 
+from langchain_cli.utils.find_replace import replace_glob
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 package_cli = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -20,8 +21,7 @@ Replacements = TypedDict(
     {
         "__package_name__": str,
         "__module_name__": str,
-        "__ModuleName__": str,
-        "__package_name_short__": str,
+        "__app_route_code__": str,
     },
 )
 
@@ -63,32 +63,19 @@ def new(
         f'add_routes(app, {chain_name}, path="/{package_name}")'
     )
 
-    # replace template strings
-    pyproject = destination_dir / "pyproject.toml"
-    pyproject_contents = pyproject.read_text()
-    pyproject.write_text(
-        pyproject_contents.replace("__package_name__", package_name).replace(
-            "__module_name__", module_name
-        )
-    )
-
     # move module folder
     package_dir = destination_dir / module_name
     shutil.move(destination_dir / "package_template", package_dir)
 
-    # update init
-    init = package_dir / "__init__.py"
-    init_contents = init.read_text()
-    init.write_text(init_contents.replace("__module_name__", module_name))
-
-    # replace readme
-    readme = destination_dir / "README.md"
-    readme_contents = readme.read_text()
-    readme.write_text(
-        readme_contents.replace("__package_name__", package_name).replace(
-            "__app_route_code__", app_route_code
-        )
+    replacements = Replacements(
+        {
+            "__package_name__": package_name,
+            "__module_name__": module_name,
+            "__app_route_code__": app_route_code,
+        }
     )
+
+    replace_glob(destination_dir, "**/*", replacements)
 
     # poetry install
     if with_poetry:
