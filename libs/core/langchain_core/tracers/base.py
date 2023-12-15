@@ -2,9 +2,20 @@
 from __future__ import annotations
 
 import logging
+import sys
+import traceback
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from tenacity import RetryCallState
@@ -44,6 +55,21 @@ class BaseTracer(BaseCallbackHandler, ABC):
     @abstractmethod
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
+
+    @staticmethod
+    def _get_stacktrace(error: BaseException) -> str:
+        """Get the stacktrace of the parent error."""
+        msg = repr(error)
+        try:
+            if sys.version_info < (3, 10):
+                tb = traceback.format_exception(
+                    error.__class__, error, error.__traceback__
+                )
+            else:
+                tb = traceback.format_exception(error)
+            return (msg + "\n\n".join(tb)).strip()
+        except:  # noqa: E722
+            return msg
 
     def _start_trace(self, run: Run) -> None:
         """Start a trace for a run."""
@@ -220,7 +246,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     ) -> Run:
         """Handle an error for an LLM run."""
         llm_run = self._get_run(run_id, run_type="llm")
-        llm_run.error = repr(error)
+        llm_run.error = self._get_stacktrace(error)
         llm_run.end_time = datetime.utcnow()
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
         self._end_trace(llm_run)
@@ -296,7 +322,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     ) -> Run:
         """Handle an error for a chain run."""
         chain_run = self._get_run(run_id)
-        chain_run.error = repr(error)
+        chain_run.error = self._get_stacktrace(error)
         chain_run.end_time = datetime.utcnow()
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
@@ -361,7 +387,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     ) -> Run:
         """Handle an error for a tool run."""
         tool_run = self._get_run(run_id, run_type="tool")
-        tool_run.error = repr(error)
+        tool_run.error = self._get_stacktrace(error)
         tool_run.end_time = datetime.utcnow()
         tool_run.events.append({"name": "error", "time": tool_run.end_time})
         self._end_trace(tool_run)
@@ -414,7 +440,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     ) -> Run:
         """Run when Retriever errors."""
         retrieval_run = self._get_run(run_id, run_type="retriever")
-        retrieval_run.error = repr(error)
+        retrieval_run.error = self._get_stacktrace(error)
         retrieval_run.end_time = datetime.utcnow()
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
         self._end_trace(retrieval_run)

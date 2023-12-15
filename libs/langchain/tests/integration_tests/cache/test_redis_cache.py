@@ -10,7 +10,7 @@ from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
 from langchain.cache import RedisCache, RedisSemanticCache
 from langchain.globals import get_llm_cache, set_llm_cache
-from tests.integration_tests.vectorstores.fake_embeddings import (
+from tests.integration_tests.cache.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
 )
