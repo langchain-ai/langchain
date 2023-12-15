@@ -68,6 +68,21 @@ class TritonTensorRTLLM(BaseLLM):
         default_factory=lambda: ["</s>"], description="Stop tokens."
     )
     seed: int = Field(42, description="The seed to use for random generation.")
+    load_model: bool = Field(
+        True,
+        description="Request the inference server to load the specified model.\
+            Certain Triton configurations do not allow for this operation.",
+    )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        if self.load_model:
+            self._load_model(self.model_name)
+
+    def __del__(self):
+        """Ensure the client streaming connection is properly shutdown"""
+        self.client.close()
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -134,9 +149,7 @@ class TritonTensorRTLLM(BaseLLM):
         **kwargs: Any,
     ) -> LLMResult:
         invocation_params = self._get_invocation_params(**kwargs)
-        # (WFH) TODO: It looks like we were doing this already but...?
-        self._load_model(self.model_name)
-        # stop_words = stop if stop is not None else self.stop
+        stop_words = stop if stop is not None else self.stop
         generations = []
         # TODO: We should handle the native batching instead.
         for prompt in prompts:
@@ -146,7 +159,7 @@ class TritonTensorRTLLM(BaseLLM):
             # TODO: Verify this is actually a string result
             result: str = self._request(
                 self.model_name,
-                # stop_words=stop,
+                stop=stop_words,
                 **invoc_params,
             )
             generations.append([Generation(text=result, generation_info={})])
@@ -159,19 +172,59 @@ class TritonTensorRTLLM(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
+        """Request inferencing from the triton server."""
         invocation_params = self._get_invocation_params(**kwargs, prompt=[[prompt]])
-        self._load_model(self.model_name)
         stop_words = stop if stop is not None else self.stop
 
+        inputs = self._generate_inputs(stream=True, **invocation_params)
+        outputs = self._generate_outputs()
+
+        result_queue = self._invoke_triton(self.model_name, inputs, outputs, stop_words)
+
+        for token in result_queue:
+            yield GenerationChunk(text=token)
+            if run_manager:
+                run_manager.on_llm_new_token(token)
+
+        self.client.stop_stream()
+
+    ##### BELOW ARE METHODS PREVIOUSLY ONLY IN THE GRPC CLIENT
+
+    def _request(
+        self,
+        model_name: str,
+        prompt: Sequence[Sequence[str]],
+        stop: Optional[List[str]] = None,
+        **params: Any,
+    ) -> str:
+        """Request inferencing from the triton server."""
+        # create model inputs and outputs
+        inputs = self._generate_inputs(stream=False, prompt=prompt, **params)
+        outputs = self._generate_outputs()
+
+        result_queue = self._invoke_triton(self.model_name, inputs, outputs, stop)
+
+        result_str = ""
+        for token in result_queue:
+            result_str += token
+
+        self.client.stop_stream()
+
+        return self._trim_batch_response(result_str)
+
+    def _invoke_triton(self, model_name, inputs, outputs, stop_words):
+        if not self.client.is_model_ready(model_name):
+            raise RuntimeError("Cannot request streaming, model is not loaded")
+
         request_id = str(random.randint(1, 9999999))  # nosec
+
         result_queue = StreamingResponseGenerator(
             self,
             request_id,
             force_batch=False,
             stop_words=stop_words,
         )
-        inputs = self._generate_inputs(stream=True, **invocation_params)
-        outputs = self._generate_outputs()
+
         self.client.start_stream(
             callback=partial(
                 self._stream_callback,
@@ -180,68 +233,18 @@ class TritonTensorRTLLM(BaseLLM):
                 stop_words=stop_words,
             )
         )
+
+        # Even though this request may not be a streaming request certain configurations
+        # in Triton prevent the GRPC server from accepting none streaming connections.
+        # Therefore we call the streaming API and combine the streamed results.
         self.client.async_stream_infer(
-            model_name=self.model_name,
+            model_name=model_name,
             inputs=inputs,
             outputs=outputs,
             request_id=request_id,
         )
 
-        for token in result_queue:
-            yield GenerationChunk(text=token)
-            if run_manager:
-                run_manager.on_llm_new_token(token)
-
-    ##### BELOW ARE METHODS PREVIOUSLY ONLY IN THE GRPC CLIENT
-
-    def _request(
-        self,
-        model_name: str,
-        prompt: Sequence[Sequence[str]],
-        **params: Any,
-    ) -> str:
-        """Request inferencing from the triton server."""
-        if not self.client.is_model_ready(model_name):
-            raise RuntimeError("Cannot request streaming, model is not loaded")
-
-        request_id = str(random.randint(1, 9999999))  # nosec
-        result_queue = StreamingResponseGenerator(
-            self,
-            request_id,
-            force_batch=False,
-            stop_words=self.stop,
-        )
-
-        # create model inputs and outputs
-        inputs = self._generate_inputs(stream=False, prompt=prompt, **params)
-        outputs = self._generate_outputs()
-
-        self.client.start_stream(
-            callback=partial(
-                self._stream_callback,
-                result_queue,
-                force_batch=False,
-                stop_words=self.stop,
-            )
-        )
-
-        # call the model for inference
-        self.client.async_stream_infer(
-            model_name=self.model_name,
-            inputs=inputs,
-            outputs=outputs,
-            request_id=request_id,
-        )
-
-        result_str = ""
-        for token in result_queue:
-            result_str += token
-
-        # result = self.client.infer(model_name, inputs=inputs, outputs=outputs)
-        # result_str = "".join(
-        #     [val.decode("utf-8") for val in result.as_numpy("text_output").tolist()]
-        # )
-        return self._trim_batch_response(result_str)
+        return result_queue
 
     def _generate_outputs(
         self,
