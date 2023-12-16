@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+
+from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     from github.Issue import Issue
@@ -76,8 +77,13 @@ class GitHubAPIWrapper(BaseModel):
             private_key,
         )
         gi = GithubIntegration(auth=auth)
-        installation = gi.get_installations()[0]
-
+        installation = gi.get_installations()
+        if not installation:
+            raise ValueError(
+                f"Please make sure to install the created github app with id {github_app_id} on the repo: {github_repository}"
+                "More instructions can be found at https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app"
+            )
+        installation = installation[0]
         # create a GitHub instance:
         g = installation.get_github_for_installation()
         repo = g.get_repo(github_repository)
