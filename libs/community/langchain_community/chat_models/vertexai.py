@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import base64
 import logging
-from dataclasses import dataclass, field
 import re
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
 from langchain_core.callbacks import (
@@ -109,11 +109,13 @@ def _parse_chat_history_gemini(
             elif path.startswith("data:image/"):
                 # extract base64 component from image uri
                 try:
-                    encoded = re.search(r"data:image/\w{2,4};base64,(.*)", path).group(1)
+                    encoded = re.search(r"data:image/\w{2,4};base64,(.*)", path).group(
+                        1
+                    )
                 except AttributeError:
                     raise ValueError(
-                        f"Invalid image uri. It should be in the format "
-                        f"data:image/<image_type>;base64,<base64_encoded_image>."
+                        "Invalid image uri. It should be in the format "
+                        "data:image/<image_type>;base64,<base64_encoded_image>."
                     )
                 image = Image.from_bytes(base64.b64decode(encoded))
             else:
