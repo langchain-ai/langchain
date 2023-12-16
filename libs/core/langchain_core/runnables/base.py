@@ -2655,6 +2655,119 @@ class RunnableLambda(Runnable[Input, Output]):
             **kwargs,
         )
 
+    def _stream(
+        self,
+        input: Input,
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> Output:
+        output = call_func_with_variable_args(self.func, input, config, run_manager)
+
+        # If the output is a runnable, use its stream output
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking "
+                    f"{self} with input {input}."
+                )
+            iterator = output.stream(
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            )
+        else:
+            # Otherwise, wrap it in an iterator
+            iterator = iter([output])
+        return cast(Output, iterator)
+
+    def stream(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> Iterator[Output]:
+        if hasattr(self, "func"):
+            return cast(
+                Iterator[Output],
+                self._call_with_config(
+                    self._stream,
+                    input,
+                    self._config(config, self.func),
+                ),
+            )
+        else:
+            raise TypeError(
+                "Cannot stream a coroutine function synchronously."
+                "Use `astream` instead."
+            )
+
+    async def _astream(
+        self,
+        input: Input,
+        run_manager: AsyncCallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> Output:
+        output = await acall_func_with_variable_args(
+            self.afunc, input, config, run_manager
+        )
+        # If the output is a runnable, use its astream output
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking "
+                    f"{self} with input {input}."
+                )
+            iterator: AsyncIterator[Output] = output.astream(
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            )
+        else:
+            # Otherwise, wrap it in an async iterator
+            class SimpleAsyncIterator(AsyncIterator[Output]):
+                def __init__(self, element: Output):
+                    self.elements = [element]
+
+                async def __anext__(self) -> Output:
+                    if self.elements:
+                        return self.elements.pop()
+                    else:
+                        raise StopAsyncIteration
+
+            iterator = SimpleAsyncIterator(output)
+        return cast(Output, iterator)
+
+    async def astream(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> AsyncIterator[Output]:
+        if hasattr(self, "afunc"):
+            async for output in cast(
+                AsyncIterator[Output],
+                await self._acall_with_config(
+                    self._astream,
+                    input,
+                    self._config(config, self.afunc),
+                ),
+            ):
+                yield output
+        else:
+            # Calls stream in a thread pool.
+            for output in await asyncio.get_running_loop().run_in_executor(
+                None, partial(self.stream, **kwargs), input, config
+            ):
+                yield output
+
 
 class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     """
