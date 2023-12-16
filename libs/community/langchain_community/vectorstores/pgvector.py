@@ -60,7 +60,14 @@ class BaseModel(Base):
     uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 
+_classes: Any = None
+
+
 def _get_embedding_collection_store() -> Any:
+    global _classes
+    if _classes is not None:
+        return _classes
+
     from pgvector.sqlalchemy import Vector
 
     class CollectionStore(BaseModel):
@@ -126,7 +133,9 @@ def _get_embedding_collection_store() -> Any:
         # custom_id : any user defined id
         custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
 
-    return EmbeddingStore, CollectionStore
+    _classes = (EmbeddingStore, CollectionStore)
+
+    return _classes
 
 
 def _results_to_docs(docs_and_scores: Any) -> List[Document]:
