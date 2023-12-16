@@ -7,7 +7,6 @@ EXPECT_ALL = [
     "AmazonAPIGateway",
     "Anthropic",
     "Anyscale",
-    "Aphrodite",
     "Arcee",
     "Aviary",
     "AzureMLOnlineEndpoint",
