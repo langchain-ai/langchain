@@ -141,6 +141,12 @@ redirects = {
 for old_link in redirects:
     html_additional_pages[old_link] = "redirects.html"
 
+partners_dir = Path(__file__).parent.parent.parent / "libs/partners"
+partners = [
+    (p.name, p.name.replace("-", "_") + "_api_reference")
+    for p in partners_dir.iterdir()
+]
+
 html_context = {
     "display_github": True,  # Integrate GitHub
     "github_user": "langchain-ai",  # Username
@@ -148,9 +154,7 @@ html_context = {
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
     "redirects": redirects,
-    "drop_down_navigation": [
-        ("Google Generative AI", "https://python.langchain.com", "")
-    ],
+    "partners": partners,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
