@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/toolkits/google_drive",
+      "destination": "/docs/integrations/tools/google_drive"
+    },
+    {
       "source": "/docs/use_cases/question_answering/analyze_document",
       "destination": "/cookbook"
     },
