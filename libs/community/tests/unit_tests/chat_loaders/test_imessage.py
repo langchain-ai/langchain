@@ -1,4 +1,5 @@
 import pathlib
+import datetime
 
 from langchain_community.chat_loaders import imessage, utils
 
@@ -7,6 +8,7 @@ def test_imessage_chat_loader() -> None:
     chat_path = pathlib.Path(__file__).parent / "data" / "imessage_chat.db"
     loader = imessage.IMessageChatLoader(str(chat_path))
 
+
     chat_sessions = list(
         utils.map_ai_messages(loader.lazy_load(), sender="testemail@gmail.com")
     )
@@ -14,8 +16,17 @@ def test_imessage_chat_loader() -> None:
 
     assert chat_sessions[0]["messages"], "Chat messages should not be empty"
 
+    first_message =  chat_sessions[0]["messages"][0]
+
     # message content in text field
-    assert "Yeh" in chat_sessions[0]["messages"][0].content, "Chat content mismatch"
+    assert "Yeh" in first_message.content, "Chat content mismatch"
+
+    # time parsed correctly
+    expected_message_time = datetime.datetime(2023,11,5,2, 50, 50, 393148)
+    assert first_message.additional_kwargs["message_time"] == expected_message_time , "date failed to parse"
+
+    # is_from_me parsed correctly
+    assert first_message.additional_kwargs["is_from_me"] == 0 , "is_from_me failed to parse"
 
     # short message content in attributedBody field
     assert (
@@ -26,3 +37,5 @@ def test_imessage_chat_loader() -> None:
     long_msg = "aaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbba"
     "aaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbb"
     assert long_msg in chat_sessions[0]["messages"][18].content, "Chat content mismatch"
+
+

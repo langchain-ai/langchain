@@ -7,10 +7,23 @@ from langchain_core.chat_sessions import ChatSession
 from langchain_core.messages import HumanMessage
 
 from langchain_community.chat_loaders.base import BaseChatLoader
+from datetime import datetime
 
 if TYPE_CHECKING:
     import sqlite3
 
+def nanoseconds_from_2001_to_datetime(nanoseconds:int) -> datetime:
+    # Convert nanoseconds to seconds (1 second = 1e9 nanoseconds)
+    timestamp_in_seconds = nanoseconds / 1e9
+
+    # The reference date is January 1, 2001, in Unix time
+    reference_date_seconds = datetime(2001, 1, 1).timestamp()
+
+    # Calculate the actual timestamp by adding the reference date
+    actual_timestamp = reference_date_seconds + timestamp_in_seconds
+
+    # Convert to a datetime object
+    return datetime.fromtimestamp(actual_timestamp)
 
 class IMessageChatLoader(BaseChatLoader):
     """Load chat sessions from the `iMessage` chat.db SQLite file.
@@ -76,6 +89,7 @@ class IMessageChatLoader(BaseChatLoader):
             length, start = int.from_bytes(content[1:3], "little"), 3
         return content[start : start + length].decode("utf-8", errors="ignore")
 
+
     def _load_single_chat_session(
         self, cursor: "sqlite3.Cursor", chat_id: int
     ) -> ChatSession:
@@ -92,7 +106,7 @@ class IMessageChatLoader(BaseChatLoader):
         results: List[HumanMessage] = []
 
         query = """
-        SELECT message.date, handle.id, message.text, message.attributedBody
+        SELECT message.date, handle.id, message.text, message.is_from_me, message.attributedBody
         FROM message
         JOIN chat_message_join ON message.ROWID = chat_message_join.message_id
         JOIN handle ON message.handle_id = handle.ROWID
@@ -102,7 +116,7 @@ class IMessageChatLoader(BaseChatLoader):
         cursor.execute(query, (chat_id,))
         messages = cursor.fetchall()
 
-        for date, sender, text, attributedBody in messages:
+        for date, sender, text, is_from_me, attributedBody in messages:
             if text:
                 content = text
             elif attributedBody:
@@ -115,8 +129,9 @@ class IMessageChatLoader(BaseChatLoader):
                     role=sender,
                     content=content,
                     additional_kwargs={
-                        "message_time": date,
+                        "message_time": nanoseconds_from_2001_to_datetime(date),
                         "sender": sender,
+                        "is_from_me": is_from_me,
                     },
                 )
             )
