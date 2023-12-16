@@ -63,21 +63,27 @@ class Reviver:
             if len(namespace) == 1 and namespace[0] == "langchain":
                 raise ValueError(f"Invalid namespace: {value}")
 
-            # Get the importable path
-            key = tuple(namespace + [name])
-            if key not in SERIALIZABLE_MAPPING:
-                raise ValueError(
-                    "Trying to deserialize something that cannot "
-                    "be deserialized in current version of langchain-core: "
-                    f"{key}"
-                )
-            import_path = SERIALIZABLE_MAPPING[key]
-            # Split into module and name
-            import_dir, import_obj = import_path[:-1], import_path[-1]
-            # Import module
-            mod = importlib.import_module(".".join(import_dir))
-            # Import class
-            cls = getattr(mod, import_obj)
+            # If namespace is in known namespaces, try to use mapping
+            if namespace[0] in DEFAULT_NAMESPACES:
+                # Get the importable path
+                key = tuple(namespace + [name])
+                if key not in SERIALIZABLE_MAPPING:
+                    raise ValueError(
+                        "Trying to deserialize something that cannot "
+                        "be deserialized in current version of langchain-core: "
+                        f"{key}"
+                    )
+                import_path = SERIALIZABLE_MAPPING[key]
+                # Split into module and name
+                import_dir, import_obj = import_path[:-1], import_path[-1]
+                # Import module
+                mod = importlib.import_module(".".join(import_dir))
+                # Import class
+                cls = getattr(mod, import_obj)
+            # Otherwise, load by path
+            else:
+                mod = importlib.import_module(".".join(namespace))
+                cls = getattr(mod, name)
 
             # The class must be a subclass of Serializable.
             if not issubclass(cls, Serializable):

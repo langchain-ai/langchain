@@ -1,3 +1,3 @@
-from langchain_community.llms.yandex import YandexGPT, _BaseYandexGPT
+from langchain_community.llms.yandex import YandexGPT
 
-__all__ = ["_BaseYandexGPT", "YandexGPT"]
+__all__ = ["YandexGPT"]
