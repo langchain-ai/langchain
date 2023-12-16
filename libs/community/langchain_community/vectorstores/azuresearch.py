@@ -431,16 +431,16 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
+        from azure.search.documents.models import VectorizedQuery
 
         results = self.client.search(
             search_text="",
-            vectors=[
-                Vector(
+            vector_queries=[
+                VectorizedQuery(
                     value=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
-                    k=k,
+                    k_nearest_neighbors=k,
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
