@@ -1,4 +1,4 @@
-"""Test OCIModelDeploymentVLLM Endpoint."""
+"""Test OCI Data Science Model Deployment Endpoint."""
 
 import responses
 
