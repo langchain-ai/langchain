@@ -307,3 +307,85 @@ class Ollama(BaseLLM, _OllamaCommon):
                         chunk.text,
                         verbose=self.verbose,
                     )
+class OllamaMultiModal(BaseLLM, _OllamaCommon):
+    """Ollama locally runs large language models with multimodal support."""
+
+    class Config:
+        extra = Extra.forbid
+
+    @property
+    def _llm_type(self) -> str:
+        return "ollama-llm-multimodal"
+
+    def _generate(
+        self,
+        prompts: List[str],
+        images: Optional[List[str]] = None,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        generations = []
+        for prompt in prompts:
+            merged_kwargs = kwargs.copy()
+            merged_kwargs.update({"prompt": prompt})
+            if images:
+                merged_kwargs["images"] = images
+
+            final_chunk = self._stream_with_aggregation(
+                stop=stop,
+                run_manager=run_manager,
+                verbose=self.verbose,
+                **merged_kwargs,
+            )
+            generations.append([final_chunk])
+        return LLMResult(generations=generations)
+
+    def _stream_with_aggregation(
+        self,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> GenerationChunk:
+        final_chunk: Optional[GenerationChunk] = None
+        for stream_resp in self._create_stream(**kwargs):
+            if stream_resp:
+                chunk = _stream_response_to_generation_chunk(stream_resp)
+                if final_chunk is None:
+                    final_chunk = chunk
+                else:
+                    final_chunk += chunk
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        chunk.text,
+                        verbose=verbose,
+                    )
+        if final_chunk is None:
+            raise ValueError("No data received from Ollama stream.")
+
+        return final_chunk
+
+    def _create_stream(
+        self,
+        **kwargs: Any,
+    ) -> Iterator[str]:
+        # Ensure that the 'model' parameter is included
+        params = self._default_params
+        params.update(kwargs)  # Update params with any additional kwargs
+
+        response = requests.post(
+            url=f"{self.base_url}/api/generate/",
+            headers={"Content-Type": "application/json"},
+            json=params,  # Use updated params here
+            stream=True,
+            timeout=self.timeout,
+        )
+        response.encoding = "utf-8"
+        if response.status_code != 200:
+            optional_detail = response.json().get("error")
+            raise ValueError(
+                f"Ollama call failed with status code {response.status_code}."
+                f" Details: {optional_detail}"
+            )
+        return response.iter_lines(decode_unicode=True)
