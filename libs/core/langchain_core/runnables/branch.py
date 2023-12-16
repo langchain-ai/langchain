@@ -1,7 +1,9 @@
 from typing import (
     Any,
+    AsyncIterator,
     Awaitable,
     Callable,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -264,3 +266,117 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             raise
         run_manager.on_chain_end(dumpd(output))
         return output
+
+    def stream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        """First evaluates the condition,
+        then delegate to true or false branch."""
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self),
+            input,
+            name=config.get("run_name"),
+        )
+        outputs = []
+
+        try:
+            for idx, branch in enumerate(self.branches):
+                condition, runnable = branch
+
+                expression_value = condition.invoke(
+                    input,
+                    config=patch_config(
+                        config,
+                        callbacks=run_manager.get_child(tag=f"condition:{idx + 1}"),
+                    ),
+                )
+
+                if expression_value:
+                    for output in runnable.stream(
+                        input,
+                        config=patch_config(
+                            config,
+                            callbacks=run_manager.get_child(tag=f"branch:{idx + 1}"),
+                        ),
+                        **kwargs,
+                    ):
+                        yield output
+                        outputs.append(output)
+                    break
+            else:
+                for output in self.default.stream(
+                    input,
+                    config=patch_config(
+                        config,
+                        callbacks=run_manager.get_child(tag="branch:default"),
+                    ),
+                    **kwargs,
+                ):
+                    yield output
+                    outputs.append(output)
+        except Exception as e:
+            run_manager.on_chain_error(e)
+            raise
+        run_manager.on_chain_end(dumpd(outputs))
+
+    async def astream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        """First evaluates the condition,
+        then delegate to true or false branch."""
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self),
+            input,
+            name=config.get("run_name"),
+        )
+        outputs = []
+
+        try:
+            for idx, branch in enumerate(self.branches):
+                condition, runnable = branch
+
+                expression_value = await condition.ainvoke(
+                    input,
+                    config=patch_config(
+                        config,
+                        callbacks=run_manager.get_child(tag=f"condition:{idx + 1}"),
+                    ),
+                )
+
+                if expression_value:
+                    async for output in runnable.astream(
+                        input,
+                        config=patch_config(
+                            config,
+                            callbacks=run_manager.get_child(tag=f"branch:{idx + 1}"),
+                        ),
+                        **kwargs,
+                    ):
+                        yield output
+                        outputs.append(output)
+                    break
+            else:
+                async for output in self.default.astream(
+                    input,
+                    config=patch_config(
+                        config,
+                        callbacks=run_manager.get_child(tag="branch:default"),
+                    ),
+                    **kwargs,
+                ):
+                    yield output
+                    outputs.append(output)
+        except Exception as e:
+            run_manager.on_chain_error(e)
+            raise
+        run_manager.on_chain_end(dumpd(outputs))

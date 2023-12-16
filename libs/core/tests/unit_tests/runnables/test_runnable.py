@@ -125,6 +125,29 @@ class FakeRunnable(Runnable[str, int]):
         return len(input)
 
 
+class FakeStreamingRunnable(Runnable[int, int]):
+    def invoke(self, input: int, config: Optional[RunnableConfig] = None) -> int:
+        raise NotImplementedError()
+
+    def stream(
+        self,
+        input: int,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[int]:
+        for _ in range(input):
+            yield _
+
+    async def astream(
+        self,
+        input: int,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[int]:
+        for _ in range(input):
+            yield _
+
+
 class FakeRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
@@ -3979,6 +4002,116 @@ async def test_runnable_branch_abatch() -> None:
     )
 
     assert await branch.abatch([1, 10, 0]) == [2, 100, -1]
+
+
+def test_runnable_branch_stream() -> None:
+    """Verify that stream works for RunnableBranch."""
+
+    branch = RunnableBranch[int, Any](
+        (lambda x: x > 0, FakeStreamingRunnable()),
+        lambda x: x - 1,
+    )
+
+    assert list(branch.stream(1)) == [0]
+    assert list(branch.stream(5)) == [0, 1, 2, 3, 4]
+    assert list(branch.stream(10)) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    assert list(branch.stream(0)) == [-1]
+
+
+def test_runnable_branch_stream_with_callbacks() -> None:
+    """Verify that stream works for RunnableBranch when using callbacks."""
+    tracer = FakeTracer()
+
+    def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    branch = RunnableBranch[int, Any](
+        (lambda x: x > 100, raise_value_error),
+        (lambda x: x > 0, FakeStreamingRunnable()),
+        lambda x: x - 1,
+    )
+    config: RunnableConfig = {"callbacks": [tracer]}
+
+    assert list(branch.stream(5, config=config)) == [0, 1, 2, 3, 4]
+
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error is None
+    assert tracer.runs[0].outputs == {"output": [0, 1, 2, 3, 4]}
+
+    # Check that the chain on error is invoked
+    with pytest.raises(ValueError):
+        for _ in branch.stream(1000, config=config):
+            pass
+
+    assert len(tracer.runs) == 2
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
+    assert tracer.runs[1].outputs is None
+
+
+async def test_runnable_branch_astream() -> None:
+    """Verify that astream works for RunnableBranch."""
+
+    branch = RunnableBranch[int, Any](
+        (lambda x: x > 0, FakeStreamingRunnable()),
+        lambda x: x - 1,
+    )
+
+    assert [_ async for _ in branch.astream(1)] == [0]
+    assert [_ async for _ in branch.astream(5)] == [0, 1, 2, 3, 4]
+    assert [_ async for _ in branch.astream(10)] == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    assert [_ async for _ in branch.astream(0)] == [-1]
+
+    # Verify that the async variant is used if available
+    async def condition(x: int) -> bool:
+        return x > 0
+
+    async def add(x: int) -> int:
+        return x + 1
+
+    async def sub(x: int) -> int:
+        return x - 1
+
+    branch = RunnableBranch[int, Any]((condition, add), FakeStreamingRunnable())
+
+    assert [_ async for _ in branch.astream(5)] == [6]
+    assert [_ async for _ in branch.astream(-5)] == []
+
+    branch = RunnableBranch[int, Any]((condition, FakeStreamingRunnable()), sub)
+
+    assert [_ async for _ in branch.astream(5)] == [0, 1, 2, 3, 4]
+    assert [_ async for _ in branch.astream(-5)] == [-6]
+
+
+async def test_runnable_branch_astream_with_callbacks() -> None:
+    """Verify that astream works for RunnableBranch when using callbacks."""
+    tracer = FakeTracer()
+
+    async def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    branch = RunnableBranch[int, Any](
+        (lambda x: x > 100, raise_value_error),
+        (lambda x: x > 0, FakeStreamingRunnable()),
+        lambda x: x - 1,
+    )
+    config: RunnableConfig = {"callbacks": [tracer]}
+
+    assert [_ async for _ in branch.astream(5, config=config)] == [0, 1, 2, 3, 4]
+
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error is None
+    assert tracer.runs[0].outputs == {"output": [0, 1, 2, 3, 4]}
+
+    # Check that the chain on error is invoked
+    with pytest.raises(ValueError):
+        async for _ in branch.astream(1000, config=config):
+            pass
+
+    assert len(tracer.runs) == 2
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
+    assert tracer.runs[1].outputs is None
 
 
 @pytest.mark.skipif(
