@@ -1,19 +1,24 @@
 """Test Baidu Qianfan Chat Endpoint."""
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
+    BaseMessageChunk,
     FunctionMessage,
     HumanMessage,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.pydantic_v1 import SecretStr
+from pytest import CaptureFixture, MonkeyPatch
 
-from langchain_community.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
+from langchain_community.chat_models.baidu_qianfan_endpoint import (
+    QianfanChatEndpoint,
+)
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 _FUNCTIONS: Any = [
@@ -288,3 +293,48 @@ def test_functions_call() -> None:
     chain = prompt | chat.bind(functions=_FUNCTIONS)
     resp = chain.invoke({})
     assert isinstance(resp, AIMessage)
+
+
+def test_qianfan_key_masked_when_passed_from_env(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+) -> None:
+    """Test initialization with an API key provided via an env variable"""
+    monkeypatch.setenv("QIANFAN_AK", "test-api-key")
+    monkeypatch.setenv("QIANFAN_SK", "test-secret-key")
+
+    chat = QianfanChatEndpoint()
+    print(chat.qianfan_ak, end="")
+    captured = capsys.readouterr()
+    assert captured.out == "**********"
+
+    print(chat.qianfan_sk, end="")
+    captured = capsys.readouterr()
+    assert captured.out == "**********"
+
+
+def test_qianfan_key_masked_when_passed_via_constructor(
+    capsys: CaptureFixture,
+) -> None:
+    """Test initialization with an API key provided via the initializer"""
+    chat = QianfanChatEndpoint(
+        qianfan_ak="test-api-key",
+        qianfan_sk="test-secret-key",
+    )
+    print(chat.qianfan_ak, end="")
+    captured = capsys.readouterr()
+    assert captured.out == "**********"
+
+    print(chat.qianfan_sk, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_uses_actual_secret_value_from_secret_str() -> None:
+    """Test that actual secret is retrieved using `.get_secret_value()`."""
+    chat = QianfanChatEndpoint(
+        qianfan_ak="test-api-key",
+        qianfan_sk="test-secret-key",
+    )
+    assert cast(SecretStr, chat.qianfan_ak).get_secret_value() == "test-api-key"
+    assert cast(SecretStr, chat.qianfan_sk).get_secret_value() == "test-secret-key"
