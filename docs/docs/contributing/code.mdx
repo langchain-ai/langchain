@@ -1,6 +1,5 @@
 ---
-sidebar_label: Code
-sidebar_position: 2
+sidebar_position: 1
 ---
 # Contribute Code
 
@@ -49,7 +48,7 @@ This repository contains multiple packages:
 - `langchain-community`: Third-party integrations of various components.
 - `langchain`: Chains, agents, and retrieval logic that makes up the cognitive architecture of your applications.
 - `langchain-experimental`: Components and chains that are experimental, either in the sense that the techniques are novel and still being tested, or they require giving the LLM more access than would be possible in most production systems.
-- Partner integrations: Partner packages in `libs/partners` that are independently verison controlled.
+- Partner integrations: Partner packages in `libs/partners` that are independently version controlled.
 
 Each of these has its own development environment. Docs are run from the top-level makefile, but development
 is split across separate test & release flows.
@@ -99,7 +98,7 @@ To run unit tests in Docker:
 make docker_tests
 ```
 
-There are also [integration tests and code-coverage](./reference/testing) available.
+There are also [integration tests and code-coverage](./testing) available.
 
 ### Only develop langchain_core or langchain_experimental
 
