@@ -1,60 +1,40 @@
 """Test OCIModelDeploymentVLLM Endpoint."""
 
-import pytest
-
-from langchain_community.llms import (
-    OCIModelDeploymentTGI,
-    OCIModelDeploymentVLLM,
-)
+import responses
+from langchain_community.llms import OCIModelDeploymentTGI, OCIModelDeploymentVLLM
 
 
-@pytest.mark.skip(
-    "This test requires an inference endpoint. Tested with "
-    "OCI Data Science Model Deployment endpoints."
-)
+@responses.activate
 def test_call_vllm() -> None:
     """Test valid call to oci model deployment endpoint."""
-    llm = OCIModelDeploymentVLLM(endpoint="")
-    output = llm("Who is the first president of United States?")
-    print(output)
+    endpoint = "https://MD_OCID/predict"
+    responses.add(
+        responses.POST,
+        endpoint,
+        json={
+            "choices": [{"index": 0, "text": "This is a completion."}],
+        },
+        status=200,
+    )
+
+    llm = OCIModelDeploymentVLLM(endpoint=endpoint, model="my_model")
+    output = llm("This is a prompt.")
     assert isinstance(output, str)
 
 
-@pytest.mark.skip(
-    "This test requires an inference endpoint. Tested with "
-    "OCI Data Science Model Deployment endpoints."
-)
+@responses.activate
 def test_call_tgi() -> None:
     """Test valid call to oci model deployment endpoint."""
-    llm = OCIModelDeploymentTGI(endpoint="")
-    output = llm("Who is the first president of United States?")
-    print(output)
+    endpoint = "https://MD_OCID/predict"
+    responses.add(
+        responses.POST,
+        endpoint,
+        json={
+            "generated_text": "This is a completion.",
+        },
+        status=200,
+    )
+
+    llm = OCIModelDeploymentTGI(endpoint=endpoint)
+    output = llm("This is a prompt.")
     assert isinstance(output, str)
-
-
-# @pytest.mark.requires("oracle-ads")
-# def test_dumpd_load_tgi() -> None:
-#     """Test dumpd/load an OCIModelDeploymentTGI LLM."""
-#     llm = OCIModelDeploymentTGI(
-#         endpoint="https://<MD_OCID>/predict",
-#         temperature=0.75,
-#         max_tokens=100,
-#         k=1,
-#     )
-#     loaded_llm = load(dumpd(llm))
-#     assert_llm_equality(llm, loaded_llm, exclude=["auth"])
-
-
-# @pytest.mark.requires("oracle-ads")
-# def test_dumps_loads_vllm() -> None:
-#     """Test dumps/loads an OCIModelDeploymentVLLM LLM."""
-#     llm = OCIModelDeploymentVLLM(
-#         endpoint="https://<MD_OCID>/predict",
-#         model="mymodel",
-#         n=2,
-#         temperature=0.75,
-#         max_tokens=100,
-#         k=1,
-#     )
-#     loaded_llm = loads(dumps(llm))
-#     assert_llm_equality(llm, loaded_llm, exclude=["auth"])
