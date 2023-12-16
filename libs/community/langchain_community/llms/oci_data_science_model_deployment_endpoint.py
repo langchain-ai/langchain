@@ -52,6 +52,11 @@ class OCIModelDeploymentLLM(LLM):
         """This class can be serialized with default LangChain serialization."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "llms", "oci_data_science_model_deployment_endpoint"]
+
     @root_validator()
     def validate_environment(  # pylint: disable=no-self-argument
         cls, values: Dict
