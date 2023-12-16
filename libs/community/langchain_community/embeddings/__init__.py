@@ -137,7 +137,7 @@ __all__ = [
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
     "BookendEmbeddings",
-    "YandexGPTEmbeddings"
+    "YandexGPTEmbeddings",
 ]
 
 

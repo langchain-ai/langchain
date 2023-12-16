@@ -20,6 +20,10 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         - You can specify the key in a constructor parameter `api_key`
         or in an environment variable `YC_API_KEY`.
 
+    To use the default model specify the folder ID in a parameter `folder_id`
+    or in an environment variable `YC_FOLDER_ID`.
+    Or specify the model URI in a constructor parameter `model_uri`
+
     Example:
         .. code-block:: python
 
@@ -35,6 +39,14 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     with the `ai.languageModels.user` role"""
     model_uri: str = ""
     """Model uri to use."""
+    folder_id: str = ""
+    """Yandex Cloud folder ID"""
+    model_uri: str = ""
+    """Model uri to use."""
+    model_name: str = "text-search-query"
+    """Model name to use."""
+    model_version: str = "latest"
+    """Model version to use."""
     url: str = "llm.api.cloud.yandex.net:443"
     """The url of the API."""
 
@@ -46,8 +58,26 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         values["iam_token"] = iam_token
         api_key = get_from_dict_or_env(values, "api_key", "YC_API_KEY", "")
         values["api_key"] = api_key
+        folder_id = get_from_dict_or_env(values, "folder_id", "YC_FOLDER_ID", "")
+        values["folder_id"] = folder_id
         if api_key == "" and iam_token == "":
             raise ValueError("Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided.")
+        if values["iam_token"]:
+            values["_grpc_metadata"] = [
+                ("authorization", f"Bearer {values['iam_token']}")
+            ]
+            if values["folder_id"]:
+                values["_grpc_metadata"].append(("x-folder-id", values["folder_id"]))
+        else:
+            values["_grpc_metadata"] = (
+                ("authorization", f"Api-Key {values['api_key']}"),
+            )
+        if values["model_uri"] == "" and values["folder_id"] == "":
+            raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
+        if not values["model_uri"]:
+            values[
+                "model_uri"
+            ] = f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -75,15 +105,10 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         channel_credentials = grpc.ssl_channel_credentials()
         channel = grpc.secure_channel(self.url, channel_credentials)
 
-        if self.iam_token:
-            metadata = (("authorization", f"Bearer {self.iam_token}"),)
-        else:
-            metadata = (("authorization", f"Api-Key {self.api_key}"),)
-
         for text in texts:
             request = TextEmbeddingRequest(model_uri=self.model_uri, text=text)
             stub = EmbeddingsServiceStub(channel)
-            res = stub.TextEmbedding(request, metadata=metadata)
+            res = stub.TextEmbedding(request, metadata=self._grpc_metadata)
             result.append(res.embedding)
 
         return result
