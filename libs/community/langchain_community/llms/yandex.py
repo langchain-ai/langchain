@@ -232,9 +232,9 @@ class YandexGPT(_BaseYandexGPT, LLM):
                         operation_request, metadata=self._grpc_metadata
                     )
 
-            instruct_response = CompletionResponse()
-            operation.response.Unpack(instruct_response)
-            text = instruct_response.alternatives[0].message.text
+            completion_response = CompletionResponse()
+            operation.response.Unpack(completion_response)
+            text = completion_response.alternatives[0].message.text
             if stop is not None:
                 text = enforce_stop_tokens(text, stop)
             return text
