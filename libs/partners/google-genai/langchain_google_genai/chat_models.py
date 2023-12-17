@@ -37,6 +37,7 @@ from langchain_core.messages import (
     ChatMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
@@ -106,7 +107,7 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
     )
 
 
-def _chat_with_retry(*, generation_method: Callable, **kwargs: Any) -> Any:
+def _chat_with_retry(*args: Any, generation_method: Callable, **kwargs: Any) -> Any:
     """
     Executes a chat generation method with retry logic using tenacity.
 
@@ -125,9 +126,9 @@ def _chat_with_retry(*, generation_method: Callable, **kwargs: Any) -> Any:
     from google.api_core.exceptions import InvalidArgument  # type: ignore
 
     @retry_decorator
-    def _chat_with_retry(**kwargs: Any) -> Any:
+    def _chat_with_retry(*args: Any, **kwargs: Any) -> Any:
         try:
-            return generation_method(**kwargs)
+            return generation_method(*args, **kwargs)
         except InvalidArgument as e:
             # Do not retry for these errors.
             raise ChatGoogleGenerativeAIError(
@@ -136,10 +137,12 @@ def _chat_with_retry(*, generation_method: Callable, **kwargs: Any) -> Any:
         except Exception as e:
             raise e
 
-    return _chat_with_retry(**kwargs)
+    return _chat_with_retry(*args, **kwargs)
 
 
-async def _achat_with_retry(*, generation_method: Callable, **kwargs: Any) -> Any:
+async def _achat_with_retry(
+    *args: Any, generation_method: Callable, **kwargs: Any
+) -> Any:
     """
     Executes a chat generation method with retry logic using tenacity.
 
@@ -158,9 +161,9 @@ async def _achat_with_retry(*, generation_method: Callable, **kwargs: Any) -> An
     from google.api_core.exceptions import InvalidArgument  # type: ignore
 
     @retry_decorator
-    async def _achat_with_retry(**kwargs: Any) -> Any:
+    async def _achat_with_retry(*args: Any, **kwargs: Any) -> Any:
         try:
-            return await generation_method(**kwargs)
+            return await generation_method(*args, **kwargs)
         except InvalidArgument as e:
             # Do not retry for these errors.
             raise ChatGoogleGenerativeAIError(
@@ -169,27 +172,7 @@ async def _achat_with_retry(*, generation_method: Callable, **kwargs: Any) -> An
         except Exception as e:
             raise e
 
-    return await _achat_with_retry(**kwargs)
-
-
-def _get_role(message: BaseMessage) -> str:
-    if isinstance(message, ChatMessage):
-        if message.role not in ("user", "model"):
-            raise ChatGoogleGenerativeAIError(
-                "Gemini only supports user and model roles when"
-                " providing it with Chat messages."
-            )
-        return message.role
-    elif isinstance(message, HumanMessage):
-        return "user"
-    elif isinstance(message, AIMessage):
-        return "model"
-    else:
-        # TODO: Gemini doesn't seem to have a concept of system messages yet.
-        raise ChatGoogleGenerativeAIError(
-            f"Message of '{message.type}' type not supported by Gemini."
-            " Please only provide it with Human or AI (user/assistant) messages."
-        )
+    return await _achat_with_retry(*args, **kwargs)
 
 
 def _is_openai_parts_format(part: dict) -> bool:
@@ -272,7 +255,7 @@ def _convert_to_parts(
     parts = []
     for part in content:
         if isinstance(part, str):
-            parts.append(genai.types.PartDict(text=part, inline_data=None))
+            parts.append(genai.types.PartDict(text=part))
         elif isinstance(part, Mapping):
             # OpenAI Format
             if _is_openai_parts_format(part):
@@ -304,27 +287,49 @@ def _convert_to_parts(
     return parts
 
 
-def _messages_to_genai_contents(
-    input_messages: Sequence[BaseMessage],
+def _parse_chat_history(
+    input_messages: Sequence[BaseMessage], convert_system_message_to_human: bool = False
 ) -> List[genai.types.ContentDict]:
-    """Converts a list of messages into a Gemini API google content dicts."""
-
     messages: List[genai.types.MessageDict] = []
+
+    raw_system_message: Optional[str] = None
     for i, message in enumerate(input_messages):
-        role = _get_role(message)
-        if isinstance(message.content, str):
-            parts = [message.content]
+        if (
+            i == 0
+            and isinstance(message, SystemMessage)
+            and not convert_system_message_to_human
+        ):
+            raise ValueError("SystemMessages are not yet supported!")
+        elif i == 0 and isinstance(message, SystemMessage):
+            raw_system_message = (
+                message.content if isinstance(message.content, str) else None
+            )
+            continue
+        elif isinstance(message, AIMessage):
+            role = "model"
+        elif isinstance(message, HumanMessage):
+            role = "user"
         else:
-            parts = _convert_to_parts(message.content)
-        messages.append({"role": role, "parts": parts})
-        if i > 0:
-            # Cannot have multiple messages from the same role in a row.
-            if role == messages[-2]["role"]:
-                raise ChatGoogleGenerativeAIError(
-                    "Cannot have multiple messages from the same role in a row."
-                    " Consider merging them into a single message with multiple"
-                    f" parts.\nReceived: {messages}"
+            raise ValueError(
+                f"Unexpected message with type {type(message)} at the position {i}."
+            )
+
+        raw_content = message.content
+        if isinstance(raw_content, str):
+            raw_content = [raw_content]
+        parts = _convert_to_parts(raw_content)
+        if raw_system_message:
+            if role == "model":
+                raise ValueError(
+                    "SystemMessage should be followed by a HumanMessage and "
+                    "not by AIMessage."
                 )
+            if "text" in parts[0]:
+                parts[0]["text"] = f"{raw_system_message}\n{parts[0]['text']}"
+            else:
+                parts = [{"text": raw_system_message}] + parts
+            raw_system_message = None
+        messages.append({"role": role, "parts": parts})
     return messages
 
 
@@ -457,8 +462,8 @@ Supported examples:
     n: int = Field(default=1, alias="candidate_count")
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
-
-    _generative_model: Any  #: :meta private:
+    convert_system_message_to_human: bool = False
+    "Whether to prepend a SystemMessage to the first HumanMessage or not."
 
     class Config:
         allow_population_by_field_name = True
@@ -499,7 +504,7 @@ Supported examples:
         if values.get("top_k") is not None and values["top_k"] <= 0:
             raise ValueError("top_k must be positive")
         model = values["model"]
-        values["_generative_model"] = genai.GenerativeModel(model_name=model)
+        values["client"] = genai.GenerativeModel(model_name=model)
         return values
 
     @property
@@ -512,18 +517,9 @@ Supported examples:
             "n": self.n,
         }
 
-    @property
-    def _generation_method(self) -> Callable:
-        return self._generative_model.generate_content
-
-    @property
-    def _async_generation_method(self) -> Callable:
-        return self._generative_model.generate_content_async
-
     def _prepare_params(
-        self, messages: Sequence[BaseMessage], stop: Optional[List[str]], **kwargs: Any
+        self, stop: Optional[List[str]], **kwargs: Any
     ) -> Dict[str, Any]:
-        contents = _messages_to_genai_contents(messages)
         gen_config = {
             k: v
             for k, v in {
@@ -538,7 +534,7 @@ Supported examples:
         }
         if "generation_config" in kwargs:
             gen_config = {**gen_config, **kwargs.pop("generation_config")}
-        params = {"generation_config": gen_config, "contents": contents, **kwargs}
+        params = {"generation_config": gen_config, **kwargs}
         return params
 
     def _generate(
@@ -548,10 +544,11 @@ Supported examples:
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params = self._prepare_params(messages, stop, **kwargs)
+        params, chat, message = self._prepare_chat(messages, stop=stop)
         response: genai.types.GenerateContentResponse = _chat_with_retry(
+            content=message,
             **params,
-            generation_method=self._generation_method,
+            generation_method=chat.send_message,
         )
         return _response_to_result(response)
 
@@ -562,10 +559,11 @@ Supported examples:
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params = self._prepare_params(messages, stop, **kwargs)
+        params, chat, message = self._prepare_chat(messages, stop=stop)
         response: genai.types.GenerateContentResponse = await _achat_with_retry(
+            content=message,
             **params,
-            generation_method=self._async_generation_method,
+            generation_method=chat.send_message_async,
         )
         return _response_to_result(response)
 
@@ -576,10 +574,11 @@ Supported examples:
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        params = self._prepare_params(messages, stop, **kwargs)
+        params, chat, message = self._prepare_chat(messages, stop=stop)
         response: genai.types.GenerateContentResponse = _chat_with_retry(
+            content=message,
             **params,
-            generation_method=self._generation_method,
+            generation_method=chat.send_message,
             stream=True,
         )
         for chunk in response:
@@ -602,10 +601,11 @@ Supported examples:
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        params = self._prepare_params(messages, stop, **kwargs)
+        params, chat, message = self._prepare_chat(messages, stop=stop)
         async for chunk in await _achat_with_retry(
+            content=message,
             **params,
-            generation_method=self._async_generation_method,
+            generation_method=chat.send_message_async,
             stream=True,
         ):
             _chat_result = _response_to_result(
@@ -619,3 +619,18 @@ Supported examples:
             yield gen
             if run_manager:
                 await run_manager.on_llm_new_token(gen.text)
+
+    def _prepare_chat(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Tuple[Dict[str, Any], genai.ChatSession, genai.types.ContentDict]:
+        params = self._prepare_params(stop, **kwargs)
+        history = _parse_chat_history(
+            messages,
+            convert_system_message_to_human=self.convert_system_message_to_human,
+        )
+        message = history.pop()
+        chat = self.client.start_chat(history=history)
+        return params, chat, message

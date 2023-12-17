@@ -1,6 +1,6 @@
 """Test ChatGoogleGenerativeAI chat model."""
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from langchain_google_genai.chat_models import (
     ChatGoogleGenerativeAI,
@@ -147,3 +147,40 @@ def test_chat_google_genai_invoke_multimodal_invalid_model() -> None:
     llm = ChatGoogleGenerativeAI(model=_MODEL)
     with pytest.raises(ChatGoogleGenerativeAIError):
         llm.invoke(messages)
+
+
+def test_chat_google_genai_single_call_with_history() -> None:
+    model = ChatGoogleGenerativeAI(model=_MODEL)
+    text_question1, text_answer1 = "How much is 2+2?", "4"
+    text_question2 = "How much is 3+3?"
+    message1 = HumanMessage(content=text_question1)
+    message2 = AIMessage(content=text_answer1)
+    message3 = HumanMessage(content=text_question2)
+    response = model([message1, message2, message3])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+
+
+def test_chat_google_genai_system_message_error() -> None:
+    model = ChatGoogleGenerativeAI(model=_MODEL)
+    text_question1, text_answer1 = "How much is 2+2?", "4"
+    text_question2 = "How much is 3+3?"
+    system_message = SystemMessage(content="You're supposed to answer math questions.")
+    message1 = HumanMessage(content=text_question1)
+    message2 = AIMessage(content=text_answer1)
+    message3 = HumanMessage(content=text_question2)
+    with pytest.raises(ValueError):
+        model([system_message, message1, message2, message3])
+
+
+def test_chat_google_genai_system_message() -> None:
+    model = ChatGoogleGenerativeAI(model=_MODEL, convert_system_message_to_human=True)
+    text_question1, text_answer1 = "How much is 2+2?", "4"
+    text_question2 = "How much is 3+3?"
+    system_message = SystemMessage(content="You're supposed to answer math questions.")
+    message1 = HumanMessage(content=text_question1)
+    message2 = AIMessage(content=text_answer1)
+    message3 = HumanMessage(content=text_question2)
+    response = model([system_message, message1, message2, message3])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
