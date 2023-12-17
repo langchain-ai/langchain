@@ -167,7 +167,7 @@ class LLMInputOutputAdapter:
                 f"Unknown streaming response output key for provider: {provider}"
             )
 
-        async for event in stream:
+        for event in stream:
             chunk = event.get("chunk")
             if chunk:
                 chunk_obj = json.loads(chunk.get("bytes").decode())
