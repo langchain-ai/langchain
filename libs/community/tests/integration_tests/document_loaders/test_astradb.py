@@ -94,6 +94,7 @@ class TestAstraDB:
             namespace=ASTRA_DB_KEYSPACE,
             sort={"foo": 1},
             find_options={"limit": 30},
+            extraction_function=lambda x: str(x["foo"]),
         )
         docs = loader.load()
 
@@ -101,6 +102,6 @@ class TestAstraDB:
 
         i = 0
         for doc in docs:
-            content = json.loads(doc.page_content)
-            assert content["foo"] >= i
-            i = content["foo"]
+            content = int(doc.page_content)
+            assert content >= i
+            i = content

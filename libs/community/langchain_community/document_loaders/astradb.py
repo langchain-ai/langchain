@@ -2,7 +2,7 @@ import json
 import logging
 import threading
 from queue import Queue
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
@@ -26,6 +26,7 @@ class AstraDBLoader(BaseLoader):
         find_options: Optional[Dict[str, Any]] = None,
         sort: Optional[Dict[str, Any]] = None,
         nb_prefetched: int = 1000,
+        extraction_function: Callable[[Dict], str] = json.dumps,
     ) -> None:
         try:
             from astrapy.db import AstraDB
@@ -48,6 +49,7 @@ class AstraDBLoader(BaseLoader):
         self.find_options = find_options or {}
         self.sort = sort
         self.nb_prefetched = nb_prefetched
+        self.extraction_function = extraction_function
 
         if astra_db_client is not None:
             astra_db = astra_db_client
@@ -92,7 +94,7 @@ class AstraDBLoader(BaseLoader):
         for doc in docs:
             queue.put(
                 Document(
-                    page_content=json.dumps(doc),
+                    page_content=self.extraction_function(doc),
                     metadata={
                         "namespace": self.collection.astra_db.namespace,
                         "api_endpoint": self.collection.astra_db.base_url,
