@@ -125,29 +125,6 @@ class FakeRunnable(Runnable[str, int]):
         return len(input)
 
 
-class FakeStreamingRunnable(Runnable[int, int]):
-    def invoke(self, input: int, config: Optional[RunnableConfig] = None) -> int:
-        raise NotImplementedError()
-
-    def stream(
-        self,
-        input: int,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
-    ) -> Iterator[int]:
-        for _ in range(input):
-            yield _
-
-    async def astream(
-        self,
-        input: int,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
-    ) -> AsyncIterator[int]:
-        for _ in range(input):
-            yield _
-
-
 class FakeRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
@@ -4007,111 +3984,135 @@ async def test_runnable_branch_abatch() -> None:
 def test_runnable_branch_stream() -> None:
     """Verify that stream works for RunnableBranch."""
 
-    branch = RunnableBranch[int, Any](
-        (lambda x: x > 0, FakeStreamingRunnable()),
-        lambda x: x - 1,
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+
+    branch = RunnableBranch[str, Any](
+        (lambda x: x == "hello", llm),
+        lambda x: x,
     )
 
-    assert list(branch.stream(1)) == [0]
-    assert list(branch.stream(5)) == [0, 1, 2, 3, 4]
-    assert list(branch.stream(10)) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    assert list(branch.stream(0)) == [-1]
+    assert list(branch.stream("hello")) == list(llm_res)
+    assert list(branch.stream("bye")) == ["bye"]
 
 
 def test_runnable_branch_stream_with_callbacks() -> None:
     """Verify that stream works for RunnableBranch when using callbacks."""
     tracer = FakeTracer()
 
-    def raise_value_error(x: int) -> int:
+    def raise_value_error(x: str) -> Any:
         """Raise a value error."""
-        raise ValueError("x is too large")
+        raise ValueError(f"x is {x}")
 
-    branch = RunnableBranch[int, Any](
-        (lambda x: x > 100, raise_value_error),
-        (lambda x: x > 0, FakeStreamingRunnable()),
-        lambda x: x - 1,
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+
+    branch = RunnableBranch[str, Any](
+        (lambda x: x == "error", raise_value_error),
+        (lambda x: x == "hello", llm),
+        lambda x: x,
     )
     config: RunnableConfig = {"callbacks": [tracer]}
 
-    assert list(branch.stream(5, config=config)) == [0, 1, 2, 3, 4]
+    assert list(branch.stream("hello", config=config)) == list(llm_res)
 
     assert len(tracer.runs) == 1
     assert tracer.runs[0].error is None
-    assert tracer.runs[0].outputs == {"output": [0, 1, 2, 3, 4]}
+    assert tracer.runs[0].outputs == {"output": list(llm_res)}
 
-    # Check that the chain on error is invoked
+    # Verify that the chain on error is invoked
     with pytest.raises(ValueError):
-        for _ in branch.stream(1000, config=config):
+        for _ in branch.stream("error", config=config):
             pass
 
     assert len(tracer.runs) == 2
-    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
+    assert "ValueError('x is error')" in str(tracer.runs[1].error)
     assert tracer.runs[1].outputs is None
+
+    assert list(branch.stream("bye", config=config)) == ["bye"]
+
+    assert len(tracer.runs) == 3
+    assert tracer.runs[2].error is None
+    assert tracer.runs[2].outputs == {"output": ["bye"]}
 
 
 async def test_runnable_branch_astream() -> None:
     """Verify that astream works for RunnableBranch."""
 
-    branch = RunnableBranch[int, Any](
-        (lambda x: x > 0, FakeStreamingRunnable()),
-        lambda x: x - 1,
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+
+    branch = RunnableBranch[str, Any](
+        (lambda x: x == "hello", llm),
+        lambda x: x,
     )
 
-    assert [_ async for _ in branch.astream(1)] == [0]
-    assert [_ async for _ in branch.astream(5)] == [0, 1, 2, 3, 4]
-    assert [_ async for _ in branch.astream(10)] == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    assert [_ async for _ in branch.astream(0)] == [-1]
+    assert [_ async for _ in branch.astream("hello")] == list(llm_res)
+    assert [_ async for _ in branch.astream("bye")] == ["bye"]
 
     # Verify that the async variant is used if available
-    async def condition(x: int) -> bool:
-        return x > 0
+    async def condition(x: str) -> bool:
+        return x == "hello"
 
-    async def add(x: int) -> int:
-        return x + 1
+    async def repeat(x: str) -> str:
+        return x + x
 
-    async def sub(x: int) -> int:
-        return x - 1
+    async def reverse(x: str) -> str:
+        return x[::-1]
 
-    branch = RunnableBranch[int, Any]((condition, add), FakeStreamingRunnable())
+    branch = RunnableBranch[str, Any]((condition, repeat), llm)
 
-    assert [_ async for _ in branch.astream(5)] == [6]
-    assert [_ async for _ in branch.astream(-5)] == []
+    assert [_ async for _ in branch.astream("hello")] == ["hello" * 2]
+    assert [_ async for _ in branch.astream("bye")] == list(llm_res)
 
-    branch = RunnableBranch[int, Any]((condition, FakeStreamingRunnable()), sub)
+    branch = RunnableBranch[str, Any]((condition, llm), reverse)
 
-    assert [_ async for _ in branch.astream(5)] == [0, 1, 2, 3, 4]
-    assert [_ async for _ in branch.astream(-5)] == [-6]
+    assert [_ async for _ in branch.astream("hello")] == list(llm_res)
+    assert [_ async for _ in branch.astream("bye")] == ["eyb"]
 
 
 async def test_runnable_branch_astream_with_callbacks() -> None:
     """Verify that astream works for RunnableBranch when using callbacks."""
     tracer = FakeTracer()
 
-    async def raise_value_error(x: int) -> int:
+    def raise_value_error(x: str) -> Any:
         """Raise a value error."""
-        raise ValueError("x is too large")
+        raise ValueError(f"x is {x}")
 
-    branch = RunnableBranch[int, Any](
-        (lambda x: x > 100, raise_value_error),
-        (lambda x: x > 0, FakeStreamingRunnable()),
-        lambda x: x - 1,
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+
+    branch = RunnableBranch[str, Any](
+        (lambda x: x == "error", raise_value_error),
+        (lambda x: x == "hello", llm),
+        lambda x: x,
     )
     config: RunnableConfig = {"callbacks": [tracer]}
 
-    assert [_ async for _ in branch.astream(5, config=config)] == [0, 1, 2, 3, 4]
+    assert [_ async for _ in branch.astream("hello", config=config)] == list(llm_res)
 
     assert len(tracer.runs) == 1
     assert tracer.runs[0].error is None
-    assert tracer.runs[0].outputs == {"output": [0, 1, 2, 3, 4]}
+    assert tracer.runs[0].outputs == {"output": list(llm_res)}
 
-    # Check that the chain on error is invoked
+    # Verify that the chain on error is invoked
     with pytest.raises(ValueError):
-        async for _ in branch.astream(1000, config=config):
+        async for _ in branch.astream("error", config=config):
             pass
 
     assert len(tracer.runs) == 2
-    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
+    assert "ValueError('x is error')" in str(tracer.runs[1].error)
     assert tracer.runs[1].outputs is None
+
+    assert [_ async for _ in branch.astream("bye", config=config)] == ["bye"]
+
+    assert len(tracer.runs) == 3
+    assert tracer.runs[2].error is None
+    assert tracer.runs[2].outputs == {"output": ["bye"]}
 
 
 @pytest.mark.skipif(
