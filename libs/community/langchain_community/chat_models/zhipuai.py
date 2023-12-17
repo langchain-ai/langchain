@@ -1,8 +1,10 @@
 """ZHIPU AI chat models wrapper."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+from functools import partial
 from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -64,6 +66,26 @@ class ChatZhipuAI(BaseChatModel):
                 "Could not import zhipuai package. Please install it via 'pip install zhipuai'"
             )
 
+    async def async_invoke(self, prompt):
+        loop = asyncio.get_running_loop()
+        partial_func = partial(
+            self.zhipuai.model_api.async_invoke, model="chatglm_turbo", prompt=prompt
+        )
+        response = await loop.run_in_executor(
+            None,
+            partial_func,
+        )
+        return response
+
+    async def async_invoke_result(self, task_id):
+        loop = asyncio.get_running_loop()
+        response = await loop.run_in_executor(
+            None,
+            self.zhipuai.model_api.query_async_invoke_result,
+            task_id,
+        )
+        return response
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -81,8 +103,6 @@ class ChatZhipuAI(BaseChatModel):
                 role = "user"
 
             prompt.append({"role": role, "content": message.content})
-
-        print("prompt", prompt)
 
         if not self.streaming:
             response = self.zhipuai.model_api.invoke(
@@ -115,7 +135,6 @@ class ChatZhipuAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         """ """
-        print(messages)
 
         prompt = []
         for message in messages:
@@ -126,16 +145,13 @@ class ChatZhipuAI(BaseChatModel):
 
             prompt.append({"role": role, "content": message.content})
 
-        print(prompt)
+        invoke_response = await self.async_invoke(prompt)
+        task_id = invoke_response["data"]["task_id"]
 
-        response = await self.zhipuai.model_api.async_invoke(
-            model=self.model,
-            prompt=prompt,
-            top_p=self.top_p,
-            temperature=self.temperature,
-        )
-        if response["code"] != 200:
-            raise RuntimeError(response)
+        response = await self.async_invoke_result(task_id)
+        while response["data"]["task_status"] != "SUCCESS":
+            await asyncio.sleep(1)
+            response = await self.async_invoke_result(task_id)
 
         content = response["data"]["choices"][0]["content"]
         content = json.loads(content)
@@ -159,12 +175,11 @@ class ChatZhipuAI(BaseChatModel):
         )
 
         for r in response.events():
-            if r.event == "error":
-                raise ValueError(f"Error from Zhipuai api response: {r}")
+            if r.event == "add":
+                delta = r.data
+                yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                if run_manager:
+                    run_manager.on_llm_new_token(delta)
 
-            data = r.data
-            print(data)
-            chunk = AIMessageChunk(content=data)
-            yield ChatGenerationChunk(message=chunk)
-            if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+            elif r.event == "error":
+                raise ValueError(f"Error from ZhipuAI API response: {r.data}")
