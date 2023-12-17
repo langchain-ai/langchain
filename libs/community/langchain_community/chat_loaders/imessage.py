@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
@@ -7,12 +8,12 @@ from langchain_core.chat_sessions import ChatSession
 from langchain_core.messages import HumanMessage
 
 from langchain_community.chat_loaders.base import BaseChatLoader
-from datetime import datetime
 
 if TYPE_CHECKING:
     import sqlite3
 
-def nanoseconds_from_2001_to_datetime(nanoseconds:int) -> datetime:
+
+def nanoseconds_from_2001_to_datetime(nanoseconds: int) -> datetime:
     # Convert nanoseconds to seconds (1 second = 1e9 nanoseconds)
     timestamp_in_seconds = nanoseconds / 1e9
 
@@ -24,6 +25,7 @@ def nanoseconds_from_2001_to_datetime(nanoseconds:int) -> datetime:
 
     # Convert to a datetime object
     return datetime.fromtimestamp(actual_timestamp)
+
 
 class IMessageChatLoader(BaseChatLoader):
     """Load chat sessions from the `iMessage` chat.db SQLite file.
@@ -89,7 +91,6 @@ class IMessageChatLoader(BaseChatLoader):
             length, start = int.from_bytes(content[1:3], "little"), 3
         return content[start : start + length].decode("utf-8", errors="ignore")
 
-
     def _load_single_chat_session(
         self, cursor: "sqlite3.Cursor", chat_id: int
     ) -> ChatSession:
@@ -130,7 +131,9 @@ class IMessageChatLoader(BaseChatLoader):
                     content=content,
                     additional_kwargs={
                         "message_time": date,
-                        "message_time_as_datetime": nanoseconds_from_2001_to_datetime(date),
+                        "message_time_as_datetime": nanoseconds_from_2001_to_datetime(
+                            date
+                        ),
                         "sender": sender,
                         "is_from_me": bool(is_from_me),
                     },
