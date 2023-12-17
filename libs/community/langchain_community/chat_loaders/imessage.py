@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
@@ -7,12 +8,12 @@ from langchain_core.chat_sessions import ChatSession
 from langchain_core.messages import HumanMessage
 
 from langchain_community.chat_loaders.base import BaseChatLoader
-from datetime import datetime
 
 if TYPE_CHECKING:
     import sqlite3
 
-def nanoseconds_from_2001_to_datetime(nanoseconds:int) -> datetime:
+
+def nanoseconds_from_2001_to_datetime(nanoseconds: int) -> datetime:
     # Convert nanoseconds to seconds (1 second = 1e9 nanoseconds)
     timestamp_in_seconds = nanoseconds / 1e9
 
@@ -24,6 +25,7 @@ def nanoseconds_from_2001_to_datetime(nanoseconds:int) -> datetime:
 
     # Convert to a datetime object
     return datetime.fromtimestamp(actual_timestamp)
+
 
 class IMessageChatLoader(BaseChatLoader):
     """Load chat sessions from the `iMessage` chat.db SQLite file.
@@ -58,7 +60,6 @@ class IMessageChatLoader(BaseChatLoader):
                 "The sqlite3 module is required to load iMessage chats.\n"
                 "Please install it with `pip install pysqlite3`"
             ) from e
-
 
     def _parse_attributedBody(self, attributedBody: bytes) -> str:
         """
@@ -98,7 +99,7 @@ class IMessageChatLoader(BaseChatLoader):
             JOIN chat_handle_join ON chat_message_join.chat_id = chat_handle_join.chat_id
             JOIN handle ON handle.ROWID = chat_handle_join.handle_id"""
 
-        joins_no_chat_handle= """
+        joins_no_chat_handle = """
             JOIN handle ON message.handle_id = handle.ROWID
         """
 
@@ -113,11 +114,8 @@ class IMessageChatLoader(BaseChatLoader):
             ORDER BY message.date ASC;
         """
 
-
     def _load_single_chat_session(
-        self, cursor: "sqlite3.Cursor",
-        use_chat_handle_table: bool,
-        chat_id: int
+        self, cursor: "sqlite3.Cursor", use_chat_handle_table: bool, chat_id: int
     ) -> ChatSession:
         """
         Load a single chat session from the iMessage chat.db.
@@ -149,7 +147,9 @@ class IMessageChatLoader(BaseChatLoader):
                     content=content,
                     additional_kwargs={
                         "message_time": date,
-                        "message_time_as_datetime": nanoseconds_from_2001_to_datetime(date),
+                        "message_time_as_datetime": nanoseconds_from_2001_to_datetime(
+                            date
+                        ),
                         "sender": sender,
                         "is_from_me": bool(is_from_me),
                     },
@@ -196,6 +196,8 @@ class IMessageChatLoader(BaseChatLoader):
         chat_ids = [row[0] for row in cursor.fetchall()]
 
         for chat_id in chat_ids:
-            yield self._load_single_chat_session(cursor, is_chat_handle_join_exists, chat_id)
+            yield self._load_single_chat_session(
+                cursor, is_chat_handle_join_exists, chat_id
+            )
 
         conn.close()
