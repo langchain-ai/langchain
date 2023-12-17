@@ -24,6 +24,7 @@ from langchain.chat_models.baichuan import ChatBaichuan
 from langchain.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from langchain.chat_models.bedrock import BedrockChat
 from langchain.chat_models.cohere import ChatCohere
+from langchain.chat_models.databricks import ChatDatabricks
 from langchain.chat_models.ernie import ErnieBotChat
 from langchain.chat_models.everlyai import ChatEverlyAI
 from langchain.chat_models.fake import FakeListChatModel
@@ -37,12 +38,14 @@ from langchain.chat_models.jinachat import JinaChat
 from langchain.chat_models.konko import ChatKonko
 from langchain.chat_models.litellm import ChatLiteLLM
 from langchain.chat_models.minimax import MiniMaxChat
+from langchain.chat_models.mlflow import ChatMlflow
 from langchain.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
 from langchain.chat_models.ollama import ChatOllama
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.vertexai import ChatVertexAI
+from langchain.chat_models.volcengine_maas import VolcEngineMaasChat
 from langchain.chat_models.yandex import ChatYandexGPT
 
 __all__ = [
@@ -51,10 +54,12 @@ __all__ = [
     "AzureChatOpenAI",
     "FakeListChatModel",
     "PromptLayerChatOpenAI",
+    "ChatDatabricks",
     "ChatEverlyAI",
     "ChatAnthropic",
     "ChatCohere",
     "ChatGooglePalm",
+    "ChatMlflow",
     "ChatMLflowAIGateway",
     "ChatOllama",
     "ChatVertexAI",
@@ -73,4 +78,5 @@ __all__ = [
     "ChatBaichuan",
     "ChatHunyuan",
     "GigaChat",
+    "VolcEngineMaasChat",
 ]

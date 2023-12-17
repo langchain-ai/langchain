@@ -77,8 +77,8 @@ For environments that requires more involving preparation, look for `*.sh`. For 
 
 ### Prepare environment variables for local testing:
 
-- copy `tests/.env.example` to `tests/.env`
-- set variables in `tests/.env` file, e.g `OPENAI_API_KEY`
+- copy `tests/integration_tests/.env.example` to `tests/integration_tests/.env`
+- set variables in `tests/integration_tests/.env` file, e.g `OPENAI_API_KEY`
 
 Additionally, it's important to note that some integration tests may require certain
 environment variables to be set, such as `OPENAI_API_KEY`. Be sure to set any required

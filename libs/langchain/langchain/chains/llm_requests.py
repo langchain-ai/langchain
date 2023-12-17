@@ -3,10 +3,11 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
-from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.utilities.requests import TextRequestsWrapper
 
 DEFAULT_HEADERS = {

@@ -5,6 +5,11 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, Union
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import Extra, Field
+
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
@@ -20,10 +25,7 @@ from langchain.evaluation.criteria.eval_chain import (
     Criteria,
 )
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
-from langchain.prompts.prompt import PromptTemplate
-from langchain.pydantic_v1 import Extra, Field
-from langchain.schema import RUN_KEY, BaseOutputParser
-from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema import RUN_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,7 @@ _SUPPORTED_CRITERIA = {
 
 
 def resolve_pairwise_criteria(
-    criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]]
+    criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]],
 ) -> dict:
     """Resolve the criteria for the pairwise evaluator.
 
@@ -160,7 +162,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     Example:
         >>> from langchain.chat_models import ChatOpenAI
         >>> from langchain.evaluation.comparison import PairwiseStringEvalChain
-        >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4")
+        >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4", model_kwargs={"random_seed": 42})
         >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
         >>> result = chain.evaluate_string_pairs(
         ...     input = "What is the chemical formula for water?",
@@ -179,12 +181,16 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         # .     " by explaining what the formula means.\\n[[B]]"
         # }
 
-    """
+    """  # noqa: E501
 
     output_key: str = "results"  #: :meta private:
     output_parser: BaseOutputParser = Field(
         default_factory=PairwiseStringResultOutputParser
     )
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     class Config:
         """Configuration for the PairwiseStringEvalChain."""

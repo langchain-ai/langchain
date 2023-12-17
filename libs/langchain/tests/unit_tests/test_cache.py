@@ -3,6 +3,11 @@ from typing import Dict, Generator, List, Union
 
 import pytest
 from _pytest.fixtures import FixtureRequest
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.llms import BaseLLM
+from langchain_core.load import dumps
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration, Generation
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -11,15 +16,8 @@ from langchain.cache import (
     SQLAlchemyCache,
 )
 from langchain.chat_models import FakeListChatModel
-from langchain.chat_models.base import BaseChatModel, dumps
 from langchain.globals import get_llm_cache, set_llm_cache
 from langchain.llms import FakeListLLM
-from langchain.llms.base import BaseLLM
-from langchain.schema import (
-    ChatGeneration,
-    Generation,
-)
-from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 
 
 def get_sqlite_cache() -> SQLAlchemyCache:

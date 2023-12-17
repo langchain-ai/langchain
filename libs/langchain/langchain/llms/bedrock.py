@@ -1,3 +1,12 @@
+from langchain_community.llms.bedrock import (
+    Bedrock,
+    BedrockBase,
+)
+
+__all__ = [
+    "BedrockBase",
+    "Bedrock",
+]
 import asyncio
 import json
 import warnings

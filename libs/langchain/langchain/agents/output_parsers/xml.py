@@ -1,7 +1,8 @@
 from typing import Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+
 from langchain.agents import AgentOutputParser
-from langchain.schema import AgentAction, AgentFinish
 
 
 class XMLAgentOutputParser(AgentOutputParser):
