@@ -68,7 +68,6 @@ from langchain_core.runnables import (
     RunnableWithFallbacks,
     add,
 )
-from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
     BaseTracer,
@@ -3552,28 +3551,13 @@ def test_runnable_lambda_stream() -> None:
     assert output == [range(5)]
 
     # Runnable output should also work
-    class StreamingRunnable(Runnable[Input, Output]):
-        def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None
-        ) -> Output:
-            raise NotImplementedError()
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-        def stream(
-            self,
-            input: Input,
-            config: Optional[RunnableConfig] = None,
-            **kwargs: Optional[Any],
-        ) -> Iterator[Output]:
-            for _ in range(cast(int, input)):
-                yield _
+    output = list(RunnableLambda(lambda x: llm).stream(""))
+    assert output == list(llm_res)
 
-    output = [
-        chunk
-        for chunk in cast(
-            Iterator[int], RunnableLambda(lambda x: StreamingRunnable()).stream(5)
-        )
-    ]
-    assert output == [0, 1, 2, 3, 4]
 
 
 async def test_runnable_lambda_astream() -> None:
@@ -3597,57 +3581,30 @@ async def test_runnable_lambda_astream() -> None:
     assert output == [range(5)]
 
     # Normal output using func should also work
-    output = [chunk async for chunk in RunnableLambda(range).astream(5)]
+    output = [_ async for _ in RunnableLambda(range).astream(5)]
     assert output == [range(5)]
 
     # Runnable output should also work
-    class AstreamingRunnable(Runnable[Input, Output]):
-        def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None
-        ) -> Output:
-            raise NotImplementedError()
-
-        async def astream(
-            self,
-            input: Input,
-            config: Optional[RunnableConfig] = None,
-            **kwargs: Optional[Any],
-        ) -> AsyncIterator[Output]:
-            for _ in range(cast(int, input)):
-                yield _
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
     output = [
-        chunk
-        async for chunk in RunnableLambda(
+        _
+        async for _ in RunnableLambda(
             func=id,
-            afunc=awrapper(lambda x: AstreamingRunnable()),  # id func is just dummy
-        ).astream(5)
+            afunc=awrapper(lambda x: llm),
+        ).astream("")
     ]
-    assert output == [0, 1, 2, 3, 4]
-
-    # Runnable output using func should also work
-    class StreamingRunnable(Runnable[Input, Output]):
-        def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None
-        ) -> Output:
-            raise NotImplementedError()
-
-        def stream(
-            self,
-            input: Input,
-            config: Optional[RunnableConfig] = None,
-            **kwargs: Optional[Any],
-        ) -> Iterator[Output]:
-            for _ in range(cast(int, input)):
-                yield _
+    assert output == list(llm_res)
 
     output = [
         chunk
         async for chunk in cast(
-            AsyncIterator[int], RunnableLambda(lambda x: StreamingRunnable()).astream(5)
+            AsyncIterator[str], RunnableLambda(lambda x: llm).astream("")
         )
     ]
-    assert output == [0, 1, 2, 3, 4]
+    assert output == list(llm_res)
 
 
 @freeze_time("2023-01-01")

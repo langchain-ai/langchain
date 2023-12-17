@@ -2687,8 +2687,8 @@ class RunnableLambda(Runnable[Input, Output]):
     def stream(
         self,
         input: Input,
-        config: RunnableConfig | None = None,
-        **kwargs: Any | None,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         if hasattr(self, "func"):
             return cast(
@@ -2748,8 +2748,8 @@ class RunnableLambda(Runnable[Input, Output]):
     async def astream(
         self,
         input: Input,
-        config: RunnableConfig | None = None,
-        **kwargs: Any | None,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         if hasattr(self, "afunc"):
             async for output in cast(
