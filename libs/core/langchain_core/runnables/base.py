@@ -2657,32 +2657,35 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def _stream(
         self,
-        input: Input,
+        input: Iterator[Input],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
-    ) -> Output:
-        output = call_func_with_variable_args(self.func, input, config, run_manager)
-
-        # If the output is a runnable, use its stream output
-        if isinstance(output, Runnable):
-            recursion_limit = config["recursion_limit"]
-            if recursion_limit <= 0:
-                raise RecursionError(
-                    f"Recursion limit reached when invoking "
-                    f"{self} with input {input}."
-                )
-            iterator = output.stream(
-                input,
-                patch_config(
-                    config,
-                    callbacks=run_manager.get_child(),
-                    recursion_limit=recursion_limit - 1,
-                ),
+    ) -> Iterator[Output]:
+        for ichunk in input:
+            output = call_func_with_variable_args(
+                self.func, ichunk, config, run_manager
             )
-        else:
-            # Otherwise, wrap it in an iterator
-            iterator = iter([output])
-        return cast(Output, iterator)
+
+            # If the output is a runnable, use its stream output
+            if isinstance(output, Runnable):
+                recursion_limit = config["recursion_limit"]
+                if recursion_limit <= 0:
+                    raise RecursionError(
+                        f"Recursion limit reached when invoking "
+                        f"{self} with input {ichunk}."
+                    )
+                for chunk in output.stream(
+                    ichunk,
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(),
+                        recursion_limit=recursion_limit - 1,
+                    ),
+                ):
+                    yield chunk
+            else:
+                # Otherwise, just yield it
+                yield output
 
     def stream(
         self,
@@ -2691,14 +2694,12 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         if hasattr(self, "func"):
-            return cast(
-                Iterator[Output],
-                self._call_with_config(
-                    self._stream,
-                    input,
-                    self._config(config, self.func),
-                ),
-            )
+            for output in self._transform_stream_with_config(
+                iter([input]),
+                self._stream,
+                self._config(config, self.func),
+            ):
+                yield output
         else:
             raise TypeError(
                 "Cannot stream a coroutine function synchronously."
@@ -2707,43 +2708,34 @@ class RunnableLambda(Runnable[Input, Output]):
 
     async def _astream(
         self,
-        input: Input,
+        input: AsyncIterator[Input],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
-    ) -> Output:
-        output = await acall_func_with_variable_args(
-            self.afunc, input, config, run_manager
-        )
-        # If the output is a runnable, use its astream output
-        if isinstance(output, Runnable):
-            recursion_limit = config["recursion_limit"]
-            if recursion_limit <= 0:
-                raise RecursionError(
-                    f"Recursion limit reached when invoking "
-                    f"{self} with input {input}."
-                )
-            iterator: AsyncIterator[Output] = output.astream(
-                input,
-                patch_config(
-                    config,
-                    callbacks=run_manager.get_child(),
-                    recursion_limit=recursion_limit - 1,
-                ),
+    ) -> AsyncIterator[Output]:
+        async for ichunk in input:
+            output = await acall_func_with_variable_args(
+                self.afunc, ichunk, config, run_manager
             )
-        else:
-            # Otherwise, wrap it in an async iterator
-            class SimpleAsyncIterator(AsyncIterator[Output]):
-                def __init__(self, element: Output):
-                    self.elements = [element]
-
-                async def __anext__(self) -> Output:
-                    if self.elements:
-                        return self.elements.pop()
-                    else:
-                        raise StopAsyncIteration
-
-            iterator = SimpleAsyncIterator(output)
-        return cast(Output, iterator)
+            # If the output is a runnable, use its astream output
+            if isinstance(output, Runnable):
+                recursion_limit = config["recursion_limit"]
+                if recursion_limit <= 0:
+                    raise RecursionError(
+                        f"Recursion limit reached when invoking "
+                        f"{self} with input {ichunk}."
+                    )
+                async for chunk in output.astream(
+                    ichunk,
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(),
+                        recursion_limit=recursion_limit - 1,
+                    ),
+                ):
+                    yield chunk
+            else:
+                # Otherwise, just yield it
+                yield output
 
     async def astream(
         self,
@@ -2752,13 +2744,14 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         if hasattr(self, "afunc"):
-            async for output in cast(
-                AsyncIterator[Output],
-                await self._acall_with_config(
-                    self._astream,
-                    input,
-                    self._config(config, self.afunc),
-                ),
+
+            async def input_aiter() -> AsyncIterator[Input]:
+                yield input
+
+            async for output in self._atransform_stream_with_config(
+                input_aiter(),
+                self._astream,
+                self._config(config, self.afunc),
             ):
                 yield output
         else:

@@ -3559,6 +3559,36 @@ def test_runnable_lambda_stream() -> None:
     assert output == list(llm_res)
 
 
+def test_runnable_lambda_stream_with_callbacks() -> None:
+    """Test that stream works for RunnableLambda when using callbacks."""
+    tracer = FakeTracer()
+
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+    config: RunnableConfig = {"callbacks": [tracer]}
+
+    assert list(RunnableLambda(lambda x: llm).stream("", config=config)) == list(
+        llm_res
+    )
+
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error is None
+    assert tracer.runs[0].outputs == {"output": llm_res}
+
+    def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    # Check that the chain on error is invoked
+    with pytest.raises(ValueError):
+        for _ in RunnableLambda(raise_value_error).stream(1000, config=config):
+            pass
+
+    assert len(tracer.runs) == 2
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
+    assert tracer.runs[1].outputs is None
+
 
 async def test_runnable_lambda_astream() -> None:
     """Test that astream works for both normal functions & those returning Runnable."""
@@ -3605,6 +3635,37 @@ async def test_runnable_lambda_astream() -> None:
         )
     ]
     assert output == list(llm_res)
+
+
+async def test_runnable_lambda_astream_with_callbacks() -> None:
+    """Test that astream works for RunnableLambda when using callbacks."""
+    tracer = FakeTracer()
+
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+    config: RunnableConfig = {"callbacks": [tracer]}
+
+    assert [
+        _ async for _ in RunnableLambda(lambda x: llm).astream("", config=config)
+    ] == list(llm_res)
+
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error is None
+    assert tracer.runs[0].outputs == {"output": llm_res}
+
+    def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    # Check that the chain on error is invoked
+    with pytest.raises(ValueError):
+        async for _ in RunnableLambda(raise_value_error).astream(1000, config=config):
+            pass
+
+    assert len(tracer.runs) == 2
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
+    assert tracer.runs[1].outputs is None
 
 
 @freeze_time("2023-01-01")
