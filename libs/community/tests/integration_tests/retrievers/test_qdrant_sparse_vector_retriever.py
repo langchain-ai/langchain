@@ -35,12 +35,11 @@ def consistent_fake_sparse_encoder(
     num_non_zero_elements = int(size * density)
 
     # Generate random indices without replacement
-    indices = random.sample(range(size), num_non_zero_elements)
+    indices = sorted(random.sample(range(size), num_non_zero_elements))
 
     # Generate random float values for the non-zero elements
     values = [random.uniform(0.0, 1.0) for _ in range(num_non_zero_elements)]
 
-    indices.sort()
     return indices, values
 
 
