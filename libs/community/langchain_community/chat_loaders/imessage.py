@@ -129,9 +129,10 @@ class IMessageChatLoader(BaseChatLoader):
                     role=sender,
                     content=content,
                     additional_kwargs={
-                        "message_time": nanoseconds_from_2001_to_datetime(date),
+                        "message_time": date,
+                        "message_time_as_datetime": nanoseconds_from_2001_to_datetime(date),
                         "sender": sender,
-                        "is_from_me": is_from_me,
+                        "is_from_me": bool(is_from_me),
                     },
                 )
             )
