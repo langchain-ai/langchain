@@ -29,6 +29,7 @@ from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.awadb import AwaDB
 from langchain.vectorstores.azuresearch import AzureSearch
 from langchain.vectorstores.bageldb import Bagel
+from langchain.vectorstores.bigquery_vector_search import BigQueryVectorSearch
 from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.clarifai import Clarifai
@@ -91,6 +92,7 @@ __all__ = [
     "AwaDB",
     "AzureSearch",
     "Bagel",
+    "BigQueryVectorSearch",
     "Cassandra",
     "Chroma",
     "Chroma",
