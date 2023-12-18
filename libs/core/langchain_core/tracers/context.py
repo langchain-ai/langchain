@@ -30,14 +30,20 @@ if TYPE_CHECKING:
     from langchain_core.callbacks.base import BaseCallbackHandler, Callbacks
     from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 
-tracing_callback_var: ContextVar[Optional[LangChainTracerV1]] = ContextVar(  # noqa: E501
+tracing_callback_var: ContextVar[
+    Optional[LangChainTracerV1]
+] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
 
-tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
+tracing_v2_callback_var: ContextVar[
+    Optional[LangChainTracer]
+] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
 )
-run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVar(  # noqa: E501
+run_collector_var: ContextVar[
+    Optional[RunCollectorCallbackHandler]
+] = ContextVar(  # noqa: E501
     "run_collector", default=None
 )
 
@@ -205,6 +211,19 @@ def register_configure_hook(
     handle_class: Optional[Type[BaseCallbackHandler]] = None,
     env_var: Optional[str] = None,
 ) -> None:
+    """Register a configure hook.
+
+    Args:
+        context_var (ContextVar[Optional[Any]]): The context variable.
+        inheritable (bool): Whether the context variable is inheritable.
+        handle_class (Optional[Type[BaseCallbackHandler]], optional):
+          The callback handler class. Defaults to None.
+        env_var (Optional[str], optional): The environment variable. Defaults to None.
+
+    Raises:
+        ValueError: If env_var is set, handle_class must also be set
+          to a non-None value.
+    """
     if env_var is not None and handle_class is None:
         raise ValueError(
             "If env_var is set, handle_class must also be set to a non-None value."
