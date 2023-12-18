@@ -141,4 +141,4 @@ class WasmChatService(BaseChatModel):
 
     @property
     def _llm_type(self) -> str:
-        return "wasmedge-chat"
+        return "wasm-chat"
