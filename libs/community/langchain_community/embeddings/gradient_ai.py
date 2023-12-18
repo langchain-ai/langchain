@@ -40,7 +40,7 @@ class GradientEmbeddings(BaseModel, Embeddings):
         and selecting "Access tokens" under the profile drop-down.
     """
 
-    gradient_api_url: Optional[str] = None
+    gradient_api_url: str = "https://api.gradient.ai/api"
     """Endpoint URL to use."""
 
     query_prompt_for_retrieval: Optional[str] = None
