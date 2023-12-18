@@ -169,7 +169,7 @@ class TritonTensorRTLLM(BaseLLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         self._load_model(self.model_name)
-        
+
         invocation_params = self._get_invocation_params(**kwargs, prompt=[[prompt]])
         stop_words = stop if stop is not None else self.stop
 
