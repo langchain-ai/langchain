@@ -70,4 +70,3 @@ def test_gpt_router_streaming_callback() -> None:
     message = HumanMessage(content="Write me a sentence with 10 words.")
     chat([message])
     assert callback_handler.llm_streams > 1
-
