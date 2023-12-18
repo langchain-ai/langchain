@@ -13,7 +13,6 @@ Required to run this test:
 import json
 import os
 import uuid
-from random import randrange
 
 import pytest
 
@@ -28,7 +27,7 @@ def _has_env_vars() -> bool:
     return all([ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_API_ENDPOINT])
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def astra_db_collection():
     from astrapy.db import AstraDB
 
@@ -62,7 +61,6 @@ class TestAstraDB:
             nb_prefetched=1,
             projection={"foo": 1},
             find_options={"limit": 22},
-            sort={"foo": 1},
             filter_criteria={"foo": "bar"},
         )
         docs = loader.load()
@@ -81,27 +79,18 @@ class TestAstraDB:
                 "collection": astra_db_collection.collection_name,
             }
 
-    def test_sort(self, astra_db_collection) -> None:
-        for _ in range(2):
-            astra_db_collection.insert_many(
-                [{"foo": randrange(1000)} for _ in range(20)]
-            )
+    def test_extraction_function(self, astra_db_collection) -> None:
+        astra_db_collection.insert_many([{"foo": "bar", "baz": "qux"}] * 20)
 
         loader = AstraDBLoader(
             astra_db_collection.collection_name,
             token=ASTRA_DB_APPLICATION_TOKEN,
             api_endpoint=ASTRA_DB_API_ENDPOINT,
             namespace=ASTRA_DB_KEYSPACE,
-            sort={"foo": 1},
             find_options={"limit": 30},
-            extraction_function=lambda x: str(x["foo"]),
+            extraction_function=lambda x: x["foo"],
         )
-        docs = loader.load()
+        docs = loader.lazy_load()
+        doc = next(docs)
 
-        assert len(docs) == 30
-
-        i = 0
-        for doc in docs:
-            content = int(doc.page_content)
-            assert content >= i
-            i = content
+        assert doc.page_content == "bar"

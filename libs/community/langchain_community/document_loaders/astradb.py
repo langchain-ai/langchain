@@ -24,7 +24,6 @@ class AstraDBLoader(BaseLoader):
         filter_criteria: Optional[Dict[str, Any]] = None,
         projection: Optional[Dict[str, Any]] = None,
         find_options: Optional[Dict[str, Any]] = None,
-        sort: Optional[Dict[str, Any]] = None,
         nb_prefetched: int = 1000,
         extraction_function: Callable[[Dict], str] = json.dumps,
     ) -> None:
@@ -47,7 +46,6 @@ class AstraDBLoader(BaseLoader):
         self.filter = filter_criteria
         self.projection = projection
         self.find_options = find_options or {}
-        self.sort = sort
         self.nb_prefetched = nb_prefetched
         self.extraction_function = extraction_function
 
@@ -76,22 +74,21 @@ class AstraDBLoader(BaseLoader):
             yield doc
         t.join()
 
-    def fetch_results(self, queue: Queue) -> None:
-        has_more = self.fetch_page_result(queue)
-        while has_more:
-            has_more = self.fetch_page_result(queue)
+    def fetch_results(self, queue: Queue):
+        self.fetch_page_result(queue)
+        while self.find_options.get("pageState"):
+            self.fetch_page_result(queue)
         queue.put(None)
 
-    def fetch_page_result(self, queue: Queue) -> bool:
+    def fetch_page_result(self, queue: Queue):
         res = self.collection.find(
             filter=self.filter,
             options=self.find_options,
             projection=self.projection,
-            sort=self.sort,
+            sort=None,
         )
         self.find_options["pageState"] = res["data"].get("nextPageState")
-        docs = res["data"]["documents"]
-        for doc in docs:
+        for doc in res["data"]["documents"]:
             queue.put(
                 Document(
                     page_content=self.extraction_function(doc),
@@ -102,13 +99,3 @@ class AstraDBLoader(BaseLoader):
                     },
                 )
             )
-        if len(docs) == 20 and self.sort:
-            self.find_options["skip"] = self.find_options.get("skip", 0) + 20
-            if "limit" not in self.find_options:
-                return True
-            limit = self.find_options["limit"]
-            if limit == 20:
-                return False
-            self.find_options["limit"] = limit - 20
-            return True
-        return self.find_options["pageState"] is not None
