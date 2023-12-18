@@ -83,6 +83,7 @@ msal = {version = "^1.25.0", optional = true}
 databricks-vectorsearch = {version = "^0.21", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
+pathway = {version = "^0.7.5", optional = true, python = ">=3.10"}
 
 [tool.poetry.group.test]
 optional = true
@@ -143,7 +144,6 @@ langchain-core = { path = "../core", develop = true }
 fireworks-ai = "^0.9.0"
 boto3 = ">=1.28.57,<2"
 google-cloud-aiplatform = ">=1.37.0,<2"
-pathway = {version = "^0.7.5", python = ">=3.10"}
 
 [tool.poetry.group.lint]
 optional = true

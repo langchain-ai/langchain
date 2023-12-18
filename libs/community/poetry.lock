@@ -574,7 +574,7 @@ tzdata = ["tzdata"]
 name = "beartype"
 version = "0.15.0"
 description = "Unbearably fast runtime type checking in pure Python."
-optional = false
+optional = true
 python-versions = ">=3.8.0"
 files = [
     {file = "beartype-0.15.0-py3-none-any.whl", hash = "sha256:52cd2edea72fdd84e4e7f8011a9e3007bf0125c3d6d7219e937b9d8868169177"},
@@ -652,7 +652,7 @@ files = [
 name = "bokeh"
 version = "3.3.2"
 description = "Interactive plots and applications in the browser from Python"
-optional = false
+optional = true
 python-versions = ">=3.9"
 files = [
     {file = "bokeh-3.3.2-py3-none-any.whl", hash = "sha256:f70bcea96c72f85bbeae01b9dcd30a9f27aa48fbfaf8e6f45b6958dfcd08e5c5"},
@@ -1118,7 +1118,7 @@ test = ["pytest"]
 name = "contourpy"
 version = "1.2.0"
 description = "Python library for calculating contours of 2D quadrilateral grids"
-optional = false
+optional = true
 python-versions = ">=3.9"
 files = [
     {file = "contourpy-1.2.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0274c1cb63625972c0c007ab14dd9ba9e199c36ae1a231ce45d725cbcbfd10a8"},
@@ -1529,7 +1529,7 @@ graph = ["objgraph (>=1.7.2)"]
 name = "diskcache"
 version = "5.6.3"
 description = "Disk Cache -- Disk and file backed persistent cache."
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "diskcache-5.6.3-py3-none-any.whl", hash = "sha256:5e31b2d5fbad117cc363ebaf6b689474db18a1f6438bc82358b024abd4c2ca19"},
@@ -2042,7 +2042,7 @@ tqdm = ["tqdm"]
 name = "geographiclib"
 version = "2.0"
 description = "The geodesic routines from GeographicLib"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "geographiclib-2.0-py3-none-any.whl", hash = "sha256:6b7225248e45ff7edcee32becc4e0a1504c606ac5ee163a5656d482e0cd38734"},
@@ -2086,7 +2086,7 @@ shapely = ">=1.7.1"
 name = "geopy"
 version = "2.4.1"
 description = "Python Geocoding Toolbox"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "geopy-2.4.1-py3-none-any.whl", hash = "sha256:ae8b4bc5c1131820f4d75fce9d4aaaca0c85189b3aa5d64c3dcaf5e3b7b882a7"},
@@ -2188,7 +2188,7 @@ grpcio-gcp = ["grpcio-gcp (>=0.2.2,<1.0.dev0)"]
 name = "google-api-python-client"
 version = "2.111.0"
 description = "Google API Client Library for Python"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "google-api-python-client-2.111.0.tar.gz", hash = "sha256:3a45a53c031478d1c82c7162dd25c9a965247bca6bd438af0838a9d9b8219405"},
@@ -2229,7 +2229,7 @@ requests = ["requests (>=2.20.0,<3.0.0.dev0)"]
 name = "google-auth-httplib2"
 version = "0.2.0"
 description = "Google Authentication Library: httplib2 transport"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "google-auth-httplib2-0.2.0.tar.gz", hash = "sha256:38aa7badf48f974f1eb9861794e9c0cb2a0511a4ec0679b1f886d108f5640e05"},
@@ -2784,7 +2784,7 @@ files = [
 name = "h3"
 version = "3.7.6"
 description = "Hierarchical hexagonal geospatial indexing system"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "h3-3.7.6-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:cd4a5103a86a7d98cffa3be77eb82080aa2e9d676bbd1661f3db9ecad7a4ef2b"},
@@ -2884,7 +2884,7 @@ socks = ["socksio (==1.*)"]
 name = "httplib2"
 version = "0.22.0"
 description = "A comprehensive HTTP client library."
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
     {file = "httplib2-0.22.0-py3-none-any.whl", hash = "sha256:14ae0a53c1ba8f3d37e9e27cf37eabb0fb9980f435ba405d546948b009dd64dc"},
@@ -3217,7 +3217,7 @@ files = [
 name = "joblib"
 version = "1.3.2"
 description = "Lightweight pipelining with Python functions"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "joblib-1.3.2-py3-none-any.whl", hash = "sha256:ef4331c65f239985f3f2220ecc87db222f08fd22097a3dd5698f693875f8cbb9"},
@@ -3426,7 +3426,7 @@ qtconsole = "*"
 name = "jupyter-bokeh"
 version = "3.0.7"
 description = "A Jupyter extension for rendering Bokeh content."
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "jupyter_bokeh-3.0.7-py3-none-any.whl", hash = "sha256:676d74bd8b95c7467d5e7ea1c954b306c7768b7bfa2bb3dd32e64efdf7dc09ee"},
@@ -3742,7 +3742,7 @@ regex = ["regex"]
 name = "linkify-it-py"
 version = "2.0.2"
 description = "Links recognition library with FULL unicode support."
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "linkify-it-py-2.0.2.tar.gz", hash = "sha256:19f3060727842c254c808e99d465c80c49d2c7306788140987a1a7a29b0d6ad2"},
@@ -3762,7 +3762,7 @@ test = ["coverage", "pytest", "pytest-cov"]
 name = "llvmlite"
 version = "0.41.1"
 description = "lightweight wrapper around basic LLVM functionality"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "llvmlite-0.41.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:c1e1029d47ee66d3a0c4d6088641882f75b93db82bd0e6178f7bd744ebce42b9"},
@@ -3902,7 +3902,7 @@ source = ["Cython (>=0.29.35)"]
 name = "markdown"
 version = "3.5.1"
 description = "Python implementation of John Gruber's Markdown."
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "Markdown-3.5.1-py3-none-any.whl", hash = "sha256:5874b47d4ee3f0b14d764324d2c94c03ea66bee56f2d929da9f2508d65e722dc"},
@@ -3917,7 +3917,7 @@ testing = ["coverage", "pyyaml"]
 name = "markdown-it-py"
 version = "3.0.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "markdown-it-py-3.0.0.tar.gz", hash = "sha256:e3f60a94fa066dc52ec76661e37c851cb232d92f9886b15cb560aaada2df8feb"},
@@ -4059,7 +4059,7 @@ traitlets = "*"
 name = "mdit-py-plugins"
 version = "0.4.0"
 description = "Collection of plugins for markdown-it-py"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "mdit_py_plugins-0.4.0-py3-none-any.whl", hash = "sha256:b51b3bb70691f57f974e257e367107857a93b36f322a9e6d44ca5bf28ec2def9"},
@@ -4078,7 +4078,7 @@ testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions"]
 name = "mdurl"
 version = "0.1.2"
 description = "Markdown URL utilities"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
@@ -4645,7 +4645,7 @@ test = ["pytest", "pytest-console-scripts", "pytest-jupyter", "pytest-tornasync"
 name = "numba"
 version = "0.58.1"
 description = "compiling Python code using LLVM"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "numba-0.58.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:07f2fa7e7144aa6f275f27260e73ce0d808d3c62b30cff8906ad1dec12d87bbe"},
@@ -5037,7 +5037,7 @@ files = [
 name = "panel"
 version = "1.3.4"
 description = "The powerful data exploration & web app framework for Python."
-optional = false
+optional = true
 python-versions = ">=3.9"
 files = [
     {file = "panel-1.3.4-py2.py3-none-any.whl", hash = "sha256:14afde92a5c2b531f2ccb785b34b4711e1f4557934c85727b3594e2dae73d0a5"},
@@ -5085,7 +5085,7 @@ files = [
 name = "param"
 version = "2.0.1"
 description = "Make your Python code clearer and more reliable by declaring Parameters."
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "param-2.0.1-py3-none-any.whl", hash = "sha256:4bfc94c0e4127626fa833e30c71c91ea73e7675b80c26dbdd4a6e5a8f6dc46db"},
@@ -5121,7 +5121,7 @@ testing = ["docopt", "pytest (<6.0.0)"]
 name = "pathway"
 version = "0.7.5"
 description = "Pathway is a data processing framework which takes care of streaming data updates for you."
-optional = false
+optional = true
 python-versions = ">=3.10"
 files = [
     {file = "pathway-0.7.5-cp310-abi3-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl", hash = "sha256:e59dd366db4f5f7837e869e8e5ce92cbc262d519e95fbcf5e435047bd5951d86"},
@@ -5656,7 +5656,7 @@ files = [
 name = "pyarrow"
 version = "14.0.1"
 description = "Python library for Apache Arrow"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "pyarrow-14.0.1-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:96d64e5ba7dceb519a955e5eeb5c9adcfd63f73a56aea4722e2cc81364fc567a"},
@@ -6148,7 +6148,7 @@ files = [
 name = "pyparsing"
 version = "3.1.1"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
-optional = false
+optional = true
 python-versions = ">=3.6.8"
 files = [
     {file = "pyparsing-3.1.1-py3-none-any.whl", hash = "sha256:32c7c0b711493c72ff18a981d24f28aaf9c1fb7ed5e9667c9e84e3db623bdbfb"},
@@ -6455,7 +6455,7 @@ files = [
 name = "python-sat"
 version = "0.1.8.dev12"
 description = "A Python library for prototyping with SAT oracles"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "python-sat-0.1.8.dev12.tar.gz", hash = "sha256:028ba1d23aea9bd58b653766a8abab978a848d4192e54929ff118329704ad8e6"},
@@ -6573,7 +6573,7 @@ files = [
 name = "pyviz-comms"
 version = "3.0.0"
 description = "A JupyterLab extension for rendering HoloViz content."
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "pyviz_comms-3.0.0-py3-none-any.whl", hash = "sha256:91c967151b1e4d436c458c147a31991a42fbe7567e49176e4eb5b8dc8e20f1ff"},
@@ -7219,7 +7219,7 @@ files = [
 name = "rich"
 version = "13.7.0"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
-optional = false
+optional = true
 python-versions = ">=3.7.0"
 files = [
     {file = "rich-13.7.0-py3-none-any.whl", hash = "sha256:6da14c108c4866ee9520bbffa71f6fe3962e193b7da68720583850cd4548e235"},
@@ -7417,7 +7417,7 @@ crt = ["botocore[crt] (>=1.33.2,<2.0a.0)"]
 name = "scikit-learn"
 version = "1.3.2"
 description = "A set of python modules for machine learning and data mining"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "scikit-learn-1.3.2.tar.gz", hash = "sha256:a2f54c76accc15a34bfb9066e6c7a56c1e7235dda5762b990792330b52ccfb05"},
@@ -7464,7 +7464,7 @@ tests = ["black (>=23.3.0)", "matplotlib (>=3.1.3)", "mypy (>=1.3)", "numpydoc (
 name = "scipy"
 version = "1.9.3"
 description = "Fundamental algorithms for scientific computing in Python"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "scipy-1.9.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:1884b66a54887e21addf9c16fb588720a8309a57b2e258ae1c7986d4444d3bc0"},
@@ -7732,7 +7732,7 @@ sqlcipher = ["sqlcipher3-binary"]
 name = "sqlglot"
 version = "10.6.1"
 description = "An easily customizable SQL parser and transpiler"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "sqlglot-10.6.1-py3-none-any.whl", hash = "sha256:7f1999056d98602757e50d189bec1a47c09e3d9f07e5945601b9ba6c61b22deb"},
@@ -7930,7 +7930,7 @@ typing = ["mypy (>=1.6,<2.0)", "traitlets (>=5.11.1)"]
 name = "threadpoolctl"
 version = "3.2.0"
 description = "threadpoolctl"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "threadpoolctl-3.2.0-py3-none-any.whl", hash = "sha256:2b7818516e423bdaebb97c723f86a7c6b0a83d3f3b0970328d66f4d9104dc032"},
@@ -8463,7 +8463,7 @@ devenv = ["check-manifest", "pytest (>=4.3)", "pytest-cov", "pytest-mock (>=3.3)
 name = "uc-micro-py"
 version = "1.0.2"
 description = "Micro subset of unicode data files for linkify-it-py projects."
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "uc-micro-py-1.0.2.tar.gz", hash = "sha256:30ae2ac9c49f39ac6dce743bd187fcd2b574b16ca095fa74cd9396795c954c54"},
@@ -8525,7 +8525,7 @@ dev = ["flake8", "flake8-annotations", "flake8-bandit", "flake8-bugbear", "flake
 name = "uritemplate"
 version = "4.1.1"
 description = "Implementation of RFC 6570 URI Templates"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "uritemplate-4.1.1-py2.py3-none-any.whl", hash = "sha256:830c08b8d99bdd312ea4ead05994a38e8936266f84b9a7878232db50b044e02e"},
@@ -9009,7 +9009,7 @@ files = [
 name = "xyzservices"
 version = "2023.10.1"
 description = "Source of XYZ tiles providers"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "xyzservices-2023.10.1-py3-none-any.whl", hash = "sha256:6a4c38d3a9f89d3e77153eff9414b36a8ee0850c9e8b85796fd1b2a85b8dfd68"},
@@ -9141,4 +9141,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "67fd782f6eb1e0066d463b3dba7b5c97d4e4a0820fa479dfed6ef43887a4a035"
+content-hash = "efbec6fb2c618a5350d9e5da339504c1c20871935e73de3bcf1fbe98895c0ff2"
