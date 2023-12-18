@@ -288,7 +288,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             tc.id for tc in run.required_action.submit_tool_outputs.tool_calls
         }
         tool_outputs = [
-            {"output": output, "tool_call_id": action.tool_call_id}
+            {"output": str(output), "tool_call_id": action.tool_call_id}
             for action, output in intermediate_steps
             if action.tool_call_id in required_tool_call_ids
         ]
