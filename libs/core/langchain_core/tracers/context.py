@@ -30,9 +30,7 @@ if TYPE_CHECKING:
     from langchain_core.callbacks.base import BaseCallbackHandler, Callbacks
     from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 
-tracing_callback_var: ContextVar[
-    Optional[LangChainTracerV1]
-] = ContextVar(  # noqa: E501
+tracing_callback_var: ContextVar[Optional[LangChainTracerV1]] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
 
