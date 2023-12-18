@@ -1,5 +1,6 @@
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
 from langchain_community.chat_models.zhipuai import ChatZhipuAI
 
 
@@ -15,7 +16,8 @@ def test_chat() -> None:
             content="You are a helpful assistant that translates English to Chinese."
         ),
         HumanMessage(
-            content="Translate this sentence from English to Chinese. I love programming."
+            content="""Translate this sentence from English to Chinese:
+I love programming."""
         ),
     ]
     chat(messages)

@@ -63,7 +63,8 @@ class ChatZhipuAI(BaseChatModel):
             self.zhipuai.api_key = self.api_key
         except ImportError:
             raise RuntimeError(
-                "Could not import zhipuai package. Please install it via 'pip install zhipuai'"
+                "Could not import zhipuai package. "
+                "Please install it via 'pip install zhipuai'"
             )
 
     async def async_invoke(self, prompt):
