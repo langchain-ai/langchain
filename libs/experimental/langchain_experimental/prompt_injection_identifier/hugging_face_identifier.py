@@ -79,7 +79,7 @@ class HuggingFaceInjectionIdentifier(BaseTool):
         """Use the tool."""
         result = self.model(query)
         score = result[0]["score"] if result[0]["label"] == self.injection_label else 1 - result[0]["score"]
-        if score < self.threshold:
+        if score > self.threshold:
             raise PromptInjectionException("Prompt injection attack detected", score)
 
         return query
