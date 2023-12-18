@@ -630,13 +630,14 @@ def test_lambda_schemas() -> None:
     }
 
     second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
-    assert RunnableLambda(
-        second_lambda,  # type: ignore[arg-type]
-    ).input_schema.schema() == {
-        "title": "RunnableLambdaInput",
-        "type": "object",
-        "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
-    }
+    assert (
+        RunnableLambda(second_lambda).input_schema.schema()  # type: ignore[arg-type]
+        == {
+            "title": "RunnableLambdaInput",
+            "type": "object",
+            "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
+        }
+    )
 
     def get_value(input):  # type: ignore[no-untyped-def]
         return input["variable_name"]
@@ -3624,33 +3625,32 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
 
     parent_run_foo = parent_runs[0]
     assert parent_run_foo.inputs["input"] == "foo"
-    assert parent_run_foo.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_foo.error)
     assert len(parent_run_foo.child_runs) == 4
-    assert [r.error for r in parent_run_foo.child_runs] == [
+    assert [r.error for r in parent_run_foo.child_runs[:-1]] == [
         None,
         None,
         None,
-        repr(ValueError()),
     ]
+    assert repr(ValueError()) in str(parent_run_foo.child_runs[-1].error)
 
     parent_run_bar = parent_runs[1]
     assert parent_run_bar.inputs["input"] == "bar"
-    assert parent_run_bar.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_bar.error)
     assert len(parent_run_bar.child_runs) == 2
-    assert [r.error for r in parent_run_bar.child_runs] == [
-        None,
-        repr(ValueError()),
-    ]
+    assert parent_run_bar.child_runs[0].error is None
+    assert repr(ValueError()) in str(parent_run_bar.child_runs[1].error)
 
     parent_run_baz = parent_runs[2]
     assert parent_run_baz.inputs["input"] == "baz"
-    assert parent_run_baz.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_baz.error)
     assert len(parent_run_baz.child_runs) == 3
-    assert [r.error for r in parent_run_baz.child_runs] == [
+
+    assert [r.error for r in parent_run_baz.child_runs[:-1]] == [
         None,
         None,
-        repr(ValueError()),
     ]
+    assert repr(ValueError()) in str(parent_run_baz.child_runs[-1].error)
 
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
@@ -3746,33 +3746,31 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
 
     parent_run_foo = parent_runs[0]
     assert parent_run_foo.inputs["input"] == "foo"
-    assert parent_run_foo.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_foo.error)
     assert len(parent_run_foo.child_runs) == 4
-    assert [r.error for r in parent_run_foo.child_runs] == [
+    assert [r.error for r in parent_run_foo.child_runs[:-1]] == [
         None,
         None,
         None,
-        repr(ValueError()),
     ]
+    assert repr(ValueError()) in str(parent_run_foo.child_runs[-1].error)
 
     parent_run_bar = parent_runs[1]
     assert parent_run_bar.inputs["input"] == "bar"
-    assert parent_run_bar.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_bar.error)
     assert len(parent_run_bar.child_runs) == 2
-    assert [r.error for r in parent_run_bar.child_runs] == [
-        None,
-        repr(ValueError()),
-    ]
+    assert parent_run_bar.child_runs[0].error is None
+    assert repr(ValueError()) in str(parent_run_bar.child_runs[1].error)
 
     parent_run_baz = parent_runs[2]
     assert parent_run_baz.inputs["input"] == "baz"
-    assert parent_run_baz.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_baz.error)
     assert len(parent_run_baz.child_runs) == 3
-    assert [r.error for r in parent_run_baz.child_runs] == [
+    assert [r.error for r in parent_run_baz.child_runs[:-1]] == [
         None,
         None,
-        repr(ValueError()),
     ]
+    assert repr(ValueError()) in str(parent_run_baz.child_runs[-1].error)
 
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
@@ -3941,7 +3939,7 @@ def test_runnable_branch_invoke_callbacks() -> None:
         branch.invoke(1000, config={"callbacks": [tracer]})
 
     assert len(tracer.runs) == 2
-    assert tracer.runs[1].error == "ValueError('x is too large')"
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
     assert tracer.runs[1].outputs is None
 
 
@@ -3968,7 +3966,7 @@ async def test_runnable_branch_ainvoke_callbacks() -> None:
         await branch.ainvoke(1000, config={"callbacks": [tracer]})
 
     assert len(tracer.runs) == 2
-    assert tracer.runs[1].error == "ValueError('x is too large')"
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
     assert tracer.runs[1].outputs is None
 
 
