@@ -82,8 +82,13 @@ def _create_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
+    from gpt_router import exceptions
+
     errors = [
-        Exception,
+        exceptions.GPTRouterApiTimeoutError,
+        exceptions.GPTRouterInternalServerError,
+        exceptions.GPTRouterNotAvailableError,
+        exceptions.GPTRouterTooManyRequestsError,
     ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
