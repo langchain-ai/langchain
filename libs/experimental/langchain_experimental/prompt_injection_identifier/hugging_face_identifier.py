@@ -19,10 +19,14 @@ class PromptInjectionException(ValueError):
 
 
 def _model_default_factory(
-        model_name: str = "laiyer/deberta-v3-base-prompt-injection",
+    model_name: str = "laiyer/deberta-v3-base-prompt-injection",
 ) -> Pipeline:
     try:
-        from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
+        from transformers import (
+            AutoModelForSequenceClassification,
+            AutoTokenizer,
+            pipeline,
+        )
     except ImportError as e:
         raise ImportError(
             "Cannot import transformers, please install with "
@@ -37,7 +41,7 @@ def _model_default_factory(
         model=model,
         tokenizer=tokenizer,
         max_length=512,  # default length of BERT models
-        truncation=True,  # truncate to max_length otherwise it will fail on long prompts
+        truncation=True,  # otherwise it will fail on long prompts
     )
 
 
@@ -57,7 +61,9 @@ class HuggingFaceInjectionIdentifier(BaseTool):
         model name of a text-classification transformers model. Defaults to 
         ``laiyer/deberta-v3-base-prompt-injection`` model.
     """
-    threshold: float = Field(description="Threshold for prompt injection detection.", default=0.5)
+    threshold: float = Field(
+        description="Threshold for prompt injection detection.", default=0.5
+    )
     """Threshold for prompt injection detection.
     
     Defaults to 0.5."""
@@ -78,7 +84,11 @@ class HuggingFaceInjectionIdentifier(BaseTool):
     def _run(self, query: str) -> str:
         """Use the tool."""
         result = self.model(query)
-        score = result[0]["score"] if result[0]["label"] == self.injection_label else 1 - result[0]["score"]
+        score = (
+            result[0]["score"]
+            if result[0]["label"] == self.injection_label
+            else 1 - result[0]["score"]
+        )
         if score > self.threshold:
             raise PromptInjectionException("Prompt injection attack detected", score)
 
