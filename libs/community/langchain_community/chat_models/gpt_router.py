@@ -383,4 +383,3 @@ class ChatGPTRouter(BaseChatModel):
             generations.append(gen)
         llm_output = {"token_usage": response.meta, "model": response.model}
         return ChatResult(generations=generations, llm_output=llm_output)
-    
