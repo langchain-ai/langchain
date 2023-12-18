@@ -6,7 +6,7 @@ from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_experimental.llms.anthropic_functions import AnthropicFunctions
 
-template = """A article will be passed to you. Extract from it all papers that are mentioned by this article. 
+template = """A article will be passed to you. Extract from it all papers that are mentioned by this article.
 
 Do not extract the name of the article itself. If no papers are mentioned that's fine - you don't need to extract any! Just return an empty list.
 

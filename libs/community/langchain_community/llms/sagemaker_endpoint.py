@@ -92,7 +92,7 @@ class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
                 def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
                     input_str = json.dumps({prompt: prompt, **model_kwargs})
                     return input_str.encode('utf-8')
-                
+
                 def transform_output(self, output: bytes) -> str:
                     response_json = json.loads(output.read().decode("utf-8"))
                     return response_json[0]["generated_text"]
@@ -142,7 +142,7 @@ class SagemakerEndpoint(LLM):
     """
 
     """
-    Args:        
+    Args:
 
         region_name: The aws region e.g., `us-west-2`.
             Fallsback to AWS_DEFAULT_REGION env variable
@@ -155,7 +155,7 @@ class SagemakerEndpoint(LLM):
 
         client: boto3 client for Sagemaker Endpoint
 
-        content_handler: Implementation for model specific LLMContentHandler 
+        content_handler: Implementation for model specific LLMContentHandler
 
 
     Example:
@@ -229,7 +229,7 @@ class SagemakerEndpoint(LLM):
                 def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
                     input_str = json.dumps({prompt: prompt, **model_kwargs})
                     return input_str.encode('utf-8')
-                
+
                 def transform_output(self, output: bytes) -> str:
                     response_json = json.loads(output.read().decode("utf-8"))
                     return response_json[0]["generated_text"]

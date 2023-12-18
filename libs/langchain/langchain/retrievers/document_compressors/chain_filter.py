@@ -31,7 +31,7 @@ class LLMChainFilter(BaseDocumentCompressor):
     """Filter that drops documents that aren't relevant to the query."""
 
     llm_chain: LLMChain
-    """LLM wrapper to use for filtering documents. 
+    """LLM wrapper to use for filtering documents.
     The chain prompt is expected to have a BooleanOutputParser."""
 
     get_input: Callable[[str, Document], dict] = default_get_input

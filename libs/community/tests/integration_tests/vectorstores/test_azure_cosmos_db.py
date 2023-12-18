@@ -54,7 +54,7 @@ def azure_openai_embeddings() -> Any:
 This is how to run the integration tests:
 
 cd libs/langchain
-pytest tests/integration_tests/vectorstores/test_azure_cosmos_db.py 
+pytest tests/integration_tests/vectorstores/test_azure_cosmos_db.py
 """
 
 

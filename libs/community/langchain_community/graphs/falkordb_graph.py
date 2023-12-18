@@ -16,10 +16,10 @@ RETURN {label:label, keys:keys} AS output
 rel_properties_query = """
 MATCH ()-[r]->()
 WITH keys(r) as keys, type(r) AS types
-WITH CASE WHEN keys = [] THEN [NULL] ELSE keys END AS keys, types 
+WITH CASE WHEN keys = [] THEN [NULL] ELSE keys END AS keys, types
 UNWIND types AS type
 UNWIND keys AS key WITH type,
-collect(DISTINCT key) AS keys 
+collect(DISTINCT key) AS keys
 RETURN {types:type, keys:keys} AS output
 """
 

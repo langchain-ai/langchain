@@ -19,7 +19,7 @@ class AzureMLEndpointClient(object):
         """Initialize the class."""
         if not endpoint_api_key or not endpoint_url:
             raise ValueError(
-                """A key/token and REST endpoint should 
+                """A key/token and REST endpoint should
                 be provided to invoke the endpoint"""
             )
         self.endpoint_url = endpoint_url
@@ -53,24 +53,24 @@ class ContentFormatterBase:
     """
     Example:
         .. code-block:: python
-        
+
             class ContentFormatter(ContentFormatterBase):
                 content_type = "application/json"
                 accepts = "application/json"
-                
+
                 def format_request_payload(
-                    self, 
-                    prompt: str, 
+                    self,
+                    prompt: str,
                     model_kwargs: Dict
                 ) -> bytes:
                     input_str = json.dumps(
                         {
-                            "inputs": {"input_string": [prompt]}, 
+                            "inputs": {"input_string": [prompt]},
                             "parameters": model_kwargs,
                         }
                     )
                     return str.encode(input_str)
-                    
+
                 def format_response_payload(self, output: str) -> str:
                     response_json = json.loads(output)
                     return response_json[0]["0"]
@@ -139,8 +139,8 @@ class OSSContentFormatter(GPT2ContentFormatter):
     def __init__(self) -> None:
         super().__init__()
         warnings.warn(
-            """`OSSContentFormatter` will be deprecated in the future. 
-                      Please use `GPT2ContentFormatter` instead.  
+            """`OSSContentFormatter` will be deprecated in the future.
+                      Please use `GPT2ContentFormatter` instead.
                       """
         )
 
@@ -211,7 +211,7 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
     """  # noqa: E501
 
     endpoint_url: str = ""
-    """URL of pre-existing Endpoint. Should be passed to constructor or specified as 
+    """URL of pre-existing Endpoint. Should be passed to constructor or specified as
         env var `AZUREML_ENDPOINT_URL`."""
 
     endpoint_api_key: str = ""
@@ -219,7 +219,7 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         env var `AZUREML_ENDPOINT_API_KEY`."""
 
     deployment_name: str = ""
-    """Deployment Name for Endpoint. NOT REQUIRED to call endpoint. Should be passed 
+    """Deployment Name for Endpoint. NOT REQUIRED to call endpoint. Should be passed
         to constructor or specified as env var `AZUREML_DEPLOYMENT_NAME`."""
 
     http_client: Any = None  #: :meta private:

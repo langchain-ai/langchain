@@ -41,7 +41,7 @@ class KoboldApiLLM(LLM):
 
     use_authors_note: Optional[bool] = False
     """Whether to use the author's note from the KoboldAI GUI when generating text.
-    
+
     This has no effect unless use_story is also enabled.
     """
 
@@ -53,70 +53,70 @@ class KoboldApiLLM(LLM):
 
     max_context_length: Optional[int] = 1600
     """Maximum number of tokens to send to the model.
-    
+
     minimum: 1
     """
 
     max_length: Optional[int] = 80
     """Number of tokens to generate.
-    
+
     maximum: 512
     minimum: 1
     """
 
     rep_pen: Optional[float] = 1.12
     """Base repetition penalty value.
-    
+
     minimum: 1
     """
 
     rep_pen_range: Optional[int] = 1024
     """Repetition penalty range.
-    
+
     minimum: 0
     """
 
     rep_pen_slope: Optional[float] = 0.9
     """Repetition penalty slope.
-    
+
     minimum: 0
     """
 
     temperature: Optional[float] = 0.6
     """Temperature value.
-    
+
     exclusiveMinimum: 0
     """
 
     tfs: Optional[float] = 0.9
     """Tail free sampling value.
-    
+
     maximum: 1
     minimum: 0
     """
 
     top_a: Optional[float] = 0.9
     """Top-a sampling value.
-    
+
     minimum: 0
     """
 
     top_p: Optional[float] = 0.95
     """Top-p sampling value.
-    
+
     maximum: 1
     minimum: 0
     """
 
     top_k: Optional[int] = 0
     """Top-k sampling value.
-    
+
     minimum: 0
     """
 
     typical: Optional[float] = 0.5
     """Typical sampling value.
-    
+
     maximum: 1
     minimum: 0
     """

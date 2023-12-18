@@ -45,9 +45,9 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
 
     strict: bool = False
     """Whether to allow non-JSON-compliant strings.
-    
+
     See: https://docs.python.org/3/library/json.html#encoders-and-decoders
-    
+
     Useful when the parsed output may include unicode characters or new lines.
     """
 

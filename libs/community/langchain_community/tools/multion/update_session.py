@@ -24,7 +24,7 @@ class UpdateSessionSchema(BaseModel):
 
     sessionId: str = Field(
         ...,
-        description="""The sessionID, 
+        description="""The sessionID,
         received from one of the createSessions run before""",
     )
     query: str = Field(

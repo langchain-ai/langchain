@@ -7,10 +7,10 @@ from langchain.prompts import PromptTemplate
 rail_str = """
 <rail version="0.1">
 <output>
-    <string 
-        description="Profanity-free translation" 
-        format="is-profanity-free" 
-        name="translated_statement" 
+    <string
+        description="Profanity-free translation"
+        format="is-profanity-free"
+        name="translated_statement"
         on-fail-is-profanity-free="fix">
     </string>
 </output>

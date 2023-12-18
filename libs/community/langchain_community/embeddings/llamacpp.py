@@ -25,7 +25,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Token context window."""
 
     n_parts: int = Field(-1, alias="n_parts")
-    """Number of parts to split the model into. 
+    """Number of parts to split the model into.
     If -1, the number of parts is automatically determined."""
 
     seed: int = Field(-1, alias="seed")
@@ -44,7 +44,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Force system to keep model in RAM."""
 
     n_threads: Optional[int] = Field(None, alias="n_threads")
-    """Number of threads to use. If None, the number 
+    """Number of threads to use. If None, the number
     of threads is automatically determined."""
 
     n_batch: Optional[int] = Field(8, alias="n_batch")

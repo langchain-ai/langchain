@@ -28,10 +28,10 @@ To run against Elastic Cloud, set the following environment variables:
 
 Some of the tests require the following models to be deployed in the ML Node:
 - elser (can be downloaded and deployed through Kibana and trained models UI)
-- sentence-transformers__all-minilm-l6-v2 (can be deployed 
+- sentence-transformers__all-minilm-l6-v2 (can be deployed
   through API, loaded via eland)
 
-These tests that require the models to be deployed are skipped by default. 
+These tests that require the models to be deployed are skipped by default.
 Enable them by adding the model name to the modelsDeployed list below.
 """
 
@@ -400,7 +400,7 @@ class TestElasticsearch:
                         "script": {
                             "source": """
             double value = dotProduct(params.query_vector, 'vector');
-            return sigmoid(1, Math.E, -value); 
+            return sigmoid(1, Math.E, -value);
             """,
                             "params": {
                                 "query_vector": [

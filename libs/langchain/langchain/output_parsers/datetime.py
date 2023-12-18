@@ -39,7 +39,7 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
 
     def get_format_instructions(self) -> str:
         examples = comma_list(_generate_random_datetime_strings(self.format))
-        return f"""Write a datetime string that matches the 
+        return f"""Write a datetime string that matches the
             following pattern: "{self.format}". Examples: {examples}"""
 
     def parse(self, response: str) -> datetime:

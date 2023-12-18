@@ -134,7 +134,7 @@ Assistant:""",
 
 Human: Assistant: Hello""": """
 
-Human: 
+Human:
 
 Assistant: Hello""",
     """
@@ -159,17 +159,17 @@ Assistant: Hello there, your name is:
 
 Human.
 
-Human: Hello there, your name is: 
+Human: Hello there, your name is:
 
 Assistant.""": """
 
-Human: 
+Human:
 
 Assistant: Hello there, your name is:
 
 Human.
 
-Human: Hello there, your name is: 
+Human: Hello there, your name is:
 
 Assistant.
 
@@ -188,7 +188,7 @@ Assistant: Hi
 
 Human: Hi""": """
 
-Human: 
+Human:
 
 Assistant: Hi
 

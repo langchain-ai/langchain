@@ -28,7 +28,7 @@ class EdenAiExplicitImageTool(EdenaiTool):
     description = (
         "A wrapper around edenai Services Explicit image detection. "
         """Useful for when you have to extract Explicit Content from images.
-        it detects adult only content in images, 
+        it detects adult only content in images,
         that is generally inappropriate for people under
         the age of 18 and includes nudity, sexual activity,
         pornography, violence, gore content, etc."""

@@ -256,7 +256,7 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
         elif similarity is DistanceStrategy.DOT_PRODUCT:
             similarityAlgo = f"""
             double value = dotProduct(params.query_vector, '{vector_query_field}');
-            return sigmoid(1, Math.E, -value); 
+            return sigmoid(1, Math.E, -value);
             """
         else:
             raise ValueError(f"Similarity {similarity} not supported.")

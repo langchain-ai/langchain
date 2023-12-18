@@ -12,7 +12,7 @@ from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from sql_pgvector.prompt_templates import final_template, postgresql_template
 
 """
-IMPORTANT: For using this template, you will need to 
+IMPORTANT: For using this template, you will need to
 follow the setup steps in the readme file
 """
 

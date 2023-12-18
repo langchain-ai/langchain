@@ -44,7 +44,7 @@ for element in raw_pdf_elements:
 
 # Summarize
 
-prompt_text = """You are an assistant tasked with summarizing tables and text. \ 
+prompt_text = """You are an assistant tasked with summarizing tables and text. \
 Give a concise summary of the table or text. Table or text chunk: {element} """
 prompt = ChatPromptTemplate.from_template(prompt_text)
 model = ChatOpenAI(temperature=0, model="gpt-4")

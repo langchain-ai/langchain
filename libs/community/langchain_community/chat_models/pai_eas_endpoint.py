@@ -153,7 +153,7 @@ class PaiEasChatEndpoint(BaseChatModel):
             else:
                 supported = ",".join([role for role in ["user", "assistant", "system"]])
                 raise ValueError(
-                    f"""Received unsupported role. 
+                    f"""Received unsupported role.
                     Supported roles for the LLaMa Foundation Model: {supported}"""
                 )
         prompt["prompt"] = user_content[len(user_content) - 1]

@@ -67,7 +67,7 @@ class EdenAiSpeechToTextTool(EdenaiTool):
             if temp["status"] == "finished":
                 if temp["results"][self.providers[0]]["error"] is not None:
                     raise Exception(
-                        f"""EdenAI returned an unexpected response 
+                        f"""EdenAI returned an unexpected response
                         {temp['results'][self.providers[0]]['error']}"""
                     )
                 else:

@@ -11,7 +11,7 @@ class AIMessage(BaseMessage):
     """A Message from an AI."""
 
     example: bool = False
-    """Whether this Message is being passed in to the model as part of an example 
+    """Whether this Message is being passed in to the model as part of an example
         conversation.
     """
 

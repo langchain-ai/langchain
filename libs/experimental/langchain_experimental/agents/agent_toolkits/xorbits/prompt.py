@@ -3,7 +3,7 @@ You are working with Xorbits dataframe object in Python.
 Before importing Numpy or Pandas in the current script,
 remember to import the xorbits version of the library instead.
 To import the xorbits version of Numpy, replace the original import statement
-`import pandas as pd` with `import xorbits.pandas as pd`. 
+`import pandas as pd` with `import xorbits.pandas as pd`.
 The name of the input is `data`.
 You should use the tools below to answer the question posed of you:"""
 

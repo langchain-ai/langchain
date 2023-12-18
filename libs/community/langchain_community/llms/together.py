@@ -31,33 +31,33 @@ class Together(LLM):
     together_api_key: SecretStr
     """Together AI API key. Get it here: https://api.together.xyz/settings/api-keys"""
     model: str
-    """Model name. Available models listed here: 
+    """Model name. Available models listed here:
         https://docs.together.ai/docs/inference-models
     """
     temperature: Optional[float] = None
     """Model temperature."""
     top_p: Optional[float] = None
-    """Used to dynamically adjust the number of choices for each predicted token based 
-        on the cumulative probabilities. A value of 1 will always yield the same 
-        output. A temperature less than 1 favors more correctness and is appropriate 
-        for question answering or summarization. A value greater than 1 introduces more 
+    """Used to dynamically adjust the number of choices for each predicted token based
+        on the cumulative probabilities. A value of 1 will always yield the same
+        output. A temperature less than 1 favors more correctness and is appropriate
+        for question answering or summarization. A value greater than 1 introduces more
         randomness in the output.
     """
     top_k: Optional[int] = None
-    """Used to limit the number of choices for the next predicted word or token. It 
-        specifies the maximum number of tokens to consider at each step, based on their 
-        probability of occurrence. This technique helps to speed up the generation 
-        process and can improve the quality of the generated text by focusing on the 
+    """Used to limit the number of choices for the next predicted word or token. It
+        specifies the maximum number of tokens to consider at each step, based on their
+        probability of occurrence. This technique helps to speed up the generation
+        process and can improve the quality of the generated text by focusing on the
         most likely options.
     """
     max_tokens: Optional[int] = None
     """The maximum number of tokens to generate."""
     repetition_penalty: Optional[float] = None
-    """A number that controls the diversity of generated text by reducing the 
+    """A number that controls the diversity of generated text by reducing the
         likelihood of repeated sequences. Higher values decrease repetition.
     """
     logprobs: Optional[int] = None
-    """An integer that specifies how many top token log probabilities are included in 
+    """An integer that specifies how many top token log probabilities are included in
         the response for each token generation step.
     """
 

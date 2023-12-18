@@ -7,7 +7,7 @@ WRITER_SYSTEM_PROMPT = "You are an AI critical thinker research assistant. Your 
 
 
 # Report prompts from https://github.com/assafelovic/gpt-researcher/blob/master/gpt_researcher/master/prompts.py
-RESEARCH_REPORT_TEMPLATE = """Information: 
+RESEARCH_REPORT_TEMPLATE = """Information:
 --------
 {research_summary}
 --------
@@ -24,7 +24,7 @@ You must write the report in apa format.
 Please do your best, this is very important to my career."""  # noqa: E501
 
 
-RESOURCE_REPORT_TEMPLATE = """Information: 
+RESOURCE_REPORT_TEMPLATE = """Information:
 --------
 {research_summary}
 --------
@@ -38,7 +38,7 @@ The report should have a minimum length of 1,200 words.
 
 Please do your best, this is very important to my career."""  # noqa: E501
 
-OUTLINE_REPORT_TEMPLATE = """Information: 
+OUTLINE_REPORT_TEMPLATE = """Information:
 --------
 {research_summary}
 --------

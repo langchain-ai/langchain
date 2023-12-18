@@ -84,7 +84,7 @@ When you pick this mug up with your thumb on top and middle finger through the
 loop, your ring finger slides into the mug under the loop where it is too hot
 to touch and burns you.
 
-  
+
 
 If you try and pick it up with your thumb and index finger you can’t hold the
 mug."""

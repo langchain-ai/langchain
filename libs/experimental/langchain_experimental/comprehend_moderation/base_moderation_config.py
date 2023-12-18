@@ -9,7 +9,7 @@ class ModerationPiiConfig(BaseModel):
 
     labels: List[str] = []
     """
-    List of PII Universal Labels. 
+    List of PII Universal Labels.
     Defaults to `list[]`
     """
 

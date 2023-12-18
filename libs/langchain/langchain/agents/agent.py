@@ -831,7 +831,7 @@ class AgentExecutor(Chain):
     max_iterations: Optional[int] = 15
     """The maximum number of steps to take before ending the execution
     loop.
-    
+
     Setting to 'None' could lead to an infinite loop."""
     max_execution_time: Optional[float] = None
     """The maximum amount of wall clock time to spend in the execution
@@ -843,7 +843,7 @@ class AgentExecutor(Chain):
 
     `"force"` returns a string saying that it stopped because it met a
         time or iteration limit.
-    
+
     `"generate"` calls the agent's LLM Chain one final time to generate
         a final answer based on the previous steps.
     """

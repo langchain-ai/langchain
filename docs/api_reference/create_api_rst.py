@@ -258,9 +258,9 @@ Classes
 
                 full_doc += f"""\
     :template: {template}
-    
+
     {class_["qualified_name"]}
-    
+
 """
 
         if functions:

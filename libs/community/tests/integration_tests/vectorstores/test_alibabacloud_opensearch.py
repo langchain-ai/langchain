@@ -33,17 +33,17 @@ class FakeEmbeddingsWithOsDimension(FakeEmbeddings):
 settings = AlibabaCloudOpenSearchSettings(
     endpoint="The endpoint of opensearch instance, If you want to access through
      the public network, you need to enable public network access in the network
-     information of the instance details. If you want to access within 
+     information of the instance details. If you want to access within
      the Alibaba Cloud VPC, you can directly use the API domain name.",
     instance_id="The identify of opensearch instance",
     protocol (str): "Communication Protocol between SDK and Server, default is http.",
     username="The username specified when purchasing the instance.",
     password="The password specified when purchasing the instance.",
-    namespace (str) : "The instance data will be partitioned based on the 
-     namespace field, If the namespace is enabled, you need to specify the 
-     namespace field name during  initialization. Otherwise, the queries cannot 
+    namespace (str) : "The instance data will be partitioned based on the
+     namespace field, If the namespace is enabled, you need to specify the
+     namespace field name during  initialization. Otherwise, the queries cannot
      be executed correctly, default is empty.",
-    table_name="The table name is specified when adding a table after completing 
+    table_name="The table name is specified when adding a table after completing
      the instance configuration.",
     field_name_mapping={
         # insert data into opensearch based on the mapping name of the field.

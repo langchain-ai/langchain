@@ -6,7 +6,7 @@ FULL_PROMPT = """# Context
 {hint}
 
 # Rules
-- Ignore all data which is not part of the plate. 
+- Ignore all data which is not part of the plate.
 - Row identifiers start with a single letter of the alphabet.
 - The header row of the plate has monotonically increasing integers {col_range_str}.
 - The header row should NOT be considered the starting row of the plate.

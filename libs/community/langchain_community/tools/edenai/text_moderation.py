@@ -26,19 +26,19 @@ class EdenAiTextModerationTool(EdenaiTool):
 
     description = (
         "A wrapper around edenai Services explicit content detection for text. "
-        """Useful for when you have to scan text for offensive, 
+        """Useful for when you have to scan text for offensive,
         sexually explicit or suggestive content,
         it checks also if there is any content of self-harm,
         violence, racist or hate speech."""
-        """the structure of the output is : 
+        """the structure of the output is :
         'the type of the explicit content : the likelihood of it being explicit'
-        the likelihood is a number 
+        the likelihood is a number
         between 1 and 5, 1 being the lowest and 5 the highest.
         something is explicit if the likelihood is equal or higher than 3.
-        for example : 
+        for example :
         nsfw_likelihood: 1
         this is not explicit.
-        for example : 
+        for example :
         nsfw_likelihood: 3
         this is explicit.
         """

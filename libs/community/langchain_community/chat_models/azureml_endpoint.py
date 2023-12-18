@@ -56,7 +56,7 @@ class LlamaContentFormatter(ContentFormatterBase):
                 [role for role in LlamaContentFormatter.SUPPORTED_ROLES]
             )
             raise ValueError(
-                f"""Received unsupported role. 
+                f"""Received unsupported role.
                 Supported roles for the LLaMa Foundation Model: {supported}"""
             )
 
@@ -95,7 +95,7 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
     """
 
     endpoint_url: str = ""
-    """URL of pre-existing Endpoint. Should be passed to constructor or specified as 
+    """URL of pre-existing Endpoint. Should be passed to constructor or specified as
         env var `AZUREML_ENDPOINT_URL`."""
 
     endpoint_api_key: SecretStr = convert_to_secret_str("")

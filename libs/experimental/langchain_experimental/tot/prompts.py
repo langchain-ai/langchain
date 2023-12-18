@@ -17,18 +17,18 @@ def get_cot_prompt() -> PromptTemplate:
             You are an intelligent agent that is generating one thought at a time in
             a tree of thoughts setting.
 
-            PROBLEM 
-            
+            PROBLEM
+
             {{problem_description}}
-            
+
             {% if thoughts %}
             THOUGHTS
-            
+
             {% for thought in thoughts %}
             {{ thought }}
             {% endfor %}
             {% endif %}
-            
+
             Let's think step by step.
             """
         ).strip(),
@@ -61,10 +61,10 @@ def get_propose_prompt() -> PromptTemplate:
             """
                 You are an intelligent agent that is generating thoughts in a tree of
                 thoughts setting.
-                
+
                 The output should be a markdown code snippet formatted as a JSON list of
                 strings, including the leading and trailing "```json" and "```":
-                
+
                 ```json
                 [
                 "<thought-1>",
@@ -72,21 +72,21 @@ def get_propose_prompt() -> PromptTemplate:
                 "<thought-3>"
                 ]
                 ```
-                
+
                 PROBLEM
-                
+
                 {{ problem_description }}
-                
+
                 {% if thoughts %}
                 VALID THOUGHTS
-                
+
                 {% for thought in thoughts %}
                 {{ thought }}
                 {% endfor %}
-                
+
                 Possible next {{ n }} valid thoughts based on the last valid thought:
                 {% else %}
-                
+
                 Possible next {{ n }} valid thoughts based on the PROBLEM:
                 {%- endif -%}
                 """
@@ -118,12 +118,12 @@ CHECKER_PROMPT = PromptTemplate(
         """
         You are an intelligent agent, validating thoughts of another intelligent agent.
 
-        PROBLEM 
-        
+        PROBLEM
+
         {problem_description}
 
         THOUGHTS
-        
+
         {thoughts}
 
         Evaluate the thoughts and respond with one word.

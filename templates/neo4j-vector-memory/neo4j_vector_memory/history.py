@@ -47,7 +47,7 @@ def save_history(input: Dict[str, Any]) -> str:
             """
 MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session{id: $session_id}),
                     (s)-[l:LAST_MESSAGE]->(last_message)
-CREATE (last_message)-[:NEXT]->(q:Question 
+CREATE (last_message)-[:NEXT]->(q:Question
                 {text:$question, rephrased:$rephrased_question, date:datetime()}),
                 (q)-[:HAS_ANSWER]->(:Answer {text:$output}),
                 (s)-[:LAST_MESSAGE]->(q)
@@ -64,7 +64,7 @@ MERGE (q)-[:RETRIEVED]->(n)
         graph.query(
             """MERGE (u:User {id: $user_id})
 CREATE (u)-[:HAS_SESSION]->(s1:Session {id:$session_id}),
-    (s1)-[:LAST_MESSAGE]->(q:Question 
+    (s1)-[:LAST_MESSAGE]->(q:Question
             {text:$question, rephrased:$rephrased_question, date:datetime()}),
         (q)-[:HAS_ANSWER]->(:Answer {text:$output})
 WITH q

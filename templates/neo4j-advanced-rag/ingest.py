@@ -52,7 +52,7 @@ for i, parent in enumerate(parent_documents):
     WITH p
     CALL db.create.setVectorProperty(p, 'embedding', $parent_embedding)
     YIELD node
-    WITH p 
+    WITH p
     UNWIND $children AS child
     MERGE (c:Child {id: child.id})
     SET c.text = child.text

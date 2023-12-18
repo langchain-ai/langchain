@@ -26,8 +26,8 @@ class EdenAiParsingInvoiceTool(EdenaiTool):
 
     description = (
         "A wrapper around edenai Services invoice parsing. "
-        """Useful for when you have to extract information from 
-        an image it enables to take invoices 
+        """Useful for when you have to extract information from
+        an image it enables to take invoices
         in a variety of formats and returns the data in contains
         (items, prices, addresses, vendor name, etc.)
         in a structured format to automate the invoice processing """

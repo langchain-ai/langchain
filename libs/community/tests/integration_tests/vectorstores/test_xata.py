@@ -1,7 +1,7 @@
 """Test Xata vector store functionality.
 
 Before running this test, please create a Xata database by following
-the instructions from: 
+the instructions from:
 https://python.langchain.com/docs/integrations/vectorstores/xata
 """
 import os

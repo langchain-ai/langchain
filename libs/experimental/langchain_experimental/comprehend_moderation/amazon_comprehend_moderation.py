@@ -24,7 +24,7 @@ class AmazonComprehendModerationChain(Chain):
 
     moderation_config: BaseModerationConfig = BaseModerationConfig()
     """
-    Configuration settings for moderation, 
+    Configuration settings for moderation,
     defaults to BaseModerationConfig with default values
     """
 
@@ -45,7 +45,7 @@ class AmazonComprehendModerationChain(Chain):
     """
 
     moderation_callback: Optional[BaseModerationCallbackHandler] = None
-    """Callback handler for moderation, this is different 
+    """Callback handler for moderation, this is different
     from regular callbacks which can be used in addition to this."""
 
     unique_id: Optional[str] = None

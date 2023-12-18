@@ -24,11 +24,11 @@ def test_provider_not_available(mock_post: MagicMock) -> None:
     mock_response.json.return_value = [
         {
             "error": {
-                "message": """Amazon has returned an error: 
-                An error occurred (TextSizeLimitExceededException) 
-                when calling the DetectTargetedSentiment 
-                operation: Input text size exceeds limit. 
-                Max length of request text allowed is 5000 bytes 
+                "message": """Amazon has returned an error:
+                An error occurred (TextSizeLimitExceededException)
+                when calling the DetectTargetedSentiment
+                operation: Input text size exceeds limit.
+                Max length of request text allowed is 5000 bytes
                 while in this request the text size is 47380 bytes""",
                 "type": "ProviderInvalidInputTextLengthError",
             },

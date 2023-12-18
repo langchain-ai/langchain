@@ -27,7 +27,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.bedrock_embeddings import BedrockEmbeddings
-            
+
             region_name ="us-east-1"
             credentials_profile_name = "default"
             model_id = "amazon.titan-embed-text-v1"

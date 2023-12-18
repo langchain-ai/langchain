@@ -8,7 +8,7 @@ class ChatResult(BaseModel):
     """Class that contains all results for a single chat model call."""
 
     generations: List[ChatGeneration]
-    """List of the chat generations. This is a List because an input can have multiple 
+    """List of the chat generations. This is a List because an input can have multiple
         candidate generations.
     """
     llm_output: Optional[dict] = None

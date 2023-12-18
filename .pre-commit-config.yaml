@@ -1,0 +1,12 @@
+# See https://pre-commit.com for more information
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+    -   id: trailing-whitespace
+        # Only include Python files
+        files: \.py$
+    -   id: end-of-file-fixer
+        # Only include Python files
+        files: \.py$
+    -   id: check-yaml

@@ -34,7 +34,7 @@ class Blob(BaseModel):
     """MimeType not to be confused with a file extension."""
     encoding: str = "utf-8"
     """Encoding to use if decoding the bytes into a string.
-    
+
     Use utf-8 as default encoding, if decoding to string.
     """
     path: Optional[PathLike] = None

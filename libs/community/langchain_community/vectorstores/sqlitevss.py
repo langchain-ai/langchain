@@ -83,11 +83,11 @@ class SQLiteVSS(VectorStore):
         )
         self._connection.execute(
             f"""
-                CREATE TRIGGER IF NOT EXISTS embed_text 
+                CREATE TRIGGER IF NOT EXISTS embed_text
                 AFTER INSERT ON {self._table}
                 BEGIN
                     INSERT INTO vss_{self._table}(rowid, text_embedding)
-                    VALUES (new.rowid, new.text_embedding) 
+                    VALUES (new.rowid, new.text_embedding)
                     ;
                 END;
             """
@@ -135,12 +135,12 @@ class SQLiteVSS(VectorStore):
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         sql_query = f"""
-            SELECT 
+            SELECT
                 text,
                 metadata,
                 distance
             FROM {self._table} e
-            INNER JOIN vss_{self._table} v on v.rowid = e.rowid  
+            INNER JOIN vss_{self._table} v on v.rowid = e.rowid
             WHERE vss_search(
               v.text_embedding,
               vss_search_params('{json.dumps(embedding)}', {k})

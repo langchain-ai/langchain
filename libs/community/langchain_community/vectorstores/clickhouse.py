@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             n = ",".join([f"'{self.escape_str(str(_n))}'" for _n in n])
             _data.append(f"({n})")
         i_str = f"""
-                INSERT INTO TABLE 
+                INSERT INTO TABLE
                     {self.config.database}.{self.config.table}({ks})
                 VALUES
                 {','.join(_data)}
@@ -356,11 +356,11 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             for k in self.config.index_query_params:
                 settings_strs.append(f"SETTING {k}={self.config.index_query_params[k]}")
         q_str = f"""
-            SELECT {self.config.column_map['document']}, 
+            SELECT {self.config.column_map['document']},
                 {self.config.column_map['metadata']}, dist
             FROM {self.config.database}.{self.config.table}
             {where_str}
-            ORDER BY L2Distance({self.config.column_map['embedding']}, [{q_emb_str}]) 
+            ORDER BY L2Distance({self.config.column_map['embedding']}, [{q_emb_str}])
                 AS dist {self.dist_order}
             LIMIT {topk} {' '.join(settings_strs)}
             """

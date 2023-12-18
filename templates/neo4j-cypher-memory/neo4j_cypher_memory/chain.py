@@ -60,15 +60,15 @@ def save_history(input):
     # store history to database
     graph.query(
         """MERGE (u:User {id: $user_id})
-WITH u                
+WITH u
 OPTIONAL MATCH (u)-[:HAS_SESSION]->(s:Session{id: $session_id}),
                 (s)-[l:LAST_MESSAGE]->(last_message)
 FOREACH (_ IN CASE WHEN last_message IS NULL THEN [1] ELSE [] END |
 CREATE (u)-[:HAS_SESSION]->(s1:Session {id:$session_id}),
     (s1)-[:LAST_MESSAGE]->(q:Question {text:$question, cypher:$query, date:datetime()}),
-        (q)-[:HAS_ANSWER]->(:Answer {text:$output}))                                
+        (q)-[:HAS_ANSWER]->(:Answer {text:$output}))
 FOREACH (_ IN CASE WHEN last_message IS NOT NULL THEN [1] ELSE [] END |
-CREATE (last_message)-[:NEXT]->(q:Question 
+CREATE (last_message)-[:NEXT]->(q:Question
                 {text:$question, cypher:$query, date:datetime()}),
                 (q)-[:HAS_ANSWER]->(:Answer {text:$output}),
                 (s)-[:LAST_MESSAGE]->(q)

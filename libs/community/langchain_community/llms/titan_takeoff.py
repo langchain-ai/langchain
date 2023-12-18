@@ -13,7 +13,7 @@ class TitanTakeoff(LLM):
     """Wrapper around Titan Takeoff APIs."""
 
     base_url: str = "http://localhost:8000"
-    """Specifies the baseURL to use for the Titan Takeoff API. 
+    """Specifies the baseURL to use for the Titan Takeoff API.
     Default = http://localhost:8000.
     """
 
@@ -29,12 +29,12 @@ class TitanTakeoff(LLM):
     """
 
     sampling_temperature: float = 1.0
-    """Sample with randomness. Bigger temperatures are associated with 
+    """Sample with randomness. Bigger temperatures are associated with
     more randomness and 'creativity'. Default = 1.0.
     """
 
     repetition_penalty: float = 1.0
-    """Penalise the generation of tokens that have been generated before. 
+    """Penalise the generation of tokens that have been generated before.
     Set to > 1 to penalize. Default = 1 (no penalty).
     """
 

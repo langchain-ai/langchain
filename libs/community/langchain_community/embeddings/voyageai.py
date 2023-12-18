@@ -84,7 +84,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout in seconds for the API request."""
     show_progress_bar: bool = False
-    """Whether to show a progress bar when embedding. Must have tqdm installed if set 
+    """Whether to show a progress bar when embedding. Must have tqdm installed if set
         to True."""
 
     class Config:

@@ -15,7 +15,7 @@ classify it as either being about `recommendation`, `library` or `other`.
 '{message}'
 
 Respond with just one word.
-For example, if the message is about a book recommendation,respond with 
+For example, if the message is about a book recommendation,respond with
 `recommendation`.
 """
     )

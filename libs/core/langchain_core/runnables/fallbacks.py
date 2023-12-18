@@ -86,7 +86,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """A sequence of fallbacks to try."""
     exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,)
     """The exceptions on which fallbacks should be tried.
-    
+
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
 

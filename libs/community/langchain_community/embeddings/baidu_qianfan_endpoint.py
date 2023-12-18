@@ -25,12 +25,12 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
     model: str = "Embedding-V1"
     """Model name
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
-    
-    for now, we support Embedding-V1 and 
+
+    for now, we support Embedding-V1 and
     - Embedding-V1 （默认模型）
     - bge-large-en
     - bge-large-zh
-    
+
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set
     """

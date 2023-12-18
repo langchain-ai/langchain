@@ -46,7 +46,7 @@ class CTranslate2(BaseLLM):
 
     ctranslate2_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """
-    Holds any model parameters valid for `ctranslate2.Generator` call not 
+    Holds any model parameters valid for `ctranslate2.Generator` call not
     explicitly specified.
     """
 

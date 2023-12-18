@@ -51,9 +51,9 @@ class QianfanLLMEndpoint(LLM):
     """Whether to stream the results or not."""
 
     model: str = "ERNIE-Bot-turbo"
-    """Model name. 
+    """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
-    
+
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set
     """

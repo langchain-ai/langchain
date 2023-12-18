@@ -29,12 +29,12 @@ class TitanTakeoffPro(LLM):
     """
 
     sampling_temperature: Optional[float] = None
-    """Sample with randomness. Bigger temperatures are associated with 
+    """Sample with randomness. Bigger temperatures are associated with
     more randomness and 'creativity'.
     """
 
     repetition_penalty: Optional[float] = None
-    """Penalise the generation of tokens that have been generated before. 
+    """Penalise the generation of tokens that have been generated before.
     Set to > 1 to penalize.
     """
 

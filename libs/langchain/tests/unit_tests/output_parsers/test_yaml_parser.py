@@ -36,7 +36,7 @@ action_input: The yamlOutputParser class is powerful
 additional_fields: null
 for_new_lines: |
   not_escape_newline:
-   escape_newline: 
+   escape_newline:
 
 ```"""
 

@@ -218,7 +218,7 @@ Things you should do:
 - If a request is unrelated to generating AQL Query, say that you cannot help the user.
 
 Things you should not do:
-- Do not use any properties/relationships that can't be inferred from the `ArangoDB Schema` or the `AQL Query Examples`. 
+- Do not use any properties/relationships that can't be inferred from the `ArangoDB Schema` or the `AQL Query Examples`.
 - Do not include any text except the generated AQL Query.
 - Do not provide explanations or apologies in your responses.
 - Do not generate an AQL Query that removes or deletes any data.
@@ -234,7 +234,7 @@ AQL Query Examples (Optional):
 User Input:
 {user_input}
 
-AQL Query: 
+AQL Query:
 """
 
 AQL_GENERATION_PROMPT = PromptTemplate(
@@ -244,11 +244,11 @@ AQL_GENERATION_PROMPT = PromptTemplate(
 
 AQL_FIX_TEMPLATE = """Task: Address the ArangoDB Query Language (AQL) error message of an ArangoDB Query Language query.
 
-You are an ArangoDB Query Language (AQL) expert responsible for correcting the provided `AQL Query` based on the provided `AQL Error`. 
+You are an ArangoDB Query Language (AQL) expert responsible for correcting the provided `AQL Query` based on the provided `AQL Error`.
 
 The `AQL Error` explains why the `AQL Query` could not be executed in the database.
 The `AQL Error` may also contain the position of the error relative to the total number of lines of the `AQL Query`.
-For example, 'error X at position 2:5' denotes that the error X occurs on line 2, column 5 of the `AQL Query`.  
+For example, 'error X at position 2:5' denotes that the error X occurs on line 2, column 5 of the `AQL Query`.
 
 You are also given the `ArangoDB Schema`. It is a JSON Object containing:
 1. `Graph Schema`: Lists all Graphs within the ArangoDB Database Instance, along with their Edge Relationships.
@@ -334,8 +334,8 @@ NEPTUNE_OPENCYPHER_GENERATION_PROMPT = PromptTemplate(
 
 NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE = """
 Write an openCypher query to answer the following question. Do not explain the answer. Only return the query.{extra_instructions}
-Question:  "{question}". 
-Here is the property graph schema: 
+Question:  "{question}".
+Here is the property graph schema:
 {schema}
 \n"""
 

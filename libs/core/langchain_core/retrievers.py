@@ -58,14 +58,14 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
     """Optional list of tags associated with the retriever. Defaults to None
     These tags will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
     metadata: Optional[Dict[str, Any]] = None
     """Optional metadata associated with the retriever. Defaults to None
     This metadata will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
 

@@ -29,7 +29,7 @@ for parent in parent_documents:
     graph.query(
         """
     CREATE (p:Parent {text: $parent})
-    WITH p 
+    WITH p
     UNWIND $children AS child
     CREATE (c:Child {text: child})
     CREATE (c)-[:HAS_PARENT]->(p)

@@ -66,14 +66,14 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
             import deepeval  # ignore: F401,I001
         except ImportError:
             raise ImportError(
-                """To use the deepeval callback manager you need to have the 
-                `deepeval` Python package installed. Please install it with 
+                """To use the deepeval callback manager you need to have the
+                `deepeval` Python package installed. Please install it with
                 `pip install deepeval`"""
             )
 
         if os.path.exists(".deepeval"):
             warnings.warn(
-                """You are currently not logging anything to the dashboard, we 
+                """You are currently not logging anything to the dashboard, we
                 recommend using `deepeval login`."""
             )
 
@@ -125,7 +125,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
                     print(f"Toxic Score: {score}")
                 else:
                     raise ValueError(
-                        f"""Metric {metric.__name__} is not supported by deepeval 
+                        f"""Metric {metric.__name__} is not supported by deepeval
                         callbacks."""
                     )
 

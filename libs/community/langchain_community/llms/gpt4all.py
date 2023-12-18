@@ -33,7 +33,7 @@ class GPT4All(LLM):
     """Token context window."""
 
     n_parts: int = Field(-1, alias="n_parts")
-    """Number of parts to split the model into. 
+    """Number of parts to split the model into.
     If -1, the number of parts is automatically determined."""
 
     seed: int = Field(0, alias="seed")

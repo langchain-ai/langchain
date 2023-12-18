@@ -232,8 +232,8 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
         except ImportError:
             logger.warning(
-                """[LLMonitor] To use the LLMonitor callback handler you need to 
-                have the `llmonitor` Python package installed. Please install it 
+                """[LLMonitor] To use the LLMonitor callback handler you need to
+                have the `llmonitor` Python package installed. Please install it
                 with `pip install llmonitor`"""
             )
             self.__has_valid_config = False
@@ -241,9 +241,9 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
         if parse(self.__llmonitor_version) < parse("0.0.32"):
             logger.warning(
-                f"""[LLMonitor] The installed `llmonitor` version is 
-                {self.__llmonitor_version} 
-                but `LLMonitorCallbackHandler` requires at least version 0.0.32 
+                f"""[LLMonitor] The installed `llmonitor` version is
+                {self.__llmonitor_version}
+                but `LLMonitorCallbackHandler` requires at least version 0.0.32
                 upgrade `llmonitor` with `pip install --upgrade llmonitor`"""
             )
             self.__has_valid_config = False
@@ -256,7 +256,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
         _app_id = app_id or os.getenv("LLMONITOR_APP_ID")
         if _app_id is None:
             logger.warning(
-                """[LLMonitor] app_id must be provided either as an argument or 
+                """[LLMonitor] app_id must be provided either as an argument or
                 as an environment variable"""
             )
             self.__has_valid_config = False
@@ -272,7 +272,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
                 raise ConnectionError()
         except Exception:
             logger.warning(
-                f"""[LLMonitor] Could not connect to the LLMonitor API at 
+                f"""[LLMonitor] Could not connect to the LLMonitor API at
                 {self.__api_url}"""
             )
 

@@ -19,11 +19,11 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     """Your Azure endpoint, including the resource.
 
         Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
-        
+
         Example: `https://example-resource.azure.openai.com/`
     """
     deployment: Optional[str] = Field(default=None, alias="azure_deployment")
-    """A model deployment. 
+    """A model deployment.
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
@@ -35,7 +35,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
 
-        For more: 
+        For more:
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
     """  # noqa: E501
     azure_ad_token_provider: Union[Callable[[], str], None] = None

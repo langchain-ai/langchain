@@ -522,7 +522,7 @@ class GitHubAPIWrapper(BaseModel):
             str: A success or failure message
         """
         if self.github_base_branch == self.active_branch:
-            return """Cannot make a pull request because 
+            return """Cannot make a pull request because
             commits are already in the main or master branch."""
         else:
             try:

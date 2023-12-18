@@ -173,7 +173,7 @@ class StarRocks(VectorStore):
         dim = len(embedding.embed_query("test"))
 
         self.schema = f"""\
-CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(    
+CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
     {self.config.column_map['id']} string,
     {self.config.column_map['document']} string,
     {self.config.column_map['embedding']} array<float>,
@@ -359,8 +359,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             where_str = ""
 
         q_str = f"""
-            SELECT {self.config.column_map['document']}, 
-                {self.config.column_map['metadata']}, 
+            SELECT {self.config.column_map['document']},
+                {self.config.column_map['metadata']},
                 cosine_similarity_norm(array<float>[{q_emb_str}],
                   {self.config.column_map['embedding']}) as dist
             FROM {self.config.database}.{self.config.table}

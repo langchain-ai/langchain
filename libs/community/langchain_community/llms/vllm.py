@@ -19,7 +19,7 @@ class VLLM(BaseLLM):
     """The number of GPUs to use for distributed execution with tensor parallelism."""
 
     trust_remote_code: Optional[bool] = False
-    """Trust remote code (e.g., from HuggingFace) when downloading the model 
+    """Trust remote code (e.g., from HuggingFace) when downloading the model
     and tokenizer."""
 
     n: int = 1
@@ -29,11 +29,11 @@ class VLLM(BaseLLM):
     """Number of output sequences that are generated from the prompt."""
 
     presence_penalty: float = 0.0
-    """Float that penalizes new tokens based on whether they appear in the 
+    """Float that penalizes new tokens based on whether they appear in the
     generated text so far"""
 
     frequency_penalty: float = 0.0
-    """Float that penalizes new tokens based on their frequency in the 
+    """Float that penalizes new tokens based on their frequency in the
     generated text so far"""
 
     temperature: float = 1.0
@@ -52,7 +52,7 @@ class VLLM(BaseLLM):
     """List of strings that stop the generation when they are generated."""
 
     ignore_eos: bool = False
-    """Whether to ignore the EOS token and continue generating tokens after 
+    """Whether to ignore the EOS token and continue generating tokens after
     the EOS token is generated."""
 
     max_new_tokens: int = 512
@@ -65,7 +65,7 @@ class VLLM(BaseLLM):
     """The data type for the model weights and activations."""
 
     download_dir: Optional[str] = None
-    """Directory to download and load the weights. (Default to the default 
+    """Directory to download and load the weights. (Default to the default
     cache dir of huggingface)"""
 
     vllm_kwargs: Dict[str, Any] = Field(default_factory=dict)

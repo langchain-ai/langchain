@@ -7,7 +7,7 @@ class HumanMessage(BaseMessage):
     """A Message from a human."""
 
     example: bool = False
-    """Whether this Message is being passed in to the model as part of an example 
+    """Whether this Message is being passed in to the model as part of an example
         conversation.
     """
 

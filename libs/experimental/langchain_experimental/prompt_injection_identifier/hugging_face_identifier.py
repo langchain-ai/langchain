@@ -33,10 +33,10 @@ class HuggingFaceInjectionIdentifier(BaseTool):
         "Input should be any message from the user."
     )
     model: Any = Field(default_factory=_model_default_factory)
-    """Model to use for prompt injection detection. 
-    
+    """Model to use for prompt injection detection.
+
     Can be specified as transformers Pipeline or string. String should correspond to the
-        model name of a text-classification transformers model. Defaults to 
+        model name of a text-classification transformers model. Defaults to
         ``deepset/deberta-v3-base-injection`` model.
     """
 

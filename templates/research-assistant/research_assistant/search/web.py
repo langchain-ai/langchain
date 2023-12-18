@@ -96,14 +96,14 @@ The agent is determined by the field of the topic and the specific name of the a
 
 examples:
 task: "should I invest in apple stocks?"
-response: 
+response:
 {
     "agent": "💰 Finance Agent",
     "agent_role_prompt: "You are a seasoned finance analyst AI assistant. Your primary goal is to compose comprehensive, astute, impartial, and methodically arranged financial reports based on provided data and trends."
 }
 task: "could reselling sneakers become profitable?"
-response: 
-{ 
+response:
+{
     "agent":  "📈 Business Analyst Agent",
     "agent_role_prompt": "You are an experienced AI business analyst assistant. Your main objective is to produce comprehensive, insightful, impartial, and systematically structured business reports based on provided business data, market trends, and strategic analysis."
 }
@@ -118,14 +118,14 @@ CHOOSE_AGENT_PROMPT = ChatPromptTemplate.from_messages(
     [SystemMessage(content=AUTO_AGENT_INSTRUCTIONS), ("user", "task: {task}")]
 )
 
-SUMMARY_TEMPLATE = """{text} 
+SUMMARY_TEMPLATE = """{text}
 
 -----------
 
-Using the above text, answer in short the following question: 
+Using the above text, answer in short the following question:
 
 > {question}
- 
+
 -----------
 if the question cannot be answered using the text, imply summarize the text. Include all factual information, numbers, stats etc if available."""  # noqa: E501
 SUMMARY_PROMPT = ChatPromptTemplate.from_template(SUMMARY_TEMPLATE)

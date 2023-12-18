@@ -85,7 +85,7 @@ class APIPropertyBase(BaseModel):
 
     type: SCHEMA_TYPE = Field(alias="type")
     """The type of the property.
-    
+
     Either a primitive type, a component/parameter type,
     or an array or 'object' (dict) of the above."""
 

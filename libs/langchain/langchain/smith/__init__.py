@@ -54,19 +54,19 @@ or LangSmith's `RunEvaluator` classes.
     from langchain.evaluation import StringEvaluator
 
     class MyStringEvaluator(StringEvaluator):
-        
+
         @property
         def requires_input(self) -> bool:
             return False
-        
+
         @property
         def requires_reference(self) -> bool:
             return True
-        
+
         @property
         def evaluation_name(self) -> str:
             return "exact_match"
-        
+
         def _evaluate_strings(self, prediction, reference=None, input=None, **kwargs) -> dict:
             return {"score": prediction == reference}
 
@@ -80,7 +80,7 @@ or LangSmith's `RunEvaluator` classes.
         "<my_dataset_name>",
         construct_chain,
         evaluation=evaluation_config,
-    )    
+    )
 
 **Primary Functions**
 

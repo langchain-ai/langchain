@@ -93,7 +93,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
                 self._query(
                     f"""
                         SELECT 1
-                        FROM {self.location} 
+                        FROM {self.location}
                         WHERE _id=:session_id
                         LIMIT 1
                     """,
@@ -118,7 +118,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
             lambda message_id: len(
                 self._query(
                     f"""
-                        SELECT * 
+                        SELECT *
                         FROM UNNEST((
                             SELECT {self.messages_key}
                             FROM {self.location}

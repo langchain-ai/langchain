@@ -56,7 +56,7 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
     name: str = "requests_post"
     description: str = """Use this when you want to POST to a website.
     Input should be a json string with two keys: "url" and "data".
-    The value of "url" should be a string, and the value of "data" should be a dictionary of 
+    The value of "url" should be a string, and the value of "data" should be a dictionary of
     key-value pairs you want to POST to the url.
     Be careful to always use double quotes for strings in the json string
     The output will be the text response of the POST request.
@@ -93,7 +93,7 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
     name: str = "requests_patch"
     description: str = """Use this when you want to PATCH to a website.
     Input should be a json string with two keys: "url" and "data".
-    The value of "url" should be a string, and the value of "data" should be a dictionary of 
+    The value of "url" should be a string, and the value of "data" should be a dictionary of
     key-value pairs you want to PATCH to the url.
     Be careful to always use double quotes for strings in the json string
     The output will be the text response of the PATCH request.
@@ -130,7 +130,7 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
     name: str = "requests_put"
     description: str = """Use this when you want to PUT to a website.
     Input should be a json string with two keys: "url" and "data".
-    The value of "url" should be a string, and the value of "data" should be a dictionary of 
+    The value of "url" should be a string, and the value of "data" should be a dictionary of
     key-value pairs you want to PUT to the url.
     Be careful to always use double quotes for strings in the json string.
     The output will be the text response of the PUT request.

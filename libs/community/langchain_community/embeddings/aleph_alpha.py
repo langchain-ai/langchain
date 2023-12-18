@@ -35,48 +35,48 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     model: str = "luminous-base"
     """Model name to use."""
     compress_to_size: Optional[int] = None
-    """Should the returned embeddings come back as an original 5120-dim vector, 
+    """Should the returned embeddings come back as an original 5120-dim vector,
     or should it be compressed to 128-dim."""
     normalize: Optional[bool] = None
     """Should returned embeddings be normalized"""
     contextual_control_threshold: Optional[int] = None
-    """Attention control parameters only apply to those tokens that have 
+    """Attention control parameters only apply to those tokens that have
     explicitly been set in the request."""
     control_log_additive: bool = True
-    """Apply controls on prompt items by adding the log(control_factor) 
+    """Apply controls on prompt items by adding the log(control_factor)
     to attention scores."""
 
     # Client params
     aleph_alpha_api_key: Optional[str] = None
     """API key for Aleph Alpha API."""
     host: str = "https://api.aleph-alpha.com"
-    """The hostname of the API host. 
+    """The hostname of the API host.
     The default one is "https://api.aleph-alpha.com")"""
     hosting: Optional[str] = None
     """Determines in which datacenters the request may be processed.
     You can either set the parameter to "aleph-alpha" or omit it (defaulting to None).
-    Not setting this value, or setting it to None, gives us maximal flexibility 
+    Not setting this value, or setting it to None, gives us maximal flexibility
     in processing your request in our
-    own datacenters and on servers hosted with other providers. 
+    own datacenters and on servers hosted with other providers.
     Choose this option for maximal availability.
-    Setting it to "aleph-alpha" allows us to only process the request 
+    Setting it to "aleph-alpha" allows us to only process the request
     in our own datacenters.
     Choose this option for maximal data privacy."""
     request_timeout_seconds: int = 305
-    """Client timeout that will be set for HTTP requests in the 
+    """Client timeout that will be set for HTTP requests in the
     `requests` library's API calls.
     Server will close all requests after 300 seconds with an internal server error."""
     total_retries: int = 8
-    """The number of retries made in case requests fail with certain retryable 
+    """The number of retries made in case requests fail with certain retryable
     status codes. If the last
-    retry fails a corresponding exception is raised. Note, that between retries 
+    retry fails a corresponding exception is raised. Note, that between retries
     an exponential backoff
-    is applied, starting with 0.5 s after the first retry and doubling for each 
+    is applied, starting with 0.5 s after the first retry and doubling for each
     retry made. So with the
-    default setting of 8 retries a total wait time of 63.5 s is added between 
+    default setting of 8 retries a total wait time of 63.5 s is added between
     the retries."""
     nice: bool = False
-    """Setting this to True, will signal to the API that you intend to be 
+    """Setting this to True, will signal to the API that you intend to be
     nice to other users
     by de-prioritizing your request below concurrent ones."""
 

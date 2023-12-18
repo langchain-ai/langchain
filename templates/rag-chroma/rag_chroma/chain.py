@@ -8,7 +8,7 @@ from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
 # Example for document loading (from url), splitting, and creating vectostore
 
-""" 
+"""
 # Load
 from langchain.document_loaders import WebBaseLoader
 loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
@@ -20,7 +20,7 @@ text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 all_splits = text_splitter.split_documents(data)
 
 # Add to vectorDB
-vectorstore = Chroma.from_documents(documents=all_splits, 
+vectorstore = Chroma.from_documents(documents=all_splits,
                                     collection_name="rag-chroma",
                                     embedding=OpenAIEmbeddings(),
                                     )

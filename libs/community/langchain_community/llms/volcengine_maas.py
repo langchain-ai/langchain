@@ -26,11 +26,11 @@ class VolcEngineMaasBase(BaseModel):
     """Region of the VolcEngineMaas LLM."""
 
     model: str = "skylark-lite-public"
-    """Model name. you could check this model details here 
+    """Model name. you could check this model details here
     https://www.volcengine.com/docs/82379/1133187
     and you could choose other models by change this field"""
     model_version: Optional[str] = None
-    """Model version. Only used in moonshot large language model. 
+    """Model version. Only used in moonshot large language model.
     you could check details here https://www.volcengine.com/docs/82379/1158281"""
 
     top_p: Optional[float] = 0.8
@@ -49,7 +49,7 @@ class VolcEngineMaasBase(BaseModel):
     """Timeout for connect to volc engine maas endpoint. Default is 60 seconds."""
 
     read_timeout: Optional[int] = 60
-    """Timeout for read response from volc engine maas endpoint. 
+    """Timeout for read response from volc engine maas endpoint.
     Default is 60 seconds."""
 
     @root_validator()

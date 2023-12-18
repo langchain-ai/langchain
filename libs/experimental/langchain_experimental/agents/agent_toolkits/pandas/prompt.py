@@ -5,7 +5,7 @@ You are working with a pandas dataframe in Python. The name of the dataframe is 
 You should use the tools below to answer the question posed of you:"""
 
 MULTI_DF_PREFIX = """
-You are working with {num_dfs} pandas dataframes in Python named df1, df2, etc. You 
+You are working with {num_dfs} pandas dataframes in Python named df1, df2, etc. You
 should use the tools below to answer the question posed of you:"""
 
 SUFFIX_NO_DF = """

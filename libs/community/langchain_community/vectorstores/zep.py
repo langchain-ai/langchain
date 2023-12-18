@@ -140,7 +140,7 @@ class ZepVectorStore(VectorStore):
         if self._collection and self._collection.is_auto_embedded:
             if self._embedding is not None:
                 warnings.warn(
-                    """The collection is set to auto-embed and an embedding 
+                    """The collection is set to auto-embed and an embedding
                 function is present. Ignoring the embedding function.""",
                     stacklevel=2,
                 )

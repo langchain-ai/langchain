@@ -250,7 +250,7 @@ class TelegramChatApiLoader(BaseLoader):
             import pandas as pd
         except ImportError:
             raise ImportError(
-                """`pandas` package not found. 
+                """`pandas` package not found.
                 please install with `pip install pandas`
                 """
             )

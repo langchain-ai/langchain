@@ -44,7 +44,7 @@ class Replicate(LLM):
     replicate_api_token: Optional[str] = None
     prompt_key: Optional[str] = None
     version_obj: Any = Field(default=None, exclude=True)
-    """Optionally pass in the model version object during initialization to avoid 
+    """Optionally pass in the model version object during initialization to avoid
         having to make an extra API call to retrieve it during streaming. NOTE: not
         serializable, is excluded from serialization.
     """

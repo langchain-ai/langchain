@@ -128,8 +128,8 @@ class LlamaCpp(LLM):
     """
     grammar: Optional[Union[str, LlamaGrammar]] = None
     """
-    grammar: formal grammar for constraining model outputs. For instance, the grammar 
-    can be used to force the model to generate valid JSON or to speak exclusively in 
+    grammar: formal grammar for constraining model outputs. For instance, the grammar
+    can be used to force the model to generate valid JSON or to speak exclusively in
     emojis. At most one of grammar_path and grammar should be passed in.
     """
 

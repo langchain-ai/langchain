@@ -40,7 +40,7 @@ a well formatted instance would be:
   avg: 1.4
 ```
 
-Please follow the standard YAML formatting conventions with an indent of 2 spaces and make sure that the data types adhere strictly to the following JSON schema: 
+Please follow the standard YAML formatting conventions with an indent of 2 spaces and make sure that the data types adhere strictly to the following JSON schema:
 ```
 {schema}
 ```
@@ -48,12 +48,12 @@ Please follow the standard YAML formatting conventions with an indent of 2 space
 Make sure to always enclose the YAML output in triple backticks (```)"""
 
 XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
-1. Output should conform to the tags below. 
+1. Output should conform to the tags below.
 2. If tags are not given, make them on your own.
 3. Remember to always open and close all the tags.
 
 As an example, for the tags ["foo", "bar", "baz"]:
-1. String "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>" is a well-formatted instance of the schema. 
+1. String "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>" is a well-formatted instance of the schema.
 2. String "<foo>\n   <bar>\n   </foo>" is a badly-formatted instance.
 3. String "<foo>\n   <tag>\n   </tag>\n</foo>" is a badly-formatted instance.
 

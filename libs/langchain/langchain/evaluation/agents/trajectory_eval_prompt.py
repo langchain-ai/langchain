@@ -91,7 +91,7 @@ The way model uses the search is not helpful. The model should have used the sea
 The model didn't use the calculator tool and gave an incorrect answer. The search API should be used for current events or specific questions.\
 The tools were not used in a helpful way. The model did not use too many steps to answer the question.\
 The model did not use the appropriate tools to answer the question.\
-    
+
 Judgment: Given the good reasoning in the final answer but otherwise poor performance, we give the model a score of 2.
 
 Score: 2"""

@@ -57,14 +57,14 @@ class AzureChatOpenAI(ChatOpenAI):
 
     azure_endpoint: Union[str, None] = None
     """Your Azure endpoint, including the resource.
-    
+
         Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
-    
+
         Example: `https://example-resource.azure.openai.com/`
     """
     deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
-    """A model deployment. 
-    
+    """A model deployment.
+
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
     """
@@ -74,15 +74,15 @@ class AzureChatOpenAI(ChatOpenAI):
     """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
     azure_ad_token: Union[str, None] = None
     """Your Azure Active Directory token.
-    
+
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
-        
-        For more: 
+
+        For more:
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
     """  # noqa: E501
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
-        
+
         Will be invoked on every request.
     """
     model_version: str = ""
@@ -90,7 +90,7 @@ class AzureChatOpenAI(ChatOpenAI):
     openai_api_type: str = ""
     """Legacy, for openai<1.0.0 support."""
     validate_base_url: bool = True
-    """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
+    """For backwards compatibility. If legacy val openai_api_base is passed in, try to
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
 

@@ -1,5 +1,5 @@
 """
-Ensemble retriever that ensemble the results of 
+Ensemble retriever that ensemble the results of
 multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
 from typing import Any, Dict, List

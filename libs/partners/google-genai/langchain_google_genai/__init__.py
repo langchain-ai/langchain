@@ -35,7 +35,7 @@ llm.invoke("Sing a ballad of LangChain.")
 ## Using LLMs
 
 The package also supports generating text with Google's models.
-    
+
 ```python
 from langchain_google_genai import GoogleGenerativeAI
 

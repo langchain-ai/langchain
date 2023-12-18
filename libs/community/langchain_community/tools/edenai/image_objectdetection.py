@@ -49,7 +49,7 @@ class EdenAiObjectDetectionTool(EdenaiTool):
             if self.show_positions and all(
                 [x_min, x_max, y_min, y_max]
             ):  # some providers don't return positions
-                label_str += f""",at the position x_min: {x_min}, x_max: {x_max}, 
+                label_str += f""",at the position x_min: {x_min}, x_max: {x_max},
                 y_min: {y_min}, y_max: {y_max}"""
             label_info.append(label_str)
 

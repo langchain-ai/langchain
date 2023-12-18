@@ -36,7 +36,7 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
     the environment."""
     engine_data_type: int = Field(default=0, ge=0, le=2)
     """ Defines the Vertex AI Search data type
-    0 - Unstructured data 
+    0 - Unstructured data
     1 - Structured data
     2 - Website data
     """
@@ -224,15 +224,15 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
     """
     query_expansion_condition: int = Field(default=1, ge=0, le=2)
     """Specification to determine under which conditions query expansion should occur.
-    0 - Unspecified query expansion condition. In this case, server behavior defaults 
+    0 - Unspecified query expansion condition. In this case, server behavior defaults
         to disabled
-    1 - Disabled query expansion. Only the exact search query is used, even if 
+    1 - Disabled query expansion. Only the exact search query is used, even if
         SearchResponse.total_size is zero.
     2 - Automatic query expansion built by the Search API.
     """
     spell_correction_mode: int = Field(default=2, ge=0, le=2)
     """Specification to determine under which conditions query expansion should occur.
-    0 - Unspecified spell correction mode. In this case, server behavior defaults 
+    0 - Unspecified spell correction mode. In this case, server behavior defaults
         to auto.
     1 - Suggestion only. Search API will try to find a spell suggestion if there is any
         and put in the `SearchResponse.corrected_query`.

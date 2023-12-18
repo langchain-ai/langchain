@@ -32,7 +32,7 @@ class DallEAPIWrapper(BaseModel):
     openai_api_key: Optional[str] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
-    """Base URL path for API requests, leave blank if not using a proxy or service 
+    """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""

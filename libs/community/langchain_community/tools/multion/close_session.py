@@ -24,7 +24,7 @@ class CloseSessionSchema(BaseModel):
 
     sessionId: str = Field(
         ...,
-        description="""The sessionId, received from one of the createSessions 
+        description="""The sessionId, received from one of the createSessions
         or updateSessions run before""",
     )
 

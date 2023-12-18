@@ -11,7 +11,7 @@ class StackExchangeAPIWrapper(BaseModel):
     max_results: int = 3
     """Max number of results to include in output."""
     query_type: Literal["all", "title", "body"] = "all"
-    """Which part of StackOverflows items to match against. One of 'all', 'title', 
+    """Which part of StackOverflows items to match against. One of 'all', 'title',
         'body'. Defaults to 'all'.
     """
     fetch_params: Dict[str, Any] = Field(default_factory=dict)

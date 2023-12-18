@@ -18,7 +18,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
     llm: BaseLanguageModel
     memory_key: str = "history"
     max_token_limit: int = 12000
-    """The max number of tokens to keep in the buffer. 
+    """The max number of tokens to keep in the buffer.
     Once the buffer exceeds this many tokens, the oldest messages will be pruned."""
     return_messages: bool = True
     output_key: str = "output"

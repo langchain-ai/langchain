@@ -75,7 +75,7 @@ class GenerativeAgent(BaseModel):
 {q1}?
 Context from memory:
 {relevant_memories}
-Relevant context: 
+Relevant context:
 """
         )
         entity_name = self._get_entity_from_observation(observation)

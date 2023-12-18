@@ -202,7 +202,7 @@ class ChatOpenAI(BaseChatModel):
     openai_api_key: Optional[str] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
-    """Base URL path for API requests, leave blank if not using a proxy or service 
+    """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
@@ -211,7 +211,7 @@ class ChatOpenAI(BaseChatModel):
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or
         None."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
@@ -222,14 +222,14 @@ class ChatOpenAI(BaseChatModel):
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
     tiktoken_model_name: Optional[str] = None
-    """The model name to pass to tiktoken when using this class. 
-    Tiktoken is used to count the number of tokens in documents to constrain 
-    them to be under a certain limit. By default, when set to None, this will 
-    be the same as the embedding model name. However, there are some cases 
-    where you may want to use this Embedding class with a model name not 
-    supported by tiktoken. This can include when using Azure embeddings or 
-    when using one of the many model providers that expose an OpenAI-like 
-    API but with different models. In those cases, in order to avoid erroring 
+    """The model name to pass to tiktoken when using this class.
+    Tiktoken is used to count the number of tokens in documents to constrain
+    them to be under a certain limit. By default, when set to None, this will
+    be the same as the embedding model name. However, there are some cases
+    where you may want to use this Embedding class with a model name not
+    supported by tiktoken. This can include when using Azure embeddings or
+    when using one of the many model providers that expose an OpenAI-like
+    API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None

@@ -237,7 +237,7 @@ class Vectara(VectorStore):
             self._index_doc(doc)
         elif success_str == "E_NO_PERMISSIONS":
             print(
-                """No permissions to add document to Vectara. 
+                """No permissions to add document to Vectara.
                 Check your corpus ID, customer ID and API key"""
             )
         return [doc_id]

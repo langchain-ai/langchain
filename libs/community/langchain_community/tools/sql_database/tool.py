@@ -48,7 +48,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
     name: str = "sql_db_schema"
     description: str = """
-    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.    
+    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
 
     Example Input: "table1, table2, table3"
     """

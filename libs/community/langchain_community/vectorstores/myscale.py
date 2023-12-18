@@ -208,7 +208,7 @@ class MyScale(VectorStore):
             n = ",".join([f"'{self.escape_str(str(_n))}'" for _n in n])
             _data.append(f"({n})")
         i_str = f"""
-                INSERT INTO TABLE 
+                INSERT INTO TABLE
                     {self.config.database}.{self.config.table}({ks})
                 VALUES
                 {','.join(_data)}
@@ -336,11 +336,11 @@ class MyScale(VectorStore):
             where_str = ""
 
         q_str = f"""
-            SELECT {self.config.column_map['text']}, 
+            SELECT {self.config.column_map['text']},
                 {self.config.column_map['metadata']}, dist
             FROM {self.config.database}.{self.config.table}
             {where_str}
-            ORDER BY distance({self.config.column_map['vector']}, [{q_emb_str}]) 
+            ORDER BY distance({self.config.column_map['vector']}, [{q_emb_str}])
                 AS dist {self.dist_order}
             LIMIT {topk}
             """
@@ -526,11 +526,11 @@ class MyScaleWithoutJSON(MyScale):
             where_str = ""
 
         q_str = f"""
-            SELECT {self.config.column_map['text']}, dist, 
+            SELECT {self.config.column_map['text']}, dist,
                 {','.join(self.must_have_cols)}
             FROM {self.config.database}.{self.config.table}
             {where_str}
-            ORDER BY distance({self.config.column_map['vector']}, [{q_emb_str}]) 
+            ORDER BY distance({self.config.column_map['vector']}, [{q_emb_str}])
                 AS dist {self.dist_order}
             LIMIT {topk}
             """
