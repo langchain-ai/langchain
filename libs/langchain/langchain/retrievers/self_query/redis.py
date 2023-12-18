@@ -34,7 +34,7 @@ _COMPARATOR_TO_BUILTIN_METHOD = {
 
 
 class RedisTranslator(Visitor):
-    """Translate"""
+    """Visitor for translating structured queries to Redis filter expressions."""
 
     allowed_comparators = (
         Comparator.EQ,
