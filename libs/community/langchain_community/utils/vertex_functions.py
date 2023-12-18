@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from langchain.agents import Tool
+from langchain_core.tools import Tool
 
 from langchain_community.utils.openai_functions import (
     FunctionDescription,

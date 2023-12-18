@@ -11,11 +11,6 @@ from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from langchain.agents import AgentExecutor, Tool
-from langchain.agents.format_scratchpad import format_to_openai_function_messages
-from langchain.agents.output_parsers import VertexAIFunctionsAgentOutputParser
-from langchain.chains import LLMMathChain
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -302,6 +297,12 @@ def test_parse_examples_failes_wrong_sequence() -> None:
 
 
 def test_tools() -> None:
+    from langchain.agents import AgentExecutor, Tool
+    from langchain.agents.format_scratchpad import format_to_openai_function_messages
+    from langchain.agents.output_parsers import VertexAIFunctionsAgentOutputParser
+    from langchain.chains import LLMMathChain
+    from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+
     llm = ChatVertexAI(model_name="gemini-pro")
     math_chain = LLMMathChain.from_llm(llm=llm)
     raw_tools = [
