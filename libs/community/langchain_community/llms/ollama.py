@@ -307,6 +307,8 @@ class Ollama(BaseLLM, _OllamaCommon):
                         chunk.text,
                         verbose=self.verbose,
                     )
+
+                    
 class OllamaMultiModal(BaseLLM, _OllamaCommon):
     """Ollama locally runs large language models with multimodal support."""
 
