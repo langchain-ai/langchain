@@ -150,9 +150,6 @@ class TritonTensorRTLLM(BaseLLM):
         # TODO: We should handle the native batching instead.
         for prompt in prompts:
             invoc_params = {**invocation_params, "prompt": [[prompt]]}
-            # request_id = str(random.randint(1, 9999999))  # nosec
-            # TODO: Fix request ID and stop_word specification
-            # TODO: Verify this is actually a string result
             result: str = self._request(
                 self.model_name,
                 stop=stop_words,
@@ -207,7 +204,7 @@ class TritonTensorRTLLM(BaseLLM):
 
         self.client.stop_stream()
 
-        return self._trim_batch_response(result_str)
+        return result_str
 
     def _invoke_triton(self, model_name, inputs, outputs, stop_words):
         if not self.client.is_model_ready(model_name):
@@ -226,7 +223,6 @@ class TritonTensorRTLLM(BaseLLM):
             callback=partial(
                 self._stream_callback,
                 result_queue,
-                force_batch=False,
                 stop_words=stop_words,
             )
         )
@@ -300,18 +296,6 @@ class TritonTensorRTLLM(BaseLLM):
         ]
         return inputs
 
-    def _trim_batch_response(self, result_str: str) -> str:
-        """Trim batch response by removing prompt and extra generated text."""
-        # extract the generated part of the prompt
-        # TODO: This assumes llama-style prompting...
-        split = result_str.split("[/INST]", 1)
-        generated = split[-1]
-        end_token = generated.find("</s>")
-        if end_token == -1:
-            return generated
-        generated = generated[:end_token].strip()
-        return generated
-
     def _send_stop_signals(self, model_name: str, request_id: str) -> None:
         """Send the stop signal to the Triton Inference server."""
         stop_inputs = self._generate_stop_signals()
@@ -356,7 +340,6 @@ class TritonTensorRTLLM(BaseLLM):
     def _stream_callback(
         self,
         result_queue: queue.Queue[Union[Optional[Dict[str, str]], str]],
-        force_batch: bool,
         result: grpcclient.InferResult,
         error: str,
         stop_words: List[str],
@@ -370,8 +353,6 @@ class TritonTensorRTLLM(BaseLLM):
             if "outputs" in response_raw:
                 # the very last response might have no output, just the final flag
                 response = self._process_result(response_raw)
-                if force_batch:
-                    response = self._trim_batch_response(response)
 
                 if response in stop_words:
                     result_queue.put(None)
