@@ -77,18 +77,22 @@ class QianfanLLMEndpoint(LLM):
             values,
             "qianfan_ak",
             "QIANFAN_AK",
+            default="",
         )
         values["qianfan_sk"] = get_from_dict_or_env(
             values,
             "qianfan_sk",
             "QIANFAN_SK",
+            default="",
         )
 
         params = {
-            "ak": values["qianfan_ak"],
-            "sk": values["qianfan_sk"],
             "model": values["model"],
         }
+        if values["qianfan_ak"] != "":
+            params["ak"] = values["qianfan_ak"]
+        if values["qianfan_sk"] != "":
+            params["sk"] = values["qianfan_sk"]
         if values["endpoint"] is not None and values["endpoint"] != "":
             params["endpoint"] = values["endpoint"]
         try:
