@@ -130,7 +130,9 @@ class GradientEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         query = (
-            f"{self.query_prompt_for_retrieval} {text}" if self.query_prompt_for_retrieval else text
+            f"{self.query_prompt_for_retrieval} {text}"
+            if self.query_prompt_for_retrieval
+            else text
         )
         return self.embed_documents([query])[0]
 
@@ -144,7 +146,9 @@ class GradientEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         query = (
-            f"{self.query_prompt_for_retrieval} {text}" if self.query_prompt_for_retrieval else text
+            f"{self.query_prompt_for_retrieval} {text}"
+            if self.query_prompt_for_retrieval
+            else text
         )
         embeddings = await self.aembed_documents([query])
         return embeddings[0]
