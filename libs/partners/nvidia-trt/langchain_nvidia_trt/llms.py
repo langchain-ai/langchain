@@ -78,7 +78,7 @@ class TritonTensorRTLLM(BaseLLM):
         """Ensure the client streaming connection is properly shutdown"""
         self.client.close()
 
-    @root_validator(pre=True)
+    @root_validator(pre=True, allow_reuse=True)
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that python package exists in environment."""
         if not values.get("client"):
