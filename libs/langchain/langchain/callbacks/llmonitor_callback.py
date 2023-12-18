@@ -3,7 +3,4 @@ from langchain_community.callbacks.llmonitor_callback import (
     identify,
 )
 
-__all__ = [
-    "identify",
-    "LLMonitorCallbackHandler"
-]
+__all__ = ["identify", "LLMonitorCallbackHandler"]
