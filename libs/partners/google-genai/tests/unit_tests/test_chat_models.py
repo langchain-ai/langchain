@@ -55,6 +55,6 @@ def test_parse_history() -> None:
     assert len(history) == 3
     assert history[0] == {
         "role": "user",
-        "parts": [{"text": f"{system_input}\n{text_question1}"}],
+        "parts": [{"text": system_input}, {"text": text_question1}],
     }
-    assert history[1] == {"role": "model", "parts": [{"text": f"{text_answer1}"}]}
+    assert history[1] == {"role": "model", "parts": [{"text": text_answer1}]}
