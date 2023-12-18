@@ -391,7 +391,7 @@ class TritonTensorRTLLM(BaseLLM):
         self.client.stop_stream()
 
 
-class StreamingResponseGenerator(queue.Queue[Optional[str]]):
+class StreamingResponseGenerator(queue.Queue):
     """A Generator that provides the inference results from an LLM."""
 
     def __init__(
