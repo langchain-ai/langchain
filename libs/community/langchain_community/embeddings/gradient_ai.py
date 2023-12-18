@@ -43,8 +43,8 @@ class GradientEmbeddings(BaseModel, Embeddings):
     gradient_api_url: Optional[str] = None
     """Endpoint URL to use."""
 
-    query_for_retrieval: Optional[str] = None
-    """Endpoint URL to use."""
+    query_prompt_for_retrieval: Optional[str] = None
+    """Query pre-prompt"""
 
     client: Any = None  #: :meta private:
     """Gradient client."""
@@ -130,7 +130,7 @@ class GradientEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         query = (
-            f"{self.query_for_retrieval} {text}" if self.query_for_retrieval else text
+            f"{self.query_prompt_for_retrieval} {text}" if self.query_prompt_for_retrieval else text
         )
         return self.embed_documents([query])[0]
 
@@ -144,7 +144,7 @@ class GradientEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         query = (
-            f"{self.query_for_retrieval} {text}" if self.query_for_retrieval else text
+            f"{self.query_prompt_for_retrieval} {text}" if self.query_prompt_for_retrieval else text
         )
         embeddings = await self.aembed_documents([query])
         return embeddings[0]
