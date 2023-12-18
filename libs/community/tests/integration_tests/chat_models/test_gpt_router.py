@@ -1,4 +1,4 @@
-"""Test Anthropic API wrapper."""
+"""Test GPTRouter API wrapper."""
 from typing import List
 
 from langchain_core.callbacks import (
@@ -17,7 +17,7 @@ def test_gpt_router_call() -> None:
         name="claude-instant-1.2", provider_name="anthropic"
     )
     chat = ChatGPTRouter(models_priority_list=[anthropic_claude])
-    message = HumanMessage(content="Hello")
+    message = HumanMessage(content="Hello World")
     response = chat([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
@@ -30,7 +30,7 @@ def test_gpt_router_generate() -> None:
     )
     chat = ChatGPTRouter(models_priority_list=[anthropic_claude])
     chat_messages: List[List[BaseMessage]] = [
-        [HumanMessage(content="How many toes do dogs have?")]
+        [HumanMessage(content="If (5 + x = 18), what is x?")]
     ]
     messages_copy = [messages.copy() for messages in chat_messages]
     result: LLMResult = chat.generate(chat_messages)
@@ -67,6 +67,6 @@ def test_gpt_router_streaming_callback() -> None:
         callback_manager=callback_manager,
         verbose=True,
     )
-    message = HumanMessage(content="Write me a sentence with 10 words.")
+    message = HumanMessage(content="Write me a 5 line poem.")
     chat([message])
     assert callback_handler.llm_streams > 1
