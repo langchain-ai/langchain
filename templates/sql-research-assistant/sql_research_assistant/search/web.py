@@ -16,6 +16,7 @@ from langchain.schema.runnable import (
     RunnablePassthrough,
 )
 from langchain.utilities import DuckDuckGoSearchAPIWrapper
+
 from sql_research_assistant.search.sql import sql_answer_chain
 
 RESULTS_PER_QUESTION = 3
@@ -48,8 +49,6 @@ def scrape_text(url: str):
 def web_search(query: str, num_results: int):
     results = ddg_search.results(query, num_results)
     return [r["link"] for r in results]
-
-
 
 
 SEARCH_PROMPT = ChatPromptTemplate.from_messages(

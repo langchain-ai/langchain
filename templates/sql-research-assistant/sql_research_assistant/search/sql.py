@@ -56,7 +56,6 @@ sql_chain = (
 )
 
 
-
 # Chain to answer
 template = """Based on the table schema below, question, sql query, and sql response, write a natural language response:
 {schema}
@@ -82,15 +81,13 @@ class InputType(BaseModel):
 
 
 sql_answer_chain = (
-    RunnablePassthrough.assign(query=sql_chain).with_types(
-        input_type=InputType
-    )
+    RunnablePassthrough.assign(query=sql_chain).with_types(input_type=InputType)
     | RunnablePassthrough.assign(
         schema=get_schema,
         response=lambda x: db.run(x["query"]),
-    ) | RunnablePassthrough.assign(
-        answer=prompt_response
-        | ChatOpenAI()
-        | StrOutputParser()
-    ) | (lambda x: f"Question: {x['question']}\n\nAnswer: {x['answer']}")
+    )
+    | RunnablePassthrough.assign(
+        answer=prompt_response | ChatOpenAI() | StrOutputParser()
+    )
+    | (lambda x: f"Question: {x['question']}\n\nAnswer: {x['answer']}")
 )
