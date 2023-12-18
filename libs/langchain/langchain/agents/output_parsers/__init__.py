@@ -12,6 +12,7 @@ This also contains a `log` variable (which contains a log of the agent's thinkin
 from langchain.agents.output_parsers.json import JSONAgentOutputParser
 from langchain.agents.output_parsers.openai_functions import (
     OpenAIFunctionsAgentOutputParser,
+    VertexAIFunctionsAgentOutputParser,
 )
 from langchain.agents.output_parsers.react_json_single_input import (
     ReActJsonSingleInputOutputParser,
@@ -29,4 +30,5 @@ __all__ = [
     "OpenAIFunctionsAgentOutputParser",
     "XMLAgentOutputParser",
     "JSONAgentOutputParser",
+    "VertexAIFunctionsAgentOutputParser",
 ]

@@ -11,6 +11,11 @@ from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from langchain.agents import AgentExecutor, Tool
+from langchain.agents.format_scratchpad import format_to_openai_function_messages
+from langchain.agents.output_parsers import VertexAIFunctionsAgentOutputParser
+from langchain.chains import LLMMathChain
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -24,6 +29,7 @@ from langchain_community.chat_models.vertexai import (
     _parse_chat_history,
     _parse_examples,
 )
+from langchain_community.utils.vertex_functions import format_tool_to_vertex_tool
 
 model_names_to_test = [None, "codechat-bison", "chat-bison", "gemini-pro"]
 
@@ -109,7 +115,7 @@ def test_vertexai_single_call_with_context() -> None:
 
 
 def test_multimodal() -> None:
-    llm = ChatVertexAI(model_name="gemini-ultra-vision")
+    llm = ChatVertexAI(model_name="gemini-pro-vision")
     gcs_url = (
         "gs://cloud-samples-data/generative-ai/image/"
         "320px-Felis_catus-cat_on_snow.jpg"
@@ -128,7 +134,7 @@ def test_multimodal() -> None:
 
 
 def test_multimodal_history() -> None:
-    llm = ChatVertexAI(model_name="gemini-ultra-vision")
+    llm = ChatVertexAI(model_name="gemini-pro-vision")
     gcs_url = (
         "gs://cloud-samples-data/generative-ai/image/"
         "320px-Felis_catus-cat_on_snow.jpg"
@@ -293,3 +299,41 @@ def test_parse_examples_failes_wrong_sequence() -> None:
         str(exc_info.value)
         == "Expect examples to have an even amount of messages, got 1."
     )
+
+
+def test_tools() -> None:
+    llm = ChatVertexAI(model_name="gemini-pro")
+    math_chain = LLMMathChain.from_llm(llm=llm)
+    raw_tools = [
+        Tool(
+            name="Calculator",
+            func=math_chain.run,
+            description="useful for when you need to answer questions about math",
+        )
+    ]
+    tools = [format_tool_to_vertex_tool(t) for t in raw_tools]
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("user", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ]
+    )
+    llm_with_tools = llm.bind(tools=tools)
+
+    agent = (
+        {
+            "input": lambda x: x["input"],
+            "agent_scratchpad": lambda x: format_to_openai_function_messages(
+                x["intermediate_steps"]
+            ),
+        }
+        | prompt
+        | llm_with_tools
+        | VertexAIFunctionsAgentOutputParser()
+    )
+    agent_executor = AgentExecutor(agent=agent, tools=raw_tools, verbose=True)
+
+    response = agent_executor.invoke({"input": "What is 6 raised to the 0.43 power?"})
+    assert isinstance(response, dict)
+    assert response["input"] == "What is 6 raised to the 0.43 power?"
+    assert round(float(response["output"]), 3) == 2.161

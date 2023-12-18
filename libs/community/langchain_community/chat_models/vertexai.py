@@ -18,6 +18,7 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -41,7 +42,7 @@ if TYPE_CHECKING:
         CodeChatSession,
         InputOutputTextPair,
     )
-    from vertexai.preview.generative_models import Content
+    from vertexai.preview.generative_models import Candidate, Content
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,8 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
 def _parse_chat_history_gemini(
     history: List[BaseMessage], project: Optional[str]
 ) -> List["Content"]:
+    from google.cloud.aiplatform_v1beta1.types.content import Part as GapicPart
+    from google.cloud.aiplatform_v1beta1.types.tool import FunctionCall
     from vertexai.preview.generative_models import Content, Image, Part
 
     def _convert_to_prompt(part: Union[str, Dict]) -> Part:
@@ -113,23 +116,45 @@ def _parse_chat_history_gemini(
             raise ValueError("Only text and image_url types are supported!")
         return Part.from_image(image)
 
+    def _convert_to_parts(message: BaseMessage) -> List[Part]:
+        raw_content = message.content
+        if isinstance(raw_content, str):
+            raw_content = [raw_content]
+        return [_convert_to_prompt(part) for part in raw_content]
+
     vertex_messages = []
     for i, message in enumerate(history):
         if i == 0 and isinstance(message, SystemMessage):
             raise ValueError("SystemMessages are not yet supported!")
         elif isinstance(message, AIMessage):
+            raw_function_call = message.additional_kwargs.get("function_call")
             role = "model"
+            if raw_function_call:
+                function_call = FunctionCall(
+                    {
+                        "name": raw_function_call["name"],
+                        "args": raw_function_call["arguments"],
+                    }
+                )
+                gapic_part = GapicPart(function_call=function_call)
+                parts = [Part._from_gapic(gapic_part)]
         elif isinstance(message, HumanMessage):
             role = "user"
+            parts = _convert_to_parts(message)
+        elif isinstance(message, FunctionMessage):
+            role = "user"
+            parts = [
+                Part.from_function_response(
+                    name=message.name,
+                    response={
+                        "content": message.content,
+                    },
+                )
+            ]
         else:
             raise ValueError(
                 f"Unexpected message with type {type(message)} at the position {i}."
             )
-
-        raw_content = message.content
-        if isinstance(raw_content, str):
-            raw_content = [raw_content]
-        parts = [_convert_to_prompt(part) for part in raw_content]
         vertex_message = Content(role=role, parts=parts)
         vertex_messages.append(vertex_message)
     return vertex_messages
@@ -175,6 +200,23 @@ def _get_question(messages: List[BaseMessage]) -> HumanMessage:
             f"Last message in the list should be from human, got {question.type}."
         )
     return question
+
+
+def _parse_response_candidate(response_candidate: "Candidate") -> AIMessage:
+    try:
+        content = response_candidate.text
+    except ValueError:
+        content = ""
+
+    additional_kwargs = {}
+    first_part = response_candidate.content.parts[0]
+    if first_part.function_call:
+        function_call = {"name": first_part.function_call.name}
+        function_call["arguments"] = {
+            k: first_part.function_call.args[k] for k in first_part.function_call.args
+        }
+        additional_kwargs["function_call"] = function_call
+    return AIMessage(content=content, additional_kwargs=additional_kwargs)
 
 
 class ChatVertexAI(_VertexAICommon, BaseChatModel):
@@ -247,7 +289,6 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             )
             return generate_from_stream(stream_iter)
 
-        question = _get_question(messages)
         params = self._prepare_params(stop=stop, stream=False, **kwargs)
         msg_params = {}
         if "candidate_count" in params:
@@ -257,18 +298,24 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             history_gemini = _parse_chat_history_gemini(messages, project=self.project)
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
-            response = chat.send_message(message, generation_config=params)
+            tools = params.pop("tools") if "tools" in params else None
+            response = chat.send_message(message, generation_config=params, tools=tools)
+            generations = [
+                ChatGeneration(message=_parse_response_candidate(c))
+                for c in response.candidates
+            ]
         else:
+            question = _get_question(messages)
             history = _parse_chat_history(messages[:-1])
             examples = kwargs.get("examples") or self.examples
             if examples:
                 params["examples"] = _parse_examples(examples)
             chat = self._start_chat(history, **params)
             response = chat.send_message(question.content, **msg_params)
-        generations = [
-            ChatGeneration(message=AIMessage(content=r.text))
-            for r in response.candidates
-        ]
+            generations = [
+                ChatGeneration(message=AIMessage(content=r.text))
+                for r in response.candidates
+            ]
         return ChatResult(generations=generations)
 
     async def _agenerate(
@@ -305,7 +352,14 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             history_gemini = _parse_chat_history_gemini(messages, project=self.project)
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
-            response = await chat.send_message_async(message, generation_config=params)
+            tools = params.pop("tools") if "tools" in params else None
+            response = await chat.send_message_async(
+                message, generation_config=params, tools=tools
+            )
+            generations = [
+                ChatGeneration(message=_parse_response_candidate(c))
+                for c in response.candidates
+            ]
         else:
             question = _get_question(messages)
             history = _parse_chat_history(messages[:-1])
@@ -315,10 +369,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             chat = self._start_chat(history, **params)
             response = await chat.send_message_async(question.content, **msg_params)
 
-        generations = [
-            ChatGeneration(message=AIMessage(content=r.text))
-            for r in response.candidates
-        ]
+            generations = [
+                ChatGeneration(message=AIMessage(content=r.text))
+                for r in response.candidates
+            ]
         return ChatResult(generations=generations)
 
     def _stream(
