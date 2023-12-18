@@ -299,7 +299,13 @@ def _parse_chat_history(
             and isinstance(message, SystemMessage)
             and not convert_system_message_to_human
         ):
-            raise ValueError("SystemMessages are not yet supported!")
+            raise ValueError("""SystemMessages are not yet supported!
+
+To automatically convert the leading SystemMessage to a HumanMessage,
+set  `convert_system_message_to_human` to True. Example:
+
+llm = ChatGoogleGenerativeAI(model="gemini-pro", convert_system_message_to_human=True)
+""")
         elif i == 0 and isinstance(message, SystemMessage):
             raw_system_message = (
                 message.content if isinstance(message.content, str) else None
