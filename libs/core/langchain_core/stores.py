@@ -51,3 +51,6 @@ class BaseStore(Generic[K, V], ABC):
             This method is allowed to return an iterator over either K or str
             depending on what makes more sense for the given store.
         """
+
+
+ByteStore = BaseStore[str, bytes]

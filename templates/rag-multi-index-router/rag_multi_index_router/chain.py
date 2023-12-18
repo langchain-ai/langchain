@@ -4,7 +4,6 @@ from typing import Literal
 from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.openai_functions import PydanticAttrOutputFunctionsParser
 from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field
 from langchain.retrievers import (
     ArxivRetriever,
     KayAiRetriever,
@@ -12,12 +11,13 @@ from langchain.retrievers import (
     WikipediaRetriever,
 )
 from langchain.schema import StrOutputParser
-from langchain.schema.runnable import (
+from langchain.utils.openai_functions import convert_pydantic_to_openai_function
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import (
     RouterRunnable,
     RunnableParallel,
     RunnablePassthrough,
 )
-from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 
 pubmed = PubMedRetriever(top_k_results=5).with_config(run_name="pubmed")
 arxiv = ArxivRetriever(top_k_results=5).with_config(run_name="arxiv")

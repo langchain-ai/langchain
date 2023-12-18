@@ -1,5 +1,6 @@
 """Test text splitting functionality."""
 import re
+from pathlib import Path
 from typing import List
 
 import pytest
@@ -7,6 +8,7 @@ from langchain_core.documents import Document
 
 from langchain.text_splitter import (
     CharacterTextSplitter,
+    HTMLHeaderTextSplitter,
     Language,
     MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
@@ -1128,3 +1130,48 @@ def test_solidity_code_splitter() -> None:
         "+ b;",
         "}\n  }",
     ]
+
+
+@pytest.mark.requires("lxml")
+def test_html_header_text_splitter(tmp_path: Path) -> None:
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")]
+    )
+
+    content = """
+<h1>Sample Document</h1>
+    <h2>Section</h2>
+        <p id="1234">Reference content.</p>
+
+    <h2>Lists</h2>
+        <ul>
+            <li>Item 1</li>
+            <li>Item 2</li>
+            <li>Item 3</li>
+        </ul>
+
+        <h3>A block</h3>
+            <div class="amazing">
+                <p>Some text</p>
+                <p>Some more text</p>
+            </div>
+    """
+
+    docs = splitter.split_text(content)
+    expected = [
+        Document(
+            page_content="Reference content.",
+            metadata={"Header 1": "Sample Document", "Header 2": "Section"},
+        ),
+        Document(
+            page_content="Item 1 Item 2 Item 3  \nSome text  \nSome more text",
+            metadata={"Header 1": "Sample Document", "Header 2": "Lists"},
+        ),
+    ]
+    assert docs == expected
+
+    with open(tmp_path / "doc.html", "w") as tmp:
+        tmp.write(content)
+    docs_from_file = splitter.split_text_from_file(tmp_path / "doc.html")
+
+    assert docs_from_file == expected

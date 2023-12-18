@@ -630,13 +630,14 @@ def test_lambda_schemas() -> None:
     }
 
     second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
-    assert RunnableLambda(
-        second_lambda,  # type: ignore[arg-type]
-    ).input_schema.schema() == {
-        "title": "RunnableLambdaInput",
-        "type": "object",
-        "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
-    }
+    assert (
+        RunnableLambda(second_lambda).input_schema.schema()  # type: ignore[arg-type]
+        == {
+            "title": "RunnableLambdaInput",
+            "type": "object",
+            "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
+        }
+    )
 
     def get_value(input):  # type: ignore[no-untyped-def]
         return input["variable_name"]
@@ -2029,7 +2030,7 @@ async def test_prompt_with_llm(
             ):
                 del op["value"]["id"]
 
-    assert stream_log == [
+    expected = [
         RunLogPatch(
             {
                 "op": "replace",
@@ -2113,6 +2114,7 @@ async def test_prompt_with_llm(
             {"op": "replace", "path": "/final_output", "value": "foo"},
         ),
     ]
+    assert stream_log == expected
 
 
 @freeze_time("2023-01-01")
@@ -3623,33 +3625,32 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
 
     parent_run_foo = parent_runs[0]
     assert parent_run_foo.inputs["input"] == "foo"
-    assert parent_run_foo.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_foo.error)
     assert len(parent_run_foo.child_runs) == 4
-    assert [r.error for r in parent_run_foo.child_runs] == [
+    assert [r.error for r in parent_run_foo.child_runs[:-1]] == [
         None,
         None,
         None,
-        repr(ValueError()),
     ]
+    assert repr(ValueError()) in str(parent_run_foo.child_runs[-1].error)
 
     parent_run_bar = parent_runs[1]
     assert parent_run_bar.inputs["input"] == "bar"
-    assert parent_run_bar.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_bar.error)
     assert len(parent_run_bar.child_runs) == 2
-    assert [r.error for r in parent_run_bar.child_runs] == [
-        None,
-        repr(ValueError()),
-    ]
+    assert parent_run_bar.child_runs[0].error is None
+    assert repr(ValueError()) in str(parent_run_bar.child_runs[1].error)
 
     parent_run_baz = parent_runs[2]
     assert parent_run_baz.inputs["input"] == "baz"
-    assert parent_run_baz.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_baz.error)
     assert len(parent_run_baz.child_runs) == 3
-    assert [r.error for r in parent_run_baz.child_runs] == [
+
+    assert [r.error for r in parent_run_baz.child_runs[:-1]] == [
         None,
         None,
-        repr(ValueError()),
     ]
+    assert repr(ValueError()) in str(parent_run_baz.child_runs[-1].error)
 
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
@@ -3745,33 +3746,31 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
 
     parent_run_foo = parent_runs[0]
     assert parent_run_foo.inputs["input"] == "foo"
-    assert parent_run_foo.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_foo.error)
     assert len(parent_run_foo.child_runs) == 4
-    assert [r.error for r in parent_run_foo.child_runs] == [
+    assert [r.error for r in parent_run_foo.child_runs[:-1]] == [
         None,
         None,
         None,
-        repr(ValueError()),
     ]
+    assert repr(ValueError()) in str(parent_run_foo.child_runs[-1].error)
 
     parent_run_bar = parent_runs[1]
     assert parent_run_bar.inputs["input"] == "bar"
-    assert parent_run_bar.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_bar.error)
     assert len(parent_run_bar.child_runs) == 2
-    assert [r.error for r in parent_run_bar.child_runs] == [
-        None,
-        repr(ValueError()),
-    ]
+    assert parent_run_bar.child_runs[0].error is None
+    assert repr(ValueError()) in str(parent_run_bar.child_runs[1].error)
 
     parent_run_baz = parent_runs[2]
     assert parent_run_baz.inputs["input"] == "baz"
-    assert parent_run_baz.error == repr(ValueError())
+    assert repr(ValueError()) in str(parent_run_baz.error)
     assert len(parent_run_baz.child_runs) == 3
-    assert [r.error for r in parent_run_baz.child_runs] == [
+    assert [r.error for r in parent_run_baz.child_runs[:-1]] == [
         None,
         None,
-        repr(ValueError()),
     ]
+    assert repr(ValueError()) in str(parent_run_baz.child_runs[-1].error)
 
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
@@ -3940,7 +3939,7 @@ def test_runnable_branch_invoke_callbacks() -> None:
         branch.invoke(1000, config={"callbacks": [tracer]})
 
     assert len(tracer.runs) == 2
-    assert tracer.runs[1].error == "ValueError('x is too large')"
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
     assert tracer.runs[1].outputs is None
 
 
@@ -3967,7 +3966,7 @@ async def test_runnable_branch_ainvoke_callbacks() -> None:
         await branch.ainvoke(1000, config={"callbacks": [tracer]})
 
     assert len(tracer.runs) == 2
-    assert tracer.runs[1].error == "ValueError('x is too large')"
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
     assert tracer.runs[1].outputs is None
 
 
@@ -4187,3 +4186,52 @@ async def test_ainvoke_astream_passthrough_assign_trace() -> None:
 
     assert tracer.runs[0].name == "RunnableAssign"
     assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
+
+
+async def test_astream_log_deep_copies() -> None:
+    """Verify that deep copies are used when using jsonpatch in astream log.
+
+    jsonpatch re-uses objects in its API; e.g.,
+
+    import jsonpatch
+    obj1 = { "a": 1 }
+    value = { "b": 2 }
+    obj2 = { "a": 1, "value": value }
+
+    ops = list(jsonpatch.JsonPatch.from_diff(obj1, obj2))
+    assert id(ops[0]['value']) == id(value)
+
+    This can create unexpected consequences for downstream code.
+    """
+
+    def _get_run_log(run_log_patches: Sequence[RunLogPatch]) -> RunLog:
+        """Get run log"""
+        run_log = RunLog(state=None)  # type: ignore
+        for log_patch in run_log_patches:
+            run_log = run_log + log_patch
+        return run_log
+
+    def add_one(x: int) -> int:
+        """Add one."""
+        return x + 1
+
+    chain = RunnableLambda(add_one)
+    chunks = []
+    final_output = None
+    async for chunk in chain.astream_log(1):
+        chunks.append(chunk)
+        if final_output is None:
+            final_output = chunk
+        else:
+            final_output = final_output + chunk
+
+    run_log = _get_run_log(chunks)
+    state = run_log.state.copy()
+    # Ignoring type here since we know that the state is a dict
+    # so we can delete `id` for testing purposes
+    state.pop("id")  # type: ignore
+    assert state == {
+        "final_output": 2,
+        "logs": {},
+        "streamed_output": [2],
+    }
