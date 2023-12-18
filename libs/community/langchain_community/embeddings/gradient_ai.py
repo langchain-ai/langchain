@@ -67,18 +67,18 @@ class GradientEmbeddings(BaseModel, Embeddings):
         )
 
         values["gradient_api_url"] = get_from_dict_or_env(
-            values, "gradient_api_url", "GRADIENT_API_URL", default=None
+            values, "gradient_api_url", "GRADIENT_API_URL"
         )
         try:
             import gradientai
         except ImportError:
             raise ImportError(
-                "GradientEmbeddings requires `pip install gradientai>=1.4.0`."
+                'GradientEmbeddings requires `pip install -U "gradientai>=1.4.0"`.'
             )
 
         if parse(gradientai.__version__) < parse("1.4.0"):
             raise ImportError(
-                "GradientEmbeddings requires `pip install gradientai>=1.4.0`."
+                'GradientEmbeddings requires `pip install -U "gradientai>=1.4.0"`.'
             )
 
         gradient = gradientai.Gradient(
