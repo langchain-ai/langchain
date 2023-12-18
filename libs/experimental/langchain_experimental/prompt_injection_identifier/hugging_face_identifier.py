@@ -1,7 +1,7 @@
 """Tool for the identification of prompt injection attacks."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Union
 
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.tools.base import BaseTool
@@ -19,9 +19,7 @@ class PromptInjectionException(ValueError):
 
 
 def _model_default_factory(
-    model_name: str = "laiyer/deberta-v3-base-prompt-injection",
-    use_onnx: bool = False,
-    model_subfolder: str = "",
+        model_name: str = "laiyer/deberta-v3-base-prompt-injection",
 ) -> Pipeline:
     try:
         from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
@@ -32,23 +30,7 @@ def _model_default_factory(
         ) from e
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-    if use_onnx:
-        try:
-            from optimum.onnxruntime import ORTModelForSequenceClassification
-
-            model = ORTModelForSequenceClassification.from_pretrained(
-                model_name,
-                export=False,
-                subfolder=model_subfolder,
-            )
-        except ImportError as e:
-            raise ImportError(
-                "Cannot import optimum, please install with "
-                "`pip install optimum[onnxruntime]`."
-            ) from e
-    else:
-        model = AutoModelForSequenceClassification.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
     return pipeline(
         "text-classification",
@@ -68,7 +50,7 @@ class HuggingFaceInjectionIdentifier(BaseTool):
         "Useful for when you need to ensure that prompt is free of injection attacks. "
         "Input should be any message from the user."
     )
-    model: Any = Field(default_factory=_model_default_factory)
+    model: Union[Pipeline, str, None] = Field(default_factory=_model_default_factory)
     """Model to use for prompt injection detection. 
     
     Can be specified as transformers Pipeline or string. String should correspond to the
