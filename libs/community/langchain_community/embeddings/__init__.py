@@ -25,7 +25,7 @@ from langchain_community.embeddings.baidu_qianfan_endpoint import (
 )
 from langchain_community.embeddings.bedrock import BedrockEmbeddings
 from langchain_community.embeddings.bookend import BookendEmbeddings
-from langchain_community.embeddings.bytedance_volcano import VolcanoEmbeddings
+from langchain_community.embeddings.volcengine import VolcanoEmbeddings
 from langchain_community.embeddings.clarifai import ClarifaiEmbeddings
 from langchain_community.embeddings.cohere import CohereEmbeddings
 from langchain_community.embeddings.dashscope import DashScopeEmbeddings

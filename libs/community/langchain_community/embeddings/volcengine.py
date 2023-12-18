@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class VolcanoEmbeddings(BaseModel, Embeddings):
-    """`Bytedance Volcano Embeddings` embedding models."""
+    """`Volcengine Embeddings` embedding models."""
 
     volcano_ak: Optional[str] = None
     """volcano access key
