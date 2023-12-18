@@ -1,6 +1,5 @@
 from langchain_community.embeddings.gradient_ai import (
-    GradientEmbeddings,
-    TinyAsyncGradientEmbeddingClient,
+    GradientEmbeddings
 )
 
-__all__ = ["GradientEmbeddings", "TinyAsyncGradientEmbeddingClient"]
+__all__ = ["GradientEmbeddings"]
