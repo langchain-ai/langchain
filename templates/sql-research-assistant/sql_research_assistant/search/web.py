@@ -5,11 +5,9 @@ import requests
 from bs4 import BeautifulSoup
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain.retrievers.tavily_search_api import TavilySearchAPIRetriever
 from langchain.schema.messages import SystemMessage
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import (
-    ConfigurableField,
     Runnable,
     RunnableLambda,
     RunnableParallel,
