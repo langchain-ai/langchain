@@ -1,7 +1,7 @@
 """Tool for the identification of prompt injection attacks."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.tools.base import BaseTool
@@ -10,17 +10,53 @@ if TYPE_CHECKING:
     from transformers import Pipeline
 
 
+class PromptInjectionException(ValueError):
+    def __init__(self, message="Prompt injection attack detected", score: float = 1.0):
+        self.message = message
+        self.score = score
+
+        super().__init__(self.message)
+
+
 def _model_default_factory(
-    model_name: str = "deepset/deberta-v3-base-injection"
+    model_name: str = "laiyer/deberta-v3-base-prompt-injection",
+    use_onnx: bool = False,
+    model_subfolder: str = "",
 ) -> Pipeline:
     try:
-        from transformers import pipeline
+        from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
     except ImportError as e:
         raise ImportError(
             "Cannot import transformers, please install with "
             "`pip install transformers`."
         ) from e
-    return pipeline("text-classification", model=model_name)
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    if use_onnx:
+        try:
+            from optimum.onnxruntime import ORTModelForSequenceClassification
+
+            model = ORTModelForSequenceClassification.from_pretrained(
+                model_name,
+                export=False,
+                subfolder=model_subfolder,
+            )
+        except ImportError as e:
+            raise ImportError(
+                "Cannot import optimum, please install with "
+                "`pip install optimum[onnxruntime]`."
+            ) from e
+    else:
+        model = AutoModelForSequenceClassification.from_pretrained(model_name)
+
+    return pipeline(
+        "text-classification",
+        model=model,
+        tokenizer=tokenizer,
+        max_length=512,  # default length of BERT models
+        truncation=True,  # truncate to max_length otherwise it will fail on long prompts
+    )
 
 
 class HuggingFaceInjectionIdentifier(BaseTool):
@@ -37,8 +73,19 @@ class HuggingFaceInjectionIdentifier(BaseTool):
     
     Can be specified as transformers Pipeline or string. String should correspond to the
         model name of a text-classification transformers model. Defaults to 
-        ``deepset/deberta-v3-base-injection`` model.
+        ``laiyer/deberta-v3-base-prompt-injection`` model.
     """
+    threshold: float = Field(description="Threshold for prompt injection detection.", default=0.5)
+    """Threshold for prompt injection detection.
+    
+    Defaults to 0.5."""
+    injection_label: str = Field(
+        description="Label of the injection for prompt injection detection.",
+        default="INJECTION",
+    )
+    """Label for prompt injection detection model.
+    
+    Defaults to ``INJECTION``. Value depends on the model used."""
 
     @root_validator(pre=True)
     def validate_environment(cls, values: dict) -> dict:
@@ -49,7 +96,8 @@ class HuggingFaceInjectionIdentifier(BaseTool):
     def _run(self, query: str) -> str:
         """Use the tool."""
         result = self.model(query)
-        result = sorted(result, key=lambda x: x["score"], reverse=True)
-        if result[0]["label"] == "INJECTION":
-            raise ValueError("Prompt injection attack detected")
+        score = result[0]["score"] if result[0]["label"] == self.injection_label else 1 - result[0]["score"]
+        if score < self.threshold:
+            raise PromptInjectionException("Prompt injection attack detected", score)
+
         return query
