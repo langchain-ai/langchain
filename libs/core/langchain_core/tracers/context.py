@@ -36,14 +36,10 @@ tracing_callback_var: ContextVar[
     "tracing_callback", default=None
 )
 
-tracing_v2_callback_var: ContextVar[
-    Optional[LangChainTracer]
-] = ContextVar(  # noqa: E501
+tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
 )
-run_collector_var: ContextVar[
-    Optional[RunCollectorCallbackHandler]
-] = ContextVar(  # noqa: E501
+run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVar(  # noqa: E501
     "run_collector", default=None
 )
 
