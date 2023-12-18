@@ -463,7 +463,9 @@ Supported examples:
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
     convert_system_message_to_human: bool = False
-    "Whether to prepend a SystemMessage to the first HumanMessage or not."
+    """Whether to merge any leading SystemMessage into the following HumanMessage.
+    
+    Gemini does not support system messages; any unsupported messages will raise an error."""
 
     class Config:
         allow_population_by_field_name = True
