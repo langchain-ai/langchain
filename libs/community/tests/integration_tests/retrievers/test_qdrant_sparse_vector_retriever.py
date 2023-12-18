@@ -10,7 +10,7 @@ from langchain_community.vectorstores.qdrant import QdrantException
 
 
 def consistent_fake_sparse_encoder(
-    query: str, size: int = 100, density: int = 0.7
+    query: str, size: int = 100, density: float = 0.7
 ) -> Tuple[List[int], List[float]]:
     """
     Generates a consistent fake sparse vector.
@@ -47,7 +47,7 @@ def consistent_fake_sparse_encoder(
 def retriever() -> QdrantSparseVectorRetriever:
     from qdrant_client import QdrantClient, models
 
-    client = QdrantClient()
+    client = QdrantClient(location=":memory:")
 
     collection_name = uuid.uuid4().hex
     vector_name = uuid.uuid4().hex
@@ -131,7 +131,7 @@ def test_add_texts(retriever: QdrantSparseVectorRetriever) -> None:
     assert retriever.client.count(retriever.collection_name, exact=True).count == 6
 
 
-def test_get_relevant_documents(retriever: QdrantSparseVectorRetriever):
+def test_get_relevant_documents(retriever: QdrantSparseVectorRetriever) -> None:
     retriever.add_texts(["Hai there!", "Hello world!", "Foo bar baz!"])
 
     expected = [Document(page_content="Hai there!")]
@@ -144,7 +144,9 @@ def test_get_relevant_documents(retriever: QdrantSparseVectorRetriever):
     assert retriever.get_relevant_documents("Hai there!") == expected
 
 
-def test_get_relevant_documents_with_filter(retriever: QdrantSparseVectorRetriever):
+def test_get_relevant_documents_with_filter(
+    retriever: QdrantSparseVectorRetriever,
+) -> None:
     from qdrant_client import models
 
     retriever.add_texts(
