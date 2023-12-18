@@ -592,6 +592,7 @@ __all__ = [
     "AwaDB",
     "AzureSearch",
     "Bagel",
+    "BigQueryVectorSearch",
     "Cassandra",
     "AstraDB",
     "Chroma",
