@@ -1,6 +1,14 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/providers/aws_dynamodb",
+      "destination": "/docs/integrations/platforms/aws#aws-dynamodb"
+    },
+    {
+      "source": "/docs/integrations/providers/scann",
+      "destination": "/docs/integrations/platforms/google#google-scann"
+    },
+    {
       "source": "/docs/integrations/toolkits/google_drive",
       "destination": "/docs/integrations/tools/google_drive"
     },
