@@ -1,8 +1,9 @@
-from typing import List, Any, Dict
+import sys
+from typing import Any, Dict, List
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
-import sys
+
 from langchain_community.embeddings import GradientEmbeddings
 
 _MODEL_ID = "my_model_valid_id"
@@ -18,14 +19,13 @@ _DOCUMENTS = [
 ]
 
 
-
 class GradientEmbeddingsModel(MagicMock):
     """MockGradientModel."""
 
-    def embed(self, inputs: List[Dict[str,str]]) -> Any:
+    def embed(self, inputs: List[Dict[str, str]]) -> Any:
         """Just duplicate the query m times."""
         output = MagicMock()
-        
+
         embeddings = []
         for i, inp in enumerate(inputs):
             # verify correct ordering
@@ -70,6 +70,7 @@ class MockGradientaiPackage(MagicMock):
     """Mock Gradientai package."""
 
     Gradient = MockGradient
+    __version__ = "1.4.0"
 
 
 def test_gradient_llm_sync() -> None:
@@ -97,7 +98,6 @@ def test_gradient_llm_sync() -> None:
         assert response == want
 
 
-
 def test_gradient_wrong_setup() -> None:
     with pytest.raises(Exception):
         GradientEmbeddings(
@@ -107,6 +107,7 @@ def test_gradient_wrong_setup() -> None:
             model=_MODEL_ID,
         )
 
+
 def test_gradient_wrong_setup2() -> None:
     with pytest.raises(Exception):
         GradientEmbeddings(
@@ -115,6 +116,7 @@ def test_gradient_wrong_setup2() -> None:
             gradient_workspace_id="",  # empty
             model=_MODEL_ID,
         )
+
 
 def test_gradient_wrong_setup3() -> None:
     with pytest.raises(Exception):

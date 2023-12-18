@@ -1,15 +1,9 @@
-import asyncio
-import logging
-import os
-from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-import aiohttp
-import numpy as np
-import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from packaging.version import parse
 
 __all__ = ["GradientEmbeddings"]
 
@@ -48,7 +42,7 @@ class GradientEmbeddings(BaseModel, Embeddings):
 
     gradient_api_url: Optional[str] = None
     """Endpoint URL to use."""
-    
+
     query_for_retrieval: Optional[str] = None
     """Endpoint URL to use."""
 
@@ -78,7 +72,14 @@ class GradientEmbeddings(BaseModel, Embeddings):
         try:
             import gradientai
         except ImportError:
-            raise ImportError("GradientEmbeddings requires `pip install gradientai`.")
+            raise ImportError(
+                "GradientEmbeddings requires `pip install gradientai>=1.4.0`."
+            )
+
+        if parse(gradientai.__version__) < parse("1.4.0"):
+            raise ImportError(
+                "GradientEmbeddings requires `pip install gradientai>=1.4.0`."
+            )
 
         gradient = gradientai.Gradient(
             access_token=values["gradient_access_token"],
@@ -128,7 +129,9 @@ class GradientEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        query = f"{self.query_for_retrieval} {text}" if self.query_for_retrieval else text
+        query = (
+            f"{self.query_for_retrieval} {text}" if self.query_for_retrieval else text
+        )
         return self.embed_documents([query])[0]
 
     async def aembed_query(self, text: str) -> List[float]:
@@ -140,6 +143,8 @@ class GradientEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        query = f"{self.query_for_retrieval} {text}" if self.query_for_retrieval else text
+        query = (
+            f"{self.query_for_retrieval} {text}" if self.query_for_retrieval else text
+        )
         embeddings = await self.aembed_documents([query])
         return embeddings[0]
