@@ -85,7 +85,7 @@ class HuggingFaceInjectionIdentifier(BaseTool):
 
     def _run(self, query: str) -> str:
         """Use the tool."""
-        result = self.model(query)
+        result = self.model(query)  # type: ignore
         score = (
             result[0]["score"]
             if result[0]["label"] == self.injection_label
