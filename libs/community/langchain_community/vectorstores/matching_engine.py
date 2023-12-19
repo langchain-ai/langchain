@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from langchain_community.embeddings import TensorflowHubEmbeddings
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class _DocumentWithID(Document):
