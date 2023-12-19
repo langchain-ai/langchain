@@ -18,9 +18,7 @@ logger = logging.getLogger(__name__)
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
 )
-wandb_tracing_callback_var: ContextVar[
-    Optional[WandbTracer]
-] = ContextVar(  # noqa: E501
+wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(  # noqa: E501
     "tracing_wandb_callback", default=None
 )
 
