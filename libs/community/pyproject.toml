@@ -28,6 +28,7 @@ openai = {version = "<2", optional = true}
 arxiv = {version = "^1.4", optional = true}
 pypdf = {version = "^3.4.0", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
+gradientai = {version="^1.4.0", optional = true}
 pgvector = {version = "^0.1.6", optional = true}
 atlassian-python-api = {version = "^3.36.0", optional=true}
 html2text = {version="^2020.1.16", optional=true}
@@ -203,6 +204,7 @@ extended_testing = [
  "telethon",
  "psychicapi",
  "gql",
+ "gradientai",
  "requests-toolbelt",
  "html2text",
  "numexpr",
