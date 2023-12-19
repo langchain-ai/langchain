@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class PromptInjectionException(ValueError):
-    def __init__(self, message="Prompt injection attack detected", score: float = 1.0):
+    def __init__(self, message: str = "Prompt injection attack detected", score: float = 1.0):
         self.message = message
         self.score = score
 
