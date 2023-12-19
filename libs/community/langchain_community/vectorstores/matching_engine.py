@@ -396,6 +396,7 @@ class MatchingEngine(VectorStore):
         endpoint_id: str,
         credentials_path: Optional[str] = None,
         embedding: Optional[Embeddings] = None,
+        **kwargs: Any,
     ) -> "MatchingEngine":
         """Takes the object creation out of the constructor.
 
@@ -411,6 +412,7 @@ class MatchingEngine(VectorStore):
             the local file system.
             embedding: The :class:`Embeddings` that will be used for
             embedding the texts.
+            kwargs: Additional keyword arguments to pass to MatchingEngine.__init__().
 
         Returns:
             A configured MatchingEngine with the texts added to the index.
@@ -433,6 +435,7 @@ class MatchingEngine(VectorStore):
             gcs_client=gcs_client,
             credentials=credentials,
             gcs_bucket_name=gcs_bucket_name,
+            **kwargs,
         )
 
     @classmethod
