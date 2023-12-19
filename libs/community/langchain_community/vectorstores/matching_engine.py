@@ -4,7 +4,7 @@ import json
 import logging
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type, cast
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -53,6 +53,8 @@ class MatchingEngine(VectorStore):
         gcs_client: storage.Client,
         gcs_bucket_name: str,
         credentials: Optional[Credentials] = None,
+        *,
+        document_id_key: str = "document_id",
     ):
         """Google Vertex AI Vector Search (previously Matching Engine)
          implementation of the vector store.
@@ -82,6 +84,7 @@ class MatchingEngine(VectorStore):
             gcs_client: The GCS client.
             gcs_bucket_name: The GCS bucket name.
             credentials (Optional): Created GCP credentials.
+            document_id_key: Key for storing document id in document metadata.
         """
         super().__init__()
         self._validate_google_libraries_installation()
@@ -93,6 +96,7 @@ class MatchingEngine(VectorStore):
         self.gcs_client = gcs_client
         self.credentials = credentials
         self.gcs_bucket_name = gcs_bucket_name
+        self.document_id_key = document_id_key
 
     @property
     def embeddings(self) -> Embeddings:
@@ -232,7 +236,7 @@ class MatchingEngine(VectorStore):
         Returns:
             List[Tuple[_DocumentWithID, float]]: List of documents most similar to
             the query text and cosine distance in float for each.
-            Lower score represents more similarity. Each document has an `id` attribute
+            Lower score represents more similarity.
 
         """
         filter = filter or []
@@ -270,8 +274,9 @@ class MatchingEngine(VectorStore):
             page_content = self._download_from_gcs(f"documents/{doc.id}")
             results.append(
                 (
-                    cast(
-                        Document, _DocumentWithID(page_content=page_content, id=doc.id)
+                    Document(
+                        page_content=page_content,
+                        metadata={self.document_id_key: doc.id},
                     ),
                     doc.distance,
                 )
