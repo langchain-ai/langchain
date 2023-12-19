@@ -670,6 +670,8 @@ def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
     chunk_ids = input_ids[start_idx:cur_idx]
     while start_idx < len(input_ids):
         splits.append(tokenizer.decode(chunk_ids))
+        if cur_idx == len(input_ids):
+            break
         start_idx += tokenizer.tokens_per_chunk - tokenizer.chunk_overlap
         cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
         chunk_ids = input_ids[start_idx:cur_idx]
