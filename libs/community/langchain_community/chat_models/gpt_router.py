@@ -77,7 +77,7 @@ def get_ordered_generation_requests(
 
 
 def _create_retry_decorator(
-    llm: ChatGPTRouter,
+    llm: GPTRouter,
     run_manager: Optional[
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
@@ -96,7 +96,7 @@ def _create_retry_decorator(
 
 
 def completion_with_retry(
-    llm: ChatGPTRouter,
+    llm: GPTRouter,
     models_priority_list: List[GPTRouterModel],
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -118,7 +118,7 @@ def completion_with_retry(
 
 
 async def acompletion_with_retry(
-    llm: ChatGPTRouter,
+    llm: GPTRouter,
     models_priority_list: List[GPTRouterModel],
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -140,7 +140,7 @@ async def acompletion_with_retry(
     return await _completion_with_retry(**kwargs)
 
 
-class ChatGPTRouter(BaseChatModel):
+class GPTRouter(BaseChatModel):
     """GPTRouter by Writesonic Inc.
 
     For more information, see https://gpt-router.writesonic.com/docs
