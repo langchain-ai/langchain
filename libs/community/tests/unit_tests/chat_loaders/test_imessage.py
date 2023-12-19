@@ -34,7 +34,7 @@ def test_imessage_chat_loader() -> None:
 
     # is_from_me parsed correctly
     assert (
-        first_message.additional_kwargs["is_from_me"] == False
+        first_message.additional_kwargs["is_from_me"] is False
     ), "is_from_me failed to parse"
 
     # short message content in attributedBody field

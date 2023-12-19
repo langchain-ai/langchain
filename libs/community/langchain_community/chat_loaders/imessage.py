@@ -113,7 +113,7 @@ class IMessageChatLoader(BaseChatLoader):
         JOIN handle ON message.handle_id = handle.ROWID
         WHERE chat_message_join.chat_id = ?
         ORDER BY message.date ASC;
-        """
+        """  # noqa: E501
         cursor.execute(query, (chat_id,))
         messages = cursor.fetchall()
 
