@@ -230,7 +230,7 @@ class MatchingEngine(VectorStore):
                 for more detail.
 
         Returns:
-            List[Tuple[_DocumentWithID, float]]: List of documents most similar to
+            List[Tuple[Document, float]]: List of documents most similar to
             the query text and cosine distance in float for each.
             Lower score represents more similarity.
 
