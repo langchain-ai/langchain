@@ -16,7 +16,7 @@ def test_chat_google_genai_stream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
-    for token in llm.stream("I'm Pickle Rick"):
+    for token in llm.stream("This is a test. Say 'foo'"):
         assert isinstance(token.content, str)
 
 
@@ -24,7 +24,7 @@ async def test_chat_google_genai_astream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
-    async for token in llm.astream("I'm Pickle Rick"):
+    async for token in llm.astream("This is a test. Say 'foo'"):
         assert isinstance(token.content, str)
 
 
@@ -32,7 +32,9 @@ async def test_chat_google_genai_abatch() -> None:
     """Test streaming tokens from ChatGoogleGenerativeAI."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
-    result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
+    result = await llm.abatch(
+        ["This is a test. Say 'foo'", "This is a test, say 'bar'"]
+    )
     for token in result:
         assert isinstance(token.content, str)
 
@@ -42,7 +44,7 @@ async def test_chat_google_genai_abatch_tags() -> None:
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
     result = await llm.abatch(
-        ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
+        ["This is a test", "This is another test"], config={"tags": ["foo"]}
     )
     for token in result:
         assert isinstance(token.content, str)
@@ -52,7 +54,7 @@ def test_chat_google_genai_batch() -> None:
     """Test batch tokens from ChatGoogleGenerativeAI."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
-    result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
+    result = llm.batch(["This is a test. Say 'foo'", "This is a test, say 'bar'"])
     for token in result:
         assert isinstance(token.content, str)
 
@@ -61,7 +63,7 @@ async def test_chat_google_genai_ainvoke() -> None:
     """Test invoke tokens from ChatGoogleGenerativeAI."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
-    result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
+    result = await llm.ainvoke("This is a test. Say 'foo'", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
 
 
@@ -70,7 +72,7 @@ def test_chat_google_genai_invoke() -> None:
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
     result = llm.invoke(
-        "I'm Pickle Rick",
+        "This is a test. Say 'foo'",
         config=dict(tags=["foo"]),
         generation_config=dict(top_k=2, top_p=1, temperature=0.7),
     )
