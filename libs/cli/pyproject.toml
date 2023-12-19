@@ -30,6 +30,8 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 
+[tool.poetry.group.test_integration.dependencies]
+
 [tool.poetry.extras]
 # For langserve
 serve = []
