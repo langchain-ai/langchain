@@ -211,7 +211,7 @@ class SerpAPIWrapper(BaseModel):
 
         if "buying_guide" in res.keys():
             snippets.append(res["buying_guide"])
-        if "local_results" in res.keys() and isinstance(res["local_results"], list):
+        if "local_results" in res and isinstance(res["local_results"], list):
             snippets += res["local_results"]
 
         if len(snippets) > 0:
