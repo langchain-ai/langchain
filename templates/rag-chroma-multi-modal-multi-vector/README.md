@@ -15,6 +15,14 @@ This template performs multi-modal RAG using Chroma with the multi-vector retrie
 
 ## Storage
 
+By default, this will use [LocalFileStore](https://python.langchain.com/docs/integrations/stores/file_system) to store images.
+
+For production, it may be desirable to use a remote option such as Redis.
+
+You can set the `local_file_store` flag in `chain.py` and `ingest.py` to switch between the two options.
+
+For Redis, the template will use [UpstashRedisByteStore](https://python.langchain.com/docs/integrations/stores/upstash_redis).
+
 We will use Upstash to store the images, which offers Redis with a REST API.
 
 Simply login [here](https://upstash.com/) and create a database.
