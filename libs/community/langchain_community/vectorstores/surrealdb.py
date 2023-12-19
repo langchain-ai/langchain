@@ -200,7 +200,9 @@ class SurrealDBStore(VectorStore):
         from {collection}
         where vector::similarity::cosine(embedding,{embedding}) >= {score_threshold}
         order by similarity desc LIMIT {k}
-        """.format(**args)
+        """.format(
+            **args
+        )
 
         results = await self.sdb.query(query)
 

@@ -127,7 +127,7 @@ class SKLearnVectorStoreException(RuntimeError):
 
 class SKLearnVectorStore(VectorStore):
     """Simple in-memory vector store based on the `scikit-learn` library
-    `NearestNeighbors` implementation."""
+    `NearestNeighbors`."""
 
     def __init__(
         self,
