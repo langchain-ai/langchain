@@ -8,7 +8,7 @@ from langchain_core.callbacks import (
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
-from langchain_community.chat_models.gpt_router import ChatGPTRouter, GPTRouterModel
+from langchain_community.chat_models.gpt_router import GPTRouter, GPTRouterModel
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -17,7 +17,7 @@ def test_gpt_router_call() -> None:
     anthropic_claude = GPTRouterModel(
         name="claude-instant-1.2", provider_name="anthropic"
     )
-    chat = ChatGPTRouter(models_priority_list=[anthropic_claude])
+    chat = GPTRouter(models_priority_list=[anthropic_claude])
     message = HumanMessage(content="Hello World")
     response = chat([message])
     assert isinstance(response, AIMessage)
@@ -29,7 +29,7 @@ def test_gpt_router_call_incorrect_model() -> None:
     anthropic_claude = GPTRouterModel(
         name="model_does_not_exist", provider_name="anthropic"
     )
-    chat = ChatGPTRouter(models_priority_list=[anthropic_claude])
+    chat = GPTRouter(models_priority_list=[anthropic_claude])
     message = HumanMessage(content="Hello World")
     with pytest.raises(Exception):
         chat([message])
@@ -40,7 +40,7 @@ def test_gpt_router_generate() -> None:
     anthropic_claude = GPTRouterModel(
         name="claude-instant-1.2", provider_name="anthropic"
     )
-    chat = ChatGPTRouter(models_priority_list=[anthropic_claude])
+    chat = GPTRouter(models_priority_list=[anthropic_claude])
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="If (5 + x = 18), what is x?")]
     ]
@@ -59,7 +59,7 @@ def test_gpt_router_streaming() -> None:
     anthropic_claude = GPTRouterModel(
         name="claude-instant-1.2", provider_name="anthropic"
     )
-    chat = ChatGPTRouter(models_priority_list=[anthropic_claude], streaming=True)
+    chat = GPTRouter(models_priority_list=[anthropic_claude], streaming=True)
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, AIMessage)
@@ -73,7 +73,7 @@ def test_gpt_router_streaming_callback() -> None:
     anthropic_claude = GPTRouterModel(
         name="claude-instant-1.2", provider_name="anthropic"
     )
-    chat = ChatGPTRouter(
+    chat = GPTRouter(
         models_priority_list=[anthropic_claude],
         streaming=True,
         callback_manager=callback_manager,
