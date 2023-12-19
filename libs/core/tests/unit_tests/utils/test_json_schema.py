@@ -155,24 +155,25 @@ def test_dereference_refs_integer_ref() -> None:
     schema = {
         "type": "object",
         "properties": {
-            "error_400": {"$ref": "#/$defs/error/400"},
+            "error_400": {"$ref": "#/$defs/400"},
         },
         "$defs": {
-            "error": {
+            400: {
                 "type": "object",
-                "properties": {"400": {"type": "string", "description": "Bad Request"}},
+                "properties": {"description": "Bad Request"},
             },
         },
     }
     expected = {
         "type": "object",
         "properties": {
-            "error_400": {"type": "string", "description": "Bad Request"},
+            "error_400": {"type": "object",
+                        "properties": {"description": "Bad Request"}},
         },
         "$defs": {
-            "error": {
+            400: {
                 "type": "object",
-                "properties": {"400": {"type": "string", "description": "Bad Request"}},
+                "properties": {"description": "Bad Request"},
             },
         },
     }
