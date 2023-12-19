@@ -42,6 +42,8 @@ _EXPECTED = [
     "OpenSearchVectorSearch",
     "PGEmbedding",
     "PGVector",
+    "PathwayVectorClient",
+    "PathwayVectorServer",
     "Pinecone",
     "Qdrant",
     "Redis",

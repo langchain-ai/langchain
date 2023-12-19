@@ -189,6 +189,7 @@ extended_testing = [
  "google-cloud-documentai",
  "esprima",
  "jq",
+ "pathway",
  "pdfminer-six",
  "pgvector",
  "pypdf",
