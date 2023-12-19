@@ -152,3 +152,14 @@ class GradientEmbeddings(BaseModel, Embeddings):
         )
         embeddings = await self.aembed_documents([query])
         return embeddings[0]
+
+
+class TinyAsyncGradientEmbeddingClient:  #: :meta private:
+    """Deprecated, TinyAsyncGradientEmbeddingClient was removed.
+    
+    This class is just for backwards compatibility with older versions of langchain_community.
+    It might be entirely removed in the future.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        raise ValueError("Deprecated,TinyAsyncGradientEmbeddingClient was removed.")
