@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
-from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
+if TYPE_CHECKING:
+    from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
+
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
