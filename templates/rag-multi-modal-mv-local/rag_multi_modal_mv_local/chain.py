@@ -1,6 +1,5 @@
 import base64
 import io
-import os
 from pathlib import Path
 
 from langchain.chat_models import ChatOllama
@@ -43,12 +42,12 @@ def get_resized_images(docs):
     for doc in docs:
         if isinstance(doc, Document):
             doc = doc.page_content
-        resized_image = resize_base64_image(doc, size=(1280, 720))
-        b64_images.append(resized_image)
+        # resized_image = resize_base64_image(doc, size=(1280, 720))
+        b64_images.append(doc)
     return {"images": b64_images}
 
 
-def img_prompt_func(data_dict, num_images=2):
+def img_prompt_func(data_dict, num_images=1):
     """
     Ollama prompt for image analysis.
 
@@ -67,10 +66,9 @@ def img_prompt_func(data_dict, num_images=2):
     text_message = {
         "type": "text",
         "text": (
-            "You are tasked with answering questions about visual content.\n"
-            "You will be give a set of image(s).\n"
-            "Use this information to answer the user question. \n"
-            f"User-provided question: {data_dict['question']}\n\n"
+            "You are a helpful assistant that gives a description of food pictures.\n"
+            "Give a detailed summary of the image.\n"
+            "Give reccomendations for similar food to try.\n"
         ),
     }
     messages.append(text_message)
@@ -85,7 +83,7 @@ def multi_modal_rag_chain(retriever):
     :return: A chain of functions representing the multi-modal RAG process.
     """
     # Initialize the multi-modal Large Language Model with specific parameters
-    model = ChatOllama(model="bakllava",temperature=0)
+    model = ChatOllama(model="bakllava", temperature=0)
 
     # Define the RAG pipeline
     chain = (
@@ -109,7 +107,9 @@ vectorstore_mvr = Chroma(
 )
 
 # Load file store
-store = LocalFileStore(str(Path(__file__).parent.parent / "multi_vector_retriever_metadata"))
+store = LocalFileStore(
+    str(Path(__file__).parent.parent / "multi_vector_retriever_metadata")
+)
 id_key = "doc_id"
 
 # Create the multi-vector retriever

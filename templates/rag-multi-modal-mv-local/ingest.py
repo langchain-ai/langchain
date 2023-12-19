@@ -24,7 +24,7 @@ def image_summarize(img_base64, prompt):
     :return: Image summarization prompt
 
     """
-    chat = ChatOllama(model="bakllava",temperature=0)
+    chat = ChatOllama(model="bakllava", temperature=0)
 
     msg = chat.invoke(
         [
@@ -33,7 +33,7 @@ def image_summarize(img_base64, prompt):
                     {"type": "text", "text": prompt},
                     {
                         "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"},
+                        "image_url": f"data:image/jpeg;base64,{img_base64}",
                     },
                 ]
             )
@@ -55,9 +55,7 @@ def generate_img_summaries(img_base64_list):
     processed_images = []
 
     # Prompt
-    prompt = """You are an assistant tasked with summarizing images for retrieval. \
-    These summaries will be embedded and used to retrieve the raw image. \
-    Give a concise summary of the image that is well optimized for retrieval."""
+    prompt = """Give a detailed summary of the image."""
 
     # Apply summarization to images
     for i, base64_image in enumerate(img_base64_list):
@@ -72,15 +70,15 @@ def generate_img_summaries(img_base64_list):
 
 def get_images(img_path):
     """
-    Extract images from each page of a PDF document and save as JPEG files.
+    Extract images.
 
     :param img_path: A string representing the path to the images.
     """
     # Get image URIs
     pil_images = [
-            Image.open(os.path.join(img_path, image_name))
-            for image_name in os.listdir(img_path)
-            if image_name.endswith(".jpg")
+        Image.open(os.path.join(img_path, image_name))
+        for image_name in os.listdir(img_path)
+        if image_name.endswith(".jpg")
     ]
     return pil_images
 
@@ -119,7 +117,7 @@ def convert_to_base64(pil_image):
     buffered = BytesIO()
     pil_image.save(buffered, format="JPEG")  # You can change the format if needed
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    img_str = resize_base64_image(img_str, size=(831,623))
+    # img_str = resize_base64_image(img_str, size=(831,623))
     return img_str
 
 
@@ -134,7 +132,9 @@ def create_multi_vector_retriever(vectorstore, image_summaries, images):
     """
 
     # Initialize the storage layer for images
-    store = LocalFileStore(str(Path(__file__).parent.parent / "multi_vector_retriever_metadata"))
+    store = LocalFileStore(
+        str(Path(__file__).parent / "multi_vector_retriever_metadata")
+    )
     id_key = "doc_id"
 
     # Create the multi-vector retriever
@@ -159,7 +159,7 @@ def create_multi_vector_retriever(vectorstore, image_summaries, images):
     return retriever
 
 
-# Load PDF
+# Load images
 doc_path = Path(__file__).parent / "docs/"
 rel_doc_path = doc_path.relative_to(Path.cwd())
 print("Read images")

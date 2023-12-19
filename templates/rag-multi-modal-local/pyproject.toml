@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rag-chroma-multi-modal-local"
+name = "rag-multi-modal-local"
 version = "0.1.0"
 description = "Multi-modal RAG using Chroma"
 authors = [
@@ -16,6 +16,7 @@ chromadb = ">=0.4.14"
 open-clip-torch = ">=2.23.0"
 torch = ">=2.1.0"
 langchain-experimental = "^0.0.43"
+langchain-community = ">=0.0.4"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"

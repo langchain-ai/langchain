@@ -2,7 +2,7 @@ import base64
 import io
 from pathlib import Path
 
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOllama
 from langchain.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
@@ -58,16 +58,15 @@ def img_prompt_func(data_dict, num_images=2):
         for image in data_dict["context"]["images"][:num_images]:
             image_message = {
                 "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{image}"},
+                "image_url": f"data:image/jpeg;base64,{image}",
             }
             messages.append(image_message)
     text_message = {
         "type": "text",
         "text": (
-            "You are an analyst tasked with answering questions about visual content.\n"
-            "You will be give a set of image(s) from a slide deck / presentation.\n"
-            "Use this information to answer the user question. \n"
-            f"User-provided question: {data_dict['question']}\n\n"
+            "You are a helpful assistant that gives a description of food pictures.\n"
+            "Give a detailed summary of the image.\n"
+            "Give reccomendations for similar foods to try.\n"
         ),
     }
     messages.append(text_message)
@@ -82,7 +81,7 @@ def multi_modal_rag_chain(retriever):
     :return: A chain of functions representing the multi-modal RAG process.
     """
     # Initialize the multi-modal Large Language Model with specific parameters
-    model = ChatOpenAI(temperature=0, model="gpt-4-vision-preview", max_tokens=1024)
+    model = ChatOllama(model="bakllava", temperature=0)
 
     # Define the RAG pipeline
     chain = (

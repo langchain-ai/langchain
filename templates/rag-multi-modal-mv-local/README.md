@@ -3,7 +3,13 @@
 
 Multi-modal LLMs unlock new ways to build apps over visual content like photos.
  
-This template performs multi-modal RAG the multi-vector retriever (see [blog](https://blog.langchain.dev/multi-modal-rag-template/)):
+This template performs multi-modal RAG over a set of images.
+
+It first indexes the images and allows a user to asks questions about them.
+
+For each question, it will retrieve the relevant image and pass the image to a multi-modal LLM to generate the answer.
+
+To do this, it uses the multi-vector retriever (see [blog](https://blog.langchain.dev/multi-modal-rag-template/)):
 
 * Given a set of images
 * It uses a local multi-modal LLM ([bakllava](https://ollama.ai/library/bakllava)) to summarize each image
@@ -19,26 +25,28 @@ We will use [Ollama](https://python.langchain.com/docs/integrations/chat/ollama#
 
 Download the latest version of Ollama: https://ollama.ai/
 
-Pull the relevant open source LLM: https://ollama.ai/library/bakllava
+Pull the an open source multi-modal LLM: e.g., https://ollama.ai/library/bakllava
 
 ```
 ollama pull baklava
 ```
 
+The app is by default configured for `baklava`. But you can change this in `chain.py` and `ingest.py` for different downloaded models.
+
 ## Input
 
-Supply a set of images the `/docs` directory. 
-
-This will create your vectorstore (Chroma) and local file storage for images: 
+Supply a set of images the `/docs` directory and run:
 
 ```
 poetry install
 python ingest.py
 ```
 
-## LLM
+This will create a vectorstore (Chroma) of image summaries that are embedded using [Ollama embeddings](https://python.langchain.com/docs/integrations/text_embedding/ollama). 
 
-The app will retrieve images based on the user question and pass them to baklava for final answer synthesis.
+Each image summaries is linked to the raw images, which is stored in a [local file store](https://python.langchain.com/docs/integrations/stores/file_system).
+
+This allows us to retrieve images based on natural langugae text summaries.
 
 ## Usage
 

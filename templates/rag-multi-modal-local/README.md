@@ -1,17 +1,35 @@
 
 # rag-chroma-multi-modal
 
-Presentations (slide decks, etc) contain visual content that challenges conventional RAG.
-
-Multi-modal LLMs unlock new ways to build apps over visual content like presentations.
+Multi-modal LLMs unlock new ways to build apps over visual content like photos.
  
-This template performs multi-modal RAG using Chroma with multi-modal OpenCLIP embeddings and OpenAI GPT-4V.
+This template performs multi-modal RAG over a set of images.
+
+It first indexes the images and allows a user to asks questions about them.
+
+For each question, it will retrieve the relevant image and pass the image to a multi-modal LLM to generate the answer.
+
+All these steps will be done using local, open-source LLMs.
+
+## LLM
+
+We will use [Ollama](https://python.langchain.com/docs/integrations/chat/ollama#multi-modal) for generating image summaries and final image QA.
+
+Download the latest version of Ollama: https://ollama.ai/
+
+Pull the an open source multi-modal LLM: e.g., https://ollama.ai/library/bakllava
+
+```
+ollama pull baklava
+```
+
+The app is by default configured for `baklava`. But you can change this in `chain.py` and `ingest.py` for different downloaded models.
 
 ## Input
 
-Supply a slide deck as pdf in the `/docs` directory. 
+Supply a set of images the `/docs` directory. 
 
-Create your vectorstore with: 
+This will create a vectorstore (Chroma) of image summaries that are embedded using OpenCLIP embeddings.
 
 ```
 poetry install
@@ -38,14 +56,6 @@ vectorstore_mmembd = Chroma(
     ),
 )
 ```
-
-## LLM
-
-The app will retrieve images using multi-modal embeddings, and pass them to GPT-4V.
-
-## Environment Setup
-
-Set the `OPENAI_API_KEY` environment variable to access the OpenAI GPT-4V.
 
 ## Usage
 

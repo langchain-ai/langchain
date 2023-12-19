@@ -1024,13 +1024,13 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.0.350"
+version = "0.0.351"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain-0.0.350-py3-none-any.whl", hash = "sha256:11b605f325a4271a7815baaec05bc7622e3ad1f10f26b05c752cafa27663ed38"},
-    {file = "langchain-0.0.350.tar.gz", hash = "sha256:f0e68a92d200bb722586688ab7b411b2430bd98ad265ca03b264e7e7acbb6c01"},
+    {file = "langchain-0.0.351-py3-none-any.whl", hash = "sha256:90cdaee27db2b2aeeb7b0709a79cbfe3e858fc9536b6bc3ea262135a6affc70f"},
+    {file = "langchain-0.0.351.tar.gz", hash = "sha256:6bf2a8665a7a3ca2bbd4eea9889ecfd3d39ab23a505549a03860272474399b38"},
 ]
 
 [package.dependencies]
@@ -1040,7 +1040,7 @@ dataclasses-json = ">=0.5.7,<0.7"
 jsonpatch = ">=1.33,<2.0"
 langchain-community = ">=0.0.2,<0.1"
 langchain-core = ">=0.1,<0.2"
-langsmith = ">=0.0.63,<0.1.0"
+langsmith = ">=0.0.70,<0.1.0"
 numpy = ">=1,<2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -1082,13 +1082,13 @@ uvicorn = ">=0.23.2,<0.24.0"
 
 [[package]]
 name = "langchain-community"
-version = "0.0.2"
+version = "0.0.4"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain_community-0.0.2-py3-none-any.whl", hash = "sha256:2af62f7917db26a83b4ca6a46f6fc9d65c6358256cbb516375d89817b9437493"},
-    {file = "langchain_community-0.0.2.tar.gz", hash = "sha256:178fb0005c9438a945cabec7cadc89e6ca4eb99abd4cb310bc82618ac8215268"},
+    {file = "langchain_community-0.0.4-py3-none-any.whl", hash = "sha256:c021357e8d7570e3a5a03eaae9132b818d4376e39f3e865909464c6a9c4e6119"},
+    {file = "langchain_community-0.0.4.tar.gz", hash = "sha256:7a5f8fff6272d6472004c86cb0b6202129a15d42bf94fb7da0c2477c5967212c"},
 ]
 
 [package.dependencies]
@@ -1174,13 +1174,13 @@ server = ["fastapi (>=0.90.1,<1)", "sse-starlette (>=1.3.0,<2.0.0)"]
 
 [[package]]
 name = "langsmith"
-version = "0.0.68"
+version = "0.0.71"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.68-py3-none-any.whl", hash = "sha256:c60d66f8f6745bba170204b0e7c88ace9db72941d3f8b9a47cef25947880f7dc"},
-    {file = "langsmith-0.0.68.tar.gz", hash = "sha256:420bd2e088656935419f39e2e748b560af5961cb9133e149dd9ad14670981af8"},
+    {file = "langsmith-0.0.71-py3-none-any.whl", hash = "sha256:dccc8522acbe64723ee6d54cb043f5c8d55512782b5eb3031add6691a00a28e1"},
+    {file = "langsmith-0.0.71.tar.gz", hash = "sha256:1c6147563d7d658f5514299526a18d4e69e0e8ed59b99ad87abaf894eed1477a"},
 ]
 
 [package.dependencies]
@@ -2557,21 +2557,6 @@ mypy-extensions = ">=0.3.0"
 typing-extensions = ">=3.7.4"
 
 [[package]]
-name = "upstash-redis"
-version = "1.0.0"
-description = "Serverless Redis SDK from Upstash"
-optional = false
-python-versions = ">=3.8,<4.0"
-files = [
-    {file = "upstash_redis-1.0.0-py3-none-any.whl", hash = "sha256:960ac8c1309589fa062243ae3c68555194f5d732c6663d30a2a3cff43494e310"},
-    {file = "upstash_redis-1.0.0.tar.gz", hash = "sha256:4fe84cfa9f63d31b0ebd8cd5102f086068b52cafbf062fd0a9088ebcd7075393"},
-]
-
-[package.dependencies]
-aiohttp = ">=3.8.4,<4.0.0"
-requests = ">=2.31.0,<3.0.0"
-
-[[package]]
 name = "urllib3"
 version = "2.1.0"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
@@ -2946,4 +2931,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "9189c83605ae35418d6fc3724a2bd66e5852047ea08e4e1483525e13fa22ce2e"
+content-hash = "2b6e280e9f94fbe477fa6bf6b007236a80626f74b7dcd2627fbd7f595f746fab"
