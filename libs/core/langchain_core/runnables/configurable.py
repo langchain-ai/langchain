@@ -422,6 +422,18 @@ def _strremoveprefix(s: str, prefix: str) -> str:
 def prefix_config_spec(
     spec: ConfigurableFieldSpec, prefix: str
 ) -> ConfigurableFieldSpec:
+    """Prefix the id of a ConfigurableFieldSpec.
+
+    This is useful when a RunnableConfigurableAlternatives is used as a
+    ConfigurableField of another RunnableConfigurableAlternatives.
+
+    Args:
+        spec: The ConfigurableFieldSpec to prefix.
+        prefix: The prefix to add.
+
+    Returns:
+
+    """
     return (
         ConfigurableFieldSpec(
             id=f"{prefix}/{spec.id}",
