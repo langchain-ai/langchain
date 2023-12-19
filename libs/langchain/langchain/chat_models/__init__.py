@@ -31,7 +31,6 @@ from langchain.chat_models.fake import FakeListChatModel
 from langchain.chat_models.fireworks import ChatFireworks
 from langchain.chat_models.gigachat import GigaChat
 from langchain.chat_models.google_palm import ChatGooglePalm
-from langchain.chat_models.gpt_router import ChatGPTRouter
 from langchain.chat_models.human import HumanInputChatModel
 from langchain.chat_models.hunyuan import ChatHunyuan
 from langchain.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
@@ -80,5 +79,4 @@ __all__ = [
     "ChatHunyuan",
     "GigaChat",
     "VolcEngineMaasChat",
-    "ChatGPTRouter",
 ]
