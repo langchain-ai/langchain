@@ -47,8 +47,6 @@ EXPECT_ALL = [
     "Modal",
     "MosaicML",
     "Nebula",
-    "OCIModelDeploymentTGI",
-    "OCIModelDeploymentVLLM",
     "NIBittensorLLM",
     "NLPCloud",
     "Ollama",

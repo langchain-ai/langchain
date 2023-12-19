@@ -1,10 +1,11 @@
 """Test OCI Data Science Model Deployment Endpoint."""
-
+import pytest
 import responses
 
 from langchain_community.llms import OCIModelDeploymentTGI, OCIModelDeploymentVLLM
 
 
+@pytest.mark.requires("oracle_ads")
 @responses.activate
 def test_call_vllm() -> None:
     """Test valid call to oci model deployment endpoint."""
@@ -23,6 +24,7 @@ def test_call_vllm() -> None:
     assert isinstance(output, str)
 
 
+@pytest.mark.requires("oracle_ads")
 @responses.activate
 def test_call_tgi() -> None:
     """Test valid call to oci model deployment endpoint."""
