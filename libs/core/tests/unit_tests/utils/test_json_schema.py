@@ -149,3 +149,32 @@ def test_dereference_refs_remote_ref() -> None:
     }
     with pytest.raises(ValueError):
         dereference_refs(schema)
+
+
+def test_dereference_refs_integer_ref() -> None:
+    schema = {
+        "type": "object",
+        "properties": {
+            "error_400": {"$ref": "#/$defs/error/400"},
+        },
+        "$defs": {
+            "error": {
+                "type": "object",
+                "properties": {"400": {"type": "string", "description": "Bad Request"}},
+            },
+        },
+    }
+    expected = {
+        "type": "object",
+        "properties": {
+            "error_400": {"type": "string", "description": "Bad Request"},
+        },
+        "$defs": {
+            "error": {
+                "type": "object",
+                "properties": {"400": {"type": "string", "description": "Bad Request"}},
+            },
+        },
+    }
+    actual = dereference_refs(schema)
+    assert actual == expected
