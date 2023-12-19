@@ -144,7 +144,7 @@ class PathwayVectorClient(VectorStore):
         )
 
     def similarity_search(
-        self, query: str, k: int = 4, metadata_filter: str | None = None
+        self, query: str, k: int = 4, metadata_filter: Optional[str] = None
     ) -> List[Document]:
         rets = self.client(query=query, k=k, metadata_filter=metadata_filter)
 
