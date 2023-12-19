@@ -55,6 +55,8 @@ class EvalConfig(BaseModel):
 
 
 class SingleKeyEvalConfig(EvalConfig):
+    """Configuration for a run evaluator that only requires a single key."""
+
     reference_key: Optional[str] = None
     """The key in the dataset run to use as the reference string.
     If not provided, we will attempt to infer automatically."""
