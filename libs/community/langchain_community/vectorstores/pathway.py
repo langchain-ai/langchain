@@ -11,14 +11,15 @@ PathwayVectorServer to retrieve up-to-date documents.
 
 """
 
-from typing import Callable, List, Optional
+from typing import TYPE_CHECKING, Callable, List, Optional
 
-import pathway as pw
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from pathway.xpacks.llm import vector_store
 
+if TYPE_CHECKING:
+    import pathway as pw
+    from pathway.xpacks.llm import vector_store
 
 class PathwayVectorServer:
     """
@@ -28,7 +29,7 @@ class PathwayVectorServer:
     Args:
         embedder - embedding model e.g. OpenAIEmbeddings
         parser - callable that parses file contents into a list of documents
-        splitter - docuent splitter, e.g. CharacterTextSplitter
+        splitter - document splitter, e.g. CharacterTextSplitter
     """
 
     def __init__(
@@ -39,6 +40,14 @@ class PathwayVectorServer:
         splitter: Optional[BaseDocumentTransformer] = None,
         **kwargs,
     ) -> None:
+        try:
+            from pathway.xpacks.llm import vector_store
+        except ImportError:
+            raise ImportError(
+                "Could not import pathway python package. "
+                "Please install it with `pip install pathway`."
+            )
+
         generic_parser = None
         if parser:
             generic_parser = lambda x: [  # noqa
@@ -67,8 +76,7 @@ class PathwayVectorServer:
         port,
         threaded=False,
         with_cache=True,
-        cache_backend: pw.persistence.Backend
-        | None = pw.persistence.Backend.filesystem("./Cache"),
+        cache_backend: pw.persistence.Backend | None = None,
     ):
         """
         Run the server and start answering queries.
@@ -89,6 +97,15 @@ class PathwayVectorServer:
         Returns:
             If threaded, return the Thread object. Else, does not return.
         """
+        try:
+            import pathway as pw
+        except ImportError:
+            raise ImportError(
+                "Could not import pathway python package. "
+                "Please install it with `pip install pathway`."
+            )
+        if with_cache and cache_backend is None:
+            cache_backend = pw.persistence.Backend.filesystem("./Cache")
         return self.vector_store_server.run_server(
             host,
             port,
