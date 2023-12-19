@@ -48,7 +48,7 @@ def mock_completion() -> dict:
         "id": "cmpl-3evkmQda5Hu7fcZavknQda3SQ",
         "object": "text_completion",
         "created": 1689989000,
-        "model": "text-davinci-003",
+        "model": "gpt-3.5-turbo-instruct",
         "choices": [
             {"text": "Bar Baz", "index": 0, "logprobs": None, "finish_reason": "length"}
         ],
