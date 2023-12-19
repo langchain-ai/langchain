@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
-from grpc import RpcError
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -264,6 +263,8 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
 
 
 def _create_retry_decorator(llm: YandexGPT) -> Callable[[Any], Any]:
+    from grpc import RpcError
+
     min_seconds = 1
     max_seconds = 60
     return retry(
