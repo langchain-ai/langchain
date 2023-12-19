@@ -70,9 +70,6 @@ from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
-from langchain.document_loaders.doc_intelligence import (
-    AzureAIDocumentIntelligenceLoader,
-)
 from langchain.document_loaders.docugami import DocugamiLoader
 from langchain.document_loaders.docusaurus import DocusaurusLoader
 from langchain.document_loaders.dropbox import DropboxLoader
@@ -259,7 +256,6 @@ __all__ = [
     "DirectoryLoader",
     "DiscordChatLoader",
     "DocugamiLoader",
-    "AzureAIDocumentIntelligenceLoader",
     "DocusaurusLoader",
     "Docx2txtLoader",
     "DropboxLoader",

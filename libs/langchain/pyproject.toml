@@ -109,7 +109,6 @@ msal = {version = "^1.25.0", optional = true}
 databricks-vectorsearch = {version = "^0.21", optional = true}
 couchbase = {version = "^4.1.9", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
-azure-ai-documentintelligence = {version = "^1.0.0b1", optional = true}
 datasets = {version = "^2.15.0", optional = true}
 
 [tool.poetry.group.test]
@@ -221,7 +220,6 @@ azure = [
     "azure-cognitiveservices-speech",
     "azure-search-documents",
     "azure-ai-textanalytics",
-    "azure-ai-documentintelligence",
 ]
 all = []
 cli = ["typer"]
@@ -295,7 +293,6 @@ extended_testing = [
  "databricks-vectorsearch",
  "couchbase",
  "dgml-utils",
- "azure-ai-documentintelligence",
  "cohere",
 ]
 
