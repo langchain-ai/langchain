@@ -1,6 +1,7 @@
 from typing import Any, Iterator, Optional
 
 from langchain_core.documents import Document
+
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 
@@ -104,6 +105,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
 
     def parse_url(self, url: str) -> Iterator[Document]:
         from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
+
         print(url)
         poller = self.client.begin_analyze_document(
             self.api_model,

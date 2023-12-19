@@ -1,9 +1,12 @@
 from typing import Iterator, List, Optional
 
 from langchain_core.documents import Document
-from langchain.document_loaders.base import BaseLoader
+
+from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.document_loaders.parsers import AzureAIDocumentIntelligenceParser
+from langchain_community.document_loaders.parsers import (
+    AzureAIDocumentIntelligenceParser,
+)
 
 
 class AzureAIDocumentIntelligenceLoader(BaseLoader):
@@ -23,10 +26,10 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         Initialize the object for file processing with Azure Document Intelligence
         (formerly Form Recognizer).
 
-        This constructor initializes a AzureAIDocumentIntelligenceParser object to be used
-        for parsing files using the Azure Document Intelligence API. The load method
-        generates Documents whose content representations are determined by the mode
-        parameter.
+        This constructor initializes a AzureAIDocumentIntelligenceParser object to be
+        used for parsing files using the Azure Document Intelligence API. The load
+        method generates Documents whose content representations are determined by the
+        mode parameter.
 
         Parameters:
         -----------
@@ -57,7 +60,9 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         ... )
         """
 
-        assert file_path is not None or url_path is not None, "file_path or url_path must be provided"
+        assert (
+            file_path is not None or url_path is not None
+        ), "file_path or url_path must be provided"
         self.file_path = file_path
         self.url_path = url_path
 
