@@ -4,7 +4,7 @@ import json
 import logging
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type, cast
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -23,6 +23,10 @@ if TYPE_CHECKING:
     from langchain_community.embeddings import TensorflowHubEmbeddings
 
 logger = logging.getLogger()
+
+
+class _DocumentWithID(Document):
+    id: str
 
 
 class MatchingEngine(VectorStore):
@@ -226,9 +230,10 @@ class MatchingEngine(VectorStore):
                 for more detail.
 
         Returns:
-            List[Tuple[Document, float]]: List of documents most similar to
+            List[Tuple[_DocumentWithID, float]]: List of documents most similar to
             the query text and cosine distance in float for each.
-            Lower score represents more similarity.
+            Lower score represents more similarity. Each document has an `id` attribute
+
         """
         filter = filter or []
 
@@ -265,7 +270,9 @@ class MatchingEngine(VectorStore):
             page_content = self._download_from_gcs(f"documents/{doc.id}")
             results.append(
                 (
-                    Document(page_content=page_content, metadata={"id": doc.id}),
+                    cast(
+                        Document, _DocumentWithID(page_content=page_content, id=doc.id)
+                    ),
                     doc.distance,
                 )
             )
