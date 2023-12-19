@@ -1,6 +1,7 @@
 """Test GPTRouter API wrapper."""
 from typing import List
 
+import pytest
 from langchain_core.callbacks import (
     CallbackManager,
 )
@@ -21,6 +22,16 @@ def test_gpt_router_call() -> None:
     response = chat([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+
+def test_gpt_router_call_incorrect_model() -> None:
+    """Test invalid modelName """
+    anthropic_claude = GPTRouterModel(
+        name="model_does_not_exist", provider_name="anthropic"
+    )
+    chat = ChatGPTRouter(models_priority_list=[anthropic_claude])
+    message = HumanMessage(content="Hello World")
+    with pytest.raises(Exception):
+        chat([message])
 
 
 def test_gpt_router_generate() -> None:
