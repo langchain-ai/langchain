@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List
 
-from grpc import RpcError
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -118,6 +117,8 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
 
 
 def _create_retry_decorator(llm: YandexGPTEmbeddings) -> Callable[[Any], Any]:
+    from grpc import RpcError
+
     min_seconds = 1
     max_seconds = 60
     return retry(
