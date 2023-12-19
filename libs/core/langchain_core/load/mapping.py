@@ -334,28 +334,6 @@ SERIALIZABLE_MAPPING = {
         "replicate",
         "Replicate",
     ),
-    (
-        "langchain",
-        "llms",
-        "oci_data_science_model_deployment_endpoint",
-        "OCIModelDeploymentTGI",
-    ): (
-        "langchain",
-        "llms",
-        "oci_data_science_model_deployment_endpoint",
-        "OCIModelDeploymentTGI",
-    ),
-    (
-        "langchain",
-        "llms",
-        "oci_data_science_model_deployment_endpoint",
-        "OCIModelDeploymentVLLM",
-    ): (
-        "langchain",
-        "llms",
-        "oci_data_science_model_deployment_endpoint",
-        "OCIModelDeploymentVLLM",
-    ),
     ("langchain", "llms", "vertexai", "VertexAI"): (
         "langchain",
         "llms",

@@ -19,7 +19,7 @@ def test_call_vllm() -> None:
     )
 
     llm = OCIModelDeploymentVLLM(endpoint=endpoint, model="my_model")
-    output = llm("This is a prompt.")
+    output = llm.invoke("This is a prompt.")
     assert isinstance(output, str)
 
 
@@ -37,5 +37,5 @@ def test_call_tgi() -> None:
     )
 
     llm = OCIModelDeploymentTGI(endpoint=endpoint)
-    output = llm("This is a prompt.")
+    output = llm.invoke("This is a prompt.")
     assert isinstance(output, str)

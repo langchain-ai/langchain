@@ -47,16 +47,6 @@ class OCIModelDeploymentLLM(LLM):
     """Stop words to use when generating. Model output is cut off
     at the first occurrence of any of these substrings."""
 
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        """This class can be serialized with default LangChain serialization."""
-        return True
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "llms", "oci_data_science_model_deployment_endpoint"]
-
     @root_validator()
     def validate_environment(  # pylint: disable=no-self-argument
         cls, values: Dict
@@ -145,14 +135,14 @@ class OCIModelDeploymentLLM(LLM):
         params = self._invocation_params(stop, **kwargs)
         body = self._construct_json_body(prompt, params)
         logger.info(f"LLM API Request:\n{prompt}")
-        response = self.send_request(
+        response = self._send_request(
             data=body, endpoint=self.endpoint, **requests_kwargs
         )
         completion = self._process_response(response)
         logger.info(f"LLM API Completion:\n{completion}")
         return completion
 
-    def send_request(
+    def _send_request(
         self,
         data: Any,
         endpoint: str,
