@@ -1,7 +1,7 @@
 """Tool for the identification of prompt injection attacks."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any
 
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.tools.base import BaseTool
@@ -11,7 +11,11 @@ if TYPE_CHECKING:
 
 
 class PromptInjectionException(ValueError):
-    def __init__(self, message="Prompt injection attack detected", score: float = 1.0):
+    def __init__(
+        self,
+        message: str = "Prompt injection attack detected",
+        score: float = 1.0,
+    ):
         self.message = message
         self.score = score
 
@@ -54,7 +58,7 @@ class HuggingFaceInjectionIdentifier(BaseTool):
         "Useful for when you need to ensure that prompt is free of injection attacks. "
         "Input should be any message from the user."
     )
-    model: Union[Pipeline, str, None] = Field(default_factory=_model_default_factory)
+    model: Any = Field(default_factory=_model_default_factory)
     """Model to use for prompt injection detection. 
     
     Can be specified as transformers Pipeline or string. String should correspond to the
@@ -79,6 +83,7 @@ class HuggingFaceInjectionIdentifier(BaseTool):
     def validate_environment(cls, values: dict) -> dict:
         if isinstance(values.get("model"), str):
             values["model"] = _model_default_factory(model_name=values["model"])
+
         return values
 
     def _run(self, query: str) -> str:
