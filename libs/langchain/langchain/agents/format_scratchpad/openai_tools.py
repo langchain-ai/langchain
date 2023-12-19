@@ -31,6 +31,7 @@ def _create_tool_message(
     return ToolMessage(
         tool_call_id=agent_action.tool_call_id,
         content=content,
+        additional_kwargs={"name": agent_action.tool},
     )
 
 
