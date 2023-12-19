@@ -19,6 +19,12 @@ sse-starlette = "^1.6.5"
 export_module = "sql_research_assistant"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "research"
+author = "LangChain"
+integrations = ["OpenAI"]
+tags = ["data", "agents", "sql"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
