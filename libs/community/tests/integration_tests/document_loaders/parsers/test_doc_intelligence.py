@@ -3,7 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from langchain_community.document_loaders.parsers import AzureAIDocumentIntelligenceParser
+from langchain_community.document_loaders.parsers import (
+    AzureAIDocumentIntelligenceParser,
+)
 
 
 @pytest.mark.requires("azure", "azure.ai", "azure.ai.documentintelligence")
