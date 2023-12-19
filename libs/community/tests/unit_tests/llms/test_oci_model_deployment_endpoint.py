@@ -5,7 +5,7 @@ import responses
 from langchain_community.llms import OCIModelDeploymentTGI, OCIModelDeploymentVLLM
 
 
-@pytest.mark.requires("oracle_ads")
+@pytest.mark.requires("ads")
 @responses.activate
 def test_call_vllm() -> None:
     """Test valid call to oci model deployment endpoint."""
@@ -24,7 +24,7 @@ def test_call_vllm() -> None:
     assert isinstance(output, str)
 
 
-@pytest.mark.requires("oracle_ads")
+@pytest.mark.requires("ads")
 @responses.activate
 def test_call_tgi() -> None:
     """Test valid call to oci model deployment endpoint."""
