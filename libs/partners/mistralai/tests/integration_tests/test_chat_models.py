@@ -3,7 +3,7 @@ from langchain_mistralai.chat_models import ChatMistralAI
 
 
 def test_stream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from ChatMistralAI."""
     llm = ChatMistralAI()
 
     for token in llm.stream("I'm Pickle Rick"):
@@ -11,7 +11,7 @@ def test_stream() -> None:
 
 
 async def test_astream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from ChatMistralAI."""
     llm = ChatMistralAI()
 
     async for token in llm.astream("I'm Pickle Rick"):
@@ -19,7 +19,7 @@ async def test_astream() -> None:
 
 
 async def test_abatch() -> None:
-    """Test streaming tokens from ChatMistral."""
+    """Test streaming tokens from ChatMistralAI"""
     llm = ChatMistralAI()
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -28,7 +28,7 @@ async def test_abatch() -> None:
 
 
 async def test_abatch_tags() -> None:
-    """Test batch tokens from ChatMistral."""
+    """Test batch tokens from ChatMistralAI"""
     llm = ChatMistralAI()
 
     result = await llm.abatch(
@@ -39,7 +39,7 @@ async def test_abatch_tags() -> None:
 
 
 def test_batch() -> None:
-    """Test batch tokens from ChatMistral."""
+    """Test batch tokens from ChatMistralAI"""
     llm = ChatMistralAI()
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -48,7 +48,7 @@ def test_batch() -> None:
 
 
 async def test_ainvoke() -> None:
-    """Test invoke tokens from ChatMistral."""
+    """Test invoke tokens from ChatMistralAI"""
     llm = ChatMistralAI()
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
@@ -56,7 +56,7 @@ async def test_ainvoke() -> None:
 
 
 def test_invoke() -> None:
-    """Test invoke tokens from ChatMistral."""
+    """Test invoke tokens from ChatMistralAI"""
     llm = ChatMistralAI()
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
