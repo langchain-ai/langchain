@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-cli"
-version = "0.0.19"
+version = "0.0.20rc0"
 description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 license = "MIT"
