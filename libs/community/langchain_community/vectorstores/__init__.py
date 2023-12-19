@@ -372,6 +372,12 @@ def _import_supabase() -> Any:
     return SupabaseVectorStore
 
 
+def _import_surrealdb() -> Any:
+    from langchain_community.vectorstores.surrealdb import SurrealDBStore
+
+    return SurrealDBStore
+
+
 def _import_tair() -> Any:
     from langchain_community.vectorstores.tair import Tair
 
@@ -567,6 +573,8 @@ def __getattr__(name: str) -> Any:
         return _import_starrocks()
     elif name == "SupabaseVectorStore":
         return _import_supabase()
+    elif name == "SurrealDBStore":
+        return _import_surrealdb()
     elif name == "Tair":
         return _import_tair()
     elif name == "TencentVectorDB":
@@ -655,6 +663,7 @@ __all__ = [
     "SQLiteVSS",
     "StarRocks",
     "SupabaseVectorStore",
+    "SurrealDBStore",
     "Tair",
     "TileDB",
     "Tigris",

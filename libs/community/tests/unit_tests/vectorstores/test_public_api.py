@@ -55,6 +55,7 @@ _EXPECTED = [
     "SQLiteVSS",
     "StarRocks",
     "SupabaseVectorStore",
+    "SurrealDBStore",
     "Tair",
     "TileDB",
     "Tigris",

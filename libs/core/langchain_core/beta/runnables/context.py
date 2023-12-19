@@ -128,6 +128,15 @@ def aconfig_with_context(
     config: RunnableConfig,
     steps: List[Runnable],
 ) -> RunnableConfig:
+    """Asynchronously patch a runnable config with context getters and setters.
+
+    Args:
+        config: The runnable config.
+        steps: The runnable steps.
+
+    Returns:
+        The patched runnable config.
+    """
     return _config_with_context(config, steps, _asetter, _agetter, asyncio.Event)
 
 
@@ -135,10 +144,21 @@ def config_with_context(
     config: RunnableConfig,
     steps: List[Runnable],
 ) -> RunnableConfig:
+    """Patch a runnable config with context getters and setters.
+
+    Args:
+        config: The runnable config.
+        steps: The runnable steps.
+
+    Returns:
+        The patched runnable config.
+    """
     return _config_with_context(config, steps, _setter, _getter, threading.Event)
 
 
 class ContextGet(RunnableSerializable):
+    """Get a context value."""
+
     prefix: str = ""
 
     key: Union[str, List[str]]
@@ -197,6 +217,8 @@ def _coerce_set_value(value: SetValue) -> Runnable[Input, Output]:
 
 
 class ContextSet(RunnableSerializable):
+    """Set a context value."""
+
     prefix: str = ""
 
     keys: Mapping[str, Optional[Runnable]]
@@ -276,8 +298,18 @@ class ContextSet(RunnableSerializable):
 
 
 class Context:
+    """Context for a runnable."""
+
     @staticmethod
     def create_scope(scope: str, /) -> "PrefixContext":
+        """Create a context scope.
+
+        Args:
+            scope: The scope.
+
+        Returns:
+            The context scope.
+        """
         return PrefixContext(prefix=scope)
 
     @staticmethod
@@ -295,6 +327,8 @@ class Context:
 
 
 class PrefixContext:
+    """Context for a runnable with a prefix."""
+
     prefix: str = ""
 
     def __init__(self, prefix: str = ""):
