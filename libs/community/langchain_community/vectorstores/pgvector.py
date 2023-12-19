@@ -490,7 +490,8 @@ class PGVector(VectorStore):
         return docs
     
     def _create_filter_clause(self, key, value):
-        IN, NIN, BETWEEN, GT, LT, NE, EQ, LIKE, CONTAINS, OR, AND = "in", "nin", "between", "gt", "lt", "ne", "eq", "like", "contains", "or", "and"
+        IN, NIN, BETWEEN, GT, LT, NE = "in", "nin", "between", "gt", "lt", "ne"
+        EQ, LIKE, CONTAINS, OR, AND = "eq", "like", "contains", "or", "and"
 
         value_case_insensitive = {
             k.lower(): v for k, v in value.items()
@@ -506,7 +507,10 @@ class PGVector(VectorStore):
         elif BETWEEN in map(str.lower, value):
             filter_by_metadata = self.EmbeddingStore.cmetadata[
                 key
-            ].astext.between(str(value_case_insensitive[BETWEEN][0]), str(value_case_insensitive[BETWEEN][1]))
+            ].astext.between(
+                str(value_case_insensitive[BETWEEN][0]), 
+                str(value_case_insensitive[BETWEEN][1])
+                )
         elif GT in map(str.lower, value):
             filter_by_metadata = self.EmbeddingStore.cmetadata[
                 key
@@ -532,10 +536,16 @@ class PGVector(VectorStore):
                 key
             ].astext.contains(value_case_insensitive[CONTAINS])
         elif OR in map(str.lower, value):
-            or_clauses = [self._create_filter_clause(key, sub_value) for sub_value in value_case_insensitive[OR]]
+            or_clauses = [
+                self._create_filter_clause(key, sub_value) 
+                for sub_value in value_case_insensitive[OR]
+            ]
             filter_by_metadata = sqlalchemy.or_(or_clauses)
         elif AND in map(str.lower, value):
-            and_clauses = [self._create_filter_clause(key, sub_value) for sub_value in value_case_insensitive[AND]]
+            and_clauses = [
+                self._create_filter_clause(key, sub_value) 
+                for sub_value in value_case_insensitive[AND]
+            ]
             filter_by_metadata = sqlalchemy.and_(and_clauses)
 
         else:
