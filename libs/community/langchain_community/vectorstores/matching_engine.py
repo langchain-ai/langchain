@@ -50,7 +50,7 @@ class MatchingEngine(VectorStore):
         gcs_bucket_name: str,
         credentials: Optional[Credentials] = None,
         *,
-        document_id_key: str = "document_id",
+        document_id_key: Optional[str] = None,
     ):
         """Google Vertex AI Vector Search (previously Matching Engine)
          implementation of the vector store.
@@ -80,7 +80,9 @@ class MatchingEngine(VectorStore):
             gcs_client: The GCS client.
             gcs_bucket_name: The GCS bucket name.
             credentials (Optional): Created GCP credentials.
-            document_id_key: Key for storing document id in document metadata.
+            document_id_key (Optional): Key for storing document ID in document
+                metadata. If None, document ID will not be returned in document
+                metadata.
         """
         super().__init__()
         self._validate_google_libraries_installation()
@@ -260,28 +262,27 @@ class MatchingEngine(VectorStore):
         if len(response) == 0:
             return []
 
-        results = []
+        docs: List[Tuple[Document, float]] = []
 
         # I'm only getting the first one because queries receives an array
         # and the similarity_search method only receives one query. This
         # means that the match method will always return an array with only
         # one element.
-        for doc in response[0]:
-            page_content = self._download_from_gcs(f"documents/{doc.id}")
-            results.append(
-                (
-                    Document(
-                        page_content=page_content,
-                        # TODO: return all metadata.
-                        metadata={self.document_id_key: doc.id},
-                    ),
-                    doc.distance,
-                )
+        for result in response[0]:
+            page_content = self._download_from_gcs(f"documents/{result.id}")
+            # TODO: return all metadata.
+            metadata = {}
+            if self.document_id_key is not None:
+                metadata[self.document_id_key] = result.id
+            document = Document(
+                page_content=page_content,
+                metadata=metadata,
             )
+            docs.append((document, result.distance))
 
         logger.debug("Downloaded documents for query.")
 
-        return results
+        return docs
 
     def similarity_search(
         self,
