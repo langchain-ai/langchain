@@ -11,16 +11,8 @@ on:
     inputs:
       working-directory:
         required: true
-        type: choice
+        type: string
         default: 'libs/langchain'
-        options:
-          - libs/langchain
-          - libs/core
-          - libs/experimental
-          - libs/community
-          - libs/partners/google-genai
-          - libs/partners/nvidia-ai-endpoints
-          - libs/partners/mistralai
 
 env:
   PYTHON_VERSION: "3.10"

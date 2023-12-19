@@ -13,6 +13,8 @@ from langchain_community.llms.gradient_ai import TrainResult
 
 @runtime_checkable
 class TrainableLLM(Protocol):
+    """Protocol for trainable language models."""
+
     @abstractmethod
     def train_unsupervised(
         self,
@@ -31,6 +33,8 @@ class TrainableLLM(Protocol):
 
 
 class Memorize(BaseTool):
+    """Tool that trains a language model."""
+
     name: str = "Memorize"
     description: str = (
         "Useful whenever you observed novel information "
