@@ -47,6 +47,15 @@ def merge_content(
     first_content: Union[str, List[Union[str, Dict]]],
     second_content: Union[str, List[Union[str, Dict]]],
 ) -> Union[str, List[Union[str, Dict]]]:
+    """Merge two message contents.
+
+    Args:
+        first_content: The first content.
+        second_content: The second content.
+
+    Returns:
+        The merged content.
+    """
     # If first chunk is a string
     if isinstance(first_content, str):
         # If the second chunk is also a string, then merge them naively
@@ -146,6 +155,14 @@ class BaseMessageChunk(BaseMessage):
 
 
 def message_to_dict(message: BaseMessage) -> dict:
+    """Convert a Message to a dictionary.
+
+    Args:
+        message: Message to convert.
+
+    Returns:
+        Message as a dict.
+    """
     return {"type": message.type, "data": message.dict()}
 
 
