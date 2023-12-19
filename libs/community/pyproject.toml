@@ -83,7 +83,6 @@ msal = {version = "^1.25.0", optional = true}
 databricks-vectorsearch = {version = "^0.21", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
-pathway = {version = "^0.7.5", optional = true, python = ">=3.10"}
 
 [tool.poetry.group.test]
 optional = true
@@ -189,7 +188,6 @@ extended_testing = [
  "google-cloud-documentai",
  "esprima",
  "jq",
- "pathway",
  "pdfminer-six",
  "pgvector",
  "pypdf",
