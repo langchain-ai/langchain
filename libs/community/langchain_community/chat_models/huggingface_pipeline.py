@@ -2,63 +2,74 @@ from __future__ import annotations
 
 import importlib.util
 import logging
-from typing import Any, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.llms import BaseLLM
-from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Extra
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.pydantic_v1 import Extra, Field
 
+from langchain_community.adapters.openai import convert_message_to_dict
 from langchain_community.llms.utils import enforce_stop_tokens
 
-DEFAULT_TASK = "conversational"
-VALID_TASKS = ("conversational",)
-DEFAULT_BATCH_SIZE = 4
+if TYPE_CHECKING:
+    from transformers import Conversation
 
 logger = logging.getLogger(__name__)
 
 
-class HuggingFacePipeline(BaseLLM):
-    """HuggingFace Pipeline API.
+def _messages_to_conversation(messages: Sequence[BaseMessage]) -> Conversation:
+    """Convert messages to transformers Conversation.
+
+    Uses OpenAI message role conventions: AIMessage has role "assistant",
+        HumanMessage has role "user".
+    """
+    from transformers import Conversation
+
+    return Conversation(messages=[convert_message_to_dict(msg) for msg in messages])
+
+
+class ChatHuggingFacePipeline(BaseChatModel):
+    """HuggingFace Pipeline chat model API.
 
     To use, you should have the ``transformers`` python package installed.
 
-    Only supports `text-generation`, `text2text-generation` and `summarization` for now.
+    Only supports `conversational` task for now.
 
     Example using from_model_id:
         .. code-block:: python
 
             from langchain_community.chat_models import ChatHuggingFacePipeline
 
-            hf = HuggingFacePipeline.from_model_id(
-                model_id="gpt2",
-                task="conversational",
+            chat = ChatHuggingFacePipeline.from_model_id(
+                model_id="",
                 pipeline_kwargs={"max_new_tokens": 10},
             )
+
     Example passing pipeline in directly:
         .. code-block:: python
 
             from langchain_community.chat_models import ChatHuggingFacePipeline
-            from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+            from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
 
             model_id = "gpt2"
             tokenizer = AutoTokenizer.from_pretrained(model_id)
-            model = AutoModelForCausalLM.from_pretrained(model_id)
+            model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
             pipe = pipeline(
                 "conversational", model=model, tokenizer=tokenizer, max_new_tokens=10
             )
-            hf = HuggingFacePipeline(pipeline=pipe)
+            chat = HuggingFacePipeline(pipeline=pipe)
     """
 
-    pipeline: Any  #: :meta private:
+    pipeline: Any = Field(exclude=True)  #: :meta private:
     model_id: str
     """Model name to use."""
-    model_kwargs: Optional[dict] = None
+    model_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments passed to the model."""
-    pipeline_kwargs: Optional[dict] = None
+    pipeline_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments passed to the pipeline."""
-    batch_size: int = DEFAULT_BATCH_SIZE
-    """Batch size to use when passing multiple documents to generate."""
+    messages_to_conversation: Callable = _messages_to_conversation
 
     class Config:
         """Configuration for this pydantic object."""
@@ -69,44 +80,31 @@ class HuggingFacePipeline(BaseLLM):
     def from_model_id(
         cls,
         model_id: str,
-        task: str,
+        *,
+        task: str = "conversational",
         device: Optional[int] = -1,
         device_map: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
         pipeline_kwargs: Optional[dict] = None,
-        batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
-    ) -> HuggingFacePipeline:
+    ) -> ChatHuggingFacePipeline:
         """Construct the pipeline object from model_id and task."""
         try:
-            from transformers import (
-                AutoModelForCausalLM,
-                AutoModelForSeq2SeqLM,
-                AutoTokenizer,
-            )
+            from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
             from transformers import pipeline as hf_pipeline
-
-        except ImportError:
-            raise ValueError(
+        except ImportError as e:
+            raise ImportError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
-            )
+            ) from e
 
         _model_kwargs = model_kwargs or {}
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
         try:
-            if task == "text-generation":
-                model = AutoModelForCausalLM.from_pretrained(model_id, **_model_kwargs)
-            elif task in ("text2text-generation", "summarization"):
-                model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
-            else:
-                raise ValueError(
-                    f"Got invalid task {task}, "
-                    f"currently only {VALID_TASKS} are supported"
-                )
+            model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
@@ -155,26 +153,19 @@ class HuggingFacePipeline(BaseLLM):
             tokenizer=tokenizer,
             device=device,
             device_map=device_map,
-            batch_size=batch_size,
             model_kwargs=_model_kwargs,
             **_pipeline_kwargs,
         )
-        if pipeline.task not in VALID_TASKS:
-            raise ValueError(
-                f"Got invalid task {pipeline.task}, "
-                f"currently only {VALID_TASKS} are supported"
-            )
         return cls(
             pipeline=pipeline,
             model_id=model_id,
             model_kwargs=_model_kwargs,
             pipeline_kwargs=_pipeline_kwargs,
-            batch_size=batch_size,
             **kwargs,
         )
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model_id": self.model_id,
@@ -182,66 +173,24 @@ class HuggingFacePipeline(BaseLLM):
             "pipeline_kwargs": self.pipeline_kwargs,
         }
 
-    @property
-    def _llm_type(self) -> str:
-        return "huggingface_pipeline"
-
     def _generate(
         self,
-        prompts: List[str],
+        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> LLMResult:
-        # List to hold all results
-        text_generations: List[str] = []
+    ) -> ChatResult:
+        conversation = self.messages_to_conversation(messages)
+        conversation = self.pipeline(conversation)
+        generated_text = conversation.messages[-1]["content"]
+        if stop:
+            # Enforce stop tokens
+            generated_text = enforce_stop_tokens(generated_text, stop)
 
-        for i in range(0, len(prompts), self.batch_size):
-            batch_prompts = prompts[i : i + self.batch_size]
-
-            # Process batch of prompts
-            responses = self.pipeline(batch_prompts)
-
-            # Process each response in the batch
-            for j, response in enumerate(responses):
-                if isinstance(response, list):
-                    # if model returns multiple generations, pick the top one
-                    response = response[0]
-
-                if self.pipeline.task == "text-generation":
-                    try:
-                        from transformers.pipelines.text_generation import ReturnType
-
-                        remove_prompt = (
-                            self.pipeline._postprocess_params.get("return_type")
-                            != ReturnType.NEW_TEXT
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f"Unable to extract pipeline return_type. "
-                            f"Received error:\n\n{e}"
-                        )
-                        remove_prompt = True
-                    if remove_prompt:
-                        text = response["generated_text"][len(batch_prompts[j]) :]
-                    else:
-                        text = response["generated_text"]
-                elif self.pipeline.task == "text2text-generation":
-                    text = response["generated_text"]
-                elif self.pipeline.task == "summarization":
-                    text = response["summary_text"]
-                else:
-                    raise ValueError(
-                        f"Got invalid task {self.pipeline.task}, "
-                        f"currently only {VALID_TASKS} are supported"
-                    )
-                if stop:
-                    # Enforce stop tokens
-                    text = enforce_stop_tokens(text, stop)
-
-                # Append the processed text to results
-                text_generations.append(text)
-
-        return LLMResult(
-            generations=[[Generation(text=text)] for text in text_generations]
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content=generated_text))]
         )
+
+    @property
+    def _llm_type(self) -> str:
+        return "chat_huggingface_pipeline"

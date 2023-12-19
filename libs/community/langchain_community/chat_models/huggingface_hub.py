@@ -1,44 +1,74 @@
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import BaseMessage
-from langchain_core.outputs import ChatResult
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
-DEFAULT_REPO_ID = "gpt2"
-VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
+
+def _messages_to_dict(messages: Sequence[BaseMessage]) -> Dict[str, Any]:
+    """Convert BaseMessage sequence to conversational HF inference API input.
+
+    Assumes the last message in the sequence is the current input.
+    Assumes any message that's not an AIMessage is a past user input.
+    """
+    past_user_inputs = []
+    generated_responses = []
+    for msg in messages[:-1]:
+        if isinstance(msg, AIMessage):
+            generated_responses.append(msg.content)
+        else:
+            past_user_inputs.append(msg.content)
+    return {
+        "past_user_inputs": past_user_inputs,
+        "generated_responses": generated_responses,
+        "text": messages[-1].content,
+    }
 
 
 class ChatHuggingFaceHub(BaseChatModel):
-    """HuggingFaceHub  models.
+    """HuggingFaceHub chat models.
+
+    Uses the ``huggingfacehub.inference_api.InferenceAPI`` client.
+    Install with `pip install huggingface-hub`.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
     environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
     it as a named parameter to the constructor.
 
-    Only supports `text-generation`, `text2text-generation` and `summarization` for now.
+    Only supports `conversational` task for now.
 
     Example:
         .. code-block:: python
 
             from langchain_community.chat_models import ChatHuggingFaceHub
 
-            hf = HuggingFaceHub(repo_id="gpt2", huggingfacehub_api_token="my-api-key")
+            chat = ChatHuggingHub(
+                repo_id="repo/id",
+                huggingfacehub_api_token="my-api-key"
+            )
+            chat.invoke([HumanMessage(content="Write a plot for a Christmas movie")])
     """
 
-    client: Any  #: :meta private:
+    client: Any = Field(exclude=True)  #: :meta private:
+
     repo_id: str
     """Model name to use."""
+
     task: str = "conversational"
 
     model_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
 
     huggingfacehub_api_token: Optional[str] = None
+    """HuggingFace Hub API token.
+    
+    If not specified will be read from environment variable 'HUGGINGFACEHUB_API_TOKEN'.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -53,24 +83,16 @@ class ChatHuggingFaceHub(BaseChatModel):
         )
         try:
             from huggingface_hub.inference_api import InferenceApi
-
-            repo_id = values["repo_id"]
-            client = InferenceApi(
-                repo_id=repo_id,
-                token=huggingfacehub_api_token,
-                task=values.get("task"),
-            )
-            if client.task not in VALID_TASKS:
-                raise ValueError(
-                    f"Got invalid task {client.task}, "
-                    f"currently only {VALID_TASKS} are supported"
-                )
-            values["client"] = client
         except ImportError:
             raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
+        values["client"] = InferenceApi(
+            repo_id=values["repo_id"],
+            token=huggingfacehub_api_token,
+            task=values.get("task"),
+        )
         return values
 
     @property
@@ -79,13 +101,8 @@ class ChatHuggingFaceHub(BaseChatModel):
         return {
             "repo_id": self.repo_id,
             "task": self.task,
-            "model_kwargs": self.model_kwargs or {},
+            "model_kwargs": self.model_kwargs,
         }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "huggingface_hub"
 
     def _generate(
         self,
@@ -107,13 +124,22 @@ class ChatHuggingFaceHub(BaseChatModel):
         _model_kwargs = self.model_kwargs or {}
 
         # payload samples
-        params = {**_model_kwargs, **kwargs}
-        message_dicts = messages_to_dict(messages)
-        response = self.client(inputs=message_dicts, params=params)
+        params = {**self.model_kwargs, **kwargs}
+        inputs = _messages_to_dict(messages)
+        response = self.client(inputs=inputs, params=params)
         if "error" in response:
             raise ValueError(f"Error raised by inference API: {response['error']}")
+        generated_text = response["generated_text"]
+
         if stop is not None:
             # This is a bit hacky, but I can't figure out a better way to enforce
             # stop tokens when making calls to huggingface_hub.
-            text = enforce_stop_tokens(text, stop)
-        return text
+            generated_text = enforce_stop_tokens(generated_text, stop)
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content=generated_text))]
+        )
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "chat_huggingface_hub"

@@ -1,47 +1,74 @@
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import BaseMessage
-from langchain_core.outputs import ChatResult
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
-VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
+
+def _messages_to_dict(messages: Sequence[BaseMessage]) -> Dict[str, Any]:
+    """Convert BaseMessage sequence to conversational HF inference API input.
+
+    Assumes the last message in the sequence is the current input.
+    Assumes any message that's not an AIMessage is a past user input.
+    """
+    past_user_inputs = []
+    generated_responses = []
+    for msg in messages[:-1]:
+        if isinstance(msg, AIMessage):
+            generated_responses.append(msg.content)
+        else:
+            past_user_inputs.append(msg.content)
+    return {
+        "past_user_inputs": past_user_inputs,
+        "generated_responses": generated_responses,
+        "text": messages[-1].content,
+    }
 
 
 class ChatHuggingFaceEndpoint(BaseChatModel):
-    """HuggingFace Endpoint models.
+    """HuggingFace Endpoint chat models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
     environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
     it as a named parameter to the constructor.
 
-    Only supports `text-generation` and `text2text-generation` for now.
+    Only supports `conversational` task for now.
 
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import HuggingFaceEndpoint
+            from langchain_community.chat_models import ChatHuggingFaceEndpoint
+            from langchain_core.messages import HumanMessage
+
             endpoint_url = (
                 "https://abcdefghijklmnop.us-east-1.aws.endpoints.huggingface.cloud"
             )
-            hf = HuggingFaceEndpoint(
+            chat = ChatHuggingFaceEndpoint(
                 endpoint_url=endpoint_url,
                 huggingfacehub_api_token="my-api-key"
             )
+            chat.invoke([HumanMessage(content="Write a plot for a Christmas movie")])
     """
 
     endpoint_url: str
     """Endpoint URL to use."""
+
     model_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
+
     task: str = "conversational"
 
     huggingfacehub_api_token: Optional[str] = None
+    """HuggingFace Hub API token.
+
+    If not specified will be read from environment variable 'HUGGINGFACEHUB_API_TOKEN'.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -54,41 +81,36 @@ class ChatHuggingFaceEndpoint(BaseChatModel):
         huggingfacehub_api_token = get_from_dict_or_env(
             values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
         )
+        values["huggingfacehub_api_token"] = huggingfacehub_api_token
+        return values
+
+    def validate_api_token(cls, huggingfacehub_api_token: str) -> None:
         try:
             from huggingface_hub.hf_api import HfApi
-
-            try:
-                HfApi(
-                    endpoint="https://huggingface.co",  # Can be a Private Hub endpoint.
-                    token=huggingfacehub_api_token,
-                ).whoami()
-            except Exception as e:
-                raise ValueError(
-                    "Could not authenticate with huggingface_hub. "
-                    "Please check your API token."
-                ) from e
-
         except ImportError:
             raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-        values["huggingfacehub_api_token"] = huggingfacehub_api_token
-        return values
+        try:
+            HfApi(
+                endpoint="https://huggingface.co",  # Can be a Private Hub endpoint.
+                token=huggingfacehub_api_token,
+            ).whoami()
+        except Exception as e:
+            raise ValueError(
+                "Could not authenticate with huggingface_hub. "
+                "Please check your API token."
+            ) from e
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint_url": self.endpoint_url, "task": self.task},
-            **{"model_kwargs": _model_kwargs},
+            "endpoint_url": self.endpoint_url,
+            "task": self.task,
+            "model_kwargs": self.model_kwargs,
         }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "huggingface_endpoint"
 
     def _generate(
         self,
@@ -107,34 +129,31 @@ class ChatHuggingFaceEndpoint(BaseChatModel):
             The ChatResult containing the chat response generated by the model.
 
         """
-        _model_kwargs = self.model_kwargs or {}
+        params = {**self.model_kwargs, **kwargs}
+        inputs = _messages_to_dict(messages)
+        payload = {"inputs": inputs, "parameters": params}
 
-        # payload samples
-        params = {**_model_kwargs, **kwargs}
-        message_dicts = messages_to_dict(messages)
-        parameter_payload = {"inputs": message_dicts, "parameters": params}
-
-        # HTTP headers for authorization
         headers = {
             "Authorization": f"Bearer {self.huggingfacehub_api_token}",
             "Content-Type": "application/json",
         }
 
-        # send request
-        try:
-            response = requests.post(
-                self.endpoint_url, headers=headers, json=parameter_payload
-            )
-        except requests.exceptions.RequestException as e:  # This is the correct syntax
-            raise ValueError(f"Error raised by inference endpoint: {e}")
-        generated_text = response.json()
-        if "error" in generated_text:
+        response = requests.post(self.endpoint_url, headers=headers, json=payload)
+        if "error" in response.json():
             raise ValueError(
-                f"Error raised by inference API: {generated_text['error']}"
+                f"Error raised by inference API: {response.json()['error']}"
             )
+        generated_text = response.json()["generated_text"]
 
         if stop is not None:
             # This is a bit hacky, but I can't figure out a better way to enforce
             # stop tokens when making calls to huggingface_hub.
-            text = enforce_stop_tokens(text, stop)
-        return text
+            generated_text = enforce_stop_tokens(generated_text, stop)
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content=generated_text))]
+        )
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "chat_huggingface_endpoint"
