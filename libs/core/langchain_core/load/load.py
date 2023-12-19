@@ -3,10 +3,15 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
-from langchain_core.load.mapping import SERIALIZABLE_MAPPING
+from langchain_core.load.mapping import (
+    OLD_PROMPT_TEMPLATE_FORMATS,
+    SERIALIZABLE_MAPPING,
+)
 from langchain_core.load.serializable import Serializable
 
 DEFAULT_NAMESPACES = ["langchain", "langchain_core", "langchain_community"]
+
+ALL_SERIALIZABLE_MAPPINGS = {**SERIALIZABLE_MAPPING, **OLD_PROMPT_TEMPLATE_FORMATS}
 
 
 class Reviver:
@@ -67,13 +72,13 @@ class Reviver:
             if namespace[0] in DEFAULT_NAMESPACES:
                 # Get the importable path
                 key = tuple(namespace + [name])
-                if key not in SERIALIZABLE_MAPPING:
+                if key not in ALL_SERIALIZABLE_MAPPINGS:
                     raise ValueError(
                         "Trying to deserialize something that cannot "
                         "be deserialized in current version of langchain-core: "
                         f"{key}"
                     )
-                import_path = SERIALIZABLE_MAPPING[key]
+                import_path = ALL_SERIALIZABLE_MAPPINGS[key]
                 # Split into module and name
                 import_dir, import_obj = import_path[:-1], import_path[-1]
                 # Import module

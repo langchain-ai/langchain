@@ -36,7 +36,7 @@ def parse_ai_message_to_openai_tool_action(
         function = tool_call["function"]
         function_name = function["name"]
         try:
-            _tool_input = json.loads(function["arguments"])
+            _tool_input = json.loads(function["arguments"] or "{}")
         except JSONDecodeError:
             raise OutputParserException(
                 f"Could not parse tool input: {function} because "

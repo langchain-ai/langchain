@@ -1,7 +1,10 @@
 # NVIDIA
 
-> [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) give users easy access to hosted endpoints for generative AI models like Llama-2, SteerLM, Mistral, etc. Using the API, you can query live endpoints available on the [NVIDIA GPU Cloud (NGC)](https://catalog.ngc.nvidia.com/ai-foundation-models) to get quick results from a DGX-hosted cloud compute environment. All models are source-accessible and can be deployed on your own compute cluster.
-These models are provided via the `langchain-nvidia-ai-endpoints` package.
+> [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) give users easy access to NVIDIA hosted API endpoints for NVIDIA AI Foundation Models like Mixtral 8x7B, Llama 2, Stable Diffusion, etc. These models, hosted on the [NVIDIA NGC catalog](https://catalog.ngc.nvidia.com/ai-foundation-models), are optimized, tested, and hosted on the NVIDIA AI platform, making them fast and easy to evaluate, further customize, and seamlessly run at peak performance on any accelerated stack.
+> 
+> With [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/), you can get quick results from a fully accelerated stack running on [NVIDIA DGX Cloud](https://www.nvidia.com/en-us/data-center/dgx-cloud/). Once customized, these models can be deployed anywhere with enterprise-grade security, stability, and support using [NVIDIA AI Enterprise](https://www.nvidia.com/en-us/data-center/products/ai-enterprise/).
+> 
+> These models can be easily accessed via the [`langchain-nvidia-ai-endpoints`](https://pypi.org/project/langchain-nvidia-ai-endpoints/) package, as shown below.
 
 ## Installation
 
@@ -11,7 +14,7 @@ pip install -U langchain-nvidia-ai-endpoints
 
 ## Setup and Authentication
 
-- Create a free account at [NVIDIA GPU Cloud (NGC)](https://catalog.ngc.nvidia.com/).
+- Create a free [NVIDIA NGC](https://catalog.ngc.nvidia.com/) account.
 - Navigate to `Catalog > AI Foundation Models > (Model with API endpoint)`.
 - Select `API` and generate the key `NVIDIA_API_KEY`.
 
@@ -31,7 +34,7 @@ print(result.content)
 
 A selection of NVIDIA AI Foundation models are supported directly in LangChain with familiar APIs.
 
-The active models which are supported can be found [in NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/).
+The active models which are supported can be found [in NGC](https://catalog.ngc.nvidia.com/ai-foundation-models).
 
 **The following may be useful examples to help you get started:**
 - **[`ChatNVIDIA` Model](/docs/integrations/chat/nvidia_ai_endpoints).**
