@@ -23,8 +23,9 @@ def test_gpt_router_call() -> None:
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
+
 def test_gpt_router_call_incorrect_model() -> None:
-    """Test invalid modelName """
+    """Test invalid modelName"""
     anthropic_claude = GPTRouterModel(
         name="model_does_not_exist", provider_name="anthropic"
     )
