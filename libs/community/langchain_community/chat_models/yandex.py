@@ -218,7 +218,7 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
 
 def _create_retry_decorator(llm: ChatYandexGPT) -> Callable[[Any], Any]:
     from grpc import RpcError
-    
+
     min_seconds = 1
     max_seconds = 60
     return retry(
