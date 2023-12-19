@@ -272,6 +272,7 @@ class MatchingEngine(VectorStore):
                 (
                     Document(
                         page_content=page_content,
+                        # TODO: return all metadata.
                         metadata={self.document_id_key: doc.id},
                     ),
                     doc.distance,
