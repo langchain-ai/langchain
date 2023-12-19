@@ -263,7 +263,12 @@ class MatchingEngine(VectorStore):
         # one element.
         for doc in response[0]:
             page_content = self._download_from_gcs(f"documents/{doc.id}")
-            results.append((Document(page_content=page_content), doc.distance))
+            results.append(
+                (
+                    Document(page_content=page_content, metadata={"id": doc.id}),
+                    doc.distance,
+                )
+            )
 
         logger.debug("Downloaded documents for query.")
 
