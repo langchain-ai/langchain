@@ -1,11 +1,22 @@
 """Wrapper around YandexGPT embedding models."""
+from __future__ import annotations
 
-from ast import Dict
-from typing import List
+import logging
+from typing import Any, Callable, Dict, List
 
+from grpc import RpcError
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class YandexGPTEmbeddings(BaseModel, Embeddings):
@@ -49,6 +60,8 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     """Model version to use."""
     url: str = "llm.api.cloud.yandex.net:443"
     """The url of the API."""
+    max_retries: int = 6
+    """Maximum number of retries to make when generating."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -89,29 +102,8 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        try:
-            import grpc
-            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
-                TextEmbeddingRequest,
-            )
-            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
-                EmbeddingsServiceStub,
-            )
-        except ImportError as e:
-            raise ImportError(
-                "Please install YandexCloud SDK" " with `pip install yandexcloud`."
-            ) from e
-        result = []
-        channel_credentials = grpc.ssl_channel_credentials()
-        channel = grpc.secure_channel(self.url, channel_credentials)
 
-        for text in texts:
-            request = TextEmbeddingRequest(model_uri=self.model_uri, text=text)
-            stub = EmbeddingsServiceStub(channel)
-            res = stub.TextEmbedding(request, metadata=self._grpc_metadata)
-            result.append(res.embedding)
-
-        return result
+        return _embed_with_retry(self, texts=texts)
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using a YandexGPT embeddings models.
@@ -122,4 +114,53 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return self.embed_documents([text])[0]
+        return _embed_with_retry(self, texts=[text])[0]
+
+
+def _create_retry_decorator(llm: YandexGPTEmbeddings) -> Callable[[Any], Any]:
+    min_seconds = 1
+    max_seconds = 60
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(llm.max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(retry_if_exception_type((RpcError))),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+def _embed_with_retry(llm: YandexGPTEmbeddings, **kwargs: Any) -> Any:
+    """Use tenacity to retry the embedding call."""
+    retry_decorator = _create_retry_decorator(llm)
+
+    @retry_decorator
+    def _completion_with_retry(**_kwargs: Any) -> Any:
+        return _make_request(llm, **_kwargs)
+
+    return _completion_with_retry(**kwargs)
+
+
+def _make_request(self: YandexGPTEmbeddings, texts: List[str]):
+    try:
+        import grpc
+        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+            TextEmbeddingRequest,
+        )
+        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+            EmbeddingsServiceStub,
+        )
+    except ImportError as e:
+        raise ImportError(
+            "Please install YandexCloud SDK" " with `pip install yandexcloud`."
+        ) from e
+    result = []
+    channel_credentials = grpc.ssl_channel_credentials()
+    channel = grpc.secure_channel(self.url, channel_credentials)
+
+    for text in texts:
+        request = TextEmbeddingRequest(model_uri=self.model_uri, text=text)
+        stub = EmbeddingsServiceStub(channel)
+        res = stub.TextEmbedding(request, metadata=self._grpc_metadata)
+        result.append(res.embedding)
+
+    return result
