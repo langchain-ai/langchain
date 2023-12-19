@@ -24,8 +24,8 @@ export_attr = "chain"
 [tool.templates-hub]
 use-case = "research"
 author = "LangChain"
-integrations = ["OpenAI"]
-tags = ["data", "agents", "sql"]
+integrations = ["Ollama", "OpenAI"]
+tags = ["data", "agents", "sql", "local-models"]
 
 [build-system]
 requires = ["poetry-core"]

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOllama, ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel
@@ -8,7 +8,9 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.utilities import SQLDatabase
 
-llm = ChatOpenAI()
+# Add the LLM downloaded from Ollama
+ollama_llm = "llama2"
+llm = ChatOllama(model=ollama_llm)
 
 
 db_path = Path(__file__).parent / "nba_roster.db"
