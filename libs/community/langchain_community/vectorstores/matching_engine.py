@@ -25,10 +25,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class _DocumentWithID(Document):
-    id: str
-
-
 class MatchingEngine(VectorStore):
     """`Google Vertex AI Vector Search` (previously Matching Engine) vector store.
 
