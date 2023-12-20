@@ -1,27 +1,28 @@
 
-# rag-gemini-multi-modal
+# rag-multi-modal-local
 
-Multi-modal LLMs enable text-to-image retrieval and question-answering over images. 
+Visual search is a famililar application to many with iPhones or Android devices: use natural language to search across your photo collection. 
+  
+With the release of open source, multi-modal LLMs it's possible to build this kind of application for yourself and have it run on your personal laptop. 
 
-You can ask questions in natural language about a collection of photos, retrieve relevant ones, and have a multi-modal LLM answer questions about the retrieved images.
-
-This template performs text-to-image retrieval for question-answering about a slide deck, which often contains visual elements that are not captured in standard RAG.
+This template demonstrates how to perform visual search and question-answering over a collection of photos.
  
-This will use OpenCLIP embeddings and [Google Gemini](https://deepmind.google/technologies/gemini/#introduction) for answer synthesis.
+Given a set of photos, it will use OpenCLIP embeddings to index them, retrieve photos relevant to user question, and use Ollama to run a local, open-source multi-modal LLM to answer questions about the retrieved photos.
 
 ## Input
 
-Supply a slide deck as pdf in the `/docs` directory. 
+Supply a set of photos in the `/docs` directory. 
 
-By default, this template has a slide deck about Q3 earnings from DataDog, a public techologyy company.
+By default, this template has a toy collection of 3 food pictures.
 
 Example questions to ask can be:
 ```
-How many customers does Datadog have?
-What is Datadog platform % Y/Y growth in FY20, FY21, and FY22?
+What kind of soft serve did I have?
 ```
 
-To create an index of the slide deck, run:
+In practice, a larger corpus of images can be tested.
+
+To create an index of the images, run:
 ```
 poetry install
 python ingest.py
@@ -50,11 +51,17 @@ vectorstore_mmembd = Chroma(
 
 ## LLM
 
-The app will retrieve images using multi-modal embeddings, and pass them to Google Gemini.
+This template will use [Ollama](https://python.langchain.com/docs/integrations/chat/ollama#multi-modal).
 
-## Environment Setup
+Download the latest version of Ollama: https://ollama.ai/
 
-Set your `GOOGLE_API_KEY` environment variable in order to access Gemini.
+Pull the an open source multi-modal LLM: e.g., https://ollama.ai/library/bakllava
+
+```
+ollama pull bakllava
+```
+
+The app is by default configured for `bakllava`. But you can change this in `chain.py` and `ingest.py` for different downloaded models.
 
 ## Usage
 
@@ -67,20 +74,20 @@ pip install -U langchain-cli
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package rag-gemini-multi-modal
+langchain app new my-app --package rag-chroma-multi-modal
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add rag-gemini-multi-modal
+langchain app add rag-chroma-multi-modal
 ```
 
 And add the following code to your `server.py` file:
 ```python
-from rag_gemini_multi_modal import chain as rag_gemini_multi_modal_chain
+from rag_chroma_multi_modal import chain as rag_chroma_multi_modal_chain
 
-add_routes(app, rag_gemini_multi_modal_chain, path="/rag-gemini-multi-modal")
+add_routes(app, rag_chroma_multi_modal_chain, path="/rag-chroma-multi-modal")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -104,12 +111,12 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/rag-gemini-multi-modal/playground](http://127.0.0.1:8000/rag-gemini-multi-modal/playground)  
+We can access the playground at [http://127.0.0.1:8000/rag-chroma-multi-modal/playground](http://127.0.0.1:8000/rag-chroma-multi-modal/playground)  
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/rag-gemini-multi-modal")
+runnable = RemoteRunnable("http://localhost:8000/rag-chroma-multi-modal")
 ```
