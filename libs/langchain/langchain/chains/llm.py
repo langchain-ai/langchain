@@ -31,10 +31,10 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain.chains.base import Chain
+from langchain.chains.base import RunnableChain
 
 
-class LLMChain(Chain):
+class LLMChain(RunnableChain):
     """Chain to run queries against LLMs.
 
     Example:
@@ -75,6 +75,13 @@ class LLMChain(Chain):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    def as_runnable(self) -> Runnable:
+        return (
+            self.prompt
+            | self.llm.bind(**self.llm_kwargs)
+            | {self.output_key: self.output_parser}
+        )
 
     @property
     def input_keys(self) -> List[str]:
