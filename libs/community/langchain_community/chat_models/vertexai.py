@@ -95,7 +95,7 @@ def _is_url(s: str) -> bool:
         return all([result.scheme, result.netloc])
     except Exception as e:
         logger.debug(f"Unable to parse URL: {e}")
-        return False 
+        return False
 
 
 def _parse_chat_history_gemini(
