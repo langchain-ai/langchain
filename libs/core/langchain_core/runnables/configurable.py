@@ -53,7 +53,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     @property
     def InputType(self) -> Type[Input]:
@@ -217,6 +218,11 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
     fields: Dict[str, AnyConfigurableField]
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
+
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
@@ -318,6 +324,11 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     of the form <which.id>==<alternative_key>, eg. a key named "temperature" used by 
     the alternative named "gpt3" becomes "model==gpt3/temperature"."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
+
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         with _enums_for_spec_lock:
@@ -411,6 +422,18 @@ def _strremoveprefix(s: str, prefix: str) -> str:
 def prefix_config_spec(
     spec: ConfigurableFieldSpec, prefix: str
 ) -> ConfigurableFieldSpec:
+    """Prefix the id of a ConfigurableFieldSpec.
+
+    This is useful when a RunnableConfigurableAlternatives is used as a
+    ConfigurableField of another RunnableConfigurableAlternatives.
+
+    Args:
+        spec: The ConfigurableFieldSpec to prefix.
+        prefix: The prefix to add.
+
+    Returns:
+
+    """
     return (
         ConfigurableFieldSpec(
             id=f"{prefix}/{spec.id}",

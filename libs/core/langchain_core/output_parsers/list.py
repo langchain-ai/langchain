@@ -26,6 +26,11 @@ class CommaSeparatedListOutputParser(ListOutputParser):
     def is_lc_serializable(cls) -> bool:
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "output_parsers", "list"]
+
     def get_format_instructions(self) -> str:
         return (
             "Your response should be a list of comma separated values, "

@@ -21,6 +21,7 @@ from langchain.retrievers.self_query.dashvector import DashvectorTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
 from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
 from langchain.retrievers.self_query.milvus import MilvusTranslator
+from langchain.retrievers.self_query.mongodb_atlas import MongoDBAtlasTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.opensearch import OpenSearchTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
@@ -36,6 +37,7 @@ from langchain.vectorstores import (
     DeepLake,
     ElasticsearchStore,
     Milvus,
+    MongoDBAtlasVectorSearch,
     MyScale,
     OpenSearchVectorSearch,
     Pinecone,
@@ -66,6 +68,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         SupabaseVectorStore: SupabaseVectorTranslator,
         TimescaleVector: TimescaleVectorTranslator,
         OpenSearchVectorSearch: OpenSearchTranslator,
+        MongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
     }
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)

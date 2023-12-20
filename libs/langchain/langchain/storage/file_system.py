@@ -2,12 +2,12 @@ import re
 from pathlib import Path
 from typing import Iterator, List, Optional, Sequence, Tuple, Union
 
-from langchain_core.stores import BaseStore
+from langchain_core.stores import ByteStore
 
 from langchain.storage.exceptions import InvalidKeyException
 
 
-class LocalFileStore(BaseStore[str, bytes]):
+class LocalFileStore(ByteStore):
     """BaseStore interface that works on the local file system.
 
     Examples:

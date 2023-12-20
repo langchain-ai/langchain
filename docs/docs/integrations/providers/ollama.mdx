@@ -1,0 +1,55 @@
+# Ollama
+
+>[Ollama](https://ollama.ai/) is a python library. It allows you to run open-source large language models, 
+> such as LLaMA2, locally.
+>
+>`Ollama` bundles model weights, configuration, and data into a single package, defined by a Modelfile. 
+>It optimizes setup and configuration details, including GPU usage.
+>For a complete list of supported models and model variants, see the [Ollama model library](https://ollama.ai/library).
+
+See [this guide](https://python.langchain.com/docs/guides/local_llms#quickstart) for more details 
+on how to use `Ollama` with LangChain.
+
+## Installation and Setup
+
+Follow [these instructions](https://github.com/jmorganca/ollama?tab=readme-ov-file#ollama)
+to set up and run a local Ollama instance.
+To use, you should set up the environment variables `ANYSCALE_API_BASE` and
+`ANYSCALE_API_KEY`.
+
+
+## LLM
+
+```python
+from langchain.llms import Ollama
+```
+
+See the notebook example [here](/docs/integrations/llms/ollama).
+
+## Chat Models
+
+### Chat Ollama
+
+```python
+from langchain.chat_models import ChatOllama
+```
+
+See the notebook example [here](/docs/integrations/chat/ollama).
+
+### Ollama functions
+
+```python
+from langchain_experimental.llms.ollama_functions import OllamaFunctions
+```
+
+See the notebook example [here](/docs/integrations/chat/ollama_functions).
+
+## Embedding models
+
+```python
+from langchain.embeddings import OllamaEmbeddings
+```
+
+See the notebook example [here](/docs/integrations/text_embedding/ollama).
+
+

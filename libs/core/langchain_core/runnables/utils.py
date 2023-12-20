@@ -308,13 +308,16 @@ class ConfigurableFieldSpec(NamedTuple):
     description: Optional[str] = None
     default: Any = None
     is_shared: bool = False
+    dependencies: Optional[List[str]] = None
 
 
 def get_unique_config_specs(
     specs: Iterable[ConfigurableFieldSpec],
 ) -> List[ConfigurableFieldSpec]:
     """Get the unique config specs from a sequence of config specs."""
-    grouped = groupby(sorted(specs, key=lambda s: s.id), lambda s: s.id)
+    grouped = groupby(
+        sorted(specs, key=lambda s: (s.id, *(s.dependencies or []))), lambda s: s.id
+    )
     unique: List[ConfigurableFieldSpec] = []
     for id, dupes in grouped:
         first = next(dupes)

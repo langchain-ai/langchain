@@ -2,7 +2,7 @@
 
 Implements "Skeleton of Thought" from [this](https://sites.google.com/view/sot-llm) paper.
 
-This technique makes it possible to generate longer generates more quickly by first generating a skeleton, then generating each point of the outline.
+This technique makes it possible to generate longer generations more quickly by first generating a skeleton, then generating each point of the outline.
 
 ## Environment Setup
 

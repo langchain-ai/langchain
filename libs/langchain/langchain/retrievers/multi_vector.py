@@ -1,13 +1,14 @@
 from enum import Enum
-from typing import List
+from typing import Dict, List, Optional
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.stores import BaseStore
+from langchain_core.stores import BaseStore, ByteStore
 from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.storage._lc_store import create_kv_docstore
 
 
 class SearchType(str, Enum):
@@ -25,13 +26,26 @@ class MultiVectorRetriever(BaseRetriever):
     vectorstore: VectorStore
     """The underlying vectorstore to use to store small chunks
     and their embedding vectors"""
+    byte_store: Optional[ByteStore] = None
+    """The lower-level backing storage layer for the parent documents"""
     docstore: BaseStore[str, Document]
-    """The storage layer for the parent documents"""
+    """The storage interface for the parent documents"""
     id_key: str = "doc_id"
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass to the search function."""
     search_type: SearchType = SearchType.similarity
     """Type of search to perform (similarity / mmr)"""
+
+    @root_validator(pre=True)
+    def shim_docstore(cls, values: Dict) -> Dict:
+        byte_store = values.get("byte_store")
+        docstore = values.get("docstore")
+        if byte_store is not None:
+            docstore = create_kv_docstore(byte_store)
+        elif docstore is None:
+            raise Exception("You must pass a `byte_store` parameter.")
+        values["docstore"] = docstore
+        return values
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

@@ -239,7 +239,7 @@ def __getattr__(name: str) -> Any:
 
         return FewShotPromptTemplate
     elif name == "Prompt":
-        from langchain_core.prompts import Prompt
+        from langchain.prompts import Prompt
 
         _warn_on_import(name, replacement="langchain.prompts.Prompt")
 

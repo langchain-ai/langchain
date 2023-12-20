@@ -141,3 +141,14 @@ def test_serialize_llmchain_with_non_serializable_arg(snapshot: Any) -> None:
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
     assert dumps(chain, pretty=True) == snapshot
+
+
+def test_person_with_kwargs(snapshot: Any) -> None:
+    person = Person(secret="hello")
+    assert dumps(person, separators=(",", ":")) == snapshot
+
+
+def test_person_with_invalid_kwargs() -> None:
+    person = Person(secret="hello")
+    with pytest.raises(TypeError):
+        dumps(person, invalid_kwarg="hello")

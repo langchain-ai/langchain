@@ -17,18 +17,10 @@ from langchain.chains.sequential import SequentialChain
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 
-CREATE_ASSERTIONS_PROMPT = PromptTemplate.from_file(
-    PROMPTS_DIR / "create_facts.txt", ["summary"]
-)
-CHECK_ASSERTIONS_PROMPT = PromptTemplate.from_file(
-    PROMPTS_DIR / "check_facts.txt", ["assertions"]
-)
-REVISED_SUMMARY_PROMPT = PromptTemplate.from_file(
-    PROMPTS_DIR / "revise_summary.txt", ["checked_assertions", "summary"]
-)
-ARE_ALL_TRUE_PROMPT = PromptTemplate.from_file(
-    PROMPTS_DIR / "are_all_true_prompt.txt", ["checked_assertions"]
-)
+CREATE_ASSERTIONS_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "create_facts.txt")
+CHECK_ASSERTIONS_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "check_facts.txt")
+REVISED_SUMMARY_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "revise_summary.txt")
+ARE_ALL_TRUE_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "are_all_true_prompt.txt")
 
 
 def _load_sequential_chain(

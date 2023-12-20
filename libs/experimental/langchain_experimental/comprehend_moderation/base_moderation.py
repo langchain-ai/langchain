@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.schema import AIMessage, HumanMessage
@@ -54,10 +54,10 @@ class BaseModeration:
             message = prompt.messages[-1]
             self.chat_message_index = len(prompt.messages) - 1
             if isinstance(message, HumanMessage):
-                input_text = message.content
+                input_text = cast(str, message.content)
 
             if isinstance(message, AIMessage):
-                input_text = message.content
+                input_text = cast(str, message.content)
         else:
             raise ValueError(
                 f"Invalid input type {type(input_text)}. "
