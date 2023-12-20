@@ -163,7 +163,7 @@ def test_konko_additional_args_test() -> None:
         ChatKonko(model_kwargs={"temperature": 0.2})
 
     with pytest.raises(ValueError):
-        ChatKonko(model_kwargs={"model": "text-davinci-003"})
+        ChatKonko(model_kwargs={"model": "gpt-3.5-turbo-instruct"})
 
 
 def test_konko_token_streaming_test() -> None:
