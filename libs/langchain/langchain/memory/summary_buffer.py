@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.pydantic_v1 import root_validator
@@ -11,6 +11,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
     """Buffer with summarizer for storing conversation memory."""
 
     max_token_limit: int = 2000
+    k: Optional[int] = None
     moving_summary_buffer: str = ""
     memory_key: str = "history"
 
@@ -28,7 +29,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        buffer = self.buffer
+        buffer = self.buffer[-self.k * 2 :] if self.k else self.buffer
         if self.moving_summary_buffer != "":
             first_messages: List[BaseMessage] = [
                 self.summary_message_cls(content=self.moving_summary_buffer)
