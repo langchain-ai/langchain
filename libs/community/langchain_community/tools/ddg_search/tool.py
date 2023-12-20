@@ -11,6 +11,8 @@ from langchain_community.utilities.duckduckgo_search import DuckDuckGoSearchAPIW
 
 
 class DDGInput(BaseModel):
+    """Input for the DuckDuckGo search tool."""
+
     query: str = Field(description="search query to look up")
 
 

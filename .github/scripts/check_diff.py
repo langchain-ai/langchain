@@ -1,5 +1,6 @@
 import json
 import sys
+import os
 
 LANGCHAIN_DIRS = {
     "libs/core",
@@ -30,9 +31,15 @@ if __name__ == "__main__":
             )
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
-            dirs_to_run.update(
-                (f"libs/partners/{partner_dir}", "libs/langchain", "libs/experimental")
-            )
+            if os.path.isdir(f"libs/partners/{partner_dir}"):
+                dirs_to_run.update(
+                    (
+                        f"libs/partners/{partner_dir}",
+                        "libs/langchain",
+                        "libs/experimental",
+                    )
+                )
+            # Skip if the directory was deleted
         elif file.startswith("templates/"):
             template = file.split("/")[1]
             dirs_to_run.add(f"templates/{template}")

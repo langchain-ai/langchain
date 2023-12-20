@@ -454,9 +454,12 @@ class ChatOpenAI(BaseChatModel):
             response = response.dict()
         for res in response["choices"]:
             message = convert_dict_to_message(res["message"])
+            generation_info = dict(finish_reason=res.get("finish_reason"))
+            if "logprobs" in res:
+                generation_info["logprobs"] = res["logprobs"]
             gen = ChatGeneration(
                 message=message,
-                generation_info=dict(finish_reason=res.get("finish_reason")),
+                generation_info=generation_info,
             )
             generations.append(gen)
         token_usage = response.get("usage", {})
