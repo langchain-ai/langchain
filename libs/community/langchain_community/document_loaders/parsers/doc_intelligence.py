@@ -97,11 +97,11 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             result = poller.result()
 
             if self.mode in ["single", "markdown"]:
-                yield from self._generate_docs_single(blob, result)
+                yield from self._generate_docs_single(result)
             elif self.mode == ["page"]:
-                yield from self._generate_docs_page(blob, result)
+                yield from self._generate_docs_page(result)
             else:
-                yield from self._generate_docs_object(blob, result)
+                yield from self._generate_docs_object(result)
 
     def parse_url(self, url: str) -> Iterator[Document]:
         from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
