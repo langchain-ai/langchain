@@ -80,7 +80,8 @@
                   <ul>
                     {% for inner_child in nav_item.children %}
                       <li class="sk-toctree-l3">
-                        <a href="{{ inner_child.url }}">{{ inner_child.title }}</a>
+                        {% set second_layer_ns = inner_child.title[inner_child.title.index(".")+1:] %}
+                        <a href="{{ inner_child.url }}">{{ second_layer_ns }}</a>
                       </li>
                     {% endfor %}
                   </ul>
