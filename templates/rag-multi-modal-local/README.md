@@ -1,50 +1,43 @@
 
-# rag-chroma-multi-modal
+# rag-multi-modal-local
 
-Multi-modal LLMs unlock new ways to build apps over visual content like photos.
+Multi-modal LLMs enable text-to-image retrieval and question-answering over images. 
+
+You can ask questions in natural language about a collection of photos, retrieve relevant ones, and have a multi-modal LLM answer questions about the retrieved images.
+
+This template performs text-to-image retrieval for question-answering about a collection of photos.
  
-This template performs multi-modal RAG over a set of images.
-
-It first indexes the images and allows a user to asks questions about them.
-
-For each question, it will retrieve the relevant image and pass the image to a multi-modal LLM to generate the answer.
-
-All these steps will be done using local, open-source LLMs.
-
-## LLM
-
-We will use [Ollama](https://python.langchain.com/docs/integrations/chat/ollama#multi-modal) for generating image summaries and final image QA.
-
-Download the latest version of Ollama: https://ollama.ai/
-
-Pull the an open source multi-modal LLM: e.g., https://ollama.ai/library/bakllava
-
-```
-ollama pull baklava
-```
-
-The app is by default configured for `baklava`. But you can change this in `chain.py` and `ingest.py` for different downloaded models.
+This will use OpenCLIP embeddings and Ollama to run a local, open-source multi-modal LLM for answer synthesis.
 
 ## Input
 
-Supply a set of images the `/docs` directory. 
+Supply a set of photos in the `/docs` directory. 
 
-This will create a vectorstore (Chroma) of image summaries that are embedded using OpenCLIP embeddings.
+By default, this template has a toy collection of 3 food pictures.
 
+Example questions to ask can be:
+```
+What kind of soft serve did I have?
+What did I put on my french fries?
+```
+
+In practice, a larger corpus of images can be tested.
+
+To create an index of the images, run:
 ```
 poetry install
 python ingest.py
 ```
 
-## Embeddings
+## Storage
 
-This template will use [OpenCLIP](https://github.com/mlfoundations/open_clip) multi-modal embeddings.
+This template will use [OpenCLIP](https://github.com/mlfoundations/open_clip) multi-modal embeddings to embed the images.
 
-You can select different options (see results [here](https://github.com/mlfoundations/open_clip/blob/main/docs/openclip_results.csv)).
+You can select different embedding model options (see results [here](https://github.com/mlfoundations/open_clip/blob/main/docs/openclip_results.csv)).
 
 The first time you run the app, it will automatically download the multimodal embedding model.
 
-By default, LangChain will use an embedding model with reasonably strong performance, `ViT-H-14`.
+By default, LangChain will use an embedding model with moderate performance but lower memory requirments, `ViT-H-14`.
 
 You can choose alternative `OpenCLIPEmbeddings` models in `rag_chroma_multi_modal/ingest.py`:
 ```
@@ -56,6 +49,20 @@ vectorstore_mmembd = Chroma(
     ),
 )
 ```
+
+## LLM
+
+This template will use [Ollama](https://python.langchain.com/docs/integrations/chat/ollama#multi-modal).
+
+Download the latest version of Ollama: https://ollama.ai/
+
+Pull the an open source multi-modal LLM: e.g., https://ollama.ai/library/bakllava
+
+```
+ollama pull baklava
+```
+
+The app is by default configured for `baklava`. But you can change this in `chain.py` and `ingest.py` for different downloaded models.
 
 ## Usage
 

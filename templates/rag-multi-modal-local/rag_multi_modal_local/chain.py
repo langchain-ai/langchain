@@ -40,12 +40,13 @@ def get_resized_images(docs):
     for doc in docs:
         if isinstance(doc, Document):
             doc = doc.page_content
-        resized_image = resize_base64_image(doc, size=(1280, 720))
-        b64_images.append(resized_image)
+        # Optional: re-size image
+        # resized_image = resize_base64_image(doc, size=(1280, 720))
+        b64_images.append(doc)
     return {"images": b64_images}
 
 
-def img_prompt_func(data_dict, num_images=2):
+def img_prompt_func(data_dict, num_images=1):
     """
     GPT-4V prompt for image analysis.
 

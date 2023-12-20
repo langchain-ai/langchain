@@ -1095,13 +1095,13 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 
 [[package]]
 name = "langchain-cli"
-version = "0.0.19"
+version = "0.0.20"
 description = "CLI for interacting with LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain_cli-0.0.19-py3-none-any.whl", hash = "sha256:07b37f6fe507639537d2d79757cc659dfc396df6049ee97b8e12dfbfcb86a85b"},
-    {file = "langchain_cli-0.0.19.tar.gz", hash = "sha256:c518e1b2e8dd787d30385a5947a01b4cd72c24eb79159c9833f08b681975fd84"},
+    {file = "langchain_cli-0.0.20-py3-none-any.whl", hash = "sha256:bfcf21a8a36362dc2aa406acb435468eab33847dc0ccaef6877d3d3d9e2fcfc9"},
+    {file = "langchain_cli-0.0.20.tar.gz", hash = "sha256:a4d2eab44587851f44e14fd3d7eb9a17209d935d3adb07305c56602d07dcc722"},
 ]
 
 [package.dependencies]

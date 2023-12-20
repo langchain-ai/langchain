@@ -3,7 +3,7 @@ import io
 from pathlib import Path
 
 from langchain.chat_models import ChatOllama
-from langchain.embeddings import OllamaEmbeddings
+from langchain.embeddings import GPT4AllEmbeddings
 from langchain.pydantic_v1 import BaseModel
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.schema.document import Document
@@ -42,6 +42,7 @@ def get_resized_images(docs):
     for doc in docs:
         if isinstance(doc, Document):
             doc = doc.page_content
+        # Optional: re-size image
         # resized_image = resize_base64_image(doc, size=(1280, 720))
         b64_images.append(doc)
     return {"images": b64_images}
@@ -68,7 +69,6 @@ def img_prompt_func(data_dict, num_images=1):
         "text": (
             "You are a helpful assistant that gives a description of food pictures.\n"
             "Give a detailed summary of the image.\n"
-            "Give reccomendations for similar food to try.\n"
         ),
     }
     messages.append(text_message)
@@ -103,7 +103,7 @@ def multi_modal_rag_chain(retriever):
 vectorstore_mvr = Chroma(
     collection_name="image_summaries",
     persist_directory=str(Path(__file__).parent.parent / "chroma_db_multi_modal"),
-    embedding_function=OllamaEmbeddings(),
+    embedding_function=GPT4AllEmbeddings(),
 )
 
 # Load file store

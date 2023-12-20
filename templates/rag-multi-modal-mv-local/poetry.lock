@@ -660,6 +660,25 @@ gitdb = ">=4.0.1,<5"
 test = ["black", "coverage[toml]", "ddt (>=1.1.1,!=1.4.3)", "mock", "mypy", "pre-commit", "pytest", "pytest-cov", "pytest-instafail", "pytest-subtests", "pytest-sugar"]
 
 [[package]]
+name = "gpt4all"
+version = "2.0.2"
+description = "Python bindings for GPT4All"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "gpt4all-2.0.2-py3-none-macosx_10_15_universal2.whl", hash = "sha256:f18f348d21e2ce8e45dbf8334960670660b53f69a8e47a26bb7e64924e6ed130"},
+    {file = "gpt4all-2.0.2-py3-none-manylinux1_x86_64.whl", hash = "sha256:e4c19df94f45829565563017577b299c012ebed18ebea1d6df0273ef89c92a01"},
+    {file = "gpt4all-2.0.2-py3-none-win_amd64.whl", hash = "sha256:c09440bfb3463b9e278875fc726cf1f75d2a2b19bb73d97dde5e57b0b1f6e059"},
+]
+
+[package.dependencies]
+requests = "*"
+tqdm = "*"
+
+[package.extras]
+dev = ["black", "isort", "mkautodoc", "mkdocs-jupyter", "mkdocs-material", "mkdocstrings[python]", "pytest", "setuptools", "twine", "wheel"]
+
+[[package]]
 name = "graphlib-backport"
 version = "1.0.3"
 description = "Backport of the Python 3.9 graphlib module for Python 3.6+"
@@ -1064,13 +1083,13 @@ text-helpers = ["chardet (>=5.1.0,<6.0.0)"]
 
 [[package]]
 name = "langchain-cli"
-version = "0.0.19"
+version = "0.0.20"
 description = "CLI for interacting with LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain_cli-0.0.19-py3-none-any.whl", hash = "sha256:07b37f6fe507639537d2d79757cc659dfc396df6049ee97b8e12dfbfcb86a85b"},
-    {file = "langchain_cli-0.0.19.tar.gz", hash = "sha256:c518e1b2e8dd787d30385a5947a01b4cd72c24eb79159c9833f08b681975fd84"},
+    {file = "langchain_cli-0.0.20-py3-none-any.whl", hash = "sha256:bfcf21a8a36362dc2aa406acb435468eab33847dc0ccaef6877d3d3d9e2fcfc9"},
+    {file = "langchain_cli-0.0.20.tar.gz", hash = "sha256:a4d2eab44587851f44e14fd3d7eb9a17209d935d3adb07305c56602d07dcc722"},
 ]
 
 [package.dependencies]
@@ -2931,4 +2950,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "2b6e280e9f94fbe477fa6bf6b007236a80626f74b7dcd2627fbd7f595f746fab"
+content-hash = "c7801cc6ecebe931a48e76a98621a528112be4bff04507a3d9d6a640340cb8db"

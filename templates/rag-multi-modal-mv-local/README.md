@@ -1,23 +1,44 @@
 
 # rag-multi-modal-mv-local
 
-Multi-modal LLMs unlock new ways to build apps over visual content like photos.
- 
-This template performs multi-modal RAG over a set of images.
+Multi-modal LLMs enable text-to-image retrieval and question-answering over images. 
 
-It first indexes the images and allows a user to asks questions about them.
+You can ask questions in natural language about a collection of photos, retrieve relevant ones, and have a multi-modal LLM answer questions about the retrieved images.
 
-For each question, it will retrieve the relevant image and pass the image to a multi-modal LLM to generate the answer.
+This template performs text-to-image retrieval for question-answering about a slide deck, which often contains visual elements that are not captured in standard RAG.
 
-To do this, it uses the multi-vector retriever (see [blog](https://blog.langchain.dev/multi-modal-rag-template/)):
+This will use Ollama to run a local multi-modal LLM for image captioning and answer synthesis.
+
+## Input
+
+Supply a set of photos in the `/docs` directory. 
+
+By default, this template has a toy collection of 3 food pictures.
+
+The app will look up and summarize photos based upon provided keywords or questions:
+```
+What kind of ice cream did I have?
+```
+
+In practice, a larger corpus of images can be tested.
+
+To create an index of the images, run:
+```
+poetry install
+python ingest.py
+```
+
+## Storage
+
+Here is the process the template will use to create an index of the slides (see [blog](https://blog.langchain.dev/multi-modal-rag-template/)):
 
 * Given a set of images
 * It uses a local multi-modal LLM ([bakllava](https://ollama.ai/library/bakllava)) to summarize each image
 * Embeds the image summaries with a link to the original images
-* Given a user question, it will relevant image(s) based on similarity between the image summary and user input
+* Given a user question, it will relevant image(s) based on similarity between the image summary and user input (using GPT4All embeddings)
 * It will pass those images to bakllava for answer synthesis
 
-All these steps will be done using local, open-source LLMs.
+By default, this will use [LocalFileStore](https://python.langchain.com/docs/integrations/stores/file_system) to store images and Chroma to store summaries.
 
 ## LLM
 
@@ -33,20 +54,7 @@ ollama pull baklava
 
 The app is by default configured for `baklava`. But you can change this in `chain.py` and `ingest.py` for different downloaded models.
 
-## Input
-
-Supply a set of images the `/docs` directory and run:
-
-```
-poetry install
-python ingest.py
-```
-
-This will create a vectorstore (Chroma) of image summaries that are embedded using [Ollama embeddings](https://python.langchain.com/docs/integrations/text_embedding/ollama). 
-
-Each image summaries is linked to the raw images, which is stored in a [local file store](https://python.langchain.com/docs/integrations/stores/file_system).
-
-This allows us to retrieve images based on natural langugae text summaries.
+The app will retrieve images based on similarity between the text input and the image summary, and pass the images to `baklava`.
 
 ## Usage
 
