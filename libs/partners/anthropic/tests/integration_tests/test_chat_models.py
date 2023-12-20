@@ -1,4 +1,6 @@
 """Test ChatAnthropicMessages chat model."""
+from langchain_core.prompts import ChatPromptTemplate
+
 from langchain_anthropic.chat_models import ChatAnthropicMessages
 
 
@@ -60,4 +62,25 @@ def test_invoke() -> None:
     llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    assert isinstance(result.content, str)
+
+
+def test_system_invoke() -> None:
+    """Test invoke tokens with a system message"""
+    llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are an expert cartographer. If asked, you are a cartographer. "
+                "STAY IN CHARACTER",
+            ),
+            ("human", "Are you a mathematician?"),
+        ]
+    )
+
+    chain = prompt | llm
+
+    result = chain.invoke({})
     assert isinstance(result.content, str)
