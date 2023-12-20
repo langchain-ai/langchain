@@ -41,6 +41,7 @@ jobs:
         shell: bash
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           make integration_tests
 
