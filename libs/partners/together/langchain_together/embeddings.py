@@ -15,7 +15,9 @@ class TogetherEmbeddings(BaseModel, Embeddings):
 
             from langchain_together import TogetherEmbeddings
 
-            model = TogetherEmbeddings(model='togethercomputer/m2-bert-80M-8k-retrieval')
+            model = TogetherEmbeddings(
+                model='togethercomputer/m2-bert-80M-8k-retrieval'
+            )
     """
 
     _client: together.Together
