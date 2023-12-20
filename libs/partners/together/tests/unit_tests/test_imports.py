@@ -1,9 +1,6 @@
 from langchain_together import __all__
 
 EXPECTED_ALL = [
-    "TogetherLLM",
-    "ChatTogether",
-    "TogetherVectorStore",
     "TogetherEmbeddings",
 ]
 
