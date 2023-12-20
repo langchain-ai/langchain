@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Union
 
 from langchain_core.messages import (
     AIMessage,
@@ -42,7 +42,7 @@ class BaseChatMessageHistory(ABC):
     messages: List[BaseMessage]
     """A list of Messages stored in-memory."""
 
-    def add_user_message(self, message: HumanMessage | str) -> None:
+    def add_user_message(self, message: Union[HumanMessage, str]) -> None:
         """Convenience method for adding a human message string to the store.
 
         Args:
@@ -53,7 +53,7 @@ class BaseChatMessageHistory(ABC):
         else:
             self.add_message(HumanMessage(content=message))
 
-    def add_ai_message(self, message: AIMessage | str) -> None:
+    def add_ai_message(self, message: Union[AIMessage, str]) -> None:
         """Convenience method for adding an AI message string to the store.
 
         Args:
