@@ -54,6 +54,8 @@ class _DatabricksClientBase(BaseModel, ABC):
 def _transform_completions(response: Dict[str, Any]) -> str:
     return response["choices"][0]["text"]
 
+def _transform_llama2_chat(response: Dict[str, Any]) -> str:
+    return response["candidates"][0]["text"]
 
 def _transform_chat(response: Dict[str, Any]) -> str:
     return response["choices"][0]["message"]["content"]
@@ -87,7 +89,8 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             "external_model",
             "foundation_model_api",
         )
-        self.task = endpoint.get("task")
+        if self.task is None:
+            self.task = endpoint.get("task")
 
     @property
     def llm(self) -> bool:
@@ -114,6 +117,8 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
                 return _transform_chat(resp)
             elif self.task == "llm/v1/completions":
                 return _transform_completions(resp)
+            elif self.task == "llama2/chat":
+                return _transform_llama2_chat(resp)
 
             return resp
         else:
@@ -325,6 +330,10 @@ class Databricks(LLM):
     """The maximum number of tokens to generate."""
     extra_params: Dict[str, Any] = Field(default_factory=dict)
     """Any extra parameters to pass to the endpoint."""
+    task: Optional[str] = None
+    """The task of the endpoint. Only used when using a serving endpoint.
+    If not provided, the task is automatically inferred from the endpoint.
+    """
 
     _client: _DatabricksClientBase = PrivateAttr()
 
@@ -430,6 +439,7 @@ class Databricks(LLM):
             "stop": self.stop,
             "max_tokens": self.max_tokens,
             "extra_params": self.extra_params,
+            "task": self.task,
             # TODO: Support saving transform_input_fn and transform_output_fn
             # "transform_input_fn": self.transform_input_fn,
             # "transform_output_fn": self.transform_output_fn,
