@@ -178,6 +178,8 @@ class ChatMistralAI(BaseChatModel):
        probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
     random_seed: Optional[int] = None
     safe_mode: bool = False
+    streaming: bool = False
+    """Whether to stream the results or not."""
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -189,6 +191,7 @@ class ChatMistralAI(BaseChatModel):
             "top_p": self.top_p,
             "random_seed": self.random_seed,
             "safe_mode": self.safe_mode,
+            "stream": self.streaming,
         }
         filtered = {k: v for k, v in defaults.items() if v is not None}
         return filtered
@@ -250,8 +253,8 @@ class ChatMistralAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else False
-        if should_stream:
+        stream = self.streaming if stream is None else stream
+        if stream:
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -351,8 +354,8 @@ class ChatMistralAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else False
-        if should_stream:
+        stream = self.streaming if stream is None else stream
+        if stream:
             stream_iter = self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
             )
