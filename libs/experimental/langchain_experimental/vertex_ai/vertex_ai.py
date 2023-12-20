@@ -21,7 +21,7 @@ class VertexAIMultimodalEmbeddings(_VertexAICommon, Embeddings):
             raise_vertex_import_error()
         return values
 
-    def embed_image(self, uris: List[str]) -> List[List[float]]:
+    def embed_images(self, uris: List[str]) -> List[List[float]]:
         try:
             from vertexai.preview.vision_models import Image
             from PIL import Image as _PILImage
@@ -40,7 +40,7 @@ class VertexAIMultimodalEmbeddings(_VertexAICommon, Embeddings):
         text_features = []
         for text in texts:
             embedding = self.model.get_embeddings(contextual_text=text)
-            text_features.append(embedding)
+            text_features.append(embedding.text_embedding)
 
         return text_features
 
