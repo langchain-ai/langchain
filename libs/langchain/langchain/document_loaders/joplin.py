@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.joplin import LINK_NOTE_TEMPLATE, JoplinLoader
+from langchain_community.document_loaders.joplin import JoplinLoader
 
-__all__ = ["LINK_NOTE_TEMPLATE", "JoplinLoader"]
+__all__ = ["JoplinLoader"]

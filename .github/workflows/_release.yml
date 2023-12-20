@@ -11,15 +11,8 @@ on:
     inputs:
       working-directory:
         required: true
-        type: choice
+        type: string
         default: 'libs/langchain'
-        options:
-          - libs/langchain
-          - libs/core
-          - libs/experimental
-          - libs/community
-          - libs/partners/google-genai
-          - libs/partners/nvidia-aiplay
 
 env:
   PYTHON_VERSION: "3.10"
@@ -160,6 +153,9 @@ jobs:
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
