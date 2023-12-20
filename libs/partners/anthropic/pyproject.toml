@@ -8,8 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
-httpx-sse = "^0.3.1"
-httpx = "^0.25.2"
+anthropic = "^0.8.0"
 
 [tool.poetry.group.test]
 optional = true

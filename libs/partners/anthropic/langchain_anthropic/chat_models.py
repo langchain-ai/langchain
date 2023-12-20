@@ -1,8 +1,7 @@
 import os
-from typing import Any, AsyncIterator, Dict, Iterator, List, Literal, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Literal, Optional, Tuple
 
-import httpx
-from httpx_sse import aconnect_sse, connect_sse
+import anthropic
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -25,6 +24,37 @@ class _AnthropicMessageContent(BaseModel):
 _message_type_lookups = {"human": "user", "assistant": "ai"}
 
 
+def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[Dict]]:
+    """Format messages for anthropic."""
+
+    """
+    [
+                {
+                    "role": _message_type_lookups[m.type],
+                    "content": [_AnthropicMessageContent(text=m.content).dict()],
+                }
+                for m in messages
+            ]
+    """
+    system = None
+    formatted_messages = []
+    for i, message in enumerate(messages):
+        if not isinstance(message.content, str):
+            raise ValueError("Anthropic Messages API only supports text generation.")
+        if message.type == "system":
+            if i != 0:
+                raise ValueError("System message must be at beginning of message list.")
+            system = message.content
+        else:
+            formatted_messages.append(
+                {
+                    "role": _message_type_lookups[message.type],
+                    "content": message.content,
+                }
+            )
+    return system, formatted_messages
+
+
 class ChatAnthropicMessages(BaseChatModel):
     """Beta ChatAnthropicMessages chat model.
 
@@ -36,8 +66,8 @@ class ChatAnthropicMessages(BaseChatModel):
             model = ChatAnthropicMessages()
     """
 
-    _client: httpx.Client
-    _async_client: httpx.AsyncClient
+    _client: anthropic.Client = Field(default_factory=anthropic.Client)
+    _async_client: anthropic.AsyncClient = Field(default_factory=anthropic.AsyncClient)
 
     model: str = Field(alias="model_name")
     """Model name to use."""
@@ -70,58 +100,38 @@ class ChatAnthropicMessages(BaseChatModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        values["anthropic_api_key"] = values.get("anthropic_api_key") or os.environ.get(
-            "ANTHROPIC_API_KEY"
+        anthropic_api_key = SecretStr(
+            values.get("anthropic_api_key") or os.environ.get("ANTHROPIC_API_KEY") or ""
         )
-        values["_client"] = httpx.Client(
-            base_url=values["anthropic_api_url"],
-            timeout=values.get("default_request_timeout", 600),
-            headers={
-                "x-api-key": values["anthropic_api_key"],
-                "Content-Type": "application/json",
-                "anthropic-version": "2023-06-01",
-                "anthropic-beta": "messages-2023-12-15",
-            },
+        values["anthropic_api_key"] = anthropic_api_key
+        values["_client"] = anthropic.Client(
+            api_key=anthropic_api_key.get_secret_value()
         )
-        values["_async_client"] = httpx.AsyncClient(
-            base_url=values["anthropic_api_url"],
-            timeout=values.get("default_request_timeout", 600),
-            headers={
-                "x-api-key": values["anthropic_api_key"],
-                "Content-Type": "application/json",
-                "anthropic-version": "2023-06-01",
-                "anthropic-beta": "messages-2023-12-15",
-            },
+        values["_async_client"] = anthropic.AsyncClient(
+            api_key=anthropic_api_key.get_secret_value()
         )
         return values
 
-    def _request_body(
+    def _format_params(
         self,
         *,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        stream: bool = False,
         **kwargs: Dict,
     ) -> Dict:
-        if any(not isinstance(m.content, str) for m in messages):
-            raise ValueError("Anthropic Messages API only supports text generation.")
-        if any(m.type not in _message_type_lookups for m in messages):
-            raise ValueError(
-                "Anthropic Messages API only supports user and ai messages."
-            )
+        # get system prompt if any
+        system, formatted_messages = _format_messages(messages)
         rtn = {
             "model": self.model,
             "max_tokens": self.max_tokens,
-            "messages": [
-                {
-                    "role": _message_type_lookups[m.type],
-                    "content": [_AnthropicMessageContent(text=m.content).dict()],
-                }
-                for m in messages
-            ],
+            "messages": formatted_messages,
+            "temperature": self.temperature,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
             "stop_sequences": stop,
-            "stream": stream,
+            "system": system,
         }
+        rtn = {k: v for k, v in rtn.items() if v is not None}
 
         return rtn
 
@@ -132,21 +142,10 @@ class ChatAnthropicMessages(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        with connect_sse(
-            self._client,
-            "POST",
-            "/v1/messages",
-            json=self._request_body(
-                messages=messages, stop=stop, stream=True, **kwargs
-            ),
-        ) as sse:
-            for event in sse.iter_sse():
-                if event.event == "content_block_delta":
-                    data = event.json()
-                    content = data["delta"]["text"]
-                    yield ChatGenerationChunk(
-                        message=AIMessageChunk(content=content),
-                    )
+        params = self._format_params(messages=messages, stop=stop, **kwargs)
+        with self._client.beta.messages.stream(**params) as stream:
+            for text in stream.text_stream:
+                yield ChatGenerationChunk(message=AIMessageChunk(content=text))
 
     async def _astream(
         self,
@@ -155,21 +154,10 @@ class ChatAnthropicMessages(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        async with aconnect_sse(
-            self._async_client,
-            "POST",
-            "/v1/messages",
-            json=self._request_body(
-                messages=messages, stop=stop, stream=True, **kwargs
-            ),
-        ) as sse:
-            async for event in sse.aiter_sse():
-                if event.event == "content_block_delta":
-                    data = event.json()
-                    content = data["delta"]["text"]
-                    yield ChatGenerationChunk(
-                        message=AIMessageChunk(content=content),
-                    )
+        params = self._format_params(messages=messages, stop=stop, **kwargs)
+        async with self._async_client.beta.messages.stream(**params) as stream:
+            async for text in stream.text_stream:
+                yield ChatGenerationChunk(message=AIMessageChunk(content=text))
 
     def _generate(
         self,
@@ -178,18 +166,12 @@ class ChatAnthropicMessages(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        res = self._client.post(
-            "/v1/messages",
-            json=self._request_body(messages=messages, stop=stop, **kwargs),
-        )
-        data = res.json()
-        if res.status_code != 200:
-            raise ValueError(str(data["error"]))
-
-        content = data["content"][0]["text"]
-
+        params = self._format_params(messages=messages, stop=stop, **kwargs)
+        data = self._client.beta.messages.create(**params)
         return ChatResult(
-            generations=[ChatGeneration(message=AIMessage(content=content))],
+            generations=[
+                ChatGeneration(message=AIMessage(content=data.content[0].text))
+            ],
             llm_output=data,
         )
 
@@ -200,15 +182,11 @@ class ChatAnthropicMessages(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        res = await self._async_client.post(
-            "/v1/messages",
-            json=self._request_body(messages=messages, stop=stop, **kwargs),
-        )
-        data = res.json()
-        if res.status_code != 200:
-            raise ValueError(str(data["error"]))
-        content = data["content"][0]["text"]
+        params = self._format_params(messages=messages, stop=stop, **kwargs)
+        data = await self._async_client.beta.messages.create(**params)
         return ChatResult(
-            generations=[ChatGeneration(message=AIMessage(content=content))],
+            generations=[
+                ChatGeneration(message=AIMessage(content=data.content[0].text))
+            ],
             llm_output=data,
         )
