@@ -35,26 +35,29 @@ Here is the process the template will use to create an index of the slides (see 
 * Given a set of images
 * It uses a local multi-modal LLM ([bakllava](https://ollama.ai/library/bakllava)) to summarize each image
 * Embeds the image summaries with a link to the original images
-* Given a user question, it will relevant image(s) based on similarity between the image summary and user input (using GPT4All embeddings)
+* Given a user question, it will relevant image(s) based on similarity between the image summary and user input (using Ollama embeddings)
 * It will pass those images to bakllava for answer synthesis
 
 By default, this will use [LocalFileStore](https://python.langchain.com/docs/integrations/stores/file_system) to store images and Chroma to store summaries.
 
-## LLM
+## LLM and Embedding Models
 
-We will use [Ollama](https://python.langchain.com/docs/integrations/chat/ollama#multi-modal) for generating image summaries and final image QA.
+We will use [Ollama](https://python.langchain.com/docs/integrations/chat/ollama#multi-modal) for generating image summaries, embeddings, and the final image QA.
 
 Download the latest version of Ollama: https://ollama.ai/
 
-Pull the an open source multi-modal LLM: e.g., https://ollama.ai/library/bakllava
+Pull an open source multi-modal LLM: e.g., https://ollama.ai/library/bakllava
+
+Pull an open source embedding model: e.g., https://ollama.ai/library/llama2:7b
 
 ```
-ollama pull baklava
+ollama pull bakllava
+ollama pull llama2:7b
 ```
 
-The app is by default configured for `baklava`. But you can change this in `chain.py` and `ingest.py` for different downloaded models.
+The app is by default configured for `bakllava`. But you can change this in `chain.py` and `ingest.py` for different downloaded models.
 
-The app will retrieve images based on similarity between the text input and the image summary, and pass the images to `baklava`.
+The app will retrieve images based on similarity between the text input and the image summary, and pass the images to `bakllava`.
 
 ## Usage
 

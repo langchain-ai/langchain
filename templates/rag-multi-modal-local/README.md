@@ -58,10 +58,10 @@ Download the latest version of Ollama: https://ollama.ai/
 Pull the an open source multi-modal LLM: e.g., https://ollama.ai/library/bakllava
 
 ```
-ollama pull baklava
+ollama pull bakllava
 ```
 
-The app is by default configured for `baklava`. But you can change this in `chain.py` and `ingest.py` for different downloaded models.
+The app is by default configured for `bakllava`. But you can change this in `chain.py` and `ingest.py` for different downloaded models.
 
 ## Usage
 

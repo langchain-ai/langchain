@@ -3,7 +3,7 @@ import io
 from pathlib import Path
 
 from langchain.chat_models import ChatOllama
-from langchain.embeddings import GPT4AllEmbeddings
+from langchain.embeddings import OllamaEmbeddings
 from langchain.pydantic_v1 import BaseModel
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.schema.document import Document
@@ -103,7 +103,7 @@ def multi_modal_rag_chain(retriever):
 vectorstore_mvr = Chroma(
     collection_name="image_summaries",
     persist_directory=str(Path(__file__).parent.parent / "chroma_db_multi_modal"),
-    embedding_function=GPT4AllEmbeddings(),
+    embedding_function=OllamaEmbeddings(model="llama2:7b"),
 )
 
 # Load file store

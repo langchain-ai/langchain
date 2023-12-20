@@ -6,7 +6,7 @@ from io import BytesIO
 from pathlib import Path
 
 from langchain.chat_models import ChatOllama
-from langchain.embeddings import GPT4AllEmbeddings
+from langchain.embeddings import OllamaEmbeddings
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.schema.document import Document
 from langchain.schema.messages import HumanMessage
@@ -176,7 +176,7 @@ image_summaries, images_base_64_processed = generate_img_summaries(images_base_6
 vectorstore_mvr = Chroma(
     collection_name="image_summaries",
     persist_directory=str(Path(__file__).parent / "chroma_db_multi_modal"),
-    embedding_function=GPT4AllEmbeddings(),
+    embedding_function=OllamaEmbeddings(model="llama2:7b"),
 )
 
 # Create documents
