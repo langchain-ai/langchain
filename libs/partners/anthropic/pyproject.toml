@@ -44,6 +44,12 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 langchain-core = {path = "../../core", develop = true}
 
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.test_integration.dependencies]
+langchain-core = {path = "../../core", develop = true}
+
 [tool.ruff]
 select = [
   "E",  # pycodestyle
