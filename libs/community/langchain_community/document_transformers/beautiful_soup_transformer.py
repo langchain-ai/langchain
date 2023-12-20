@@ -137,6 +137,15 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
 
 def get_navigable_strings(element: Any) -> Iterator[str]:
+    """Get all navigable strings from a BeautifulSoup element.
+
+    Args:
+        element: A BeautifulSoup element.
+
+    Returns:
+        A generator of strings.
+    """
+
     from bs4 import NavigableString, Tag
 
     for child in cast(Tag, element).children:

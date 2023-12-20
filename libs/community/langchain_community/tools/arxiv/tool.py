@@ -10,6 +10,8 @@ from langchain_community.utilities.arxiv import ArxivAPIWrapper
 
 
 class ArxivInput(BaseModel):
+    """Input for the Arxiv tool."""
+
     query: str = Field(description="search query to look up")
 
 
