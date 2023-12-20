@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
@@ -10,6 +11,20 @@ from langchain_community.chat_loaders.base import BaseChatLoader
 
 if TYPE_CHECKING:
     import sqlite3
+
+
+def nanoseconds_from_2001_to_datetime(nanoseconds: int) -> datetime:
+    # Convert nanoseconds to seconds (1 second = 1e9 nanoseconds)
+    timestamp_in_seconds = nanoseconds / 1e9
+
+    # The reference date is January 1, 2001, in Unix time
+    reference_date_seconds = datetime(2001, 1, 1).timestamp()
+
+    # Calculate the actual timestamp by adding the reference date
+    actual_timestamp = reference_date_seconds + timestamp_in_seconds
+
+    # Convert to a datetime object
+    return datetime.fromtimestamp(actual_timestamp)
 
 
 class IMessageChatLoader(BaseChatLoader):
@@ -92,17 +107,17 @@ class IMessageChatLoader(BaseChatLoader):
         results: List[HumanMessage] = []
 
         query = """
-        SELECT message.date, handle.id, message.text, message.attributedBody
+        SELECT message.date, handle.id, message.text, message.is_from_me, message.attributedBody
         FROM message
         JOIN chat_message_join ON message.ROWID = chat_message_join.message_id
         JOIN handle ON message.handle_id = handle.ROWID
         WHERE chat_message_join.chat_id = ?
         ORDER BY message.date ASC;
-        """
+        """  # noqa: E501
         cursor.execute(query, (chat_id,))
         messages = cursor.fetchall()
 
-        for date, sender, text, attributedBody in messages:
+        for date, sender, text, is_from_me, attributedBody in messages:
             if text:
                 content = text
             elif attributedBody:
@@ -116,7 +131,11 @@ class IMessageChatLoader(BaseChatLoader):
                     content=content,
                     additional_kwargs={
                         "message_time": date,
+                        "message_time_as_datetime": nanoseconds_from_2001_to_datetime(
+                            date
+                        ),
                         "sender": sender,
+                        "is_from_me": bool(is_from_me),
                     },
                 )
             )

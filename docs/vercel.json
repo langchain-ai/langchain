@@ -1,6 +1,14 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/providers/tencentvectordb",
+      "destination": "/docs/integrations/providers/tencent"
+    },
+    {
+      "source": "/docs/integrations/chat/hunyuan",
+      "destination": "/docs/integrations/chat/tencent_hunyuan"
+    },
+    {
       "source": "/docs/integrations/providers/aws_dynamodb",
       "destination": "/docs/integrations/platforms/aws#aws-dynamodb"
     },
