@@ -51,9 +51,22 @@ def test_valid_call(fake_llm_chain: LLMChain) -> None:
     """Test valid call of LLM chain."""
     output = fake_llm_chain({"bar": "baz"})
     assert output == {"bar": "baz", "text1": "foo"}
+    assert fake_llm_chain.invoke({"bar": "baz"}) == output
 
     # Test with stop words.
     output = fake_llm_chain({"bar": "baz", "stop": ["foo"]})
+    # Response should be `bar` now.
+    assert output == {"bar": "baz", "stop": ["foo"], "text1": "bar"}
+
+
+async def test_valid_acall(fake_llm_chain: LLMChain) -> None:
+    """Test valid call of LLM chain."""
+    output = await fake_llm_chain.acall({"bar": "baz"})
+    assert output == {"bar": "baz", "text1": "foo"}
+    assert await fake_llm_chain.ainvoke({"bar": "baz"}) == output
+
+    # Test with stop words.
+    output = await fake_llm_chain.acall({"bar": "baz", "stop": ["foo"]})
     # Response should be `bar` now.
     assert output == {"bar": "baz", "stop": ["foo"], "text1": "bar"}
 
@@ -73,3 +86,4 @@ def test_predict_and_parse() -> None:
     chain = LLMChain(prompt=prompt, llm=llm)
     output = chain.predict_and_parse(foo="foo")
     assert output == ["foo", "bar"]
+    assert output == chain.invoke({"foo": "foo"})["text"]

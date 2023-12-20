@@ -27,8 +27,10 @@ async def atest_simple() -> None:
         verbose=True,
     )
     got = await qa_chain.acall("What is the answer?")
+    memory.clear()
     assert got["chat_history"][1].content == fixed_resp
     assert got["answer"] == fixed_resp
+    assert got == await qa_chain.ainvoke("What is the answer?")
 
 
 @pytest.mark.asyncio
@@ -37,7 +39,7 @@ async def atest_fixed_message_response_when_docs_found() -> None:
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
     retriever = SequentialRetriever(
-        sequential_responses=[[Document(page_content=answer)]]
+        sequential_responses=[[Document(page_content=answer)]], cycle=True
     )
     memory = ConversationBufferMemory(
         k=1, output_key="answer", memory_key="chat_history", return_messages=True
@@ -52,8 +54,10 @@ async def atest_fixed_message_response_when_docs_found() -> None:
         verbose=True,
     )
     got = await qa_chain.acall("What is the answer?")
+    memory.clear()
     assert got["chat_history"][1].content == answer
     assert got["answer"] == answer
+    assert got == await qa_chain.ainvoke("What is the answer?")
 
 
 def test_fixed_message_response_when_no_docs_found() -> None:
@@ -74,8 +78,10 @@ def test_fixed_message_response_when_no_docs_found() -> None:
         verbose=True,
     )
     got = qa_chain("What is the answer?")
+    memory.clear()
     assert got["chat_history"][1].content == fixed_resp
     assert got["answer"] == fixed_resp
+    assert got == qa_chain.invoke("What is the answer?")
 
 
 def test_fixed_message_response_when_docs_found() -> None:
@@ -83,7 +89,7 @@ def test_fixed_message_response_when_docs_found() -> None:
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
     retriever = SequentialRetriever(
-        sequential_responses=[[Document(page_content=answer)]]
+        sequential_responses=[[Document(page_content=answer)]], cycle=True
     )
     memory = ConversationBufferMemory(
         k=1, output_key="answer", memory_key="chat_history", return_messages=True
@@ -98,5 +104,7 @@ def test_fixed_message_response_when_docs_found() -> None:
         verbose=True,
     )
     got = qa_chain("What is the answer?")
+    memory.clear()
     assert got["chat_history"][1].content == answer
     assert got["answer"] == answer
+    assert got == qa_chain.invoke("What is the answer?")

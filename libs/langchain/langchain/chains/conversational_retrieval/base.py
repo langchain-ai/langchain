@@ -15,8 +15,13 @@ from langchain_core.messages import BaseMessage
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import Runnable, RunnableConfig
-from langchain_core.runnables.base import RunnableMap
+from langchain_core.runnables import (
+    Runnable,
+    RunnableConfig,
+    RunnableLambda,
+    RunnableMap,
+)
+from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
@@ -297,25 +302,33 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         get_chat_history = self.get_chat_history or _get_chat_history
 
         def get_new_question(inputs: Dict[str, Any]):
-            return (
-                self.question_generator
-                if inputs["chat_history"]
-                else inputs["question"]
-            )
+            if inputs["chat_history"]:
+                return self.question_generator
+            else:
+                return inputs["question"]
 
         def get_answer(inputs: Dict[str, Any]):
-            return (
-                self.response_if_no_docs_found
-                if self.response_if_no_docs_found is not None
+            if (
+                self.response_if_no_docs_found is not None
                 and len(inputs["input_documents"]) == 0
-                else self.combine_docs_chain
-            )
+            ):
+                return self.response_if_no_docs_found
+            else:
+                return self.combine_docs_chain | itemgetter(
+                    self.combine_docs_chain.output_key
+                )
+
+        output_map = {self.output_key: RunnablePassthrough()}
+        if self.return_source_documents:
+            output_map["source_documents"] = context.getter("input_documents")
+        if self.return_generated_question:
+            output_map["generated_question"] = context.getter("new_question")
 
         return (
             RunnableMap(
                 question=itemgetter("question") | context.setter("question"),
                 chat_history=itemgetter("chat_history")
-                | get_chat_history
+                | RunnableLambda(get_chat_history)
                 | context.setter("chat_history"),
             )
             | get_new_question
@@ -330,11 +343,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
                     "new_question" if self.rephrase_question else "question"
                 ),
             }
-            | {
-                self.output_key: get_answer,
-                "source_documents": context.getter("input_documents"),
-                "generated_question": context.getter("new_question"),
-            }
+            | get_answer
+            | output_map
         )
 
     def _reduce_tokens_below_limit(self, docs: List[Document]) -> List[Document]:

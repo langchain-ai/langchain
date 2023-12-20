@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Type, Union
 
 import yaml
+from langchain_core.beta.runnables.context import Context
 from langchain_core.load.dump import dumpd
 from langchain_core.memory import BaseMemory
 from langchain_core.outputs import RunInfo
@@ -20,7 +21,9 @@ from langchain_core.pydantic_v1 import (
     validator,
 )
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
+from langchain_core.runnables.base import RunnableLambda
 from langchain_core.runnables.configurable import ConfigurableFieldSpec
+from langchain_core.runnables.passthrough import RunnablePassthrough
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -674,6 +677,22 @@ class RunnableChain(Chain, ABC):
     def as_runnable(self) -> Runnable:
         ...
 
+    def as_runnable_wrapped(self, return_only_outputs: bool = False) -> Runnable:
+        context = Context.create_scope("runnable-chain")
+
+        def prep_outputs(all: Dict[str, Any]) -> Dict[str, Any]:
+            print("before outprep", all)
+            return self.prep_outputs(all["inputs"], all["outputs"], return_only_outputs)
+
+        return (
+            self.prep_inputs
+            | RunnableLambda(lambda i: print("after prep", i) or i.copy())
+            | context.setter("inputs")
+            | self.as_runnable()
+            | {"outputs": RunnablePassthrough(), "inputs": context.getter("inputs")}
+            | prep_outputs
+        )
+
     @property
     def InputType(self) -> Type[Dict[str, Any]]:
         return self.as_runnable().InputType
@@ -692,39 +711,51 @@ class RunnableChain(Chain, ABC):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
-        return self.as_runnable().config_specs
+        return self.as_runnable_wrapped().config_specs
 
     def invoke(
         self,
         input: Dict[str, Any],
         config: Optional[RunnableConfig] = None,
+        return_only_outputs: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        return self.as_runnable().invoke(input, config, **kwargs)
+        return self.as_runnable_wrapped(return_only_outputs).invoke(
+            input, config, **kwargs
+        )
 
     async def ainvoke(
         self,
         input: Dict[str, Any],
         config: Optional[RunnableConfig] = None,
+        return_only_outputs: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        return await self.as_runnable().ainvoke(input, config, **kwargs)
+        return await self.as_runnable_wrapped(return_only_outputs).ainvoke(
+            input, config, **kwargs
+        )
 
     def stream(
         self,
         input: Dict[str, Any],
         config: Optional[RunnableConfig] = None,
+        return_only_outputs: bool = False,
         **kwargs: Any,
     ) -> Iterator[Dict[str, Any]]:
-        yield from self.as_runnable().stream(input, config, **kwargs)
+        yield from self.as_runnable_wrapped(return_only_outputs).stream(
+            input, config, **kwargs
+        )
 
     async def astream(
         self,
         input: Dict[str, Any],
         config: Optional[RunnableConfig] = None,
+        return_only_outputs: bool = False,
         **kwargs: Any,
     ) -> AsyncIterator[Dict[str, Any]]:
-        async for item in self.as_runnable().astream(input, config, **kwargs):
+        async for item in self.as_runnable_wrapped(return_only_outputs).astream(
+            input, config, **kwargs
+        ):
             yield item
 
     def batch(
@@ -733,9 +764,10 @@ class RunnableChain(Chain, ABC):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
+        return_only_outputs: bool = False,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        return self.as_runnable().batch(
+        return self.as_runnable_wrapped(return_only_outputs).batch(
             inputs, config, **kwargs, return_exceptions=return_exceptions
         )
 
@@ -745,9 +777,10 @@ class RunnableChain(Chain, ABC):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
+        return_only_outputs: bool = False,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        return await self.as_runnable().abatch(
+        return await self.as_runnable_wrapped(return_only_outputs).abatch(
             inputs, config, **kwargs, return_exceptions=return_exceptions
         )
 
@@ -755,15 +788,21 @@ class RunnableChain(Chain, ABC):
         self,
         input: Iterator[Dict[str, Any]],
         config: Optional[RunnableConfig] = None,
+        return_only_outputs: bool = False,
         **kwargs: Any | None,
     ) -> Iterator[Dict[str, Any]]:
-        yield from self.as_runnable().transform(input, config, **kwargs)
+        yield from self.as_runnable_wrapped(return_only_outputs).transform(
+            input, config, **kwargs
+        )
 
     async def atransform(
         self,
         input: AsyncIterator[Dict[str, Any]],
         config: Optional[RunnableConfig] = None,
+        return_only_outputs: bool = False,
         **kwargs: Any | None,
     ) -> AsyncIterator[Dict[str, Any]]:
-        async for chunk in super().atransform(input, config, **kwargs):
+        async for chunk in self.as_runnable_wrapped(return_only_outputs).atransform(
+            input, config, **kwargs
+        ):
             yield chunk

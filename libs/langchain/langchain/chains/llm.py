@@ -80,7 +80,7 @@ class LLMChain(RunnableChain):
         return (
             self.prompt
             | self.llm.bind(**self.llm_kwargs)
-            | {self.output_key: self.output_parser}
+            | {self.output_key: self.prompt.output_parser or self.output_parser}
         )
 
     @property

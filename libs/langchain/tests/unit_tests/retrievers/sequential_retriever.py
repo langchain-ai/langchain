@@ -8,16 +8,20 @@ class SequentialRetriever(BaseRetriever):
 
     sequential_responses: List[List[Document]]
     response_index: int = 0
+    cycle: bool = False
 
     def _get_relevant_documents(  # type: ignore[override]
         self,
         query: str,
     ) -> List[Document]:
         if self.response_index >= len(self.sequential_responses):
-            return []
-        else:
-            self.response_index += 1
-            return self.sequential_responses[self.response_index - 1]
+            if self.cycle:
+                self.response_index = 0
+            else:
+                return []
+
+        self.response_index += 1
+        return self.sequential_responses[self.response_index - 1]
 
     async def _aget_relevant_documents(  # type: ignore[override]
         self,
