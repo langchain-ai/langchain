@@ -672,7 +672,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         return [self(inputs, callbacks=callbacks) for inputs in input_list]
 
 
-class RunnableChain(Chain, ABC):
+class RunnableChain(Chain):
     @abstractmethod
     def as_runnable(self) -> Runnable:
         ...
