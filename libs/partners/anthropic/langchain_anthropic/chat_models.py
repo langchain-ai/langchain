@@ -1,5 +1,5 @@
 import os
-from typing import Any, AsyncIterator, Dict, Iterator, List, Literal, Optional, Tuple
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Tuple
 
 import anthropic
 from langchain_core.callbacks import (
@@ -13,13 +13,8 @@ from langchain_core.messages import (
     BaseMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-
-
-class _AnthropicMessageContent(BaseModel):
-    type: Literal["text"] = "text"
-    text: str
-
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
 
 _message_type_lookups = {"human": "user", "assistant": "ai"}
 
@@ -100,7 +95,7 @@ class ChatAnthropicMessages(BaseChatModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        anthropic_api_key = SecretStr(
+        anthropic_api_key = convert_to_secret_str(
             values.get("anthropic_api_key") or os.environ.get("ANTHROPIC_API_KEY") or ""
         )
         values["anthropic_api_key"] = anthropic_api_key
