@@ -4007,7 +4007,7 @@ def test_runnable_branch_stream_with_callbacks() -> None:
 
     llm_res = "i'm a textbot"
     # sleep to better simulate a real stream
-    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+    llm = FakeStreamingListLLM(responses=[llm_res])
 
     branch = RunnableBranch[str, Any](
         (lambda x: x == "error", raise_value_error),
@@ -4020,7 +4020,7 @@ def test_runnable_branch_stream_with_callbacks() -> None:
 
     assert len(tracer.runs) == 1
     assert tracer.runs[0].error is None
-    assert tracer.runs[0].outputs == {"output": list(llm_res)}
+    assert tracer.runs[0].outputs == {"output": llm_res}
 
     # Verify that the chain on error is invoked
     with pytest.raises(ValueError):
@@ -4035,7 +4035,7 @@ def test_runnable_branch_stream_with_callbacks() -> None:
 
     assert len(tracer.runs) == 3
     assert tracer.runs[2].error is None
-    assert tracer.runs[2].outputs == {"output": ["bye"]}
+    assert tracer.runs[2].outputs == {"output": "bye"}
 
 
 async def test_runnable_branch_astream() -> None:
@@ -4097,7 +4097,7 @@ async def test_runnable_branch_astream_with_callbacks() -> None:
 
     assert len(tracer.runs) == 1
     assert tracer.runs[0].error is None
-    assert tracer.runs[0].outputs == {"output": list(llm_res)}
+    assert tracer.runs[0].outputs == {"output": llm_res}
 
     # Verify that the chain on error is invoked
     with pytest.raises(ValueError):
@@ -4112,7 +4112,7 @@ async def test_runnable_branch_astream_with_callbacks() -> None:
 
     assert len(tracer.runs) == 3
     assert tracer.runs[2].error is None
-    assert tracer.runs[2].outputs == {"output": ["bye"]}
+    assert tracer.runs[2].outputs == {"output": "bye"}
 
 
 @pytest.mark.skipif(
