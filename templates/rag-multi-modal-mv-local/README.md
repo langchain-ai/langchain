@@ -1,13 +1,13 @@
 
 # rag-multi-modal-mv-local
 
-Multi-modal LLMs enable text-to-image retrieval and question-answering over images. 
+Visual search is a famililar application to many with iPhones or Android devices: use natural language to search across your photo collection. 
+  
+With the release of open source, multi-modal LLMs it's possible to build this kind of application for yourself and have it run on your personal laptop. 
 
-You can ask questions in natural language about a collection of photos, retrieve relevant ones, and have a multi-modal LLM answer questions about the retrieved images.
-
-This template performs text-to-image retrieval for question-answering about a slide deck, which often contains visual elements that are not captured in standard RAG.
-
-This will use Ollama to run a local multi-modal LLM for image captioning and answer synthesis.
+This template demonstrates how to perform visual search and question-answering over a collection of photos.
+ 
+Given a set of photos, it will produce image summaries and index them, retrieve photos relevant to user question using the summaries, and use Ollama to run a local, open-source multi-modal LLM to answer questions about the retrieved photos.
 
 ## Input
 
