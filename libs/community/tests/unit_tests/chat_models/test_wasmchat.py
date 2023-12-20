@@ -1,15 +1,16 @@
 import pytest
-from langchain_community.chat_models.wasm_chat import (
-    WasmChatService,
-    _convert_dict_to_message,
-    _convert_message_to_dict,
-)
 from langchain_core.messages import (
     AIMessage,
     ChatMessage,
     FunctionMessage,
     HumanMessage,
     SystemMessage,
+)
+
+from langchain_community.chat_models.wasm_chat import (
+    WasmChatService,
+    _convert_dict_to_message,
+    _convert_message_to_dict,
 )
 
 
@@ -73,7 +74,5 @@ def test_wasm_chat_without_service_url() -> None:
     with pytest.raises(ValueError) as e:
         chat(messages)
 
-    assert (
-        "Error code: 503, reason: The IP address or port of the chat service is incorrect."
-        in str(e)
-    )
+    assert "Error code: 503" in str(e)
+    assert "reason: The IP address or port of the chat service is incorrect." in str(e)
