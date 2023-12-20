@@ -4007,7 +4007,7 @@ def test_runnable_branch_stream_with_callbacks() -> None:
 
     llm_res = "i'm a textbot"
     # sleep to better simulate a real stream
-    llm = FakeStreamingListLLM(responses=[llm_res])
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
     branch = RunnableBranch[str, Any](
         (lambda x: x == "error", raise_value_error),
