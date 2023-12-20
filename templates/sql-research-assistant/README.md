@@ -4,6 +4,12 @@ This package does research over a SQL database
 
 ## Usage
 
+This package relies on multiple models, which have the following dependencies:
+
+- OpenAI: set the `OPENAI_API_KEY` environment variables
+- Ollama: [install and run Ollama](https://python.langchain.com/docs/integrations/chat/ollama)
+- llama2 (on Ollama): `ollama pull llama2` (otherwise you will get 404 errors from Ollama)
+
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
