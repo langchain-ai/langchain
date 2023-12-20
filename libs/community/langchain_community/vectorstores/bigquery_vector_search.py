@@ -10,12 +10,12 @@ from typing import (
     Union,
 )
 
+from google.cloud import bigquery
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import DistanceStrategy
-from google.cloud import bigquery
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.EUCLIDEAN_DISTANCE
 
@@ -116,7 +116,7 @@ class BigQueryVectorSearch(VectorStore):
         try:
             table = self.bqclient.get_table(table_ref)
             self._validate_columns(table)
-            print("The table is valid.")
+            print(f"The table `{full_table_id}` is valid.")
             return table
         except NotFound:
             raise NotFound(f"The dataset `{full_table_id}` is not found.")
@@ -162,7 +162,7 @@ class BigQueryVectorSearch(VectorStore):
               embeddings. Defaults to None.
 
       Returns:
-          List[str]: empty list
+          List[str]: empty list.
       """
       if isinstance(texts, str):
           texts = [texts]
@@ -172,10 +172,8 @@ class BigQueryVectorSearch(VectorStore):
           self._add_text_with_embedding_in_table(pair)
     
 
-    def _add_text_with_embedding_in_table(self, pair: Tuple):
-        """Inset the text with associated embedding into the table."""
-        from google.cloud import bigquery
-
+    def _add_text_with_embedding_in_table(self, pair: Tuple) -> List[str]:
+        """Insert the text with associated embedding into the table."""
         sql = f"""
 INSERT INTO `{self.full_table_id}` (
 {self.content_field}, {self.vector_field}
@@ -183,10 +181,9 @@ INSERT INTO `{self.full_table_id}` (
 '{list(pair)[1]}', ARRAY{list(pair)[0]}
 )
 """
-        print(sql)
         job_config = bigquery.QueryJobConfig()
 
-        query_job = self.bqclient.query(sql, job_config=job_config)
+        self.bqclient.query(sql, job_config=job_config)
         return []
     
     def similarity_search(
@@ -223,7 +220,6 @@ INSERT INTO `{self.full_table_id}` (
         document_tuples = self._search_with_score_and_embeddings(query, k, filter)
         return [(doc, distance) for doc, _, distance in document_tuples]
 
-
     def _create_vector_index(self) -> Any:
         """
         A vector index in BigQuery table enables efficient
@@ -245,9 +241,8 @@ INSERT INTO `{self.full_table_id}` (
       ON `{self.full_table_id}`({self.vector_field})
       OPTIONS(distance_type="{distance_type}", index_type="IVF")
       """
-        print("_create_vector_index")
-        print(sql)
         job = self.bqclient.query(sql, job_config=job_config)
+        return job
 
     def _create_search_input_table(
         self,
@@ -257,7 +252,7 @@ INSERT INTO `{self.full_table_id}` (
         Create a new table with vector to search.
         """
         job_config = bigquery.QueryJobConfig()
-        ## Create a new table with query to search in the exisiting dataset
+        ## Create a new table with query to search in the existing dataset
         embedding = self.embeddings.embed_query(query)
         new_table = f"{self.project_id}.{self.dataset_name}.test_query"
         sql = f"""
@@ -267,9 +262,8 @@ INSERT INTO `{self.full_table_id}` (
     ) AS
     SELECT '{query}', ARRAY{embedding}
     """
-        print("_create_search_input_table")
-        print(sql)
         job = self.bqclient.query(sql, job_config=job_config)
+        return job
 
     def _bigquery_vector_search(self, k: int = 4) -> Any:
         """
@@ -286,8 +280,6 @@ INSERT INTO `{self.full_table_id}` (
         TABLE `{self.full_table_id}`, '{self.vector_field}',
         TABLE `{new_table}`, top_k => {k})
     """
-        print("_bigquery_vector_search")
-        print(vector_search_sql)
         vector_search_job = self.bqclient.query(
             vector_search_sql, job_config=job_config
         )
@@ -306,3 +298,9 @@ INSERT INTO `{self.full_table_id}` (
             doc = Document(page_content=row[self.content_field])
             document_tuples.append((doc, row[self.vector_field], row["distance"]))
         return document_tuples
+    
+    @classmethod
+    def from_texts():
+        raise NotImplementedError(f"BigQueryVectorSearch can't be initialized
+                                  from texts and embeddings. Please intialize
+                                  with the constructor.")
