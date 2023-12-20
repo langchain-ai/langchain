@@ -728,6 +728,14 @@ class Unparser:
 
 
 def roundtrip(filename, output=sys.stdout):
+    """Parse a file and pretty-print it to output.
+
+    The output is formatted as valid Python source code.
+
+    Args:
+        filename: The name of the file to parse.
+        output: The output stream to write to.
+    """
     with open(filename, "rb") as pyfile:
         encoding = tokenize.detect_encoding(pyfile.readline)[0]
     with open(filename, "r", encoding=encoding) as pyfile:

@@ -32,6 +32,7 @@ EXPECTED_ALL = [
     "GigaChat",
     "VolcEngineMaasChat",
     "WasmChatService",
+    "GPTRouter",
 ]
 
 
