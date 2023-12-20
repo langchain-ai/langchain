@@ -533,6 +533,12 @@ def _import_volcengine_maas() -> Any:
 
     return VolcEngineMaasLLM
 
+def _import_konko() -> Any:
+    from langchain.llms.konko import Konko
+
+    return Konko
+
+
 
 def __getattr__(name: str) -> Any:
     if name == "AI21":
@@ -701,6 +707,8 @@ def __getattr__(name: str) -> Any:
         return _import_yandex_gpt()
     elif name == "VolcEngineMaasLLM":
         return _import_volcengine_maas()
+    elif name == "Konko":
+        return _import_konko()
     elif name == "type_to_cls_dict":
         # for backwards compatibility
         type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -793,6 +801,7 @@ __all__ = [
     "QianfanLLMEndpoint",
     "YandexGPT",
     "VolcEngineMaasLLM",
+    "Konko",
 ]
 
 
@@ -877,4 +886,5 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "qianfan_endpoint": _import_baidu_qianfan_endpoint,
         "yandex_gpt": _import_yandex_gpt,
         "VolcEngineMaasLLM": _import_volcengine_maas,
+        "konko": _import_konko,
     }

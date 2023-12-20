@@ -1,5 +1,6 @@
 """KonkoAI chat wrapper."""
 from __future__ import annotations
+import warnings 
 
 import logging
 import os
@@ -107,6 +108,13 @@ class ChatKonko(BaseChatModel):
                 "due to an old version of the konko package. Try upgrading it "
                 "with `pip install --upgrade konko`."
             )
+        
+        if not hasattr(konko, 'Completion'):
+            warnings.warn(
+                "You are using an older version of the 'konko' package. "
+                "Please consider upgrading to access new features."
+            )
+
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
