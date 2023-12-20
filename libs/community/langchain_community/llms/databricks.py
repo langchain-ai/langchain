@@ -94,7 +94,7 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
 
     @property
     def llm(self) -> bool:
-        return self.task in ("llm/v1/chat", "llm/v1/completions")
+        return self.task in ("llm/v1/chat", "llm/v1/completions", "llama2/chat")
 
     @root_validator(pre=True)
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -117,8 +117,6 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
                 return _transform_chat(resp)
             elif self.task == "llm/v1/completions":
                 return _transform_completions(resp)
-            elif self.task == "llama2/chat":
-                return _transform_llama2_chat(resp)
 
             return resp
         else:
@@ -130,6 +128,8 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             preds = response["predictions"]
             # For a single-record query, the result is not a list.
             pred = preds[0] if isinstance(preds, list) else preds
+            if self.task == "llama2/chat":
+                return _transform_llama2_chat(pred)
             return transform_output_fn(pred) if transform_output_fn else pred
 
 
@@ -410,6 +410,7 @@ class Databricks(LLM):
                 api_token=self.api_token,
                 endpoint_name=self.endpoint_name,
                 databricks_uri=self.databricks_uri,
+                task=self.task,
             )
         elif self.cluster_id and self.cluster_driver_port:
             self._client = _DatabricksClusterDriverProxyClient(
