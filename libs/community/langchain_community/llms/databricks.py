@@ -54,8 +54,10 @@ class _DatabricksClientBase(BaseModel, ABC):
 def _transform_completions(response: Dict[str, Any]) -> str:
     return response["choices"][0]["text"]
 
+
 def _transform_llama2_chat(response: Dict[str, Any]) -> str:
     return response["candidates"][0]["text"]
+
 
 def _transform_chat(response: Dict[str, Any]) -> str:
     return response["choices"][0]["message"]["content"]
