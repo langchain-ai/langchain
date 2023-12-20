@@ -13,6 +13,8 @@ from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 
 
 class TavilyInput(BaseModel):
+    """Input for the Tavily tool."""
+
     query: str = Field(description="search query to look up")
 
 

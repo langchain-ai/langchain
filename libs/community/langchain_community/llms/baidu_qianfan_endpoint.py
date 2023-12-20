@@ -17,7 +17,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -73,22 +73,30 @@ class QianfanLLMEndpoint(LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        values["qianfan_ak"] = get_from_dict_or_env(
-            values,
-            "qianfan_ak",
-            "QIANFAN_AK",
+        values["qianfan_ak"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "qianfan_ak",
+                "QIANFAN_AK",
+                default="",
+            )
         )
-        values["qianfan_sk"] = get_from_dict_or_env(
-            values,
-            "qianfan_sk",
-            "QIANFAN_SK",
+        values["qianfan_sk"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "qianfan_sk",
+                "QIANFAN_SK",
+                default="",
+            )
         )
 
         params = {
-            "ak": values["qianfan_ak"],
-            "sk": values["qianfan_sk"],
             "model": values["model"],
         }
+        if values["qianfan_ak"].get_secret_value() != "":
+            params["ak"] = values["qianfan_ak"].get_secret_value()
+        if values["qianfan_sk"].get_secret_value() != "":
+            params["sk"] = values["qianfan_sk"].get_secret_value()
         if values["endpoint"] is not None and values["endpoint"] != "":
             params["endpoint"] = values["endpoint"]
         try:
