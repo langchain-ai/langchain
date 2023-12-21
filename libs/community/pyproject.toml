@@ -245,6 +245,8 @@ extended_testing = [
  "databricks-vectorsearch",
  "dgml-utils",
  "cohere",
+ "oracle-ads",
+ "zhipuai",
 ]
 
 [tool.ruff]

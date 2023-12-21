@@ -6,7 +6,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from langchain_community.chat_models.zhipuai import ChatZhipuAI
 
-
+@pytest.mark.requires("zhipuai")
 def test_chat_zhipuai_model_param() -> None:
     chat = ChatZhipuAI(api_key="your_api_key", model="chatglm_turbo", streaming=False)
     assert chat.model == "chatglm_turbo"
