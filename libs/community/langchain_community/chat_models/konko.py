@@ -1,9 +1,9 @@
 """KonkoAI chat wrapper."""
 from __future__ import annotations
-import warnings 
 
 import logging
 import os
+import warnings
 from typing import (
     Any,
     Dict,
@@ -108,8 +108,8 @@ class ChatKonko(BaseChatModel):
                 "due to an old version of the konko package. Try upgrading it "
                 "with `pip install --upgrade konko`."
             )
-        
-        if not hasattr(konko, 'Completion'):
+
+        if not hasattr(konko, "Completion"):
             warnings.warn(
                 "You are using an older version of the 'konko' package. "
                 "Please consider upgrading to access new features."

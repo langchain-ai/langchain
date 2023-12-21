@@ -1,7 +1,7 @@
 """Wrapper around Konko AI's Completion API."""
 import logging
+import warnings
 from typing import Any, Dict, List, Optional
-import warnings 
 
 from aiohttp import ClientSession
 from langchain_core.callbacks import (
@@ -26,7 +26,7 @@ class Konko(LLM):
     Konko AI API reference: https://docs.konko.ai/reference/
     """
 
-    base_url: str = "https://api.dev.konko.ai/v1/completions"
+    base_url: str = "https://api.konko.ai/v1/completions"
     """Base inference API URL."""
     konko_api_key: SecretStr
     """Konko AI API key."""
@@ -80,7 +80,7 @@ class Konko(LLM):
                 "Could not import konko python package. "
                 "Please install it with `pip install konko`."
             )
-        if not hasattr(konko, 'Completion'):
+        if not hasattr(konko, "Completion"):
             warnings.warn(
                 "You are using an older version of the 'konko' package. "
                 "Please consider upgrading to access new features."
