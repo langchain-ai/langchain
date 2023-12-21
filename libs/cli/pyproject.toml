@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "gigachain-cli"
-version = "0.0.19"
+version = "0.0.20"
 description = "CLI for interacting with GigaChain"
-authors = ["Erick Friis <erick@langchain.dev>", "Konstantin Krestnikov <k.krestnikov@gmail.com>"]
+authors = ["Erick Friis <erick@langchain.dev>"]
 license = "MIT"
 readme = "README.md"
 packages = [
@@ -34,6 +34,8 @@ ruff = "^0.1.5"
 [tool.poetry.group.test.dependencies]
 
 [tool.poetry.group.typing.dependencies]
+
+[tool.poetry.group.test_integration.dependencies]
 
 [tool.poetry.extras]
 # For langserve

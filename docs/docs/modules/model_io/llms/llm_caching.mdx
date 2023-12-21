@@ -9,7 +9,7 @@ from langchain.globals import set_llm_cache
 from langchain.llms import OpenAI
 
 # To make the caching really obvious, lets use a slower model.
-llm = OpenAI(model_name="text-davinci-002", n=2, best_of=2)
+llm = OpenAI(model_name="gpt-3.5-turbo-instruct", n=2, best_of=2)
 ```
 
 ## In Memory Cache
@@ -110,8 +110,8 @@ As an example, we will load a summarizer map-reduce chain. We will cache results
 
 
 ```python
-llm = OpenAI(model_name="text-davinci-002")
-no_cache_llm = OpenAI(model_name="text-davinci-002", cache=False)
+llm = OpenAI(model_name="gpt-3.5-turbo-instruct")
+no_cache_llm = OpenAI(model_name="gpt-3.5-turbo-instruct", cache=False)
 ```
 
 

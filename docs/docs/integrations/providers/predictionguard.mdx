@@ -88,7 +88,7 @@ os.environ["OPENAI_API_KEY"] = "<your OpenAI api key>"
 # Your Prediction Guard API key. Get one at predictionguard.com
 os.environ["PREDICTIONGUARD_TOKEN"] = "<your Prediction Guard access token>"
 
-pgllm = PredictionGuard(model="OpenAI-text-davinci-003")
+pgllm = PredictionGuard(model="OpenAI-gpt-3.5-turbo-instruct")
 
 template = """Question: {question}
 

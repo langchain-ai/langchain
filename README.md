@@ -252,7 +252,7 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 
 [^1]: В настоящий момент эта функциональность доступна в бета-режиме.
 
-For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).
+For detailed information on how to contribute, see [here](https://python.langchain.com/docs/contributing/).
 
 ## 🌟 Contributors
 

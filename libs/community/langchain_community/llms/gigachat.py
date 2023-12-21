@@ -47,14 +47,20 @@ class _BaseGigaChat(Serializable):
     key_file_password: Optional[str] = None
     # Support for connection to GigaChat through SSL certificates
 
+    """ DEPRECATED: Check for profanity (old naming) """
     profanity: bool = True
+
     """ Check for profanity """
-    streaming: bool = False
+    profanity_check: bool = True
+    
     """ Whether to stream the results or not. """
+    streaming: bool = False
+
+    """What sampling temperature to use."""    
     temperature: Optional[float] = None
-    """What sampling temperature to use."""
-    max_tokens: Optional[int] = None
+
     """ Maximum number of tokens to generate """
+    max_tokens: Optional[int] = None
 
     @property
     def _llm_type(self) -> str:
@@ -113,7 +119,7 @@ class _BaseGigaChat(Serializable):
         return {
             "temperature": self.temperature,
             "model": self.model,
-            "profanity": self.profanity,
+            "profanity": self.profanity and self.profanity_check,
             "streaming": self.streaming,
             "max_tokens": self.max_tokens,
         }
