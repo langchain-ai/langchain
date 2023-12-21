@@ -1,8 +1,8 @@
 """Test Vertex AI API wrapper.
-In order to run this test, you need to install VertexAI SDK 
+In order to run this test, you need to install VertexAI SDK
 pip install google-cloud-aiplatform>=1.35.0
 
-Your end-user credentials would be used to make the calls (make sure you've run 
+Your end-user credentials would be used to make the calls (make sure you've run
 `gcloud auth login` first).
 """
 from langchain_community.embeddings import VertexAIEmbeddings
@@ -22,6 +22,16 @@ def test_embedding_query() -> None:
     model = VertexAIEmbeddings()
     output = model.embed_query(document)
     assert len(output) == 768
+
+
+def test_large_batches() -> None:
+    documents = ["foo bar" for _ in range(0, 251)]
+    model_uscentral1 = VertexAIEmbeddings(location="us-central1")
+    model_asianortheast1 = VertexAIEmbeddings(location="asia-northeast1")
+    model_uscentral1.embed_documents(documents)
+    model_asianortheast1.embed_documents(documents)
+    assert model_uscentral1.instance["batch_size"] >= 250
+    assert model_asianortheast1.instance["batch_size"] < 50
 
 
 def test_paginated_texts() -> None:
