@@ -116,21 +116,23 @@ class Clarifai(VectorStore):
                 batch_metadatas = (
                     metadatas[idx : idx + batch_size] if metadatas else None
                 )
+                if ids is None:
+                    batch_ids = [uuid.uuid4().hex for _ in range(len(batch_texts))]
+                else:
+                    batch_ids = ids[idx : idx + batch_size]
                 if batch_metadatas is not None:
                     meta_list = []
                     for meta in batch_metadatas:
                         meta_struct = Struct()
                         meta_struct.update(meta)
                         meta_list.append(meta_struct)
-                if ids is None:
-                    ids = [uuid.uuid4().hex for _ in range(len(batch_texts))]
                 input_batch = [
                     input_obj.get_text_input(
-                        input_id=ids[id],
-                        raw_text=inp,
-                        metadata=meta_list[id] if batch_metadatas else None,
+                        input_id=batch_ids[i],
+                        raw_text=text,
+                        metadata=meta_list[i] if batch_metadatas else None,
                     )
-                    for id, inp in enumerate(batch_texts)
+                    for i, text in enumerate(batch_texts)
                 ]
                 result_id = input_obj.upload_inputs(inputs=input_batch)
                 input_job_ids.extend(result_id)
