@@ -52,12 +52,13 @@ class Jaguar(VectorStore):
         self._embedding = embedding
         try:
             from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
-            self._jag = JaguarHttpClient(url)
         except ImportError:
             raise ValueError(
                 "Could not import qdrant-client python package. "
                 "Please install it with `pip install -U jaguardb-http-client`"
             )
+
+        self._jag = JaguarHttpClient(url)
         self._token = ""
 
     def login(
