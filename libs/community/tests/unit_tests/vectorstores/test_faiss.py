@@ -11,6 +11,7 @@ from langchain_community.docstore.base import Docstore
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores.faiss import FAISS
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from vectorstores.utils import DistanceStrategy
 
 _PAGE_CONTENT = """This is a page about LangChain.
 
@@ -685,6 +686,13 @@ def test_missing_normalize_score_fn() -> None:
     faiss_instance = FAISS.from_texts(texts, FakeEmbeddings(), distance_strategy="fake")
     with pytest.raises(ValueError):
         faiss_instance.similarity_search_with_relevance_scores("foo", k=2)
+
+
+@pytest.mark.requires("faiss")
+def test_ip_score() -> None:
+    db = FAISS.from_texts(['sundays coming so i drive my car'], embedding=FakeEmbeddings(),
+                          distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT)
+    db.similarity_search_with_relevance_scores('sundays', k=1)
 
 
 @pytest.mark.requires("faiss")
