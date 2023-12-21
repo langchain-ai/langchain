@@ -1,29 +1,32 @@
 
-# rag-chroma-multi-modal
+# rag-multi-modal-local
 
-Multi-modal LLMs enable visual assistants that can perform question-answering about images. 
+Visual search is a famililar application to many with iPhones or Android devices. It allows user to serch photos using natural language. 
+  
+With the release of open source, multi-modal LLMs it's possible to build this kind of application for yourself for your own private photo collection.
 
-This template create a visual assistant for slide decks, which often contain visuals such as graphs or figures.
+This template demonstrates how to perform private visual search and question-answering over a collection of your photos.
 
-It uses OpenCLIP embeddings to embed all of the slide images and stores them in Chroma.
+It uses OpenCLIP embeddings to embed all of the photos and stores them in Chroma.
  
-Given a question, relevat slides are retrieved and passed to GPT-4V for answer synthesis.
-
-![mm-mmembd](https://github.com/langchain-ai/langchain/assets/122662504/b3bc8406-48ae-4707-9edf-d0b3a511b200)
+Given a question, relevat photos are retrieved and passed to an open source multi-modal LLM of your choice for answer synthesis.
+ 
+![mm-local](https://github.com/langchain-ai/langchain/assets/122662504/da543b21-052c-4c43-939e-d4f882a45d75)
 
 ## Input
 
-Supply a slide deck as pdf in the `/docs` directory. 
+Supply a set of photos in the `/docs` directory. 
 
-By default, this template has a slide deck about Q3 earnings from DataDog, a public techologyy company.
+By default, this template has a toy collection of 3 food pictures.
 
 Example questions to ask can be:
 ```
-How many customers does Datadog have?
-What is Datadog platform % Y/Y growth in FY20, FY21, and FY22?
+What kind of soft serve did I have?
 ```
 
-To create an index of the slide deck, run:
+In practice, a larger corpus of images can be tested.
+
+To create an index of the images, run:
 ```
 poetry install
 python ingest.py
@@ -52,11 +55,17 @@ vectorstore_mmembd = Chroma(
 
 ## LLM
 
-The app will retrieve images based on similarity between the text input and the image, which are both mapped to multi-modal embedding space. It will then pass the images to GPT-4V.
+This template will use [Ollama](https://python.langchain.com/docs/integrations/chat/ollama#multi-modal).
 
-## Environment Setup
+Download the latest version of Ollama: https://ollama.ai/
 
-Set the `OPENAI_API_KEY` environment variable to access the OpenAI GPT-4V.
+Pull the an open source multi-modal LLM: e.g., https://ollama.ai/library/bakllava
+
+```
+ollama pull bakllava
+```
+
+The app is by default configured for `bakllava`. But you can change this in `chain.py` and `ingest.py` for different downloaded models.
 
 ## Usage
 

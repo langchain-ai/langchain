@@ -1,18 +1,15 @@
 import base64
 import io
-import os
 from pathlib import Path
 
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.pydantic_v1 import BaseModel
-from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.schema.document import Document
-from langchain.schema.messages import HumanMessage
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
-from langchain.storage import LocalFileStore, UpstashRedisByteStore
+from langchain.chat_models import ChatOllama
 from langchain.vectorstores import Chroma
+from langchain_core.documents import Document
+from langchain_core.messages import HumanMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain_experimental.open_clip import OpenCLIPEmbeddings
 from PIL import Image
 
 
@@ -43,12 +40,13 @@ def get_resized_images(docs):
     for doc in docs:
         if isinstance(doc, Document):
             doc = doc.page_content
-        resized_image = resize_base64_image(doc, size=(1280, 720))
-        b64_images.append(resized_image)
+        # Optional: re-size image
+        # resized_image = resize_base64_image(doc, size=(1280, 720))
+        b64_images.append(doc)
     return {"images": b64_images}
 
 
-def img_prompt_func(data_dict, num_images=2):
+def img_prompt_func(data_dict, num_images=1):
     """
     GPT-4V prompt for image analysis.
 
@@ -61,16 +59,15 @@ def img_prompt_func(data_dict, num_images=2):
         for image in data_dict["context"]["images"][:num_images]:
             image_message = {
                 "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{image}"},
+                "image_url": f"data:image/jpeg;base64,{image}",
             }
             messages.append(image_message)
     text_message = {
         "type": "text",
         "text": (
-            "You are an analyst tasked with answering questions about visual content.\n"
-            "You will be give a set of image(s) from a slide deck / presentation.\n"
-            "Use this information to answer the user question. \n"
-            f"User-provided question: {data_dict['question']}\n\n"
+            "You are a helpful assistant that gives a description of food pictures.\n"
+            "Give a detailed summary of the image.\n"
+            "Give reccomendations for similar foods to try.\n"
         ),
     }
     messages.append(text_message)
@@ -85,7 +82,7 @@ def multi_modal_rag_chain(retriever):
     :return: A chain of functions representing the multi-modal RAG process.
     """
     # Initialize the multi-modal Large Language Model with specific parameters
-    model = ChatOpenAI(temperature=0, model="gpt-4-vision-preview", max_tokens=1024)
+    model = ChatOllama(model="bakllava", temperature=0)
 
     # Define the RAG pipeline
     chain = (
@@ -101,38 +98,20 @@ def multi_modal_rag_chain(retriever):
     return chain
 
 
-# Flag
-local_file_store = True
-
 # Load chroma
-vectorstore_mvr = Chroma(
-    collection_name="image_summaries",
+vectorstore_mmembd = Chroma(
+    collection_name="multi-modal-rag",
     persist_directory=str(Path(__file__).parent.parent / "chroma_db_multi_modal"),
-    embedding_function=OpenAIEmbeddings(),
+    embedding_function=OpenCLIPEmbeddings(
+        model_name="ViT-H-14", checkpoint="laion2b_s32b_b79k"
+    ),
 )
 
-if local_file_store:
-    store = LocalFileStore(
-        str(Path(__file__).parent.parent / "multi_vector_retriever_metadata")
-    )
-else:
-    # Load redis
-    UPSTASH_URL = os.getenv("UPSTASH_URL")
-    UPSTASH_TOKEN = os.getenv("UPSTASH_TOKEN")
-    store = UpstashRedisByteStore(url=UPSTASH_URL, token=UPSTASH_TOKEN)
-
-#
-id_key = "doc_id"
-
-# Create the multi-vector retriever
-retriever = MultiVectorRetriever(
-    vectorstore=vectorstore_mvr,
-    byte_store=store,
-    id_key=id_key,
-)
+# Make retriever
+retriever_mmembd = vectorstore_mmembd.as_retriever()
 
 # Create RAG chain
-chain = multi_modal_rag_chain(retriever)
+chain = multi_modal_rag_chain(retriever_mmembd)
 
 
 # Add typing for input

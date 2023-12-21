@@ -5,13 +5,12 @@ import uuid
 from io import BytesIO
 from pathlib import Path
 
-import pypdfium2 as pdfium
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.chat_models import ChatOllama
+from langchain.embeddings import OllamaEmbeddings
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.schema.document import Document
 from langchain.schema.messages import HumanMessage
-from langchain.storage import LocalFileStore, UpstashRedisByteStore
+from langchain.storage import LocalFileStore
 from langchain.vectorstores import Chroma
 from PIL import Image
 
@@ -25,7 +24,7 @@ def image_summarize(img_base64, prompt):
     :return: Image summarization prompt
 
     """
-    chat = ChatOpenAI(model="gpt-4-vision-preview", max_tokens=1024)
+    chat = ChatOllama(model="bakllava", temperature=0)
 
     msg = chat.invoke(
         [
@@ -34,7 +33,7 @@ def image_summarize(img_base64, prompt):
                     {"type": "text", "text": prompt},
                     {
                         "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"},
+                        "image_url": f"data:image/jpeg;base64,{img_base64}",
                     },
                 ]
             )
@@ -56,9 +55,7 @@ def generate_img_summaries(img_base64_list):
     processed_images = []
 
     # Prompt
-    prompt = """You are an assistant tasked with summarizing images for retrieval. \
-    These summaries will be embedded and used to retrieve the raw image. \
-    Give a concise summary of the image that is well optimized for retrieval."""
+    prompt = """Give a detailed summary of the image."""
 
     # Apply summarization to images
     for i, base64_image in enumerate(img_base64_list):
@@ -71,20 +68,18 @@ def generate_img_summaries(img_base64_list):
     return image_summaries, processed_images
 
 
-def get_images_from_pdf(pdf_path):
+def get_images(img_path):
     """
-    Extract images from each page of a PDF document and save as JPEG files.
+    Extract images.
 
-    :param pdf_path: A string representing the path to the PDF file.
+    :param img_path: A string representing the path to the images.
     """
-    pdf = pdfium.PdfDocument(pdf_path)
-    n_pages = len(pdf)
-    pil_images = []
-    for page_number in range(n_pages):
-        page = pdf.get_page(page_number)
-        bitmap = page.render(scale=1, rotation=0, crop=(0, 0, 0, 0))
-        pil_image = bitmap.to_pil()
-        pil_images.append(pil_image)
+    # Get image URIs
+    pil_images = [
+        Image.open(os.path.join(img_path, image_name))
+        for image_name in os.listdir(img_path)
+        if image_name.endswith(".jpg")
+    ]
     return pil_images
 
 
@@ -122,35 +117,24 @@ def convert_to_base64(pil_image):
     buffered = BytesIO()
     pil_image.save(buffered, format="JPEG")  # You can change the format if needed
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    img_str = resize_base64_image(img_str, size=(960, 540))
+    # img_str = resize_base64_image(img_str, size=(831,623))
     return img_str
 
 
-def create_multi_vector_retriever(
-    vectorstore, image_summaries, images, local_file_store
-):
+def create_multi_vector_retriever(vectorstore, image_summaries, images):
     """
     Create retriever that indexes summaries, but returns raw images or texts
 
     :param vectorstore: Vectorstore to store embedded image sumamries
     :param image_summaries: Image summaries
     :param images: Base64 encoded images
-    :param local_file_store: Use local file storage
     :return: Retriever
     """
 
-    # File storage option
-    if local_file_store:
-        store = LocalFileStore(
-            str(Path(__file__).parent / "multi_vector_retriever_metadata")
-        )
-    else:
-        # Initialize the storage layer for images using Redis
-        UPSTASH_URL = os.getenv("UPSTASH_URL")
-        UPSTASH_TOKEN = os.getenv("UPSTASH_TOKEN")
-        store = UpstashRedisByteStore(url=UPSTASH_URL, token=UPSTASH_TOKEN)
-
-    # Doc ID
+    # Initialize the storage layer for images
+    store = LocalFileStore(
+        str(Path(__file__).parent / "multi_vector_retriever_metadata")
+    )
     id_key = "doc_id"
 
     # Create the multi-vector retriever
@@ -175,11 +159,11 @@ def create_multi_vector_retriever(
     return retriever
 
 
-# Load PDF
-doc_path = Path(__file__).parent / "docs/DDOG_Q3_earnings_deck.pdf"
+# Load images
+doc_path = Path(__file__).parent / "docs/"
 rel_doc_path = doc_path.relative_to(Path.cwd())
-print("Extract slides as images")
-pil_images = get_images_from_pdf(rel_doc_path)
+print("Read images")
+pil_images = get_images(rel_doc_path)
 
 # Convert to b64
 images_base_64 = [convert_to_base64(i) for i in pil_images]
@@ -192,7 +176,7 @@ image_summaries, images_base_64_processed = generate_img_summaries(images_base_6
 vectorstore_mvr = Chroma(
     collection_name="image_summaries",
     persist_directory=str(Path(__file__).parent / "chroma_db_multi_modal"),
-    embedding_function=OpenAIEmbeddings(),
+    embedding_function=OllamaEmbeddings(model="llama2:7b"),
 )
 
 # Create documents
@@ -205,5 +189,4 @@ retriever_multi_vector_img = create_multi_vector_retriever(
     vectorstore_mvr,
     image_summaries,
     images_base_64_processed_documents,
-    local_file_store=True,
 )
