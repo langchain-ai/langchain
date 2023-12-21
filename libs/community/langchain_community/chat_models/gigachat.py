@@ -70,7 +70,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
 
         payload = Chat(
             messages=[_convert_message_to_dict(m) for m in messages],
-            profanity_check=self.profanity,
+            profanity_check=self.profanity_check,
         )
         if self.temperature is not None:
             payload.temperature = self.temperature
@@ -174,6 +174,5 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
                 if run_manager:
                     await run_manager.on_llm_new_token(content)
 
-    def get_num_tokens(self, text: str) -> int:
-        """Count approximate number of tokens"""
-        return round(len(text) / 4.6)
+    class Config:
+        extra = "allow"

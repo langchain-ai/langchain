@@ -47,7 +47,7 @@ class _BaseGigaChat(Serializable):
     key_file_password: Optional[str] = None
     # Support for connection to GigaChat through SSL certificates
 
-    profanity: bool = True
+    profanity_check: Optional[bool] = None
     """ Check for profanity """
     streaming: bool = False
     """ Whether to stream the results or not. """
@@ -55,6 +55,7 @@ class _BaseGigaChat(Serializable):
     """What sampling temperature to use."""
     max_tokens: Optional[int] = None
     """ Maximum number of tokens to generate """
+    use_api_for_tokens: bool = False
 
     @property
     def _llm_type(self) -> str:
@@ -85,6 +86,7 @@ class _BaseGigaChat(Serializable):
             scope=self.scope,
             access_token=self.access_token,
             model=self.model,
+            profanity_check=self.profanity_check,
             user=self.user,
             password=self.password,
             timeout=self.timeout,
@@ -105,6 +107,17 @@ class _BaseGigaChat(Serializable):
                 "Could not import gigachat python package. "
                 "Please install it with `pip install gigachat`."
             )
+        fields = set(cls.__fields__.keys())
+        fields.add("profanity")
+        diff = set(values.keys()) - fields
+        if diff:
+            logger.warning(f"Extra fields {diff} in GigaChat class")
+        if "profanity" in fields:
+            logger.warning(
+                "Profanity field is deprecated. Use 'profanity_check' instead."
+            )
+            if values.get("profanity_check") is None:
+                values["profanity_check"] = values.get("profanity")
         return values
 
     @property
@@ -113,10 +126,43 @@ class _BaseGigaChat(Serializable):
         return {
             "temperature": self.temperature,
             "model": self.model,
-            "profanity": self.profanity,
+            "profanity": self.profanity_check,
             "streaming": self.streaming,
             "max_tokens": self.max_tokens,
         }
+
+    def tokens_count(self, input_: List[str], model: str | None = None) -> List[Any]:
+        """Get tokens of string list"""
+        return self._client.tokens_count(input_, model)
+
+    async def atokens_count(
+        self, input_: List[str], model: str | None = None
+    ) -> List[Any]:
+        """Get tokens of strings list (async)"""
+        return await self._client.atokens_count(input_, model)
+
+    def get_models(self) -> Any:
+        """Get available models of Gigachat"""
+        return self._client.get_models()
+
+    async def aget_models(self) -> Any:
+        """Get available models of Gigachat (async)"""
+        return await self._client.aget_models()
+
+    def get_model(self, model: str) -> Any:
+        """Get info about model"""
+        return self._client.get_model(model)
+
+    async def aget_model(self, model: str) -> Any:
+        """Get info about model (async)"""
+        return await self._client.aget_model(model)
+
+    def get_num_tokens(self, text: str) -> int:
+        """Count approximate number of tokens"""
+        if self.use_api_for_tokens:
+            return self.tokens_count([text])[0].tokens  # type: ignore
+        else:
+            return round(len(text) / 4.6)
 
 
 class GigaChat(_BaseGigaChat, BaseLLM):
@@ -131,10 +177,12 @@ class GigaChat(_BaseGigaChat, BaseLLM):
             giga = GigaChat(credentials=..., verify_ssl_certs=False)
     """
 
+    payload_role: str = "user"
+
     def _build_payload(self, messages: List[str]) -> Dict[str, Any]:
         payload: Dict[str, Any] = {
-            "messages": [{"role": "user", "content": m} for m in messages],
-            "profanity_check": self.profanity,
+            "messages": [{"role": self.payload_role, "content": m} for m in messages],
+            "profanity_check": self.profanity_check,
         }
         if self.temperature is not None:
             payload["temperature"] = self.temperature
@@ -254,6 +302,5 @@ class GigaChat(_BaseGigaChat, BaseLLM):
                 if run_manager:
                     await run_manager.on_llm_new_token(content)
 
-    def get_num_tokens(self, text: str) -> int:
-        """Count approximate number of tokens"""
-        return round(len(text) / 4.6)
+    class Config:
+        extra = "allow"
