@@ -11,6 +11,8 @@ EXPECTED_ALL = [
     "StrOutputParser",
     "BaseTransformOutputParser",
     "BaseCumulativeTransformOutputParser",
+    "SimpleJsonOutputParser",
+    "XMLOutputParser",
 ]
 
 
