@@ -701,11 +701,13 @@ class RunnableChain(Chain):
     def OutputType(self) -> Type[Dict[str, Any]]:
         return self.as_runnable().OutputType
 
-    def get_input_schema(self, config: RunnableConfig | None = None) -> Type[BaseModel]:
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         return self.as_runnable().get_input_schema(config)
 
     def get_output_schema(
-        self, config: RunnableConfig | None = None
+        self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         return self.as_runnable().get_output_schema(config)
 
@@ -789,7 +791,7 @@ class RunnableChain(Chain):
         input: Iterator[Dict[str, Any]],
         config: Optional[RunnableConfig] = None,
         return_only_outputs: bool = False,
-        **kwargs: Any | None,
+        **kwargs: Any,
     ) -> Iterator[Dict[str, Any]]:
         yield from self.as_runnable_wrapped(return_only_outputs).transform(
             input, config, **kwargs
@@ -800,7 +802,7 @@ class RunnableChain(Chain):
         input: AsyncIterator[Dict[str, Any]],
         config: Optional[RunnableConfig] = None,
         return_only_outputs: bool = False,
-        **kwargs: Any | None,
+        **kwargs: Any,
     ) -> AsyncIterator[Dict[str, Any]]:
         async for chunk in self.as_runnable_wrapped(return_only_outputs).atransform(
             input, config, **kwargs
