@@ -20,6 +20,7 @@ from langchain_core.vectorstores import VectorStore
 if TYPE_CHECKING:
     from pathway.xpacks.llm import vector_store
 
+
 class PathwayVectorServer:
     """
     Build an autoupdating document indexing pipeline
