@@ -133,7 +133,7 @@ def _get_search_client(
             missing_fields = {
                 key: mandatory_fields[key]
                 for key, value in set(mandatory_fields.items())
-                - set(fields_types.items())
+                                  - set(fields_types.items())
             }
             if len(missing_fields) > 0:
                 # Helper for formatting field information for each missing field.
@@ -502,16 +502,16 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
+        from azure.search.documents.models import VectorizedQuery
 
         results = self.client.search(
             search_text=query,
             vectors=[
-                Vector(
-                    value=np.array(
+                VectorizedQuery(
+                    vector=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
-                    k=k,
+                    k_nearest_neighbors=k,
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
@@ -594,16 +594,16 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
+        from azure.search.documents.models import VectorizedQuery
 
         results = self.client.search(
             search_text=query,
             vectors=[
-                Vector(
-                    value=np.array(
+                VectorizedQuery(
+                    vector=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
-                    k=50,
+                    k_nearest_neighbors=50,
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
