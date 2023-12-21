@@ -8,7 +8,7 @@ from typing import Any, Callable, List, Optional
 import jsonpatch  # type: ignore[import]
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.output_parsers import BaseCumulativeTransformOutputParser
+from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 
 
 def _replace_new_line(match: re.Match[str]) -> str:
