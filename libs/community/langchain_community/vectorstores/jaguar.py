@@ -54,8 +54,10 @@ class Jaguar(VectorStore):
             from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
             self._jag = JaguarHttpClient(url)
         except ImportError:
-            self._jag = None
-
+            raise ValueError(
+                "Could not import qdrant-client python package. "
+                "Please install it with `pip install -U jaguardb-http-client`"
+            )
         self._token = ""
 
     def login(
@@ -71,9 +73,6 @@ class Jaguar(VectorStore):
         Returns:
             True if successful; False if not successful
         """
-
-        if self._jag is None:
-            return False
 
         if jaguar_api_key == "":
             jaguar_api_key = self._jag.getApiKey()
