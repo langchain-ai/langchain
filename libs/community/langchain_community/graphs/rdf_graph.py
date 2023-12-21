@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import (
     TYPE_CHECKING,
+    Dict,
     List,
     Optional,
-    Dict,
 )
 
 if TYPE_CHECKING:
@@ -127,8 +127,10 @@ class RdfGraph:
         :param update_endpoint: SPARQL endpoint for UPDATE queries, write access
         :param standard: RDF, RDFS, or OWL
         :param local_copy: new local copy for storing changes
-        :param graph_kwargs: Additional rdflib.Graph specific kwargs that will be used to initialize it.
-        If not provided, only identifier="urn:x-rdflib:default" is used to initialize the graph.
+        :param graph_kwargs: Additional rdflib.Graph specific kwargs
+        that will be used to initialize it.
+        If not provided, only identifier="urn:x-rdflib:default" is used
+        to initialize the graph.
         """
         self.source_file = source_file
         self.serialization = serialization
