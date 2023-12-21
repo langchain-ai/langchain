@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from abc import abstractmethod
 from collections import deque
-from typing import Deque, Iterator, List, TypeVar, Union
+from typing import AsyncIterator, Deque, Iterator, List, TypeVar, Union
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
@@ -42,7 +42,10 @@ class ListOutputParser(BaseTransformOutputParser[List[str]]):
         for chunk in input:
             if isinstance(chunk, BaseMessage):
                 # extract text
-                chunk = chunk.content
+                chunk_content = chunk.content
+                if not isinstance(chunk_content, str):
+                    continue
+                chunk = chunk_content
             # add current chunk to buffer
             buffer += chunk
             # parse buffer into a list of parts
@@ -51,16 +54,50 @@ class ListOutputParser(BaseTransformOutputParser[List[str]]):
                 # yield only complete parts
                 for m in droplastn(self.parse_iter(buffer), 1):
                     done_idx = m.end()
-                    yield m.group(1)
+                    yield [m.group(1)]
                 buffer = buffer[done_idx:]
             except NotImplementedError:
                 parts = self.parse(buffer)
                 # yield only complete parts
                 if len(parts) > 1:
-                    yield from parts[:-1]
+                    for part in parts[:-1]:
+                        yield [part]
                     buffer = parts[-1]
         # yield the last part
-        yield from self.parse(buffer)
+        for part in self.parse(buffer):
+            yield [part]
+
+    async def _atransform(
+        self, input: AsyncIterator[Union[str, BaseMessage]]
+    ) -> AsyncIterator[List[str]]:
+        buffer = ""
+        async for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                # extract text
+                chunk_content = chunk.content
+                if not isinstance(chunk_content, str):
+                    continue
+                chunk = chunk_content
+            # add current chunk to buffer
+            buffer += chunk
+            # parse buffer into a list of parts
+            try:
+                done_idx = 0
+                # yield only complete parts
+                for m in droplastn(self.parse_iter(buffer), 1):
+                    done_idx = m.end()
+                    yield [m.group(1)]
+                buffer = buffer[done_idx:]
+            except NotImplementedError:
+                parts = self.parse(buffer)
+                # yield only complete parts
+                if len(parts) > 1:
+                    for part in parts[:-1]:
+                        yield [part]
+                    buffer = parts[-1]
+        # yield the last part
+        for part in self.parse(buffer):
+            yield [part]
 
 
 class CommaSeparatedListOutputParser(ListOutputParser):
