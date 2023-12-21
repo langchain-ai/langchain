@@ -18,7 +18,7 @@ tool for the job.
 """
 from typing import Any
 
-from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
+from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 
 # Used for internal purposes
 _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
@@ -384,12 +384,6 @@ def _import_office365_send_message() -> Any:
     from langchain.tools.office365.send_message import O365SendMessage
 
     return O365SendMessage
-
-
-def _import_office365_utils() -> Any:
-    from langchain.tools.office365.utils import authenticate
-
-    return authenticate
 
 
 def _import_openapi_utils_api_models() -> Any:
@@ -865,8 +859,6 @@ def __getattr__(name: str) -> Any:
         return _import_office365_send_event()
     elif name == "O365SendMessage":
         return _import_office365_send_message()
-    elif name == "authenticate":
-        return _import_office365_utils()
     elif name == "APIOperation":
         return _import_openapi_utils_api_models()
     elif name == "OpenAPISpec":
@@ -1103,7 +1095,6 @@ __all__ = [
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "authenticate",
     "format_tool_to_openai_function",
     "tool",
 ]

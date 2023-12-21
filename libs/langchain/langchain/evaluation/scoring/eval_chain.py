@@ -51,7 +51,7 @@ _SUPPORTED_CRITERIA = {
 
 
 def resolve_criteria(
-    criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]]
+    criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]],
 ) -> dict:
     """Resolve the criteria for the pairwise evaluator.
 
@@ -184,6 +184,10 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         """Configuration for the ScoreStringEvalChain."""
 
         extra = Extra.ignore
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @property
     def requires_reference(self) -> bool:

@@ -1,6 +1,34 @@
 {
   "redirects": [
     {
+      "source": "docs/docs/integrations/providers/alibabacloud_opensearch",
+      "destination": "docs/docs/integrations/providers/alibaba_cloud"
+    },
+    {
+      "source": "/docs/integrations/chat/pai_eas_chat_endpoint",
+      "destination": "/docs/integrations/chat/alibaba_cloud_pai_eas"
+    },
+    {
+      "source": "/docs/integrations/providers/tencentvectordb",
+      "destination": "/docs/integrations/providers/tencent"
+    },
+    {
+      "source": "/docs/integrations/chat/hunyuan",
+      "destination": "/docs/integrations/chat/tencent_hunyuan"
+    },
+    {
+      "source": "/docs/integrations/providers/aws_dynamodb",
+      "destination": "/docs/integrations/platforms/aws#aws-dynamodb"
+    },
+    {
+      "source": "/docs/integrations/providers/scann",
+      "destination": "/docs/integrations/platforms/google#google-scann"
+    },
+    {
+      "source": "/docs/integrations/toolkits/google_drive",
+      "destination": "/docs/integrations/tools/google_drive"
+    },
+    {
       "source": "/docs/use_cases/question_answering/analyze_document",
       "destination": "/cookbook"
     },

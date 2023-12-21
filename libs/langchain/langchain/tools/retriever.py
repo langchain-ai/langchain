@@ -5,6 +5,8 @@ from langchain.tools import Tool
 
 
 class RetrieverInput(BaseModel):
+    """Input to the retriever."""
+
     query: str = Field(description="query to look up in retriever")
 
 

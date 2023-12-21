@@ -1,12 +1,11 @@
 import os
 
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel
 from langchain.retrievers.multi_query import MultiQueryRetriever
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.vectorstores import Vectara
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
 if os.environ.get("VECTARA_CUSTOMER_ID", None) is None:
     raise Exception("Missing `VECTARA_CUSTOMER_ID` environment variable.")
@@ -15,35 +14,37 @@ if os.environ.get("VECTARA_CORPUS_ID", None) is None:
 if os.environ.get("VECTARA_API_KEY", None) is None:
     raise Exception("Missing `VECTARA_API_KEY` environment variable.")
 
-# If you want to ingest data then use this code.
-# Note that no document chunking is needed, as this is
-# done efficiently in the Vectara backend.
-# Note: you will need to install beautifulsoup4 to ingest
 
-# from langchain.document_loaders import WebBaseLoader
-# from langchain.embeddings import OpenAIEmbeddings
-# loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
-# docs = loader.load()
-# vec_store = Vectara.from_documents(docs, embedding=OpenAIEmbeddings())
-# retriever = vec_store.as_retriever()
+# Setup the Vectara retriever with your Corpus ID and API Key
 
-# Otherwise, if data is already loaded into Vectara then use this code:
+# note you can customize the retriever behavior by passing additional arguments:
+# - k: number of results to return (defaults to 5)
+# - lambda_val: the
+#   [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching)
+#   factor for hybrid search (defaults to 0.025)
+# - filter: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview)
+#   to apply to the results (default None)
+# - n_sentence_context: number of sentences to include before/after the actual matching
+#   segment when returning results. This defaults to 2.
+# - mmr_config: can be used to specify MMR mode in the query.
+#   - is_enabled: True or False
+#   - mmr_k: number of results to use for MMR reranking
+#   - diversity_bias: 0 = no diversity, 1 = full diversity. This is the lambda
+#     parameter in the MMR formula and is in the range 0...1
+vectara_retriever = Vectara().as_retriever()
+
+# Setup the Multi-query retriever
 llm = ChatOpenAI(temperature=0)
-retriever = MultiQueryRetriever.from_llm(retriever=Vectara().as_retriever(), llm=llm)
+retriever = MultiQueryRetriever.from_llm(retriever=vectara_retriever, llm=llm)
 
-# RAG prompt
-template = """Answer the question based only on the following context:
-{context}
-Question: {question}
-"""
-prompt = ChatPromptTemplate.from_template(template)
-
-# RAG
+# Setup RAG pipeline with multi-query.
+# We extract the summary from the RAG output, which is the last document
+# (if summary is enabled)
+# Note that if you want to extract the citation information, you can use res[:-1]]
 model = ChatOpenAI()
 chain = (
     RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
-    | prompt
-    | model
+    | (lambda res: res[-1])
     | StrOutputParser()
 )
 
