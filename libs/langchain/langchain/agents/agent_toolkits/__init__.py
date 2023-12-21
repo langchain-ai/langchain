@@ -42,10 +42,10 @@ from langchain.agents.agent_toolkits.powerbi.base import create_pbi_agent
 from langchain.agents.agent_toolkits.powerbi.chat_base import create_pbi_chat_agent
 from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
 from langchain.agents.agent_toolkits.spark_sql.base import create_spark_sql_agent
-from langchain.agents.agent_toolkits.unitycatalog import UCSQLDatabaseToolkit
 from langchain.agents.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
 from langchain.agents.agent_toolkits.sql.base import create_sql_agent
 from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
+from langchain.agents.agent_toolkits.unitycatalog.toolkit import UCSQLDatabaseToolkit
 from langchain.agents.agent_toolkits.vectorstore.base import (
     create_vectorstore_agent,
     create_vectorstore_router_agent,
@@ -56,7 +56,6 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreToolkit,
 )
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
-from langchain.tools.retriever import create_retriever_tool
 
 DEPRECATED_AGENTS = [
     "create_csv_agent",
