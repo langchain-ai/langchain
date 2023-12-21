@@ -1,13 +1,15 @@
 
 # rag-chroma-multi-modal
 
-Multi-modal LLMs enable text-to-image retrieval and question-answering over images. 
+Multi-modal LLMs enable visual assistants that can perform question-answering about images. 
 
-You can ask questions in natural language about a collection of photos, retrieve relevant ones, and have a multi-modal LLM answer questions about the retrieved images.
+This template create a visual assistant for slide decks, which often contain visuals such as graphs or figures.
 
-This template performs text-to-image retrieval for question-answering about a slide deck, which often contains visual elements that are not captured in standard RAG.
+It uses OpenCLIP embeddings to embed all of the slide images and stores them in Chroma.
+ 
+Given a question, relevat slides are retrieved and passed to GPT-4V for answer synthesis.
 
-This will use OpenCLIP embeddings and GPT-4V for answer synthesis.
+![mm-mmembd](https://github.com/langchain-ai/langchain/assets/122662504/b3bc8406-48ae-4707-9edf-d0b3a511b200)
 
 ## Input
 
