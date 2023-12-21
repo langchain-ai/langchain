@@ -506,7 +506,7 @@ class AzureSearch(VectorStore):
 
         results = self.client.search(
             search_text=query,
-            vectors=[
+            vector_queries=[
                 VectorizedQuery(
                     vector=np.array(
                         self.embedding_function(query), dtype=np.float32
