@@ -263,10 +263,12 @@ def _import_koboldai() -> Any:
 
     return KoboldApiLLM
 
+
 def _import_konko() -> Any:
     from langchain.llms.konko import Konko
 
     return Konko
+
 
 def _import_llamacpp() -> Any:
     from langchain.llms.llamacpp import LlamaCpp
