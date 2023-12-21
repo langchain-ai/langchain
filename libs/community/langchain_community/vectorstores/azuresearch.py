@@ -437,7 +437,7 @@ class AzureSearch(VectorStore):
             search_text="",
             vector_queries=[
                 VectorizedQuery(
-                    value=np.array(
+                    vector=np.array(
                         self.embedding_function(query), dtype=np.float32
                     ).tolist(),
                     k_nearest_neighbors=k,
