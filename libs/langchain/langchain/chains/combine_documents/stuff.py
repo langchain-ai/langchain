@@ -1,11 +1,17 @@
 """Chain that combines documents by stuffing into context."""
-
+from operator import itemgetter
 from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.runnables import (
+    Runnable,
+    RunnableLambda,
+    RunnableParallel,
+    RunnablePassthrough,
+)
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
@@ -99,6 +105,24 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
                     f"not found in llm_chain input_variables: {llm_chain_variables}"
                 )
         return values
+
+    def as_runnable(self) -> Runnable:
+        def _format_document(doc: Document):
+            return format_document(doc, self.document_prompt)
+
+        format_docs = (
+            itemgetter(self.input_key) | RunnableLambda(_format_document).map()
+        )
+
+        def pop_raw_docs(input_: dict) -> dict:
+            return {k: v for k, v in input_.items() if k != self.input_key}
+
+        chain = (
+            RunnablePassthrough.assign(**{self.document_variable_name: format_docs})
+            | pop_raw_docs
+            | self.llm_chain.as_runnable()
+        )
+        return RunnableParallel({self.output_key: chain})
 
     @property
     def input_keys(self) -> List[str]:

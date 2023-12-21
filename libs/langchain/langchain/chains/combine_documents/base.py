@@ -11,11 +11,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain.chains.base import Chain
+from langchain.chains.base import Chain, RunnableChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
-class BaseCombineDocumentsChain(Chain, ABC):
+class BaseCombineDocumentsChain(RunnableChain, ABC):
     """Base interface for chains combining documents.
 
     Subclasses of this chain deal with combining documents in a variety of
