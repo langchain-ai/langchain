@@ -163,4 +163,4 @@ class ChatHuggingFace(BaseChatModel):
 
     @property
     def _llm_type(self) -> str:
-        return f"huggingface-chat-wrapper"
+        return "huggingface-chat-wrapper"
