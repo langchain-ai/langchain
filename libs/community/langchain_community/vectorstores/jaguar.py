@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from typing import Any, List, Optional, Tuple
+
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -51,10 +52,13 @@ class Jaguar(VectorStore):
         self._embedding = embedding
         try:
             from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
-            self._jag = JaguarHttpClient(url)
         except ImportError:
-            self._jag = None
+            raise ValueError(
+                "Could not import jaguardb-http-client python package. "
+                "Please install it with `pip install -U jaguardb-http-client`"
+            )
 
+        self._jag = JaguarHttpClient(url)
         self._token = ""
 
     def login(
@@ -70,9 +74,6 @@ class Jaguar(VectorStore):
         Returns:
             True if successful; False if not successful
         """
-
-        if self._jag is None:
-            return False
 
         if jaguar_api_key == "":
             jaguar_api_key = self._jag.getApiKey()
