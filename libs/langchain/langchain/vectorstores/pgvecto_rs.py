@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.pgvecto_rs import PGVecto_rs, _ORMBase
+from langchain_community.vectorstores.pgvecto_rs import PGVecto_rs
 
-__all__ = ["_ORMBase", "PGVecto_rs"]
+__all__ = ["PGVecto_rs"]
