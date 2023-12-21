@@ -1165,3 +1165,8 @@ class FAISS(VectorStore):
             (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
         ]
         return docs_and_rel_scores
+
+    @staticmethod
+    def _max_inner_product_relevance_score_fn(distance: float) -> float:
+        """Normalize the distance to a score on a scale [0, 1]."""
+        return (distance + 1) / 2

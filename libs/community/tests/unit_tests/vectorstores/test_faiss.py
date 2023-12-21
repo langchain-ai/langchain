@@ -690,9 +690,19 @@ def test_missing_normalize_score_fn() -> None:
 
 @pytest.mark.requires("faiss")
 def test_ip_score() -> None:
-    db = FAISS.from_texts(['sundays coming so i drive my car'], embedding=FakeEmbeddings(),
-                          distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT)
-    db.similarity_search_with_relevance_scores('sundays', k=1)
+    embedding = FakeEmbeddings()
+    vector = embedding.embed_query("hi")
+    assert vector == [1] * 9 + [0], f"FakeEmbeddings() has changed, produced {vector}"
+
+    db = FAISS.from_texts(
+        ["sundays coming so i drive my car"],
+        embedding=FakeEmbeddings(),
+        distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
+    )
+    scores = db.similarity_search_with_relevance_scores("sundays", k=1)
+    assert len(scores) == 1, "only one vector should be in db"
+    _, score = scores[0]
+    assert score == 9, f"expected inner product of default vectors to be 9, not {score}"
 
 
 @pytest.mark.requires("faiss")
