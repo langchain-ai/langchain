@@ -2,11 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
-
-if TYPE_CHECKING:
-    from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
-
+from typing import Any, List, Optional, Tuple
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -23,7 +19,7 @@ class Jaguar(VectorStore):
     Example:
        .. code-block:: python
 
-           from langchain.vectorstores import Jaguar
+           from langchain_community.vectorstores.jaguar import Jaguar
 
            vectorstore = Jaguar(
                pod = 'vdb',
@@ -53,8 +49,12 @@ class Jaguar(VectorStore):
         self._vector_dimension = vector_dimension
 
         self._embedding = embedding
+        try:
+            from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
+            self._jag = JaguarHttpClient(url)
+        except ImportError:
+            self._jag = None
 
-        self._jag = JaguarHttpClient(url)
         self._token = ""
 
     def login(
@@ -70,6 +70,9 @@ class Jaguar(VectorStore):
         Returns:
             True if successful; False if not successful
         """
+
+        if self._jag is None:
+            return False
 
         if jaguar_api_key == "":
             jaguar_api_key = self._jag.getApiKey()
