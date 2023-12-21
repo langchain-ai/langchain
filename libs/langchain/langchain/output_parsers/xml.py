@@ -37,7 +37,7 @@ class XMLOutputParser(BaseTransformOutputParser):
 
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
-    ) -> Iterator[AddableDict[str, Any]]:
+    ) -> Iterator[AddableDict]:
         parser = ET.XMLPullParser(["start", "end"])
         current_path: List[str] = []
         current_path_has_children = False
@@ -69,7 +69,7 @@ class XMLOutputParser(BaseTransformOutputParser):
 
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
-    ) -> AsyncIterator[AddableDict[str, Any]]:
+    ) -> AsyncIterator[AddableDict]:
         parser = ET.XMLPullParser(["start", "end"])
         current_path: List[str] = []
         current_path_has_children = False
