@@ -40,6 +40,7 @@ EXPECT_ALL = [
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
     "KoboldApiLLM",
+    "Konko",
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
@@ -84,7 +85,6 @@ EXPECT_ALL = [
     "YandexGPT",
     "VolcEngineMaasLLM",
     "WatsonxLLM",
-    "Konko",
 ]
 
 
