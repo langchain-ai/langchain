@@ -1,32 +1,41 @@
 
 # rag-chroma-multi-modal
 
-Presentations (slide decks, etc) contain visual content that challenges conventional RAG.
+Multi-modal LLMs enable text-to-image retrieval and question-answering over images. 
 
-Multi-modal LLMs unlock new ways to build apps over visual content like presentations.
- 
-This template performs multi-modal RAG using Chroma with multi-modal OpenCLIP embeddings and OpenAI GPT-4V.
+You can ask questions in natural language about a collection of photos, retrieve relevant ones, and have a multi-modal LLM answer questions about the retrieved images.
+
+This template performs text-to-image retrieval for question-answering about a slide deck, which often contains visual elements that are not captured in standard RAG.
+
+This will use OpenCLIP embeddings and GPT-4V for answer synthesis.
 
 ## Input
 
 Supply a slide deck as pdf in the `/docs` directory. 
 
-Create your vectorstore with: 
+By default, this template has a slide deck about Q3 earnings from DataDog, a public techologyy company.
 
+Example questions to ask can be:
+```
+How many customers does Datadog have?
+What is Datadog platform % Y/Y growth in FY20, FY21, and FY22?
+```
+
+To create an index of the slide deck, run:
 ```
 poetry install
 python ingest.py
 ```
 
-## Embeddings
+## Storage
 
-This template will use [OpenCLIP](https://github.com/mlfoundations/open_clip) multi-modal embeddings.
+This template will use [OpenCLIP](https://github.com/mlfoundations/open_clip) multi-modal embeddings to embed the images.
 
-You can select different options (see results [here](https://github.com/mlfoundations/open_clip/blob/main/docs/openclip_results.csv)).
+You can select different embedding model options (see results [here](https://github.com/mlfoundations/open_clip/blob/main/docs/openclip_results.csv)).
 
 The first time you run the app, it will automatically download the multimodal embedding model.
 
-By default, LangChain will use an embedding model with reasonably strong performance, `ViT-H-14`.
+By default, LangChain will use an embedding model with moderate performance but lower memory requirments, `ViT-H-14`.
 
 You can choose alternative `OpenCLIPEmbeddings` models in `rag_chroma_multi_modal/ingest.py`:
 ```
@@ -41,7 +50,7 @@ vectorstore_mmembd = Chroma(
 
 ## LLM
 
-The app will retrieve images using multi-modal embeddings, and pass them to GPT-4V.
+The app will retrieve images based on similarity between the text input and the image, which are both mapped to multi-modal embedding space. It will then pass the images to GPT-4V.
 
 ## Environment Setup
 
