@@ -120,7 +120,6 @@ _EXPECTED = [
     "ZapierNLAListActions",
     "ZapierNLARunAction",
     "authenticate",
-    "format_tool_to_openai_function",
     "tool",
 ]
 

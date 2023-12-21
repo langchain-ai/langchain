@@ -524,14 +524,6 @@ def _import_reddit_search_RedditSearchRun() -> Any:
     return RedditSearchRun
 
 
-def _import_render() -> Any:
-    from langchain_community.tools.convert_to_openai import (
-        format_tool_to_openai_function,
-    )
-
-    return format_tool_to_openai_function
-
-
 def _import_requests_tool_BaseRequestsTool() -> Any:
     from langchain_community.tools.requests.tool import BaseRequestsTool
 
@@ -921,8 +913,6 @@ def __getattr__(name: str) -> Any:
         return _import_python_tool_PythonREPLTool()
     elif name == "RedditSearchRun":
         return _import_reddit_search_RedditSearchRun()
-    elif name == "format_tool_to_openai_function":
-        return _import_render()
     elif name == "BaseRequestsTool":
         return _import_requests_tool_BaseRequestsTool()
     elif name == "RequestsDeleteTool":
@@ -1122,6 +1112,5 @@ __all__ = [
     "ZapierNLAListActions",
     "ZapierNLARunAction",
     "authenticate",
-    "format_tool_to_openai_function",
     "tool",
 ]
