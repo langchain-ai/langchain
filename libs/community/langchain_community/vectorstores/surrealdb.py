@@ -62,7 +62,7 @@ class SurrealDBStore(VectorStore):
         self.db = kwargs.pop("db", "database")
         self.dburl = kwargs.pop("dburl", "ws://localhost:8000/rpc")
         self.embedding_function = embedding_function
-        self.sdb = Surreal()
+        self.sdb = Surreal(self.dburl)
         self.kwargs = kwargs
 
     async def initialize(self) -> None:
@@ -104,7 +104,12 @@ class SurrealDBStore(VectorStore):
         ids = []
         for idx, text in enumerate(texts):
             record = await self.sdb.create(
-                self.collection, {"text": text, "embedding": embeddings[idx]}
+                self.collection,
+                {
+                    "text": text,
+                    "embedding": embeddings[idx],
+                    "metadata": metadatas[idx],
+                },
             )
             ids.append(record[0]["id"])
         return ids
@@ -195,7 +200,7 @@ class SurrealDBStore(VectorStore):
             "k": k,
             "score_threshold": kwargs.get("score_threshold", 0),
         }
-        query = """select id, text,
+        query = """select id, text, metadata,
         vector::similarity::cosine(embedding,{embedding}) as similarity
         from {collection}
         where vector::similarity::cosine(embedding,{embedding}) >= {score_threshold}
@@ -206,9 +211,13 @@ class SurrealDBStore(VectorStore):
         if len(results) == 0:
             return []
 
+        print(results)
         return [
             (
-                Document(page_content=result["text"], metadata={"id": result["id"]}),
+                Document(
+                    page_content=result["text"],
+                    metadata={"id": result["id"], **result["metadata"]},
+                ),
                 result["similarity"],
             )
             for result in results[0]["result"]
