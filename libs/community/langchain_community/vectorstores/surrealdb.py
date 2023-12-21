@@ -103,13 +103,12 @@ class SurrealDBStore(VectorStore):
         embeddings = self.embedding_function.embed_documents(list(texts))
         ids = []
         for idx, text in enumerate(texts):
+            data = {"text": text, "embedding": embeddings[idx]}
+            if metadatas != None and idx < len(metadatas):
+                data["metadata"] = metadatas[idx]
             record = await self.sdb.create(
                 self.collection,
-                {
-                    "text": text,
-                    "embedding": embeddings[idx],
-                    "metadata": metadatas[idx],
-                },
+                data,
             )
             ids.append(record[0]["id"])
         return ids
