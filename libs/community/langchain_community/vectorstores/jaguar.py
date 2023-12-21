@@ -54,7 +54,7 @@ class Jaguar(VectorStore):
             from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
         except ImportError:
             raise ValueError(
-                "Could not import qdrant-client python package. "
+                "Could not import jaguardb-http-client python package. "
                 "Please install it with `pip install -U jaguardb-http-client`"
             )
 
