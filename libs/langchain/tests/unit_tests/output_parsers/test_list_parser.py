@@ -8,13 +8,41 @@ from langchain.output_parsers.list import (
 def test_single_item() -> None:
     """Test that a string with a single item is parsed to a list with that item."""
     parser = CommaSeparatedListOutputParser()
-    assert parser.parse("foo") == ["foo"]
+    text = "foo"
+    expected = ["foo"]
+
+    assert parser.parse(text) == expected
+    assert list(parser.transform(t for t in text)) == expected
+    assert list(parser.transform(t for t in text.splitlines(keepends=True))) == expected
+    assert (
+        list(
+            parser.transform(
+                " " + t if i > 0 else t for i, t in enumerate(text.split(" "))
+            )
+        )
+        == expected
+    )
+    assert list(parser.transform([text])) == expected
 
 
 def test_multiple_items() -> None:
     """Test that a string with multiple comma-separated items is parsed to a list."""
     parser = CommaSeparatedListOutputParser()
-    assert parser.parse("foo, bar, baz") == ["foo", "bar", "baz"]
+    text = "foo, bar, baz"
+    expected = ["foo", "bar", "baz"]
+
+    assert parser.parse(text) == expected
+    assert list(parser.transform(t for t in text)) == expected
+    assert list(parser.transform(t for t in text.splitlines(keepends=True))) == expected
+    assert (
+        list(
+            parser.transform(
+                " " + t if i > 0 else t for i, t in enumerate(text.split(" "))
+            )
+        )
+        == expected
+    )
+    assert list(parser.transform([text])) == expected
 
 
 def test_numbered_list() -> None:
@@ -28,9 +56,26 @@ def test_numbered_list() -> None:
 
     text3 = "No items in the list."
 
-    assert parser.parse(text1) == ["foo", "bar", "baz"]
-    assert parser.parse(text2) == ["apple", "banana", "cherry"]
-    assert parser.parse(text3) == []
+    for text, expected in [
+        (text1, ["foo", "bar", "baz"]),
+        (text2, ["apple", "banana", "cherry"]),
+        (text3, []),
+    ]:
+        assert parser.parse(text) == expected
+        assert list(parser.transform(t for t in text)) == expected
+        assert (
+            list(parser.transform(t for t in text.splitlines(keepends=True)))
+            == expected
+        )
+        assert (
+            list(
+                parser.transform(
+                    " " + t if i > 0 else t for i, t in enumerate(text.split(" "))
+                )
+            )
+            == expected
+        )
+        assert list(parser.transform([text])) == expected
 
 
 def test_markdown_list() -> None:
@@ -44,6 +89,23 @@ def test_markdown_list() -> None:
 
     text3 = "No items in the list."
 
-    assert parser.parse(text1) == ["foo", "bar", "baz"]
-    assert parser.parse(text2) == ["apple", "banana", "cherry"]
-    assert parser.parse(text3) == []
+    for text, expected in [
+        (text1, ["foo", "bar", "baz"]),
+        (text2, ["apple", "banana", "cherry"]),
+        (text3, []),
+    ]:
+        assert parser.parse(text) == expected
+        assert list(parser.transform(t for t in text)) == expected
+        assert (
+            list(parser.transform(t for t in text.splitlines(keepends=True)))
+            == expected
+        )
+        assert (
+            list(
+                parser.transform(
+                    " " + t if i > 0 else t for i, t in enumerate(text.split(" "))
+                )
+            )
+            == expected
+        )
+        assert list(parser.transform([text])) == expected
