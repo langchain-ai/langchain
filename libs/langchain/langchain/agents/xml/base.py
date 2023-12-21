@@ -1,17 +1,17 @@
-from typing import Any, List, Tuple, Union, Sequence
+from typing import Any, List, Sequence, Tuple, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.prompts.chat import AIMessagePromptTemplate, ChatPromptTemplate
-from langchain_core.tools import BaseTool
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts.chat import AIMessagePromptTemplate, ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
+from langchain_core.tools import BaseTool
 
 from langchain.agents.agent import BaseSingleActionAgent
+from langchain.agents.format_scratchpad import format_xml
+from langchain.agents.output_parsers import XMLAgentOutputParser
 from langchain.agents.xml.prompt import agent_instructions, agent_instructions_v1
 from langchain.callbacks.base import Callbacks
 from langchain.chains.llm import LLMChain
-from langchain.agents.format_scratchpad import format_xml
-from langchain.agents.output_parsers import XMLAgentOutputParser
 from langchain.tools.render import render_text_description
 
 
@@ -46,10 +46,10 @@ class XMLAgent(BaseSingleActionAgent):
 
     @staticmethod
     def get_default_prompt() -> ChatPromptTemplate:
-        base_prompt = ChatPromptTemplate.from_template(
-            agent_instructions
+        base_prompt = ChatPromptTemplate.from_template(agent_instructions)
+        return base_prompt + AIMessagePromptTemplate.from_template(
+            "{intermediate_steps}"
         )
-        return base_prompt + AIMessagePromptTemplate.from_template("{intermediate_steps}")
 
     @staticmethod
     def get_default_output_parser() -> XMLAgentOutputParser:
@@ -104,29 +104,6 @@ class XMLAgent(BaseSingleActionAgent):
         return response[self.llm_chain.output_key]
 
 
-def create_default_prompt(
-    instructions: str = "You are a helpful assistant.",
-):
-    """Create default prompt for XML agent.
-
-    Args:
-        instructions: String to put at the start of the prompt,
-            defaults to "You are a helpful assistant."
-
-    Returns:
-        A prompt template. Requires two or three variables:
-        - `input`: this is the user input
-        - `tools`: the tools the agent has access to (including descriptions).
-        - `tool_names`: the list of names of the tools the agent has access to
-        - `agent_scratchpad`: this is the history of steps the agent has taken so far.
-            This gets populated by the AgentExecutor.
-    """
-    base_prompt = ChatPromptTemplate.from_template(
-        agent_instructions_v1
-    ).partial(instructions=instructions)
-    return base_prompt + AIMessagePromptTemplate.from_template("{agent_scratchpad}")
-
-
 def create_xml_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ):
@@ -139,12 +116,12 @@ def create_xml_agent(
 
             from langchain.agents.xml_agent import (
                 create_xml_agent,
-                create_default_prompt
             )
+            from langchain import hub
             from langchain.chat_models import ChatAnthropic
             from langchain.agents import AgentExecutor
 
-            prompt = create_default_prompt()
+            prompt = hub.pull("hwchase17/xml-agent")
             model = ChatAnthropic()
             tools = ...
 
@@ -165,11 +142,11 @@ def create_xml_agent(
         AgentAction or AgentFinish.
 
     """
-    missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(prompt.input_variables)
+    missing_vars = {"tools", "agent_scratchpad"}.difference(
+        prompt.input_variables
+    )
     if missing_vars:
-        raise ValueError(
-            f"Prompt missing required variables: {missing_vars}"
-        )
+        raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
     prompt = prompt.partial(
         tools=render_text_description(list(tools)),
@@ -179,9 +156,9 @@ def create_xml_agent(
 
     agent = (
         RunnablePassthrough.assign(
-            agent_scratchpad=lambda x: format_xml(
-                x["intermediate_steps"]
-            )
+            agent_scratchpad=lambda x: format_xml(x["intermediate_steps"]),
+            # Give it a default
+            chat_history=lambda x: x.get("chat_history", ""),
         )
         | prompt
         | llm_with_stop

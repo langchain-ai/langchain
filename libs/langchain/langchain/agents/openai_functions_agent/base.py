@@ -229,40 +229,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         )
 
 
-def create_default_prompt(
-    instructions: str = "You are a helpful AI assistant.",
-    include_chat_history: bool = False,
-):
-    """Create default prompt for OpenAI Functions agent.
-
-    Args:
-        instructions: Instructions to use for the agent. Will be passed as a system
-            message. Defaults to "You are a helpful AI assistant."
-        include_chat_history: Whether to include a variable for chat history or not.
-            If yes, this will require an input of `chat_history`.
-
-    Returns:
-        A prompt template. Requires two or three variables:
-        - `input`: this is the user input
-        - `agent_scratchpad`: this is the history of steps the agent has taken so far.
-            This gets populated by the AgentExecutor.
-        - `chat_history`: This is optionally required as input, if
-            `include_chat_history` is set to True. It should be a list of LangChain
-            Message objects.
-    """
-    messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
-    messages = [SystemMessage(content=instructions)]
-    if include_chat_history:
-        messages.append(MessagesPlaceholder(variable_name="chat_history"))
-    messages.extend(
-        [
-            HumanMessagePromptTemplate.from_template("{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
-    )
-    return ChatPromptTemplate(messages=messages)
-
-
 def create_openai_functions_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ):

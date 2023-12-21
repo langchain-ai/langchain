@@ -63,13 +63,14 @@ from langchain.agents.load_tools import (
 )
 from langchain.agents.loading import load_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
-from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
+from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent, create_openai_functions_agent
 from langchain.agents.openai_functions_multi_agent.base import OpenAIMultiFunctionsAgent
 from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.agents.structured_chat.base import StructuredChatAgent
 from langchain.agents.tools import Tool, tool
-from langchain.agents.xml.base import XMLAgent
+from langchain.agents.xml.base import XMLAgent, create_xml_agent
+from langchain.agents.react.agent import create_react_agent
 
 DEPRECATED_CODE = [
     "create_csv_agent",
@@ -133,4 +134,7 @@ __all__ = [
     "load_tools",
     "tool",
     "XMLAgent",
+    "create_openai_functions_agent",
+    "create_xml_agent",
+    "create_react_agent",
 ]
