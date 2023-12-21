@@ -542,7 +542,7 @@ class AmazonTextractPDFParser(BaseBlobParser):
 
 class DocumentIntelligenceParser(BaseBlobParser):
     """Loads a PDF with Azure Document Intelligence
-    (formerly Forms Recognizer) and chunks at character level."""
+    (formerly Form Recognizer) and chunks at character level."""
 
     def __init__(self, client: Any, model: str):
         warnings.warn(
