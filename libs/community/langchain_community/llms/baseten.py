@@ -33,19 +33,22 @@ class Baseten(LLM):
 
     Examples:
         .. code-block:: python
-            from langchain.llms import Baseten
+
+            from langchain_community.llms import Baseten
             # Production deployment
             mistral = Baseten(model="MODEL_ID", deployment="production")
             mistral("What is the Mistral wind?")
 
         .. code-block:: python
-            from langchain.llms import Baseten
+
+            from langchain_community.llms import Baseten
             # Development deployment
             mistral = Baseten(model="MODEL_ID", deployment="development")
             mistral("What is the Mistral wind?")
 
         .. code-block:: python
-            from langchain.llms import Baseten
+
+            from langchain_community.llms import Baseten
             # Other published deployment
             mistral = Baseten(model="MODEL_ID", deployment="DEPLOYMENT_ID")
             mistral("What is the Mistral wind?")

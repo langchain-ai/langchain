@@ -44,7 +44,7 @@ To use this module, you must:
 Production deployment (standard for model library models)
 
 ```python
-from langchain.llms import Baseten
+from langchain_community.llms import Baseten
 
 mistral = Baseten(model="MODEL_ID", deployment="production")
 mistral("What is the Mistral wind?")
@@ -53,7 +53,7 @@ mistral("What is the Mistral wind?")
 Development deployment
 
 ```python
-from langchain.llms import Baseten
+from langchain_community.llms import Baseten
 
 mistral = Baseten(model="MODEL_ID", deployment="development")
 mistral("What is the Mistral wind?")
@@ -62,7 +62,7 @@ mistral("What is the Mistral wind?")
 Other published deployment
 
 ```python
-from langchain.llms import Baseten
+from langchain_community.llms import Baseten
 
 mistral = Baseten(model="MODEL_ID", deployment="DEPLOYMENT_ID")
 mistral("What is the Mistral wind?")
