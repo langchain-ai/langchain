@@ -1169,4 +1169,4 @@ class FAISS(VectorStore):
     @staticmethod
     def _max_inner_product_relevance_score_fn(distance: float) -> float:
         """Normalize the distance to a score on a scale [0, 1]."""
-        return (distance + 1) / 2
+        return distance

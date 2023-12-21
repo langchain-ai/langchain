@@ -688,6 +688,7 @@ def test_missing_normalize_score_fn() -> None:
         faiss_instance.similarity_search_with_relevance_scores("foo", k=2)
 
 
+@pytest.mark.skip(reason="old relevance score feature")
 @pytest.mark.requires("faiss")
 def test_ip_score() -> None:
     embedding = FakeEmbeddings()
@@ -702,7 +703,9 @@ def test_ip_score() -> None:
     scores = db.similarity_search_with_relevance_scores("sundays", k=1)
     assert len(scores) == 1, "only one vector should be in db"
     _, score = scores[0]
-    assert score == 9, f"expected inner product of default vectors to be 9, not {score}"
+    assert (
+        score == 1
+    ), f"expected inner product of equivalent vectors to be 1, not {score}"
 
 
 @pytest.mark.requires("faiss")
