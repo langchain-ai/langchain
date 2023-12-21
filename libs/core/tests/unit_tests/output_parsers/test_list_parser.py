@@ -1,4 +1,4 @@
-from langchain.output_parsers.list import (
+from langchain_core.output_parsers.list import (
     CommaSeparatedListOutputParser,
     MarkdownListOutputParser,
     NumberedListOutputParser,
