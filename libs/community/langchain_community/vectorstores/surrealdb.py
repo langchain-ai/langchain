@@ -127,7 +127,16 @@ class SurrealDBStore(VectorStore):
         Returns:
             List of ids for the newly inserted documents
         """
-        return asyncio.run(self.aadd_texts(texts, metadatas, **kwargs))
+
+        async def _add_texts(
+            texts: Iterable[str],
+            metadatas: Optional[List[dict]] = None,
+            **kwargs: Any,
+        ) -> List[str]:
+            await self.initialize()
+            return await self.aadd_texts(texts, metadatas, **kwargs)
+
+        return asyncio.run(_add_texts(texts, metadatas, **kwargs))
 
     async def adelete(
         self,
@@ -408,7 +417,7 @@ class SurrealDBStore(VectorStore):
 
         sdb = cls(embedding, **kwargs)
         await sdb.initialize()
-        await sdb.aadd_texts(texts)
+        await sdb.aadd_texts(texts, metadatas, **kwargs)
         return sdb
 
     @classmethod
