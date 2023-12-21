@@ -1,10 +1,13 @@
 """Base interface for chains combining documents."""
 
 from abc import ABC, abstractmethod
+from operator import itemgetter
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain_core.documents import Document
+from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import (
@@ -13,6 +16,30 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain, RunnableChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
+
+
+def _format_docs_chain(
+    input_key: str,
+    document_prompt: BasePromptTemplate,
+    document_variable_name: str,
+    document_separator: str,
+) -> Runnable:
+    def format_document_(doc: Document) -> str:
+        return format_document(doc, document_prompt)
+
+    format_docs = (
+        itemgetter(input_key)
+        | RunnableLambda(format_document_).map()
+        | document_separator.join
+    )
+
+    def pop_raw_docs(input_: dict) -> dict:
+        return {k: v for k, v in input_.items() if k != input_key}
+
+    return (
+        RunnablePassthrough.assign(**{document_variable_name: format_docs})
+        | pop_raw_docs
+    )
 
 
 class BaseCombineDocumentsChain(RunnableChain, ABC):

@@ -21,7 +21,6 @@ from langchain_core.pydantic_v1 import (
     validator,
 )
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
-from langchain_core.runnables.base import RunnableLambda
 from langchain_core.runnables.configurable import ConfigurableFieldSpec
 from langchain_core.runnables.passthrough import RunnablePassthrough
 
@@ -681,12 +680,12 @@ class RunnableChain(Chain):
         context = Context.create_scope("runnable-chain")
 
         def prep_outputs(all: Dict[str, Any]) -> Dict[str, Any]:
-            print("before outprep", all)
+            # print("before outprep", all)
             return self.prep_outputs(all["inputs"], all["outputs"], return_only_outputs)
 
         return (
             self.prep_inputs
-            | RunnableLambda(lambda i: print("after prep", i) or i.copy())
+            # | RunnableLambda(lambda i: print("after prep", i) or i.copy())
             | context.setter("inputs")
             | self.as_runnable()
             | {"outputs": RunnablePassthrough(), "inputs": context.getter("inputs")}

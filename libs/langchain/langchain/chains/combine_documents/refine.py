@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
@@ -132,6 +133,44 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
                     f"not found in llm_chain input_variables: {llm_chain_variables}"
                 )
         return values
+
+    def as_runnable(self) -> Runnable:
+        def format_inputs(inputs: dict) -> dict:
+            doc = inputs[self.input_key][len(inputs.get("intermediate_steps", [])) - 1]
+            inputs[self.document_variable_name] = format_document(
+                doc, self.document_prompt
+            )
+            return {
+                k: v
+                for k, v in inputs.items()
+                if k not in ("intermediate_steps", self.input_key)
+            }
+
+        first_chain = format_inputs | self.initial_llm_chain.as_runnable()
+        refine_chain = format_inputs | self.refine_llm_chain.as_runnable()
+
+        def loop(inputs: dict) -> Union[Runnable, dict]:
+            if len(inputs.get("intermediate_steps", [])) < len(inputs[self.input_key]):
+                return (
+                    RunnablePassthrough.assign(
+                        intermediate_steps=lambda x: x.get("intermediate_steps", [])
+                        + [x[self.initial_response_name]]
+                    )
+                    | RunnablePassthrough.assign(
+                        **{self.initial_response_name: refine_chain}
+                    )
+                    | loop
+                )
+            else:
+                res = {self.output_key: inputs["intermediate_steps"][-1]}
+                if self.return_intermediate_steps:
+                    res["intermediate_steps"] = inputs["intermediate_steps"]
+                return res
+
+        return (
+            RunnablePassthrough.assign(**{self.initial_response_name: first_chain})
+            | loop
+        )
 
     def combine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
