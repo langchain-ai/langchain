@@ -123,6 +123,6 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
 
                 resp = self.client.embeddings(req)
                 lst.extend([res["embedding"] for res in resp["data"]])
-            except MaasException as err:
-                raise ValueError(f"Error: {err!r}")
+            except MaasException as e:
+                raise ValueError(f"embed by volcengine Error: {e}")
         return lst
