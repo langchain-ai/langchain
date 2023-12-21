@@ -230,14 +230,14 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
 
 
 def create_default_prompt(
-    system_message: Optional[str] = "You are a helpful AI assistant.",
+    instructions: str = "You are a helpful AI assistant.",
     include_chat_history: bool = False,
 ):
     """Create default prompt for OpenAI Functions agent.
 
     Args:
-        system_message: String to use as the system message,
-            defaults to "You are a helpful AI assistant."
+        instructions: Instructions to use for the agent. Will be passed as a system
+            message. Defaults to "You are a helpful AI assistant."
         include_chat_history: Whether to include a variable for chat history or not.
             If yes, this will require an input of `chat_history`.
 
@@ -251,7 +251,7 @@ def create_default_prompt(
             Message objects.
     """
     messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
-    messages = [SystemMessage(content=system_message)]
+    messages = [SystemMessage(content=instructions)]
     if include_chat_history:
         messages.append(MessagesPlaceholder(variable_name="chat_history"))
     messages.extend(
@@ -279,14 +279,16 @@ def create_openai_functions_agent(
                 create_default_prompt
             )
             from langchain.chat_models import ChatOpenAI
+            from langchain.agents import AgentExecutor
 
             prompt = create_default_prompt()
             model = ChatOpenAI()
             tools = ...
 
             agent = create_openai_functions_agent(model, tools, prompt)
+            agent_executor = AgentExecutor(agent=agent, tools=tools)
 
-            agent.invoke({"input": "hi"})
+            agent_executor.invoke({"input": "hi"})
 
         Creating an agent with memory
 
@@ -297,20 +299,22 @@ def create_openai_functions_agent(
                 create_default_prompt
             )
             from langchain.chat_models import ChatOpenAI
+            from langchain.agents import AgentExecutor
 
             prompt = create_default_prompt(include_chat_history=True)
             model = ChatOpenAI()
             tools = ...
 
             agent = create_openai_functions_agent(model, tools, prompt)
+            agent_executor = AgentExecutor(agent=agent, tools=tools)
 
             # Call for the first time with no memory
-            agent.invoke({"input": "hi", "chat_history"=[]})
+            agent_executor.invoke({"input": "hi", "chat_history"=[]})
 
             # Call for the second time and pass in chat messages
             from langchain_core.messages import HumanMessage, AIMessage
             messages = [HumanMessage(content="hi"), AIMessage(content="hi")]
-            agent.invoke({"input": "hi", "chat_history"=messages})
+            agent_executor.invoke({"input": "hi", "chat_history"=messages})
 
     Args:
         llm: LLM to use as the agent. Should work with OpenAI function calling,
