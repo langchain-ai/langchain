@@ -2661,31 +2661,37 @@ class RunnableLambda(Runnable[Input, Output]):
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> Iterator[Output]:
+        final: Optional[Input] = None
         for ichunk in input:
-            output = call_func_with_variable_args(
-                self.func, ichunk, config, run_manager
-            )
-
-            # If the output is a runnable, use its stream output
-            if isinstance(output, Runnable):
-                recursion_limit = config["recursion_limit"]
-                if recursion_limit <= 0:
-                    raise RecursionError(
-                        f"Recursion limit reached when invoking "
-                        f"{self} with input {ichunk}."
-                    )
-                for chunk in output.stream(
-                    ichunk,
-                    patch_config(
-                        config,
-                        callbacks=run_manager.get_child(),
-                        recursion_limit=recursion_limit - 1,
-                    ),
-                ):
-                    yield chunk
+            if final is None:
+                final = ichunk
             else:
-                # Otherwise, just yield it
-                yield output
+                final = final + ichunk  # type: ignore[operator]
+
+        output = call_func_with_variable_args(
+            self.func, cast(Input, final), config, run_manager
+        )
+
+        # If the output is a runnable, use its stream output
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking "
+                    f"{self} with input {final}."
+                )
+            for chunk in output.stream(
+                final,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            ):
+                yield chunk
+        else:
+            # Otherwise, just yield it
+            yield output
 
     def stream(
         self,
@@ -2712,30 +2718,37 @@ class RunnableLambda(Runnable[Input, Output]):
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> AsyncIterator[Output]:
+        final: Optional[Input] = None
         async for ichunk in input:
-            output = await acall_func_with_variable_args(
-                self.afunc, ichunk, config, run_manager
-            )
-            # If the output is a runnable, use its astream output
-            if isinstance(output, Runnable):
-                recursion_limit = config["recursion_limit"]
-                if recursion_limit <= 0:
-                    raise RecursionError(
-                        f"Recursion limit reached when invoking "
-                        f"{self} with input {ichunk}."
-                    )
-                async for chunk in output.astream(
-                    ichunk,
-                    patch_config(
-                        config,
-                        callbacks=run_manager.get_child(),
-                        recursion_limit=recursion_limit - 1,
-                    ),
-                ):
-                    yield chunk
+            if final is None:
+                final = ichunk
             else:
-                # Otherwise, just yield it
-                yield output
+                final = final + ichunk  # type: ignore[operator]
+
+        output = await acall_func_with_variable_args(
+            self.afunc, cast(Input, final), config, run_manager
+        )
+
+        # If the output is a runnable, use its astream output
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking "
+                    f"{self} with input {final}."
+                )
+            async for chunk in output.astream(
+                final,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            ):
+                yield chunk
+        else:
+            # Otherwise, just yield it
+            yield output
 
     async def astream(
         self,
