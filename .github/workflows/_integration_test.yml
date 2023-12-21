@@ -20,7 +20,7 @@ jobs:
       matrix:
         python-version:
           - "3.8"
-          - "3.11"
+          - "3.12"
     name: Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
