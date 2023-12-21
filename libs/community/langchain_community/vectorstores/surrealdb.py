@@ -211,7 +211,6 @@ class SurrealDBStore(VectorStore):
         if len(results) == 0:
             return []
 
-        print(results)
         return [
             (
                 Document(
