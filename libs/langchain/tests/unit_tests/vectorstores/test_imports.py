@@ -10,7 +10,5 @@ def test_all_imports() -> None:
             "AlibabaCloudOpenSearchSettings",
             "ClickhouseSettings",
             "MyScaleSettings",
-            "PathwayVectorClient",
-            "PathwayVectorServer",
         ]:
             assert issubclass(getattr(vectorstores, cls), VectorStore)
