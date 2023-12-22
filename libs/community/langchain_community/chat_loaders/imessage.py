@@ -96,8 +96,10 @@ class IMessageChatLoader(BaseChatLoader):
         # However, the table doesn't exist if database created with OSX 12 or above.
 
         joins_w_chat_handle = """
-            JOIN chat_handle_join ON chat_message_join.chat_id = chat_handle_join.chat_id
-            JOIN handle ON handle.ROWID = chat_handle_join.handle_id"""
+            JOIN chat_handle_join ON
+                 chat_message_join.chat_id = chat_handle_join.chat_id
+            JOIN handle ON
+                 handle.ROWID = chat_handle_join.handle_id"""
 
         joins_no_chat_handle = """
             JOIN handle ON message.handle_id = handle.ROWID
@@ -106,9 +108,14 @@ class IMessageChatLoader(BaseChatLoader):
         joins = joins_w_chat_handle if use_chat_handle_table else joins_no_chat_handle
 
         return f"""
-            SELECT message.date, handle.id, message.text, message.is_from_me, message.attributedBody
+            SELECT  message.date,
+                    handle.id,
+                    message.text,
+                    message.is_from_me,
+                    message.attributedBody
             FROM message
-            JOIN chat_message_join ON message.ROWID = chat_message_join.message_id
+            JOIN chat_message_join ON
+                 message.ROWID = chat_message_join.message_id
             {joins}
             WHERE chat_message_join.chat_id = ?
             ORDER BY message.date ASC;
@@ -182,7 +189,9 @@ class IMessageChatLoader(BaseChatLoader):
         cursor = conn.cursor()
 
         # See if chat_handle_join table exists:
-        query = """SELECT name FROM sqlite_master WHERE type='table' AND name='chat_handle_join';"""
+        query = """SELECT name FROM sqlite_master
+                   WHERE type='table' AND name='chat_handle_join';"""
+
         cursor.execute(query)
         is_chat_handle_join_exists = cursor.fetchone()
 
