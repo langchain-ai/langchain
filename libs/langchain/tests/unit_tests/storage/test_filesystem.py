@@ -77,3 +77,26 @@ def test_yield_keys(file_store: LocalFileStore) -> None:
     # Assert that the yielded keys match the expected keys
     expected_keys = ["key1", os.path.join("subdir", "key2")]
     assert keys == expected_keys
+
+
+def test_catches_forbidden_keys(file_store: LocalFileStore) -> None:
+    """Make sure we raise exception on keys that are not allowed; e.g., absolute path"""
+    with pytest.raises(InvalidKeyException):
+        file_store.mset([("/etc", b"value1")])
+    with pytest.raises(InvalidKeyException):
+        list(file_store.yield_keys("/etc/passwd"))
+    with pytest.raises(InvalidKeyException):
+        file_store.mget(["/etc/passwd"])
+
+    # check relative paths
+    with pytest.raises(InvalidKeyException):
+        list(file_store.yield_keys(".."))
+
+    with pytest.raises(InvalidKeyException):
+        file_store.mget(["../etc/passwd"])
+
+    with pytest.raises(InvalidKeyException):
+        file_store.mset([("../etc", b"value1")])
+
+    with pytest.raises(InvalidKeyException):
+        list(file_store.yield_keys("../etc/passwd"))
