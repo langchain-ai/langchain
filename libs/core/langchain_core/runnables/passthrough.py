@@ -298,7 +298,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             yield chunk
 
 
-_graph_passthrough = RunnablePassthrough()
+_graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 
 
 class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
@@ -365,9 +365,10 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         # add passthrough node and edges
         input_node = graph.first_node()
         output_node = graph.last_node()
-        passthrough_node = graph.add_node(_graph_passthrough)
-        graph.add_edge(input_node, passthrough_node)
-        graph.add_edge(passthrough_node, output_node)
+        if input_node is not None and output_node is not None:
+            passthrough_node = graph.add_node(_graph_passthrough)
+            graph.add_edge(input_node, passthrough_node)
+            graph.add_edge(passthrough_node, output_node)
         return graph
 
     def _invoke(
