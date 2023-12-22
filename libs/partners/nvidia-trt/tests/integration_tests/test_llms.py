@@ -8,7 +8,7 @@ _MODEL_NAME = "ensemble"
 
 @pytest.mark.skip(reason="Need a working Triton server")
 def test_stream() -> None:
-    """Test streaming tokens from nvidia-trt."""
+    """Test streaming tokens from NVIDIA TRT."""
     llm = TritonTensorRTLLM(model_name=_MODEL_NAME)
 
     for token in llm.stream("I'm Pickle Rick"):
