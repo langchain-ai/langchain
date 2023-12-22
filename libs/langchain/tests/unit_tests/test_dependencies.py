@@ -35,22 +35,24 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         package_name for package_name, required in is_required.items() if required
     ]
 
-    assert sorted(required_dependencies) == [
-        "PyYAML",
-        "SQLAlchemy",
-        "aiohttp",
-        "anyio",
-        "async-timeout",
-        "dataclasses-json",
-        "jsonpatch",
-        "langchain-core",
-        "langsmith",
-        "numpy",
-        "pydantic",
-        "python",
-        "requests",
-        "tenacity",
-    ]
+    assert sorted(required_dependencies) == sorted(
+        [
+            "PyYAML",
+            "SQLAlchemy",
+            "aiohttp",
+            "async-timeout",
+            "dataclasses-json",
+            "jsonpatch",
+            "langchain-core",
+            "langsmith",
+            "numpy",
+            "pydantic",
+            "python",
+            "requests",
+            "tenacity",
+            "langchain-community",
+        ]
+    )
 
     unrequired_dependencies = [
         package_name for package_name, required in is_required.items() if not required
@@ -104,5 +106,8 @@ def test_imports() -> None:
     from langchain.llms import OpenAI  # noqa: F401
     from langchain.retrievers import VespaRetriever  # noqa: F401
     from langchain.tools import DuckDuckGoSearchResults  # noqa: F401
-    from langchain.utilities import SerpAPIWrapper  # noqa: F401
+    from langchain.utilities import (
+        SearchApiAPIWrapper,  # noqa: F401
+        SerpAPIWrapper,  # noqa: F401
+    )
     from langchain.vectorstores import FAISS  # noqa: F401

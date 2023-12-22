@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """Wrapper around Anyscale Endpoint"""
 import os
 from typing import (
@@ -360,3 +361,10 @@ class Anyscale(BaseOpenAI):
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
         return create_llm_result(choices, prompts, token_usage, self.model_name)
+=======
+from langchain_community.llms.anyscale import (
+    Anyscale,
+)
+
+__all__ = ["Anyscale"]
+>>>>>>> upstream/master

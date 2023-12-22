@@ -232,6 +232,10 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """The name of the criterion being evaluated."""
     output_key: str = "results"  #: :meta private:
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     class Config:
         """Configuration for the QAEvalChain."""
 
@@ -507,6 +511,10 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
 class LabeledCriteriaEvalChain(CriteriaEvalChain):
     """Criteria evaluation chain that requires references."""
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @property
     def requires_reference(self) -> bool:

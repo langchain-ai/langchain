@@ -52,13 +52,7 @@ jobs:
         shell: bash
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
-          poetry install --with=test_integration
-          poetry run pip install google-cloud-aiplatform
-          poetry run pip install "boto3>=1.28.57"
-          if [[ ${{ matrix.python-version }} != "3.8" ]]
-          then
-            poetry run pip install fireworks-ai
-          fi
+          poetry install --with=test_integration,test
 
       - name: Run tests
         shell: bash
@@ -68,7 +62,9 @@ jobs:
           AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
           AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          AZURE_OPENAI_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
         run: |
           make scheduled_tests

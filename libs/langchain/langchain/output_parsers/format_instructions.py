@@ -26,21 +26,26 @@ Here is the output schema:
 {schema}
 ```"""
 
+YAML_FORMAT_INSTRUCTIONS = """The output should be formatted as a YAML instance that conforms to the given JSON schema below.
 
-XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
-1. Output should conform to the tags below. 
-2. If tags are not given, make them on your own.
-3. Remember to always open and close all the tags.
-
-As an example, for the tags ["foo", "bar", "baz"]:
-1. String "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>" is a well-formatted instance of the schema. 
-2. String "<foo>\n   <bar>\n   </foo>" is a badly-formatted instance.
-3. String "<foo>\n   <tag>\n   </tag>\n</foo>" is a badly-formatted instance.
-
-Here are the output tags:
+As an example, for the schema
 ```
-{tags}
-```"""
+{{'title': 'Players', 'description': 'A list of players', 'type': 'array', 'items': {{'$ref': '#/definitions/Player'}}, 'definitions': {{'Player': {{'title': 'Player', 'type': 'object', 'properties': {{'name': {{'title': 'Name', 'description': 'Player name', 'type': 'string'}}, 'avg': {{'title': 'Avg', 'description': 'Batting average', 'type': 'number'}}}}, 'required': ['name', 'avg']}}}}}}
+```
+a well formatted instance would be:
+```
+- name: John Doe
+  avg: 0.3
+- name: Jane Maxfield
+  avg: 1.4
+```
+
+Please follow the standard YAML formatting conventions with an indent of 2 spaces and make sure that the data types adhere strictly to the following JSON schema: 
+```
+{schema}
+```
+
+Make sure to always enclose the YAML output in triple backticks (```)"""
 
 
 PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS = """The output should be formatted as a string as the operation, followed by a colon, followed by the column or row to be queried on, followed by optional array parameters.

@@ -8,6 +8,7 @@ EXPECTED_ALL = [
     "Run",
     "RunLog",
     "RunLogPatch",
+    "LogStreamCallbackHandler",
 ]
 
 
