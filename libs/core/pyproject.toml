@@ -41,6 +41,7 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
+grandalf = "^0.8"
 
 [tool.poetry.group.test]
 optional = true
