@@ -76,12 +76,15 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
-    from langchain_core.runnables.graph import Graph
     from langchain_core.tracers.log_stream import RunLog, RunLogPatch
     from langchain_core.tracers.root_listeners import Listener
 
 
 Other = TypeVar("Other")
+
+
+class _SchemaConfig:
+    arbitrary_types_allowed = True
 
 
 class Runnable(Generic[Input, Output], ABC):
@@ -268,7 +271,9 @@ class Runnable(Generic[Input, Output], ABC):
             return root_type
 
         return create_model(
-            self.__class__.__name__ + "Input", __root__=(root_type, None)
+            self.__class__.__name__ + "Input",
+            __root__=(root_type, None),
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -299,7 +304,9 @@ class Runnable(Generic[Input, Output], ABC):
             return root_type
 
         return create_model(
-            self.__class__.__name__ + "Output", __root__=(root_type, None)
+            self.__class__.__name__ + "Output",
+            __root__=(root_type, None),
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -322,9 +329,6 @@ class Runnable(Generic[Input, Output], ABC):
             A pydantic model that can be used to validate config.
         """
 
-        class _Config:
-            arbitrary_types_allowed = True
-
         include = include or []
         config_specs = self.config_specs
         configurable = (
@@ -339,6 +343,7 @@ class Runnable(Generic[Input, Output], ABC):
                     )
                     for spec in config_specs
                 },
+                __config__=_SchemaConfig,
             )
             if config_specs
             else None
@@ -346,7 +351,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         return create_model(  # type: ignore[call-overload]
             self.__class__.__name__ + "Config",
-            __config__=_Config,
+            __config__=_SchemaConfig,
             **({"configurable": (configurable, None)} if configurable else {}),
             **{
                 field_name: (field_type, None)
@@ -1407,6 +1412,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         for k, v in next_input_schema.__fields__.items()
                         if k not in first.mapper.steps
                     },
+                    __config__=_SchemaConfig,
                 )
 
         return self.first.get_input_schema(config)
@@ -2008,6 +2014,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                     for k, v in step.get_input_schema(config).__fields__.items()
                     if k != "__root__"
                 },
+                __config__=_SchemaConfig,
             )
 
         return super().get_input_schema(config)
@@ -2019,6 +2026,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         return create_model(  # type: ignore[call-overload]
             "RunnableParallelOutput",
             **{k: (v.OutputType, None) for k, v in self.steps.items()},
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -2550,9 +2558,14 @@ class RunnableLambda(Runnable[Input, Output]):
                 return create_model(
                     "RunnableLambdaInput",
                     **{item[1:-1]: (Any, None) for item in items},  # type: ignore
+                    __config__=_SchemaConfig,
                 )
             else:
-                return create_model("RunnableLambdaInput", __root__=(List[Any], None))
+                return create_model(
+                    "RunnableLambdaInput",
+                    __root__=(List[Any], None),
+                    __config__=_SchemaConfig,
+                )
 
         if self.InputType != Any:
             return super().get_input_schema(config)
@@ -2561,6 +2574,7 @@ class RunnableLambda(Runnable[Input, Output]):
             return create_model(
                 "RunnableLambdaInput",
                 **{key: (Any, None) for key in dict_keys},  # type: ignore
+                __config__=_SchemaConfig,
             )
 
         return super().get_input_schema(config)
@@ -2783,6 +2797,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[self.bound.get_input_schema(config)],  # type: ignore
                 None,
             ),
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -2799,6 +2814,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[schema],  # type: ignore
                 None,
             ),
+            __config__=_SchemaConfig,
         )
 
     @property
