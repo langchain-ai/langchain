@@ -3,11 +3,7 @@ Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py"""
 
 import math
 import os
-from typing import Mapping, Sequence, Tuple
-
-from grandalf.graphs import Edge, Graph, Vertex  # type: ignore[import]
-from grandalf.layouts import SugiyamaLayout  # type: ignore[import]
-from grandalf.routing import EdgeViewer, route_with_lines  # type: ignore[import]
+from typing import Any, Mapping, Sequence, Tuple
 
 
 class VertexViewer:
@@ -161,7 +157,17 @@ class AsciiCanvas:
 
 def _build_sugiyama_layout(
     vertices: Mapping[str, str], edges: Sequence[Tuple[str, str]]
-) -> SugiyamaLayout:
+) -> Any:
+    try:
+        from grandalf.graphs import Edge, Graph, Vertex  # type: ignore[import]
+        from grandalf.layouts import SugiyamaLayout  # type: ignore[import]
+        from grandalf.routing import (  # type: ignore[import]
+            EdgeViewer,
+            route_with_lines,
+        )
+    except ImportError:
+        print("Install grandalf to draw graphs. `pip install grandalf`")
+        raise
     #
     # Just a reminder about naming conventions:
     # +------------X

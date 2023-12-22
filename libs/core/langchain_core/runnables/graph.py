@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable
+from langchain_core.runnables.graph_draw import draw
 
 
 class Edge(NamedTuple):
@@ -97,12 +98,6 @@ class Graph:
                 self.remove_node(last_node)
 
     def draw(self) -> str:
-        try:
-            from langchain_core.runnables.graph_draw import draw
-        except ImportError:
-            print("Install grandalf to draw graphs. `pip install grandalf`")
-            raise
-
         def node_data(node: Node) -> str:
             return (
                 node.data.__class__.__name__
