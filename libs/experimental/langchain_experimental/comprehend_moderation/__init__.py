@@ -19,8 +19,6 @@ from langchain_experimental.comprehend_moderation.toxicity import ComprehendToxi
 
 __all__ = [
     "BaseModeration",
-    "BaseModerationActions",
-    "BaseModerationFilters",
     "ComprehendPII",
     "ComprehendPromptSafety",
     "ComprehendToxicity",
