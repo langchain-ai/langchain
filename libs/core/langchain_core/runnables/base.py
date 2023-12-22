@@ -2035,15 +2035,18 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             step_graph = step.get_graph()
             step_graph.trim_first_node()
             step_graph.trim_last_node()
-            graph.extend(step_graph)
-            step_first_node = step_graph.first_node()
-            if not step_first_node:
-                raise ValueError(f"Runnable {step} has no first node")
-            step_last_node = step_graph.last_node()
-            if not step_last_node:
-                raise ValueError(f"Runnable {step} has no last node")
-            graph.add_edge(input_node, step_first_node)
-            graph.add_edge(step_last_node, output_node)
+            if not step_graph:
+                graph.add_edge(input_node, output_node)
+            else:
+                graph.extend(step_graph)
+                step_first_node = step_graph.first_node()
+                if not step_first_node:
+                    raise ValueError(f"Runnable {step} has no first node")
+                step_last_node = step_graph.last_node()
+                if not step_last_node:
+                    raise ValueError(f"Runnable {step} has no last node")
+                graph.add_edge(input_node, step_first_node)
+                graph.add_edge(step_last_node, output_node)
 
         return graph
 

@@ -24,6 +24,9 @@ class Graph:
     nodes: Dict[str, Node] = field(default_factory=dict)
     edges: List[Edge] = field(default_factory=list)
 
+    def __bool__(self) -> bool:
+        return bool(self.nodes)
+
     def next_id(self) -> str:
         return uuid4().hex
 
@@ -86,7 +89,11 @@ class Graph:
         ie. if removing it would not leave the graph without a "first" node."""
         first_node = self.first_node()
         if first_node:
-            if len([edge for edge in self.edges if edge.source == first_node.id]) == 1:
+            if (
+                len(self.nodes) == 1
+                or len([edge for edge in self.edges if edge.source == first_node.id])
+                == 1
+            ):
                 self.remove_node(first_node)
 
     def trim_last_node(self) -> None:
@@ -94,16 +101,31 @@ class Graph:
         ie. if removing it would not leave the graph without a "last" node."""
         last_node = self.last_node()
         if last_node:
-            if len([edge for edge in self.edges if edge.target == last_node.id]) == 1:
+            if (
+                len(self.nodes) == 1
+                or len([edge for edge in self.edges if edge.target == last_node.id])
+                == 1
+            ):
                 self.remove_node(last_node)
 
-    def draw(self) -> str:
+    def draw_ascii(self) -> str:
         def node_data(node: Node) -> str:
-            return (
-                node.data.__class__.__name__
-                if isinstance(node.data, Runnable)
-                else node.data.__name__
-            )
+            if isinstance(node.data, Runnable):
+                try:
+                    data = str(node.data)
+                    if (
+                        data.startswith("<")
+                        or data[0] != data[0].upper()
+                        or len(data.splitlines()) > 1
+                    ):
+                        data = node.data.__class__.__name__
+                    elif len(data) > 36:
+                        data = data[:36] + "..."
+                except Exception:
+                    data = node.data.__class__.__name__
+            else:
+                data = node.data.__name__
+            return data
 
         return draw(
             {node.id: node_data(node) for node in self.nodes.values()},

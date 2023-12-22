@@ -156,13 +156,17 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         str: the source code of the lambda function
     """
     try:
+        name = func.__name__ if func.__name__ != "<lambda>" else None
+    except AttributeError:
+        name = None
+    try:
         code = inspect.getsource(func)
         tree = ast.parse(textwrap.dedent(code))
         visitor = GetLambdaSource()
         visitor.visit(tree)
-        return visitor.source if visitor.count == 1 else None
+        return visitor.source if visitor.count == 1 else name
     except (SyntaxError, TypeError, OSError):
-        return None
+        return name
 
 
 def indent_lines_after_first(text: str, prefix: str) -> str:
