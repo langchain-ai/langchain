@@ -1,22 +1,9 @@
-"""Anyscale Endpoints chat wrapper. Relies heavily on ChatOpenAI."""
-from __future__ import annotations
-
-import logging
-import os
-import sys
-from typing import TYPE_CHECKING, Dict, Optional, Set
-
-import requests
-from langchain_core.messages import BaseMessage
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-
-from langchain_community.adapters.openai import convert_message_to_dict
-from langchain_community.chat_models.openai import (
-    ChatOpenAI,
-    _import_tiktoken,
+from langchain_community.chat_models.anyscale import (
+    ChatAnyscale,
 )
-from langchain_community.utils.openai import is_openai_v1
+<<<<<<< HEAD
+from langchain.utils import get_from_dict_or_env
+from langchain.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
     import tiktoken
@@ -24,7 +11,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
+DEFAULT_BASE_URL = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
 
@@ -43,7 +30,7 @@ class ChatAnyscale(ChatOpenAI):
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_models import ChatAnyscale
+            from langchain.chat_models import ChatAnyscale
             chat = ChatAnyscale(model_name="meta-llama/Llama-2-7b-chat-hf")
     """
 
@@ -56,15 +43,11 @@ class ChatAnyscale(ChatOpenAI):
     def lc_secrets(self) -> Dict[str, str]:
         return {"anyscale_api_key": "ANYSCALE_API_KEY"}
 
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        return False
-
-    anyscale_api_key: SecretStr
+    anyscale_api_key: SecretStr = Field(default=None)
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
-    anyscale_api_base: str = Field(default=DEFAULT_API_BASE)
+    anyscale_api_base: str = Field(default=DEFAULT_BASE_URL)
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
     anyscale_proxy: Optional[str] = None
@@ -75,7 +58,7 @@ class ChatAnyscale(ChatOpenAI):
     @staticmethod
     def get_available_models(
         anyscale_api_key: Optional[str] = None,
-        anyscale_api_base: str = DEFAULT_API_BASE,
+        anyscale_api_base: str = DEFAULT_BASE_URL,
     ) -> Set[str]:
         """Get available models from Anyscale API."""
         try:
@@ -102,14 +85,9 @@ class ChatAnyscale(ChatOpenAI):
 
         return {model["id"] for model in models_response.json()["data"]}
 
-    @root_validator(pre=True)
-    def validate_environment_override(cls, values: dict) -> dict:
+    @root_validator()
+    def validate_environment(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values,
-            "anyscale_api_key",
-            "ANYSCALE_API_KEY",
-        )
         values["anyscale_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
@@ -117,11 +95,11 @@ class ChatAnyscale(ChatOpenAI):
                 "ANYSCALE_API_KEY",
             )
         )
-        values["openai_api_base"] = get_from_dict_or_env(
+        values["anyscale_api_base"] = get_from_dict_or_env(
             values,
             "anyscale_api_base",
             "ANYSCALE_API_BASE",
-            default=DEFAULT_API_BASE,
+            default=DEFAULT_BASE_URL,
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values,
@@ -140,8 +118,8 @@ class ChatAnyscale(ChatOpenAI):
         try:
             if is_openai_v1():
                 client_params = {
-                    "api_key": values["openai_api_key"],
-                    "base_url": values["openai_api_base"],
+                    "api_key": values["anyscale_api_key"].get_secret_value(),
+                    "base_url": values["anyscale_api_base"],
                     # To do: future support
                     # "organization": values["openai_organization"],
                     # "timeout": values["request_timeout"],
@@ -152,6 +130,8 @@ class ChatAnyscale(ChatOpenAI):
                 }
                 values["client"] = openai.OpenAI(**client_params).chat.completions
             else:
+                values["openai_api_base"] = values["anyscale_api_base"]
+                values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()
                 values["client"] = openai.ChatCompletion
         except AttributeError as exc:
             raise ValueError(
@@ -164,20 +144,21 @@ class ChatAnyscale(ChatOpenAI):
             values["model_name"] = DEFAULT_MODEL
 
         model_name = values["model_name"]
-
-        available_models = cls.get_available_models(
-            values["openai_api_key"],
-            values["openai_api_base"],
-        )
-
-        if model_name not in available_models:
-            raise ValueError(
-                f"Model name {model_name} not found in available models: "
-                f"{available_models}.",
+        if model_name != "test":
+            available_models = cls.get_available_models(
+                values["anyscale_api_key"].get_secret_value(),
+                values["anyscale_api_base"],
             )
 
-        values["available_models"] = available_models
+            if model_name not in available_models:
+                raise ValueError(
+                    f"Model name {model_name} not found in available models: "
+                    f"{available_models}.",
+                )
 
+            values["available_models"] = available_models
+        else:
+            values["available_models"] = "test_models"
         return values
 
     def _get_encoding_model(self) -> tuple[str, tiktoken.Encoding]:
@@ -197,24 +178,7 @@ class ChatAnyscale(ChatOpenAI):
 
     def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
         """Calculate num tokens with tiktoken package.
+=======
+>>>>>>> upstream/master
 
-        Official documentation: https://github.com/openai/openai-cookbook/blob/
-        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
-        if sys.version_info[1] <= 7:
-            return super().get_num_tokens_from_messages(messages)
-        model, encoding = self._get_encoding_model()
-        tokens_per_message = 3
-        tokens_per_name = 1
-        num_tokens = 0
-        messages_dict = [convert_message_to_dict(m) for m in messages]
-        for message in messages_dict:
-            num_tokens += tokens_per_message
-            for key, value in message.items():
-                # Cast str(value) in case the message value is not a string
-                # This occurs with function messages
-                num_tokens += len(encoding.encode(str(value)))
-                if key == "name":
-                    num_tokens += tokens_per_name
-        # every reply is primed with <im_start>assistant
-        num_tokens += 3
-        return num_tokens
+__all__ = ["ChatAnyscale"]
