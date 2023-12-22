@@ -77,6 +77,9 @@ from langchain_community.document_loaders.dataframe import DataFrameLoader
 from langchain_community.document_loaders.diffbot import DiffbotLoader
 from langchain_community.document_loaders.directory import DirectoryLoader
 from langchain_community.document_loaders.discord import DiscordChatLoader
+from langchain_community.document_loaders.doc_intelligence import (
+    AzureAIDocumentIntelligenceLoader,
+)
 from langchain_community.document_loaders.docugami import DocugamiLoader
 from langchain_community.document_loaders.docusaurus import DocusaurusLoader
 from langchain_community.document_loaders.dropbox import DropboxLoader
@@ -247,6 +250,7 @@ __all__ = [
     "AssemblyAIAudioTranscriptLoader",
     "AsyncHtmlLoader",
     "AzureAIDataLoader",
+    "AzureAIDocumentIntelligenceLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
