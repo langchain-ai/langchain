@@ -18,6 +18,8 @@ class SlackGetMessageSchema(BaseModel):
 
 
 class SlackGetMessage(SlackBaseTool):
+    """Tool that gets Slack messages."""
+
     name: str = "get_messages"
     description: str = "Use this tool to get messages from a channel."
 

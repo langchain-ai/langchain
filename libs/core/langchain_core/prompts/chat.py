@@ -87,13 +87,17 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     variable_name: str
     """Name of variable to use as messages."""
 
+    optional: bool = False
+
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "chat"]
 
-    def __init__(self, variable_name: str, **kwargs: Any):
-        return super().__init__(variable_name=variable_name, **kwargs)
+    def __init__(self, variable_name: str, *, optional: bool = False, **kwargs: Any):
+        return super().__init__(
+            variable_name=variable_name, optional=optional, **kwargs
+        )
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
@@ -104,7 +108,11 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         Returns:
             List of BaseMessage.
         """
-        value = kwargs[self.variable_name]
+        value = (
+            kwargs.get(self.variable_name, [])
+            if self.optional
+            else kwargs[self.variable_name]
+        )
         if not isinstance(value, list):
             raise ValueError(
                 f"variable {self.variable_name} should be a list of base messages, "

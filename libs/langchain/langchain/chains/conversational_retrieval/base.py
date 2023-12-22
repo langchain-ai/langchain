@@ -55,8 +55,12 @@ def _get_chat_history(chat_history: List[CHAT_TURN_TYPE]) -> str:
 
 
 class InputType(BaseModel):
+    """Input type for ConversationalRetrievalChain."""
+
     question: str
+    """The question to answer."""
     chat_history: List[CHAT_TURN_TYPE] = Field(default_factory=list)
+    """The chat history to use for retrieval."""
 
 
 class BaseConversationalRetrievalChain(Chain):
