@@ -33,27 +33,36 @@ For more details, see our [Installation guide](/docs/get_started/installation).
 
 ### Environment
 
-Using LangChain will usually require integrations with one or more model providers, data stores, APIs, etc. For this example, we'll use OpenAI's model APIs.
+Using LangChain will usually require integrations with one or more model providers, data stores, APIs, etc. For this getting started guide, we will provide two options: using OpenAI (a popular model available via API) or using a local open source model.
 
-First we'll need to install their Python package:
+<Tabs>
+  <TabItem value="openai" label="OpenAI" default>
+    First we'll need to install their Python package:
 
-```bash
-pip install openai
-```
+    ```bash
+    pip install openai
+    ```
 
-Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
+    Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
 
-```bash
-export OPENAI_API_KEY="..."
-```
+    ```bash
+    export OPENAI_API_KEY="..."
+    ```
 
-If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
+    If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
 
-```python
-from langchain.chat_models import ChatOpenAI
+    ```python
+    from langchain.chat_models import ChatOpenAI
 
-llm = ChatOpenAI(openai_api_key="...")
-```
+    llm = ChatOpenAI(openai_api_key="...")
+    ```
+  </TabItem>
+  <TabItem value="conda" label="Conda">
+    <CodeBlock language="bash">conda install langchain -c conda-forge</CodeBlock>
+  </TabItem>
+</Tabs>
+
+
 
 ### LangSmith
 
