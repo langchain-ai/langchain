@@ -35,7 +35,7 @@ from typing_extensions import Literal, get_args
 
 from langchain_core.load.dump import dumpd, dumps
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core.pydantic_v1 import BaseConfig, BaseModel, Field, create_model
 from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,
@@ -83,7 +83,7 @@ if TYPE_CHECKING:
 Other = TypeVar("Other")
 
 
-class _SchemaConfig:
+class _SchemaConfig(BaseConfig):
     arbitrary_types_allowed = True
 
 

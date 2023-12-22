@@ -123,8 +123,8 @@ class NonLocals(ast.NodeVisitor):
     """Get nonlocal variables accessed."""
 
     def __init__(self) -> None:
-        self.loads = set()
-        self.stores = set()
+        self.loads: Set[str] = set()
+        self.stores: Set[str] = set()
 
     def visit_Name(self, node: ast.Name) -> Any:
         if isinstance(node.ctx, ast.Load):
