@@ -1,23 +1,36 @@
-"""Vector search in Google Cloud BigQuery."""
+"""Vector Store in Google Cloud BigQuery."""
 from __future__ import annotations
 
-from typing import (
-    Any,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+import asyncio
+import json
+import logging
+import sys
+import uuid
+from datetime import datetime
+from functools import partial
+from threading import Lock, Thread
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
-from google.cloud import bigquery
-from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
+import numpy as np
+from langchain.docstore.document import Document
+from langchain.schema.embeddings import Embeddings
+from langchain.schema.vectorstore import VectorStore
+from langchain.vectorstores.utils import maximal_marginal_relevance
 
 from langchain_community.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.EUCLIDEAN_DISTANCE
+DEFAULT_DOC_ID_COLUMN_NAME = "doc_id"  # document id
+DEFAULT_TEXT_EMBEDDING_COLUMN_NAME = "text_embedding"  # embeddings vectors
+DEFAULT_METADATA_COLUMN_NAME = "metadata"  # document metadata
+DEFAULT_CONTENT_COLUMN_NAME = "content"  # text content, do not rename
+DEFAULT_TOP_K = 4  # default number of documents returned from similarity search
+
+_MIN_INDEX_ROWS = 10000  # minimal number of rows for creating an index
+_SLOW_SEARCH_SECONDS = 2.5  # Search jobs longer than this are considered slow.
+_INDEX_CHECK_PERIOD_SECONDS = 120  # Do not check for index more often that this.
+
+_vector_table_lock = Lock()  # process-wide BigQueryVectorSearch table lock
 
 
 class BigQueryVectorSearch(VectorStore):
@@ -29,30 +42,36 @@ class BigQueryVectorSearch(VectorStore):
 
     def __init__(
         self,
+        embedding: Embeddings,
         project_id: str,
         dataset_name: str,
         table_name: str,
-        content_field: str,
-        vector_field: str,
-        embedding: Embeddings,
-        index_field: str = None,
-        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         location: str = "US",
-        metadata: str = None,
+        content_field: str = DEFAULT_CONTENT_COLUMN_NAME,
+        metadata_field: str = DEFAULT_METADATA_COLUMN_NAME,
+        text_embedding_field: str = DEFAULT_TEXT_EMBEDDING_COLUMN_NAME,
+        doc_id_field: str = DEFAULT_DOC_ID_COLUMN_NAME,
+        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         credentials: Optional[Any] = None,
     ):
         """Constructor for BigQueryVectorSearch.
 
         Args:
+            embedding (Embeddings): Text Embedding model to use.
             project_id (str): GCP project.
             dataset_name (str): BigQuery dataset to store documents and embeddings.
             table_name (str): BigQuery table name.
+            location (str, optional): BigQuery region. Defaults to
+                                      `US`(multi-region).
             content_field (str): Specifies the column to store the content.
-            vector_field (str): Specifies the column to store the vector.
-            embedding (Embeddings): Embedding model to use.
-            index_field (str, Optional): Specifies the column to store
-                the vector index.
-
+                                 Defaults to `content`.
+            metadata_field (str): Specifies the column to store the metadata.
+                                  Defaults to `metadata`.
+            text_embedding_field (str): Specifies the column to store
+                                        the embeddings vector.
+                                        Defaults to `text_embedding`.
+            doc_id_field (str): Specifies the column to store the document id.
+                                Defaults to `doc_id`.
             distance_strategy (DistanceStrategy, optional):
                 Determines the strategy employed for calculating
                 the distance between vectors in the embedding space.
@@ -64,14 +83,13 @@ class BigQueryVectorSearch(VectorStore):
                     two vectors. This metric considers the geometric distance in
                     the vector space, and might be more suitable for embeddings
                     that rely on spatial relationships. This is the default behavior
-
-            location (str, optional): BigQuery region. Defaults to
-                `US`(multi-region).
             credentials (Credentials, optional): Custom Google Cloud credentials
                 to use. Defaults to None.
         """
         try:
-            self.bqclient = bigquery.Client(
+            from google.cloud import bigquery
+
+            self.bq_client = bigquery.Client(
                 project=project_id, location=location, credentials=credentials
             )
         except ModuleNotFoundError:
@@ -79,156 +97,143 @@ class BigQueryVectorSearch(VectorStore):
                 "Please, install or upgrade the google-cloud-bigquery library: "
                 "pip install google-cloud-bigquery"
             )
-
+        self._logger = logging.getLogger(__name__)
+        self._creating_index = False
+        self._have_index = False
+        self.embedding_model = embedding
         self.project_id = project_id
         self.dataset_name = dataset_name
         self.table_name = table_name
-        self.content_field = content_field
-        self.vector_field = vector_field
-        self.embedding = embedding
-        self.index_field = index_field
-        self.distance_strategy = distance_strategy
         self.location = location
-        self.metadata = metadata
-
+        self.content_field = content_field
+        self.metadata_field = metadata_field
+        self.text_embedding_field = text_embedding_field
+        self.doc_id_field = doc_id_field
+        self.distance_strategy = distance_strategy
         self._full_table_id = (
             f"{self.project_id}." f"{self.dataset_name}." f"{self.table_name}"
         )
+        self._logger.debug("Using table `%s`", self.full_table_id)
+        with _vector_table_lock:
+            self.vectors_table = self._initialize_table()
+        self._last_index_check = datetime.min
+        self._initialize_vector_index()
 
-        self.vectors_table = self._validate_table(self.full_table_id)
+    def _initialize_table(self) -> Any:
+        """Validates or creates the BigQuery table."""
+        from google.cloud import bigquery
 
-    @property
-    def embeddings(self) -> Embeddings:
-        return self.embedding
-
-    @property
-    def full_table_id(self) -> str:
-        return self._full_table_id
-
-    def _validate_table(self, full_table_id: str) -> Any:
-        """Validate the BigQuery dataset and table."""
-        from google.api_core.exceptions import NotFound
-
-        table_ref = bigquery.table.TableReference.from_string(
-            full_table_id, default_project=self.project_id
-        )
-
-        try:
-            table = self.bqclient.get_table(table_ref)
-            self._validate_columns(table)
-            print(f"The table `{full_table_id}` is valid.")
-            return table
-        except NotFound:
-            raise NotFound(f"The dataset `{full_table_id}` is not found.")
-
-    def _validate_columns(self, table=bigquery.Table) -> Any:
-        """Validate the schema contains one embedding and one content column."""
-        schema = table.schema
-        content_qualified = False
-        vector_qualified = False
-
-        for table_field_schema in schema:
-            if (
-                table_field_schema.field_type == "STRING"
-                and table_field_schema.name == self.content_field
-            ):
-                content_qualified = True
-            elif (
-                table_field_schema.field_type.startswith("FLOAT")
-                and table_field_schema.name == self.vector_field
-            ):
-                vector_qualified = True
-
-        if not content_qualified or not vector_qualified:
-            raise ValueError(
-                "The table schema should contain vector_filed column "
-                "in FLOAT type and content_field column in STRING type."
+        table_ref = bigquery.TableReference.from_string(self._full_table_id)
+        table = self.bq_client.create_table(table_ref, exists_ok=True)
+        changed_schema = False
+        schema = table.schema.copy()
+        columns = {c.name: c for c in schema}
+        if self.doc_id_field not in columns:
+            changed_schema = True
+            schema.append(
+                bigquery.SchemaField(name=self.doc_id_field, field_type="STRING")
             )
-      
-    def add_texts(
-      self,
-      texts: Union[str, Iterable[str]],
-      metadatas: Optional[List[dict]] = None,
-      embeddings: Optional[List[List[float]]] = None,
-      **kwargs: Any,
-  ) -> List[str]:
-      """Add more texts to the vectorstore.
+        elif (
+            columns[self.doc_id_field].field_type != "STRING"
+            or columns[self.doc_id_field].mode == "REPEATED"
+        ):
+            raise ValueError(f"Column {self.doc_id_field} must be of " "STRING type")
+        if self.metadata_field not in columns:
+            changed_schema = True
+            schema.append(
+                bigquery.SchemaField(name=self.metadata_field, field_type="JSON")
+            )
+        elif (
+            columns[self.metadata_field].field_type not in ["JSON", "STRING"]
+            or columns[self.metadata_field].mode == "REPEATED"
+        ):
+            raise ValueError(
+                f"Column {self.metadata_field} must be of STRING or JSON type"
+            )
+        if self.content_field not in columns:
+            changed_schema = True
+            schema.append(
+                bigquery.SchemaField(name=self.content_field, field_type="STRING")
+            )
+        elif (
+            columns[self.content_field].field_type != "STRING"
+            or columns[self.content_field].mode == "REPEATED"
+        ):
+            raise ValueError(f"Column {self.content_field} must be of " "STRING type")
+        if self.text_embedding_field not in columns:
+            changed_schema = True
+            schema.append(
+                bigquery.SchemaField(
+                    name=self.text_embedding_field,
+                    field_type="FLOAT64",
+                    mode="REPEATED",
+                )
+            )
+        elif (
+            columns[self.text_embedding_field].field_type not in ("FLOAT", "FLOAT64")
+            or columns[self.text_embedding_field].mode != "REPEATED"
+        ):
+            raise ValueError(
+                f"Column {self.text_embedding_field} must be of " "ARRAY<FLOAT64> type"
+            )
+        if changed_schema:
+            self._logger.debug("Updated table `%s` schema.", self.full_table_id)
+            table.schema = schema
+            table = self.bq_client.update_table(table, fields=["schema"])
+        return table
 
-      Args:
-          texts (Iterable[str]): Iterable of strings/text to add to the vectorstore.
-          metadatas (Optional[List[dict]], optional): Optional list of metadatas.
-              Defaults to None.
-          embeddings (Optional[List[List[float]]], optional): Optional pre-generated
-              embeddings. Defaults to None.
-
-      Returns:
-          List[str]: empty list.
-      """
-      if isinstance(texts, str):
-          texts = [texts]
-      embedded_texts = [self.embeddings.embed_query(text) for text in texts]
-      list_of_embeddings_texts = list(zip(embedded_texts, texts))
-      for pair in list_of_embeddings_texts:
-          self._add_text_with_embedding_in_table(pair)
-    
-
-    def _add_text_with_embedding_in_table(self, pair: Tuple) -> List[str]:
-        """Insert the text with associated embedding into the table."""
-        sql = f"""
-INSERT INTO `{self.full_table_id}` (
-{self.content_field}, {self.vector_field}
-) VALUES (
-'{list(pair)[1]}', ARRAY{list(pair)[0]}
-)
-"""
-        job_config = bigquery.QueryJobConfig()
-
-        self.bqclient.query(sql, job_config=job_config)
-        return []
-    
-    def similarity_search(
-        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
-    ) -> List[Document]:
-        """Returns the most similar indexed documents to the query text.
-
-        Uses cosine similarity.
-
-        Args:
-            query (str): The query text for which to find similar documents.
-            k (int): The number of documents to return. Default is 4.
-            filter (dict): A dictionary of metadata fields and values to filter by.
-
-        Returns:
-            List[Document]: A list of documents that are most similar to the query text.
-        """
-        docs_and_scores = self.similarity_search_with_score(
-            query=query, k=k, filter=filter
-        )
-        return [doc for doc, _ in docs_and_scores]
-
-    def similarity_search_with_score(
-        self, query: str, k: int = 4, filter: Optional[dict] = None
-    ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to query. Uses cosine similarity.
-
-        Args:
-            query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-            filter: A dictionary of metadata fields and values to filter by.
-                    Defaults to None.
-        """
-        document_tuples = self._search_with_score_and_embeddings(query, k, filter)
-        return [(doc, distance) for doc, _, distance in document_tuples]
-
-    def _create_vector_index(self) -> Any:
+    def _initialize_vector_index(self) -> Any:
         """
         A vector index in BigQuery table enables efficient
         approximate vector search.
         """
-        job_config = bigquery.QueryJobConfig()
+        from google.cloud import bigquery
 
-        index_col = "my_index" if self.index_field is None else self.index_field
+        if self._have_index or self._creating_index:
+            # Already have an index or in the process of creating one.
+            return
+        table = self.bq_client.get_table(self.vectors_table)
+        if (table.num_rows or 0) < _MIN_INDEX_ROWS:
+            # Not enough rows to create index.
+            self._logger.debug("Not enough rows to create a vector index.")
+            return
+        # Check if index exists, create if necessary
+        check_query = (
+            f"SELECT 1 FROM `{self.project_id}.{self.dataset_name}"
+            ".INFORMATION_SCHEMA.VECTOR_INDEXES` WHERE"
+            f" table_name = '{self.table_name}'"
+        )
+        job = self.bq_client.query(
+            check_query, api_method=bigquery.enums.QueryApiMethod.QUERY
+        )
+        if job.result().total_rows == 0:
+            # Need to create an index. Make it in a separate thread.
+            self._create_index_in_background()
+        else:
+            self._logger.debug("Vector index already exists.")
+            self._have_index = True
 
+    def _create_index_in_background(self):
+        with _vector_table_lock:
+            if (
+                datetime.utcnow() - self._last_index_check
+            ).total_seconds() < _INDEX_CHECK_PERIOD_SECONDS:
+                return
+            if self._creating_index or self._have_index:
+                return
+            self._last_index_check = datetime.utcnow()
+            self._creating_index = True
+            self._logger.debug("Trying to create a vector index.")
+            thread = Thread(target=self._create_index, daemon=True)
+            thread.start()
+
+    def _create_index(self):
+        from google.api_core.exceptions import ClientError
+
+        table = self.bq_client.get_table(self.vectors_table)
+        if (table.num_rows or 0) < _MIN_INDEX_ROWS:
+            # Not enough rows to create index.
+            return
         if self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             distance_type = "EUCLIDEAN"
         elif self.distance_strategy == DistanceStrategy.COSINE:
@@ -236,71 +241,587 @@ INSERT INTO `{self.full_table_id}` (
         # Default to EUCLIDEAN_DISTANCE
         else:
             distance_type = "EUCLIDEAN"
-        sql = f"""
-      CREATE OR REPLACE VECTOR INDEX `{self.project_id}.{self.dataset_name}.{index_col}`
-      ON `{self.full_table_id}`({self.vector_field})
-      OPTIONS(distance_type="{distance_type}", index_type="IVF")
-      """
-        job = self.bqclient.query(sql, job_config=job_config)
-        return job
+        index_name = f"{self.table_name}_langchain_index"
+        try:
+            sql = f"""
+                CREATE VECTOR INDEX IF NOT EXISTS
+                `{self.project_id}.{self.dataset_name}.{index_name}`
+                ON `{self.full_table_id}`({self.text_embedding_field})
+                OPTIONS(distance_type="{distance_type}", index_type="IVF")
+            """
+            self.bq_client.query(sql).result()
+            self._have_index = True
+        except ClientError as ex:
+            self._logger.debug("Vector index creation failed (%s).", ex.args[0])
+        finally:
+            self._creating_index = False
 
-    def _create_search_input_table(
+    def _persist(self, data: Dict[str, Any]) -> None:
+        """Saves documents and embeddings to BigQuery."""
+        from google.cloud import bigquery
+
+        data_len = len(data[list(data.keys())[0]])
+        if data_len == 0:
+            return
+
+        list_of_dicts = [dict(zip(data, t)) for t in zip(*data.values())]
+
+        job_config = bigquery.LoadJobConfig()
+        job_config.schema = self.vectors_table.schema
+        job_config.schema_update_options = (
+            bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION
+        )
+        job_config.write_disposition = bigquery.WriteDisposition.WRITE_APPEND
+        job = self.bq_client.load_table_from_json(
+            list_of_dicts, self.vectors_table, job_config=job_config
+        )
+        job.result()
+
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return self.embedding_model
+
+    @property
+    def full_table_id(self) -> str:
+        return self._full_table_id
+
+    def add_texts(
+        self,
+        texts: List[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadata associated with the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        ids = [uuid.uuid4().hex for _ in texts]
+        values_dict: Dict[str, List[Any]] = {
+            self.content_field: texts,
+            self.doc_id_field: ids,
+        }
+        if not metadatas:
+            metadatas = []
+        len_diff = len(ids) - len(metadatas)
+        add_meta = [None for _ in range(0, len_diff)]
+        metadatas = [m if m is not None else {} for m in metadatas + add_meta]
+        values_dict[self.metadata_field] = metadatas
+        embs = self.embedding_model.embed_documents(texts)
+        values_dict[self.text_embedding_field] = embs
+        self._persist(values_dict)
+        return ids
+
+    def get_documents(
+        self, ids: Optional[List[str]] = None, filter: Optional[Dict[str, Any]] = None
+    ) -> List[Document]:
+        """Search documents by their ids or metadata values.
+
+        Args:
+            ids: List of ids of documents to retrieve from the vectorstore.
+            filter: Filter on metadata properties, e.g.
+                            {
+                                "str_property": "foo",
+                                "int_property": 123
+                            }
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        if ids and len(ids) > 0:
+            from google.cloud import bigquery
+
+            job_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ArrayQueryParameter("ids", "STRING", ids),
+                ]
+            )
+            id_expr = f"{self.doc_id_field} IN UNNEST(@ids)"
+        else:
+            job_config = None
+            id_expr = "TRUE"
+        if filter:
+            filter_expressions = []
+            for i in filter.items():
+                if isinstance(i[1], float):
+                    expr = (
+                        "ABS(CAST(JSON_VALUE("
+                        f"`{self.metadata_field}`,'$.{i[0]}') "
+                        f"AS FLOAT64) - {i[1]}) "
+                        f"<= {sys.float_info.epsilon}"
+                    )
+                else:
+                    val = str(i[1]).replace('"', '\\"')
+                    expr = (
+                        f"JSON_VALUE(`{self.metadata_field}`,'$.{i[0]}')" f' = "{val}"'
+                    )
+                filter_expressions.append(expr)
+            filter_expression_str = " AND ".join(filter_expressions)
+            where_filter_expr = f" AND ({filter_expression_str})"
+        else:
+            where_filter_expr = ""
+
+        job = self.bq_client.query(
+            f"""
+                    SELECT * FROM `{self.full_table_id}` WHERE {id_expr}
+                    {where_filter_expr}
+                    """,
+            job_config=job_config,
+        )
+        docs: List[Document] = []
+        for row in job:
+            metadata = None
+            if self.metadata_field:
+                metadata = row[self.metadata_field]
+            if metadata:
+                metadata = json.loads(metadata)
+            else:
+                metadata = {}
+            metadata["__id"] = row[self.doc_id_field]
+            doc = Document(page_content=row[self.content_field], metadata=metadata)
+            docs.append(doc)
+        return docs
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        if not ids or len(ids) == 0:
+            return True
+        from google.cloud import bigquery
+
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ArrayQueryParameter("ids", "STRING", ids),
+            ]
+        )
+        self.bq_client.query(
+            f"""
+                    DELETE FROM `{self.full_table_id}` WHERE {self.doc_id_field}
+                    IN UNNEST(@ids)
+                    """,
+            job_config=job_config,
+        ).result()
+        return True
+
+    async def adelete(
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self.delete, **kwargs), ids
+        )
+
+    def _search_with_score_and_embeddings_by_vector(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_TOP_K,
+        filter: Optional[Dict[str, Any]] = None,
+        brute_force: bool = False,
+        fraction_lists_to_search: Optional[float] = None,
+    ) -> List[Tuple[Document, List[float], float]]:
+        from google.cloud import bigquery
+
+        filter_expr = "TRUE"
+        if filter:
+            filter_expressions = []
+            for i in filter.items():
+                if isinstance(i[1], float):
+                    expr = (
+                        "ABS(CAST(JSON_VALUE("
+                        f"base.`{self.metadata_field}`,'$.{i[0]}') "
+                        f"AS FLOAT64) - {i[1]}) "
+                        f"<= {sys.float_info.epsilon}"
+                    )
+                else:
+                    val = str(i[1]).replace('"', '\\"')
+                    expr = (
+                        f"JSON_VALUE(base.`{self.metadata_field}`,'$.{i[0]}')"
+                        f' = "{val}"'
+                    )
+                filter_expressions.append(expr)
+            filter_expression_str = " AND ".join(filter_expressions)
+            filter_expr += f" AND ({filter_expression_str})"
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ArrayQueryParameter("v", "FLOAT64", embedding),
+            ],
+            use_query_cache=False,
+            priority=bigquery.QueryPriority.BATCH,
+        )
+        if self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+            distance_type = "EUCLIDEAN"
+        elif self.distance_strategy == DistanceStrategy.COSINE:
+            distance_type = "COSINE"
+        # Default to EUCLIDEAN_DISTANCE
+        else:
+            distance_type = "EUCLIDEAN"
+        if brute_force:
+            options_string = ",options => '{\"use_brute_force\":true}'"
+        elif fraction_lists_to_search:
+            if fraction_lists_to_search == 0 or fraction_lists_to_search >= 1.0:
+                raise ValueError(
+                    "`fraction_lists_to_search` must be between " "0.0 and 1.0"
+                )
+            options_string = (
+                ',options => \'{"fraction_lists_to_search":'
+                f"{fraction_lists_to_search}}}'"
+            )
+        else:
+            options_string = ""
+        query = f"""
+            SELECT
+                base.*,
+                distance AS _vector_search_distance
+            FROM VECTOR_SEARCH(
+                TABLE `{self.full_table_id}`,
+                "{self.text_embedding_field}",
+                (SELECT @v AS {self.text_embedding_field}),
+                distance_type => "{distance_type}",
+                top_k => {k}
+                {options_string}
+            )
+            WHERE {filter_expr}
+            LIMIT {k}
+        """
+        document_tuples: List[Tuple[Document, List[float], float]] = []
+        started = datetime.utcnow()
+        # TODO(vladkol): Use jobCreationMode=JOB_CREATION_OPTIONAL when available.
+        job = self.bq_client.query(
+            query, job_config=job_config, api_method=bigquery.enums.QueryApiMethod.QUERY
+        )
+        ended = datetime.utcnow()
+        for row in job:
+            metadata = row[self.metadata_field]
+            if metadata:
+                metadata = json.loads(metadata)
+            else:
+                metadata = {}
+            metadata["__id"] = row[self.doc_id_field]
+            doc = Document(page_content=row[self.content_field], metadata=metadata)
+            document_tuples.append(
+                (doc, row[self.text_embedding_field], row["_vector_search_distance"])
+            )
+        # Updating job start and end time with real values if available.
+        started = job.started or started
+        ended = job.ended or ended
+        # Checking if the query was too slow.
+        if (
+            not self._have_index
+            and (ended - started).total_seconds() >= _SLOW_SEARCH_SECONDS
+        ):
+            self._create_index_in_background()
+        return document_tuples
+
+    def similarity_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_TOP_K,
+        filter: Optional[Dict[str, Any]] = None,
+        brute_force: bool = False,
+        fraction_lists_to_search: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on metadata properties, e.g.
+                            {
+                                "str_property": "foo",
+                                "int_property": 123
+                            }
+            brute_force: Whether to use brute force search. Defaults to False.
+            fraction_lists_to_search: Optional percentage of lists to search,
+                must be in range 0.0 and 1.0, exclusive.
+                If Node, uses service's default which is 0.05.
+
+        Returns:
+            List of Documents most similar to the query vector with distance.
+        """
+        del kwargs
+        document_tuples = self._search_with_score_and_embeddings_by_vector(
+            embedding, k, filter, brute_force, fraction_lists_to_search
+        )
+        return [(doc, distance) for doc, _, distance in document_tuples]
+
+    def similarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_TOP_K,
+        filter: Optional[Dict[str, Any]] = None,
+        brute_force: bool = False,
+        fraction_lists_to_search: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on metadata properties, e.g.
+                            {
+                                "str_property": "foo",
+                                "int_property": 123
+                            }
+            brute_force: Whether to use brute force search. Defaults to False.
+            fraction_lists_to_search: Optional percentage of lists to search,
+                must be in range 0.0 and 1.0, exclusive.
+                If Node, uses service's default which is 0.05.
+
+        Returns:
+            List of Documents most similar to the query vector.
+        """
+        tuples = self.similarity_search_with_score_by_vector(
+            embedding, k, filter, brute_force, fraction_lists_to_search, **kwargs
+        )
+        return [i[0] for i in tuples]
+
+    def similarity_search_with_score(
         self,
         query: str,
-    ) -> Any:
-        """
-        Create a new table with vector to search.
-        """
-        job_config = bigquery.QueryJobConfig()
-        ## Create a new table with query to search in the existing dataset
-        embedding = self.embeddings.embed_query(query)
-        new_table = f"{self.project_id}.{self.dataset_name}.test_query"
-        sql = f"""
-    CREATE OR REPLACE TABLE `{new_table}` (
-        {self.content_field} STRING,
-        {self.vector_field} ARRAY<FLOAT64>
-    ) AS
-    SELECT '{query}', ARRAY{embedding}
-    """
-        job = self.bqclient.query(sql, job_config=job_config)
-        return job
+        k: int = DEFAULT_TOP_K,
+        filter: Optional[Dict[str, Any]] = None,
+        brute_force: bool = False,
+        fraction_lists_to_search: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Run similarity search with score.
 
-    def _bigquery_vector_search(self, k: int = 4) -> Any:
+        Args:
+            query: search query text.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on metadata properties, e.g.
+                            {
+                                "str_property": "foo",
+                                "int_property": 123
+                            }
+            brute_force: Whether to use brute force search. Defaults to False.
+            fraction_lists_to_search: Optional percentage of lists to search,
+                must be in range 0.0 and 1.0, exclusive.
+                If Node, uses service's default which is 0.05.
+
+        Returns:
+            List of Documents most similar to the query vector, with similarity scores.
         """
-        Conduct vector search in BigQuery.
-        """
-        job_config = bigquery.QueryJobConfig()
-        new_table = f"{self.project_id}.{self.dataset_name}.test_query"
-        vector_search_sql = f"""
-    SELECT
-        base.{self.content_field} AS {self.content_field},
-        base.{self.vector_field} AS {self.vector_field},
-        distance
-    FROM VECTOR_SEARCH(
-        TABLE `{self.full_table_id}`, '{self.vector_field}',
-        TABLE `{new_table}`, top_k => {k})
-    """
-        vector_search_job = self.bqclient.query(
-            vector_search_sql, job_config=job_config
+        emb = self.embedding_model.embed_query(query)  # type: ignore
+        return self.similarity_search_with_score_by_vector(
+            emb, k, filter, brute_force, fraction_lists_to_search, **kwargs
         )
-        return vector_search_job
 
-    def _search_with_score_and_embeddings(
-        self, query: str, k: int = 4, filter: Optional[dict] = None
+    def similarity_search(
+        self,
+        query: str,
+        k: int = DEFAULT_TOP_K,
+        filter: Optional[Dict[str, Any]] = None,
+        brute_force: bool = False,
+        fraction_lists_to_search: Optional[float] = None,
+        **kwargs: Any,
     ) -> List[Document]:
-        self._create_vector_index()
-        self._create_search_input_table(query=query)
-        vector_search_job = self._bigquery_vector_search(k=k)
+        """Run similarity search.
 
-        # Build the documents
-        document_tuples: List[Tuple[Document, List[float], float]] = []
-        for row in vector_search_job:
-            doc = Document(page_content=row[self.content_field])
-            document_tuples.append((doc, row[self.vector_field], row["distance"]))
-        return document_tuples
-    
+        Args:
+            query: search query text.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on metadata properties, e.g.
+                            {
+                                "str_property": "foo",
+                                "int_property": 123
+                            }
+            brute_force: Whether to use brute force search. Defaults to False.
+            fraction_lists_to_search: Optional percentage of lists to search,
+                must be in range 0.0 and 1.0, exclusive.
+                If Node, uses service's default which is 0.05.
+
+        Returns:
+            List of Documents most similar to the query vector.
+        """
+        tuples = self.similarity_search_with_score(
+            query, k, filter, brute_force, fraction_lists_to_search, **kwargs
+        )
+        return [i[0] for i in tuples]
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        if self.distance_strategy == DistanceStrategy.COSINE:
+            return BigQueryVectorSearch._cosine_relevance_score_fn
+        else:
+            raise ValueError(
+                "Relevance score is not supported "
+                f"for `{self.distance_strategy}` distance."
+            )
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = DEFAULT_TOP_K,
+        fetch_k: int = DEFAULT_TOP_K * 5,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        brute_force: bool = False,
+        fraction_lists_to_search: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: search query text.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter: Filter on metadata properties, e.g.
+                            {
+                                "str_property": "foo",
+                                "int_property": 123
+                            }
+            brute_force: Whether to use brute force search. Defaults to False.
+            fraction_lists_to_search: Optional percentage of lists to search,
+                must be in range 0.0 and 1.0, exclusive.
+                If Node, uses service's default which is 0.05.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        query_embedding = self.embedding_model.embed_query(  # type: ignore
+            query
+        )
+        doc_tuples = self._search_with_score_and_embeddings_by_vector(
+            query_embedding, fetch_k, filter, brute_force, fraction_lists_to_search
+        )
+        doc_embeddings = [d[1] for d in doc_tuples]
+        mmr_doc_indexes = maximal_marginal_relevance(
+            np.array(query_embedding), doc_embeddings, lambda_mult=lambda_mult, k=k
+        )
+        return [doc_tuples[i][0] for i in mmr_doc_indexes]
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_TOP_K,
+        fetch_k: int = DEFAULT_TOP_K * 5,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        brute_force: bool = False,
+        fraction_lists_to_search: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter: Filter on metadata properties, e.g.
+                            {
+                                "str_property": "foo",
+                                "int_property": 123
+                            }
+            brute_force: Whether to use brute force search. Defaults to False.
+            fraction_lists_to_search: Optional percentage of lists to search,
+                must be in range 0.0 and 1.0, exclusive.
+                If Node, uses service's default which is 0.05.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        doc_tuples = self._search_with_score_and_embeddings_by_vector(
+            embedding, fetch_k, filter, brute_force, fraction_lists_to_search
+        )
+        doc_embeddings = [d[1] for d in doc_tuples]
+        mmr_doc_indexes = maximal_marginal_relevance(
+            np.array(embedding), doc_embeddings, lambda_mult=lambda_mult, k=k
+        )
+        return [doc_tuples[i][0] for i in mmr_doc_indexes]
+
+    async def amax_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = DEFAULT_TOP_K,
+        fetch_k: int = DEFAULT_TOP_K * 5,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        brute_force: bool = False,
+        fraction_lists_to_search: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance."""
+
+        func = partial(
+            self.max_marginal_relevance_search,
+            query,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            brute_force=brute_force,
+            fraction_lists_to_search=fraction_lists_to_search,
+            **kwargs,
+        )
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_TOP_K,
+        fetch_k: int = DEFAULT_TOP_K * 5,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        brute_force: bool = False,
+        fraction_lists_to_search: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance."""
+        return await asyncio.get_running_loop().run_in_executor(
+            None,
+            partial(self.max_marginal_relevance_search_by_vector, **kwargs),
+            embedding,
+            k,
+            fetch_k,
+            lambda_mult,
+            filter,
+            brute_force,
+            fraction_lists_to_search,
+        )
+
     @classmethod
-    def from_texts():
-        raise NotImplementedError(f"BigQueryVectorSearch can't be initialized
-                                  from texts and embeddings. Please intialize
-                                  with the constructor.")
+    def from_texts(
+        cls: Type["BigQueryVectorSearch"],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> "BigQueryVectorSearch":
+        """Return VectorStore initialized from texts and embeddings."""
+        vs_obj = BigQueryVectorSearch(embedding=embedding, **kwargs)
+        vs_obj.add_texts(texts, metadatas)
+        return vs_obj

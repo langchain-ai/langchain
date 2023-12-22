@@ -329,6 +329,10 @@
       "destination": "/docs/integrations/platforms/google"
     },
     {
+      "source":  "/docs/integrations/providers/google_bigquery_vector_search",
+      "destination": "/docs/integrations/platforms/google"
+    },
+    {
       "source":  "/docs/integrations/providers/aws_s3",
       "destination": "/docs/integrations/platforms/aws"
     },
