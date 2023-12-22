@@ -106,7 +106,6 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
     def parse_url(self, url: str) -> Iterator[Document]:
         from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 
-        print(url)
         poller = self.client.begin_analyze_document(
             self.api_model,
             AnalyzeDocumentRequest(url_source=url),
