@@ -215,7 +215,7 @@ class Jaguar(VectorStore):
         k: int = 3,
         fetch_k: int = -1,
         where: Optional[str] = None,
-        score_threshold: Optional[float] = -1.0,
+        args: Optional[str] = None,
         metadatas: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -227,9 +227,7 @@ class Jaguar(VectorStore):
             lambda_val: lexical match parameter for hybrid search.
             where: the where clause in select similarity. For example a
                 where can be "rating > 3.0 and (state = 'NV' or state = 'CA')"
-            score_threshold: minimal score threshold for the result.
-                If defined, results with score less than this value will be
-                filtered out.
+            args: extra options passed to select similarity
             kwargs:  vector_index=vcol, vector_type=cosine_fraction_float
         Returns:
             List of Documents most similar to the query and score for each.
@@ -254,7 +252,9 @@ class Jaguar(VectorStore):
             + ",type="
             + vtype
         )
-        q += ",with_score=yes,with_text=yes,score_threshold=" + str(score_threshold)
+        q += ",with_score=yes,with_text=yes"
+        if args is not None:
+            q += "," + args
 
         if metadatas is not None:
             meta = "&".join(metadatas)
