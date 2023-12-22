@@ -56,13 +56,15 @@ class LocalFileStore(ByteStore):
         """
         if not re.match(r"^[a-zA-Z0-9_.\-/]+$", key):
             raise InvalidKeyException(f"Invalid characters in key: {key}")
-        full_path = self.root_path / key
-        common_path = os.path.commonpath([self.root_path, full_path])
-        if common_path != self.root_path:
+        full_path = os.path.abspath(self.root_path / key)
+        common_path = os.path.commonpath([str(self.root_path), full_path])
+        if common_path != str(self.root_path):
             raise InvalidKeyException(
                 f"Invalid key: {key}. Key should be relative to the full path."
+                f"{self.root_path} vs. {common_path} and full path of {full_path}"
             )
-        return full_path
+
+        return Path(full_path)
 
     def mget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
         """Get the values associated with the given keys.
