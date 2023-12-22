@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from langchain_core.documents import Document
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import BaseMessage
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
@@ -16,19 +19,34 @@ from langchain.chains.combine_documents.base import (
 )
 from langchain.chains.llm import LLMChain
 
+LanguageModelLike = Union[
+    Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
+]
+
 
 def create_refine_documents_chain(
-    initial_chain: Runnable,
-    refine_chain: Runnable,
+    initial_prompt: BasePromptTemplate,
+    refine_prompt: BasePromptTemplate,
+    llm: LanguageModelLike,
     document_input_key: str,
-    working_response_key: str,
     output_key: str,
+    *,
+    document_prompt: Optional[BasePromptTemplate] = None,
+    working_response_key: Optional[str] = None,
 ) -> Runnable:
-    def pop_intermediate_steps(inputs: dict) -> dict:
+    _document_prompt = document_prompt or _get_default_document_prompt()
+    _working_response_key = working_response_key or output_key
+
+    def format_inputs(inputs: dict) -> dict:
+        doc = inputs[document_input_key][len(inputs.get("intermediate_steps", []))]
+        inputs[document_input_key] = format_document(doc, _document_prompt)
         return {k: v for k, v in inputs.items() if k != "intermediate_steps"}
 
+    initial_chain = format_inputs | initial_prompt | llm | StrOutputParser()
+    refine_chain = format_inputs | refine_prompt | llm | StrOutputParser()
+
     def update_intermediate_steps(inputs: dict) -> dict:
-        inputs["intermediate_steps"].append(inputs[working_response_key])
+        inputs["intermediate_steps"].append(inputs[_working_response_key])
         return inputs
 
     def loop(inputs: dict) -> Union[Runnable, dict]:
@@ -37,18 +55,18 @@ def create_refine_documents_chain(
                 RunnablePassthrough.assign(
                     **{
                         "intermediate_steps": update_intermediate_steps,
-                        working_response_key: pop_intermediate_steps | refine_chain,
+                        _working_response_key: refine_chain,
                     }
                 )
                 | loop
             )
         else:
             return {
-                output_key: inputs[working_response_key],
+                output_key: inputs[_working_response_key],
                 "intermediate_steps": inputs["intermediate_steps"],
             }
 
-    return RunnablePassthrough.assign(**{working_response_key: initial_chain}) | loop
+    return RunnablePassthrough.assign(**{_working_response_key: initial_chain}) | loop
 
 
 def _get_default_document_prompt() -> PromptTemplate:
