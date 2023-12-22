@@ -2612,7 +2612,6 @@ class RunnableLambda(Runnable[Input, Output]):
         )
 
     def get_graph(self, config: RunnableConfig | None = None) -> Graph:
-        print(self.deps)
         if deps := self.deps:
             graph = Graph()
             input_node = graph.add_node(self.get_input_schema(config))
