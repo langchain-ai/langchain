@@ -29,6 +29,7 @@ def create_stuff_documents_chain(
     document_separator: str = "\n\n",
     output_key: Optional[str] = None,
 ) -> Runnable:
+    """"""
     if document_input_key not in prompt.input_variables:
         raise ValueError
     _document_prompt = document_prompt or _get_default_document_prompt()

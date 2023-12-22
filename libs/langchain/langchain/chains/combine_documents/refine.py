@@ -2,18 +2,53 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
 )
 from langchain.chains.llm import LLMChain
+
+
+def create_refine_documents_chain(
+    initial_chain: Runnable,
+    refine_chain: Runnable,
+    document_input_key: str,
+    working_response_key: str,
+    output_key: str,
+) -> Runnable:
+    def pop_intermediate_steps(inputs: dict) -> dict:
+        return {k: v for k, v in inputs.items() if k != "intermediate_steps"}
+
+    def update_intermediate_steps(inputs: dict) -> dict:
+        inputs["intermediate_steps"].append(inputs[working_response_key])
+        return inputs
+
+    def loop(inputs: dict) -> Union[Runnable, dict]:
+        if len(inputs.get("intermediate_steps", [])) < len(inputs[document_input_key]):
+            return (
+                RunnablePassthrough.assign(
+                    **{
+                        "intermediate_steps": update_intermediate_steps,
+                        working_response_key: pop_intermediate_steps | refine_chain,
+                    }
+                )
+                | loop
+            )
+        else:
+            return {
+                output_key: inputs[working_response_key],
+                "intermediate_steps": inputs["intermediate_steps"],
+            }
+
+    return RunnablePassthrough.assign(**{working_response_key: initial_chain}) | loop
 
 
 def _get_default_document_prompt() -> PromptTemplate:
