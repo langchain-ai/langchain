@@ -17,7 +17,7 @@ def test_stream() -> None:
 
 @pytest.mark.skip(reason="Need a working Triton server")
 async def test_astream() -> None:
-    """Test streaming tokens from nvidia-trt."""
+    """Test streaming tokens from NVIDIA TRT."""
     llm = TritonTensorRTLLM(model_name=_MODEL_NAME)
 
     async for token in llm.astream("I'm Pickle Rick"):
