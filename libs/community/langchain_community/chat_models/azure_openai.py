@@ -26,7 +26,7 @@ class AzureChatOpenAI(ChatOpenAI):
     In addition, you should have the ``openai`` python package installed, and the
     following environment variables set or passed in constructor in lower case:
     - ``AZURE_OPENAI_API_KEY``
-    - ``AZURE_OPENAI_API_ENDPOINT``
+    - ``AZURE_OPENAI_ENDPOINT``
     - ``AZURE_OPENAI_AD_TOKEN``
     - ``OPENAI_API_VERSION``
     - ``OPENAI_PROXY``
