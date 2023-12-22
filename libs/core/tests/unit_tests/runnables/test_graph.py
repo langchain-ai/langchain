@@ -10,7 +10,7 @@ from tests.unit_tests.fake.llm import FakeListLLM
 
 def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
     runnable = StrOutputParser()
-    graph = StrOutputParser().graph()
+    graph = StrOutputParser().get_graph()
     first_node = graph.first_node()
     assert first_node is not None
     assert first_node.data.schema() == runnable.input_schema.schema()  # type: ignore[union-attr]
@@ -30,7 +30,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
     list_parser = CommaSeparatedListOutputParser()
 
     sequence = prompt | fake_llm | list_parser
-    graph = sequence.graph()
+    graph = sequence.get_graph()
     assert graph.draw() == snapshot
 
 
@@ -47,5 +47,5 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
             "as_list": list_parser,
         }
     )
-    graph = sequence.graph()
+    graph = sequence.get_graph()
     assert graph.draw() == snapshot

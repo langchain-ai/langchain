@@ -353,7 +353,7 @@ class Runnable(Generic[Input, Output], ABC):
             },
         )
 
-    def graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         """Return a graph representation of this runnable."""
         from langchain_core.runnables.graph import Graph
 
@@ -1460,13 +1460,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
         return get_unique_config_specs(spec for spec, _ in all_specs)
 
-    def graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         from langchain_core.runnables.graph import Graph
 
         graph = Graph()
         for step in self.steps:
             current_last_node = graph.last_node()
-            step_graph = step.graph(config)
+            step_graph = step.get_graph(config)
             if step is not self.first:
                 step_graph.trim_first_node()
             if step is not self.last:
@@ -2025,14 +2025,14 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             spec for step in self.steps.values() for spec in step.config_specs
         )
 
-    def graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         from langchain_core.runnables.graph import Graph
 
         graph = Graph()
         input_node = graph.add_node(self.get_input_schema(config))
         output_node = graph.add_node(self.get_output_schema(config))
         for step in self.steps.values():
-            step_graph = step.graph()
+            step_graph = step.get_graph()
             step_graph.trim_first_node()
             step_graph.trim_last_node()
             graph.extend(step_graph)
