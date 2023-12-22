@@ -48,6 +48,7 @@ from langchain_core.runnables.config import (
     merge_configs,
     patch_config,
 )
+from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
@@ -59,6 +60,7 @@ from langchain_core.runnables.utils import (
     accepts_run_manager,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
+    get_function_nonlocals,
     get_lambda_source,
     get_unique_config_specs,
     indent_lines_after_first,
@@ -2577,6 +2579,47 @@ class RunnableLambda(Runnable[Input, Output]):
         except ValueError:
             return Any
 
+    @property
+    def deps(self) -> List[Runnable]:
+        """The dependencies of this runnable."""
+        if hasattr(self, "func"):
+            objects = get_function_nonlocals(self.func)
+            print("objects", objects)
+        elif hasattr(self, "afunc"):
+            objects = get_function_nonlocals(self.afunc)
+            print("aobjects", objects)
+        else:
+            objects = []
+
+        return [obj for obj in objects if isinstance(obj, Runnable)]
+
+    def get_graph(self, config: RunnableConfig | None = None) -> Graph:
+        print(self.deps)
+        if deps := self.deps:
+            graph = Graph()
+            input_node = graph.add_node(self.get_input_schema(config))
+            output_node = graph.add_node(self.get_output_schema(config))
+            for dep in deps:
+                dep_graph = dep.get_graph()
+                dep_graph.trim_first_node()
+                dep_graph.trim_last_node()
+                if not dep_graph:
+                    graph.add_edge(input_node, output_node)
+                else:
+                    graph.extend(dep_graph)
+                    dep_first_node = dep_graph.first_node()
+                    if not dep_first_node:
+                        raise ValueError(f"Runnable {dep} has no first node")
+                    dep_last_node = dep_graph.last_node()
+                    if not dep_last_node:
+                        raise ValueError(f"Runnable {dep} has no last node")
+                    graph.add_edge(input_node, dep_first_node)
+                    graph.add_edge(dep_last_node, output_node)
+        else:
+            graph = super().get_graph(config)
+
+        return graph
+
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunnableLambda):
             if hasattr(self, "func") and hasattr(other, "func"):
@@ -2761,6 +2804,9 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.bound.config_specs
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        return self.bound.get_graph(config)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -2972,6 +3018,9 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.bound.config_specs
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        return self.bound.get_graph(config)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

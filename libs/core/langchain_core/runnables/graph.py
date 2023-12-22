@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, NamedTuple, Optional, Type, Union
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Type, Union
 from uuid import uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables.base import Runnable
 from langchain_core.runnables.graph_draw import draw
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.base import Runnable as RunnableType
 
 
 class Edge(NamedTuple):
@@ -16,7 +18,7 @@ class Edge(NamedTuple):
 
 class Node(NamedTuple):
     id: str
-    data: Union[Type[BaseModel], Runnable]
+    data: Union[Type[BaseModel], RunnableType]
 
 
 @dataclass
@@ -30,7 +32,7 @@ class Graph:
     def next_id(self) -> str:
         return uuid4().hex
 
-    def add_node(self, data: Union[Type[BaseModel], Runnable]) -> Node:
+    def add_node(self, data: Union[Type[BaseModel], RunnableType]) -> Node:
         """Add a node to the graph and return it."""
         node = Node(id=self.next_id(), data=data)
         self.nodes[node.id] = node
@@ -109,6 +111,8 @@ class Graph:
                 self.remove_node(last_node)
 
     def draw_ascii(self) -> str:
+        from langchain_core.runnables.base import Runnable
+
         def node_data(node: Node) -> str:
             if isinstance(node.data, Runnable):
                 try:
