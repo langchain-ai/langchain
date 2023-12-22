@@ -2598,14 +2598,18 @@ class RunnableLambda(Runnable[Input, Output]):
         """The dependencies of this runnable."""
         if hasattr(self, "func"):
             objects = get_function_nonlocals(self.func)
-            print("objects", objects)
         elif hasattr(self, "afunc"):
             objects = get_function_nonlocals(self.afunc)
-            print("aobjects", objects)
         else:
             objects = []
 
         return [obj for obj in objects if isinstance(obj, Runnable)]
+
+    @property
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
+        return get_unique_config_specs(
+            spec for dep in self.deps for spec in dep.config_specs
+        )
 
     def get_graph(self, config: RunnableConfig | None = None) -> Graph:
         print(self.deps)

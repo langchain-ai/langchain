@@ -223,7 +223,6 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = FunctionNonLocals()
         visitor.visit(tree)
-        print("nonlocals", visitor.nonlocals)
         values: List[Any] = []
         for k, v in inspect.getclosurevars(func).nonlocals.items():
             if k in visitor.nonlocals:
