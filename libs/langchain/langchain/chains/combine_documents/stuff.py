@@ -1,7 +1,10 @@
 """Chain that combines documents by stuffing into context."""
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from langchain_core.documents import Document
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import BaseMessage
+from langchain_core.output_parsers import BaseGenerationOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
@@ -11,24 +14,30 @@ from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 
+LanguageModelLike = Union[
+    Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
+]
+
 
 def create_stuff_documents_chain(
-    llm_chain: Runnable,
+    llm: LanguageModelLike,
+    prompt: BasePromptTemplate,
+    output_parser: BaseGenerationOutputParser,
     document_input_key: str,
     *,
     document_prompt: Optional[BasePromptTemplate] = None,
     document_separator: str = "\n\n",
     output_key: Optional[str] = None,
 ) -> Runnable:
-    document_prompt = document_prompt or _get_default_document_prompt()
+    _document_prompt = document_prompt or _get_default_document_prompt()
 
     def format_documents(inputs: dict) -> dict:
         inputs[document_input_key] = document_separator.join(
-            format_document(doc, document_prompt) for doc in inputs[document_input_key]
+            format_document(doc, _document_prompt) for doc in inputs[document_input_key]
         )
         return inputs
 
-    chain = format_documents | llm_chain
+    chain = format_documents | llm | prompt | output_parser
     if output_key:
         return RunnableParallel({output_key: chain})
     else:
@@ -36,7 +45,7 @@ def create_stuff_documents_chain(
 
 
 def _get_default_document_prompt() -> PromptTemplate:
-    return PromptTemplate(input_variables=["page_content"], template="{page_content}")
+    return PromptTemplate.from_template("{page_content}")
 
 
 class StuffDocumentsChain(BaseCombineDocumentsChain):
