@@ -39,26 +39,40 @@ Using LangChain will usually require integrations with one or more model provide
   <TabItem value="openai" label="OpenAI" default>
     First we'll need to install their Python package:
 
-    ```bash
-    pip install openai
-    ```
+    <CodeBlock language="bash">pip install openai</CodeBlock>
 
     Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
 
-    ```bash
-    export OPENAI_API_KEY="..."
-    ```
+    <CodeBlock language="bash">export OPENAI_API_KEY="..."</CodeBlock>
+
+    We can then initialize the model:
+
+    <CodeBlock language="python">from langchain.chat_models import ChatOpenAI
+
+    llm = ChatOpenAI()
+    </CodeBlock>
 
     If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
 
-    ```python
+    <CodeBlock language="python">
     from langchain.chat_models import ChatOpenAI
 
     llm = ChatOpenAI(openai_api_key="...")
-    ```
+    </CodeBlock>
   </TabItem>
-  <TabItem value="conda" label="Conda">
-    <CodeBlock language="bash">conda install langchain -c conda-forge</CodeBlock>
+  <TabItem value="local" label="Local Open Source">
+    [Ollama](https://ollama.ai/) allows you to run open-source large language models, such as Llama 2, locally.
+
+    First, follow [these instructions](https://github.com/jmorganca/ollama) to set up and run a local Ollama instance:
+
+    * [Download](https://ollama.ai/download)
+    * Fetch a model via `ollama pull llama2`
+
+    Then, make sure the Ollama server is running. After that, you can do:
+    <CodeBlock language="python">
+    from langchain.llms import Ollama
+    llm = Ollama(model="llama2")
+    </CodeBlock>
   </TabItem>
 </Tabs>
 
@@ -76,15 +90,6 @@ If you do want to use LangSmith, after you sign up at the link above, make sure 
 ```shell
 export LANGCHAIN_TRACING_V2="true"
 export LANGCHAIN_API_KEY="..."
-```
-
-### LangServe
-
-LangServe helps developers deploy LangChain chains as a REST API. You do not need to use LangServe to use LangChain, but in this guide we'll show how you can deploy your app with LangServe.
-
-Install with:
-```bash
-pip install "langserve[all]"
 ```
 
 ## Building with LangChain
@@ -308,8 +313,12 @@ For more on LangSmith [head here](/docs/langsmith/).
 ## Serving with LangServe
 
 Now that we've built an application, we need to serve it. That's where LangServe comes in.
-LangServe helps developers deploy LCEL chains as a REST API.
-The library is integrated with FastAPI and uses pydantic for data validation.
+LangServe helps developers deploy LangChain chains as a REST API. You do not need to use LangServe to use LangChain, but in this guide we'll show how you can deploy your app with LangServe.
+
+Install with:
+```bash
+pip install "langserve[all]"
+```
 
 ### Server
 
