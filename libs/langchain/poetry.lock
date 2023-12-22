@@ -2149,7 +2149,7 @@ shapely = ">=1.7.1"
 
 [[package]]
 name = "gigachain-community"
-version = "0.0.4"
+version = "0.0.4.1"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -9155,4 +9155,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "3a843f17e4f751dab9543ff6ca8f7f123e8b1f7b6b75b4dfde621abbfc702e89"
+content-hash = "f8eecb5c97c7923fa5b9ba86c3a9b22fb7cd38017b89aade6d7d8a89cb1e76ae"

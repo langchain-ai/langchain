@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-community"
-version = "0.0.4"
+version = "0.0.4.1"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"

@@ -977,7 +977,7 @@ develop = true
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
-gigachain-community = ">=0.0.4,<0.1"
+gigachain-community = ">=0.0.4.1,<0.1"
 gigachain-core = "^0.1"
 gigachat = "0.1.10"
 jsonpatch = "^1.33"
@@ -1010,7 +1010,7 @@ url = "../langchain"
 
 [[package]]
 name = "gigachain-community"
-version = "0.0.4"
+version = "0.0.4.1"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
