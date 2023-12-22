@@ -8,11 +8,12 @@ from functools import partial
 from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.chat_models import (BaseChatModel,
-                                                        generate_from_stream)
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    generate_from_stream,
+)
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
-from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
-                                    ChatResult)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ class ChatZhipuAI(BaseChatModel):
     def _llm_type(self) -> str:
         """Return the type of chat model."""
         return "zhipuai"
-    
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"zhipuai_api_key": "ZHIPUAI_API_KEY"}
@@ -74,7 +75,7 @@ class ChatZhipuAI(BaseChatModel):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "zhipuai"]
-    
+
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
