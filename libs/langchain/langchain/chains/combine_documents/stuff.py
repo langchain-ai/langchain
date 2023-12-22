@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import BaseMessage
-from langchain_core.output_parsers import BaseGenerationOutputParser
+from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
@@ -22,7 +22,7 @@ LanguageModelLike = Union[
 def create_stuff_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,
-    output_parser: BaseGenerationOutputParser,
+    output_parser: BaseOutputParser,
     document_input_key: str,
     *,
     document_prompt: Optional[BasePromptTemplate] = None,
