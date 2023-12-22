@@ -102,9 +102,21 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     if is_inside_string:
         new_s += '"'
 
-    # Close any remaining open structures in the reverse order that they were opened.
-    for closing_char in reversed(stack):
-        new_s += closing_char
+    while new_s:
+        final_s = new_s
+
+        # Close any remaining open structures in the reverse
+        # order that they were opened.
+        for closing_char in reversed(stack):
+            final_s += closing_char
+
+        # Attempt to parse the modified string as JSON.
+        try:
+            return json.loads(final_s, strict=strict)
+        except json.JSONDecodeError:
+            # If we still can't parse the string as JSON,
+            # try removing the last character
+            new_s = new_s[:-1]
 
     # Attempt to parse the modified string as JSON.
     return json.loads(new_s, strict=strict)
