@@ -248,7 +248,7 @@ class ContextSet(RunnableSerializable):
         )
 
     def __str__(self) -> str:
-        return f"ContextSet({_print_keys(self.keys.keys())})"
+        return f"ContextSet({_print_keys(list(self.keys.keys()))})"
 
     @property
     def ids(self) -> List[str]:
