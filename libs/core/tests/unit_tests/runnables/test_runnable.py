@@ -569,7 +569,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "properties": {"name": {"title": "Name", "type": "string"}},
     }
     assert seq_w_map.output_schema.schema() == {
-        "title": "RunnableParallelOutput",
+        "title": "RunnableMapOutput",
         "type": "object",
         "properties": {
             "original": {"title": "Original", "type": "string"},
@@ -613,7 +613,7 @@ def test_passthrough_assign_schema() -> None:
     # expected dict input_schema
     assert invalid_seq_w_assign.input_schema.schema() == {
         "properties": {"question": {"title": "Question"}},
-        "title": "RunnableParallelInput",
+        "title": "RunnableMapInput",
         "type": "object",
     }
 
@@ -768,7 +768,7 @@ def test_schema_complex_seq() -> None:
     )
 
     assert chain2.input_schema.schema() == {
-        "title": "RunnableParallelInput",
+        "title": "RunnableMapInput",
         "type": "object",
         "properties": {
             "person": {"title": "Person", "type": "string"},
@@ -2221,7 +2221,6 @@ async def test_stream_log_lists() -> None:
     }
 
 
-@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm_and_async_lambda(
     mocker: MockerFixture, snapshot: SnapshotAssertion
@@ -4262,7 +4261,6 @@ def test_with_config_callbacks() -> None:
     assert isinstance(result, RunnableBinding)
 
 
-@pytest.mark.asyncio
 async def test_ainvoke_on_returned_runnable() -> None:
     """Verify that a runnable returned by a sync runnable in the async path will
     be runthroughaasync path (issue #13407)"""
@@ -4301,7 +4299,6 @@ def test_invoke_stream_passthrough_assign_trace() -> None:
     assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
 
 
-@pytest.mark.asyncio
 async def test_ainvoke_astream_passthrough_assign_trace() -> None:
     def idchain_sync(__input: dict) -> bool:
         return False

@@ -2007,7 +2007,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         ):
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model(  # type: ignore[call-overload]
-                "RunnableParallelInput",
+                "RunnableMapInput",
                 **{
                     k: (v.annotation, v.default)
                     for step in self.steps.values()
@@ -2024,7 +2024,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
-            "RunnableParallelOutput",
+            "RunnableMapOutput",
             **{k: (v.OutputType, None) for k, v in self.steps.items()},
             __config__=_SchemaConfig,
         )
@@ -2650,7 +2650,9 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __repr__(self) -> str:
         """A string representation of this runnable."""
-        if hasattr(self, "func"):
+        if hasattr(self, "func") and isinstance(self.func, itemgetter):
+            return f"RunnableLambda({str(self.func)[len('operator.'):]})"
+        elif hasattr(self, "func"):
             return f"RunnableLambda({get_lambda_source(self.func) or '...'})"
         elif hasattr(self, "afunc"):
             return f"RunnableLambda(afunc={get_lambda_source(self.afunc) or '...'})"
