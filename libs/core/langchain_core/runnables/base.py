@@ -74,6 +74,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
+    from langchain_core.runnables.graph import Graph
     from langchain_core.tracers.log_stream import RunLog, RunLogPatch
     from langchain_core.tracers.root_listeners import Listener
 
@@ -351,6 +352,18 @@ class Runnable(Generic[Input, Output], ABC):
                 if field_name in [i for i in include if i != "configurable"]
             },
         )
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        """Return a graph representation of this runnable."""
+        from langchain_core.runnables.graph import Graph
+
+        graph = Graph()
+        input_node = graph.add_node(self.get_input_schema(config))
+        runnable_node = graph.add_node(self)
+        output_node = graph.add_node(self.get_output_schema(config))
+        graph.add_edge(input_node, runnable_node)
+        graph.add_edge(runnable_node, output_node)
+        return graph
 
     def __or__(
         self,
@@ -1447,6 +1460,26 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
         return get_unique_config_specs(spec for spec, _ in all_specs)
 
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        from langchain_core.runnables.graph import Graph
+
+        graph = Graph()
+        for step in self.steps:
+            current_last_node = graph.last_node()
+            step_graph = step.get_graph(config)
+            if step is not self.first:
+                step_graph.trim_first_node()
+            if step is not self.last:
+                step_graph.trim_last_node()
+            graph.extend(step_graph)
+            step_first_node = step_graph.first_node()
+            if not step_first_node:
+                raise ValueError(f"Runnable {step} has no first node")
+            if current_last_node:
+                graph.add_edge(current_last_node, step_first_node)
+
+        return graph
+
     def __repr__(self) -> str:
         return "\n| ".join(
             repr(s) if i == 0 else indent_lines_after_first(repr(s), "| ")
@@ -1991,6 +2024,31 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         return get_unique_config_specs(
             spec for step in self.steps.values() for spec in step.config_specs
         )
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        from langchain_core.runnables.graph import Graph
+
+        graph = Graph()
+        input_node = graph.add_node(self.get_input_schema(config))
+        output_node = graph.add_node(self.get_output_schema(config))
+        for step in self.steps.values():
+            step_graph = step.get_graph()
+            step_graph.trim_first_node()
+            step_graph.trim_last_node()
+            if not step_graph:
+                graph.add_edge(input_node, output_node)
+            else:
+                graph.extend(step_graph)
+                step_first_node = step_graph.first_node()
+                if not step_first_node:
+                    raise ValueError(f"Runnable {step} has no first node")
+                step_last_node = step_graph.last_node()
+                if not step_last_node:
+                    raise ValueError(f"Runnable {step} has no last node")
+                graph.add_edge(input_node, step_first_node)
+                graph.add_edge(step_last_node, output_node)
+
+        return graph
 
     def __repr__(self) -> str:
         map_for_repr = ",\n  ".join(

@@ -4127,13 +4127,13 @@ def test_representation_of_runnables() -> None:
         """Return 2."""
         return 2
 
-    assert repr(RunnableLambda(func=f)) == "RunnableLambda(...)"
+    assert repr(RunnableLambda(func=f)) == "RunnableLambda(f)"
 
     async def af(x: int) -> int:
         """Return 2."""
         return 2
 
-    assert repr(RunnableLambda(func=f, afunc=af)) == "RunnableLambda(...)"
+    assert repr(RunnableLambda(func=f, afunc=af)) == "RunnableLambda(f)"
 
     assert repr(
         RunnableLambda(lambda x: x + 2)
