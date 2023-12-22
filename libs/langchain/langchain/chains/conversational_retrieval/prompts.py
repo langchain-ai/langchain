@@ -18,3 +18,16 @@ Helpful Answer:"""
 QA_PROMPT = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]
 )
+
+combined_prompt_emplate = """Given the following chat history and pieces of contexts, please answer the follow up question. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+---
+Chat History: {chat_history}
+---
+Context: {context}
+---
+Question: {question}
+Helpful Answer:"""
+CHAT_RETRIEVAL_QA_PROMPT = PromptTemplate(
+    template=combined_prompt_emplate,
+    input_variables=["chat_history", "context", "question"],
+)

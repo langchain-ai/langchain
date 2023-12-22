@@ -24,7 +24,10 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
+from langchain.chains.conversational_retrieval.prompts import (
+    CONDENSE_QUESTION_PROMPT,
+    CHAT_RETRIEVAL_QA_PROMPT,
+)
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 
@@ -68,7 +71,7 @@ class BaseConversationalRetrievalChain(Chain):
 
     combine_docs_chain: BaseCombineDocumentsChain
     """The chain used to combine any retrieved documents."""
-    question_generator: LLMChain
+    question_generator: Optional[LLMChain]
     """The chain used to generate a new question for the sake of retrieval.
     This chain will take in the current question (with variable `question`)
     and any chat history (with variable `chat_history`) and will produce
@@ -141,7 +144,7 @@ class BaseConversationalRetrievalChain(Chain):
         get_chat_history = self.get_chat_history or _get_chat_history
         chat_history_str = get_chat_history(inputs["chat_history"])
 
-        if chat_history_str:
+        if chat_history_str and self.question_generator is not None:
             callbacks = _run_manager.get_child()
             new_question = self.question_generator.run(
                 question=question, chat_history=chat_history_str, callbacks=callbacks
@@ -155,19 +158,20 @@ class BaseConversationalRetrievalChain(Chain):
             docs = self._get_docs(new_question, inputs, run_manager=_run_manager)
         else:
             docs = self._get_docs(new_question, inputs)  # type: ignore[call-arg]
-        output: Dict[str, Any] = {}
-        if self.response_if_no_docs_found is not None and len(docs) == 0:
-            output[self.output_key] = self.response_if_no_docs_found
-        else:
-            new_inputs = inputs.copy()
-            if self.rephrase_question:
-                new_inputs["question"] = new_question
-            new_inputs["chat_history"] = chat_history_str
-            answer = self.combine_docs_chain.run(
-                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
-            )
-            output[self.output_key] = answer
-
+        new_inputs = inputs.copy()
+        if self.rephrase_question:
+            new_inputs["question"] = new_question
+        new_inputs["chat_history"] = chat_history_str
+        if (
+            self.question_generator is None
+            and "context"
+            not in self.combine_docs_chain.llm_chain.prompt.input_variables
+        ):
+            self.combine_docs_chain.llm_chain.prompt = CHAT_RETRIEVAL_QA_PROMPT
+        answer = self.combine_docs_chain.run(
+            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+        )
+        output: Dict[str, Any] = {self.output_key: answer}
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
@@ -386,8 +390,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         )
         return cls(
             retriever=retriever,
-            combine_docs_chain=doc_chain,
             question_generator=condense_question_chain,
+            combine_docs_chain=doc_chain,
             callbacks=callbacks,
             **kwargs,
         )
