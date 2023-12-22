@@ -5,7 +5,7 @@ from langchain_anthropic.chat_models import ChatAnthropicMessages
 
 
 def test_stream() -> None:
-    """Test streaming tokens from anthropic."""
+    """Test streaming tokens from Anthropic."""
     llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
 
     for token in llm.stream("I'm Pickle Rick"):
