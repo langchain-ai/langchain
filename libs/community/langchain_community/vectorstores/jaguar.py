@@ -60,8 +60,14 @@ class Jaguar(VectorStore):
 
         self._jag = JaguarHttpClient(url)
         self._token = ""
+        rc = self._login()
+        if rc is False:
+            raise ValueError("Could not connect to jaguar server")
 
-    def login(
+    def __del__(self):
+        self._logout()
+
+    def _login(
         self,
         jaguar_api_key: Optional[str] = "",
     ) -> bool:
@@ -412,7 +418,7 @@ class Jaguar(VectorStore):
         q = "drop store " + podstore
         self.run(q)
 
-    def logout(self) -> None:
+    def _logout(self) -> None:
         """
         Logout to cleanup resources
         Args: no args

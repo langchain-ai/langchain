@@ -22,6 +22,10 @@ class TestJaguar:
 
     @classmethod
     def setup_class(cls) -> None:
+        """
+        Requires environment variable JAGUAR_API_KEY
+        or $HOME/.jagrc storing the jaguar api key
+        """
         url = "http://127.0.0.1:8080/fwww/"
         cls.pod = "vdb"
         cls.store = "langchain_test_store"
@@ -42,13 +46,6 @@ class TestJaguar:
     @classmethod
     def teardown_class(cls) -> None:
         pass
-
-    def test_login(self) -> None:
-        """
-        Requires environment variable JAGUAR_API_KEY
-        or $HOME/.jagrc storing the jaguar api key
-        """
-        self.vectorstore.login()
 
     def test_create(self) -> None:
         """
@@ -130,9 +127,3 @@ class TestJaguar:
         Destroy the vector store
         """
         self.vectorstore.drop()
-
-    def test_logout(self) -> None:
-        """
-        Logout and free resources
-        """
-        self.vectorstore.logout()
