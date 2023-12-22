@@ -129,14 +129,7 @@ class IMessageChatLoader(BaseChatLoader):
         """
         results: List[HumanMessage] = []
 
-        query = """
-        SELECT message.date, handle.id, message.text, message.is_from_me, message.attributedBody
-        FROM message
-        JOIN chat_message_join ON message.ROWID = chat_message_join.message_id
-        JOIN handle ON message.handle_id = handle.ROWID
-        WHERE chat_message_join.chat_id = ?
-        ORDER BY message.date ASC;
-        """  # noqa: E501
+        query = self._get_session_query(use_chat_handle_table)
         cursor.execute(query, (chat_id,))
         messages = cursor.fetchall()
 
