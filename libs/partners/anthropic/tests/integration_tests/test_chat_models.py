@@ -13,7 +13,7 @@ def test_stream() -> None:
 
 
 async def test_astream() -> None:
-    """Test streaming tokens from anthropic."""
+    """Test streaming tokens from Anthropic."""
     llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
 
     async for token in llm.astream("I'm Pickle Rick"):
