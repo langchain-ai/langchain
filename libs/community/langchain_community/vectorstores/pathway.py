@@ -27,9 +27,11 @@ class PathwayVectorServer:
     for approximate nearest neighbor search.
 
     Args:
-        embedder - embedding model e.g. OpenAIEmbeddings
-        parser - callable that parses file contents into a list of documents
-        splitter - document splitter, e.g. CharacterTextSplitter
+        - docs: pathway tables typically coming out of connectors which contain
+        source documents.
+        - embedder: embedding model e.g. OpenAIEmbeddings
+        - parser: callable that parses file contents into a list of documents
+        - splitter: document splitter, e.g. CharacterTextSplitter
     """
 
     def __init__(
@@ -84,8 +86,6 @@ class PathwayVectorServer:
         Args:
             - host: host to bind the HTTP listener
             - port: port to bind the HTTP listener
-            - docs: pathway tables typically coming out of connectors which contain
-              source documents.
             - threaded: if True, run in a thread. Else block computation
             - with_cache: if True, embedding requests for the same contents are cached
             - cache_backend: the backend to use for caching if it is enabled. The
