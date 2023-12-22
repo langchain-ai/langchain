@@ -1,19 +1,31 @@
-from langchain_community.chat_models.anyscale import (
-    ChatAnyscale,
+"""Anyscale Endpoints chat wrapper. Relies heavily on ChatOpenAI."""
+from __future__ import annotations
+
+import logging
+import os
+import sys
+from typing import TYPE_CHECKING, Dict, Optional, Set
+
+import requests
+from langchain_core.messages import BaseMessage
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+
+from langchain_community.adapters.openai import convert_message_to_dict
+from langchain_community.chat_models.openai import (
+    ChatOpenAI,
+    _import_tiktoken,
 )
-<<<<<<< HEAD
-from langchain.utils import get_from_dict_or_env
-from langchain.utils.openai import is_openai_v1
+
+from langchain_community.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
     import tiktoken
 
 logger = logging.getLogger(__name__)
 
-
 DEFAULT_BASE_URL = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
-
 
 class ChatAnyscale(ChatOpenAI):
     """`Anyscale` Chat large language models.
@@ -178,7 +190,22 @@ class ChatAnyscale(ChatOpenAI):
 
     def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
         """Calculate num tokens with tiktoken package.
-=======
->>>>>>> upstream/master
-
-__all__ = ["ChatAnyscale"]
+        Official documentation: https://github.com/openai/openai-cookbook/blob/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        if sys.version_info[1] <= 7:
+            return super().get_num_tokens_from_messages(messages)
+        model, encoding = self._get_encoding_model()
+        tokens_per_message = 3
+        tokens_per_name = 1
+        num_tokens = 0
+        messages_dict = [convert_message_to_dict(m) for m in messages]
+        for message in messages_dict:
+            num_tokens += tokens_per_message
+            for key, value in message.items():
+                # Cast str(value) in case the message value is not a string	
+                # This occurs with function messages
+                num_tokens += len(encoding.encode(str(value)))
+                if key == "name":
+                    num_tokens += tokens_per_name
+        # every reply is primed with <im_start>assistant
+        num_tokens += 3
+        return num_tokens

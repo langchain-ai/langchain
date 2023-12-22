@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """Wrapper around Anyscale Endpoint"""
 import os
 from typing import (
@@ -18,17 +17,17 @@ from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
 
-from langchain.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.openai import (
+from langchain_community.llms.openai import (
     BaseOpenAI,
     acompletion_with_retry,
     completion_with_retry,
 )
-from langchain.utils import get_from_dict_or_env
-from langchain.utils.openai import is_openai_v1
+from langchain_core.utils import get_from_dict_or_env
+from langchain_community.utils.openai import is_openai_v1
 
 DEFAULT_BASE_URL = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
@@ -361,10 +360,3 @@ class Anyscale(BaseOpenAI):
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
         return create_llm_result(choices, prompts, token_usage, self.model_name)
-=======
-from langchain_community.llms.anyscale import (
-    Anyscale,
-)
-
-__all__ = ["Anyscale"]
->>>>>>> upstream/master
