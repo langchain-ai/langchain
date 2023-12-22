@@ -197,7 +197,7 @@ class BaseConversationalRetrievalChain(Chain):
         question = inputs["question"]
         get_chat_history = self.get_chat_history or _get_chat_history
         chat_history_str = get_chat_history(inputs["chat_history"])
-        if chat_history_str:
+        if chat_history_str and self.question_generator is not None:
             callbacks = _run_manager.get_child()
             new_question = await self.question_generator.arun(
                 question=question, chat_history=chat_history_str, callbacks=callbacks
@@ -212,19 +212,20 @@ class BaseConversationalRetrievalChain(Chain):
         else:
             docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
 
-        output: Dict[str, Any] = {}
-        if self.response_if_no_docs_found is not None and len(docs) == 0:
-            output[self.output_key] = self.response_if_no_docs_found
-        else:
-            new_inputs = inputs.copy()
-            if self.rephrase_question:
-                new_inputs["question"] = new_question
-            new_inputs["chat_history"] = chat_history_str
-            answer = await self.combine_docs_chain.arun(
-                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
-            )
-            output[self.output_key] = answer
-
+        new_inputs = inputs.copy()
+        if self.rephrase_question:
+            new_inputs["question"] = new_question
+        new_inputs["chat_history"] = chat_history_str
+        if (
+            self.question_generator is None
+            and "context"
+            not in self.combine_docs_chain.llm_chain.prompt.input_variables
+        ):
+            self.combine_docs_chain.llm_chain.prompt = CHAT_RETRIEVAL_QA_PROMPT
+        answer = await self.combine_docs_chain.arun(
+            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+        )
+        output: Dict[str, Any] = {self.output_key: answer}
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
