@@ -35,7 +35,7 @@ from typing_extensions import Literal, get_args
 
 from langchain_core.load.dump import dumpd, dumps
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core.pydantic_v1 import BaseConfig, BaseModel, Field, create_model
 from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,
@@ -48,6 +48,7 @@ from langchain_core.runnables.config import (
     merge_configs,
     patch_config,
 )
+from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
@@ -59,6 +60,7 @@ from langchain_core.runnables.utils import (
     accepts_run_manager,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
+    get_function_nonlocals,
     get_lambda_source,
     get_unique_config_specs,
     indent_lines_after_first,
@@ -74,12 +76,15 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
-    from langchain_core.runnables.graph import Graph
     from langchain_core.tracers.log_stream import RunLog, RunLogPatch
     from langchain_core.tracers.root_listeners import Listener
 
 
 Other = TypeVar("Other")
+
+
+class _SchemaConfig(BaseConfig):
+    arbitrary_types_allowed = True
 
 
 class Runnable(Generic[Input, Output], ABC):
@@ -266,7 +271,9 @@ class Runnable(Generic[Input, Output], ABC):
             return root_type
 
         return create_model(
-            self.__class__.__name__ + "Input", __root__=(root_type, None)
+            self.__class__.__name__ + "Input",
+            __root__=(root_type, None),
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -297,7 +304,9 @@ class Runnable(Generic[Input, Output], ABC):
             return root_type
 
         return create_model(
-            self.__class__.__name__ + "Output", __root__=(root_type, None)
+            self.__class__.__name__ + "Output",
+            __root__=(root_type, None),
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -320,9 +329,6 @@ class Runnable(Generic[Input, Output], ABC):
             A pydantic model that can be used to validate config.
         """
 
-        class _Config:
-            arbitrary_types_allowed = True
-
         include = include or []
         config_specs = self.config_specs
         configurable = (
@@ -337,6 +343,7 @@ class Runnable(Generic[Input, Output], ABC):
                     )
                     for spec in config_specs
                 },
+                __config__=_SchemaConfig,
             )
             if config_specs
             else None
@@ -344,7 +351,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         return create_model(  # type: ignore[call-overload]
             self.__class__.__name__ + "Config",
-            __config__=_Config,
+            __config__=_SchemaConfig,
             **({"configurable": (configurable, None)} if configurable else {}),
             **{
                 field_name: (field_type, None)
@@ -1405,6 +1412,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         for k, v in next_input_schema.__fields__.items()
                         if k not in first.mapper.steps
                     },
+                    __config__=_SchemaConfig,
                 )
 
         return self.first.get_input_schema(config)
@@ -2006,6 +2014,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                     for k, v in step.get_input_schema(config).__fields__.items()
                     if k != "__root__"
                 },
+                __config__=_SchemaConfig,
             )
 
         return super().get_input_schema(config)
@@ -2017,6 +2026,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         return create_model(  # type: ignore[call-overload]
             "RunnableParallelOutput",
             **{k: (v.OutputType, None) for k, v in self.steps.items()},
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -2548,9 +2558,14 @@ class RunnableLambda(Runnable[Input, Output]):
                 return create_model(
                     "RunnableLambdaInput",
                     **{item[1:-1]: (Any, None) for item in items},  # type: ignore
+                    __config__=_SchemaConfig,
                 )
             else:
-                return create_model("RunnableLambdaInput", __root__=(List[Any], None))
+                return create_model(
+                    "RunnableLambdaInput",
+                    __root__=(List[Any], None),
+                    __config__=_SchemaConfig,
+                )
 
         if self.InputType != Any:
             return super().get_input_schema(config)
@@ -2559,6 +2574,7 @@ class RunnableLambda(Runnable[Input, Output]):
             return create_model(
                 "RunnableLambdaInput",
                 **{key: (Any, None) for key in dict_keys},  # type: ignore
+                __config__=_SchemaConfig,
             )
 
         return super().get_input_schema(config)
@@ -2576,6 +2592,50 @@ class RunnableLambda(Runnable[Input, Output]):
             )
         except ValueError:
             return Any
+
+    @property
+    def deps(self) -> List[Runnable]:
+        """The dependencies of this runnable."""
+        if hasattr(self, "func"):
+            objects = get_function_nonlocals(self.func)
+        elif hasattr(self, "afunc"):
+            objects = get_function_nonlocals(self.afunc)
+        else:
+            objects = []
+
+        return [obj for obj in objects if isinstance(obj, Runnable)]
+
+    @property
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
+        return get_unique_config_specs(
+            spec for dep in self.deps for spec in dep.config_specs
+        )
+
+    def get_graph(self, config: RunnableConfig | None = None) -> Graph:
+        if deps := self.deps:
+            graph = Graph()
+            input_node = graph.add_node(self.get_input_schema(config))
+            output_node = graph.add_node(self.get_output_schema(config))
+            for dep in deps:
+                dep_graph = dep.get_graph()
+                dep_graph.trim_first_node()
+                dep_graph.trim_last_node()
+                if not dep_graph:
+                    graph.add_edge(input_node, output_node)
+                else:
+                    graph.extend(dep_graph)
+                    dep_first_node = dep_graph.first_node()
+                    if not dep_first_node:
+                        raise ValueError(f"Runnable {dep} has no first node")
+                    dep_last_node = dep_graph.last_node()
+                    if not dep_last_node:
+                        raise ValueError(f"Runnable {dep} has no last node")
+                    graph.add_edge(input_node, dep_first_node)
+                    graph.add_edge(dep_last_node, output_node)
+        else:
+            graph = super().get_graph(config)
+
+        return graph
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunnableLambda):
@@ -2740,6 +2800,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[self.bound.get_input_schema(config)],  # type: ignore
                 None,
             ),
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -2756,11 +2817,15 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[schema],  # type: ignore
                 None,
             ),
+            __config__=_SchemaConfig,
         )
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.bound.config_specs
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        return self.bound.get_graph(config)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -2972,6 +3037,9 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.bound.config_specs
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        return self.bound.get_graph(config)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

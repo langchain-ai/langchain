@@ -26,6 +26,7 @@ from langchain_core.runnables.config import (
     get_config_list,
     get_executor_for_config,
 )
+from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AnyConfigurableField,
     ConfigurableField,
@@ -75,6 +76,10 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     ) -> Type[BaseModel]:
         runnable, config = self._prepare(config)
         return runnable.get_output_schema(config)
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        runnable, config = self._prepare(config)
+        return runnable.get_graph(config)
 
     @abstractmethod
     def _prepare(
