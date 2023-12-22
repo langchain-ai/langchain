@@ -14,6 +14,19 @@ from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
 
 
+def create_map_reduce_documents_chain(mapdocument_input_key: str) -> Runnable:
+    # The chain we'll apply to each individual document.
+    # Returns a summary of the document.
+    map_chain = map_prompt | llm | StrOutputParser()
+
+    # A wrapper chain to keep the original Document metadata
+    map_as_doc_chain = (
+            RunnableParallel({"doc": RunnablePassthrough(), "content": map_chain})
+            | (lambda x: Document(page_content=x["content"],
+                                  metadata=x["doc"].metadata))
+    ).with_config(run_name="Summarize (return doc)")
+
+
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by mapping a chain over them, then combining results.
 
