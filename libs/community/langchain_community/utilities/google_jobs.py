@@ -11,6 +11,7 @@ from langchain_core.utils import (
 
 class GoogleJobsAPIWrapper(BaseModel):
     """Wrapper for SerpApi's Google Scholar API
+
     You can create SerpApi.com key by signing up at: https://serpapi.com/users/sign_up.
     The wrapper uses the SerpApi.com python package:
     https://serpapi.com/integrations/python

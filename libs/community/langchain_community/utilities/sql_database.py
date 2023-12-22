@@ -405,6 +405,10 @@ class SQLDatabase:
                     connection.exec_driver_sql(
                         f"ALTER SESSION SET CURRENT_SCHEMA = {self._schema}"
                     )
+                elif self.dialect == "sqlany":
+                    # If anybody using Sybase SQL anywhere database then it should not
+                    # go to else condition. It should be same as mssql.
+                    pass
                 else:  # postgresql and other compatible dialects
                     connection.exec_driver_sql("SET search_path TO %s", (self._schema,))
             cursor = connection.execute(text(command))

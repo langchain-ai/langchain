@@ -12,6 +12,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -128,6 +129,15 @@ def aconfig_with_context(
     config: RunnableConfig,
     steps: List[Runnable],
 ) -> RunnableConfig:
+    """Asynchronously patch a runnable config with context getters and setters.
+
+    Args:
+        config: The runnable config.
+        steps: The runnable steps.
+
+    Returns:
+        The patched runnable config.
+    """
     return _config_with_context(config, steps, _asetter, _agetter, asyncio.Event)
 
 
@@ -135,13 +145,27 @@ def config_with_context(
     config: RunnableConfig,
     steps: List[Runnable],
 ) -> RunnableConfig:
+    """Patch a runnable config with context getters and setters.
+
+    Args:
+        config: The runnable config.
+        steps: The runnable steps.
+
+    Returns:
+        The patched runnable config.
+    """
     return _config_with_context(config, steps, _setter, _getter, threading.Event)
 
 
 class ContextGet(RunnableSerializable):
+    """Get a context value."""
+
     prefix: str = ""
 
     key: Union[str, List[str]]
+
+    def __str__(self) -> str:
+        return f"ContextGet({_print_keys(self.key)})"
 
     @property
     def ids(self) -> List[str]:
@@ -197,6 +221,8 @@ def _coerce_set_value(value: SetValue) -> Runnable[Input, Output]:
 
 
 class ContextSet(RunnableSerializable):
+    """Set a context value."""
+
     prefix: str = ""
 
     keys: Mapping[str, Optional[Runnable]]
@@ -220,6 +246,9 @@ class ContextSet(RunnableSerializable):
             },
             prefix=prefix,
         )
+
+    def __str__(self) -> str:
+        return f"ContextSet({_print_keys(list(self.keys.keys()))})"
 
     @property
     def ids(self) -> List[str]:
@@ -276,8 +305,18 @@ class ContextSet(RunnableSerializable):
 
 
 class Context:
+    """Context for a runnable."""
+
     @staticmethod
     def create_scope(scope: str, /) -> "PrefixContext":
+        """Create a context scope.
+
+        Args:
+            scope: The scope.
+
+        Returns:
+            The context scope.
+        """
         return PrefixContext(prefix=scope)
 
     @staticmethod
@@ -295,6 +334,8 @@ class Context:
 
 
 class PrefixContext:
+    """Context for a runnable with a prefix."""
+
     prefix: str = ""
 
     def __init__(self, prefix: str = ""):
@@ -311,3 +352,10 @@ class PrefixContext:
         **kwargs: SetValue,
     ) -> ContextSet:
         return ContextSet(_key, _value, prefix=self.prefix, **kwargs)
+
+
+def _print_keys(keys: Union[str, Sequence[str]]) -> str:
+    if isinstance(keys, str):
+        return f"'{keys}'"
+    else:
+        return ", ".join(f"'{k}'" for k in keys)
