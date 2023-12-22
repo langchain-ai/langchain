@@ -1,6 +1,6 @@
 # Lunary
 
->[Lunary](https://lunary.ai?utm_source=langchain&utm_medium=py&utm_campaign=docs) is an open-source observability platform that provides cost and usage analytics, user tracking, tracing and evaluation tools.
+>[Lunary](https://lunary.ai?utm_source=langchain&utm_medium=py&utm_campaign=docs) is an open-source platform that provides observability (cost and usage analytics, logs and tracing), prompt management and evaluations.
 
 <video controls width='100%' >
   <source src='https://lunary.ai/videos/demo-annotated.mp4'/>
@@ -137,4 +137,4 @@ with identify("user-456", user_props={"email": "user456@test.com"}):
 ```
 ## Support
 
-For any question or issue with integration you can reach out to the Lunary team via [email](mailto:hello@lubary.ai).
+For any question or issue with integration you can reach out to the Lunary team via [email](mailto:hello@lunary.ai).
