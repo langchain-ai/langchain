@@ -18,7 +18,7 @@ class Node(NamedTuple):
     data: Union[Type[BaseModel], Runnable]
 
 
-@dataclass(slots=True, weakref_slot=True)
+@dataclass
 class Graph:
     nodes: Dict[str, Node] = field(default_factory=dict)
     edges: List[Edge] = field(default_factory=list)
