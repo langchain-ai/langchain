@@ -15,6 +15,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
     Tuple,
     Type,
@@ -136,7 +137,9 @@ class VectorStore(ABC):
         metadatas = [doc.metadata for doc in documents]
         return await self.aadd_texts(texts, metadatas, **kwargs)
 
-    def search(self, query: str, search_type: str, **kwargs: Any) -> List[Document]:
+    def search(
+        self, query: str, search_type: Literal["similarity", "mmr"], **kwargs: Any
+    ) -> List[Document]:
         """Return docs most similar to query using specified search type."""
         if search_type == "similarity":
             return self.similarity_search(query, **kwargs)
@@ -149,7 +152,7 @@ class VectorStore(ABC):
             )
 
     async def asearch(
-        self, query: str, search_type: str, **kwargs: Any
+        self, query: str, search_type: Literal["similarity", "mmr"], **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query using specified search type."""
         if search_type == "similarity":
