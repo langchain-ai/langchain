@@ -26,7 +26,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
         es_password: Password to use when connecting to Elasticsearch.
         es_api_key: API key to use when connecting to Elasticsearch.
         es_connection: Optional pre-existing Elasticsearch connection.
-        esnsure_ascii: Used to escape ASCII symbols as `\uXXXX`. Enabled by default.
+        esnsure_ascii: Used to escape ASCII symbols in json.dumps. Defaults to True.
         index: Name of the index to use.
         session_id: Arbitrary key that is used to store the messages
             of a single chat session.
