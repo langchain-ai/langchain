@@ -1,13 +1,17 @@
 
 # rag-multi-modal-mv-local
 
-Visual search is a famililar application to many with iPhones or Android devices: use natural language to search across your photo collection. 
+Visual search is a famililar application to many with iPhones or Android devices. It allows user to serch photos using natural language. 
   
-With the release of open source, multi-modal LLMs it's possible to build this kind of application for yourself and have it run on your personal laptop. 
+With the release of open source, multi-modal LLMs it's possible to build this kind of application for yourself for your own private photo collection.
 
-This template demonstrates how to perform visual search and question-answering over a collection of photos.
+This template demonstrates how to perform private visual search and question-answering over a collection of your photos.
+
+It uses an open source multi-modal LLM of your choice to create image summaries for each photos, embeds the summaries, and stores them in Chroma.
  
-Given a set of photos, it will produce image summaries and index them, retrieve photos relevant to user question using the summaries, and use Ollama to run a local, open-source multi-modal LLM to answer questions about the retrieved photos.
+Given a question, relevat photos are retrieved and passed to the multi-modal LLM for answer synthesis.
+
+![mm-caption-local](https://github.com/langchain-ai/langchain/assets/122662504/cd9b3d82-9b06-4a39-8490-7482466baf43)
 
 ## Input
 

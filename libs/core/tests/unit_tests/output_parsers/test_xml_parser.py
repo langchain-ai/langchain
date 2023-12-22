@@ -1,7 +1,7 @@
 """Test XMLOutputParser"""
 import pytest
 
-from langchain.output_parsers.xml import XMLOutputParser
+from langchain_core.output_parsers.xml import XMLOutputParser
 
 DEF_RESULT_ENCODING = """<?xml version="1.0" encoding="UTF-8"?>
  <foo>
@@ -31,6 +31,11 @@ def test_xml_output_parser(result: str) -> None:
 
     xml_result = xml_parser.parse(result)
     assert DEF_RESULT_EXPECTED == xml_result
+    assert list(xml_parser.transform(iter(result))) == [
+        {"foo": [{"bar": [{"baz": None}]}]},
+        {"foo": [{"bar": [{"baz": "slim.shady"}]}]},
+        {"foo": [{"baz": "tag"}]},
+    ]
 
 
 @pytest.mark.parametrize("result", ["foo></foo>", "<foo></foo", "foo></foo", "foofoo"])
