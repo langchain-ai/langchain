@@ -19,6 +19,7 @@ from langchain_core.prompts.chat import (
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
+    MessagesPlaceholder,
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
@@ -360,3 +361,11 @@ def test_chat_message_partial() -> None:
     ]
     assert res == expected
     assert template2.format(input="hello") == get_buffer_string(expected)
+
+
+def test_messages_placeholder() -> None:
+    prompt = MessagesPlaceholder("history")
+    with pytest.raises(KeyError):
+        prompt.format_messages()
+    prompt = MessagesPlaceholder("history", optional=True)
+    assert prompt.format_messages() == []
