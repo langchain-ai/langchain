@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Type
+from operator import itemgetter
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_core.documents import Document
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import BaseMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
 from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
+from langchain_core.runnables import Runnable, RunnableParallel, RunnablePassthrough
 from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import Callbacks
@@ -13,18 +19,83 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
 
+LanguageModelLike = Union[
+    Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
+]
 
-def create_map_reduce_documents_chain(mapdocument_input_key: str) -> Runnable:
-    # The chain we'll apply to each individual document.
-    # Returns a summary of the document.
-    map_chain = map_prompt | llm | StrOutputParser()
 
-    # A wrapper chain to keep the original Document metadata
-    map_as_doc_chain = (
-            RunnableParallel({"doc": RunnablePassthrough(), "content": map_chain})
-            | (lambda x: Document(page_content=x["content"],
-                                  metadata=x["doc"].metadata))
-    ).with_config(run_name="Summarize (return doc)")
+def create_map_documents_chain(
+    llm: LanguageModelLike,
+    prompt: BasePromptTemplate,
+    *,
+    document_input_key: str,
+    document_prompt: Optional[BasePromptTemplate] = None,
+) -> Runnable[Union[Dict[str, Any], Sequence[Document]], List[Document]]:
+    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+
+    def _format_document(inputs: dict) -> str:
+        return format_document(inputs[document_input_key], _document_prompt)
+
+    map_content_chain = (
+        RunnablePassthrough.assign(**{document_input_key: _format_document})
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+
+    map_doc_chain = RunnableParallel(
+        doc=itemgetter(document_input_key), content=map_content_chain
+    ) | (lambda x: Document(page_content=x["content"], metadata=x["doc"].metadata))
+
+    def list_inputs(inputs: Union[dict, Sequence[Document]]) -> list:
+        if isinstance(inputs, dict):
+            docs = inputs.pop(document_input_key)
+            inputs = {k: v for k, v in inputs.items() for k in prompt.input_variables}
+        else:
+            docs = inputs
+            inputs = {}
+        return [{document_input_key: doc, **inputs} for doc in docs]
+
+    return list_inputs | map_doc_chain.map()
+
+
+def create_reduce_documents_chain(
+    llm: LanguageModelLike,
+    prompt: BasePromptTemplate,
+    *,
+    document_input_key: str,
+    document_prompt: Optional[BasePromptTemplate] = None,
+    document_separator: str = "\n\n",
+) -> Runnable:
+    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+
+    def _format_inputs(inputs: dict) -> dict:
+        docs = inputs[document_input_key]
+        inputs[document_input_key] = document_separator.join(
+            format_document(doc, _document_prompt) for doc in docs
+        )
+        return {k: v for k, v in inputs.items() if k in prompt.input_variables}
+
+    return _format_inputs | prompt | llm | StrOutputParser()
+
+
+def create_map_reduce_documents_chain(
+    map_chain: Runnable[Union[Dict[str, Any], Sequence[Document]], List[Document]],
+    reduce_chain: Runnable,
+    *,
+    document_input_key: Optional[str] = None,
+    collapse_chain: Runnable,
+) -> Runnable:
+    if not collapse_chain:
+        return (
+            RunnablePassthrough.assign(**{document_input_key: map_chain}) | reduce_chain
+        )
+    else:
+        return (
+            RunnablePassthrough.assign(**{document_input_key: map_chain})
+            | collapse_chain
+            | reduce_chain
+        )
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
