@@ -8,12 +8,11 @@ from functools import partial
 from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    generate_from_stream,
-)
+from langchain_core.language_models.chat_models import (BaseChatModel,
+                                                        generate_from_stream)
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    ChatResult)
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -32,7 +31,20 @@ class meta(BaseModel):
 
 
 class ChatZhipuAI(BaseChatModel):
-    """`ZHIPU AI` large language chat models API."""
+    """`ZHIPU AI` large language chat models API.
+
+    To use, you should have the ``zhipuai`` python package installed, and the
+    environment variable ``ZHIPUAI_API_KEY`` set with your API key.
+
+    Any parameters that are valid to be passed to the zhipuai.create call can be passed
+    in, even if not explicitly saved on this class.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatZhipuAI
+            zhipuai = ChatZhipuAI(model_name="chatglm_turbo", api_key="your_api_key")
+    """
 
     zhipuai: Any
     api_key: str = Field()
@@ -51,8 +63,32 @@ class ChatZhipuAI(BaseChatModel):
 
     @property
     def _llm_type(self) -> str:
-        """Return the type of model."""
-        return self.model
+        """Return the type of chat model."""
+        return "zhipuai"
+    
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"zhipuai_api_key": "ZHIPUAI_API_KEY"}
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "chat_models", "zhipuai"]
+    
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        if self.model:
+            attributes["model"] = self.model
+
+        if self.streaming:
+            attributes["streaming"] = self.streaming
+
+        if self.return_type:
+            attributes["return_type"] = self.return_type
+
+        return attributes
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -70,7 +106,7 @@ class ChatZhipuAI(BaseChatModel):
     async def async_invoke(self, prompt):
         loop = asyncio.get_running_loop()
         partial_func = partial(
-            self.zhipuai.model_api.async_invoke, model="chatglm_turbo", prompt=prompt
+            self.zhipuai.model_api.async_invoke, model=self.model, prompt=prompt
         )
         response = await loop.run_in_executor(
             None,
