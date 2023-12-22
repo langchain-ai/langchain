@@ -165,7 +165,7 @@ class ChatZhipuAI(BaseChatModel):
             import zhipuai
 
             self.zhipuai = zhipuai
-            self.zhipuai.zhipuai_api_key = self.zhipuai_api_key
+            self.zhipuai.api_key = self.zhipuai_api_key
         except ImportError:
             raise RuntimeError(
                 "Could not import zhipuai package. "
@@ -183,9 +183,10 @@ class ChatZhipuAI(BaseChatModel):
                 return_type=self.return_type,
             )
         elif self.model == "characterglm":
+            meta = self.meta.dict()
             return self.zhipuai.model_api.invoke(
                 model=self.model,
-                meta=self.meta,
+                meta=meta,
                 prompt=prompt,
                 request_id=self.request_id,
                 return_type=self.return_type,
@@ -204,10 +205,11 @@ class ChatZhipuAI(BaseChatModel):
                 incremental=self.incremental,
             )
         elif self.model == "characterglm":
+            meta = self.meta.dict()
             return self.zhipuai.model_api.sse_invoke(
                 model=self.model,
                 prompt=prompt,
-                meta=self.meta,
+                meta=meta,
                 request_id=self.request_id,
                 return_type=self.return_type,
                 incremental=self.incremental,
@@ -239,7 +241,7 @@ class ChatZhipuAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = False,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
         """ """
@@ -252,7 +254,8 @@ class ChatZhipuAI(BaseChatModel):
 
             prompt.append({"role": role, "content": message.content})
 
-        if not self.streaming:
+        should_stream = stream if stream is not None else self.streaming
+        if not should_stream:
             response = self.invoke(prompt)
 
             if response["code"] != 200:
