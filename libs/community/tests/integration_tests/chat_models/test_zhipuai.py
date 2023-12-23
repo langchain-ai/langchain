@@ -10,7 +10,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 def test_default_call() -> None:
     """Test default model call."""
-    chat = ChatZhipuAI(zhipuai_api_key="your_zhipuai_api_key")
+    chat = ChatZhipuAI()
     response = chat(messages=[HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
@@ -19,16 +19,14 @@ def test_default_call() -> None:
 def test_model() -> None:
     """Test model kwarg works."""
     chat = ChatZhipuAI(model="chatglm_turbo")
-    response = chat(
-        zhipuai_api_key="your_zhipuai_api_key", messages=[HumanMessage(content="Hello")]
-    )
+    response = chat(messages=[HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
 
 def test_multiple_history() -> None:
     """Tests multiple history works."""
-    chat = ChatZhipuAI(zhipuai_api_key="your_zhipuai_api_key")
+    chat = ChatZhipuAI()
 
     response = chat(
         messages=[
@@ -43,7 +41,7 @@ def test_multiple_history() -> None:
 
 def test_stream() -> None:
     """Test that stream works."""
-    chat = ChatZhipuAI(zhipuai_api_key="your_zhipuai_api_key", streaming=True)
+    chat = ChatZhipuAI(streaming=True)
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     response = chat(
@@ -61,7 +59,7 @@ def test_stream() -> None:
 
 def test_multiple_messages() -> None:
     """Tests multiple messages works."""
-    chat = ChatZhipuAI(zhipuai_api_key="your_zhipuai_api_key")
+    chat = ChatZhipuAI()
     message = HumanMessage(content="Hi, how are you.")
     response = chat.generate([[message], [message]])
 
