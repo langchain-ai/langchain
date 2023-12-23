@@ -5,11 +5,13 @@ import pytest
 
 from langchain_community.chat_models.zhipuai import ChatZhipuAI
 
+zhipuai_api_key = None
+
 
 @pytest.mark.requires("zhipuai")
 def test_chat_zhipuai_model_param() -> None:
     chat = ChatZhipuAI(
-        zhipuai_api_key="your_zhipuai_api_key", model="chatglm_turbo", streaming=False
+        zhipuai_api_key=zhipuai_api_key, model="chatglm_turbo", streaming=False
     )
     assert chat.model == "chatglm_turbo"
     assert chat.zhipuai_api_key == "your_zhipuai_api_key"
