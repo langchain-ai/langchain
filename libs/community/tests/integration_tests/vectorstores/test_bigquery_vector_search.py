@@ -8,16 +8,20 @@ Your end-user credentials would be used to make the calls (make sure you've run
 import uuid
 
 import pytest
-from google.cloud import bigquery
 
 from langchain_community.vectorstores.bigquery_vector_search import BigQueryVectorSearch
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
+TEST_TABLE_NAME = "langchain_test_table"
 
 @pytest.fixture(scope="class")
 def store(request: pytest.FixtureRequest) -> BigQueryVectorSearch:
     """BigQueryVectorStore tests context."""
+    from google.cloud import bigquery
     TestBigQueryVectorStore.store = BigQueryVectorSearch(
-        dataset_name=TestBigQueryVectorStore.dataset_name
+        embedding=FakeEmbeddings,
+        dataset_name=TestBigQueryVectorStore.dataset_name,
+        table_name=TEST_TABLE_NAME
     )
     TestBigQueryVectorStore.store.add_texts(
         TestBigQueryVectorStore.texts, TestBigQueryVectorStore.metadatas
@@ -70,7 +74,7 @@ class TestBigQueryVectorStore:
     def test_semantic_search_filter_fruits(self, store: BigQueryVectorSearch) -> None:
         """Test on semantic similarity with metadata filter."""
         docs = store.similarity_search(
-            "food", metadata_filter="JSON_VALUE(metadata,'$.kind') = 'fruit'"
+            "food", filter={"kind":"fruit"}
         )
         kinds = [d.metadata["kind"] for d in docs]
         assert "fruit" in kinds
@@ -80,7 +84,7 @@ class TestBigQueryVectorStore:
     def test_get_doc_by_filter(self, store: BigQueryVectorSearch) -> None:
         """Test on document retrieval with metadata filter."""
         docs = store.get_documents(
-            metadata_filter="JSON_VALUE(metadata,'$.kind') = 'fruit'"
+            filter={"kind":"fruit"}
         )
         kinds = [d.metadata["kind"] for d in docs]
         assert "fruit" in kinds
