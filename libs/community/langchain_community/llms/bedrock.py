@@ -251,7 +251,12 @@ class BedrockBase(BaseModel, ABC):
 
     @property
     def _guardrails_enabled(self) -> bool:
-        return self.guardrails is not None and self.guardrails["id"] is not None and self.guardrails["version"] is not None
+        try:
+            return isinstance(self.guardrails, dict) and bool(self.guardrails["id"]) and bool(self.guardrails["version"])
+
+        except KeyError as e:
+            raise TypeError(f"Guardrails must be a dictionary with 'id' and 'version' keys.") from e
+
 
     def _get_guardrails_canonical_form(self) -> Dict[str, Any]:
         """
@@ -263,17 +268,11 @@ class BedrockBase(BaseModel, ABC):
                 "guardrailVersion": "string"
             }
         """
-        if self._guardrails_enabled:
-            return {
-                "amazon-bedrock-guardrailDetails" : {
-                    "guardrailId": self.guardrails["id"],
-                    "guardrailVersion": self.guardrails["version"]
-                }}
-        else:
-            raise ValueError(
-                "Guardrails call attempted but guardrails were not configured."
-                "Validate that the 'Guardrails for Bedrock' are configured correctly and enabled."
-            )
+        return {
+            "amazon-bedrock-guardrailDetails" : {
+                "guardrailId": self.guardrails.get("id"),
+                "guardrailVersion": self.guardrails.get("version"),
+            }}
 
 
     def _prepare_input_and_invoke(
@@ -301,7 +300,6 @@ class BedrockBase(BaseModel, ABC):
         }
 
         if self._guardrails_enabled:
-            #params["trace"] = "ENABLED"
             request_options["guardrail"] = "ENABLED"
 
 
@@ -358,7 +356,6 @@ class BedrockBase(BaseModel, ABC):
         }
 
         if self._guardrails_enabled:
-            # params["trace"] = "ENABLED"
             request_options["guardrail"] = "ENABLED"
 
 
