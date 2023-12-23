@@ -133,7 +133,7 @@ class BaseConversationalRetrievalChain(Chain):
             not in combine_docs_chain.llm_chain.prompt.input_variables
         ):
             raise ValueError(
-                "If `question_generator` is None, the `chat_history` " 
+                "If `question_generator` is None, the `chat_history` "
                 "variable is required for the prompt of `combine_docs_chain` "
                 "(StuffDocumentsChain). Please specify your custom prompt for "
                 "`combine_docs_chain` with the `chat_history` variable along "
@@ -141,7 +141,6 @@ class BaseConversationalRetrievalChain(Chain):
             )
         else:
             return values
-        
 
     @abstractmethod
     def _get_docs(
@@ -242,7 +241,7 @@ class BaseConversationalRetrievalChain(Chain):
                 input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
             )
             output[self.output_key] = answer
-            
+
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:

@@ -18,5 +18,3 @@ Helpful Answer:"""
 QA_PROMPT = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]
 )
-
-
