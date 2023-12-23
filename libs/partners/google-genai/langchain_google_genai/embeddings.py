@@ -97,3 +97,4 @@ class GoogleGenerativeAIEmbeddings(BaseModel, Embeddings):
         """
         task_type = self.task_type or "retrieval_query"
         return self._embed([text], task_type=task_type)[0]
+

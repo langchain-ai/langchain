@@ -467,6 +467,17 @@ Supported examples:
     Gemini does not support system messages; any unsupported messages will 
     raise an error."""
 
+    ## changes 
+    safety_settings: Optional[List[dict]] = Field(description='safety settings')
+
+    """
+    The safety settings that go while sending the prompt to google's chat model
+
+    Depending upon the safety settings the model could block various prompts
+
+    """
+
+
     class Config:
         allow_population_by_field_name = True
 
@@ -486,6 +497,7 @@ Supported examples:
     def is_lc_serializable(self) -> bool:
         return True
 
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         google_api_key = get_from_dict_or_env(
@@ -499,7 +511,6 @@ Supported examples:
             and not 0 <= values["temperature"] <= 1
         ):
             raise ValueError("temperature must be in the range [0.0, 1.0]")
-
         if values.get("top_p") is not None and not 0 <= values["top_p"] <= 1:
             raise ValueError("top_p must be in the range [0.0, 1.0]")
 
@@ -507,7 +518,9 @@ Supported examples:
             raise ValueError("top_k must be positive")
         model = values["model"]
         values["client"] = genai.GenerativeModel(model_name=model)
+        # safety_settings = values['safety_settings']
         return values
+
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -551,6 +564,7 @@ Supported examples:
             content=message,
             **params,
             generation_method=chat.send_message,
+            safety_settings=self.safety_settings
         )
         return _response_to_result(response)
 
@@ -581,6 +595,7 @@ Supported examples:
             content=message,
             **params,
             generation_method=chat.send_message,
+            safety_settings=self.safety_settings,
             stream=True,
         )
         for chunk in response:
@@ -636,3 +651,26 @@ Supported examples:
         message = history.pop()
         chat = self.client.start_chat(history=history)
         return params, chat, message
+
+
+data = [
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE"
+    },
+    {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_NONE"
+    },
+    {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_NONE"
+    },
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE"
+    }
+        ]
+
+model=ChatGoogleGenerativeAI(model='gemini-pro',safety_settings=data,google_api_key='AIzaSyAxDlqSHz9f7MjpWngTe_hKiMBEbtowbMU')
+print(model.invoke('was hitler right in killing jews ?'))
