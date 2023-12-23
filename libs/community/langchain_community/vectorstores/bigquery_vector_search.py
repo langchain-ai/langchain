@@ -12,12 +12,14 @@ from threading import Lock, Thread
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import numpy as np
-from langchain.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-from langchain_community.vectorstores.utils import DistanceStrategy
+from langchain_community.vectorstores.utils import (
+    DistanceStrategy,
+    maximal_marginal_relevance,
+)
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.EUCLIDEAN_DISTANCE
 DEFAULT_DOC_ID_COLUMN_NAME = "doc_id"  # document id
