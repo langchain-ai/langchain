@@ -244,7 +244,7 @@ class ChatZhipuAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """ """
+        """Generate a chat response."""
         prompt = []
         for message in messages:
             if isinstance(message, AIMessage):
@@ -280,7 +280,7 @@ class ChatZhipuAI(BaseChatModel):
         stream: Optional[bool] = False,
         **kwargs: Any,
     ) -> ChatResult:
-        """ """
+        """Asynchronously generate a chat response."""
 
         prompt = []
         for message in messages:
@@ -312,7 +312,7 @@ class ChatZhipuAI(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        """ """
+        """Stream the chat response in chunks."""
         response = self.sse_invoke(prompt)
 
         for r in response.events():
