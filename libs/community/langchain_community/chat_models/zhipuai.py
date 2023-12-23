@@ -49,7 +49,7 @@ class ChatZhipuAI(BaseChatModel):
     """
 
     zhipuai: Any
-    zhipuai_api_key: str = Field()
+    zhipuai_api_key: Optional[str] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `ZHIPUAI_API_KEY` if not provided."""
 
     model: str = Field("chatglm_turbo")
