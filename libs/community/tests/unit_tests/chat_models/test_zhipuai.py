@@ -8,7 +8,9 @@ from langchain_community.chat_models.zhipuai import ChatZhipuAI
 
 @pytest.mark.requires("zhipuai")
 def test_chat_zhipuai_model_param() -> None:
-    chat = ChatZhipuAI(model="chatglm_turbo", streaming=False)
+    chat = ChatZhipuAI(
+        zhipuai_api_key="your_zhipuai_api_key", model="chatglm_turbo", streaming=False
+    )
     assert chat.model == "chatglm_turbo"
     assert chat.zhipuai_api_key == "your_zhipuai_api_key"
     assert chat.streaming is False
