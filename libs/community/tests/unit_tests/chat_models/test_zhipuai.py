@@ -38,7 +38,7 @@ def mock_completion() -> dict:
 
 @pytest.mark.requires("zhipuai")
 def test_zhipuai_predict(mock_completion: dict) -> None:
-    llm = ChatZhipuAI()
+    llm = ChatZhipuAI(zhipuai_api_key="your_zhipuai_api_key")
     mock_client = MagicMock()
     completed = False
 
@@ -60,7 +60,7 @@ def test_zhipuai_predict(mock_completion: dict) -> None:
 
 @pytest.mark.requires("zhipuai")
 async def test_zhipuai_apredict(mock_completion: dict) -> None:
-    llm = ChatZhipuAI()
+    llm = ChatZhipuAI(zhipuai_api_key="your_zhipuai_api_key")
     mock_client = MagicMock()
     completed = False
 
