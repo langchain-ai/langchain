@@ -1,15 +1,18 @@
 """Test conversation chain and memory."""
-import pytest
 from langchain_core.documents import Document
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.runnables.passthrough import RunnablePassthrough
 
-from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
+from langchain.chains.conversational_retrieval.base import (
+    ConversationalRetrievalChain,
+    create_conversational_retrieval_chain,
+)
 from langchain.llms.fake import FakeListLLM
 from langchain.memory.buffer import ConversationBufferMemory
 from tests.unit_tests.retrievers.sequential_retriever import SequentialRetriever
 
 
-@pytest.mark.asyncio
-async def atest_simple() -> None:
+async def test_simplea() -> None:
     fixed_resp = "I don't know"
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
@@ -31,8 +34,7 @@ async def atest_simple() -> None:
     assert got["answer"] == fixed_resp
 
 
-@pytest.mark.asyncio
-async def atest_fixed_message_response_when_docs_found() -> None:
+async def test_fixed_message_response_when_docs_founda() -> None:
     fixed_resp = "I don't know"
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
@@ -100,3 +102,25 @@ def test_fixed_message_response_when_docs_found() -> None:
     got = qa_chain("What is the answer?")
     assert got["chat_history"][1].content == answer
     assert got["answer"] == answer
+
+
+def test_create() -> None:
+    answer = "I know the answer!"
+    llm = FakeListLLM(responses=[answer])
+    retriever = SequentialRetriever(
+        sequential_responses=[[Document(page_content=answer)]]
+    )
+    question_gen_prompt = PromptTemplate.from_template("hi! {question} {chat_history}")
+    combine_docs_chain = (
+        PromptTemplate.from_template("combine! {input_documents}")
+        | llm
+        | {"answer": RunnablePassthrough()}
+    )
+    chain = create_conversational_retrieval_chain(
+        llm, retriever, question_gen_prompt, combine_docs_chain
+    )
+    assert chain.invoke({"question": "What is the answer?", "chat_history": []}) == {
+        "answer": "I know the answer!",
+        "generated_question": "What is the answer?",
+        "source_documents": [Document(page_content="I know the answer!")],
+    }

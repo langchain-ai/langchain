@@ -4,16 +4,21 @@ from __future__ import annotations
 import inspect
 import warnings
 from abc import abstractmethod
+from operator import itemgetter
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from langchain_core.beta.runnables.context import Context
 from langchain_core.documents import Document
-from langchain_core.language_models import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel, LanguageModelLike
 from langchain_core.messages import BaseMessage
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables.config import RunnableConfig
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableMap
+from langchain_core.runnables.base import RunnableLambda
+from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
@@ -25,7 +30,7 @@ from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
-from langchain.chains.llm import LLMChain
+from langchain.chains.llm import LLMChain, _get_language_model
 from langchain.chains.question_answering import load_qa_chain
 
 # Depending on the memory type and configuration, the chat history format may differ.
@@ -465,3 +470,68 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
             callbacks=callbacks,
             **kwargs,
         )
+
+
+def create_conversational_retrieval_chain(
+    llm: LanguageModelLike,
+    retriever: BaseRetriever,
+    question_gen_prompt: BasePromptTemplate,
+    combine_docs_chain: Runnable[Dict[str, Any], Dict[str, Any]],
+    max_tokens_limit: Optional[int] = None,
+) -> Runnable:
+    if max_tokens_limit is not None:
+        assert max_tokens_limit > 0
+    if combine_docs_chain.input_schema.__custom_root_type__:
+        raise ValueError("`combine_docs_chain` must accept dict as input.")
+    if combine_docs_chain.output_schema.__custom_root_type__:
+        raise ValueError("`combine_docs_chain` must return dict as output.")
+    if set(question_gen_prompt.input_variables) != {"question", "chat_history"}:
+        raise ValueError(
+            "`question_gen_prompt` must have variables `question` and `chat_history`"
+        )
+
+    context = Context.create_scope("conversational_retrieval")
+    question_generator = question_gen_prompt | llm | StrOutputParser()
+    get_num_tokens = _get_language_model(llm).get_num_tokens
+
+    def get_new_question(inputs: Dict[str, Any]):
+        if inputs["chat_history"]:
+            return question_generator
+        else:
+            return inputs["question"]
+
+    def _reduce_tokens_below_limit(docs: List[Document]) -> List[Document]:
+        num_docs = len(docs)
+
+        if max_tokens_limit:
+            tokens = [get_num_tokens(doc.page_content) for doc in docs]
+            token_count = sum(tokens[:num_docs])
+            while token_count > max_tokens_limit:
+                num_docs -= 1
+                token_count -= tokens[num_docs]
+
+        return docs[:num_docs]
+
+    return (
+        RunnableMap(
+            question=itemgetter("question"),
+            chat_history=itemgetter("chat_history")
+            | RunnableLambda(_get_chat_history)
+            | context.setter("chat_history"),
+        )
+        | get_new_question
+        | context.setter("new_question")
+        | retriever
+        | _reduce_tokens_below_limit
+        | context.setter("input_documents")
+        | {
+            "input_documents": context.getter("input_documents"),
+            "chat_history": context.getter("chat_history"),
+            "question": context.getter("new_question"),
+        }
+        | combine_docs_chain
+        | RunnablePassthrough.assign(
+            source_documents=context.getter("input_documents"),
+            generated_question=context.getter("new_question"),
+        )
+    )
