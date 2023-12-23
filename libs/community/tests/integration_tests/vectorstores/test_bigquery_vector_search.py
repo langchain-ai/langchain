@@ -5,6 +5,7 @@ Your end-user credentials would be used to make the calls (make sure you've run
 `gcloud auth login` first).
 """
 
+import os
 import uuid
 
 import pytest
@@ -17,11 +18,22 @@ TEST_TABLE_NAME = "langchain_test_table"
 
 @pytest.fixture(scope="class")
 def store(request: pytest.FixtureRequest) -> BigQueryVectorSearch:
-    """BigQueryVectorStore tests context."""
+    """BigQueryVectorStore tests context.
+
+    In order to run this test, you define PROJECT environment variable
+    with GCP project id.
+
+    Example:
+    export PROJECT=...
+    """
     from google.cloud import bigquery
 
+    bigquery.Client(location="US").create_dataset(
+        TestBigQueryVectorStore.dataset_name, exists_ok=True
+    )
     TestBigQueryVectorStore.store = BigQueryVectorSearch(
-        embedding=FakeEmbeddings,
+        project_id=os.environ.get("PROJECT", None),
+        embedding=FakeEmbeddings(),
         dataset_name=TestBigQueryVectorStore.dataset_name,
         table_name=TEST_TABLE_NAME,
     )
