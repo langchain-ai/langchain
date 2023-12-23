@@ -123,13 +123,13 @@ class Graph:
                         or len(data.splitlines()) > 1
                     ):
                         data = node.data.__class__.__name__
-                    elif len(data) > 36:
-                        data = data[:36] + "..."
+                    elif len(data) > 42:
+                        data = data[:42] + "..."
                 except Exception:
                     data = node.data.__class__.__name__
             else:
                 data = node.data.__name__
-            return data
+            return data if not data.startswith("Runnable") else data[8:]
 
         return draw(
             {node.id: node_data(node) for node in self.nodes.values()},
