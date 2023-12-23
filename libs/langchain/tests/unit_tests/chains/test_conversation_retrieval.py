@@ -84,22 +84,23 @@ def test_fixed_message_response_when_no_docs_found() -> None:
 def test_no_single_execution_conversationl_retrieval() -> None:
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
-    doc_chain = load_qa_chain(
-            llm, chain_type="stuff", prompt=QA_PROMPT
-    )
+    doc_chain = load_qa_chain(llm, chain_type="stuff", prompt=QA_PROMPT)
     memory = ConversationBufferMemory(
         k=1, output_key="answer", memory_key="chat_history", return_messages=True
     )
     retriever = SequentialRetriever(sequential_responses=[[]])
-    with pytest.raises(ValueError, match="If `question_generator` is None, "
-                       "the `chat_history` variable is required"):
+    with pytest.raises(
+        ValueError,
+        match="If `question_generator` is None, "
+        "the `chat_history` variable is required",
+    ):
         ConversationalRetrievalChain(
             retriever=retriever,
             memory=memory,
             question_generator=None,
-            combine_docs_chain=doc_chain
+            combine_docs_chain=doc_chain,
         )
-    
+
     custom_qa_prompt_w_chathist = """\
     Given the following chat history and pieces of contexts, please answer \
     the follow up question. If you don't know the answer, just say that you \
@@ -114,14 +115,12 @@ def test_no_single_execution_conversationl_retrieval() -> None:
     CUSTOML_QA_PROMPT = PromptTemplate.from_template(
         template=custom_qa_prompt_w_chathist
     )
-    custom_doc_chain = load_qa_chain(
-            llm, chain_type="stuff", prompt=CUSTOML_QA_PROMPT
-    )
+    custom_doc_chain = load_qa_chain(llm, chain_type="stuff", prompt=CUSTOML_QA_PROMPT)
     custom_qa_chain = ConversationalRetrievalChain(
         retriever=retriever,
         memory=memory,
         question_generator=None,
-        combine_docs_chain=custom_doc_chain
+        combine_docs_chain=custom_doc_chain,
     )
     got = custom_qa_chain({"question": "What is the answer?"})
     assert got["answer"] == answer
