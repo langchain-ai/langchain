@@ -468,7 +468,7 @@ Supported examples:
     raise an error."""
 
     ## changes 
-    safety_settings: Optional[List[dict]] = Field(description='safety settings are sent to unblock or block the model from answering to various prompts')
+    safety_settings: Optional[List[dict]] = Field(description='safety settings are sent to unblock or block the model from answering to various dangerous prompts')
 
     """
     The safety settings that go while sending the prompt to google's chat model
