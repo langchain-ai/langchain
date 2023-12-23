@@ -24,10 +24,7 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain.chains.conversational_retrieval.prompts import (
-    CHAT_RETRIEVAL_QA_PROMPT,
-    CONDENSE_QUESTION_PROMPT,
-)
+from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 
@@ -135,15 +132,16 @@ class BaseConversationalRetrievalChain(Chain):
             and "chat_history"
             not in combine_docs_chain.llm_chain.prompt.input_variables
         ):
-            warnings.warn(
-                "If the `chat_history` variable is not set for the prompt of "
-                "`combine_docs_chain`(StuffDocumentsChain) when `question_generator` "
-                "is None, using the default combined prompt - CHAT_RETRIEVAL_QA_PROMPT"
-                "Or consider specifying the custom prompt for `combine_docs_chain` with"
-                "the `chat_history` variable set."
+            raise ValueError(
+                "If `question_generator` is None, the `chat_history` " 
+                "variable is required for the prompt of `combine_docs_chain` "
+                "(StuffDocumentsChain). Please specify your custom prompt for "
+                "`combine_docs_chain` with the `chat_history` variable along "
+                "with the `question` and `context` variables."
             )
-            combine_docs_chain.llm_chain.prompt = CHAT_RETRIEVAL_QA_PROMPT
-        return values
+        else:
+            return values
+        
 
     @abstractmethod
     def _get_docs(
@@ -179,14 +177,19 @@ class BaseConversationalRetrievalChain(Chain):
             docs = self._get_docs(new_question, inputs, run_manager=_run_manager)
         else:
             docs = self._get_docs(new_question, inputs)  # type: ignore[call-arg]
-        new_inputs = inputs.copy()
-        if self.rephrase_question:
-            new_inputs["question"] = new_question
-        new_inputs["chat_history"] = chat_history_str
-        answer = self.combine_docs_chain.run(
-            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
-        )
-        output: Dict[str, Any] = {self.output_key: answer}
+        output: Dict[str, Any] = {}
+        if self.response_if_no_docs_found is not None and len(docs) == 0:
+            output[self.output_key] = self.response_if_no_docs_found
+        else:
+            new_inputs = inputs.copy()
+            if self.rephrase_question:
+                new_inputs["question"] = new_question
+            new_inputs["chat_history"] = chat_history_str
+            answer = self.combine_docs_chain.run(
+                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+            )
+            output[self.output_key] = answer
+
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
@@ -227,14 +230,19 @@ class BaseConversationalRetrievalChain(Chain):
         else:
             docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
 
-        new_inputs = inputs.copy()
-        if self.rephrase_question:
-            new_inputs["question"] = new_question
-        new_inputs["chat_history"] = chat_history_str
-        answer = await self.combine_docs_chain.arun(
-            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
-        )
-        output: Dict[str, Any] = {self.output_key: answer}
+        output: Dict[str, Any] = {}
+        if self.response_if_no_docs_found is not None and len(docs) == 0:
+            output[self.output_key] = self.response_if_no_docs_found
+        else:
+            new_inputs = inputs.copy()
+            if self.rephrase_question:
+                new_inputs["question"] = new_question
+            new_inputs["chat_history"] = chat_history_str
+            answer = await self.combine_docs_chain.arun(
+                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+            )
+            output[self.output_key] = answer
+            
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
