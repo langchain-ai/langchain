@@ -14,7 +14,7 @@ def test_chat_zhipuai_model_param() -> None:
         zhipuai_api_key=zhipuai_api_key, model="chatglm_turbo", streaming=False
     )
     assert chat.model == "chatglm_turbo"
-    assert chat.zhipuai_api_key == "your_zhipuai_api_key"
+    assert chat.zhipuai_api_key == None
     assert chat.streaming is False
 
 
