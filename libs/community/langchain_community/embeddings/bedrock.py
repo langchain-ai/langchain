@@ -4,6 +4,7 @@ import os
 from functools import partial
 from typing import Any, Dict, List, Optional
 
+import numpy as np
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
@@ -63,6 +64,9 @@ class BedrockEmbeddings(BaseModel, Embeddings):
 
     endpoint_url: Optional[str] = None
     """Needed if you don't want to default to us-east-1 endpoint"""
+
+    normalize: bool = False
+    """Whether the embeddings should be normalized to unit vectors"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -145,6 +149,11 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
+    def _normalize(self, embeddings: List[float]) -> List[float]:
+        """Normalize the embedding to a unit vector."""
+        emb = np.array(embeddings)
+        return list(emb / np.linalg.norm(emb))
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a Bedrock model.
 
@@ -169,7 +178,12 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return self._embedding_func(text)
+        embedding = self._embedding_func(text)
+
+        if self.normalize:
+            return self._normalize(embedding)
+
+        return embedding
 
     async def aembed_query(self, text: str) -> List[float]:
         """Asynchronous compute query embeddings using a Bedrock model.
