@@ -7,8 +7,8 @@ from langchain.document_loaders import TextLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.graphs import Neo4jGraph
 from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field
 from langchain.text_splitter import TokenTextSplitter
+from langchain_core.pydantic_v1 import BaseModel, Field
 from neo4j.exceptions import ClientError
 
 txt_path = Path(__file__).parent / "dune.txt"

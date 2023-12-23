@@ -9,9 +9,9 @@ from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.load import dumpd
 from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.tools import BaseTool
 
 from langchain.callbacks.manager import CallbackManager
-from langchain.tools.base import BaseTool
 from langchain.tools.render import format_tool_to_openai_tool
 
 if TYPE_CHECKING:
@@ -288,7 +288,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             tc.id for tc in run.required_action.submit_tool_outputs.tool_calls
         }
         tool_outputs = [
-            {"output": output, "tool_call_id": action.tool_call_id}
+            {"output": str(output), "tool_call_id": action.tool_call_id}
             for action, output in intermediate_steps
             if action.tool_call_id in required_tool_call_ids
         ]

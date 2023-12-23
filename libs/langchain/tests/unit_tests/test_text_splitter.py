@@ -13,6 +13,8 @@ from langchain.text_splitter import (
     MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
+    Tokenizer,
+    split_text_on_tokens,
 )
 
 FAKE_PYTHON_TEXT = """
@@ -1175,3 +1177,18 @@ def test_html_header_text_splitter(tmp_path: Path) -> None:
     docs_from_file = splitter.split_text_from_file(tmp_path / "doc.html")
 
     assert docs_from_file == expected
+
+
+def test_split_text_on_tokens() -> None:
+    """Test splitting by tokens per chunk."""
+    text = "foo bar baz 123"
+
+    tokenizer = Tokenizer(
+        chunk_overlap=3,
+        tokens_per_chunk=7,
+        decode=(lambda it: "".join(chr(i) for i in it)),
+        encode=(lambda it: [ord(c) for c in it]),
+    )
+    output = split_text_on_tokens(text=text, tokenizer=tokenizer)
+    expected_output = ["foo bar", "bar baz", "baz 123"]
+    assert output == expected_output

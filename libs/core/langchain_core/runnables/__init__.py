@@ -30,7 +30,6 @@ from langchain_core.runnables.config import (
     get_config_list,
     patch_config,
 )
-from langchain_core.runnables.context import Context
 from langchain_core.runnables.fallbacks import RunnableWithFallbacks
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.router import RouterInput, RouterRunnable
@@ -48,7 +47,6 @@ __all__ = [
     "ConfigurableField",
     "ConfigurableFieldSingleOption",
     "ConfigurableFieldMultiOption",
-    "Context",
     "patch_config",
     "RouterInput",
     "RouterRunnable",
