@@ -468,7 +468,7 @@ Supported examples:
     raise an error."""
 
     ## changes 
-    safety_settings: Optional[List[dict]] = Field(description='safety settings')
+    safety_settings: Optional[List[dict]] = Field(description='safety settings are sent to unblock or block the model from answering to various prompts')
 
     """
     The safety settings that go while sending the prompt to google's chat model
@@ -518,7 +518,6 @@ Supported examples:
             raise ValueError("top_k must be positive")
         model = values["model"]
         values["client"] = genai.GenerativeModel(model_name=model)
-        # safety_settings = values['safety_settings']
         return values
 
 
@@ -651,26 +650,3 @@ Supported examples:
         message = history.pop()
         chat = self.client.start_chat(history=history)
         return params, chat, message
-
-
-data = [
-    {
-        "category": "HARM_CATEGORY_HARASSMENT",
-        "threshold": "BLOCK_NONE"
-    },
-    {
-        "category": "HARM_CATEGORY_HATE_SPEECH",
-        "threshold": "BLOCK_NONE"
-    },
-    {
-        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-        "threshold": "BLOCK_NONE"
-    },
-    {
-        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-        "threshold": "BLOCK_NONE"
-    }
-        ]
-
-model=ChatGoogleGenerativeAI(model='gemini-pro',safety_settings=data,google_api_key='AIzaSyAxDlqSHz9f7MjpWngTe_hKiMBEbtowbMU')
-print(model.invoke('was hitler right in killing jews ?'))
