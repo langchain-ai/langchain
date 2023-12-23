@@ -29,12 +29,12 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        buffer = self.buffer[-self.k * 2 :] if self.k else self.buffer
+        buffer = self.buffer
         if self.moving_summary_buffer != "":
             first_messages: List[BaseMessage] = [
                 self.summary_message_cls(content=self.moving_summary_buffer)
             ]
-            buffer = first_messages + buffer
+            buffer = first_messages + buffer[-self.k * 2 :]
         if self.return_messages:
             final_buffer: Any = buffer
         else:
@@ -72,6 +72,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
             self.moving_summary_buffer = self.predict_new_summary(
                 pruned_memory, self.moving_summary_buffer
             )
+            self.k = len(buffer)
 
     def clear(self) -> None:
         """Clear memory contents."""
