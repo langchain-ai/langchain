@@ -5,7 +5,7 @@ import pytest
 
 from langchain_community.chat_models.zhipuai import ChatZhipuAI
 
-zhipuai_api_key = None
+zhipuai_api_key = "your_zhipu_api_key"
 
 
 @pytest.mark.requires("zhipuai")
@@ -14,7 +14,7 @@ def test_chat_zhipuai_model_param() -> None:
         zhipuai_api_key=zhipuai_api_key, model="chatglm_turbo", streaming=False
     )
     assert chat.model == "chatglm_turbo"
-    assert chat.zhipuai_api_key == None
+    assert chat.zhipuai_api_key == "your_zhipu_api_key"
     assert chat.streaming is False
 
 
@@ -52,7 +52,7 @@ def test_zhipuai_predict(mock_completion: dict) -> None:
     mock_client.create = mock_create
     with patch.object(
         llm,
-        "client",
+        "_generate",
         mock_client,
     ):
         res = llm.predict("bar")
@@ -74,7 +74,7 @@ async def test_zhipuai_apredict(mock_completion: dict) -> None:
     mock_client.create = mock_create
     with patch.object(
         llm,
-        "client",
+        "_agenerate",
         mock_client,
     ):
         res = llm.predict("bar")
