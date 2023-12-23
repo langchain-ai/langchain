@@ -293,21 +293,21 @@ class BedrockBase(BaseModel, ABC):
         accept = "application/json"
         contentType = "application/json"
 
-        try:
+        request_options = {
+            "body": body,
+            "modelId": self.model_id,
+            "accept": accept,
+            "contentType": contentType
+        }
 
-            if self._guardrails_enabled:
-                # Append headers for Guardrails if they are present in the model_kwargs
-                response = self.client.invoke_model(
-                    body=body, modelId=self.model_id, accept=accept, contentType=contentType,
-                    trace="ENABLED",
-                    guardrail="ENABLED",
-                )
-            else:
-                response = self.client.invoke_model(
-                    body=body, modelId=self.model_id, accept=accept, contentType=contentType
-                )
-            # todo: understand if we even want to allow for the printing of the trace
-            #output_body = json.loads(response["body"].read().decode())
+        if self._guardrails_enabled:
+            #params["trace"] = "ENABLED"
+            request_options["guardrail"] = "ENABLED"
+
+
+        try:
+            response = self.client.invoke_model(**request_options)
+
             text = LLMInputOutputAdapter.prepare_output(provider, response)
 
         except Exception as e:
@@ -349,23 +349,22 @@ class BedrockBase(BaseModel, ABC):
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
 
+
+        request_options = {
+            "body": body,
+            "modelId": self.model_id,
+            "accept": "application/json",
+            "contentType": "application/json"
+        }
+
+        if self._guardrails_enabled:
+            # params["trace"] = "ENABLED"
+            request_options["guardrail"] = "ENABLED"
+
+
         try:
-            if self._guardrails_enabled:
-                response = self.client.invoke_model_with_response_stream(
-                    body=body,
-                    modelId=self.model_id,
-                    accept="application/json",
-                    contentType="application/json",
-                    trace="ENABLED",
-                    guardrail="ENABLED",
-                )
-            else:
-                response = self.client.invoke_model_with_response_stream(
-                    body=body,
-                    modelId=self.model_id,
-                    accept="application/json",
-                    contentType="application/json",
-                )
+            response = self.client.invoke_model_with_response_stream(**request_options)
+
         except Exception as e:
             raise ValueError(f"Error raised by bedrock service: {e}")
 
