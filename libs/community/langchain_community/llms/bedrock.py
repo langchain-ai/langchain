@@ -183,6 +183,11 @@ class BedrockBase(BaseModel, ABC):
         "cohere": "stop_sequences",
     }
 
+    guardrails: Optional[Mapping[str, str]] = {
+        "id" : None,
+        "version" : None,
+    }
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
@@ -244,6 +249,33 @@ class BedrockBase(BaseModel, ABC):
     def _model_is_anthropic(self) -> bool:
         return self._get_provider() == "anthropic"
 
+    @property
+    def _guardrails_enabled(self) -> bool:
+        return self.guardrails is not None and self.guardrails["id"] is not None and self.guardrails["version"] is not None
+
+    def _get_guardrails_canonical_form(self) -> Dict[str, Any]:
+        """
+            The canonical way to pass in guardrails to the bedrock service
+            adheres to the following format:
+
+            "amazon-bedrock-guardrailDetails": {
+                "guardrailId": "string",
+                "guardrailVersion": "string"
+            }
+        """
+        if self._guardrails_enabled:
+            return {
+                "amazon-bedrock-guardrailDetails" : {
+                    "guardrailId": self.guardrails["id"],
+                    "guardrailVersion": self.guardrails["version"]
+                }}
+        else:
+            raise ValueError(
+                "Guardrails call attempted but guardrails were not configured."
+                "Validate that the 'Guardrails for Bedrock' are configured correctly and enabled."
+            )
+
+
     def _prepare_input_and_invoke(
         self,
         prompt: str,
@@ -252,18 +284,30 @@ class BedrockBase(BaseModel, ABC):
         **kwargs: Any,
     ) -> str:
         _model_kwargs = self.model_kwargs or {}
-
         provider = self._get_provider()
         params = {**_model_kwargs, **kwargs}
+        if self._guardrails_enabled:
+            params.update(self._get_guardrails_canonical_form())
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
         accept = "application/json"
         contentType = "application/json"
 
         try:
-            response = self.client.invoke_model(
-                body=body, modelId=self.model_id, accept=accept, contentType=contentType
-            )
+
+            if self._guardrails_enabled:
+                # Append headers for Guardrails if they are present in the model_kwargs
+                response = self.client.invoke_model(
+                    body=body, modelId=self.model_id, accept=accept, contentType=contentType,
+                    trace="ENABLED",
+                    guardrail="ENABLED",
+                )
+            else:
+                response = self.client.invoke_model(
+                    body=body, modelId=self.model_id, accept=accept, contentType=contentType
+                )
+            # todo: understand if we even want to allow for the printing of the trace
+            #output_body = json.loads(response["body"].read().decode())
             text = LLMInputOutputAdapter.prepare_output(provider, response)
 
         except Exception as e:
@@ -298,16 +342,30 @@ class BedrockBase(BaseModel, ABC):
             _model_kwargs["stream"] = True
 
         params = {**_model_kwargs, **kwargs}
+
+        if self._guardrails_enabled:
+            params.update(self._get_guardrails_canonical_form())
+
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
 
         try:
-            response = self.client.invoke_model_with_response_stream(
-                body=body,
-                modelId=self.model_id,
-                accept="application/json",
-                contentType="application/json",
-            )
+            if self._guardrails_enabled:
+                response = self.client.invoke_model_with_response_stream(
+                    body=body,
+                    modelId=self.model_id,
+                    accept="application/json",
+                    contentType="application/json",
+                    trace="ENABLED",
+                    guardrail="ENABLED",
+                )
+            else:
+                response = self.client.invoke_model_with_response_stream(
+                    body=body,
+                    modelId=self.model_id,
+                    accept="application/json",
+                    contentType="application/json",
+                )
         except Exception as e:
             raise ValueError(f"Error raised by bedrock service: {e}")
 
