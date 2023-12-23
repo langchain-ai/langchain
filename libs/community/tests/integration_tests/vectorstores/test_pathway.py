@@ -1,11 +1,12 @@
 """Test Pathway vector store functionality."""
-import os
-import shutil
+
+import pathlib
 import sys
 import time
 from multiprocessing import Process
 
 import pytest
+import requests
 
 from langchain_community.vectorstores.pathway import (
     PathwayVectorClient,
@@ -14,17 +15,16 @@ from langchain_community.vectorstores.pathway import (
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 PATHWAY_HOST = "127.0.0.1"
-PATHWAY_PORT = 8754
-PATHWAY_DIR = "/tmp/pathway-samples/"
+PATHWAY_PORT = 8764
 
 
-def pathway_server():
+def pathway_server(tmp_path):
     import pathway as pw
 
     data_sources = []
     data_sources.append(
         pw.io.fs.read(
-            PATHWAY_DIR,
+            tmp_path,
             format="binary",
             mode="streaming",
             with_metadata=True,
@@ -48,25 +48,27 @@ def pathway_server():
     reason="Pathway requires python 3.10 or higher",
 )
 @pytest.mark.requires("pathway")
-class TestPathway:
-    @classmethod
-    def setup_class(cls) -> None:
-        os.mkdir(PATHWAY_DIR)
-        with open(f"{PATHWAY_DIR}file_one.txt", "w+") as f:
-            f.write("foo")
+def test_similarity_search_without_metadata(tmp_path: pathlib.Path) -> None:
+    with open(tmp_path / "file_one.txt", "w+") as f:
+        f.write("foo")
 
-    @classmethod
-    def teardown_class(cls):
-        shutil.rmtree(PATHWAY_DIR)
-        pass
-
-    def test_similarity_search_without_metadata(self) -> None:
-        p = Process(target=pathway_server)
-        p.start()
-        time.sleep(6)
-        client = PathwayVectorClient(host=PATHWAY_HOST, port=PATHWAY_PORT)
-        output = client.similarity_search("foo")
-        p.terminate()
-        time.sleep(2)
-        assert len(output) == 1
-        assert output[0].page_content == "foo"
+    p = Process(target=pathway_server, args=[tmp_path])
+    p.start()
+    time.sleep(5)
+    client = PathwayVectorClient(host=PATHWAY_HOST, port=PATHWAY_PORT)
+    MAX_ATTEMPTS = 5
+    attempts = 0
+    output = []
+    while attempts < MAX_ATTEMPTS:
+        try:
+            output = client.similarity_search("foo")
+        except requests.exceptions.RequestException:
+            pass
+        else:
+            break
+        time.sleep(1)
+        attempts += 1
+    p.terminate()
+    time.sleep(2)
+    assert len(output) == 1
+    assert output[0].page_content == "foo"

@@ -1,5 +1,7 @@
 # rag-pathway
 
+This template performs RAG using Pathway and OpenAI.
+
 Pathway is a data streaming tool that can be utilized as vector store that is always up to date.
 Once the engine is listening to your local files, Drive, Dropbox, s3 or any other connector, 
 You don't have to run any ETL jobs, embedding services or LLM Api.
@@ -7,10 +9,11 @@ You don't have to run any ETL jobs, embedding services or LLM Api.
 Your answers to questions will be always up to date with latest changes.
 You can listen to many sources simultaneously. 
 
+You can also use Pathway with the [self-query retrieval technique](https://python.langchain.com/docs/modules/data_connection/retrievers/self_query).
 
 ## Environment Setup
 
-OPENAI_API_KEY
+Set the OPENAI_API_KEY environment variable to access the OpenAI models.
 
 ## Usage
 

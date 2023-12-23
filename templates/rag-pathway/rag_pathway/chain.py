@@ -31,13 +31,13 @@ if create_vectorstore:
     # https://pathway.com/developers/tutorials/connectors/gdrive-connector/
     # to get credentials, see pathway documentation for more options including:
     # s3, Dropbox, etc.
-    data_sources.append(
-        pw.io.gdrive.read(
-            object_id="17H4YpBOAKQzEJ93xmC2z170l0bP2npMy",
-            service_user_credentials_file="credentials.json",
-            with_metadata=True,
-        )
-    )
+    # data_sources.append(
+    #     pw.io.gdrive.read(
+    #         object_id="17H4YpBOAKQzEJ93xmC2z170l0bP2npMy",
+    #         service_user_credentials_file="credentials.json",
+    #         with_metadata=True,
+    #     )
+    # )
 
     text_splitter = CharacterTextSplitter(
         separator="\n\n",

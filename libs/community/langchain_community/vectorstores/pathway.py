@@ -11,14 +11,16 @@ PathwayVectorServer to retrieve up-to-date documents.
 
 """
 
-from typing import TYPE_CHECKING, Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-if TYPE_CHECKING:
-    from pathway.xpacks.llm import vector_store
+IMPORT_PATHWAY_ERROR_MESSAGE = (
+    "Could not import pathway python package. "
+    "Please install it with `pip install pathway`."
+)
 
 
 class PathwayVectorServer:
@@ -45,10 +47,7 @@ class PathwayVectorServer:
         try:
             from pathway.xpacks.llm import vector_store
         except ImportError:
-            raise ImportError(
-                "Could not import pathway python package. "
-                "Please install it with `pip install pathway`."
-            )
+            raise ImportError(IMPORT_PATHWAY_ERROR_MESSAGE)
 
         generic_parser = None
         if parser:
@@ -100,10 +99,7 @@ class PathwayVectorServer:
         try:
             import pathway as pw
         except ImportError:
-            raise ImportError(
-                "Could not import pathway python package. "
-                "Please install it with `pip install pathway`."
-            )
+            raise ImportError(IMPORT_PATHWAY_ERROR_MESSAGE)
         if with_cache and cache_backend is None:
             cache_backend = pw.persistence.Backend.filesystem("./Cache")
         return self.vector_store_server.run_server(
@@ -125,6 +121,10 @@ class PathwayVectorClient(VectorStore):
         host,
         port,
     ) -> None:
+        try:
+            from pathway.xpacks.llm import vector_store
+        except ImportError:
+            raise ImportError(IMPORT_PATHWAY_ERROR_MESSAGE)
         self.client = vector_store.VectorStoreClient(host, port)
 
     def add_texts(
@@ -152,6 +152,35 @@ class PathwayVectorClient(VectorStore):
         return [
             Document(page_content=ret["text"], metadata=ret["metadata"]) for ret in rets
         ]
+
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        metadata_filter: Optional[str] = None,
+    ) -> List[Tuple[Document, float]]:
+        """Run similarity search with Pathway with distance.
+
+        Args:
+            - query (str): Query text to search for.
+            - k (int): Number of results to return. Defaults to 4.
+            - metadata_filter (Optional[str]): Filter by metadata.
+                Filtering query should be in JMESPath format. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of documents most similar to
+            the query text and cosine distance in float for each.
+            Lower score represents more similarity.
+        """
+        rets = self.client(query=query, k=k, metadata_filter=metadata_filter)
+
+        return [
+            (Document(page_content=ret["text"], metadata=ret["metadata"]), ret["dist"])
+            for ret in rets
+        ]
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return self._cosine_relevance_score_fn
 
     def get_vectorstore_statistics(self):
         """Fetch basic statistics about the Vector Store."""
