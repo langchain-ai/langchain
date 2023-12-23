@@ -149,10 +149,11 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
-    def _normalize(self, embeddings: List[float]) -> List[float]:
+    def _normalize_vector(self, embeddings: List[float]) -> List[float]:
         """Normalize the embedding to a unit vector."""
         emb = np.array(embeddings)
-        return list(emb / np.linalg.norm(emb))
+        norm_emb = emb / np.linalg.norm(emb)
+        return norm_emb.tolist()
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a Bedrock model.
@@ -181,7 +182,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         embedding = self._embedding_func(text)
 
         if self.normalize:
-            return self._normalize(embedding)
+            return self._normalize_vector(embedding)
 
         return embedding
 
