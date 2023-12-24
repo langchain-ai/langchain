@@ -26,7 +26,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       name: Setup python ${{ inputs.python-version }}
       with:
         python-version: ${{ inputs.python-version }}
