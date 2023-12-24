@@ -67,10 +67,13 @@ from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent, c
 from langchain.agents.openai_functions_multi_agent.base import OpenAIMultiFunctionsAgent
 from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
-from langchain.agents.structured_chat.base import StructuredChatAgent
+from langchain.agents.structured_chat.base import StructuredChatAgent, create_structured_chat_agent
 from langchain.agents.tools import Tool, tool
 from langchain.agents.xml.base import XMLAgent, create_xml_agent
 from langchain.agents.react.agent import create_react_agent
+from langchain.agents.self_ask_with_search.base import create_self_ask_with_search_agent
+from langchain.agents.json_chat.base import create_json_chat_agent
+from langchain.agents.openai_tools.base import create_openai_tools_agent
 
 DEPRECATED_CODE = [
     "create_csv_agent",
@@ -137,4 +140,8 @@ __all__ = [
     "create_openai_functions_agent",
     "create_xml_agent",
     "create_react_agent",
+    "create_openai_tools_agent",
+    "create_self_ask_with_search_agent",
+    "create_json_chat_agent",
+    "create_structured_chat_agent",
 ]

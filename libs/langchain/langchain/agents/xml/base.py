@@ -9,7 +9,7 @@ from langchain_core.tools import BaseTool
 from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.format_scratchpad import format_xml
 from langchain.agents.output_parsers import XMLAgentOutputParser
-from langchain.agents.xml.prompt import agent_instructions, agent_instructions_v1
+from langchain.agents.xml.prompt import agent_instructions
 from langchain.callbacks.base import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.tools.render import render_text_description
@@ -134,7 +134,7 @@ def create_xml_agent(
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
         prompt: The prompt to use, must have input keys of
-            `tools`, `tool_names`, and `agent_scratchpad`.
+            `tools` and `agent_scratchpad`.
 
     Returns:
         A runnable sequence representing an agent. It takes as input all the same input
