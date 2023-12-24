@@ -18,6 +18,7 @@ USER'S INPUT
 
 Okay, so what is the response to my last comment? If using information obtained from the tools you must mention it explicitly without mentioning the tool names - I have forgotten all TOOL RESPONSES! Remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else - even if you just want to respond to the user. Do NOT respond with anything except a JSON snippet no matter what!"""
 
+
 def create_json_chat_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ):
@@ -71,8 +72,7 @@ def create_json_chat_agent(
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_messages(
-                x["intermediate_steps"],
-                template_tool_response=TEMPLATE_TOOL_RESPONSE
+                x["intermediate_steps"], template_tool_response=TEMPLATE_TOOL_RESPONSE
             ),
             # Give it a default
             chat_history=lambda x: x.get("chat_history", ""),

@@ -8,6 +8,8 @@ from langchain_core.tools import BaseTool
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import JSONAgentOutputParser
 from langchain.tools.render import render_text_description
+
+
 def create_openai_tools_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ):

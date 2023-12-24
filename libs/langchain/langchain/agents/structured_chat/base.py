@@ -10,19 +10,19 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain_core.pydantic_v1 import Field
+from langchain_core.runnables import RunnablePassthrough
 
 from langchain.agents.agent import Agent, AgentOutputParser
+from langchain.agents.format_scratchpad import format_log_to_str
+from langchain.agents.output_parsers import JSONAgentOutputParser
 from langchain.agents.structured_chat.output_parser import (
     StructuredChatOutputParserWithRetries,
 )
-from langchain.tools.render import render_text_description_and_args
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.tools import BaseTool
-from langchain.agents.format_scratchpad import format_log_to_str
-from langchain.agents.output_parsers import JSONAgentOutputParser
-from langchain_core.runnables import RunnablePassthrough
+from langchain.tools.render import render_text_description_and_args
 
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 
@@ -148,8 +148,6 @@ class StructuredChatAgent(Agent):
         raise ValueError
 
 
-
-
 def create_structured_chat_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ):
@@ -202,7 +200,7 @@ def create_structured_chat_agent(
 
     agent = (
         RunnablePassthrough.assign(
-            agent_scratchpad= lambda x: format_log_to_str(x["intermediate_steps"]),
+            agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
             # Give it a default
             chat_history=lambda x: x.get("chat_history", []),
         )

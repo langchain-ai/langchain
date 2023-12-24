@@ -142,9 +142,7 @@ def create_xml_agent(
         AgentAction or AgentFinish.
 
     """
-    missing_vars = {"tools", "agent_scratchpad"}.difference(
-        prompt.input_variables
-    )
+    missing_vars = {"tools", "agent_scratchpad"}.difference(prompt.input_variables)
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 

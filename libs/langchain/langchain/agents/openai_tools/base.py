@@ -5,9 +5,13 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import BaseTool
 
-from langchain.agents.format_scratchpad.openai_tools import format_to_openai_tool_messages
+from langchain.agents.format_scratchpad.openai_tools import (
+    format_to_openai_tool_messages,
+)
 from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
 from langchain.tools.render import format_tool_to_openai_tool
+
+
 def create_openai_tools_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ):
@@ -45,9 +49,7 @@ def create_openai_tools_agent(
         AgentAction or AgentFinish.
 
     """
-    missing_vars = {"agent_scratchpad"}.difference(
-        prompt.input_variables
-    )
+    missing_vars = {"agent_scratchpad"}.difference(prompt.input_variables)
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
@@ -55,7 +57,9 @@ def create_openai_tools_agent(
 
     agent = (
         RunnablePassthrough.assign(
-            agent_scratchpad=lambda x: format_to_openai_tool_messages(x["intermediate_steps"]),
+            agent_scratchpad=lambda x: format_to_openai_tool_messages(
+                x["intermediate_steps"]
+            ),
             # Give it a default
             chat_history=lambda x: x.get("chat_history", []),
         )
