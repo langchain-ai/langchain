@@ -1,14 +1,13 @@
 # Vectara
 
->[Vectara](https://docs.vectara.com/docs/) is a GenAI platform for developers. It provides a simple API to build Grounded Generation
->(aka Retrieval-augmented-generation or RAG) applications.
+>[Vectara](https://vectara.com/) is the trusted GenAI platform for developers. It provides a simple API to build GenAI applications
+> for semantic search or RAG (Retreieval augmented generation).
 
 **Vectara Overview:**
-- `Vectara` is developer-first API platform for building GenAI applications
+- `Vectara` is developer-first API platform for building trusted GenAI applications. 
 - To use Vectara - first [sign up](https://vectara.com/integrations/langchain) and create an account. Then create a corpus and an API key for indexing and searching.
 - You can use Vectara's [indexing API](https://docs.vectara.com/docs/indexing-apis/indexing) to add documents into Vectara's index
 - You can use Vectara's [Search API](https://docs.vectara.com/docs/search-apis/search) to query Vectara's index (which also supports Hybrid search implicitly).
-- You can use Vectara's integration with LangChain as a Vector store or using the Retriever abstraction.
 
 ## Installation and Setup
 
@@ -21,7 +20,7 @@ Once you have these, you can provide them as arguments to the Vectara vectorstor
 - export `VECTARA_API_KEY`="your-vectara-api-key"
 
 
-## Vector Store
+## Vectara as a Vector Store
 
 There exists a wrapper around the Vectara platform, allowing you to use it as a vectorstore, whether for semantic search or example selection.
 
@@ -59,18 +58,35 @@ To query the vectorstore, you can use the `similarity_search` method (or `simila
 ```python
 results = vectara.similarity_score("what is LangChain?")
 ```
+The results are returned as a list of relevant documents, and a relevance score of each document.
 
-`similarity_search_with_score` also supports the following additional arguments:
+In this case, we used the default retrieval parameters, but you can also specify the following additional arguments in `similarity_search` or `similarity_search_with_score`:
 - `k`: number of results to return (defaults to 5)
 - `lambda_val`: the [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching) factor for hybrid search (defaults to 0.025)
 - `filter`: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview) to apply to the results (default None)
 - `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results. This defaults to 2.
+- `mmr_config`: can be used to specify MMR mode in the query.
+   - `is_enabled`: True or False
+   - `mmr_k`: number of results to use for MMR reranking
+   - `diversity_bias`: 0 = no diversity, 1 = full diversity. This is the lambda parameter in the MMR formula and is in the range 0...1
 
-The results are returned as a list of relevant documents, and a relevance score of each document.
+## Vectara for Retrieval Augmented Generation (RAG)
 
+Vectara provides a full RAG pipeline, including generative summarization. 
+To use this pipeline, you can specify the `summary_config` argument in `similarity_search` or `similarity_search_with_score` as follows:
 
-For a more detailed examples of using the Vectara wrapper, see one of these two sample notebooks:
-* [Chat Over Documents with Vectara](./vectara_chat.html)
-* [Vectara Text Generation](./vectara_text_generation.html)
+- `summary_config`: can be used to request an LLM summary in RAG
+   - `is_enabled`: True or False
+   - `max_results`: number of results to use for summary generation
+   - `response_lang`: language of the response summary, in ISO 639-2 format (e.g. 'en', 'fr', 'de', etc)
+
+## Example Notebooks
+
+For a more detailed examples of using Vectara, see the following examples:
+* [this notebook](/docs/integrations/vectorstores/vectara.html) shows how to use Vectara as a vectorstore for semantic search
+* [this notebook](/docs/integrations/providers/vectara/vectara_chat.html) shows how to build a chatbot with Langchain and Vectara
+* [this notebook](/docs/integrations/providers/vectara/vectara_summary.html) shows how to use the full Vectara RAG pipeline, including generative summarization
+* [this notebook](/docs/integrations/retrievers/self_query/vectara_self_query.html) shows the self-query capability with Vectara.
+
 
 

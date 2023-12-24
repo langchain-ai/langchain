@@ -30,11 +30,11 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            # Initialise with default model and instruction
+            # initialize with default model and instruction
             from langchain_community.embeddings import EmbaasEmbeddings
             emb = EmbaasEmbeddings()
 
-            # Initialise with custom model and instruction
+            # initialize with custom model and instruction
             from langchain_community.embeddings import EmbaasEmbeddings
             emb_model = "instructor-large"
             emb_inst = "Represent the Wikipedia document for retrieval"
