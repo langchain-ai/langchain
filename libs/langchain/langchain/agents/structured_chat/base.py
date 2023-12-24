@@ -10,7 +10,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain_core.pydantic_v1 import Field
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
@@ -150,7 +150,7 @@ class StructuredChatAgent(Agent):
 
 def create_structured_chat_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
-):
+) -> Runnable:
     """Create an agent aimed at supporting tools with multiple inputs.
 
     Examples:

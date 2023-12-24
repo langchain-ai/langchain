@@ -2,7 +2,7 @@ from typing import Sequence
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
 from langchain.agents.format_scratchpad.openai_tools import (
@@ -14,7 +14,7 @@ from langchain.tools.render import format_tool_to_openai_tool
 
 def create_openai_tools_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
-):
+) -> Runnable:
     """Create an agent that uses OpenAI tools.
 
     Examples:

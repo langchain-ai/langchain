@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Sequence
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.prompts import PromptTemplate
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
 from langchain.agents.format_scratchpad import format_log_to_str
@@ -13,8 +13,8 @@ from langchain.tools.render import render_text_description
 
 
 def create_react_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: PromptTemplate
-):
+    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: BasePromptTemplate
+) -> Runnable:
     """Create an agent that uses ReAct prompting.
 
     Examples:

@@ -15,7 +15,7 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
 )
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
 from langchain.agents import BaseSingleActionAgent
@@ -231,7 +231,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
 
 def create_openai_functions_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
-):
+) -> Runnable:
     """Create an agent that uses OpenAI function calling.
 
     Examples:

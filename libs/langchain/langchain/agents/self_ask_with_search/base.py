@@ -4,7 +4,7 @@ from typing import Any, Sequence, Union
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
@@ -85,7 +85,7 @@ class SelfAskWithSearchChain(AgentExecutor):
 
 def create_self_ask_with_search_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: BasePromptTemplate
-):
+) -> Runnable:
     """Create an agent that uses self-ask with search prompting.
 
     Examples:
