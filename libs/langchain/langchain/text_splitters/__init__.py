@@ -7,8 +7,7 @@
 
     BaseTextSplitter, BaseDocumentTransformer --> TextSplitter --> <name>TextSplitter  # Example: CharacterTextSplitter
                                                  RecursiveCharacterTextSplitter -->  <name>TextSplitter
-
-Note: **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter derive from BaseTextSplitter only.
+    BaseTextToDocumentsSplitter --> HTMLHeaderTextSplitter, MarkdownHeaderTextSplitter
 
 
 **Main helpers:**
@@ -19,27 +18,29 @@ Note: **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter derive from Ba
 
 """  # noqa: E501
 
-from langchain.text_splitters import (
-    TS,
-    CharacterTextSplitter,
-    ElementType,
+from langchain.text_splitters.base import TS, TextSplitter
+from langchain.text_splitters.character import CharacterTextSplitter
+from langchain.text_splitters.html_header import ElementType, HTMLHeaderTextSplitter
+from langchain.text_splitters.markdown import (
     HeaderType,
-    HTMLHeaderTextSplitter,
-    Language,
-    LatexTextSplitter,
     LineType,
     MarkdownHeaderTextSplitter,
+)
+from langchain.text_splitters.nltk import NLTKTextSplitter
+from langchain.text_splitters.recursive_character import (
+    LatexTextSplitter,
     MarkdownTextSplitter,
-    NLTKTextSplitter,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
+)
+from langchain.text_splitters.spacy import SpacyTextSplitter
+from langchain.text_splitters.token import (
     SentenceTransformersTokenTextSplitter,
-    SpacyTextSplitter,
-    TextSplitter,
     Tokenizer,
     TokenTextSplitter,
     split_text_on_tokens,
 )
+from langchain.text_splitters.utils import Language
 
 __all__ = [
     "CharacterTextSplitter",
