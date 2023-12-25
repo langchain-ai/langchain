@@ -24,6 +24,7 @@ from urllib.parse import urlparse
 # TODO: remove ignore once the google package is published with types
 import google.generativeai as genai  # type: ignore[import]
 import requests
+from google.ai.generativelanguage_v1beta import FunctionCall
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -332,14 +333,90 @@ llm = ChatGoogleGenerativeAI(model="gemini-pro", convert_system_message_to_human
     return messages
 
 
-def _parts_to_content(parts: List[genai.types.PartType]) -> Union[List[dict], str]:
+def _retrieve_function_call_response(
+    parts: List[genai.types.PartType],
+) -> Optional[Dict]:
+    for idx, part in enumerate(parts):
+        if part.function_call and part.function_call.name:
+            fc: FunctionCall = part.function_call
+            return {
+                "function_call": {
+                    "name": fc.name,
+                    "arguments": dict(fc.args.items()),
+                }
+            }
+    return None
+
+
+def _convert_function_call_req(function_calls: Union[Dict, List[Dict]]) -> Dict:
+    function_declarations = []
+    if isinstance(function_calls, dict):
+        function_declarations.append(_convert_fc_type(function_calls))
+    else:
+        for fc in function_calls:
+            function_declarations.append(_convert_fc_type(fc))
+    return {
+        "function_declarations": function_declarations,
+    }
+
+
+def _convert_fc_type(fc: Dict) -> Dict:
+    # type_: "Type"
+    # format_: str
+    # description: str
+    # nullable: bool
+    # enum: MutableSequence[str]
+    # items: "Schema"
+    # properties: MutableMapping[str, "Schema"]
+    # required: MutableSequence[str]
+    if "parameters" in fc:
+        fc["parameters"] = _convert_fc_type(fc["parameters"])
+    if "properties" in fc:
+        for k, v in fc["properties"].items():
+            fc["properties"][k] = _convert_fc_type(v)
+    if "type" in fc:
+        # STRING = 1
+        # NUMBER = 2
+        # INTEGER = 3
+        # BOOLEAN = 4
+        # ARRAY = 5
+        # OBJECT = 6
+        if fc["type"] == "string":
+            fc["type_"] = 1
+        elif fc["type"] == "number":
+            fc["type_"] = 2
+        elif fc["type"] == "integer":
+            fc["type_"] = 3
+        elif fc["type"] == "boolean":
+            fc["type_"] = 4
+        elif fc["type"] == "array":
+            fc["type_"] = 5
+        elif fc["type"] == "object":
+            fc["type_"] = 6
+        del fc["type"]
+    if "format" in fc:
+        fc["format_"] = fc["format"]
+        del fc["format"]
+
+    for k, v in fc.items():
+        if isinstance(v, dict):
+            fc[k] = _convert_fc_type(v)
+
+    return fc
+
+
+def _parts_to_content(
+    parts: List[genai.types.PartType],
+) -> Tuple[Union[List[dict], str], Optional[Dict]]:
     """Converts a list of Gemini API Part objects into a list of LangChain messages."""
+    function_call_resp = _retrieve_function_call_response(parts)
+
     if len(parts) == 1 and parts[0].text is not None and not parts[0].inline_data:
         # Simple text response. The typical response
-        return parts[0].text
+        return parts[0].text, function_call_resp
     elif not parts:
         logger.warning("Gemini produced an empty response.")
-        return ""
+        return "", function_call_resp
     messages = []
     for part in parts:
         if part.text is not None:
@@ -352,7 +429,7 @@ def _parts_to_content(parts: List[genai.types.PartType]) -> Union[List[dict], st
         else:
             # TODO: Handle inline_data if that's a thing?
             raise ChatGoogleGenerativeAIError(f"Unexpected part type. {part}")
-    return messages
+    return messages, function_call_resp
 
 
 def _response_to_result(
@@ -379,16 +456,24 @@ def _response_to_result(
         "model": ai_msg_t,
         "user": human_msg_t,
     }
+
     for candidate in response.candidates:
         content = candidate.content
-        parts_content = _parts_to_content(content.parts)
+        parts_content, additional_kwargs = _parts_to_content(content.parts)
         if content.role not in role_map:
             logger.warning(
                 f"Unrecognized role: {content.role}. Treating as a ChatMessage."
             )
-            msg = chat_msg_t(content=parts_content, role=content.role)
+            msg = chat_msg_t(
+                content=parts_content,
+                role=content.role,
+                additional_kwargs=additional_kwargs,
+            )
         else:
-            msg = role_map[content.role](content=parts_content)
+            msg = role_map[content.role](
+                content=parts_content,
+                additional_kwargs=additional_kwargs,
+            )
         generation_info = {}
         if candidate.finish_reason:
             generation_info["finish_reason"] = candidate.finish_reason.name
@@ -546,7 +631,11 @@ Supported examples:
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params, chat, message = self._prepare_chat(messages, stop=stop)
+        params, chat, message = self._prepare_chat(
+            messages,
+            stop=stop,
+            functions=kwargs.get("functions"),
+        )
         response: genai.types.GenerateContentResponse = _chat_with_retry(
             content=message,
             **params,
@@ -561,7 +650,11 @@ Supported examples:
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params, chat, message = self._prepare_chat(messages, stop=stop)
+        params, chat, message = self._prepare_chat(
+            messages,
+            stop=stop,
+            functions=kwargs.get("functions"),
+        )
         response: genai.types.GenerateContentResponse = await _achat_with_retry(
             content=message,
             **params,
@@ -576,7 +669,11 @@ Supported examples:
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        params, chat, message = self._prepare_chat(messages, stop=stop)
+        params, chat, message = self._prepare_chat(
+            messages,
+            stop=stop,
+            functions=kwargs.get("functions"),
+        )
         response: genai.types.GenerateContentResponse = _chat_with_retry(
             content=message,
             **params,
@@ -603,7 +700,11 @@ Supported examples:
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        params, chat, message = self._prepare_chat(messages, stop=stop)
+        params, chat, message = self._prepare_chat(
+            messages,
+            stop=stop,
+            functions=kwargs.get("functions"),
+        )
         async for chunk in await _achat_with_retry(
             content=message,
             **params,
@@ -628,11 +729,19 @@ Supported examples:
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Tuple[Dict[str, Any], genai.ChatSession, genai.types.ContentDict]:
+        cli = self.client
+        if "functions" in kwargs:
+            functions = kwargs["functions"]
+            del kwargs["functions"]
+
+            tools = _convert_function_call_req(functions)
+            cli = genai.GenerativeModel(model_name=self.model, tools=tools)
+
         params = self._prepare_params(stop, **kwargs)
         history = _parse_chat_history(
             messages,
             convert_system_message_to_human=self.convert_system_message_to_human,
         )
         message = history.pop()
-        chat = self.client.start_chat(history=history)
+        chat = cli.start_chat(history=history)
         return params, chat, message
