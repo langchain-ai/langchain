@@ -50,6 +50,7 @@ class QuipLoader(BaseLoader):
         include_all_folders: bool = False,
         include_comments: bool = False,
         include_images: bool = False,
+        keep_html_format: bool = False,
     ) -> List[Document]:
         """
         Args:
@@ -60,6 +61,7 @@ class QuipLoader(BaseLoader):
                    can access, but doesn't include your private folder
             :param include_comments: Include comments, defaults to False
             :param include_images: Include images, defaults to False
+            :param keep_html_format: Whether to keep html format, defaults to False
         """
         if not folder_ids and not thread_ids and not include_all_folders:
             raise ValueError(
@@ -85,7 +87,9 @@ class QuipLoader(BaseLoader):
                 )
 
         thread_ids = list(set(thread_ids[:max_docs]))
-        return self.process_threads(thread_ids, include_images, include_comments)
+        return self.process_threads(
+            thread_ids, include_images, include_comments, keep_html_format
+        )
 
     def get_thread_ids_by_folder_id(
         self, folder_id: str, depth: int, thread_ids: List[str]
@@ -125,18 +129,28 @@ class QuipLoader(BaseLoader):
                 thread_ids.append(child["thread_id"])
 
     def process_threads(
-        self, thread_ids: Sequence[str], include_images: bool, include_messages: bool
+        self,
+        thread_ids: Sequence[str],
+        include_images: bool,
+        include_messages: bool,
+        keep_html_format: bool,
     ) -> List[Document]:
         """Process a list of thread into a list of documents."""
         docs = []
         for thread_id in thread_ids:
-            doc = self.process_thread(thread_id, include_images, include_messages)
+            doc = self.process_thread(
+                thread_id, include_images, include_messages, keep_html_format
+            )
             if doc is not None:
                 docs.append(doc)
         return docs
 
     def process_thread(
-        self, thread_id: str, include_images: bool, include_messages: bool
+        self,
+        thread_id: str,
+        include_images: bool,
+        include_messages: bool,
+        keep_html_format: bool,
     ) -> Optional[Document]:
         thread = self.quip_client.get_thread(thread_id)
         thread_id = thread["thread"]["id"]
@@ -173,8 +187,26 @@ class QuipLoader(BaseLoader):
             if include_messages:
                 text = text + "/n" + self.process_thread_messages(thread_id)
 
+            if keep_html_format:
+                return Document(
+                    page_content=thread["html"] + text,
+                    metadata=metadata,
+                )
+
+            try:
+                from bs4 import BeautifulSoup  # type: ignore
+            except ImportError:
+                raise ImportError(
+                    "`beautifulsoup4` package not found, please run "
+                    "`pip install beautifulsoup4`"
+                )
+
+            thread_text = BeautifulSoup(thread["html"], "lxml").get_text(
+                " ", strip=True
+            )
+
             return Document(
-                page_content=thread["html"] + text,
+                page_content=thread_text + text,
                 metadata=metadata,
             )
         return None
