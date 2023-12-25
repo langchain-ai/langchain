@@ -85,7 +85,8 @@ jobs:
         with:
           path: |
             ${{ env.WORKDIR }}/.mypy_cache
-          key: mypy-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
+          key: mypy-lint-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
+
 
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}
@@ -105,13 +106,13 @@ jobs:
         run: |
           poetry install --with test
 
-      - name: Get .mypy_cache to speed up mypy
+      - name: Get .mypy_cache_test to speed up mypy
         uses: actions/cache@v3
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MIN: "2"
         with:
           path: |
-            ${{ env.WORKDIR }}/.mypy_cache
+            ${{ env.WORKDIR }}/.mypy_cache_test
           key: mypy-test-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
 
       - name: Analysing the code with our lint

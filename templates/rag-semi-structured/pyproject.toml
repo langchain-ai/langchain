@@ -8,7 +8,7 @@ authors = [
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<3.11"
 langchain = ">=0.0.325"
 tiktoken = ">=0.5.1"
 chromadb = ">=0.4.14"
@@ -16,6 +16,12 @@ openai = "<2"
 unstructured = ">=0.10.19"
 pdf2image = ">=1.16.3"
 pdfminer = "^20191125"
+opencv-python = "^4.8.1.78"
+pandas = "^2.1.4"
+pytesseract = "^0.3.10"
+pdfminer-six = "^20221105"
+unstructured-pytesseract = "^0.3.12"
+unstructured-inference = "^0.7.18"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"
