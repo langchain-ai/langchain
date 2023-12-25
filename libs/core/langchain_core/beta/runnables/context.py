@@ -12,6 +12,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -163,6 +164,9 @@ class ContextGet(RunnableSerializable):
 
     key: Union[str, List[str]]
 
+    def __str__(self) -> str:
+        return f"ContextGet({_print_keys(self.key)})"
+
     @property
     def ids(self) -> List[str]:
         prefix = self.prefix + "/" if self.prefix else ""
@@ -242,6 +246,9 @@ class ContextSet(RunnableSerializable):
             },
             prefix=prefix,
         )
+
+    def __str__(self) -> str:
+        return f"ContextSet({_print_keys(list(self.keys.keys()))})"
 
     @property
     def ids(self) -> List[str]:
@@ -345,3 +352,10 @@ class PrefixContext:
         **kwargs: SetValue,
     ) -> ContextSet:
         return ContextSet(_key, _value, prefix=self.prefix, **kwargs)
+
+
+def _print_keys(keys: Union[str, Sequence[str]]) -> str:
+    if isinstance(keys, str):
+        return f"'{keys}'"
+    else:
+        return ", ".join(f"'{k}'" for k in keys)
