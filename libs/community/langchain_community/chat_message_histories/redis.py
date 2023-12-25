@@ -3,6 +3,7 @@ import logging
 from typing import List, Optional
 
 from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import (
     BaseMessage,
     message_to_dict,
@@ -63,3 +64,29 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
     def clear(self) -> None:
         """Clear session memory from Redis"""
         self.redis_client.delete(self.key)
+
+
+class RedisChatMessageHistoryWithTokenLimit(RedisChatMessageHistory):
+    """Chat message history stored in a Redis database, with a max token limit"""
+
+    def __init__(
+        self,
+        session_id: str,
+        llm: BaseLanguageModel,
+        url: str = "redis://localhost:6379/0",
+        key_prefix: str = "message_store:",
+        ttl: Optional[int] = None,
+        max_token_limit=2000,
+    ):
+        super().__init__(session_id=session_id, url=url, key_prefix=key_prefix, ttl=ttl)
+        self.llm = llm
+        self.max_token_limit = max_token_limit
+
+    @property
+    def messages(self) -> List[BaseMessage]:
+        """Retrieve the messages from Redis, pruned until below max token limit"""
+        messages = super().messages
+        while self.llm.get_num_tokens_from_messages(messages) > self.max_token_limit:
+            del messages[0]
+            self.redis_client.rpop(self.key)
+        return messages
