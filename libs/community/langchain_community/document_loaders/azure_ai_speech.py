@@ -4,30 +4,30 @@ from typing import List, Optional
 
 from langchain_core.documents import Document
 
-from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.base import BaseLoader
+from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers.audio import AzureAISpeechParser
 
 
 class AzureAISpeechLoader(BaseLoader):
     """Azure AI Speech Service Document Loader.
 
-        A document loader that can load an audio file from the local file system
-        and transcribe it using Azure AI Speech Service.
+    A document loader that can load an audio file from the local file system
+    and transcribe it using Azure AI Speech Service.
 
-        Examples:
+    Examples:
 
-            .. code-block:: python
+        .. code-block:: python
 
-                from langchain_community.document_loaders import AzureAISpeechLoader
+            from langchain_community.document_loaders import AzureAISpeechLoader
 
-                loader = AzureAISpeechParser(
-                    file_path="path/to/directory/example.wav",
-                    api_key="speech-api-key-from-azure",
-                    region="speech-api-region-from-azure"
-                )
+            loader = AzureAISpeechParser(
+                file_path="path/to/directory/example.wav",
+                api_key="speech-api-key-from-azure",
+                region="speech-api-region-from-azure"
+            )
 
-                loader.lazy_load()
+            loader.lazy_load()
     """
 
     def load(self) -> List[Document]:

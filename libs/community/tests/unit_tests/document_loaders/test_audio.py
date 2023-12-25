@@ -32,9 +32,7 @@ def test_azure_speech_load_key_region_language() -> None:
 
 def test_azure_speech_load_key_region() -> None:
     loader = AzureAISpeechLoader(
-        _get_audio_file_path(),
-        api_key=SPEECH_SERVICE_KEY,
-        region=SPEECH_SERVICE_REGION
+        _get_audio_file_path(), api_key=SPEECH_SERVICE_KEY, region=SPEECH_SERVICE_REGION
     )
     documents = loader.lazy_load()
     assert "what" in documents[0].page_content.lower()

@@ -26,7 +26,6 @@ from langchain_community.document_loaders.airbyte import (
     AirbyteTypeformLoader,
     AirbyteZendeskSupportLoader,
 )
-from langchain_community.document_loaders.azure_ai_speech import AzureAISpeechLoader
 from langchain_community.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain_community.document_loaders.airtable import AirtableLoader
 from langchain_community.document_loaders.apify_dataset import ApifyDatasetLoader
@@ -40,6 +39,7 @@ from langchain_community.document_loaders.azlyrics import AZLyricsLoader
 from langchain_community.document_loaders.azure_ai_data import (
     AzureAIDataLoader,
 )
+from langchain_community.document_loaders.azure_ai_speech import AzureAISpeechLoader
 from langchain_community.document_loaders.azure_blob_storage_container import (
     AzureBlobStorageContainerLoader,
 )
@@ -54,7 +54,7 @@ from langchain_community.document_loaders.blob_loaders import (
     Blob,
     BlobLoader,
     FileSystemBlobLoader,
-    YoutubeAudioLoader
+    YoutubeAudioLoader,
 )
 from langchain_community.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain_community.document_loaders.brave_search import BraveSearchLoader

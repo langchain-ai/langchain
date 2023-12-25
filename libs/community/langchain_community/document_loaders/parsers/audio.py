@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Dict, Iterator, Optional, Tuple, List
+from typing import Dict, Iterator, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_env
@@ -57,7 +57,7 @@ class OpenAIWhisperParser(BaseBlobParser):
         # Split the audio into chunk_duration_ms chunks
         for split_number, i in enumerate(range(0, len(audio), chunk_duration_ms)):
             # Audio chunk
-            chunk = audio[i: i + chunk_duration_ms]
+            chunk = audio[i : i + chunk_duration_ms]
             file_obj = io.BytesIO(chunk.export(format="mp3").read())
             if blob.source is not None:
                 file_obj.name = blob.source + f"_part_{split_number}.mp3"
@@ -114,10 +114,10 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
     """
 
     def __init__(
-            self,
-            device: str = "0",
-            lang_model: Optional[str] = None,
-            forced_decoder_ids: Optional[Tuple[Dict]] = None,
+        self,
+        device: str = "0",
+        lang_model: Optional[str] = None,
+        forced_decoder_ids: Optional[Tuple[Dict]] = None,
     ):
         """Initialize the parser.
 
@@ -156,7 +156,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                 self.device = "cuda:0"
                 # check GPU memory and select automatically the model
                 mem = torch.cuda.get_device_properties(self.device).total_memory / (
-                        1024 ** 2
+                    1024**2
                 )
                 if mem < 5000:
                     rec_model = "openai/whisper-base"
@@ -238,12 +238,12 @@ class YandexSTTParser(BaseBlobParser):
     Audio transcription is with OpenAI Whisper model."""
 
     def __init__(
-            self,
-            *,
-            api_key: Optional[str] = None,
-            iam_token: Optional[str] = None,
-            model: str = "general",
-            language: str = "auto",
+        self,
+        *,
+        api_key: Optional[str] = None,
+        iam_token: Optional[str] = None,
+        model: str = "general",
+        language: str = "auto",
     ):
         """Initialize the parser.
 
@@ -325,16 +325,16 @@ class AzureAISpeechParser(BaseBlobParser):
     """
 
     def __init__(
-            self,
-            *,
-            api_key: Optional[str] = None,
-            region: Optional[str] = None,
-            endpoint: Optional[str] = None,
-            log_path: Optional[str] = None,
-            polling_interval_seconds: float = 0.5,
-            speech_recognition_language: Optional[str] = None,
-            auto_detect_languages: Optional[list[str]] = None,
-            speech_config_kwargs: Optional[dict] = None
+        self,
+        *,
+        api_key: Optional[str] = None,
+        region: Optional[str] = None,
+        endpoint: Optional[str] = None,
+        log_path: Optional[str] = None,
+        polling_interval_seconds: float = 0.5,
+        speech_recognition_language: Optional[str] = None,
+        auto_detect_languages: Optional[list[str]] = None,
+        speech_config_kwargs: Optional[dict] = None,
     ) -> None:
         """Initialize the parser.
 
@@ -355,21 +355,37 @@ class AzureAISpeechParser(BaseBlobParser):
             speech_recognition_language: pass a transcribe job's target source languages
         """
 
-        self.api_key = api_key if api_key is not None else get_from_env('api_key', 'AZURE_SPEECH_SERVICE_KEY')
+        self.api_key = (
+            api_key
+            if api_key is not None
+            else get_from_env("api_key", "AZURE_SPEECH_SERVICE_KEY")
+        )
 
-        self.region = region if region is not None else get_from_env('region', 'AZURE_SPEECH_REGION', 'NONE')
-        self.region = self.region if self.region != 'NONE' else None
+        self.region = (
+            region
+            if region is not None
+            else get_from_env("region", "AZURE_SPEECH_REGION", "NONE")
+        )
+        self.region = self.region if self.region != "NONE" else None
 
-        self.endpoint = endpoint if endpoint is not None else get_from_env('endpoint', 'AZURE_SPEECH_ENDPOINT', 'NONE')
-        self.endpoint = self.endpoint if self.endpoint != 'NONE' else None
+        self.endpoint = (
+            endpoint
+            if endpoint is not None
+            else get_from_env("endpoint", "AZURE_SPEECH_ENDPOINT", "NONE")
+        )
+        self.endpoint = self.endpoint if self.endpoint != "NONE" else None
 
         if not self.region and not self.endpoint:
             raise ValueError(
                 "You need to provide either the region or the endpoint argument."
             )
 
-        self.log_path = log_path if log_path is not None else get_from_env('log_path', 'AZURE_SPEECH_LOG_PATH', 'NONE')
-        self.log_path = self.log_path if self.log_path != 'NONE' else None
+        self.log_path = (
+            log_path
+            if log_path is not None
+            else get_from_env("log_path", "AZURE_SPEECH_LOG_PATH", "NONE")
+        )
+        self.log_path = self.log_path if self.log_path != "NONE" else None
 
         self.polling_interval_seconds = polling_interval_seconds
 
@@ -395,19 +411,19 @@ class AzureAISpeechParser(BaseBlobParser):
             )
 
         def conversation_transcriber_recognition_canceled_cb(
-                evt: speechsdk.SessionEventArgs
+            evt: speechsdk.SessionEventArgs,
         ) -> None:
             # Canceled event
             pass
 
         def conversation_transcriber_session_stopped_cb(
-                evt: speechsdk.SessionEventArgs
+            evt: speechsdk.SessionEventArgs,
         ) -> None:
             # SessionStopped event
             pass
 
         def conversation_transcriber_transcribed_cb(
-                evt: speechsdk.SpeechRecognitionEventArgs
+            evt: speechsdk.SpeechRecognitionEventArgs,
         ) -> None:
             if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
                 evt_dict = json.loads(evt.result.json)
@@ -434,8 +450,8 @@ class AzureAISpeechParser(BaseBlobParser):
                 _doc = Document(
                     page_content=content,
                     metadata={
-                        "offset_second": int(offset_second) / 10 ** 7,
-                        "duration_second": int(duration_second) / 10 ** 7,
+                        "offset_second": int(offset_second) / 10**7,
+                        "duration_second": int(duration_second) / 10**7,
                         "language": language,
                         "speaker_id": speaker_id,
                     },
@@ -451,7 +467,7 @@ class AzureAISpeechParser(BaseBlobParser):
                 )
 
         def conversation_transcriber_session_started_cb(
-                evt: speechsdk.SessionEventArgs
+            evt: speechsdk.SessionEventArgs,
         ) -> None:
             # SessionStarted event
             pass
