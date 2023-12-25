@@ -47,6 +47,7 @@ from langchain_community.embeddings.huggingface import (
     HuggingFaceEmbeddings,
     HuggingFaceInferenceAPIEmbeddings,
     HuggingFaceInstructEmbeddings,
+    HuggingFaceUaeEmbeddings
 )
 from langchain_community.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain_community.embeddings.infinity import InfinityEmbeddings
@@ -136,6 +137,7 @@ __all__ = [
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
     "BookendEmbeddings",
+    "HuggingFaceUaeEmbeddings",
 ]
 
 
