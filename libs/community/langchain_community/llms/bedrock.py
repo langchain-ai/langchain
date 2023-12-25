@@ -195,6 +195,23 @@ class BedrockBase(BaseModel, ABC):
         "id" : None,
         "version" : None,
     }
+    """
+    An optional dictionary to configure guardrails for Bedrock.
+
+    This field 'guardrails' consists of two keys: 'id' and 'version',
+    which should be strings, but are initialized to None. It's used to
+    determine if specific guardrails are enabled and properly set.
+
+    Type:
+        Optional[Mapping[str, str]]: A mapping with 'id' and 'version' keys.
+
+    Example:
+    llm = Bedrock(model_id="<model_id>", client=<bedrock_client>,
+                  model_kwargs={},
+                  guardrails={
+                        "id": "<guardrail_id>",
+                        "version": "<guardrail_version>"})
+    """
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
