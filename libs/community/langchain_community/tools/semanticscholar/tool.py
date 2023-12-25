@@ -25,7 +25,9 @@ class SemanticScholarQueryRun(BaseTool):
         "from research papers."
         "Input should be a search query."
     )
-    api_wrapper: SemanticScholarAPIWrapper = Field(default_factory=SemanticScholarAPIWrapper)
+    api_wrapper: SemanticScholarAPIWrapper = Field(
+        default_factory=SemanticScholarAPIWrapper
+    )
     args_schema: Type[BaseModel] = SemantscholarInput
 
     def _run(
