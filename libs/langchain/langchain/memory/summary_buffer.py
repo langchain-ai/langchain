@@ -11,7 +11,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
     """Buffer with summarizer for storing conversation memory."""
 
     max_token_limit: int = 2000
-    k: Optional[int] = None
+    k: int = 5
     moving_summary_buffer: str = ""
     memory_key: str = "history"
 
