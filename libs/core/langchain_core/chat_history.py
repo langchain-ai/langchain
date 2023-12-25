@@ -3,6 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Union
 
+from pydantic import BaseModel, Field
+
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -79,3 +81,19 @@ class BaseChatMessageHistory(ABC):
 
     def __str__(self) -> str:
         return get_buffer_string(self.messages)
+
+
+class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
+    """In memory implementation of chat message history.
+
+    Stores messages in an in memory list.
+    """
+
+    messages: List[BaseMessage] = Field(default_factory=list)
+
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
+        self.messages.append(message)
+
+    def clear(self) -> None:
+        self.messages = []

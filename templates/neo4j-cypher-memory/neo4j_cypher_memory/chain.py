@@ -3,8 +3,8 @@ from typing import Any, Dict, List
 from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chat_models import ChatOpenAI
 from langchain.graphs import Neo4jGraph
-from langchain.memory import ChatMessageHistory
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.chat_history import ChatMessageHistory
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnablePassthrough

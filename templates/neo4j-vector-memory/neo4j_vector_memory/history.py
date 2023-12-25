@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Union
 
 from langchain.graphs import Neo4jGraph
-from langchain.memory import ChatMessageHistory
 from langchain.schema import AIMessage, HumanMessage
+from langchain_core.chat_history import ChatMessageHistory
 
 graph = Neo4jGraph()
 

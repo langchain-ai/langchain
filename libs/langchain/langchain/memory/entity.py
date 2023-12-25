@@ -7,6 +7,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.utils.utils import get_prompt_input_key
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -14,7 +15,6 @@ from langchain.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     ENTITY_SUMMARIZATION_PROMPT,
 )
-from langchain.memory.utils import get_prompt_input_key
 from langchain.utilities.redis import get_client
 
 logger = logging.getLogger(__name__)
