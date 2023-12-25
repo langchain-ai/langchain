@@ -43,12 +43,13 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from tenacity import (
+    RetryCallState,
     before_sleep_log,
     retry,
     retry_if_exception_type,
-    stop_after_attempt,
     wait_exponential,
 )
+from tenacity.stop import stop_base
 
 from langchain_google_genai._common import GoogleGenerativeAIError
 
@@ -75,6 +76,27 @@ class ChatGoogleGenerativeAIError(GoogleGenerativeAIError):
     """
 
 
+class stop_after_attempt_or_terminate(stop_base):
+    """Stop when the previous attempt >= max_attempt or catch some terminate retry."""
+
+    def __init__(self, max_attempt_number: int) -> None:
+        self.max_attempt_number = max_attempt_number
+
+    def __call__(self, retry_state: "RetryCallState") -> bool:
+        if retry_state.attempt_number >= self.max_attempt_number:
+            return True
+        if retry_state.outcome:
+            try:
+                if (
+                    "400 User location is not supported"
+                    in f"{retry_state.outcome.exception()}"
+                ):
+                    return True
+            except Exception:  # noqa: E722
+                pass
+        return False
+
+
 def _create_retry_decorator() -> Callable[[Any], Any]:
     """
     Creates and returns a preconfigured tenacity retry decorator.
@@ -96,7 +118,7 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
 
     return retry(
         reraise=True,
-        stop=stop_after_attempt(max_retries),
+        stop=stop_after_attempt_or_terminate(max_retries),
         wait=wait_exponential(multiplier=multiplier, min=min_seconds, max=max_seconds),
         retry=(
             retry_if_exception_type(google.api_core.exceptions.ResourceExhausted)
