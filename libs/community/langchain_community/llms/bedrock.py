@@ -261,6 +261,15 @@ class BedrockBase(BaseModel, ABC):
 
     @property
     def _guardrails_enabled(self) -> bool:
+        """
+        Determines if guardrails are enabled and correctly configured.
+        Checks if 'guardrails' is a dictionary with non-empty 'id' and 'version' keys.
+
+        Returns:
+            bool: True if guardrails are correctly configured, False otherwise.
+        Raises:
+            TypeError: If 'guardrails' lacks 'id' or 'version' keys.
+        """
         try:
             return isinstance(self.guardrails, dict) and bool(self.guardrails["id"]) and bool(self.guardrails["version"])
 
