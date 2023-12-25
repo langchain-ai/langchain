@@ -1,7 +1,7 @@
-from langchain.document_loaders.audio import AzureSpeechServiceLoader
+from langchain_community.document_loaders import AzureAISpeechLoader
 
-SPEECH_SERVICE_REGION = ""
-SPEECH_SERVICE_KEY = ""
+SPEECH_SERVICE_REGION = "eastasia"
+SPEECH_SERVICE_KEY = "c77dcf2aa5c04dd6b6613f77d9d9161d"
 
 
 def _get_audio_file_path() -> str:
@@ -9,7 +9,7 @@ def _get_audio_file_path() -> str:
 
 
 def test_azure_speech_load_key_region_auto_detect_languages() -> None:
-    loader = AzureSpeechServiceLoader(
+    loader = AzureAISpeechLoader(
         _get_audio_file_path(),
         api_key=SPEECH_SERVICE_KEY,
         region=SPEECH_SERVICE_REGION,
@@ -20,7 +20,7 @@ def test_azure_speech_load_key_region_auto_detect_languages() -> None:
 
 
 def test_azure_speech_load_key_region_language() -> None:
-    loader = AzureSpeechServiceLoader(
+    loader = AzureAISpeechLoader(
         _get_audio_file_path(),
         api_key=SPEECH_SERVICE_KEY,
         region=SPEECH_SERVICE_REGION,
@@ -31,7 +31,7 @@ def test_azure_speech_load_key_region_language() -> None:
 
 
 def test_azure_speech_load_key_region() -> None:
-    loader = AzureSpeechServiceLoader(
+    loader = AzureAISpeechLoader(
         _get_audio_file_path(),
         api_key=SPEECH_SERVICE_KEY,
         region=SPEECH_SERVICE_REGION
@@ -41,7 +41,7 @@ def test_azure_speech_load_key_region() -> None:
 
 
 def test_azure_speech_load_key_endpoint() -> None:
-    loader = AzureSpeechServiceLoader(
+    loader = AzureAISpeechLoader(
         _get_audio_file_path(),
         api_key=SPEECH_SERVICE_KEY,
         endpoint=f"wss://{SPEECH_SERVICE_REGION}.stt.speech.microsoft.com/speech/recognition"
