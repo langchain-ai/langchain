@@ -131,9 +131,10 @@ def create_xml_agent(
             from langchain_core.messages import AIMessage, HumanMessage
             agent_executor.invoke(
                 {
-                    "input": "what's my name? Only use a tool if needed, otherwise respond with Final Answer",
-                    # Notice that chat_history is a string, since this prompt is aimed at LLMs, not chat models
-                    "chat_history": "Human: Hi! My name is Bob\nAI: Hello Bob! Nice to meet you",
+                    "input": "what's my name?",
+                    # Notice that chat_history is a string
+                    # since this prompt is aimed at LLMs, not chat models
+                    "chat_history": "Human: My name is Bob\nAI: Hello Bob!",
                 }
             )
 
