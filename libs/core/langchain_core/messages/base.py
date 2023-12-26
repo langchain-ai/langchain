@@ -38,7 +38,11 @@ class BaseMessage(Serializable):
 
     @property
     def images(self) -> list[str]:
-        """Return a list of image URLs in the message content."""
+        """Return a list of image URLs in the message content.
+        Data can be:
+        - base64 encoded (data:image/png;base64,*******...)
+        - or URL (https://example.image.org/image.png)
+        """
         if isinstance(self.content, str):
             return []
         return [
@@ -47,9 +51,8 @@ class BaseMessage(Serializable):
             if isinstance(item, dict) and item["type"] == "image_url"
         ]
 
-    @property
-    def message(self) -> str:
-        """Return the message content."""
+    def __str__(self) -> str:
+        """Return the message text."""
         return (
             self.content
             if isinstance(self.content, str)
