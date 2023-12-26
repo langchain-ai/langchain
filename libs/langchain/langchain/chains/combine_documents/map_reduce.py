@@ -19,7 +19,7 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_SEPARATOR,
-    DOCUMENTS_INPUT_KEY,
+    DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
     LanguageModelLike,
 )
@@ -36,10 +36,10 @@ def create_map_documents_chain(
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
 
     def _format_document(inputs: dict) -> str:
-        return format_document(inputs[DOCUMENTS_INPUT_KEY], _document_prompt)
+        return format_document(inputs[DOCUMENTS_KEY], _document_prompt)
 
     map_content_chain = (
-        RunnablePassthrough.assign(**{DOCUMENTS_INPUT_KEY: _format_document})
+        RunnablePassthrough.assign(**{DOCUMENTS_KEY: _format_document})
         | prompt
         | llm
         | StrOutputParser()
@@ -47,14 +47,14 @@ def create_map_documents_chain(
 
     map_doc_chain = RunnablePassthrough.assign(page_content=map_content_chain) | (
         lambda x: Document(
-            page_content=x["page_content"], metadata=x[DOCUMENTS_INPUT_KEY].metadata
+            page_content=x["page_content"], metadata=x[DOCUMENTS_KEY].metadata
         )
     )
 
     def list_inputs(inputs: dict) -> list:
-        docs = inputs.pop(DOCUMENTS_INPUT_KEY)
+        docs = inputs.pop(DOCUMENTS_KEY)
         inputs = {k: v for k, v in inputs.items() for k in prompt.input_variables}
-        return [{DOCUMENTS_INPUT_KEY: doc, **inputs} for doc in docs]
+        return [{DOCUMENTS_KEY: doc, **inputs} for doc in docs]
 
     return list_inputs | map_doc_chain.map()
 

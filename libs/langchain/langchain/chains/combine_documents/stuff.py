@@ -11,7 +11,7 @@ from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_PROMPT,
     DEFAULT_DOCUMENT_SEPARATOR,
-    DOCUMENTS_INPUT_KEY,
+    DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
     LanguageModelLike,
     _validate_prompt,
@@ -33,9 +33,8 @@ def create_stuff_documents_chain(
     _output_parser = output_parser or StrOutputParser()
 
     def _format_inputs(inputs: dict) -> dict:
-        inputs[DOCUMENTS_INPUT_KEY] = document_separator.join(
-            format_document(doc, _document_prompt)
-            for doc in inputs[DOCUMENTS_INPUT_KEY]
+        inputs[DOCUMENTS_KEY] = document_separator.join(
+            format_document(doc, _document_prompt) for doc in inputs[DOCUMENTS_KEY]
         )
         return {k: v for k, v in inputs.items() if k in prompt.input_variables}
 

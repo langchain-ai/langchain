@@ -22,13 +22,13 @@ LanguageModelLike = Union[
     Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
 ]
 DEFAULT_DOCUMENT_SEPARATOR = "\n\n"
-DOCUMENTS_INPUT_KEY = ""
+DOCUMENTS_KEY = "context"
 DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template("{page_content}")
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 
 def _validate_prompt(prompt: BasePromptTemplate) -> None:
-    if DOCUMENTS_INPUT_KEY not in prompt.input_variables:
+    if DOCUMENTS_KEY not in prompt.input_variables:
         raise ValueError()
 
 

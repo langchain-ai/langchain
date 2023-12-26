@@ -13,7 +13,7 @@ from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_PROMPT,
-    DOCUMENTS_INPUT_KEY,
+    DOCUMENTS_KEY,
     INTERMEDIATE_STEPS_KEY,
     BaseCombineDocumentsChain,
     LanguageModelLike,
@@ -56,10 +56,8 @@ def create_refine_documents_chain(
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
 
     def format_doc(inputs: dict) -> dict:
-        doc = inputs[DOCUMENTS_INPUT_KEY][
-            len(inputs.get(INTERMEDIATE_STEPS_KEY, [])) + 1
-        ]
-        inputs[DOCUMENTS_INPUT_KEY] = format_document(doc, _document_prompt)
+        doc = inputs[DOCUMENTS_KEY][len(inputs.get(INTERMEDIATE_STEPS_KEY, [])) + 1]
+        inputs[DOCUMENTS_KEY] = format_document(doc, _document_prompt)
         return {k: v for k, v in inputs.items() if k != INTERMEDIATE_STEPS_KEY}
 
     initial_chain = format_doc | initial_prompt | llm | StrOutputParser()
@@ -69,9 +67,7 @@ def create_refine_documents_chain(
         return inputs.get(INTERMEDIATE_STEPS_KEY, []) + [inputs[OUTPUT_KEY]]
 
     def loop(inputs: dict) -> Union[Runnable, dict]:
-        if len(inputs.get(INTERMEDIATE_STEPS_KEY, [])) + 1 < len(
-            inputs[DOCUMENTS_INPUT_KEY]
-        ):
+        if len(inputs.get(INTERMEDIATE_STEPS_KEY, [])) + 1 < len(inputs[DOCUMENTS_KEY]):
             return (
                 RunnablePassthrough.assign(
                     **{
@@ -87,12 +83,10 @@ def create_refine_documents_chain(
     def format_inputs(inputs: Any) -> dict:
         if isinstance(inputs, dict):
             return inputs
-        return {DOCUMENTS_INPUT_KEY: inputs}
+        return {DOCUMENTS_KEY: inputs}
 
     return (
-        format_inputs
-        | RunnablePassthrough.assign(**{OUTPUT_KEY: initial_chain})
-        | loop
+        format_inputs | RunnablePassthrough.assign(**{OUTPUT_KEY: initial_chain}) | loop
     )
 
 
