@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from operator import itemgetter
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelInput
@@ -35,7 +35,7 @@ def create_map_documents_chain(
     *,
     document_input_key: str,
     document_prompt: Optional[BasePromptTemplate] = None,
-) -> Runnable[Union[Dict[str, Any], Sequence[Document]], List[Document]]:
+) -> Runnable[Dict[str, Any], List[Document]]:
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
 
     def _format_document(inputs: dict) -> str:
@@ -52,13 +52,9 @@ def create_map_documents_chain(
         doc=itemgetter(document_input_key), content=map_content_chain
     ) | (lambda x: Document(page_content=x["content"], metadata=x["doc"].metadata))
 
-    def list_inputs(inputs: Union[dict, Sequence[Document]]) -> list:
-        if isinstance(inputs, dict):
-            docs = inputs.pop(document_input_key)
-            inputs = {k: v for k, v in inputs.items() for k in prompt.input_variables}
-        else:
-            docs = inputs
-            inputs = {}
+    def list_inputs(inputs: dict) -> list:
+        docs = inputs.pop(document_input_key)
+        inputs = {k: v for k, v in inputs.items() for k in prompt.input_variables}
         return [{document_input_key: doc, **inputs} for doc in docs]
 
     return list_inputs | map_doc_chain.map()
@@ -163,7 +159,7 @@ def create_collapse_documents_chain(
 
 
 def create_map_reduce_documents_chain(
-    map_chain: Runnable[Union[Dict[str, Any], Sequence[Document]], List[Document]],
+    map_chain: Runnable[Dict[str, Any], List[Document]],
     reduce_chain: Runnable[Dict[str, Any], str],
     *,
     document_input_key: str,
