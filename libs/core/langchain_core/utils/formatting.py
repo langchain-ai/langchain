@@ -1,6 +1,6 @@
 """Utilities for formatting strings."""
 from string import Formatter
-from typing import Any, List, Mapping, Sequence
+from typing import Any, List, Mapping, Sequence, Union
 
 
 class StrictFormatter(Formatter):
