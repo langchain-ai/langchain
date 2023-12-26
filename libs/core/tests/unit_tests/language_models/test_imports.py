@@ -9,6 +9,7 @@ EXPECTED_ALL = [
     "LanguageModelInput",
     "LanguageModelOutput",
     "get_tokenizer",
+    "LanguageModelLike",
 ]
 
 
