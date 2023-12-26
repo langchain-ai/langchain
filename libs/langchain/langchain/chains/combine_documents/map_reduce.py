@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from operator import itemgetter
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from langchain_core.documents import Document
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
 from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
@@ -20,42 +17,44 @@ from langchain_core.runnables import (
 from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import Callbacks
-from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.combine_documents.base import (
+    DEFAULT_DOCUMENT_SEPARATOR,
+    DOCUMENTS_INPUT_KEY,
+    BaseCombineDocumentsChain,
+    LanguageModelLike,
+)
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
-
-LanguageModelLike = Union[
-    Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
-]
 
 
 def create_map_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,
     *,
-    document_input_key: str,
     document_prompt: Optional[BasePromptTemplate] = None,
 ) -> Runnable[Dict[str, Any], List[Document]]:
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
 
     def _format_document(inputs: dict) -> str:
-        return format_document(inputs[document_input_key], _document_prompt)
+        return format_document(inputs[DOCUMENTS_INPUT_KEY], _document_prompt)
 
     map_content_chain = (
-        RunnablePassthrough.assign(**{document_input_key: _format_document})
+        RunnablePassthrough.assign(**{DOCUMENTS_INPUT_KEY: _format_document})
         | prompt
         | llm
         | StrOutputParser()
     )
 
-    map_doc_chain = RunnableParallel(
-        doc=itemgetter(document_input_key), content=map_content_chain
-    ) | (lambda x: Document(page_content=x["content"], metadata=x["doc"].metadata))
+    map_doc_chain = RunnablePassthrough.assign(page_content=map_content_chain) | (
+        lambda x: Document(
+            page_content=x["page_content"], metadata=x[DOCUMENTS_INPUT_KEY].metadata
+        )
+    )
 
     def list_inputs(inputs: dict) -> list:
-        docs = inputs.pop(document_input_key)
+        docs = inputs.pop(DOCUMENTS_INPUT_KEY)
         inputs = {k: v for k, v in inputs.items() for k in prompt.input_variables}
-        return [{document_input_key: doc, **inputs} for doc in docs]
+        return [{DOCUMENTS_INPUT_KEY: doc, **inputs} for doc in docs]
 
     return list_inputs | map_doc_chain.map()
 
@@ -66,7 +65,7 @@ def create_collapse_documents_chain(
     *,
     document_input_key: str,
     document_prompt: Optional[BasePromptTemplate] = None,
-    document_separator: str = "\n\n",
+    document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
     token_max: int = 4000,
     token_len_func: Optional[Callable[[str], int]] = None,
 ) -> Runnable:

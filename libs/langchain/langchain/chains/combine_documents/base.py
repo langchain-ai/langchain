@@ -1,10 +1,14 @@
 """Base interface for chains combining documents."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from langchain_core.documents import Document
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import BaseMessage
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core.runnables import Runnable
 from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import (
@@ -13,6 +17,19 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
+
+LanguageModelLike = Union[
+    Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
+]
+DEFAULT_DOCUMENT_SEPARATOR = "\n\n"
+DOCUMENTS_INPUT_KEY = ""
+DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template("{page_content}")
+INTERMEDIATE_STEPS_KEY = "intermediate_steps"
+
+
+def _validate_prompt(prompt: BasePromptTemplate) -> None:
+    if DOCUMENTS_INPUT_KEY not in prompt.input_variables:
+        raise ValueError()
 
 
 class BaseCombineDocumentsChain(Chain, ABC):

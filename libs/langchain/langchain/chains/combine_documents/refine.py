@@ -5,23 +5,22 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from langchain_core.documents import Document
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
-from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
+    DEFAULT_DOCUMENT_PROMPT,
+    DOCUMENTS_INPUT_KEY,
+    INTERMEDIATE_STEPS_KEY,
     BaseCombineDocumentsChain,
+    LanguageModelLike,
 )
 from langchain.chains.llm import LLMChain
 
-LanguageModelLike = Union[
-    Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
-]
+OUTPUT_KEY = "output"
 
 
 def create_refine_documents_chain(
@@ -29,10 +28,7 @@ def create_refine_documents_chain(
     refine_prompt: BasePromptTemplate,
     llm: LanguageModelLike,
     *,
-    document_input_key: str,
-    output_key: str,
     document_prompt: Optional[BasePromptTemplate] = None,
-    working_response_key: Optional[str] = None,
 ) -> Runnable:
     """
     
@@ -50,66 +46,54 @@ def create_refine_documents_chain(
             refine_prompt = ChatPromptTemplate.from_messages([
                 ("system", '''You are summarizing a long document one page at a time. \
             You have summarized part of the document. Given the next page, update your \
-            summary. Here is your working summary:\n\n{summary}.'''),
+            summary. Here is your working summary:\n\n{output}.'''),
                 ("human", "Here is the next page:\n\n{doc}")
             ])
             llm = ChatAnthropic(model="claude-2")
-            chain = create_refine_documents_chain(
-                initial_prompt,
-                refine_prompt,
-                llm,
-                document_input_key="doc",
-                output_key="summary"
-            )
+            chain = create_refine_documents_chain(initial_prompt, refine_prompt, llm,)
             chain.invoke(docs)
     """  # noqa: E501
-    _document_prompt = document_prompt or _get_default_document_prompt()
-    _working_response_key = working_response_key or output_key
+    _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
 
     def format_doc(inputs: dict) -> dict:
-        doc = inputs[document_input_key][len(inputs.get("intermediate_steps", [])) + 1]
-        inputs[document_input_key] = format_document(doc, _document_prompt)
-        return {k: v for k, v in inputs.items() if k != "intermediate_steps"}
+        doc = inputs[DOCUMENTS_INPUT_KEY][
+            len(inputs.get(INTERMEDIATE_STEPS_KEY, [])) + 1
+        ]
+        inputs[DOCUMENTS_INPUT_KEY] = format_document(doc, _document_prompt)
+        return {k: v for k, v in inputs.items() if k != INTERMEDIATE_STEPS_KEY}
 
     initial_chain = format_doc | initial_prompt | llm | StrOutputParser()
     refine_chain = format_doc | refine_prompt | llm | StrOutputParser()
 
     def update_intermediate_steps(inputs: dict) -> dict:
-        return inputs.get("intermediate_steps", []) + [inputs[_working_response_key]]
+        return inputs.get(INTERMEDIATE_STEPS_KEY, []) + [inputs[OUTPUT_KEY]]
 
     def loop(inputs: dict) -> Union[Runnable, dict]:
-        if len(inputs.get("intermediate_steps", [])) + 1 < len(
-            inputs[document_input_key]
+        if len(inputs.get(INTERMEDIATE_STEPS_KEY, [])) + 1 < len(
+            inputs[DOCUMENTS_INPUT_KEY]
         ):
             return (
                 RunnablePassthrough.assign(
                     **{
-                        "intermediate_steps": update_intermediate_steps,
-                        _working_response_key: refine_chain,
+                        INTERMEDIATE_STEPS_KEY: update_intermediate_steps,
+                        OUTPUT_KEY: refine_chain,
                     }
                 )
                 | loop
             )
         else:
-            return {
-                output_key: inputs[_working_response_key],
-                "intermediate_steps": inputs["intermediate_steps"],
-            }
+            return {k: inputs[k] for k in (OUTPUT_KEY, INTERMEDIATE_STEPS_KEY)}
 
     def format_inputs(inputs: Any) -> dict:
         if isinstance(inputs, dict):
             return inputs
-        return {document_input_key: inputs}
+        return {DOCUMENTS_INPUT_KEY: inputs}
 
     return (
         format_inputs
-        | RunnablePassthrough.assign(**{_working_response_key: initial_chain})
+        | RunnablePassthrough.assign(**{OUTPUT_KEY: initial_chain})
         | loop
     )
-
-
-def _get_default_document_prompt() -> PromptTemplate:
-    return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
 class RefineDocumentsChain(BaseCombineDocumentsChain):
@@ -173,7 +157,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
     initial_response_name: str
     """The variable name to format the initial response in when refining."""
     document_prompt: BasePromptTemplate = Field(
-        default_factory=_get_default_document_prompt
+        default_factory=lambda: DEFAULT_DOCUMENT_PROMPT
     )
     """Prompt to use to format each document, gets passed to `format_document`."""
     return_intermediate_steps: bool = False

@@ -1,48 +1,45 @@
 """Chain that combines documents by stuffing into context."""
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_core.documents import Document
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
-from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.runnables import Runnable
 
 from langchain.callbacks.manager import Callbacks
-from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.combine_documents.base import (
+    DEFAULT_DOCUMENT_PROMPT,
+    DEFAULT_DOCUMENT_SEPARATOR,
+    DOCUMENTS_INPUT_KEY,
+    BaseCombineDocumentsChain,
+    LanguageModelLike,
+    _validate_prompt,
+)
 from langchain.chains.llm import LLMChain
-
-LanguageModelLike = Union[
-    Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
-]
 
 
 def create_stuff_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,
     *,
-    document_input_key: str,
     output_parser: Optional[BaseOutputParser] = None,
     document_prompt: Optional[BasePromptTemplate] = None,
-    document_separator: str = "\n\n",
-) -> Runnable[Dict[str, Any], str]:
+    document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
+) -> Runnable[Dict[str, Any], Any]:
     """"""
-    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+    _validate_prompt(prompt)
+    _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _output_parser = output_parser or StrOutputParser()
 
     def _format_inputs(inputs: dict) -> dict:
-        inputs[document_input_key] = document_separator.join(
-            format_document(doc, _document_prompt) for doc in inputs[document_input_key]
+        inputs[DOCUMENTS_INPUT_KEY] = document_separator.join(
+            format_document(doc, _document_prompt)
+            for doc in inputs[DOCUMENTS_INPUT_KEY]
         )
         return {k: v for k, v in inputs.items() if k in prompt.input_variables}
 
     return _format_inputs | prompt | llm | _output_parser
-
-
-def _get_default_document_prompt() -> PromptTemplate:
-    return PromptTemplate.from_template("{page_content}")
 
 
 class StuffDocumentsChain(BaseCombineDocumentsChain):
@@ -87,7 +84,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     """LLM chain which is called with the formatted document string,
     along with any other inputs."""
     document_prompt: BasePromptTemplate = Field(
-        default_factory=_get_default_document_prompt
+        default_factory=lambda: DEFAULT_DOCUMENT_PROMPT
     )
     """Prompt to use to format each document, gets passed to `format_document`."""
     document_variable_name: str
