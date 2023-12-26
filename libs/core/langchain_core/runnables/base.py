@@ -2307,6 +2307,8 @@ class RunnableGenerator(Runnable[Input, Output]):
         transform: Union[
             Callable[[Iterator[Input]], Iterator[Output]],
             Callable[[AsyncIterator[Input]], AsyncIterator[Output]],
+            Callable[[Input], Output],
+            Callable[[Input], Awaitable[Output]],
         ],
         atransform: Optional[
             Callable[[AsyncIterator[Input]], AsyncIterator[Output]]
@@ -2319,6 +2321,34 @@ class RunnableGenerator(Runnable[Input, Output]):
             self._atransform = transform
         elif inspect.isgeneratorfunction(transform):
             self._transform = transform
+        elif inspect.iscoroutinefunction(transform):
+            self._atransform_each = transform
+
+            async def _atransform(input: AsyncIterator[Input]) -> AsyncIterator[Output]:
+                async for chunk in input:
+                    transformed = await self._atransform_each(chunk)
+                    if transformed is not None:
+                        yield transformed
+
+            self._atransform = _atransform
+        elif callable(transform):
+            self._transform_each = transform
+
+            def _transform(input: Iterator[Input]) -> Iterator[Output]:
+                for chunk in input:
+                    transformed = self._transform_each(chunk)
+                    if transformed is not None:
+                        yield transformed
+
+            self._transform = _transform
+
+            async def _atransform(input: AsyncIterator[Input]) -> AsyncIterator[Output]:
+                async for chunk in input:
+                    transformed = self._transform_each(chunk)
+                    if transformed is not None:
+                        yield transformed
+
+            self._atransform = _atransform
         else:
             raise TypeError(
                 "Expected a generator function type for `transform`."
@@ -2353,7 +2383,13 @@ class RunnableGenerator(Runnable[Input, Output]):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunnableGenerator):
-            if hasattr(self, "_transform") and hasattr(other, "_transform"):
+            if hasattr(self, "_transform_each") and hasattr(other, "_transform_each"):
+                return self._transform_each == other._transform_each
+            elif hasattr(self, "_atransform_each") and hasattr(
+                other, "_atransform_each"
+            ):
+                return self._atransform_each == other._atransform_each
+            elif hasattr(self, "_transform") and hasattr(other, "_transform"):
                 return self._transform == other._transform
             elif hasattr(self, "_atransform") and hasattr(other, "_atransform"):
                 return self._atransform == other._atransform
@@ -2363,7 +2399,18 @@ class RunnableGenerator(Runnable[Input, Output]):
             return False
 
     def __repr__(self) -> str:
-        return "RunnableGenerator(...)"
+        if hasattr(self, "_transform_each"):
+            return (
+                f"RunnableGenerator({get_lambda_source(self._transform_each) or '...'})"
+            )
+        elif hasattr(self, "_atransform_each"):
+            return f"RunnableGenerator({self._atransform_each.__name__})"
+        elif hasattr(self, "_transform"):
+            return f"RunnableGenerator({self._transform.__name__})"
+        elif hasattr(self, "_atransform"):
+            return f"RunnableGenerator({self._atransform.__name__})"
+        else:
+            return "RunnableGenerator(...)"
 
     def transform(
         self,
