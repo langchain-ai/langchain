@@ -71,7 +71,7 @@ def create_stuff_documents_chain(
             chain.invoke({"context": docs})
     """  # noqa: E501
 
-    _validate_prompt(prompt)
+    _validate_prompt(prompt, (DOCUMENTS_KEY,))
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _output_parser = output_parser or StrOutputParser()
 

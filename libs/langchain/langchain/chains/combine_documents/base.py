@@ -1,7 +1,7 @@
 """Base interface for chains combining documents."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
@@ -21,11 +21,14 @@ DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template("{page_content}")
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 
-def _validate_prompt(prompt: BasePromptTemplate) -> None:
-    if DOCUMENTS_KEY not in prompt.input_variables:
+def _validate_prompt(
+    prompt: BasePromptTemplate, expected_inputs: Sequence[str]
+) -> None:
+    missing_keys = set(expected_inputs).difference(prompt.input_variables)
+    if missing_keys:
         raise ValueError(
-            f"Prompt must accept {DOCUMENTS_KEY} as an input variable. Received prompt "
-            f"with input variables: {prompt.input_variables}"
+            f"Prompt must accept {expected_inputs} as an input variables. Received "
+            f"prompt with input variables: {prompt.input_variables}"
         )
 
 

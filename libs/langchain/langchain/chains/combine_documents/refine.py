@@ -17,6 +17,7 @@ from langchain.chains.combine_documents.base import (
     DOCUMENTS_KEY,
     INTERMEDIATE_STEPS_KEY,
     BaseCombineDocumentsChain,
+    _validate_prompt,
 )
 from langchain.chains.llm import LLMChain
 
@@ -32,27 +33,38 @@ def create_refine_documents_chain(
 ) -> Runnable:
     """
     
+    Args:
+        initial_prompt:
+        refine_prompt:
+        llm:
+        document_prompt:
+        
+    Returns:
+        
+    
     Example:
         .. code-block:: python
         
-            from langchain_community.chat_models import ChatAnthropic
+            from langchain_community.chat_models import ChatOpenAI
             from langchain_core.prompts import ChatPromptTemplate
             from langchain.chains.combine_documents.refine import create_refine_documents_chain
 
             initial_prompt = ChatPromptTemplate.from_messages([
-                ("system", "Summarize the provided content"),
-                ("human", "{doc}")
+                ("system", "Summarize this information: {context}"),
             ])
             refine_prompt = ChatPromptTemplate.from_messages([
                 ("system", '''You are summarizing a long document one page at a time. \
             You have summarized part of the document. Given the next page, update your \
-            summary. Here is your working summary:\n\n{output}.'''),
-                ("human", "Here is the next page:\n\n{doc}")
+            summary. Respond with only the updated summary and no other text. \
+            Here is your working summary:\n\n{output}.'''),
+                ("human", "Here is the next page:\n\n{context}")
             ])
-            llm = ChatAnthropic(model="claude-2")
+            llm = ChatOpenAI(model="gpt-3.5-turbo")
             chain = create_refine_documents_chain(initial_prompt, refine_prompt, llm,)
-            chain.invoke(docs)
+            chain.invoke({"context": docs})
     """  # noqa: E501
+    _validate_prompt(initial_prompt, (DOCUMENTS_KEY,))
+    _validate_prompt(refine_prompt, (DOCUMENTS_KEY, OUTPUT_KEY))
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
 
     def format_doc(inputs: dict) -> dict:
@@ -60,23 +72,28 @@ def create_refine_documents_chain(
         inputs[DOCUMENTS_KEY] = format_document(doc, _document_prompt)
         return {k: v for k, v in inputs.items() if k != INTERMEDIATE_STEPS_KEY}
 
-    initial_chain = format_doc | initial_prompt | llm | StrOutputParser()
-    refine_chain = format_doc | refine_prompt | llm | StrOutputParser()
+    initial_chain = (format_doc | initial_prompt | llm | StrOutputParser()).with_config(
+        run_name="initial_chain"
+    )
+    refine_chain = (format_doc | refine_prompt | llm | StrOutputParser()).with_config(
+        run_name="refine_chain"
+    )
 
     def update_intermediate_steps(inputs: dict) -> dict:
         return inputs.get(INTERMEDIATE_STEPS_KEY, []) + [inputs[OUTPUT_KEY]]
 
     def loop(inputs: dict) -> Union[Runnable, dict]:
-        if len(inputs.get(INTERMEDIATE_STEPS_KEY, [])) + 1 < len(inputs[DOCUMENTS_KEY]):
+        iteration = len(inputs.get(INTERMEDIATE_STEPS_KEY, [])) + 1
+        if iteration < len(inputs[DOCUMENTS_KEY]):
             return (
                 RunnablePassthrough.assign(
                     **{
                         INTERMEDIATE_STEPS_KEY: update_intermediate_steps,
                         OUTPUT_KEY: refine_chain,
                     }
-                )
+                ).with_config(run_name="refine_step")
                 | loop
-            )
+            ).with_config(run_name=f"iter_{iteration}")
         else:
             return {k: inputs[k] for k in (OUTPUT_KEY, INTERMEDIATE_STEPS_KEY)}
 
@@ -86,8 +103,12 @@ def create_refine_documents_chain(
         return {DOCUMENTS_KEY: inputs}
 
     return (
-        format_inputs | RunnablePassthrough.assign(**{OUTPUT_KEY: initial_chain}) | loop
-    )
+        format_inputs
+        | RunnablePassthrough.assign(**{OUTPUT_KEY: initial_chain}).with_config(
+            run_name="assign_initial"
+        )
+        | loop
+    ).with_config(run_name="refine_documents_chain")
 
 
 class RefineDocumentsChain(BaseCombineDocumentsChain):
