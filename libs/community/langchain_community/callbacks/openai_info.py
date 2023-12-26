@@ -1,4 +1,5 @@
 """Callback Handler that prints to std out."""
+import threading
 from typing import Any, Dict, List
 
 from langchain_core.callbacks import BaseCallbackHandler
@@ -154,6 +155,8 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     successful_requests: int = 0
     total_cost: float = 0.0
 
+    _lock: threading.Lock = threading.Lock()
+
     def __repr__(self) -> str:
         return (
             f"Tokens Used: {self.total_tokens}\n"
@@ -182,8 +185,12 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         """Collect token usage."""
         if response.llm_output is None:
             return None
+
+        self._lock.acquire()
+
         self.successful_requests += 1
         if "token_usage" not in response.llm_output:
+            self._lock.release()
             return None
         token_usage = response.llm_output["token_usage"]
         completion_tokens = token_usage.get("completion_tokens", 0)
@@ -198,6 +205,8 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         self.total_tokens += token_usage.get("total_tokens", 0)
         self.prompt_tokens += prompt_tokens
         self.completion_tokens += completion_tokens
+
+        self._lock.release()
 
     def __copy__(self) -> "OpenAICallbackHandler":
         """Return a copy of the callback handler."""
