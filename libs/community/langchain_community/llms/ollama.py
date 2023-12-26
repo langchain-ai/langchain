@@ -1,8 +1,12 @@
 import json
-from typing import Any, Dict, Iterator, List, Mapping, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
+import aiohttp
 import requests
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult
@@ -148,6 +152,22 @@ class _OllamaCommon(BaseLanguageModel):
             **kwargs,
         )
 
+    async def _acreate_generate_stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        images: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[str]:
+        payload = {"prompt": prompt, "images": images}
+        async for item in self._acreate_stream(
+            payload=payload,
+            stop=stop,
+            api_url=f"{self.base_url}/api/generate/",
+            **kwargs,
+        ):
+            yield item
+
     def _create_stream(
         self,
         api_url: str,
@@ -208,6 +228,64 @@ class _OllamaCommon(BaseLanguageModel):
                 )
         return response.iter_lines(decode_unicode=True)
 
+    async def _acreate_stream(
+        self,
+        api_url: str,
+        payload: Any,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[str]:
+        if self.stop is not None and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+        elif self.stop is not None:
+            stop = self.stop
+        elif stop is None:
+            stop = []
+
+        params = self._default_params
+
+        if "model" in kwargs:
+            params["model"] = kwargs["model"]
+
+        if "options" in kwargs:
+            params["options"] = kwargs["options"]
+        else:
+            params["options"] = {
+                **params["options"],
+                "stop": stop,
+                **kwargs,
+            }
+
+        if payload.get("messages"):
+            request_payload = {"messages": payload.get("messages", []), **params}
+        else:
+            request_payload = {
+                "prompt": payload.get("prompt"),
+                "images": payload.get("images", []),
+                **params,
+            }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                url=api_url,
+                headers={"Content-Type": "application/json"},
+                json=request_payload,
+                timeout=self.timeout,
+            ) as response:
+                if response.status != 200:
+                    if response.status == 404:
+                        raise OllamaEndpointNotFoundError(
+                            "Ollama call failed with status code 404."
+                        )
+                    else:
+                        optional_detail = await response.json().get("error")
+                        raise ValueError(
+                            f"Ollama call failed with status code {response.status}."
+                            f" Details: {optional_detail}"
+                        )
+                async for line in response.content:
+                    yield line.decode("utf-8")
+
     def _stream_with_aggregation(
         self,
         prompt: str,
@@ -226,6 +304,32 @@ class _OllamaCommon(BaseLanguageModel):
                     final_chunk += chunk
                 if run_manager:
                     run_manager.on_llm_new_token(
+                        chunk.text,
+                        verbose=verbose,
+                    )
+        if final_chunk is None:
+            raise ValueError("No data received from Ollama stream.")
+
+        return final_chunk
+
+    async def _astream_with_aggregation(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> GenerationChunk:
+        final_chunk: Optional[GenerationChunk] = None
+        async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
+            if stream_resp:
+                chunk = _stream_response_to_generation_chunk(stream_resp)
+                if final_chunk is None:
+                    final_chunk = chunk
+                else:
+                    final_chunk += chunk
+                if run_manager:
+                    await run_manager.on_llm_new_token(
                         chunk.text,
                         verbose=verbose,
                     )
@@ -293,6 +397,42 @@ class Ollama(BaseLLM, _OllamaCommon):
             generations.append([final_chunk])
         return LLMResult(generations=generations)
 
+    async def _agenerate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        images: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Call out to Ollama's generate endpoint.
+
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            The string generated by the model.
+
+        Example:
+            .. code-block:: python
+
+                response = ollama("Tell me a joke.")
+        """
+        # TODO: add caching here.
+        generations = []
+        for prompt in prompts:
+            final_chunk = await super()._astream_with_aggregation(
+                prompt,
+                stop=stop,
+                images=images,
+                run_manager=run_manager,
+                verbose=self.verbose,
+                **kwargs,
+            )
+            generations.append([final_chunk])
+        return LLMResult(generations=generations)
+
     def _stream(
         self,
         prompt: str,
@@ -306,6 +446,23 @@ class Ollama(BaseLLM, _OllamaCommon):
                 yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(
+                        chunk.text,
+                        verbose=self.verbose,
+                    )
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        async for stream_resp in self._acreate_stream(prompt, stop, **kwargs):
+            if stream_resp:
+                chunk = _stream_response_to_generation_chunk(stream_resp)
+                yield chunk
+                if run_manager:
+                    await run_manager.on_llm_new_token(
                         chunk.text,
                         verbose=self.verbose,
                     )
