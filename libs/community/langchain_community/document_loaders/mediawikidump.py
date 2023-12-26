@@ -90,23 +90,7 @@ class MWDumpLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load from a file path."""
 
-        dump = self._load_dump_file()
-
-        docs = []
-        for page in dump.pages:
-            if self.skip_redirects and page.redirect:
-                continue
-            if self.namespaces and page.namespace not in self.namespaces:
-                continue
-            try:
-                docs.append(self._load_single_page_from_dump(page))
-            except Exception as e:
-                logger.error("Parsing error: {}".format(e))
-                if self.stop_on_error:
-                    raise e
-                else:
-                    continue
-        return docs
+        return [doc for doc in self.lazy_load()]
 
     def lazy_load(
         self,
