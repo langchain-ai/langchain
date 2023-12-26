@@ -34,7 +34,7 @@ class TencentCOSFileLoader(BaseLoader):
                 "Please install it with `pip install cos-python-sdk-v5`."
             )
 
-        # Initialise a client
+        # initialize a client
         client = CosS3Client(self.conf)
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{self.bucket}/{self.key}"

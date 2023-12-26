@@ -35,7 +35,7 @@ from typing_extensions import Literal, get_args
 
 from langchain_core.load.dump import dumpd, dumps
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core.pydantic_v1 import BaseConfig, BaseModel, Field, create_model
 from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,
@@ -48,6 +48,7 @@ from langchain_core.runnables.config import (
     merge_configs,
     patch_config,
 )
+from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
@@ -59,6 +60,7 @@ from langchain_core.runnables.utils import (
     accepts_run_manager,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
+    get_function_nonlocals,
     get_lambda_source,
     get_unique_config_specs,
     indent_lines_after_first,
@@ -79,6 +81,10 @@ if TYPE_CHECKING:
 
 
 Other = TypeVar("Other")
+
+
+class _SchemaConfig(BaseConfig):
+    arbitrary_types_allowed = True
 
 
 class Runnable(Generic[Input, Output], ABC):
@@ -265,7 +271,9 @@ class Runnable(Generic[Input, Output], ABC):
             return root_type
 
         return create_model(
-            self.__class__.__name__ + "Input", __root__=(root_type, None)
+            self.__class__.__name__ + "Input",
+            __root__=(root_type, None),
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -296,7 +304,9 @@ class Runnable(Generic[Input, Output], ABC):
             return root_type
 
         return create_model(
-            self.__class__.__name__ + "Output", __root__=(root_type, None)
+            self.__class__.__name__ + "Output",
+            __root__=(root_type, None),
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -319,9 +329,6 @@ class Runnable(Generic[Input, Output], ABC):
             A pydantic model that can be used to validate config.
         """
 
-        class _Config:
-            arbitrary_types_allowed = True
-
         include = include or []
         config_specs = self.config_specs
         configurable = (
@@ -336,6 +343,7 @@ class Runnable(Generic[Input, Output], ABC):
                     )
                     for spec in config_specs
                 },
+                __config__=_SchemaConfig,
             )
             if config_specs
             else None
@@ -343,7 +351,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         return create_model(  # type: ignore[call-overload]
             self.__class__.__name__ + "Config",
-            __config__=_Config,
+            __config__=_SchemaConfig,
             **({"configurable": (configurable, None)} if configurable else {}),
             **{
                 field_name: (field_type, None)
@@ -351,6 +359,18 @@ class Runnable(Generic[Input, Output], ABC):
                 if field_name in [i for i in include if i != "configurable"]
             },
         )
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        """Return a graph representation of this runnable."""
+        from langchain_core.runnables.graph import Graph
+
+        graph = Graph()
+        input_node = graph.add_node(self.get_input_schema(config))
+        runnable_node = graph.add_node(self)
+        output_node = graph.add_node(self.get_output_schema(config))
+        graph.add_edge(input_node, runnable_node)
+        graph.add_edge(runnable_node, output_node)
+        return graph
 
     def __or__(
         self,
@@ -1392,6 +1412,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         for k, v in next_input_schema.__fields__.items()
                         if k not in first.mapper.steps
                     },
+                    __config__=_SchemaConfig,
                 )
 
         return self.first.get_input_schema(config)
@@ -1446,6 +1467,26 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 )
 
         return get_unique_config_specs(spec for spec, _ in all_specs)
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        from langchain_core.runnables.graph import Graph
+
+        graph = Graph()
+        for step in self.steps:
+            current_last_node = graph.last_node()
+            step_graph = step.get_graph(config)
+            if step is not self.first:
+                step_graph.trim_first_node()
+            if step is not self.last:
+                step_graph.trim_last_node()
+            graph.extend(step_graph)
+            step_first_node = step_graph.first_node()
+            if not step_first_node:
+                raise ValueError(f"Runnable {step} has no first node")
+            if current_last_node:
+                graph.add_edge(current_last_node, step_first_node)
+
+        return graph
 
     def __repr__(self) -> str:
         return "\n| ".join(
@@ -1966,13 +2007,14 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         ):
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model(  # type: ignore[call-overload]
-                "RunnableParallelInput",
+                "RunnableMapInput",
                 **{
                     k: (v.annotation, v.default)
                     for step in self.steps.values()
                     for k, v in step.get_input_schema(config).__fields__.items()
                     if k != "__root__"
                 },
+                __config__=_SchemaConfig,
             )
 
         return super().get_input_schema(config)
@@ -1982,8 +2024,9 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
-            "RunnableParallelOutput",
+            "RunnableMapOutput",
             **{k: (v.OutputType, None) for k, v in self.steps.items()},
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -1991,6 +2034,31 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         return get_unique_config_specs(
             spec for step in self.steps.values() for spec in step.config_specs
         )
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        from langchain_core.runnables.graph import Graph
+
+        graph = Graph()
+        input_node = graph.add_node(self.get_input_schema(config))
+        output_node = graph.add_node(self.get_output_schema(config))
+        for step in self.steps.values():
+            step_graph = step.get_graph()
+            step_graph.trim_first_node()
+            step_graph.trim_last_node()
+            if not step_graph:
+                graph.add_edge(input_node, output_node)
+            else:
+                graph.extend(step_graph)
+                step_first_node = step_graph.first_node()
+                if not step_first_node:
+                    raise ValueError(f"Runnable {step} has no first node")
+                step_last_node = step_graph.last_node()
+                if not step_last_node:
+                    raise ValueError(f"Runnable {step} has no last node")
+                graph.add_edge(input_node, step_first_node)
+                graph.add_edge(step_last_node, output_node)
+
+        return graph
 
     def __repr__(self) -> str:
         map_for_repr = ",\n  ".join(
@@ -2295,7 +2363,12 @@ class RunnableGenerator(Runnable[Input, Output]):
             return False
 
     def __repr__(self) -> str:
-        return "RunnableGenerator(...)"
+        if hasattr(self, "_transform"):
+            return f"RunnableGenerator({self._transform.__name__})"
+        elif hasattr(self, "_atransform"):
+            return f"RunnableGenerator({self._atransform.__name__})"
+        else:
+            return "RunnableGenerator(...)"
 
     def transform(
         self,
@@ -2490,9 +2563,14 @@ class RunnableLambda(Runnable[Input, Output]):
                 return create_model(
                     "RunnableLambdaInput",
                     **{item[1:-1]: (Any, None) for item in items},  # type: ignore
+                    __config__=_SchemaConfig,
                 )
             else:
-                return create_model("RunnableLambdaInput", __root__=(List[Any], None))
+                return create_model(
+                    "RunnableLambdaInput",
+                    __root__=(List[Any], None),
+                    __config__=_SchemaConfig,
+                )
 
         if self.InputType != Any:
             return super().get_input_schema(config)
@@ -2501,6 +2579,7 @@ class RunnableLambda(Runnable[Input, Output]):
             return create_model(
                 "RunnableLambdaInput",
                 **{key: (Any, None) for key in dict_keys},  # type: ignore
+                __config__=_SchemaConfig,
             )
 
         return super().get_input_schema(config)
@@ -2519,6 +2598,50 @@ class RunnableLambda(Runnable[Input, Output]):
         except ValueError:
             return Any
 
+    @property
+    def deps(self) -> List[Runnable]:
+        """The dependencies of this runnable."""
+        if hasattr(self, "func"):
+            objects = get_function_nonlocals(self.func)
+        elif hasattr(self, "afunc"):
+            objects = get_function_nonlocals(self.afunc)
+        else:
+            objects = []
+
+        return [obj for obj in objects if isinstance(obj, Runnable)]
+
+    @property
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
+        return get_unique_config_specs(
+            spec for dep in self.deps for spec in dep.config_specs
+        )
+
+    def get_graph(self, config: RunnableConfig | None = None) -> Graph:
+        if deps := self.deps:
+            graph = Graph()
+            input_node = graph.add_node(self.get_input_schema(config))
+            output_node = graph.add_node(self.get_output_schema(config))
+            for dep in deps:
+                dep_graph = dep.get_graph()
+                dep_graph.trim_first_node()
+                dep_graph.trim_last_node()
+                if not dep_graph:
+                    graph.add_edge(input_node, output_node)
+                else:
+                    graph.extend(dep_graph)
+                    dep_first_node = dep_graph.first_node()
+                    if not dep_first_node:
+                        raise ValueError(f"Runnable {dep} has no first node")
+                    dep_last_node = dep_graph.last_node()
+                    if not dep_last_node:
+                        raise ValueError(f"Runnable {dep} has no last node")
+                    graph.add_edge(input_node, dep_first_node)
+                    graph.add_edge(dep_last_node, output_node)
+        else:
+            graph = super().get_graph(config)
+
+        return graph
+
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunnableLambda):
             if hasattr(self, "func") and hasattr(other, "func"):
@@ -2532,7 +2655,9 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __repr__(self) -> str:
         """A string representation of this runnable."""
-        if hasattr(self, "func"):
+        if hasattr(self, "func") and isinstance(self.func, itemgetter):
+            return f"RunnableLambda({str(self.func)[len('operator.'):]})"
+        elif hasattr(self, "func"):
             return f"RunnableLambda({get_lambda_source(self.func) or '...'})"
         elif hasattr(self, "afunc"):
             return f"RunnableLambda(afunc={get_lambda_source(self.afunc) or '...'})"
@@ -2655,6 +2780,155 @@ class RunnableLambda(Runnable[Input, Output]):
             **kwargs,
         )
 
+    def _transform(
+        self,
+        input: Iterator[Input],
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+        **kwargs: Any,
+    ) -> Iterator[Output]:
+        final: Optional[Input] = None
+        for ichunk in input:
+            if final is None:
+                final = ichunk
+            else:
+                try:
+                    final = final + ichunk  # type: ignore[operator]
+                except TypeError:
+                    final = ichunk
+
+        output = call_func_with_variable_args(
+            self.func, cast(Input, final), config, run_manager, **kwargs
+        )
+
+        # If the output is a runnable, use its stream output
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking "
+                    f"{self} with input {final}."
+                )
+            for chunk in output.stream(
+                final,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            ):
+                yield chunk
+        else:
+            # Otherwise, just yield it
+            yield output
+
+    def transform(
+        self,
+        input: Iterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        if hasattr(self, "func"):
+            for output in self._transform_stream_with_config(
+                input,
+                self._transform,
+                self._config(config, self.func),
+                **kwargs,
+            ):
+                yield output
+        else:
+            raise TypeError(
+                "Cannot stream a coroutine function synchronously."
+                "Use `astream` instead."
+            )
+
+    def stream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        return self.transform(iter([input]), config, **kwargs)
+
+    async def _atransform(
+        self,
+        input: AsyncIterator[Input],
+        run_manager: AsyncCallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> AsyncIterator[Output]:
+        final: Optional[Input] = None
+        async for ichunk in input:
+            if final is None:
+                final = ichunk
+            else:
+                try:
+                    final = final + ichunk  # type: ignore[operator]
+                except TypeError:
+                    final = ichunk
+
+        if hasattr(self, "afunc"):
+            afunc = self.afunc
+        else:
+
+            @wraps(self.func)
+            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+                return await asyncio.get_running_loop().run_in_executor(
+                    None, partial(self.func, **kwargs), *args
+                )
+
+            afunc = f
+
+        output = await acall_func_with_variable_args(
+            afunc, cast(Input, final), config, run_manager
+        )
+
+        # If the output is a runnable, use its astream output
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking "
+                    f"{self} with input {final}."
+                )
+            async for chunk in output.astream(
+                final,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            ):
+                yield chunk
+        else:
+            # Otherwise, just yield it
+            yield output
+
+    async def atransform(
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        async for output in self._atransform_stream_with_config(
+            input,
+            self._atransform,
+            self._config(config, self.afunc if hasattr(self, "afunc") else self.func),
+            **kwargs,
+        ):
+            yield output
+
+    async def astream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        async def input_aiter() -> AsyncIterator[Input]:
+            yield input
+
+        async for chunk in self.atransform(input_aiter(), config, **kwargs):
+            yield chunk
+
 
 class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     """
@@ -2682,6 +2956,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[self.bound.get_input_schema(config)],  # type: ignore
                 None,
             ),
+            __config__=_SchemaConfig,
         )
 
     @property
@@ -2698,11 +2973,15 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[schema],  # type: ignore
                 None,
             ),
+            __config__=_SchemaConfig,
         )
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.bound.config_specs
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        return self.bound.get_graph(config)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -2914,6 +3193,9 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.bound.config_specs
+
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+        return self.bound.get_graph(config)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
