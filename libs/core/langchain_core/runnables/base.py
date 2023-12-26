@@ -1280,6 +1280,85 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         )
 
 
+def _seq_input_schema(
+    steps: List[Runnable[Any, Any]], config: Optional[RunnableConfig]
+) -> Type[BaseModel]:
+    from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
+
+    first = steps[0]
+    if len(steps) == 1:
+        return first.get_input_schema(config)
+    elif isinstance(first, RunnableAssign):
+        next_input_schema = _seq_input_schema(steps[1:], config)
+        if not next_input_schema.__custom_root_type__:
+            # it's a dict as expected
+            return create_model(  # type: ignore[call-overload]
+                "RunnableSequenceInput",
+                **{
+                    k: (v.annotation, v.default)
+                    for k, v in next_input_schema.__fields__.items()
+                    if k not in first.mapper.steps
+                },
+                __config__=_SchemaConfig,
+            )
+    elif isinstance(first, RunnablePick):
+        return _seq_input_schema(steps[1:], config)
+
+    return first.get_input_schema(config)
+
+
+def _seq_output_schema(
+    steps: List[Runnable[Any, Any]], config: Optional[RunnableConfig]
+) -> Type[BaseModel]:
+    from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
+
+    last = steps[-1]
+    if len(steps) == 1:
+        return last.get_input_schema(config)
+    elif isinstance(last, RunnableAssign):
+        mapper_output_schema = last.mapper.get_output_schema(config)
+        prev_output_schema = _seq_output_schema(steps[:-1], config)
+        if not prev_output_schema.__custom_root_type__:
+            # it's a dict as expected
+            return create_model(  # type: ignore[call-overload]
+                "RunnableSequenceOutput",
+                **{
+                    **{
+                        k: (v.annotation, v.default)
+                        for k, v in prev_output_schema.__fields__.items()
+                    },
+                    **{
+                        k: (v.annotation, v.default)
+                        for k, v in mapper_output_schema.__fields__.items()
+                    },
+                },
+                __config__=_SchemaConfig,
+            )
+    elif isinstance(last, RunnablePick):
+        prev_output_schema = _seq_output_schema(steps[:-1], config)
+        if not prev_output_schema.__custom_root_type__:
+            # it's a dict as expected
+            if isinstance(last.keys, list):
+                return create_model(  # type: ignore[call-overload]
+                    "RunnableSequenceOutput",
+                    **{
+                        k: (v.annotation, v.default)
+                        for k, v in prev_output_schema.__fields__.items()
+                        if k in last.keys
+                    },
+                    __config__=_SchemaConfig,
+                )
+            else:
+                field = prev_output_schema.__fields__[last.keys]
+                return create_model(  # type: ignore[call-overload]
+                    "RunnableSequenceOutput",
+                    __root__=(field.annotation, field.default),
+                    __config__=_SchemaConfig,
+                )
+
+    return last.get_output_schema(config)
+
+
 class RunnableSequence(RunnableSerializable[Input, Output]):
     """A sequence of runnables, where the output of each is the input of the next.
 
@@ -1397,30 +1476,12 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        from langchain_core.runnables.passthrough import RunnableAssign
-
-        if isinstance(self.first, RunnableAssign):
-            first = cast(RunnableAssign, self.first)
-            next_ = self.middle[0] if self.middle else self.last
-            next_input_schema = next_.get_input_schema(config)
-            if not next_input_schema.__custom_root_type__:
-                # it's a dict as expected
-                return create_model(  # type: ignore[call-overload]
-                    "RunnableSequenceInput",
-                    **{
-                        k: (v.annotation, v.default)
-                        for k, v in next_input_schema.__fields__.items()
-                        if k not in first.mapper.steps
-                    },
-                    __config__=_SchemaConfig,
-                )
-
-        return self.first.get_input_schema(config)
+        return _seq_input_schema(self.steps, config)
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        return self.last.get_output_schema(config)
+        return _seq_output_schema(self.steps, config)
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
