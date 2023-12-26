@@ -304,9 +304,26 @@ class VectorDBQA(BaseRetrievalQA):
 
 def create_retrieval_chain(
     retriever: Union[BaseRetriever, RetrieverOutputLike],
-    combine_docs_chain: Runnable[Dict[str, Any], Dict[str, Any]],
+    combine_docs_chain: Runnable[Dict[str, Any], str],
 ) -> Runnable:
-    """Create retrieval chain that retrieves documents and then passes them on."""
+    """Create retrieval chain that retrieves documents and then passes them on.
+
+    Args:
+        retriever: Retriever-like object that returns list of documents. Should
+            either be a subclass of BaseRetriever or a Runnable that returns
+            a list of documents. If a subclass of BaseRetriever, then it
+            is expected that an `input` key be passed in - this is what
+            is will be used to pass into the retriever. If this is NOT a
+            subclass of BaseRetriever, then all the inputs will be passed
+            into this runnable, meaning that runnable should take a dictionary
+            as input.
+        combine_docs_chain: Runnable that takes inputs and produces a string output.
+            The inputs to this will be any original inputs to this chain, a new
+            context key with the retrieved documents, and chat_history (if not present
+            in the inputs) with a value of `[]` (to easily enable conversational
+            retrieval.
+
+    """
     if isinstance(retriever, BaseRetriever):
         retrieval_docs = (lambda x: x["input"]) | retriever
     else:
