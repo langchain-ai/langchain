@@ -11,7 +11,12 @@ from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
 from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
-from langchain_core.runnables import Runnable, RunnableParallel, RunnablePassthrough
+from langchain_core.runnables import (
+    Runnable,
+    RunnableLambda,
+    RunnableParallel,
+    RunnablePassthrough,
+)
 from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import Callbacks
@@ -79,12 +84,84 @@ def create_reduce_documents_chain(
     return _format_inputs | prompt | llm | StrOutputParser()
 
 
+def create_collapse_documents_chain(
+    llm: LanguageModelLike,
+    prompt: BasePromptTemplate,
+    *,
+    document_input_key: str,
+    document_prompt: Optional[BasePromptTemplate] = None,
+    document_separator: str = "\n\n",
+    token_max: int = 4000,
+) -> Runnable:
+    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+
+    def _format_inputs(inputs: dict) -> dict:
+        docs = inputs[document_input_key]
+        inputs[document_input_key] = document_separator.join(
+            format_document(doc, _document_prompt) for doc in docs
+        )
+        return {k: v for k, v in inputs.items() if k in prompt.input_variables}
+
+    def _format_metadata(inputs: dict) -> dict:
+        docs = inputs[document_input_key]
+        combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
+        for doc in docs[1:]:
+            for k, v in doc.metadata.items():
+                if k in combined_metadata:
+                    combined_metadata[k] += f", {v}"
+                else:
+                    combined_metadata[k] = str(v)
+        return combined_metadata
+
+    reduce_chain = RunnableParallel(
+        page_content=_format_inputs | prompt | llm | StrOutputParser(),
+        metadata=_format_metadata,
+    ) | (lambda x: Document(page_content=x["page_content"], metadata=x["metadata"]))
+
+    def _get_num_tokens(docs):
+        formatted = document_separator.join(
+            format_document(doc, _document_prompt) for doc in docs
+        )
+        return llm.get_num_tokens(formatted)
+
+    def _partition_docs(inputs):
+        docs = inputs.pop(document_input_key)
+        partitions = []
+        curr = []
+        curr_len = 0
+        for doc in docs:
+            # Add empty string to document separator is included in formatted string.
+            doc_len = _get_num_tokens(["", doc])
+            if doc_len > token_max:
+                raise ValueError
+            elif curr_len + doc_len > token_max:
+                partitions.append(curr)
+                curr = []
+            else:
+                curr.append(doc)
+        return [{document_input_key: docs, **inputs} for docs in partitions]
+
+    def collapse(inputs: dict) -> Union[List[Document], Runnable]:
+        docs = inputs[document_input_key]
+        while _get_num_tokens(docs) > token_max:
+            return (
+                RunnableParallel(
+                    **{document_input_key: _partition_docs | reduce_chain.map()}
+                )
+                | collapse
+            )
+        else:
+            return docs
+
+    return RunnableLambda(collapse)
+
+
 def create_map_reduce_documents_chain(
     map_chain: Runnable[Union[Dict[str, Any], Sequence[Document]], List[Document]],
-    reduce_chain: Runnable,
+    reduce_chain: Runnable[Dict[str, Any], str],
     *,
-    document_input_key: Optional[str] = None,
-    collapse_chain: Runnable,
+    document_input_key: str,
+    collapse_chain: Optional[Runnable[Dict[str, Any], List[Document]]] = None,
 ) -> Runnable:
     if not collapse_chain:
         return (
@@ -93,7 +170,7 @@ def create_map_reduce_documents_chain(
     else:
         return (
             RunnablePassthrough.assign(**{document_input_key: map_chain})
-            | collapse_chain
+            | RunnablePassthrough.assign(**{document_input_key: collapse_chain})
             | reduce_chain
         )
 
