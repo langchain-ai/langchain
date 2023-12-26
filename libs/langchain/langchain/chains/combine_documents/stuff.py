@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
@@ -75,13 +75,17 @@ def create_stuff_documents_chain(
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _output_parser = output_parser or StrOutputParser()
 
-    def _format_inputs(inputs: dict) -> dict:
-        inputs[DOCUMENTS_KEY] = document_separator.join(
+    def _format_docs(inputs: dict) -> str:
+        return document_separator.join(
             format_document(doc, _document_prompt) for doc in inputs[DOCUMENTS_KEY]
         )
-        return {k: v for k, v in inputs.items() if k in prompt.input_variables}
 
-    return _format_inputs | prompt | llm | _output_parser
+    return (
+        RunnablePassthrough.assign(**{DOCUMENTS_KEY: _format_docs})
+        | prompt
+        | llm
+        | _output_parser
+    )
 
 
 class StuffDocumentsChain(BaseCombineDocumentsChain):
