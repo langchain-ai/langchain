@@ -80,7 +80,7 @@ def create_refine_documents_chain(
                 ("human", "Here is the next page:\n\n{context}")
             ])
             llm = ChatOpenAI(model="gpt-3.5-turbo")
-            chain = create_refine_documents_chain(llm, initial_prompt, refine_prompt)
+            chain = create_refine_documents_chain(llm, initial_prompt, refine_prompt, llm,)
             # chain.invoke({"context": docs})
     """  # noqa: E501
     _validate_prompt(initial_prompt, (DOCUMENTS_KEY,))

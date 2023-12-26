@@ -3,14 +3,31 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypedDict,
+    Union,
+    cast,
+)
 
 from langchain_core.documents import Document
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
-from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    create_model,
+    root_validator,
+)
 from langchain_core.runnables import Runnable, RunnableParallel, RunnablePassthrough
 from langchain_core.runnables.config import RunnableConfig
 
@@ -37,18 +54,47 @@ def _default_regex(text: str) -> dict:
         return {"answer": match.group(1), "score": match.group(2)}
 
 
+class _ScoredAnswer(TypedDict):
+    score: Union[str, int, float]
+    answer: str
+
+
+class _MapRerankOutputType(BaseModel):
+    top_answer: str = Field(..., description="The highest-scored answer.")
+    all_answers: List[_ScoredAnswer] = Field(
+        ...,
+        description="All answers and scores, in the same order as the input documents.",
+    )
+
+
 def create_map_rerank_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,
     *,
-    document_prompt: Optional[BasePromptTemplate] = None,
     output_parser: Optional[BaseOutputParser] = None,
+    document_prompt: Optional[BasePromptTemplate] = None,
 ) -> Runnable[Dict[str, Any], Dict[str, Any]]:
     """Create a chain that
 
         Args:
+            llm:
+            prompt:
+            output_parser:
+            document_prompt:
 
         Returns:
+            An LCEL `Runnable` chain.
+
+            Expects a dictionary as input with a list of `Document`s being passed under
+            the "context" key.
+
+            Returns a dictionary as output that looks like:
+                {
+                    "top_answer": "top-score answer string",
+                    "all_answers": [{"score": ..., "answer": "..."}, {"score": ..., "answer": "..."}, ...]
+                }
+            The scored answers in "all_answers" preserve the order of the input Documents.
+
 
         Example:
             .. code-block:: python
@@ -78,25 +124,32 @@ def create_map_rerank_documents_chain(
                 ]
 
                 chain.invoke({"context": docs, "question": "Who loves green?"})
-
+                # -> {
+                #    'all_answers':
+                #       [
+                #           {'answer': 'This context does not provide any information about who loves green.', 'score': 1},
+                #           {'answer': 'Jamal loves green but not as much as he loves orange', 'score': 5}
+                #       ],
+                #   'top_answer': 'Jamal loves green but not as much as he loves orange'
+                # }
     """  # noqa: E501
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
     _output_parser = output_parser or (StrOutputParser() | _default_regex)
 
-    def _format_inputs(inputs):
+    def format_inputs(inputs):
         docs = inputs.pop(DOCUMENTS_KEY)
         return [
             {DOCUMENTS_KEY: format_document(doc, _document_prompt), **inputs}
             for doc in docs
         ]
 
-    map_chain = _format_inputs | (prompt | llm | _output_parser).map()
+    map_chain = format_inputs | (prompt | llm | _output_parser).map()
 
-    def _top_answer(results):
+    def top_answer(results):
         return max(results["all_answers"], key=lambda x: float(x["score"]))["answer"]
 
     return RunnableParallel(all_answers=map_chain) | RunnablePassthrough.assign(
-        top_answer=_top_answer
+        top_answer=top_answer
     )
 
 
