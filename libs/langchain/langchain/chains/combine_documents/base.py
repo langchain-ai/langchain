@@ -18,9 +18,6 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
-LanguageModelLike = Union[
-    Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
-]
 DEFAULT_DOCUMENT_SEPARATOR = "\n\n"
 DOCUMENTS_KEY = "context"
 DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template("{page_content}")
