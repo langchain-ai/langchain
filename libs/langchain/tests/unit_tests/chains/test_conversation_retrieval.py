@@ -1,14 +1,14 @@
 """Test conversation chain and memory."""
 from langchain_core.documents import Document
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.runnables.passthrough import RunnablePassthrough
 
 from langchain.chains.conversational_retrieval.base import (
     ConversationalRetrievalChain,
-    create_conversational_retrieval_chain,
+    create_chat_retriever_chain,
 )
 from langchain.llms.fake import FakeListLLM
 from langchain.memory.buffer import ConversationBufferMemory
+from tests.unit_tests.retrievers.parrto_retriever import FakeParrotRetriever
 from tests.unit_tests.retrievers.sequential_retriever import SequentialRetriever
 
 
@@ -107,20 +107,18 @@ def test_fixed_message_response_when_docs_found() -> None:
 def test_create() -> None:
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
-    retriever = SequentialRetriever(
-        sequential_responses=[[Document(page_content=answer)]]
+    retriever = FakeParrotRetriever()
+    question_gen_prompt = PromptTemplate.from_template("hi! {input} {chat_history}")
+    chain = create_chat_retriever_chain(llm, retriever, question_gen_prompt)
+    expected_output = [Document(page_content="What is the answer?")]
+    output = chain.invoke({"input": "What is the answer?", "chat_history": []})
+    assert output == expected_output
+
+    output = chain.invoke({"input": "What is the answer?"})
+    assert output == expected_output
+
+    expected_output = [Document(page_content="I know the answer!")]
+    output = chain.invoke(
+        {"input": "What is the answer?", "chat_history": ["hi", "hi"]}
     )
-    question_gen_prompt = PromptTemplate.from_template("hi! {question} {chat_history}")
-    combine_docs_chain = (
-        PromptTemplate.from_template("combine! {input_documents}")
-        | llm
-        | {"answer": RunnablePassthrough()}
-    )
-    chain = create_conversational_retrieval_chain(
-        llm, retriever, question_gen_prompt, combine_docs_chain
-    )
-    assert chain.invoke({"question": "What is the answer?", "chat_history": []}) == {
-        "answer": "I know the answer!",
-        "generated_question": "What is the answer?",
-        "source_documents": [Document(page_content="I know the answer!")],
-    }
+    assert output == expected_output
