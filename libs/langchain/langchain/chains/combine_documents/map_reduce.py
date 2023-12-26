@@ -33,6 +33,16 @@ def create_map_documents_chain(
     *,
     document_prompt: Optional[BasePromptTemplate] = None,
 ) -> Runnable[Dict[str, Any], List[Document]]:
+    """Create
+
+    Args:
+
+    Returns:
+        An LCEL `Runnable` chain.
+
+    Example:
+        .. code-block:: python
+    """
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
 
     def _format_document(inputs: dict) -> str:
@@ -63,24 +73,34 @@ def create_collapse_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,
     *,
-    document_input_key: str,
     document_prompt: Optional[BasePromptTemplate] = None,
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
     token_max: int = 4000,
     token_len_func: Optional[Callable[[str], int]] = None,
 ) -> Runnable:
+    """Create
+
+    Args:
+
+    Returns:
+        An LCEL `Runnable` chain.
+
+    Example:
+        .. code-block:: python
+
+    """
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
     _token_len_func = token_len_func or getattr(llm, "get_num_tokens", len)
 
     def _format_inputs(inputs: dict) -> dict:
-        docs = inputs[document_input_key]
-        inputs[document_input_key] = document_separator.join(
+        docs = inputs[DOCUMENTS_KEY]
+        inputs[DOCUMENTS_KEY] = document_separator.join(
             format_document(doc, _document_prompt) for doc in docs
         )
         return {k: v for k, v in inputs.items() if k in prompt.input_variables}
 
     def _format_metadata(inputs: dict) -> dict:
-        docs = inputs[document_input_key]
+        docs = inputs[DOCUMENTS_KEY]
         combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
         for doc in docs[1:]:
             for k, v in doc.metadata.items():
@@ -102,7 +122,7 @@ def create_collapse_documents_chain(
         return _token_len_func(formatted)
 
     def _partition_docs(inputs):
-        docs = inputs.pop(document_input_key)
+        docs = inputs.pop(DOCUMENTS_KEY)
         partitions = []
         curr = []
         curr_len = 0
@@ -120,14 +140,14 @@ def create_collapse_documents_chain(
                 curr_len += doc_len
         if curr:
             partitions.append(curr)
-        return [{document_input_key: docs, **inputs} for docs in partitions]
+        return [{DOCUMENTS_KEY: docs, **inputs} for docs in partitions]
 
     def collapse(inputs: dict) -> Union[List[Document], Runnable]:
-        docs = inputs[document_input_key]
+        docs = inputs[DOCUMENTS_KEY]
         while _get_num_tokens(docs) > token_max:
             return (
                 RunnableParallel(
-                    **{document_input_key: _partition_docs | reduce_chain.map()}
+                    **{DOCUMENTS_KEY: _partition_docs | reduce_chain.map()}
                 )
                 | collapse
             )
@@ -138,21 +158,58 @@ def create_collapse_documents_chain(
 
 
 def create_map_reduce_documents_chain(
-    map_chain: Runnable[Dict[str, Any], List[Document]],
-    reduce_chain: Runnable[Dict[str, Any], str],
+    map_documents_chain: Runnable[Dict[str, Any], List[Document]],
+    reduce_documents_chain: Runnable[Dict[str, Any], str],
     *,
-    document_input_key: str,
-    collapse_chain: Optional[Runnable[Dict[str, Any], List[Document]]] = None,
+    collapse_documents_chain: Optional[Runnable[Dict[str, Any], List[Document]]] = None,
 ) -> Runnable:
-    if not collapse_chain:
+    """Create
+
+    Args:
+
+    Returns:
+
+    Example:
+        .. code-block:: python
+
+        from langchain_community.chat_models import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain.chains.combine_documents import (
+            create_collapse_documents_chain,
+            create_map_documents_chain,
+            create_map_reduce_documents_chain,
+            create_stuff_documents_chain,
+        )
+
+        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        extract_prompt = ChatPromptTemplate.from_template(
+            [
+                ("system", "Given a user question, extract the most relevant parts of the following context:\n\n{context}"),
+                ("human", "{question}"),
+            ]
+        )
+        map_documents_chain = create_map_documents_chain(llm, extract_prompt)
+        collapse_documents_chain = create_collapse_documents_chain(llm, extract_prompt, token_max=4000)
+
+        answer_prompt = ChatPromptTemplate.from_template(
+            [
+                ("system", "Answer the user question using the following context:\n\n{context}"),
+                ("human", "{question}"),
+            ]
+        )
+        reduce_documents_chain = create_stuff_documents_chain(llm, answer_prompt)
+        map_reduce_documents_chain = create_map_reduce_documents_chain(map_documents_chain, reduce_documents_chain,
+    """  # noqa: E501
+    if not collapse_documents_chain:
         return (
-            RunnablePassthrough.assign(**{document_input_key: map_chain}) | reduce_chain
+            RunnablePassthrough.assign(**{DOCUMENTS_KEY: map_documents_chain})
+            | reduce_documents_chain
         )
     else:
         return (
-            RunnablePassthrough.assign(**{document_input_key: map_chain})
-            | RunnablePassthrough.assign(**{document_input_key: collapse_chain})
-            | reduce_chain
+            RunnablePassthrough.assign(**{DOCUMENTS_KEY: map_documents_chain})
+            | RunnablePassthrough.assign(**{DOCUMENTS_KEY: collapse_documents_chain})
+            | reduce_documents_chain
         )
 
 
