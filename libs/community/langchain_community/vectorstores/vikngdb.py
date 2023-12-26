@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class VikingDBConfig(object):
-    def __init__(self, host="101.126.33.217", region="cn-north-1", ak="AKLTOTQ2NzkyODc5ZGMzNGQ1M2I5N2UyMmUxMGI2ZjM5YmQ",
-                 sk="TURrd1pETmlPVGxsWlRRMU5EaGlNbUZqWXprME1qTXlaVFZqTVdJd1lqTQ==", scheme="http"):
+    def __init__(self, host="host", region="region", ak="ak",
+                 sk="sk", scheme="http"):
         self.host = host
         self.region = region
         self.ak = ak
