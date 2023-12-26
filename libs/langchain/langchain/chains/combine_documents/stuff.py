@@ -75,17 +75,19 @@ def create_stuff_documents_chain(
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _output_parser = output_parser or StrOutputParser()
 
-    def _format_docs(inputs: dict) -> str:
+    def format_docs(inputs: dict) -> str:
         return document_separator.join(
             format_document(doc, _document_prompt) for doc in inputs[DOCUMENTS_KEY]
         )
 
     return (
-        RunnablePassthrough.assign(**{DOCUMENTS_KEY: _format_docs})
+        RunnablePassthrough.assign(**{DOCUMENTS_KEY: format_docs}).with_config(
+            run_name="format_inputs"
+        )
         | prompt
         | llm
         | _output_parser
-    )
+    ).with_config(run_name="stuff_documents_chain")
 
 
 class StuffDocumentsChain(BaseCombineDocumentsChain):
