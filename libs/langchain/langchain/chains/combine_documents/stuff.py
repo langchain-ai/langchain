@@ -27,7 +27,7 @@ def create_stuff_documents_chain(
     document_prompt: Optional[BasePromptTemplate] = None,
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
 ) -> Runnable[Dict[str, Any], Any]:
-    """Create a chain for passing a list of Documents to a model.
+    """Create a chain that passes a list of documents to a model.
 
     Args:
         llm: Language model.
