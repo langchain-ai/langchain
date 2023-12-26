@@ -34,6 +34,7 @@ from langchain_core.runnables.config import (
     get_executor_for_config,
     patch_config,
 )
+from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import AddableDict, ConfigurableFieldSpec
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
@@ -297,6 +298,9 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             yield chunk
 
 
+_graph_passthrough: RunnablePassthrough = RunnablePassthrough()
+
+
 class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     """
     A runnable that assigns key-value pairs to Dict[str, Any] inputs.
@@ -354,6 +358,18 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self.mapper.config_specs
+
+    def get_graph(self, config: RunnableConfig | None = None) -> Graph:
+        # get graph from mapper
+        graph = self.mapper.get_graph(config)
+        # add passthrough node and edges
+        input_node = graph.first_node()
+        output_node = graph.last_node()
+        if input_node is not None and output_node is not None:
+            passthrough_node = graph.add_node(_graph_passthrough)
+            graph.add_edge(input_node, passthrough_node)
+            graph.add_edge(passthrough_node, output_node)
+        return graph
 
     def _invoke(
         self,

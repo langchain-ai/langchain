@@ -4,6 +4,8 @@ from operator import itemgetter
 from typing import (
     Any,
     AsyncIterator,
+    Awaitable,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -569,7 +571,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "properties": {"name": {"title": "Name", "type": "string"}},
     }
     assert seq_w_map.output_schema.schema() == {
-        "title": "RunnableParallelOutput",
+        "title": "RunnableMapOutput",
         "type": "object",
         "properties": {
             "original": {"title": "Original", "type": "string"},
@@ -613,7 +615,7 @@ def test_passthrough_assign_schema() -> None:
     # expected dict input_schema
     assert invalid_seq_w_assign.input_schema.schema() == {
         "properties": {"question": {"title": "Question"}},
-        "title": "RunnableParallelInput",
+        "title": "RunnableMapInput",
         "type": "object",
     }
 
@@ -768,7 +770,7 @@ def test_schema_complex_seq() -> None:
     )
 
     assert chain2.input_schema.schema() == {
-        "title": "RunnableParallelInput",
+        "title": "RunnableMapInput",
         "type": "object",
         "properties": {
             "person": {"title": "Person", "type": "string"},
@@ -2221,7 +2223,6 @@ async def test_stream_log_lists() -> None:
     }
 
 
-@pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm_and_async_lambda(
     mocker: MockerFixture, snapshot: SnapshotAssertion
@@ -3542,6 +3543,130 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     _lambda_mock.reset_mock()
 
 
+def test_runnable_lambda_stream() -> None:
+    """Test that stream works for both normal functions & those returning Runnable."""
+    # Normal output should work
+    output: List[Any] = [chunk for chunk in RunnableLambda(range).stream(5)]
+    assert output == [range(5)]
+
+    # Runnable output should also work
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+
+    output = list(RunnableLambda(lambda x: llm).stream(""))
+    assert output == list(llm_res)
+
+
+def test_runnable_lambda_stream_with_callbacks() -> None:
+    """Test that stream works for RunnableLambda when using callbacks."""
+    tracer = FakeTracer()
+
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+    config: RunnableConfig = {"callbacks": [tracer]}
+
+    assert list(RunnableLambda(lambda x: llm).stream("", config=config)) == list(
+        llm_res
+    )
+
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error is None
+    assert tracer.runs[0].outputs == {"output": llm_res}
+
+    def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    # Check that the chain on error is invoked
+    with pytest.raises(ValueError):
+        for _ in RunnableLambda(raise_value_error).stream(1000, config=config):
+            pass
+
+    assert len(tracer.runs) == 2
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
+    assert tracer.runs[1].outputs is None
+
+
+async def test_runnable_lambda_astream() -> None:
+    """Test that astream works for both normal functions & those returning Runnable."""
+
+    # Wrapper to make a normal function async
+    def awrapper(func: Callable) -> Callable[..., Awaitable[Any]]:
+        async def afunc(*args: Any, **kwargs: Any) -> Any:
+            return func(*args, **kwargs)
+
+        return afunc
+
+    # Normal output should work
+    output: List[Any] = [
+        chunk
+        async for chunk in RunnableLambda(
+            func=id,
+            afunc=awrapper(range),  # id func is just dummy
+        ).astream(5)
+    ]
+    assert output == [range(5)]
+
+    # Normal output using func should also work
+    output = [_ async for _ in RunnableLambda(range).astream(5)]
+    assert output == [range(5)]
+
+    # Runnable output should also work
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+
+    output = [
+        _
+        async for _ in RunnableLambda(
+            func=id,
+            afunc=awrapper(lambda x: llm),
+        ).astream("")
+    ]
+    assert output == list(llm_res)
+
+    output = [
+        chunk
+        async for chunk in cast(
+            AsyncIterator[str], RunnableLambda(lambda x: llm).astream("")
+        )
+    ]
+    assert output == list(llm_res)
+
+
+async def test_runnable_lambda_astream_with_callbacks() -> None:
+    """Test that astream works for RunnableLambda when using callbacks."""
+    tracer = FakeTracer()
+
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+    config: RunnableConfig = {"callbacks": [tracer]}
+
+    assert [
+        _ async for _ in RunnableLambda(lambda x: llm).astream("", config=config)
+    ] == list(llm_res)
+
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].error is None
+    assert tracer.runs[0].outputs == {"output": llm_res}
+
+    def raise_value_error(x: int) -> int:
+        """Raise a value error."""
+        raise ValueError("x is too large")
+
+    # Check that the chain on error is invoked
+    with pytest.raises(ValueError):
+        async for _ in RunnableLambda(raise_value_error).astream(1000, config=config):
+            pass
+
+    assert len(tracer.runs) == 2
+    assert "ValueError('x is too large')" in str(tracer.runs[1].error)
+    assert tracer.runs[1].outputs is None
+
+
 @freeze_time("2023-01-01")
 def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
     class ControlledExceptionRunnable(Runnable[str, str]):
@@ -4127,13 +4252,13 @@ def test_representation_of_runnables() -> None:
         """Return 2."""
         return 2
 
-    assert repr(RunnableLambda(func=f)) == "RunnableLambda(...)"
+    assert repr(RunnableLambda(func=f)) == "RunnableLambda(f)"
 
     async def af(x: int) -> int:
         """Return 2."""
         return 2
 
-    assert repr(RunnableLambda(func=f, afunc=af)) == "RunnableLambda(...)"
+    assert repr(RunnableLambda(func=f, afunc=af)) == "RunnableLambda(f)"
 
     assert repr(
         RunnableLambda(lambda x: x + 2)
@@ -4262,7 +4387,6 @@ def test_with_config_callbacks() -> None:
     assert isinstance(result, RunnableBinding)
 
 
-@pytest.mark.asyncio
 async def test_ainvoke_on_returned_runnable() -> None:
     """Verify that a runnable returned by a sync runnable in the async path will
     be runthroughaasync path (issue #13407)"""
@@ -4301,7 +4425,6 @@ def test_invoke_stream_passthrough_assign_trace() -> None:
     assert tracer.runs[0].child_runs[0].name == "RunnableParallel"
 
 
-@pytest.mark.asyncio
 async def test_ainvoke_astream_passthrough_assign_trace() -> None:
     def idchain_sync(__input: dict) -> bool:
         return False
