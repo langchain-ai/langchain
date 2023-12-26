@@ -117,7 +117,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
             device: str = "0",
             lang_model: Optional[str] = None,
             batch_size: int=8,
-            chunk_length_s: int=30,
+            chunk_length: int=30,
             forced_decoder_ids: Optional[Tuple[Dict]] = None,
     ):
         """Initialize the parser.
@@ -130,7 +130,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
               Defaults to None.
             batch_size: batch size used for decoding
               Defaults to 8.
-            chunk_length_s: chunk length used during inference.
+            chunk_length: chunk length used during inference.
               Defaults to 30s.
         """
         try:
@@ -169,7 +169,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                 rec_model = "openai/whisper-medium"
             else:
                 rec_model = "openai/whisper-large"
-            self.lang_model = lang_model if lang_model else recommended_model
+            self.lang_model = lang_model if lang_model else rec_model
 
         print("Using the following model: ", self.lang_model)
 
@@ -179,7 +179,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
         self.pipe = pipeline(
             "automatic-speech-recognition",
             model=self.lang_model,
-            chunk_length_s=chunk_length_s,
+            chunk_length_s=chunk_length,
             device=self.device,
         )
         if forced_decoder_ids is not None:
