@@ -60,26 +60,6 @@ def create_map_documents_chain(
     return list_inputs | map_doc_chain.map()
 
 
-def create_reduce_documents_chain(
-    llm: LanguageModelLike,
-    prompt: BasePromptTemplate,
-    *,
-    document_input_key: str,
-    document_prompt: Optional[BasePromptTemplate] = None,
-    document_separator: str = "\n\n",
-) -> Runnable:
-    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
-
-    def _format_inputs(inputs: dict) -> dict:
-        docs = inputs[document_input_key]
-        inputs[document_input_key] = document_separator.join(
-            format_document(doc, _document_prompt) for doc in docs
-        )
-        return {k: v for k, v in inputs.items() if k in prompt.input_variables}
-
-    return _format_inputs | prompt | llm | StrOutputParser()
-
-
 def create_collapse_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,

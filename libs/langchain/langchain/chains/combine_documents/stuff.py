@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import BaseMessage
-from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.runnables import Runnable, RunnableParallel
+from langchain_core.runnables import Runnable
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -22,29 +22,23 @@ LanguageModelLike = Union[
 def create_stuff_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,
-    output_parser: BaseOutputParser,
     *,
     document_input_key: str,
+    output_parser: Optional[BaseOutputParser] = None,
     document_prompt: Optional[BasePromptTemplate] = None,
     document_separator: str = "\n\n",
-    output_key: Optional[str] = None,
-) -> Runnable:
+) -> Runnable[Dict[str, Any], str]:
     """"""
-    if document_input_key not in prompt.input_variables:
-        raise ValueError
-    _document_prompt = document_prompt or _get_default_document_prompt()
+    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+    _output_parser = output_parser or StrOutputParser()
 
-    def format_documents(inputs: dict) -> dict:
+    def _format_inputs(inputs: dict) -> dict:
         inputs[document_input_key] = document_separator.join(
             format_document(doc, _document_prompt) for doc in inputs[document_input_key]
         )
-        return inputs
+        return {k: v for k, v in inputs.items() if k in prompt.input_variables}
 
-    chain = format_documents | llm | prompt | output_parser
-    if output_key:
-        return RunnableParallel({output_key: chain})
-    else:
-        return chain
+    return _format_inputs | prompt | llm | _output_parser
 
 
 def _get_default_document_prompt() -> PromptTemplate:

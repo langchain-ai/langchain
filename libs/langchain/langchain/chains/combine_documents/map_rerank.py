@@ -5,13 +5,53 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 
 from langchain_core.documents import Document
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import BaseMessage
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
 from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
+from langchain_core.runnables import Runnable, RunnableParallel, RunnablePassthrough
 from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.regex import RegexParser
+
+LanguageModelLike = Union[
+    Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
+]
+
+
+def create_map_rerank_documents_chain(
+    llm: LanguageModelLike,
+    prompt: BasePromptTemplate,
+    *,
+    document_input_key: str,
+    document_prompt: Optional[BasePromptTemplate] = None,
+    output_parser: Optional[BaseOutputParser] = None,
+) -> Runnable:
+    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+    _output_parser = output_parser or RegexParser(
+        regex=r"(.*?)\nScore: (.*)",
+        output_keys=["answer", "score"],
+    )
+
+    def _format_inputs(inputs):
+        docs = inputs.pop(document_input_key)
+        return [
+            {document_input_key: format_document(doc, _document_prompt), **inputs}
+            for doc in docs
+        ]
+
+    map_chain = _format_inputs | (prompt | llm | _output_parser).map()
+
+    def _top_answer(results):
+        return max(results["all_answers"], key=lambda x: x["score"])["answer"]
+
+    return RunnableParallel(all_answers=map_chain) | RunnablePassthrough.assign(
+        top_answer=_top_answer
+    )
 
 
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):
