@@ -13,7 +13,7 @@ from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain_core.retrievers import BaseRetriever, RetrieverOutputLike
+from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables import RunnableBranch
@@ -470,55 +470,17 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         )
 
 
-def create_retrieval_chain(
-    llm: LanguageModelLike,
-    retriever: Union[BaseRetriever, RetrieverOutputLike],
-    question_gen_prompt: BasePromptTemplate,
-    combine_docs_chain: Runnable[Dict[str, Any], Dict[str, Any]],
-    max_tokens_limit: Optional[int] = None,
-    get_num_tokens: Optional[Callable] = None,
-) -> Runnable:
-    """Create retrieval chain that retrieves documents and then passes them on."""
-    if max_tokens_limit is not None:
-        if max_tokens_limit <= 0:
-            raise ValueError(
-                f"Got a negative `max_token_limit` ({max_tokens_limit}),"
-                f" but should be greater than 0"
-            )
-    if combine_docs_chain.input_schema.__custom_root_type__:
-        raise ValueError("`combine_docs_chain` must accept dict as input.")
-    if combine_docs_chain.output_schema.__custom_root_type__:
-        raise ValueError("`combine_docs_chain` must return dict as output.")
-    if "input" not in question_gen_prompt.input_variables:
+def create_chat_retriever_chain(
+        llm: LanguageModelLike,
+        retriever: RetrieverLike,
+        prompt: BasePromptTemplate,
+    ):
+    """Create a chain that takes conversation history and retrieves docs."""
+    if "input" not in prompt.input_variables:
         raise ValueError(
-            "Question Generator prompt missing variable `input`,"
-            f" has variables: {question_gen_prompt.input_variables}"
+            "Expected `input` to be a prompt variable, "
+            f"but got {prompt.input_variables}"
         )
-
-    _get_num_tokens = get_num_tokens or _get_language_model(llm).get_num_tokens
-
-    def _reduce_tokens_below_limit(docs: List[Document]) -> List[Document]:
-        num_docs = len(docs)
-
-        if max_tokens_limit:
-            tokens = [_get_num_tokens(doc.page_content) for doc in docs]
-            token_count = sum(tokens[:num_docs])
-            while token_count > max_tokens_limit:
-                num_docs -= 1
-                token_count -= tokens[num_docs]
-
-        return docs[:num_docs]
-
-    retrieve_documents = RunnableBranch(
-        (lambda x: len(x.get("chat_history", [])) == 0, (lambda x: x["input"]) | retriever),
-        question_gen_prompt | llm | StrOutputParser() | retriever
-    ).with_config(run_name="retrieve_documents")
-
-    retrieval_chain = (RunnablePassthrough.assign(
-        context=retrieve_documents | _reduce_tokens_below_limit,
-        chat_history=lambda x: x.get("chat_history", [])
-    ) | RunnablePassthrough.assign(
-        answer=combine_docs_chain
-    )).with_config(run_name="retrieval_chain")
-
-    return retrieval_chain
+    return (
+        prompt | llm | StrOutputParser() | retriever
+    ).with_config(run_name="chat_retriever_chain")

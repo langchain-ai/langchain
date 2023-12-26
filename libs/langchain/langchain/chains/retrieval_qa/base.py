@@ -4,13 +4,14 @@ from __future__ import annotations
 import inspect
 import warnings
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.retrievers import BaseRetriever
+from langchain_core.retrievers import BaseRetriever, RetrieverOutputLike
+from langchain_core.runnables import RunnablePassthrough, Runnable
 from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
@@ -300,3 +301,22 @@ class VectorDBQA(BaseRetrievalQA):
     def _chain_type(self) -> str:
         """Return the chain type."""
         return "vector_db_qa"
+
+def create_retrieval_chain(
+    retriever: Union[BaseRetriever, RetrieverOutputLike],
+    combine_docs_chain: Runnable[Dict[str, Any], Dict[str, Any]],
+) -> Runnable:
+    """Create retrieval chain that retrieves documents and then passes them on."""
+    if isinstance(retriever, BaseRetriever):
+        retrieval_docs = (lambda x: x["input"]) | retriever
+    else:
+        retrieval_docs = retriever
+
+    retrieval_chain = (RunnablePassthrough.assign(
+        context=retrieval_docs.with_config(run_name="retrieve_documents"),
+        chat_history=lambda x: x.get("chat_history", [])
+    ) | RunnablePassthrough.assign(
+        answer=combine_docs_chain
+    )).with_config(run_name="retrieval_chain")
+
+    return retrieval_chain
