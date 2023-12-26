@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 
 from langchain_core.documents import Document
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import BaseMessage
-from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
 from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
 from langchain_core.runnables import Runnable, RunnableParallel, RunnablePassthrough
@@ -23,6 +25,20 @@ LanguageModelLike = Union[
 ]
 
 
+def _default_regex(text: str) -> dict:
+    regex = r"(?:Answer:\s)?(.*?)\s*Score:\s(.*)"
+    match = re.search(regex, text, re.IGNORECASE + re.DOTALL)
+    if match is None:
+        raise OutputParserException(
+            ValueError(
+                f"Model output did not match expected regex. Expected {regex}, "
+                f"received: {text}."
+            )
+        )
+    else:
+        return {"answer": match.group(1), "score": match.group(2)}
+
+
 def create_map_rerank_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,
@@ -32,10 +48,7 @@ def create_map_rerank_documents_chain(
     output_parser: Optional[BaseOutputParser] = None,
 ) -> Runnable[Dict[str, Any], Dict[str, Any]]:
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
-    _output_parser = output_parser or RegexParser(
-        regex=r"(.*?)\nScore: (.*)",
-        output_keys=["answer", "score"],
-    )
+    _output_parser = output_parser or (StrOutputParser() | _default_regex)
 
     def _format_inputs(inputs):
         docs = inputs.pop(document_input_key)
@@ -47,7 +60,9 @@ def create_map_rerank_documents_chain(
     map_chain = _format_inputs | (prompt | llm | _output_parser).map()
 
     def _top_answer(results):
-        return max(results["all_answers"], key=lambda x: float(x["score"]))["answer"]
+        return max(results["all_answers"], key=lambda x: float(x["score"].strip()))[
+            "answer"
+        ]
 
     return RunnableParallel(all_answers=map_chain) | RunnablePassthrough.assign(
         top_answer=_top_answer
