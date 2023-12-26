@@ -158,14 +158,11 @@ def create_structured_chat_agent(
 
         .. code-block:: python
 
-            from langchain.agents import (
-                create_structured_chat_agent,
-            )
             from langchain import hub
             from langchain.chat_models import ChatOpenAI
-            from langchain.agents import AgentExecutor
+            from langchain.agents import AgentExecutor, create_structured_chat_agent
 
-            prompt = hub.pull("hwchase17/react-multi-input-json")
+            prompt = hub.pull("hwchase17/structured-chat-agent")
             model = ChatOpenAI()
             tools = ...
 
@@ -173,6 +170,18 @@ def create_structured_chat_agent(
             agent_executor = AgentExecutor(agent=agent, tools=tools)
 
             agent_executor.invoke({"input": "hi"})
+
+            # Using with chat history
+            from langchain_core.messages import AIMessage, HumanMessage
+            agent_executor.invoke(
+                {
+                    "input": "what's my name?",
+                    "chat_history": [
+                        HumanMessage(content="hi! my name is bob"),
+                        AIMessage(content="Hello Bob! How can I assist you today?"),
+                    ],
+                }
+            )
 
     Args:
         llm: LLM to use as the agent.

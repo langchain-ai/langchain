@@ -93,12 +93,9 @@ def create_self_ask_with_search_agent(
 
         .. code-block:: python
 
-            from langchain.agents import (
-                create_self_ask_with_search_agent,
-            )
             from langchain import hub
             from langchain.chat_models import ChatAnthropic
-            from langchain.agents import AgentExecutor
+            from langchain.agents import AgentExecutor, create_self_ask_with_search_agent
 
             prompt = hub.pull("hwchase17/self-ask-with-search")
             model = ChatAnthropic()
@@ -111,6 +108,8 @@ def create_self_ask_with_search_agent(
 
     Args:
         llm: LLM to use as the agent.
+        tools: List of tools. Should just be of length 1, with that tool having
+            name `Intermediate Answer`
         prompt: The prompt to use, must have input keys of `agent_scratchpad`.
 
     Returns:

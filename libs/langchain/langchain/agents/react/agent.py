@@ -21,12 +21,9 @@ def create_react_agent(
 
         .. code-block:: python
 
-            from langchain.agents.react_agent import (
-                create_react_agent,
-            )
             from langchain import hub
             from langchain.llms import OpenAI
-            from langchain.agents import AgentExecutor
+            from langchain.agents import AgentExecutor, create_react_agent
 
             prompt = hub.pull("hwchase17/react")
             model = OpenAI()
@@ -36,6 +33,16 @@ def create_react_agent(
             agent_executor = AgentExecutor(agent=agent, tools=tools)
 
             agent_executor.invoke({"input": "hi"})
+
+            # Use with chat history
+            from langchain_core.messages import AIMessage, HumanMessage
+            agent_executor.invoke(
+                {
+                    "input": "what's my name? Only use a tool if needed, otherwise respond with Final Answer",
+                    # Notice that chat_history is a string, since this prompt is aimed at LLMs, not chat models
+                    "chat_history": "Human: Hi! My name is Bob\nAI: Hello Bob! Nice to meet you",
+                }
+            )
 
     Args:
         llm: LLM to use as the agent.

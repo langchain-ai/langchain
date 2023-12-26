@@ -240,14 +240,11 @@ def create_openai_functions_agent(
 
         .. code-block:: python
 
-            from langchain.agents.openai_functions_agent import (
-                create_openai_functions_agent,
-                create_default_prompt
-            )
             from langchain.chat_models import ChatOpenAI
-            from langchain.agents import AgentExecutor
+            from langchain.agents import AgentExecutor, create_openai_functions_agent
+            from langchain import hub
 
-            prompt = create_default_prompt()
+            prompt = hub.pull("hwchase17/openai-functions-agent")
             model = ChatOpenAI()
             tools = ...
 
@@ -256,31 +253,17 @@ def create_openai_functions_agent(
 
             agent_executor.invoke({"input": "hi"})
 
-        Creating an agent with memory
-
-        .. code-block:: python
-
-            from langchain.agents.openai_functions_agent import (
-                create_openai_functions_agent,
-                create_default_prompt
+            # Using with chat history
+            from langchain_core.messages import AIMessage, HumanMessage
+            agent_executor.invoke(
+                {
+                    "input": "what's my name?",
+                    "chat_history": [
+                        HumanMessage(content="hi! my name is bob"),
+                        AIMessage(content="Hello Bob! How can I assist you today?"),
+                    ],
+                }
             )
-            from langchain.chat_models import ChatOpenAI
-            from langchain.agents import AgentExecutor
-
-            prompt = create_default_prompt(include_chat_history=True)
-            model = ChatOpenAI()
-            tools = ...
-
-            agent = create_openai_functions_agent(model, tools, prompt)
-            agent_executor = AgentExecutor(agent=agent, tools=tools)
-
-            # Call for the first time with no memory
-            agent_executor.invoke({"input": "hi", "chat_history"=[]})
-
-            # Call for the second time and pass in chat messages
-            from langchain_core.messages import HumanMessage, AIMessage
-            messages = [HumanMessage(content="hi"), AIMessage(content="hi")]
-            agent_executor.invoke({"input": "hi", "chat_history"=messages})
 
     Args:
         llm: LLM to use as the agent. Should work with OpenAI function calling,
