@@ -143,7 +143,10 @@ def create_map_rerank_documents_chain(
             for doc in docs
         ]
 
-    map_chain = format_inputs | (prompt | llm | _output_parser).map()
+    map_chain = (
+        format_inputs
+        | (prompt | llm | _output_parser).with_config(run_name="answer_and_score").map()
+    ).with_config(run_name="answer_and_score_all")
 
     def top_answer(results):
         return max(results["all_answers"], key=lambda x: float(x["score"]))["answer"]
@@ -151,10 +154,10 @@ def create_map_rerank_documents_chain(
     return (
         (
             RunnableParallel(all_answers=map_chain).with_config(
-                run_name="answer_and_score"
+                run_name="return_answers_and_scores"
             )
             | RunnablePassthrough.assign(top_answer=top_answer).with_config(
-                run_name="return_answer"
+                run_name="return_top_answer"
             )
         )
         .with_config(run_name="map_rerank_documents_chain")
