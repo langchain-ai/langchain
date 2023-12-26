@@ -2655,21 +2655,25 @@ class RunnableLambda(Runnable[Input, Output]):
             **kwargs,
         )
 
-    def _stream(
+    def _transform(
         self,
         input: Iterator[Input],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> Iterator[Output]:
         final: Optional[Input] = None
         for ichunk in input:
             if final is None:
                 final = ichunk
             else:
-                final = final + ichunk  # type: ignore[operator]
+                try:
+                    final = final + ichunk  # type: ignore[operator]
+                except TypeError:
+                    final = ichunk
 
         output = call_func_with_variable_args(
-            self.func, cast(Input, final), config, run_manager
+            self.func, cast(Input, final), config, run_manager, **kwargs
         )
 
         # If the output is a runnable, use its stream output
@@ -2693,17 +2697,18 @@ class RunnableLambda(Runnable[Input, Output]):
             # Otherwise, just yield it
             yield output
 
-    def stream(
+    def transform(
         self,
-        input: Input,
+        input: Iterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         if hasattr(self, "func"):
             for output in self._transform_stream_with_config(
-                iter([input]),
-                self._stream,
+                input,
+                self._transform,
                 self._config(config, self.func),
+                **kwargs,
             ):
                 yield output
         else:
@@ -2712,7 +2717,15 @@ class RunnableLambda(Runnable[Input, Output]):
                 "Use `astream` instead."
             )
 
-    async def _astream(
+    def stream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        return self.transform(iter([input]), config, **kwargs)
+
+    async def _atransform(
         self,
         input: AsyncIterator[Input],
         run_manager: AsyncCallbackManagerForChainRun,
@@ -2723,10 +2736,25 @@ class RunnableLambda(Runnable[Input, Output]):
             if final is None:
                 final = ichunk
             else:
-                final = final + ichunk  # type: ignore[operator]
+                try:
+                    final = final + ichunk  # type: ignore[operator]
+                except TypeError:
+                    final = ichunk
+
+        if hasattr(self, "afunc"):
+            afunc = self.afunc
+        else:
+
+            @wraps(self.func)
+            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+                return await asyncio.get_running_loop().run_in_executor(
+                    None, partial(self.func, **kwargs), *args
+                )
+
+            afunc = f
 
         output = await acall_func_with_variable_args(
-            self.afunc, cast(Input, final), config, run_manager
+            afunc, cast(Input, final), config, run_manager
         )
 
         # If the output is a runnable, use its astream output
@@ -2750,29 +2778,31 @@ class RunnableLambda(Runnable[Input, Output]):
             # Otherwise, just yield it
             yield output
 
+    async def atransform(
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        async for output in self._atransform_stream_with_config(
+            input,
+            self._atransform,
+            self._config(config, self.afunc if hasattr(self, "afunc") else self.func),
+            **kwargs,
+        ):
+            yield output
+
     async def astream(
         self,
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        if hasattr(self, "afunc"):
+        async def input_aiter() -> AsyncIterator[Input]:
+            yield input
 
-            async def input_aiter() -> AsyncIterator[Input]:
-                yield input
-
-            async for output in self._atransform_stream_with_config(
-                input_aiter(),
-                self._astream,
-                self._config(config, self.afunc),
-            ):
-                yield output
-        else:
-            # Calls stream in a thread pool.
-            for output in await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.stream, **kwargs), input, config
-            ):
-                yield output
+        async for chunk in self.atransform(input_aiter(), config, **kwargs):
+            yield chunk
 
 
 class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
