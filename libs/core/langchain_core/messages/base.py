@@ -36,6 +36,28 @@ class BaseMessage(Serializable):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "messages"]
 
+    @property
+    def images(self) -> list[str]:
+        """Return a list of image URLs in the message content."""
+        if isinstance(self.content, str):
+            return []
+        return [
+            item["image_url"]["url"]
+            for item in self.content
+            if isinstance(item, dict) and item["type"] == "image_url"
+        ]
+
+    @property
+    def message(self) -> str:
+        """Return the message content."""
+        return (
+            self.content
+            if isinstance(self.content, str)
+            else self.content[0]
+            if isinstance(self.content[0], str)
+            else self.content[0]["text"]
+        )
+
     def __add__(self, other: Any) -> ChatPromptTemplate:
         from langchain_core.prompts.chat import ChatPromptTemplate
 
