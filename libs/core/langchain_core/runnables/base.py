@@ -2775,6 +2775,155 @@ class RunnableLambda(Runnable[Input, Output]):
             **kwargs,
         )
 
+    def _transform(
+        self,
+        input: Iterator[Input],
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+        **kwargs: Any,
+    ) -> Iterator[Output]:
+        final: Optional[Input] = None
+        for ichunk in input:
+            if final is None:
+                final = ichunk
+            else:
+                try:
+                    final = final + ichunk  # type: ignore[operator]
+                except TypeError:
+                    final = ichunk
+
+        output = call_func_with_variable_args(
+            self.func, cast(Input, final), config, run_manager, **kwargs
+        )
+
+        # If the output is a runnable, use its stream output
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking "
+                    f"{self} with input {final}."
+                )
+            for chunk in output.stream(
+                final,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            ):
+                yield chunk
+        else:
+            # Otherwise, just yield it
+            yield output
+
+    def transform(
+        self,
+        input: Iterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        if hasattr(self, "func"):
+            for output in self._transform_stream_with_config(
+                input,
+                self._transform,
+                self._config(config, self.func),
+                **kwargs,
+            ):
+                yield output
+        else:
+            raise TypeError(
+                "Cannot stream a coroutine function synchronously."
+                "Use `astream` instead."
+            )
+
+    def stream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        return self.transform(iter([input]), config, **kwargs)
+
+    async def _atransform(
+        self,
+        input: AsyncIterator[Input],
+        run_manager: AsyncCallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> AsyncIterator[Output]:
+        final: Optional[Input] = None
+        async for ichunk in input:
+            if final is None:
+                final = ichunk
+            else:
+                try:
+                    final = final + ichunk  # type: ignore[operator]
+                except TypeError:
+                    final = ichunk
+
+        if hasattr(self, "afunc"):
+            afunc = self.afunc
+        else:
+
+            @wraps(self.func)
+            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+                return await asyncio.get_running_loop().run_in_executor(
+                    None, partial(self.func, **kwargs), *args
+                )
+
+            afunc = f
+
+        output = await acall_func_with_variable_args(
+            afunc, cast(Input, final), config, run_manager
+        )
+
+        # If the output is a runnable, use its astream output
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking "
+                    f"{self} with input {final}."
+                )
+            async for chunk in output.astream(
+                final,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            ):
+                yield chunk
+        else:
+            # Otherwise, just yield it
+            yield output
+
+    async def atransform(
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        async for output in self._atransform_stream_with_config(
+            input,
+            self._atransform,
+            self._config(config, self.afunc if hasattr(self, "afunc") else self.func),
+            **kwargs,
+        ):
+            yield output
+
+    async def astream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        async def input_aiter() -> AsyncIterator[Input]:
+            yield input
+
+        async for chunk in self.atransform(input_aiter(), config, **kwargs):
+            yield chunk
+
 
 class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     """
