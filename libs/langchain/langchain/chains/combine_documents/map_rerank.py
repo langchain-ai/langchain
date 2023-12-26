@@ -30,7 +30,7 @@ def create_map_rerank_documents_chain(
     document_input_key: str,
     document_prompt: Optional[BasePromptTemplate] = None,
     output_parser: Optional[BaseOutputParser] = None,
-) -> Runnable:
+) -> Runnable[Dict[str, Any], Dict[str, Any]]:
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
     _output_parser = output_parser or RegexParser(
         regex=r"(.*?)\nScore: (.*)",
@@ -47,7 +47,7 @@ def create_map_rerank_documents_chain(
     map_chain = _format_inputs | (prompt | llm | _output_parser).map()
 
     def _top_answer(results):
-        return max(results["all_answers"], key=lambda x: x["score"])["answer"]
+        return max(results["all_answers"], key=lambda x: float(x["score"]))["answer"]
 
     return RunnableParallel(all_answers=map_chain) | RunnablePassthrough.assign(
         top_answer=_top_answer
