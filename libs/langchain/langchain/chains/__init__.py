@@ -30,6 +30,7 @@ from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.conversational_retrieval.base import (
     ChatVectorDBChain,
     ConversationalRetrievalChain,
+    create_chat_retriever_chain,
 )
 from langchain.chains.example_generator import generate_example
 from langchain.chains.flare.base import FlareChain
@@ -65,7 +66,11 @@ from langchain.chains.qa_generation.base import QAGenerationChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
-from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
+from langchain.chains.retrieval_qa.base import (
+    RetrievalQA,
+    VectorDBQA,
+    create_retrieval_chain,
+)
 from langchain.chains.router import (
     LLMRouterChain,
     MultiPromptChain,
@@ -133,4 +138,6 @@ __all__ = [
     "generate_example",
     "load_chain",
     "create_sql_query_chain",
+    "create_chat_retriever_chain",
+    "create_retrieval_chain",
 ]
