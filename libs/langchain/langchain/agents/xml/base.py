@@ -163,8 +163,6 @@ def create_xml_agent(
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_xml(x["intermediate_steps"]),
-            # Give it a default
-            chat_history=lambda x: x.get("chat_history", ""),
         )
         | prompt
         | llm_with_stop

@@ -71,8 +71,6 @@ def create_react_agent(
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
-            # Give it a default
-            chat_history=lambda x: x.get("chat_history", ""),
         )
         | prompt
         | llm_with_stop

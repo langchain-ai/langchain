@@ -74,9 +74,7 @@ def create_json_chat_agent(
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_messages(
                 x["intermediate_steps"], template_tool_response=TEMPLATE_TOOL_RESPONSE
-            ),
-            # Give it a default
-            chat_history=lambda x: x.get("chat_history", ""),
+            )
         )
         | prompt
         | llm_with_stop

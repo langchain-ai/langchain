@@ -290,9 +290,7 @@ def create_openai_functions_agent(
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_function_messages(
                 x["intermediate_steps"]
-            ),
-            # Give this a default value
-            chat_history=lambda x: x.get("chat_history", []),
+            )
         )
         | prompt
         | llm_with_tools
