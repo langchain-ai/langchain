@@ -26,15 +26,16 @@ OUTPUT_KEY = "output"
 
 
 def create_refine_documents_chain(
+    llm: LanguageModelLike,
     initial_prompt: BasePromptTemplate,
     refine_prompt: BasePromptTemplate,
-    llm: LanguageModelLike,
     *,
     document_prompt: Optional[BasePromptTemplate] = None,
 ) -> Runnable:
     """Create a chain that feeds documents to a model one at a time and updates the output.
     
     Args:
+        llm: The language model to use.
         initial_prompt: The prompt to use on the first document. Must accept "context" 
             as one of the input variables. The first document will be passed in as 
             "context".
@@ -42,7 +43,6 @@ def create_refine_documents_chain(
             "context" and "output" as input variables. A document will be passed in as
             "context" and the refined output up to this iteration will be passed in as
             "output.
-        llm: The language model to use.
         document_prompt: Prompt used for formatting each document into a string. Input
             variables can be "page_content" or any metadata keys that are in all
             documents. "page_content" will automatically retrieve the
@@ -80,7 +80,7 @@ def create_refine_documents_chain(
                 ("human", "Here is the next page:\n\n{context}")
             ])
             llm = ChatOpenAI(model="gpt-3.5-turbo")
-            chain = create_refine_documents_chain(initial_prompt, refine_prompt, llm,)
+            chain = create_refine_documents_chain(llm, initial_prompt, refine_prompt)
             # chain.invoke({"context": docs})
     """  # noqa: E501
     _validate_prompt(initial_prompt, (DOCUMENTS_KEY,))

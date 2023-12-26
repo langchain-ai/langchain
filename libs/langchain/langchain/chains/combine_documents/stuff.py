@@ -61,7 +61,10 @@ def create_stuff_documents_chain(
             from langchain.chains.combine_documents import create_stuff_documents_chain
 
             prompt = ChatPromptTemplate.from_messages(
-                [("system", "What are everyone's favorite colors:\n\n{context}")]
+                [
+                    ("system", "Use the following context to answer the user's questions:\n\n{context}"),
+                    ("human", "{question}"),
+                ]
             )
             llm = ChatOpenAI(model_name="gpt-3.5-turbo")
             chain = create_stuff_documents_chain(llm, prompt)
@@ -71,7 +74,7 @@ def create_stuff_documents_chain(
                 Document(page_content = "Jamal loves green but not as much as he loves orange")
             ]
 
-            chain.invoke({"context": docs})
+            chain.invoke({"context": docs, "question": "What are everyone's favorite colors?"})
     """  # noqa: E501
 
     _validate_prompt(prompt, (DOCUMENTS_KEY,))

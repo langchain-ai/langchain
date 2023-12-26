@@ -16,6 +16,7 @@ from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
+    DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
 )
 from langchain.chains.llm import LLMChain
@@ -40,26 +41,59 @@ def create_map_rerank_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,
     *,
-    document_input_key: str,
     document_prompt: Optional[BasePromptTemplate] = None,
     output_parser: Optional[BaseOutputParser] = None,
 ) -> Runnable[Dict[str, Any], Dict[str, Any]]:
+    """Create a chain that
+
+        Args:
+
+        Returns:
+
+        Example:
+            .. code-block:: python
+
+                from langchain_community.chat_models import ChatOpenAI
+                from langchain_core.documents import Document
+                from langchain_core.output_parsers import SimpleJsonOutputParser
+                from langchain_core.prompts import ChatPromptTemplate
+                from langchain.chains.combine_documents import create_map_rerank_documents_chain
+
+                llm = ChatOpenAI(model="gpt-3.5-turbo-1106").bind(
+                    response_format={"type": "json_object"}
+                )
+                prompt = ChatPromptTemplate.from_message(
+                    [
+                        ("system", '''Answer the user question using the given context. Score the
+    answer from 1-5 based on how relevant the context is to the question. Return a JSON string with
+    keys 'answer' and 'score.\n\n{context}'''),
+                        ("human", "{question}"),
+                    ]
+                )
+                chain = create_map_rerank_documents_chain(llm, prompt, output_parser=SimpleJsonOutputParser())
+
+                docs = [
+                    Document(page_content="Jesse loves red but not yellow"),
+                    Document(page_content = "Jamal loves green but not as much as he loves orange")
+                ]
+
+                chain.invoke({"context": docs, "question": "Who loves green?"})
+
+    """  # noqa: E501
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
     _output_parser = output_parser or (StrOutputParser() | _default_regex)
 
     def _format_inputs(inputs):
-        docs = inputs.pop(document_input_key)
+        docs = inputs.pop(DOCUMENTS_KEY)
         return [
-            {document_input_key: format_document(doc, _document_prompt), **inputs}
+            {DOCUMENTS_KEY: format_document(doc, _document_prompt), **inputs}
             for doc in docs
         ]
 
     map_chain = _format_inputs | (prompt | llm | _output_parser).map()
 
     def _top_answer(results):
-        return max(results["all_answers"], key=lambda x: float(x["score"].strip()))[
-            "answer"
-        ]
+        return max(results["all_answers"], key=lambda x: float(x["score"]))["answer"]
 
     return RunnableParallel(all_answers=map_chain) | RunnablePassthrough.assign(
         top_answer=_top_answer
