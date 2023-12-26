@@ -30,7 +30,7 @@ def create_stuff_documents_chain(
     """Create a chain that passes a list of documents to a model.
 
     Args:
-        llm: Language model.
+        llm: Language model to use for responding.
         prompt: Prompt template. Must contain input variable "context", which will be
             used for passing in the formatted documents.
         output_parser: Output parser. Defaults to `StrOutputParser`.

@@ -35,6 +35,7 @@ from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
+    _validate_prompt,
 )
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.regex import RegexParser
@@ -71,16 +72,28 @@ def create_map_rerank_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,
     *,
-    output_parser: Optional[BaseOutputParser] = None,
+    output_parser: Optional[BaseOutputParser[_ScoredAnswer]] = None,
     document_prompt: Optional[BasePromptTemplate] = None,
 ) -> Runnable[Dict[str, Any], Dict[str, Any]]:
-    """Create a chain that
+    """Create a chain that writes candidates answers for each doc and selects the best one.
 
         Args:
-            llm:
-            prompt:
-            output_parser:
-            document_prompt:
+            llm: Language model to use for responding.
+            prompt: Prompt to use for answering and scoring. Must accept "context"
+                as one of the input variables. Should work well with the given
+                output_parser so that a score and answer can be extracted from each
+                model output. Scores must be comparable (e.g. floats or ints) and a
+                **higher score** should indicate a more relevant answer.
+            output_parser: Output parser to use. Must return a dictionary containing a
+                "score" and "answer" key. If none is provided, will default to a simple
+                regex parser that searches for "Answer:" and "Score:" keywords in the
+                model output.
+            document_prompt: Prompt used for formatting each document into a string. Input
+                variables can be "page_content" or any metadata keys that are in all
+                documents. "page_content" will automatically retrieve the
+                `Document.page_content`, and all other inputs variables will be
+                automatically retrieved from the `Document.metadata` dictionary. Default to
+                a prompt that only contains `Document.page_content`.
 
         Returns:
             An LCEL `Runnable` chain.
@@ -133,6 +146,7 @@ def create_map_rerank_documents_chain(
                 #   'top_answer': 'Jamal loves green but not as much as he loves orange'
                 # }
     """  # noqa: E501
+    _validate_prompt(prompt, (DOCUMENTS_KEY,))
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
     _output_parser = output_parser or (StrOutputParser() | _default_regex)
 
@@ -148,7 +162,7 @@ def create_map_rerank_documents_chain(
         | (prompt | llm | _output_parser).with_config(run_name="answer_and_score").map()
     ).with_config(run_name="answer_and_score_all")
 
-    def top_answer(results):
+    def top_answer(results: dict) -> str:
         return max(results["all_answers"], key=lambda x: float(x["score"]))["answer"]
 
     return (

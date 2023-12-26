@@ -35,7 +35,7 @@ def create_refine_documents_chain(
     """Create a chain that feeds documents to a model one at a time and updates the output.
     
     Args:
-        llm: The language model to use.
+        llm: Language model to use for responding.
         initial_prompt: The prompt to use on the first document. Must accept "context" 
             as one of the input variables. The first document will be passed in as 
             "context".
