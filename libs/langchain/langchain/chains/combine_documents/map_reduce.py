@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from operator import itemgetter
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelInput
@@ -92,8 +92,10 @@ def create_collapse_documents_chain(
     document_prompt: Optional[BasePromptTemplate] = None,
     document_separator: str = "\n\n",
     token_max: int = 4000,
+    token_len_func: Optional[Callable[[str], int]] = None,
 ) -> Runnable:
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+    _token_len_func = token_len_func or getattr(llm, "get_num_tokens", len)
 
     def _format_inputs(inputs: dict) -> dict:
         docs = inputs[document_input_key]
@@ -122,7 +124,7 @@ def create_collapse_documents_chain(
         formatted = document_separator.join(
             format_document(doc, _document_prompt) for doc in docs
         )
-        return llm.get_num_tokens(formatted)
+        return _token_len_func(formatted)
 
     def _partition_docs(inputs):
         docs = inputs.pop(document_input_key)
@@ -130,15 +132,19 @@ def create_collapse_documents_chain(
         curr = []
         curr_len = 0
         for doc in docs:
-            # Add empty string to document separator is included in formatted string.
-            doc_len = _get_num_tokens(["", doc])
+            # Add empty doc so document separator is included in formatted string.
+            doc_len = _get_num_tokens([Document(page_content=""), doc])
             if doc_len > token_max:
                 raise ValueError
             elif curr_len + doc_len > token_max:
                 partitions.append(curr)
                 curr = []
+                curr_len = 0
             else:
                 curr.append(doc)
+                curr_len += doc_len
+        if curr:
+            partitions.append(curr)
         return [{document_input_key: docs, **inputs} for docs in partitions]
 
     def collapse(inputs: dict) -> Union[List[Document], Runnable]:
