@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 
 from langchain_core.documents import Document
 from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
 from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
@@ -16,7 +17,6 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
-    LanguageModelLike,
 )
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.regex import RegexParser
