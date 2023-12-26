@@ -1,6 +1,8 @@
+import base64
 import json
 from typing import Any, Dict, Iterator, List, Optional, Union
 
+import requests
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -110,28 +112,57 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
             if isinstance(message.content, str):
                 content = message.content
             else:
+                image_urls = []
                 for content_part in message.content:
                     if content_part.get("type") == "text":
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "image_url":
                         if isinstance(content_part.get("image_url"), str):
-                            image_url_components = content_part["image_url"].split(",")
-                            # Support data:image/jpeg;base64,<image> format
-                            # and base64 strings
-                            if len(image_url_components) > 1:
-                                images.append(image_url_components[1])
+                            if content_part["image_url"].startswith("data:"):
+                                image_url_components = content_part["image_url"].split(
+                                    ","
+                                )
+                                # Support data:image/jpeg;base64,<image> format
+                                # and base64 strings
+                                if len(image_url_components) > 1:
+                                    images.append(image_url_components[1])
+                                else:
+                                    images.append(image_url_components[0])
                             else:
-                                images.append(image_url_components[0])
+                                image_urls.append(content_part["image_url"])
                         else:
-                            raise ValueError(
-                                "Only string image_url " "content parts are supported."
-                            )
+                            if isinstance(content_part.get("image_url"), dict):
+                                if content_part["image_url"]["url"].startswith("data:"):
+                                    image_url_components = content_part["image_url"][
+                                        "url"
+                                    ].split(",")
+                                    # Support data:image/jpeg;base64,<image> format
+                                    # and base64 strings
+                                    if len(image_url_components) > 1:
+                                        images.append(image_url_components[1])
+                                    else:
+                                        images.append(image_url_components[0])
+                                else:
+                                    image_urls.append(content_part["image_url"]["url"])
+                            else:
+                                raise ValueError("Unsupported message content type.")
                     else:
                         raise ValueError(
                             "Unsupported message content type. "
                             "Must either have type 'text' or type 'image_url' "
                             "with a string 'image_url' field."
                         )
+                # download images and append base64 strings
+                if image_urls:
+                    for image_url in image_urls:
+                        response = requests.get(image_url)
+                        if response.status_code == 200:
+                            image = response.content
+                            images.append(base64.b64encode(image).decode("utf-8"))
+                        else:
+                            raise ValueError(
+                                f"Failed to download image from {image_url}."
+                            )
 
             ollama_messages.append(
                 {
