@@ -196,7 +196,9 @@ class _OllamaCommon(BaseLanguageModel):
         if response.status_code != 200:
             if response.status_code == 404:
                 raise OllamaEndpointNotFoundError(
-                    "Ollama call failed with status code 404."
+                    "Ollama call failed with status code 404. "
+                    "Maybe your model is not found "
+                    f"and you should pull the model with `ollama pull {self.model}`."
                 )
             else:
                 optional_detail = response.json().get("error")
