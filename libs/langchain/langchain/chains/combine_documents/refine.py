@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from operator import itemgetter
+from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
@@ -80,7 +81,7 @@ def create_refine_documents_chain(
             ])
             llm = ChatOpenAI(model="gpt-3.5-turbo")
             chain = create_refine_documents_chain(initial_prompt, refine_prompt, llm,)
-            chain.invoke({"context": docs})
+            # chain.invoke({"context": docs})
     """  # noqa: E501
     _validate_prompt(initial_prompt, (DOCUMENTS_KEY,))
     _validate_prompt(refine_prompt, (DOCUMENTS_KEY, OUTPUT_KEY))
@@ -101,26 +102,33 @@ def create_refine_documents_chain(
     def update_intermediate_steps(inputs: dict) -> list:
         return inputs.get(INTERMEDIATE_STEPS_KEY, []) + [inputs[OUTPUT_KEY]]
 
-    def loop(inputs: dict) -> Union[Runnable, dict]:
-        iteration = len(inputs.get(INTERMEDIATE_STEPS_KEY, [])) + 1
-        if iteration < len(inputs[DOCUMENTS_KEY]):
-            return (
-                RunnablePassthrough.assign(
-                    **{
-                        INTERMEDIATE_STEPS_KEY: update_intermediate_steps,
-                        OUTPUT_KEY: refine_chain,
-                    }
-                ).with_config(run_name="refine_step")
-                | loop
-            ).with_config(run_name=f"iter_{iteration}")
-        else:
-            return {k: inputs[k] for k in (OUTPUT_KEY, INTERMEDIATE_STEPS_KEY)}
+    def loop(inputs: dict) -> Runnable:
+        if len(inputs[DOCUMENTS_KEY]) < 2:
+            return RunnablePassthrough()
+        chain = RunnablePassthrough.assign(
+            **{
+                INTERMEDIATE_STEPS_KEY: update_intermediate_steps,
+                OUTPUT_KEY: refine_chain,
+            }
+        ).with_config(run_name="refine_step_1")
+        for iteration in range(2, len(inputs[DOCUMENTS_KEY])):
+            chain |= RunnablePassthrough.assign(
+                **{
+                    INTERMEDIATE_STEPS_KEY: update_intermediate_steps,
+                    OUTPUT_KEY: refine_chain,
+                }
+            ).with_config(run_name=f"refine_step_{iteration}")
+        return chain
 
     return (
         RunnablePassthrough.assign(**{OUTPUT_KEY: initial_chain}).with_config(
             run_name="assign_initial"
         )
         | loop
+        | {
+            OUTPUT_KEY: itemgetter(OUTPUT_KEY),
+            INTERMEDIATE_STEPS_KEY: itemgetter(INTERMEDIATE_STEPS_KEY),
+        }
     ).with_config(run_name="refine_documents_chain")
 
 
