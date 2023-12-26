@@ -28,7 +28,10 @@ DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template("{page_content}")
 
 def _validate_prompt(prompt: BasePromptTemplate) -> None:
     if DOCUMENTS_KEY not in prompt.input_variables:
-        raise ValueError()
+        raise ValueError(
+            f"Prompt must accept {DOCUMENTS_KEY} as an input variable. Received prompt "
+            f"with input variables: {prompt.input_variables}"
+        )
 
 
 class BaseCombineDocumentsChain(Chain, ABC):
