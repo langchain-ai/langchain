@@ -1,16 +1,15 @@
 [tool.poetry]
-name = "rag-pinecone-rerank"
+name = "rag-pinecone-cohere-embed-rerank"
 version = "0.1.0"
-description = "Use Cohere's reranking endpoint to rerank documents from an initial retrieval step using OpenAI"
+description = "Use Cohere's reranking endpoint to rerank documents from an initial retrieval step using Cohere"
 authors = [
-    "Lance Martin <lance@langchain.dev>",
+    "Samuel Path <samuel.path@gmail.com>",
 ]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = "^0.1"
-openai = "<2"
+langchain = ">=0.0.325"
 tiktoken = ">=0.5.1"
 pinecone-client = ">=2.2.4"
 cohere = ">=4.32"
@@ -19,13 +18,13 @@ cohere = ">=4.32"
 langchain-cli = ">=0.0.15"
 
 [tool.langserve]
-export_module = "rag_pinecone_rerank"
+export_module = "rag_pinecone_cohere_embed_rerank"
 export_attr = "chain"
 
 [tool.templates-hub]
 use-case = "rag"
 author = "LangChain"
-integrations = ["OpenAI", "Pinecone", "Cohere"]
+integrations = ["Cohere", "Pinecone", "Cohere"]
 tags = ["vectordbs","post-processing"]
 
 [build-system]
