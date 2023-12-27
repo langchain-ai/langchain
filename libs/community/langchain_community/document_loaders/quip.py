@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 import xml.etree.cElementTree
 import xml.sax.saxutils
 from io import BytesIO
@@ -22,7 +23,11 @@ class QuipLoader(BaseLoader):
     """
 
     def __init__(
-        self, api_url: str, access_token: str, request_timeout: Optional[int] = 60
+        self,
+        api_url: str,
+        access_token: str,
+        request_timeout: Optional[int] = 60,
+        retry_rate_limit: bool = True,
     ):
         """
         Args:
@@ -30,6 +35,7 @@ class QuipLoader(BaseLoader):
             access_token: token of access quip API. Please refer:
             https://quip.com/dev/automation/documentation/current#section/Authentication/Get-Access-to-Quip's-APIs
             request_timeout: timeout of request, default 60s.
+            retry_rate_limit: retry requests when hit rate_limit, default True
         """
         try:
             from quip_api.quip import QuipClient
@@ -38,6 +44,8 @@ class QuipLoader(BaseLoader):
                 "`quip_api` package not found, please run " "`pip install quip_api`"
             )
 
+        # enable automatically retry when hit over rate limit error
+        self.retry_rate_limit = retry_rate_limit
         self.quip_client = QuipClient(
             access_token=access_token, base_url=api_url, request_timeout=request_timeout
         )
@@ -95,25 +103,21 @@ class QuipLoader(BaseLoader):
         self, folder_id: str, depth: int, thread_ids: List[str]
     ) -> None:
         """Get thread ids by folder id and update in thread_ids"""
-        from quip_api.quip import HTTPError, QuipError
+        from quip_api.quip import QuipError
 
         try:
             folder = self.quip_client.get_folder(folder_id)
         except QuipError as e:
-            if e.code == 403:
-                logging.warning(
-                    f"depth {depth}, Skipped over restricted folder {folder_id}, {e}"
-                )
+            if self.handle_rate_limit(e):
+                folder = self.quip_client.get_folder(folder_id)
             else:
                 logging.warning(
-                    f"depth {depth}, Skipped over folder {folder_id} "
-                    f"due to unknown error {e.code}"
+                    f"depth {depth}, skipped over folder {folder_id} due to unknown error {e}"
                 )
-            return
-        except HTTPError as e:
+                return
+        except Exception as e:
             logging.warning(
-                f"depth {depth}, Skipped over folder {folder_id} "
-                f"due to HTTP error {e.code}"
+                f"depth {depth}, skipped over folder {folder_id} due to error {e}"
             )
             return
 
@@ -152,7 +156,22 @@ class QuipLoader(BaseLoader):
         include_messages: bool,
         keep_html_format: bool,
     ) -> Optional[Document]:
-        thread = self.quip_client.get_thread(thread_id)
+        from quip_api.quip import QuipError
+
+        try:
+            thread = self.quip_client.get_thread(thread_id)
+        except QuipError as e:
+            if self.handle_rate_limit(e):
+                thread = self.quip_client.get_thread(thread_id)
+            else:
+                logging.warning(
+                    f"Skipped over thread {thread_id} due to quip error {e}"
+                )
+                return None
+        except Exception as e:
+            logging.warning(f"Skipped over thread {thread_id} due to HTTP error {e}")
+            return None
+
         thread_id = thread["thread"]["id"]
         title = thread["thread"]["title"]
         link = thread["thread"]["link"]
@@ -210,6 +229,21 @@ class QuipLoader(BaseLoader):
                 metadata=metadata,
             )
         return None
+
+    def handle_rate_limit(self, e):
+        if self.retry_rate_limit and e.code == 503 and "Over Rate Limit" in str(e):
+            # Retry later.
+            logging.info(f"headers: {e.http_error.headers}")
+            reset_time = (
+                float(e.http_error.headers.get("X-Company-Ratelimit-Reset"))
+                if "X-Company-Ratelimit-Reset" in e.http_error.headers
+                else float(e.http_error.headers.get("X-RateLimit-Reset"))
+            )
+            delay = max(2, int(reset_time - time.time()) + 2)
+            logging.warning(f"Rate Limit {e}, delaying for {delay} seconds")
+            time.sleep(delay)
+            return True
+        return False
 
     def process_thread_images(self, tree: ElementTree) -> str:
         text = ""
