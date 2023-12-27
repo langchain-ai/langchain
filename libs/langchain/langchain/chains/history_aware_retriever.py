@@ -57,7 +57,7 @@ def create_history_aware_retriever(
     retrieve_documents = RunnableBranch(
         (
             # Both empty string and empty list evaluate to False
-            lambda x: x.get("chat_history", False),
+            lambda x: not x.get("chat_history", False),
             # If no chat history, then we just pass input to retriever
             (lambda x: x["input"]) | retriever,
         ),
