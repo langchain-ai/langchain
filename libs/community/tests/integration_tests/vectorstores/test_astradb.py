@@ -230,7 +230,10 @@ class TestAstraDB:
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         try:
-            assert v_store.similarity_search_with_override("Ho", "Hi", k=1)[0].page_content == "Hi"
+            assert (
+                v_store.similarity_search_with_override("Ho", "Hi", k=1)[0].page_content
+                == "Hi"
+            )
         finally:
             v_store.delete_collection()
 
@@ -247,9 +250,15 @@ class TestAstraDB:
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         try:
-            assert v_store_2.similarity_search_with_override("Hoi", "Hee", k=1)[0].page_content == "Hee"
+            assert (
+                v_store_2.similarity_search_with_override("Hoi", "Hee", k=1)[
+                    0
+                ].page_content
+                == "Hee"
+            )
         finally:
             v_store_2.delete_collection()
+
     def test_astradb_vectorstore_crud(self, store_someemb: AstraDB) -> None:
         """Basic add/delete/update behaviour."""
         res0 = store_someemb.similarity_search("Abc", k=2)

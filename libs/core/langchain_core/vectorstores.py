@@ -615,7 +615,10 @@ class VectorStore(ABC):
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
         return VectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
-    def as_retriever_with_override(self, search_override:str, **kwargs: Any) -> VectorStoreRetriever:
+
+    def as_retriever_with_override(
+        self, search_override: str, **kwargs: Any
+    ) -> VectorStoreRetriever:
         """Return VectorStoreRetriever initialized from this VectorStore.
 
         Args:
@@ -674,7 +677,10 @@ class VectorStore(ABC):
         """
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
-        return VectorStoreRetriever(vectorstore=self, search_override=search_override, **kwargs, tags=tags)
+        return VectorStoreRetriever(
+            vectorstore=self, search_override=search_override, **kwargs, tags=tags
+        )
+
 
 class VectorStoreRetriever(BaseRetriever):
     """Base Retriever class for VectorStore."""
@@ -689,7 +695,7 @@ class VectorStoreRetriever(BaseRetriever):
         "similarity",
         "similarity_score_threshold",
         "mmr",
-        "similarity_with_override"
+        "similarity_with_override",
     )
     search_override: str = None
 
@@ -733,7 +739,9 @@ class VectorStoreRetriever(BaseRetriever):
                 query, **self.search_kwargs
             )
         elif self.search_type == "similarity_with_override":
-            docs = self.vectorstore.similarity_search_with_override(query, self.search_override, **self.search_kwargs)
+            docs = self.vectorstore.similarity_search_with_override(
+                query, self.search_override, **self.search_kwargs
+            )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
