@@ -44,7 +44,9 @@ def create_retrieval_chain(
             retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
             llm = ChatOpenAI()
             retriever = ...
-            combine_docs_chain = create_stuff_documents_chain(llm, retrieval_qa_chat_prompt)
+            combine_docs_chain = create_stuff_documents_chain(
+                llm, retrieval_qa_chat_prompt
+            )
             retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
 
             chain.invoke({"input": "..."})
