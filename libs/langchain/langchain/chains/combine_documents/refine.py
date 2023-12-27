@@ -12,6 +12,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.runnables import Runnable, RunnableParallel, RunnablePassthrough
+from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
@@ -116,15 +117,15 @@ def create_refine_documents_chain(
         _runnable_loop, step=refine_step, step_name="refine_step_{iteration}"
     )
 
-    return_outputs = RunnableParallel(
-        output=itemgetter(OUTPUT_KEY),
-        intermediate_steps=itemgetter(INTERMEDIATE_STEPS_KEY),
-    ).with_name("return_outputs")
-    return (
-        RunnablePassthrough.assign(output=initial_chain).with_name("assign_initial")
-        | refine_loop
-        | return_outputs
-    ).with_name("refine_documents_chain")
+    assign_initial = RunnablePassthrough.assign(output=initial_chain).with_name(
+        "assign_initial"
+    )
+    pick_outputs = RunnablePick([OUTPUT_KEY, INTERMEDIATE_STEPS_KEY]).with_name(
+        "pick_outputs"
+    )
+
+    refine_documents_chain = assign_initial | refine_loop | pick_outputs
+    return refine_documents_chain.with_name("refine_documents_chain")
 
 
 """ --- Helpers for LCEL Runnable chain --- """
