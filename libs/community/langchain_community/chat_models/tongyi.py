@@ -234,12 +234,10 @@ class ChatTongyi(BaseChatModel):
 
     result_format: str = Field(default="message")
     """Return result format"""
-
     class Config:
         """Configuration for this pydantic object."""
 
         allow_population_by_field_name = True
-        
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
@@ -267,9 +265,6 @@ class ChatTongyi(BaseChatModel):
 
         return values
     
-    @root_validator()
-
-
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
