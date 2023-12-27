@@ -3,7 +3,7 @@ from langchain_core.output_parsers.base import (
     BaseLLMOutputParser,
     BaseOutputParser,
 )
-from langchain_core.output_parsers.json import SimpleJsonOutputParser, JsonOutputParser
+from langchain_core.output_parsers.json import JsonOutputParser, SimpleJsonOutputParser
 from langchain_core.output_parsers.list import (
     CommaSeparatedListOutputParser,
     ListOutputParser,

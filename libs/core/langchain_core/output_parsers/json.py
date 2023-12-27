@@ -8,9 +8,9 @@ from typing import Any, Callable, List, Optional, Type
 import jsonpatch  # type: ignore[import]
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 
 
 def _replace_new_line(match: re.Match[str]) -> str:
@@ -196,9 +196,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
 
     def get_format_instructions(self) -> str:
         if self.pydantic_object is None:
-            return (
-                "Return a JSON object."
-            )
+            return "Return a JSON object."
         else:
             schema = self.pydantic_object.schema()
 
@@ -211,7 +209,6 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             # Ensure json in context is well-formed with double quotes.
             schema_str = json.dumps(reduced_schema)
             return JSON_FORMAT_INSTRUCTIONS.format(schema=schema_str)
-
 
     @property
     def _type(self) -> str:
