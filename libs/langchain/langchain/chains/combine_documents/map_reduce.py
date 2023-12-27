@@ -107,15 +107,29 @@ def create_map_reduce_documents_chain(
     *,
     collapse_documents_chain: Optional[Runnable[Dict[str, Any], List[Document]]] = None,
 ) -> Runnable[Dict[str, Any], Any]:
-    """Create
+    """Create a chain that first maps the contents of each document then reduces them.
 
     Args:
-        map_documents_chain:
-        reduce_documents_chain:
-        collapse_documents_chain:
+        map_documents_chain: Runnable chain for applying some function to the
+            contents of each document. Should accept dictionary as input and output a
+            list of Documents.
+        reduce_documents_chain: Runnable chain for reducing a list of Documents to a
+            single output. Should accept dictionary as input and is expected to read
+            the list of Documents from the "context" key.
+        collapse_documents_chain: Optional Runnable chain for consolidating a list of
+            Documents until the cumulative token size of all Documents is below some
+            token limit. Should accept dictionary as input and is expected to read the
+            list of Documents from the "context" key. If None, collapse step will not
+            be included in final chain. Else will be run after the map_documents_chain
+            and before the reduec_documents_chain.
 
     Returns:
         An LCEL `Runnable` chain.
+
+        Expects a dictionary as input with a list of `Document`s being passed under
+        the "context" key.
+
+        Return type matches the reduce_documents_chain return type.
 
     Example:
         .. code-block:: python

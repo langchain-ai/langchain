@@ -37,26 +37,54 @@ def create_collapse_documents_chain(
     token_max: int,
     document_prompt: Optional[BasePromptTemplate] = None,
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
-    token_len_func: Optional[Callable] = None,
+    token_len_func: Optional[Callable[[str], int]] = None,
 ) -> Runnable[Dict[str, Any], List[Document]]:
     """Create
 
     Args:
-        llm:
-        prompt:
-        token_max:
-        document_prompt:
-        document_separator:
-        token_len_func:
+        llm: Language model to use for collapsing document contents.
+        prompt: Prompt to use for collapsing document contents. Must accept "context" as
+            one of the input variables. The formatted documents will be passed in as
+            "context".
+        token_max: The maximum cumulative token length that the list of Documents can
+            have.
+        document_prompt: Prompt used for formatting each document into a string. Input
+            variables can be "page_content" or any metadata keys that are in all
+            documents. "page_content" will automatically retrieve the
+            `Document.page_content`, and all other inputs variables will be
+            automatically retrieved from the `Document.metadata` dictionary. Default to
+            a prompt that only contains `Document.page_content`.
+        document_separator: Separator string to use for joining formatted document
+            strings.
+        token_len_func: Optional Callable for computing token length of a string. Should
+            take string as input and output an int. If None, will default to
+            `llm.get_num_tokens` if the `llm` has this method, otherwise will use `len`.
 
     Returns:
         An LCEL `Runnable` chain.
 
+        Expects a dictionary as input. Input must contain "context" key with a list of
+        Documents.
+
+        Returns a list of Documents whose cumulative token length when formatted as
+        strings is below `token_max`.
+
     Example:
         .. code-block:: python
 
+            from langchain_community.chat_models import ChatOpenAI
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain.chains.combine_documents import create_collapse_documents_chain,
 
-    """
+            llm = ChatOpenAI(model="gpt-3.5-turbo")
+            extract_prompt = ChatPromptTemplate.from_template(
+                [
+                    ("system", "Given a user question, extract the most relevant parts of the following context:\n\n{context}"),
+                    ("human", "{question}"),
+                ]
+            )
+            collapse_documents_chain = create_collapse_documents_chain(llm, extract_prompt, token_max=4000)
+    """  # noqa: E501
     validate_prompt(prompt, (DOCUMENTS_KEY,))
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
     _token_len_func: Callable = token_len_func or getattr(llm, "get_num_tokens", len)  # type: ignore  # noqa: E501
@@ -126,7 +154,7 @@ def _dict_to_document(inputs: Dict[str, Any]) -> Document:
 
 def _docs_len(
     docs: Sequence[Document],
-    token_len_func: Callable,
+    token_len_func: Callable[[str], int],
     document_prompt: BasePromptTemplate,
     document_separator: str,
 ) -> int:
