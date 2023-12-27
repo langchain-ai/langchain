@@ -1,7 +1,10 @@
 
 # rag-conversation
 
-This template is used for [conversational](https://python.langchain.com/docs/expression_language/cookbook/retrieval#conversational-retrieval-chain) [retrieval](https://python.langchain.com/docs/use_cases/question_answering/), which is one of the most popular LLM use-cases. 
+This template is used for [conversational](https://python.langchain.com/docs/expression_language/cookbook/retrieval#conversational-retrieval-chain) [retrieval](https://python.langchain.com/docs/use_cases/question_answering/), which is one of the most popular LLM use-cases.
+
+It uses OpenAI for both the embeddings and the chat by default.
+You can also use Cohere for the embeddings and the chat by setting the environment variable `EMBEDDING_TYPE` to `Cohere`.
 
 It passes both a conversation history and retrieved documents into an LLM for synthesis.
 
@@ -9,7 +12,9 @@ It passes both a conversation history and retrieved documents into an LLM for sy
 
 This template uses Pinecone as a vectorstore and requires that `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, and `PINECONE_INDEX` are set. 
 
-Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models, and the `COHERE_API_KEY` environment variable to access the Cohere models.
+
+Note that you'll need a Pinecone index with a different number of dimensions depending on which model you use (`1536` for OpenAI and `1024` for Cohere).
 
 ## Usage
 

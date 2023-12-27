@@ -3,8 +3,8 @@ from operator import itemgetter
 from typing import List, Tuple
 
 from langchain.schema import AIMessage, HumanMessage, format_document
-from langchain_community.chat_models import ChatOpenAI
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.chat_models import ChatCohere, ChatOpenAI
+from langchain_community.embeddings import CohereEmbeddings, OpenAIEmbeddings
 from langchain_community.vectorstores import Pinecone
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -25,6 +25,22 @@ if os.environ.get("PINECONE_ENVIRONMENT", None) is None:
 
 PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
+EMBEDDING_TYPE = os.environ.get("EMBEDDING_TYPE", "OpenAI")
+
+if EMBEDDING_TYPE == "OpenAI":
+    if os.environ.get("OPENAI_API_KEY", None) is None:
+        raise Exception("Missing `OPENAI_API_KEY` environment variable.")
+    embeddings = OpenAIEmbeddings()
+    chat_model = ChatOpenAI
+elif EMBEDDING_TYPE == "Cohere":
+    if os.environ.get("COHERE_API_KEY", None) is None:
+        raise Exception("Missing `COHERE_API_KEY` environment variable.")
+    cohere_embed_model = "embed-english-v3.0"
+    embeddings = CohereEmbeddings(model=cohere_embed_model)
+    chat_model = ChatCohere
+else:
+    raise Exception("Invalid `EMBEDDING_TYPE` environment variable.")
+
 ### Ingest code - you may need to run this the first time
 # # Load
 # from langchain_community.document_loaders import WebBaseLoader
@@ -38,11 +54,11 @@ PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
 # # Add to vectorDB
 # vectorstore = Pinecone.from_documents(
-#     documents=all_splits, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
+#     documents=all_splits, embedding=embeddings, index_name=PINECONE_INDEX_NAME
 # )
 # retriever = vectorstore.as_retriever()
 
-vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
+vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, embeddings)
 retriever = vectorstore.as_retriever()
 
 # Condense a chat history and follow-up question into a standalone question
@@ -101,7 +117,7 @@ _search_query = RunnableBranch(
             chat_history=lambda x: _format_chat_history(x["chat_history"])
         )
         | CONDENSE_QUESTION_PROMPT
-        | ChatOpenAI(temperature=0)
+        | chat_model(temperature=0)
         | StrOutputParser(),
     ),
     # Else, we have no chat history, so just pass through the question
@@ -116,4 +132,4 @@ _inputs = RunnableParallel(
     }
 ).with_types(input_type=ChatHistory)
 
-chain = _inputs | ANSWER_PROMPT | ChatOpenAI() | StrOutputParser()
+chain = _inputs | ANSWER_PROMPT | chat_model() | StrOutputParser()
