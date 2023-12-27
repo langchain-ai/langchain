@@ -109,7 +109,7 @@ class LanguageParser(BaseBlobParser):
             else None
         )
 
-        if language is None:
+        if language is None or language not in LANGUAGE_SEGMENTERS:
             yield Document(
                 page_content=code,
                 metadata={
