@@ -814,7 +814,7 @@ class Runnable(Generic[Input, Output], ABC):
             kwargs={},
         )
 
-    def with_name(self, run_name: str) -> RunnableBinding[Input, Output]:
+    def with_name(self, run_name: str) -> Runnable[Input, Output]:
         """
         Bind run_name to a Runnable, returning a new Runnable.
         """
