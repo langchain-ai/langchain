@@ -4,7 +4,7 @@ from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain.chains.retrieval_qa.base import create_retrieval_chain
 from langchain.llms.fake import FakeListLLM
-from tests.unit_tests.retrievers.parrto_retriever import FakeParrotRetriever
+from tests.unit_tests.retrievers.parrot_retriever import FakeParrotRetriever
 
 
 def test_create() -> None:
