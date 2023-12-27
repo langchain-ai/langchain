@@ -4,7 +4,7 @@ from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.retrievers import RetrieverLike, RetrieverOutputLike
-from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables import RunnableBranch
 
 
 def create_history_aware_retriever(
@@ -54,16 +54,14 @@ def create_history_aware_retriever(
             f"but got {prompt.input_variables}"
         )
 
-    def get_input(inputs: dict) -> RetrieverOutputLike:
-        # Both empty string and empty list evaluate to False
-        if inputs.get("chat_history", False):
+    retrieve_documents = RunnableBranch(
+        (
+            # Both empty string and empty list evaluate to False
+            lambda x: x.get("chat_history", False),
             # If no chat history, then we just pass input to retriever
-            return (lambda x: x["input"]) | retriever
-        else:
-            # If chat history, then we pass inputs to LLM chain, then to retriever
-            return prompt | llm | StrOutputParser() | retriever
-
-    retrieve_documents = RunnableLambda(get_input).with_config(
-        run_name="chat_retriever_chain"
-    )
+            (lambda x: x["input"]) | retriever,
+        ),
+        # If chat history, then we pass inputs to LLM chain, then to retriever
+        prompt | llm | StrOutputParser() | retriever,
+    ).with_config(run_name="chat_retriever_chain")
     return retrieve_documents
