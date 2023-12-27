@@ -25,10 +25,9 @@ from langchain.chains.combine_documents.base import (
 )
 from langchain.chains.llm import LLMChain
 
-OUTPUT_KEY = "output"
-
-
 """ --- LCEL Runnable chain --- """
+
+OUTPUT_KEY = "output"
 
 
 def create_refine_documents_chain(
@@ -135,7 +134,7 @@ def create_refine_documents_chain(
 
 def _get_and_format_doc(inputs: dict, document_prompt: BasePromptTemplate) -> dict:
     intermediate_steps = inputs.pop(INTERMEDIATE_STEPS_KEY, [])
-    doc = inputs[DOCUMENTS_KEY][len(intermediate_steps) + 1]
+    doc = inputs[DOCUMENTS_KEY][len(intermediate_steps)]
     inputs[DOCUMENTS_KEY] = format_document(doc, document_prompt)
     return inputs
 
