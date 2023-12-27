@@ -26,7 +26,7 @@ from langchain.chains.llm import LLMChain
 OUTPUT_KEY = "output"
 
 
-""" --- LCEL Runnabel chain --- """
+""" --- LCEL Runnable chain --- """
 
 
 def create_refine_documents_chain(
@@ -69,6 +69,8 @@ def create_refine_documents_chain(
     Example:
         .. code-block:: python
         
+            # pip install -U langchain langchain-community
+        
             from langchain_community.chat_models import ChatOpenAI
             from langchain_core.prompts import ChatPromptTemplate
             from langchain.chains.combine_documents.refine import create_refine_documents_chain
@@ -93,10 +95,10 @@ def create_refine_documents_chain(
 
     format_doc = partial(_get_and_format_doc, document_prompt=_document_prompt)
     initial_chain = format_doc | initial_prompt | llm | StrOutputParser()
-    initial_chain = initial_chain.with_config(run_name="initial_chain")
+    initial_chain = initial_chain.with_name("initial_chain")
 
     refine_chain = format_doc | refine_prompt | llm | StrOutputParser()
-    refine_chain = refine_chain.with_config(run_name="refine_chain")
+    refine_chain = refine_chain.with_name("refine_chain")
 
     def loop(inputs: dict) -> Runnable:
         if len(inputs[DOCUMENTS_KEY]) < 2:
@@ -105,25 +107,23 @@ def create_refine_documents_chain(
             intermediate_steps=lambda x: x.get(INTERMEDIATE_STEPS_KEY, [])
             + [x[OUTPUT_KEY]],
             output=refine_chain,
-        ).with_config(run_name="refine_step_1")
+        ).with_name("refine_step_1")
         for iteration in range(2, len(inputs[DOCUMENTS_KEY])):
             chain |= RunnablePassthrough.assign(
                 intermediate_steps=lambda x: x.get(INTERMEDIATE_STEPS_KEY, [])
                 + [x[OUTPUT_KEY]],
                 output=refine_chain,
-            ).with_config(run_name=f"refine_step_{iteration}")
+            ).with_name(f"refine_step_{iteration}")
         return chain
 
     return (
-        RunnablePassthrough.assign(output=initial_chain).with_config(
-            run_name="assign_initial"
-        )
+        RunnablePassthrough.assign(output=initial_chain).with_name("assign_initial")
         | loop
         | RunnableParallel(
             output=itemgetter(OUTPUT_KEY),
             intermediate_steps=itemgetter(INTERMEDIATE_STEPS_KEY),
-        ).with_config(run_name="return_outputs")
-    ).with_config(run_name="refine_documents_chain")
+        ).with_name("return_outputs")
+    ).with_name("refine_documents_chain")
 
 
 """ --- Helpers for LCEL Runnable chain --- """

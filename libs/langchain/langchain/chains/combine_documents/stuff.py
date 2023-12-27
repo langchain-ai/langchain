@@ -87,13 +87,11 @@ def create_stuff_documents_chain(
         )
 
     return (
-        RunnablePassthrough.assign(**{DOCUMENTS_KEY: format_docs}).with_config(
-            run_name="format_inputs"
-        )
+        RunnablePassthrough.assign(context=format_docs).with_name("format_inputs")
         | prompt
         | llm
         | _output_parser
-    ).with_config(run_name="stuff_documents_chain")
+    ).with_name("stuff_documents_chain")
 
 
 class StuffDocumentsChain(BaseCombineDocumentsChain):

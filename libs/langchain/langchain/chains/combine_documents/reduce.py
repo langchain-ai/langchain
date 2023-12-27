@@ -72,6 +72,8 @@ def create_collapse_documents_chain(
     Example:
         .. code-block:: python
 
+            # pip install -U langchain langchain-community
+
             from langchain_community.chat_models import ChatOpenAI
             from langchain_core.prompts import ChatPromptTemplate
             from langchain.chains.combine_documents import create_collapse_documents_chain,
@@ -95,13 +97,13 @@ def create_collapse_documents_chain(
         document_separator=document_separator,
     )
     reduce_content_chain = _format | prompt | llm | StrOutputParser()
-    reduce_content_chain = reduce_content_chain.with_config(run_name="reduce_content")
+    reduce_content_chain = reduce_content_chain.with_name("reduce_content")
 
     reduce_chain = (
         RunnableParallel(
             page_content=reduce_content_chain,
             metadata=_combine_metadata,
-        ).with_config(run_name="reduce_document")
+        ).with_name("reduce_document")
         | _dict_to_document
     )
 
@@ -125,12 +127,12 @@ def create_collapse_documents_chain(
         if curr_len > token_max:
             assign_collapsed_docs = RunnablePassthrough.assign(
                 context=partition_docs | reduce_chain.map()
-            ).with_config(run_name="assign_collapsed_docs")
+            ).with_name("assign_collapsed_docs")
             return assign_collapsed_docs | collapse
         else:
             return docs
 
-    return RunnableLambda(collapse).with_config(run_name="collapse_documents_chain")  # type: ignore  # noqa: E501
+    return RunnableLambda(collapse).with_name("collapse_documents_chain")  # type: ignore  # noqa: E501
 
 
 """ --- Helper methods for LCEL Runnable chains --- """

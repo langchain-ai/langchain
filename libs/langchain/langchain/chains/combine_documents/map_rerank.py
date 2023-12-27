@@ -89,6 +89,8 @@ def create_map_rerank_documents_chain(
         Example:
             .. code-block:: python
 
+                # pip install -U langchain langchain-community
+
                 from langchain_community.chat_models import ChatOpenAI
                 from langchain_core.documents import Document
                 from langchain_core.output_parsers import SimpleJsonOutputParser
@@ -131,21 +133,18 @@ def create_map_rerank_documents_chain(
         format_document_inputs_as_list, document_prompt=_document_prompt
     )
 
-    answer_chain = prompt | llm | _output_parser
-    answer_chain = answer_chain.with_config(run_name="answer_and_score")
-    map_chain = (format_as_list | answer_chain.map()).with_config(
-        run_name="answer_and_score_all"
-    )
+    answer_chain = (prompt | llm | _output_parser).with_name("answer_and_score")
+    map_chain = (format_as_list | answer_chain.map()).with_name("answer_and_score_all")
 
     assign_all_answers: Runnable = RunnableParallel(all_answers=map_chain)
-    assign_all_answers = assign_all_answers.with_config(run_name="assign_all_answers")
+    assign_all_answers = assign_all_answers.with_name("assign_all_answers")
 
     assign_top_answer: Runnable = RunnablePassthrough.assign(top_answer=_top_answer)
-    assign_top_answer = assign_top_answer.with_config(run_name="assign_top_answer")
+    assign_top_answer = assign_top_answer.with_name("assign_top_answer")
 
     return (
         (assign_all_answers | assign_top_answer)
-        .with_config(run_name="map_rerank_documents_chain")
+        .with_name("map_rerank_documents_chain")
         .with_types(output_type=_MapRerankOutput)
     )
 

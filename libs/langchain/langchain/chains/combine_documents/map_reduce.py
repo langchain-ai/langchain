@@ -58,6 +58,8 @@ def create_map_documents_chain(
     Example:
         .. code-block:: python
 
+            # pip install -U langchain langchain-community
+
             from langchain_community.chat_models import ChatOpenAI
             from langchain_core.documents import Document
             from langchain_core.prompts import ChatPromptTemplate
@@ -84,21 +86,18 @@ def create_map_documents_chain(
 
     _format = partial(format_document_inputs, document_prompt=_document_prompt)
     map_content_chain = _format | prompt | llm | StrOutputParser()
-    map_content_chain = map_content_chain.with_config(run_name="map_content")
+    map_content_chain = map_content_chain.with_name("map_content")
 
     assign_page_content: Runnable = RunnablePassthrough.assign(
         page_content=map_content_chain
     )
-    assign_page_content = assign_page_content.with_config(
-        run_name="assign_page_content"
-    )
-    map_doc_chain = assign_page_content | _compile_document
-    map_docs_chain = map_doc_chain.with_config(run_name="map_document").map()
+    assign_page_content = assign_page_content.with_name("assign_page_content")
+    map_doc_chain = (assign_page_content | _compile_document).with_name("map_document")
 
     format_as_list = partial(
         format_document_inputs_as_list, document_prompt=document_prompt
     )
-    return (format_as_list | map_docs_chain).with_config(run_name="map_documents_chain")
+    return (format_as_list | (map_doc_chain.map())).with_name("map_documents_chain")
 
 
 def create_map_reduce_documents_chain(
@@ -169,16 +168,14 @@ def create_map_reduce_documents_chain(
     assign_mapped_docs: Runnable = RunnablePassthrough.assign(
         context=map_documents_chain
     )
-    assign_mapped_docs = assign_mapped_docs.with_config(run_name="assign_mapped_docs")
+    assign_mapped_docs = assign_mapped_docs.with_name("assign_mapped_docs")
     if not collapse_documents_chain:
         return assign_mapped_docs | reduce_documents_chain
     else:
         assign_collapsed_docs: Runnable = RunnablePassthrough.assign(
             context=collapse_documents_chain
         )
-        assign_collapsed_docs = assign_collapsed_docs.with_config(
-            run_name="assign_collapsed_docs"
-        )
+        assign_collapsed_docs = assign_collapsed_docs.with_name("assign_collapsed_docs")
         return assign_mapped_docs | assign_collapsed_docs | reduce_documents_chain
 
 
