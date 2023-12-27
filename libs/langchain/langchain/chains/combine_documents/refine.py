@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partial
 from operator import itemgetter
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -10,7 +11,7 @@ from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.runnables import Runnable, RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnableParallel, RunnablePassthrough
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
@@ -23,6 +24,9 @@ from langchain.chains.combine_documents.base import (
 from langchain.chains.llm import LLMChain
 
 OUTPUT_KEY = "output"
+
+
+""" --- LCEL Runnabel chain --- """
 
 
 def create_refine_documents_chain(
@@ -87,49 +91,52 @@ def create_refine_documents_chain(
     validate_prompt(refine_prompt, (DOCUMENTS_KEY, OUTPUT_KEY))
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
 
-    def format_doc(inputs: dict) -> dict:
-        doc = inputs[DOCUMENTS_KEY][len(inputs.get(INTERMEDIATE_STEPS_KEY, [])) + 1]
-        inputs[DOCUMENTS_KEY] = format_document(doc, _document_prompt)
-        return {k: v for k, v in inputs.items() if k != INTERMEDIATE_STEPS_KEY}
+    format_doc = partial(_get_and_format_doc, document_prompt=_document_prompt)
+    initial_chain = format_doc | initial_prompt | llm | StrOutputParser()
+    initial_chain = initial_chain.with_config(run_name="initial_chain")
 
-    initial_chain = (format_doc | initial_prompt | llm | StrOutputParser()).with_config(
-        run_name="initial_chain"
-    )
-    refine_chain = (format_doc | refine_prompt | llm | StrOutputParser()).with_config(
-        run_name="refine_chain"
-    )
-
-    def update_intermediate_steps(inputs: dict) -> list:
-        return inputs.get(INTERMEDIATE_STEPS_KEY, []) + [inputs[OUTPUT_KEY]]
+    refine_chain = format_doc | refine_prompt | llm | StrOutputParser()
+    refine_chain = refine_chain.with_config(run_name="refine_chain")
 
     def loop(inputs: dict) -> Runnable:
         if len(inputs[DOCUMENTS_KEY]) < 2:
             return RunnablePassthrough()
-        chain = RunnablePassthrough.assign(
-            **{
-                INTERMEDIATE_STEPS_KEY: update_intermediate_steps,
-                OUTPUT_KEY: refine_chain,
-            }
+        chain: Runnable = RunnablePassthrough.assign(
+            intermediate_steps=lambda x: x.get(INTERMEDIATE_STEPS_KEY, [])
+            + [x[OUTPUT_KEY]],
+            output=refine_chain,
         ).with_config(run_name="refine_step_1")
         for iteration in range(2, len(inputs[DOCUMENTS_KEY])):
             chain |= RunnablePassthrough.assign(
-                **{
-                    INTERMEDIATE_STEPS_KEY: update_intermediate_steps,
-                    OUTPUT_KEY: refine_chain,
-                }
+                intermediate_steps=lambda x: x.get(INTERMEDIATE_STEPS_KEY, [])
+                + [x[OUTPUT_KEY]],
+                output=refine_chain,
             ).with_config(run_name=f"refine_step_{iteration}")
         return chain
 
     return (
-        RunnablePassthrough.assign(**{OUTPUT_KEY: initial_chain}).with_config(
+        RunnablePassthrough.assign(output=initial_chain).with_config(
             run_name="assign_initial"
         )
         | loop
-        | {
-            OUTPUT_KEY: itemgetter(OUTPUT_KEY),
-            INTERMEDIATE_STEPS_KEY: itemgetter(INTERMEDIATE_STEPS_KEY),
-        }
+        | RunnableParallel(
+            output=itemgetter(OUTPUT_KEY),
+            intermediate_steps=itemgetter(INTERMEDIATE_STEPS_KEY),
+        ).with_config(run_name="return_outputs")
     ).with_config(run_name="refine_documents_chain")
+
+
+""" --- Helpers for LCEL Runnable chain --- """
+
+
+def _get_and_format_doc(inputs: dict, document_prompt: BasePromptTemplate) -> dict:
+    intermediate_steps = inputs.pop(INTERMEDIATE_STEPS_KEY, [])
+    doc = inputs[DOCUMENTS_KEY][len(intermediate_steps) + 1]
+    inputs[DOCUMENTS_KEY] = format_document(doc, document_prompt)
+    return inputs
+
+
+""" --- Legacy Chain --- """
 
 
 class RefineDocumentsChain(BaseCombineDocumentsChain):

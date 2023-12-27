@@ -25,4 +25,5 @@ __all__ = [
     "create_map_rerank_documents_chain",
     "create_map_reduce_documents_chain",
     "create_refine_documents_chain",
+    "create_collapse_documents_chain",
 ]

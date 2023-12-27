@@ -10,8 +10,12 @@ from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import Extra
-from langchain_core.runnables import Runnable, RunnableLambda, RunnableParallel, \
-    RunnablePassthrough
+from langchain_core.runnables import (
+    Runnable,
+    RunnableLambda,
+    RunnableParallel,
+    RunnablePassthrough,
+)
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
@@ -22,6 +26,8 @@ from langchain.chains.combine_documents.base import (
     format_documents,
     validate_prompt,
 )
+
+""" --- LCEL Runnable chains --- """
 
 
 def create_collapse_documents_chain(
@@ -60,10 +66,8 @@ def create_collapse_documents_chain(
         document_prompt=_document_prompt,
         document_separator=document_separator,
     )
-
-    reduce_content_chain = (_format | prompt | llm | StrOutputParser()).with_config(
-        run_name="reduce_content"
-    )
+    reduce_content_chain = _format | prompt | llm | StrOutputParser()
+    reduce_content_chain = reduce_content_chain.with_config(run_name="reduce_content")
 
     reduce_chain = (
         RunnableParallel(
@@ -101,6 +105,9 @@ def create_collapse_documents_chain(
     return RunnableLambda(collapse).with_config(run_name="collapse_documents_chain")  # type: ignore  # noqa: E501
 
 
+""" --- Helper methods for LCEL Runnable chains --- """
+
+
 def _combine_metadata(inputs: Dict[str, Any]) -> Dict[Any, str]:
     docs = inputs[DOCUMENTS_KEY]
     combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
@@ -124,6 +131,9 @@ def _docs_len(
     document_separator: str,
 ) -> int:
     return token_len_func(format_documents(docs, document_prompt, document_separator))
+
+
+""" --- Legacy Chain --- """
 
 
 class CombineDocsProtocol(Protocol):

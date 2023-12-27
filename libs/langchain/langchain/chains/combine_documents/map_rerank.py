@@ -42,6 +42,8 @@ from langchain.chains.combine_documents.base import (
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.regex import RegexParser
 
+""" --- LCEL Runnable chains --- """
+
 
 def create_map_rerank_documents_chain(
     llm: LanguageModelLike,
@@ -148,6 +150,9 @@ def create_map_rerank_documents_chain(
     )
 
 
+""" --- Helper methods for LCEL Runnable chain --- """
+
+
 def _top_answer(results: Dict[str, Any]) -> str:
     return max(results["all_answers"], key=lambda x: float(x["score"]))["answer"]
 
@@ -172,6 +177,9 @@ class _MapRerankOutput(BaseModel):
         ...,
         description="All answers and scores, in the same order as the input documents.",
     )
+
+
+""" --- Legacy Chain --- """
 
 
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):
