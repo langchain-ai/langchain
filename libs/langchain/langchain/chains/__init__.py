@@ -138,4 +138,6 @@ __all__ = [
     "generate_example",
     "load_chain",
     "create_sql_query_chain",
+    "create_retrieval_chain",
+    "create_history_aware_retriever",
 ]
