@@ -2153,9 +2153,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     class Config:
         arbitrary_types_allowed = True
 
-    def get_name(self, suffix: Optional[str] = None) -> str:
-        print("get_name", self.steps)
-        name = self.name or f"RunnableParallel<{','.join(self.steps.keys())}>"
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
+        name = name or self.name or f"RunnableParallel<{','.join(self.steps.keys())}>"
         return super().get_name(suffix, name=name)
 
     @property
@@ -3213,8 +3214,10 @@ class RunnableEach(RunnableEachBase[Input, Output]):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
-    def get_name(self, suffix: Optional[str] = None) -> str:
-        name = self.name or f"RunnableEach<{self.bound.get_name()}>"
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
+        name = name or self.name or f"RunnableEach<{self.bound.get_name()}>"
         return super().get_name(suffix, name=name)
 
     def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
@@ -3341,8 +3344,10 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             **other_kwargs,
         )
 
-    def get_name(self, suffix: Optional[str] = None) -> str:
-        return self.bound.get_name(suffix)
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
+        return self.bound.get_name(suffix, name=name)
 
     @property
     def InputType(self) -> Type[Input]:

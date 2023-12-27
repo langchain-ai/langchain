@@ -320,8 +320,12 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
-    def get_name(self, suffix: Optional[str] = None) -> str:
-        name = self.name or f"RunnableAssign<{','.join(self.mapper.steps.keys())}>"
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
+        name = (
+            name or self.name or f"RunnableAssign<{','.join(self.mapper.steps.keys())}>"
+        )
         return super().get_name(suffix, name=name)
 
     def get_input_schema(
@@ -578,9 +582,12 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
-    def get_name(self, suffix: Optional[str] = None) -> str:
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
         name = (
-            self.name
+            name
+            or self.name
             or f"RunnablePick<{','.join([self.keys] if isinstance(self.keys, str) else self.keys)}>"  # noqa: E501
         )
         return super().get_name(suffix, name=name)
