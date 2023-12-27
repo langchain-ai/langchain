@@ -54,7 +54,7 @@ def create_history_aware_retriever(
             f"but got {prompt.input_variables}"
         )
 
-    retrieve_documents = RunnableBranch(
+    retrieve_documents: RetrieverOutputLike = RunnableBranch(
         (
             # Both empty string and empty list evaluate to False
             lambda x: not x.get("chat_history", False),
