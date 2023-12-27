@@ -25,7 +25,7 @@ from langchain.chains.combine_documents.base import (
 )
 from langchain.chains.llm import LLMChain
 
-""" --- LCEL Runnable chain --- """
+# --- LCEL Runnable chain --- #
 
 OUTPUT_KEY = "output"
 
@@ -129,7 +129,7 @@ def create_refine_documents_chain(
     )
 
 
-""" --- Helpers for LCEL Runnable chain --- """
+# --- Helpers for LCEL Runnable chain --- #
 
 
 def _get_and_format_doc(inputs: dict, document_prompt: BasePromptTemplate) -> dict:
@@ -152,7 +152,7 @@ def _update_intermediate_steps(inputs: dict) -> list:
     return inputs.get(INTERMEDIATE_STEPS_KEY, []) + [inputs[OUTPUT_KEY]]
 
 
-""" --- Legacy Chain --- """
+# --- Legacy Chain --- #
 
 
 class RefineDocumentsChain(BaseCombineDocumentsChain):

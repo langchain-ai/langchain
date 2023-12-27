@@ -16,16 +16,16 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
-""" --- Constants --- """
+# --- Constants --- #
 DOCUMENTS_KEY = "context"
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
-""" --- Defaults --- """
+# --- Defaults --- #
 DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template("{page_content}")
 DEFAULT_DOCUMENT_SEPARATOR = "\n\n"
 
 
-""" --- Utilities (private) --- """
+# --- Utilities (private) --- #
 
 
 def validate_prompt(prompt: BasePromptTemplate, expected_inputs: Sequence[str]) -> None:
@@ -69,7 +69,7 @@ def format_document_inputs_as_list(
     ]
 
 
-""" --- Legacy Chain --- """
+# --- Legacy Chain --- #
 
 
 class BaseCombineDocumentsChain(Chain, ABC):

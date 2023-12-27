@@ -28,7 +28,7 @@ from langchain.chains.combine_documents.base import (
 )
 from langchain.pydantic_v1 import BaseModel
 
-""" --- LCEL Runnable chains --- """
+# --- LCEL Runnable chains --- #
 
 
 def create_collapse_documents_chain(
@@ -151,7 +151,7 @@ def create_collapse_documents_chain(
     )
 
 
-""" --- Helper methods for LCEL Runnable chains --- """
+# --- Helper methods for LCEL Runnable chains --- #
 
 
 def _combine_metadata(inputs: Dict[str, Any]) -> Dict[Any, str]:
@@ -183,7 +183,7 @@ class _CollapseOutputType(BaseModel):
     __root__: List[Document]
 
 
-""" --- Legacy Chain --- """
+# --- Legacy Chain --- #
 
 
 class CombineDocsProtocol(Protocol):

@@ -22,7 +22,7 @@ from langchain.chains.combine_documents.base import (
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
 
-""" --- LCEL Runnable chains --- """
+# --- LCEL Runnable chains --- #
 
 
 def create_map_documents_chain(
@@ -179,7 +179,7 @@ def create_map_reduce_documents_chain(
         )
 
 
-""" --- Helper methods for LCEL Runnable chains --- """
+# --- Helper methods for LCEL Runnable chains --- #
 
 
 def _compile_document(inputs: Dict[str, Any]) -> Document:
@@ -192,7 +192,7 @@ def _format_input_as_list(inputs: Dict[str, Any]) -> List[dict]:
     return [{DOCUMENTS_KEY: doc, **inputs} for doc in docs]
 
 
-""" --- Legacy Chain --- """
+# --- Legacy Chain --- #
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
