@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
@@ -22,6 +22,7 @@ from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_SEPARATOR,
     DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
+    _validate_prompt,
 )
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
@@ -80,6 +81,7 @@ def create_map_documents_chain(
 
             map_documents_chain.invoke({"context": docs, "question": "Who loves green?"})
     """  # noqa: E501
+    _validate_prompt(prompt, (DOCUMENTS_KEY,))
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
 
     def _format_document(inputs: dict) -> str:
@@ -134,6 +136,7 @@ def create_collapse_documents_chain(
         .. code-block:: python
 
     """
+    _validate_prompt(prompt, (DOCUMENTS_KEY,))
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
     _token_len_func = token_len_func or getattr(llm, "get_num_tokens", len)
 
@@ -160,16 +163,16 @@ def create_collapse_documents_chain(
         metadata=_format_metadata,
     ) | (lambda x: Document(page_content=x["page_content"], metadata=x["metadata"]))
 
-    def _get_num_tokens(docs):
+    def _get_num_tokens(docs: Sequence[Document]) -> int:
         formatted = document_separator.join(
             format_document(doc, _document_prompt) for doc in docs
         )
-        return _token_len_func(formatted)
+        return _token_len_func(formatted)  # type: ignore
 
-    def _partition_docs(inputs):
+    def _partition_docs(inputs: dict) -> List[dict]:
         docs = inputs.pop(DOCUMENTS_KEY)
         partitions = []
-        curr = []
+        curr: List[Document] = []
         curr_len = 0
         for doc in docs:
             # Add empty doc so document separator is included in formatted string.
@@ -251,13 +254,19 @@ def create_map_reduce_documents_chain(
     """  # noqa: E501
     if not collapse_documents_chain:
         return (
-            RunnablePassthrough.assign(**{DOCUMENTS_KEY: map_documents_chain})
+            RunnablePassthrough.assign(
+                **{DOCUMENTS_KEY: map_documents_chain}
+            ).with_config(run_name="return_mapped_docs")
             | reduce_documents_chain
         )
     else:
         return (
-            RunnablePassthrough.assign(**{DOCUMENTS_KEY: map_documents_chain})
-            | RunnablePassthrough.assign(**{DOCUMENTS_KEY: collapse_documents_chain})
+            RunnablePassthrough.assign(
+                **{DOCUMENTS_KEY: map_documents_chain}
+            ).with_config(run_name="return_mapped_docs")
+            | RunnablePassthrough.assign(
+                **{DOCUMENTS_KEY: collapse_documents_chain}
+            ).with_config(run_name="return_collapsed_docs")
             | reduce_documents_chain
         )
 
