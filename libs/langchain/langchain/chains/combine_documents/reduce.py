@@ -2,7 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
@@ -76,17 +87,24 @@ def create_collapse_documents_chain(
             # pip install -U langchain langchain-community
 
             from langchain_community.chat_models import ChatOpenAI
+            from langchain_core.documents import Document
             from langchain_core.prompts import ChatPromptTemplate
-            from langchain.chains.combine_documents import create_collapse_documents_chain,
+            from langchain.chains.combine_documents import create_collapse_documents_chain
 
             llm = ChatOpenAI(model="gpt-3.5-turbo")
-            extract_prompt = ChatPromptTemplate.from_template(
+            extract_prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", "Given a user question, extract the most relevant parts of the following context:\n\n{context}"),
                     ("human", "{question}"),
                 ]
             )
-            collapse_documents_chain = create_collapse_documents_chain(llm, extract_prompt, token_max=4000)
+            collapse_documents_chain = create_collapse_documents_chain(llm, extract_prompt, token_max=1000)
+
+            docs = [
+                Document(page_content="I love yellow. " * 200),
+                Document(page_content="You love green. " * 200),
+            ]
+            collapse_documents_chain.invoke({"context": docs, "question": "What color do you love?"})
     """  # noqa: E501
     validate_prompt(prompt, (DOCUMENTS_KEY,))
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
@@ -94,9 +112,7 @@ def create_collapse_documents_chain(
 
     # Runnable: Dict with many docs -> reduced string.
     reduce_content = (
-        RunnableLambda(
-            format_document_inputs,
-        )
+        RunnableLambda(cast(Callable, format_document_inputs))
         .bind(
             document_prompt=_document_prompt,
             document_separator=document_separator,
@@ -145,9 +161,9 @@ def create_collapse_documents_chain(
             return docs
 
     return (
-        RunnableLambda(collapse_loop)  # type: ignore
+        RunnableLambda(cast(Callable, collapse_loop))
         .with_name("collapse_documents_chain")
-        .with_types(output_type=_CollapseOutputType)
+        .with_types(output_type=_CollapseOutputType)  # type: ignore
     )
 
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import (
     Any,
+    Callable,
     Dict,
     List,
     Optional,
@@ -136,7 +137,7 @@ def create_map_rerank_documents_chain(
 
     # Runnable: Dict with many docs -> [{"answer": ..., "score": ...}, ...]
     map_chain = (
-        RunnableLambda(format_document_inputs_as_list)
+        RunnableLambda(cast(Callable, format_document_inputs_as_list))
         .bind(document_prompt=document_prompt or DEFAULT_DOCUMENT_PROMPT)
         .pipe(answer_chain.map(), name="answer_and_score_all")
     )

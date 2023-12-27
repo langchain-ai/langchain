@@ -1,7 +1,7 @@
 """Combining documents by mapping a chain over them first, then combining results."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, cast
 
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
@@ -84,7 +84,7 @@ def create_map_documents_chain(
 
     # Runnable: Dict with single doc -> updated page content.
     map_content = (
-        RunnableLambda(format_document_inputs)
+        RunnableLambda(cast(Callable, format_document_inputs))
         .bind(document_prompt=document_prompt or DEFAULT_DOCUMENT_PROMPT)
         .pipe(prompt, llm, StrOutputParser(), name="map_content")
     )
@@ -137,6 +137,7 @@ def create_map_reduce_documents_chain(
         .. code-block:: python
 
             from langchain_community.chat_models import ChatOpenAI
+            from langchain_core.documents import Document
             from langchain_core.prompts import ChatPromptTemplate
             from langchain.chains.combine_documents import (
                 create_collapse_documents_chain,
@@ -167,6 +168,13 @@ def create_map_reduce_documents_chain(
                 reduce_documents_chain,
                 collapse_documents_chain=collapse_documents_chain
             )
+
+            docs = [
+                Document(page_content="Jesse loves red but not yellow"),
+                Document(page_content = "Jamal loves green but not as much as he loves orange")
+            ]
+
+            map_reduce_documents_chain.invoke({"context": docs, "question": "Who loves green?"})
     """  # noqa: E501
     assign_mapped_docs = RunnablePassthrough.assign(context=map_documents_chain)
     if not collapse_documents_chain:

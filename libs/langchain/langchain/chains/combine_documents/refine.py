@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
@@ -93,7 +93,7 @@ def create_refine_documents_chain(
     validate_prompt(initial_prompt, (DOCUMENTS_KEY,))
     validate_prompt(refine_prompt, (DOCUMENTS_KEY, OUTPUT_KEY))
 
-    format_doc: Runnable = RunnableLambda(_get_and_format_doc).bind(
+    format_doc: Runnable = RunnableLambda(cast(Callable, _get_and_format_doc)).bind(
         document_prompt=document_prompt or DEFAULT_DOCUMENT_PROMPT
     )
 
@@ -116,7 +116,7 @@ def create_refine_documents_chain(
     )
 
     # Function that returns a sequence of refine_steps equal to len(docs) - 1.
-    refine_loop = RunnableLambda(_runnable_loop).bind(
+    refine_loop = RunnableLambda(cast(Callable, _runnable_loop)).bind(
         step=refine_step, step_name="refine_step_{iteration}"
     )
 
