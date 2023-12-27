@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from operator import itemgetter
+from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_core.documents import Document
@@ -32,7 +32,8 @@ from langchain.chains.combine_documents.reduce import (
 from langchain.chains.llm import LLMChain
 
 
-def _combine_metadata(docs: List[Document]) -> dict:
+def _combine_metadata(inputs: Dict[str, Any]) -> Dict[Any, str]:
+    docs = inputs[DOCUMENTS_KEY]
     combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
     for doc in docs[1:]:
         for k, v in doc.metadata.items():
@@ -41,6 +42,56 @@ def _combine_metadata(docs: List[Document]) -> dict:
             else:
                 combined_metadata[k] = str(v)
     return combined_metadata
+
+
+def format_documents(
+    documents: Sequence[Document],
+    document_prompt: BasePromptTemplate,
+    document_separator: str,
+) -> str:
+    return document_separator.join(
+        format_document(doc, document_prompt) for doc in documents
+    )
+
+
+def format_document_inputs(
+    inputs: Dict[str, Any],
+    document_prompt: BasePromptTemplate,
+    *,
+    document_separator: str = "\n\n",
+) -> Dict[str, Any]:
+    docs_val = inputs[DOCUMENTS_KEY]
+    docs = docs_val if isinstance(docs_val, list) else [docs_val]
+    inputs[DOCUMENTS_KEY] = format_documents(docs, document_prompt, document_separator)
+    return inputs
+
+
+def format_document_inputs_as_list(
+    inputs: Dict[str, Any],
+    document_prompt: BasePromptTemplate,
+) -> List[Dict[str, Any]]:
+    docs = inputs.pop(DOCUMENTS_KEY)
+    return [
+        {DOCUMENTS_KEY: format_document(doc, document_prompt), **inputs} for doc in docs
+    ]
+
+
+def _compile_document(inputs: Dict[str, Any]) -> Document:
+    doc = inputs[DOCUMENTS_KEY]
+    return Document(page_content=inputs["page_content"], metadata=doc.metadata)
+
+
+def _dict_to_document(inputs: Dict[str, Any]) -> Document:
+    return Document(page_content=inputs["page_content"], metadata=inputs["metadata"])
+
+
+def _docs_len(
+    docs: Sequence[Document],
+    token_len_func: Callable,
+    document_prompt: BasePromptTemplate,
+    document_separator: str,
+) -> int:
+    return token_len_func(format_documents(docs, document_prompt, document_separator))
 
 
 def create_map_documents_chain(
@@ -99,34 +150,23 @@ def create_map_documents_chain(
     _validate_prompt(prompt, (DOCUMENTS_KEY,))
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
 
-    def _format_document(inputs: dict) -> str:
-        return format_document(inputs[DOCUMENTS_KEY], _document_prompt)
+    _format = partial(format_document_inputs, document_prompt=_document_prompt)
+    map_content_chain = _format | prompt | llm | StrOutputParser()
+    map_content_chain = map_content_chain.with_config(run_name="map_content")
 
-    map_content_chain = (
-        RunnablePassthrough.assign(**{DOCUMENTS_KEY: _format_document}).with_config(
-            run_name="format_document"
-        )
-        | prompt
-        | llm
-        | StrOutputParser()
-    ).with_config(run_name="map_content")
+    assign_page_content: Runnable = RunnablePassthrough.assign(
+        page_content=map_content_chain
+    )
+    assign_page_content = assign_page_content.with_config(
+        run_name="assign_page_content"
+    )
+    map_doc_chain = assign_page_content | _compile_document
+    map_docs_chain = map_doc_chain.with_config(run_name="map_document").map()
 
-    map_doc_chain = (
-        RunnablePassthrough.assign(page_content=map_content_chain).with_config(
-            run_name="return_mapped_content"
-        )
-        | RunnableLambda(
-            lambda x: Document(
-                page_content=x["page_content"], metadata=x[DOCUMENTS_KEY].metadata
-            )
-        ).with_config(run_name="compile_document")
-    ).with_config(run_name="map_document")
-
-    def list_inputs(inputs: dict) -> list:
-        docs = inputs.pop(DOCUMENTS_KEY)
-        return [{DOCUMENTS_KEY: doc, **inputs} for doc in docs]
-
-    return (list_inputs | (map_doc_chain.map())).with_config(
+    _format_as_list = partial(
+        format_document_inputs_as_list, document_prompt=document_prompt
+    )
+    return (_format_as_list | map_docs_chain).with_config(
         run_name="map_documents_chain"
     )
 
@@ -138,11 +178,17 @@ def create_collapse_documents_chain(
     document_prompt: Optional[BasePromptTemplate] = None,
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
     token_max: int = 4000,
-    token_len_func: Optional[Callable[[str], int]] = None,
+    token_len_func: Optional[Callable] = None,
 ) -> Runnable[Dict[str, Any], List[Document]]:
     """Create
 
     Args:
+        llm:
+        prompt:
+        document_prompt:
+        document_separator:
+        token_max:
+        token_len_func:
 
     Returns:
         An LCEL `Runnable` chain.
@@ -150,52 +196,58 @@ def create_collapse_documents_chain(
     Example:
         .. code-block:: python
 
+
     """
     _validate_prompt(prompt, (DOCUMENTS_KEY,))
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
-    _token_len_func = token_len_func or getattr(llm, "get_num_tokens", len)
+    _token_len_func: Callable = token_len_func or getattr(llm, "get_num_tokens", len)  # type: ignore  # noqa: E501
 
-    def format_inputs(inputs: dict) -> dict:
-        inputs[DOCUMENTS_KEY] = document_separator.join(
-            format_document(doc, _document_prompt) for doc in inputs[DOCUMENTS_KEY]
-        )
-        return inputs
+    _format = partial(
+        format_document_inputs,
+        document_prompt=_document_prompt,
+        document_separator=document_separator,
+    )
 
-    reduce_content_chain = (
-        format_inputs | prompt | llm | StrOutputParser()
-    ).with_config(run_name="reduce_content")
+    reduce_content_chain = (_format | prompt | llm | StrOutputParser()).with_config(
+        run_name="reduce_content"
+    )
 
-    reduce_chain = RunnableParallel(
-        page_content=reduce_content_chain,
-        metadata=RunnableLambda(itemgetter(DOCUMENTS_KEY)) | _combine_metadata,
-    ).with_config(run_name="reduce_document") | RunnableLambda(
-        lambda x: Document(page_content=x["page_content"], metadata=x["metadata"])
-    ).with_config(run_name="compile_document")
-
-    def _get_num_tokens(docs: Sequence[Document]) -> int:
-        formatted = document_separator.join(
-            format_document(doc, _document_prompt) for doc in docs
-        )
-        return _token_len_func(formatted)  # type: ignore
+    reduce_chain = (
+        RunnableParallel(
+            page_content=reduce_content_chain,
+            metadata=_combine_metadata,
+        ).with_config(run_name="reduce_document")
+        | _dict_to_document
+    )
 
     def partition_docs(inputs: dict) -> List[dict]:
         docs = inputs.pop(DOCUMENTS_KEY)
-        partitions = split_list_of_docs(docs, _get_num_tokens, token_max)  # type: ignore  # noqa: E501
+        partitions = split_list_of_docs(
+            docs,
+            _docs_len,
+            token_max,
+            token_len_func=_token_len_func,
+            document_prompt=_document_prompt,
+            document_separator=document_separator,
+        )
         return [{DOCUMENTS_KEY: docs, **inputs} for docs in partitions]
 
     def collapse(inputs: dict) -> Union[List[Document], Runnable]:
         docs = inputs[DOCUMENTS_KEY]
-        if _get_num_tokens(docs) > token_max:
+        curr_len = _docs_len(
+            docs, _token_len_func, _document_prompt, document_separator
+        )
+        if curr_len > token_max:
             return (
                 RunnableParallel(
-                    **{DOCUMENTS_KEY: partition_docs | reduce_chain.map()}
-                ).with_config(run_name="return_documents")
+                    context=partition_docs | reduce_chain.map()
+                ).with_config(run_name="assign_reduced_documents")
                 | collapse
             )
         else:
             return docs
 
-    return RunnableLambda(collapse).with_config(run_name="collapse_documents_chain")
+    return RunnableLambda(collapse).with_config(run_name="collapse_documents_chain")  # type: ignore  # noqa: E501
 
 
 def create_map_reduce_documents_chain(
@@ -207,8 +259,12 @@ def create_map_reduce_documents_chain(
     """Create
 
     Args:
+        map_documents_chain:
+        reduce_documents_chain:
+        collapse_documents_chain:
 
     Returns:
+        An LCEL `Runnable` chain.
 
     Example:
         .. code-block:: python
@@ -245,23 +301,20 @@ def create_map_reduce_documents_chain(
                 collapse_documents_chain=collapse_documents_chain
             )
     """  # noqa: E501
+    assign_mapped_docs: Runnable = RunnablePassthrough.assign(
+        context=map_documents_chain
+    )
+    assign_mapped_docs = assign_mapped_docs.with_config(run_name="assign_mapped_docs")
     if not collapse_documents_chain:
-        return (
-            RunnablePassthrough.assign(
-                **{DOCUMENTS_KEY: map_documents_chain}
-            ).with_config(run_name="return_mapped_docs")
-            | reduce_documents_chain
-        )
+        return assign_mapped_docs | reduce_documents_chain
     else:
-        return (
-            RunnablePassthrough.assign(
-                **{DOCUMENTS_KEY: map_documents_chain}
-            ).with_config(run_name="return_mapped_docs")
-            | RunnablePassthrough.assign(
-                **{DOCUMENTS_KEY: collapse_documents_chain}
-            ).with_config(run_name="return_collapsed_docs")
-            | reduce_documents_chain
+        assign_collapsed_docs: Runnable = RunnablePassthrough.assign(
+            context=collapse_documents_chain
         )
+        assign_collapsed_docs = assign_collapsed_docs.with_config(
+            run_name="assign_collapsed_docs"
+        )
+        return assign_mapped_docs | assign_collapsed_docs | reduce_documents_chain
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
