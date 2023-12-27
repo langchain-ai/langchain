@@ -11,6 +11,7 @@ def test_api_key_is_secret_string() -> None:
     llm = Banana(banana_api_key="secret-api-key")
     assert isinstance(llm.banana_api_key, SecretStr)
 
+
 def test_api_key_masked_when_passed_from_env(
     monkeypatch: MonkeyPatch, capsys: CaptureFixture
 ) -> None:
@@ -22,6 +23,7 @@ def test_api_key_masked_when_passed_from_env(
 
     assert captured.out == "**********"
 
+
 def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
@@ -31,6 +33,7 @@ def test_api_key_masked_when_passed_via_constructor(
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
+
 
 def test_uses_actual_secret_value_from_secretstr() -> None:
     """Test that actual secret is retrieved using `.get_secret_value()`."""
