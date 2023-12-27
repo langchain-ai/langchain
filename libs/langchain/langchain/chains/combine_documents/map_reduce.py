@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from operator import itemgetter
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_core.documents import Document
@@ -24,8 +25,22 @@ from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
     _validate_prompt,
 )
-from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
+from langchain.chains.combine_documents.reduce import (
+    ReduceDocumentsChain,
+    split_list_of_docs,
+)
 from langchain.chains.llm import LLMChain
+
+
+def _combine_metadata(docs: List[Document]) -> dict:
+    combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
+    for doc in docs[1:]:
+        for k, v in doc.metadata.items():
+            if k in combined_metadata:
+                combined_metadata[k] += f", {v}"
+            else:
+                combined_metadata[k] = str(v)
+    return combined_metadata
 
 
 def create_map_documents_chain(
@@ -124,7 +139,7 @@ def create_collapse_documents_chain(
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
     token_max: int = 4000,
     token_len_func: Optional[Callable[[str], int]] = None,
-) -> Runnable:
+) -> Runnable[Dict[str, Any], List[Document]]:
     """Create
 
     Args:
@@ -140,28 +155,22 @@ def create_collapse_documents_chain(
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
     _token_len_func = token_len_func or getattr(llm, "get_num_tokens", len)
 
-    def _format_inputs(inputs: dict) -> dict:
-        docs = inputs[DOCUMENTS_KEY]
+    def format_inputs(inputs: dict) -> dict:
         inputs[DOCUMENTS_KEY] = document_separator.join(
-            format_document(doc, _document_prompt) for doc in docs
+            format_document(doc, _document_prompt) for doc in inputs[DOCUMENTS_KEY]
         )
-        return {k: v for k, v in inputs.items() if k in prompt.input_variables}
+        return inputs
 
-    def _format_metadata(inputs: dict) -> dict:
-        docs = inputs[DOCUMENTS_KEY]
-        combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
-        for doc in docs[1:]:
-            for k, v in doc.metadata.items():
-                if k in combined_metadata:
-                    combined_metadata[k] += f", {v}"
-                else:
-                    combined_metadata[k] = str(v)
-        return combined_metadata
+    reduce_content_chain = (
+        format_inputs | prompt | llm | StrOutputParser()
+    ).with_config(run_name="reduce_content")
 
     reduce_chain = RunnableParallel(
-        page_content=_format_inputs | prompt | llm | StrOutputParser(),
-        metadata=_format_metadata,
-    ) | (lambda x: Document(page_content=x["page_content"], metadata=x["metadata"]))
+        page_content=reduce_content_chain,
+        metadata=RunnableLambda(itemgetter(DOCUMENTS_KEY)) | _combine_metadata,
+    ).with_config(run_name="reduce_document") | RunnableLambda(
+        lambda x: Document(page_content=x["page_content"], metadata=x["metadata"])
+    ).with_config(run_name="compile_document")
 
     def _get_num_tokens(docs: Sequence[Document]) -> int:
         formatted = document_separator.join(
@@ -169,48 +178,32 @@ def create_collapse_documents_chain(
         )
         return _token_len_func(formatted)  # type: ignore
 
-    def _partition_docs(inputs: dict) -> List[dict]:
+    def partition_docs(inputs: dict) -> List[dict]:
         docs = inputs.pop(DOCUMENTS_KEY)
-        partitions = []
-        curr: List[Document] = []
-        curr_len = 0
-        for doc in docs:
-            # Add empty doc so document separator is included in formatted string.
-            doc_len = _get_num_tokens([Document(page_content=""), doc])
-            if doc_len > token_max:
-                raise ValueError
-            elif curr_len + doc_len > token_max:
-                partitions.append(curr)
-                curr = []
-                curr_len = 0
-            else:
-                curr.append(doc)
-                curr_len += doc_len
-        if curr:
-            partitions.append(curr)
+        partitions = split_list_of_docs(docs, _get_num_tokens, token_max)  # type: ignore  # noqa: E501
         return [{DOCUMENTS_KEY: docs, **inputs} for docs in partitions]
 
     def collapse(inputs: dict) -> Union[List[Document], Runnable]:
         docs = inputs[DOCUMENTS_KEY]
-        while _get_num_tokens(docs) > token_max:
+        if _get_num_tokens(docs) > token_max:
             return (
                 RunnableParallel(
-                    **{DOCUMENTS_KEY: _partition_docs | reduce_chain.map()}
-                )
+                    **{DOCUMENTS_KEY: partition_docs | reduce_chain.map()}
+                ).with_config(run_name="return_documents")
                 | collapse
             )
         else:
             return docs
 
-    return RunnableLambda(collapse)
+    return RunnableLambda(collapse).with_config(run_name="collapse_documents_chain")
 
 
 def create_map_reduce_documents_chain(
     map_documents_chain: Runnable[Dict[str, Any], List[Document]],
-    reduce_documents_chain: Runnable[Dict[str, Any], str],
+    reduce_documents_chain: Runnable[Dict[str, Any], Any],
     *,
     collapse_documents_chain: Optional[Runnable[Dict[str, Any], List[Document]]] = None,
-) -> Runnable:
+) -> Runnable[Dict[str, Any], Any]:
     """Create
 
     Args:
