@@ -1,12 +1,12 @@
 """Chain that combines documents by stuffing into context."""
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.runnables import Runnable, RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnableLambda
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
@@ -14,6 +14,7 @@ from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_SEPARATOR,
     DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
+    format_document_inputs,
     validate_prompt,
 )
 from langchain.chains.llm import LLMChain
@@ -78,20 +79,16 @@ def create_stuff_documents_chain(
     """  # noqa: E501
 
     validate_prompt(prompt, (DOCUMENTS_KEY,))
-    _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _output_parser = output_parser or StrOutputParser()
 
-    def format_docs(inputs: dict) -> str:
-        return document_separator.join(
-            format_document(doc, _document_prompt) for doc in inputs[DOCUMENTS_KEY]
-        )
-
     return (
-        RunnablePassthrough.assign(context=format_docs).with_name("format_inputs")
-        | prompt
-        | llm
-        | _output_parser
-    ).with_name("stuff_documents_chain")
+        RunnableLambda(cast(Callable, format_document_inputs))
+        .bind(
+            document_prompt=document_prompt or DEFAULT_DOCUMENT_PROMPT,
+            document_separator=document_separator,
+        )
+        .pipe(prompt, llm, _output_parser, name="stuff_documents_chain")
+    )
 
 
 class StuffDocumentsChain(BaseCombineDocumentsChain):
