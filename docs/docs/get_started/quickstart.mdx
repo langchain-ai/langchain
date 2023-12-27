@@ -148,7 +148,7 @@ chain.invoke({"input": "What is LangSmith"})
 
 ### Diving Deeper
 
-We've now successfully set up a basic LLM chain. We only touched on the basics of prompts, models, and output parsers - for a deeper dive into everything mentioned here, see [this section of documenation](/docs/modules/model_io).
+We've now successfully set up a basic LLM chain. We only touched on the basics of prompts, models, and output parsers - for a deeper dive into everything mentioned here, see [this section of documentation](/docs/modules/model_io).
 
 ## Tracing with LangSmith
 
@@ -217,7 +217,7 @@ vector = DocArrayInMemorySearch.from_documents(documents, embeddings)
 ```
 
 Now that we have this data indexed in a vectorstore, we will create a retrieval chain.
-This chain will take an incoming question, look up relevant documents, then pass those documents along with the orginal question into an LLM and ask it to answer the original question.
+This chain will take an incoming question, look up relevant documents, then pass those documents along with the original question into an LLM and ask it to answer the original question.
 
 First, let's set up the chain that takes a question and the retrieved documents and generates an answer.
 
@@ -260,7 +260,7 @@ This answer should be much more accurate!
 
 ### Diving Deeper
 
-We've now successfully set up a basic retrieval chain. We only touched on the basics of retrieval - for a deeper dive into everything mentioned here, see [this section of documenation](/docs/modules/data_connection).
+We've now successfully set up a basic retrieval chain. We only touched on the basics of retrieval - for a deeper dive into everything mentioned here, see [this section of documentation](/docs/modules/data_connection).
 
 ## Conversation Retrieval Chain
 
@@ -299,7 +299,7 @@ retrieval_chain.invoke({
     "input": "Tell me how"
 })
 ```
-You shoul see that this returns documents about testing in LangSmith. This is because the LLM generated a new query, combining the chat history with the follow up question.
+You should see that this returns documents about testing in LangSmith. This is because the LLM generated a new query, combining the chat history with the follow up question.
 
 Now that we have this new retriever, we can create a new chain to continue the conversation with these retrieved documents in mind.
 
@@ -404,7 +404,7 @@ agent_executor.invoke({
 
 ### Diving Deeper
 
-We've now successfully set up a basic agent. We only touched on the basics of agents - for a deeper dive into everything mentioned here, see [this section of documenation](/docs/modules/agents).
+We've now successfully set up a basic agent. We only touched on the basics of agents - for a deeper dive into everything mentioned here, see [this section of documentation](/docs/modules/agents).
 
 
 ## Serving with LangServe
