@@ -220,9 +220,11 @@ class Runnable(Generic[Input, Output], ABC):
     name: Optional[str] = None
     """The name of the runnable. Used for debugging and tracing."""
 
-    def get_name(self, suffix: Optional[str] = None) -> str:
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
         """Get the name of the runnable."""
-        name = self.name or self.__class__.__name__
+        name = name or self.name or self.__class__.__name__
         if suffix:
             if name[0].isupper():
                 return name + suffix.title()
@@ -1701,7 +1703,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.name
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         # invoke all steps in sequence
@@ -1735,7 +1737,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.name
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         # invoke all steps in sequence
@@ -1792,7 +1794,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             cm.on_chain_start(
                 dumpd(self),
                 input,
-                name=config.get("run_name") or self.name,
+                name=config.get("run_name") or self.get_name(),
             )
             for cm, input, config in zip(callback_managers, inputs, configs)
         ]
@@ -1916,7 +1918,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 cm.on_chain_start(
                     dumpd(self),
                     input,
-                    name=config.get("run_name") or self.name,
+                    name=config.get("run_name") or self.get_name(),
                 )
                 for cm, input, config in zip(callback_managers, inputs, configs)
             )
@@ -2151,6 +2153,11 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     class Config:
         arbitrary_types_allowed = True
 
+    def get_name(self, suffix: Optional[str] = None) -> str:
+        print("get_name", self.steps)
+        name = self.name or f"RunnableParallel<{','.join(self.steps.keys())}>"
+        return super().get_name(suffix, name=name)
+
     @property
     def InputType(self) -> Any:
         for step in self.steps.values():
@@ -2246,7 +2253,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         # gather results from all steps
@@ -2286,7 +2293,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         # gather results from all steps
@@ -3205,6 +3212,10 @@ class RunnableEach(RunnableEachBase[Input, Output]):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
+
+    def get_name(self, suffix: Optional[str] = None) -> str:
+        name = self.name or f"RunnableEach<{self.bound.get_name()}>"
+        return super().get_name(suffix, name=name)
 
     def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
         return RunnableEach(bound=self.bound.bind(**kwargs))
