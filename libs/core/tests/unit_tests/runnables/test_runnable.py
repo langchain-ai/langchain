@@ -2054,6 +2054,7 @@ async def test_prompt_with_llm(
                     "metadata": {},
                     "name": "ChatPromptTemplate",
                     "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output": [],
                     "streamed_output_str": [],
                     "tags": ["seq:step:1"],
                     "type": "prompt",
@@ -2087,6 +2088,7 @@ async def test_prompt_with_llm(
                     "metadata": {},
                     "name": "FakeListLLM",
                     "start_time": "2023-01-01T00:00:00.000",
+                    "streamed_output": [],
                     "streamed_output_str": [],
                     "tags": ["seq:step:2"],
                     "type": "llm",
@@ -2764,6 +2766,59 @@ def test_map_stream() -> None:
         {"question": "What is your name?"}
     )
 
+    chain_pick_one = chain | RunnablePassthrough.pick("llm")
+
+    assert chain_pick_one.output_schema.schema() == {
+        "title": "RunnableSequenceOutput",
+        "type": "string",
+    }
+
+    stream = chain_pick_one.stream({"question": "What is your name?"})
+
+    final_value = None
+    streamed_chunks = []
+    for chunk in stream:
+        streamed_chunks.append(chunk)
+        if final_value is None:
+            final_value = chunk
+        else:
+            final_value += chunk
+
+    assert streamed_chunks[0] == "i"
+    assert len(streamed_chunks) == len(llm_res)
+
+    chain_pick_two = (
+        chain
+        | RunnablePassthrough.assign(hello=RunnablePassthrough.pick("llm") | llm)
+        | RunnablePassthrough.pick(["llm", "hello"])
+    )
+
+    assert chain_pick_two.output_schema.schema() == {
+        "title": "RunnableSequenceOutput",
+        "type": "object",
+        "properties": {
+            "hello": {"title": "Hello", "type": "string"},
+            "llm": {"title": "Llm", "type": "string"},
+        },
+    }
+
+    stream = chain_pick_two.stream({"question": "What is your name?"})
+
+    final_value = None
+    streamed_chunks = []
+    for chunk in stream:
+        streamed_chunks.append(chunk)
+        if final_value is None:
+            final_value = chunk
+        else:
+            final_value += chunk
+
+    assert streamed_chunks[0] in [
+        {"llm": "i"},
+        {"chat": AIMessageChunk(content="i")},
+    ]
+    assert len(streamed_chunks) == len(llm_res) + len(chat_res)
+
 
 def test_map_stream_iterator_input() -> None:
     prompt = (
@@ -3081,10 +3136,10 @@ def test_deep_stream_assign() -> None:
         "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign.output_schema.schema() == {
-        "title": "RunnableAssignOutput",
+        "title": "RunnableSequenceOutput",
         "type": "object",
         "properties": {
-            "str": {"title": "Str"},
+            "str": {"title": "Str", "type": "string"},
             "hello": {"title": "Hello", "type": "string"},
         },
     }
@@ -3131,7 +3186,7 @@ def test_deep_stream_assign() -> None:
         "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
-        "title": "RunnableAssignOutput",
+        "title": "RunnableSequenceOutput",
         "type": "object",
         "properties": {
             "str": {"title": "Str"},
@@ -3205,10 +3260,10 @@ async def test_deep_astream_assign() -> None:
         "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign.output_schema.schema() == {
-        "title": "RunnableAssignOutput",
+        "title": "RunnableSequenceOutput",
         "type": "object",
         "properties": {
-            "str": {"title": "Str"},
+            "str": {"title": "Str", "type": "string"},
             "hello": {"title": "Hello", "type": "string"},
         },
     }
@@ -3255,7 +3310,7 @@ async def test_deep_astream_assign() -> None:
         "properties": {"question": {"title": "Question", "type": "string"}},
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
-        "title": "RunnableAssignOutput",
+        "title": "RunnableSequenceOutput",
         "type": "object",
         "properties": {
             "str": {"title": "Str"},

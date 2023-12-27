@@ -202,6 +202,21 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         """
         return RunnableAssign(RunnableParallel(kwargs))
 
+    @classmethod
+    def pick(
+        cls,
+        keys: Union[str, List[str]],
+    ) -> "RunnablePick":
+        """Pick keys from the Dict input.
+
+        Args:
+            keys: A string or list of strings representing the keys to pick.
+
+        Returns:
+            A runnable that picks keys from the Dict input.
+        """
+        return RunnablePick(keys)
+
     def invoke(
         self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Other:
@@ -522,6 +537,127 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         yield await first_map_chunk_task
         async for chunk in map_output:
             yield chunk
+
+    async def atransform(
+        self,
+        input: AsyncIterator[Dict[str, Any]],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        async for chunk in self._atransform_stream_with_config(
+            input, self._atransform, config, **kwargs
+        ):
+            yield chunk
+
+    def stream(
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Iterator[Dict[str, Any]]:
+        return self.transform(iter([input]), config, **kwargs)
+
+    async def astream(
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        async def input_aiter() -> AsyncIterator[Dict[str, Any]]:
+            yield input
+
+        async for chunk in self.atransform(input_aiter(), config, **kwargs):
+            yield chunk
+
+
+class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
+    """
+    A runnable that picks keys from Dict[str, Any] inputs.
+    """
+
+    keys: Union[str, List[str]]
+
+    def __init__(self, keys: Union[str, List[str]], **kwargs: Any) -> None:
+        super().__init__(keys=keys, **kwargs)
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
+
+    def _pick(self, input: Dict[str, Any]) -> Any:
+        assert isinstance(
+            input, dict
+        ), "The input to RunnablePassthrough.assign() must be a dict."
+
+        if isinstance(self.keys, str):
+            return input.get(self.keys)
+        else:
+            picked = {k: input.get(k) for k in self.keys if k in input}
+            if picked:
+                return AddableDict(picked)
+            else:
+                return None
+
+    def _invoke(
+        self,
+        input: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        return self._pick(input)
+
+    def invoke(
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        return self._call_with_config(self._invoke, input, config, **kwargs)
+
+    async def _ainvoke(
+        self,
+        input: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        return self._pick(input)
+
+    async def ainvoke(
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
+
+    def _transform(
+        self,
+        input: Iterator[Dict[str, Any]],
+    ) -> Iterator[Dict[str, Any]]:
+        for chunk in input:
+            picked = self._pick(chunk)
+            if picked is not None:
+                yield picked
+
+    def transform(
+        self,
+        input: Iterator[Dict[str, Any]],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any | None,
+    ) -> Iterator[Dict[str, Any]]:
+        yield from self._transform_stream_with_config(
+            input, self._transform, config, **kwargs
+        )
+
+    async def _atransform(
+        self,
+        input: AsyncIterator[Dict[str, Any]],
+    ) -> AsyncIterator[Dict[str, Any]]:
+        async for chunk in input:
+            picked = self._pick(chunk)
+            if picked is not None:
+                yield picked
 
     async def atransform(
         self,
