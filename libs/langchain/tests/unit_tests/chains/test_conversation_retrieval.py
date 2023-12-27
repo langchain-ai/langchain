@@ -2,9 +2,9 @@
 from langchain_core.documents import Document
 from langchain_core.prompts.prompt import PromptTemplate
 
+from langchain.chains import create_history_aware_retriever
 from langchain.chains.conversational_retrieval.base import (
     ConversationalRetrievalChain,
-    create_history_aware_retriever,
 )
 from langchain.llms.fake import FakeListLLM
 from langchain.memory.buffer import ConversationBufferMemory

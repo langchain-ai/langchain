@@ -4,14 +4,13 @@ from __future__ import annotations
 import inspect
 import warnings
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.retrievers import BaseRetriever, RetrieverOutputLike
-from langchain_core.runnables import Runnable, RunnablePassthrough
+from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
@@ -301,63 +300,3 @@ class VectorDBQA(BaseRetrievalQA):
     def _chain_type(self) -> str:
         """Return the chain type."""
         return "vector_db_qa"
-
-
-def create_retrieval_chain(
-    retriever: Union[BaseRetriever, RetrieverOutputLike],
-    combine_docs_chain: Runnable[Dict[str, Any], str],
-) -> Runnable:
-    """Create retrieval chain that retrieves documents and then passes them on.
-
-    Args:
-        retriever: Retriever-like object that returns list of documents. Should
-            either be a subclass of BaseRetriever or a Runnable that returns
-            a list of documents. If a subclass of BaseRetriever, then it
-            is expected that an `input` key be passed in - this is what
-            is will be used to pass into the retriever. If this is NOT a
-            subclass of BaseRetriever, then all the inputs will be passed
-            into this runnable, meaning that runnable should take a dictionary
-            as input.
-        combine_docs_chain: Runnable that takes inputs and produces a string output.
-            The inputs to this will be any original inputs to this chain, a new
-            context key with the retrieved documents, and chat_history (if not present
-            in the inputs) with a value of `[]` (to easily enable conversational
-            retrieval.
-
-    Returns:
-        An LCEL Runnable. The Runnable return is a dictionary containing at the very
-        least a `context` and `answer` key.
-
-    Example:
-        .. code-block:: python
-
-            # pip install -U langchain langchain-community
-
-            from langchain_community.chat_models import ChatOpenAI
-            from langchain.chains.combine_documents import create_stuff_documents_chain
-            from langchain.chains import create_retrieval_chain
-            from langchain import hub
-
-            retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
-            llm = ChatOpenAI()
-            retriever = ...
-            combine_docs_chain = create_stuff_documents_chain(llm, retrieval_qa_chat_prompt)
-            retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
-
-            chain.invoke({"input": "..."})
-
-    """
-    if isinstance(retriever, BaseRetriever):
-        retrieval_docs = (lambda x: x["input"]) | retriever
-    else:
-        retrieval_docs = retriever
-
-    retrieval_chain = (
-        RunnablePassthrough.assign(
-            context=retrieval_docs.with_config(run_name="retrieve_documents"),
-            chat_history=lambda x: x.get("chat_history", []),
-        )
-        | RunnablePassthrough.assign(answer=combine_docs_chain)
-    ).with_config(run_name="retrieval_chain")
-
-    return retrieval_chain
