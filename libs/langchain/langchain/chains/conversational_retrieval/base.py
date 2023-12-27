@@ -468,7 +468,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         )
 
 
-def create_chat_history_retriever(
+def create_history_aware_retriever(
     llm: LanguageModelLike,
     retriever: RetrieverLike,
     prompt: BasePromptTemplate,
