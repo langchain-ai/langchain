@@ -6,6 +6,7 @@ from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_community.llms.bananadev import Banana
 
+
 def test_api_key_is_secret_string() -> None:
     llm = Banana(banana_api_key="secret-api-key")
     assert isinstance(llm.banana_api_key, SecretStr)
