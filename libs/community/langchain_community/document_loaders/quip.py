@@ -112,7 +112,8 @@ class QuipLoader(BaseLoader):
                 folder = self.quip_client.get_folder(folder_id)
             else:
                 logging.warning(
-                    f"depth {depth}, skipped over folder {folder_id} due to unknown error {e}"
+                    f"depth {depth}, skipped over folder {folder_id} due to "
+                    f"unknown error {e}"
                 )
                 return
         except Exception as e:
@@ -208,7 +209,9 @@ class QuipLoader(BaseLoader):
 
             if keep_html_format:
                 return Document(
-                    page_content=thread["html"] + text,
+                    page_content=QuipLoader.remove_unexpected_character(
+                        thread["html"] + text
+                    ),
                     metadata=metadata,
                 )
 
@@ -225,10 +228,15 @@ class QuipLoader(BaseLoader):
             )
 
             return Document(
-                page_content=thread_text + text,
+                page_content=QuipLoader.remove_unexpected_character(thread_text + text),
                 metadata=metadata,
             )
         return None
+
+    @staticmethod
+    def remove_unexpected_character(text: str):
+        # In quip, for an empty string
+        return text.replace("\u200b", "")
 
     def handle_rate_limit(self, e):
         if self.retry_rate_limit and e.code == 503 and "Over Rate Limit" in str(e):
