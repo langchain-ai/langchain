@@ -441,6 +441,8 @@ from langchain.chat_models import ChatOpenAI
 from langchain import hub
 from langchain.agents import create_openai_functions_agent
 from langchain.agents import AgentExecutor
+from langchain.pydantic_v1 import BaseModel, Field
+from langchain_core.messages import BaseMessage
 from langserve import add_routes
 
 # 1. Load Retriever
@@ -448,6 +450,7 @@ loader = WebBaseLoader("https://docs.smith.langchain.com/overview")
 docs = loader.load()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
+embeddings = OpenAIEmbeddings()
 vector = DocArrayInMemorySearch.from_documents(documents, embeddings)
 retriever = vector.as_retriever()
 
@@ -475,10 +478,25 @@ app = FastAPI(
   description="A simple API server using LangChain's Runnable interfaces",
 )
 
-# 3. Adding chain route
+# 5. Adding chain route
+
+# We need to add these input/output schemas because the current AgentExecutor
+# is lacking in schemas.
+
+class Input(BaseModel):
+    input: str
+    chat_history: List[BaseMessage] = Field(
+        ...,
+        extra={"widget": {"type": "chat", "input": "location"}},
+    )
+
+
+class Output(BaseModel):
+    output: str
+
 add_routes(
     app,
-    category_chain,
+    agent_executor.with_types(input_type=Input, output_type=Output),
     path="/agent",
 )
 
@@ -497,7 +515,7 @@ we should see our chain being served at localhost:8000.
 ### Playground
 
 Every LangServe service comes with a simple built-in UI for configuring and invoking the application with streaming output and visibility into intermediate steps.
-Head to http://localhost:8000/category_chain/playground/ to try it out!
+Head to http://localhost:8000/agent/playground/ to try it out!
 
 ### Client
 
@@ -507,9 +525,8 @@ Using this, we can interact with the served chain as if it were running client-s
 ```python
 from langserve import RemoteRunnable
 
-remote_chain = RemoteRunnable("http://localhost:8000/category_chain/")
-remote_chain.invoke({"text": "colors"})
-# >> ['red', 'blue', 'green', 'yellow', 'orange']
+remote_chain = RemoteRunnable("http://localhost:8000/agent/")
+remote_chain.invoke({"input": "what is langsmith?"})
 ```
 
 To learn more about the many other features of LangServe [head here](/docs/langserve).
@@ -518,10 +535,12 @@ To learn more about the many other features of LangServe [head here](/docs/langs
 
 We've touched on how to build an application with LangChain, how to trace it with LangSmith, and how to serve it with LangServe.
 There are a lot more features in all three of these than we can cover here.
-To continue on your journey:
+To continue on your journey, we recommend you read the following (in order):
 
-- Read up on [LangChain Expression Language (LCEL)](/docs/expression_language) to learn how to chain these components together
-- [Dive deeper](/docs/modules/model_io) into LLMs, prompts, and output parsers and learn the other [key components](/docs/modules)
+- All of these features are backed by [LangChain Expression Language (LCEL)](/docs/expression_language) - a way to chain these components together. Check out that documentation to better understand how to create custom chains.
+- [Model IO](/docs/modules/model_io) covers more details of prompts, LLMs, and output parsers.
+- [Retrieval](/docs/modules/data_connection) covers more details of everything related to retrieval
+- [Agents](/docs/modules/agents) covers details of everything related to agents
 - Explore common [end-to-end use cases](/docs/use_cases/qa_structured/sql) and [template applications](/docs/templates)
 - [Read up on LangSmith](/docs/langsmith/), the platform for debugging, testing, monitoring and more
 - Learn more about serving your applications with [LangServe](/docs/langserve)
