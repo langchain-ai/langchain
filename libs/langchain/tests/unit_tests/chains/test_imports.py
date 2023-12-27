@@ -56,7 +56,7 @@ EXPECTED_ALL = [
     "generate_example",
     "load_chain",
     "create_sql_query_chain",
-    "create_chat_history_retriever",
+    "create_history_aware_retriever",
     "create_retrieval_chain",
 ]
 
