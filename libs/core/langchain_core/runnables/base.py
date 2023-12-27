@@ -410,7 +410,7 @@ class Runnable(Generic[Input, Output], ABC):
         """Compose this runnable with another object to create a RunnableSequence."""
         return RunnableSequence(coerce_to_runnable(other), self)
 
-    def pick(self, keys: Union[str, List[str]]) -> Runnable[Any, Any]:
+    def pick(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
         """Pick keys from the dict output of this runnable.
         Returns a new runnable."""
         from langchain_core.runnables.passthrough import RunnablePick
@@ -427,7 +427,7 @@ class Runnable(Generic[Input, Output], ABC):
                 Union[Runnable[Dict[str, Any], Any], Callable[[Dict[str, Any]], Any]],
             ],
         ],
-    ) -> Runnable[Any, Any]:
+    ) -> RunnableSerializable[Any, Any]:
         """Assigns new fields to the dict output of this runnable.
         Returns a new runnable."""
         from langchain_core.runnables.passthrough import RunnableAssign
