@@ -234,11 +234,12 @@ class ChatTongyi(BaseChatModel):
 
     result_format: str = Field(default="message")
     """Return result format"""
+    
     class Config:
         """Configuration for this pydantic object."""
 
         allow_population_by_field_name = True
-        
+
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
