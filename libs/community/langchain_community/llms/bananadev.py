@@ -1,9 +1,9 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -38,7 +38,7 @@ class Banana(LLM):
     """Holds any model parameters valid for `create` call not
     explicitly specified."""
 
-    banana_api_key: Optional[str] = None
+    banana_api_key: Optional[SecretStr] = None
 
     class Config:
         """Configuration for this pydantic config."""
@@ -103,7 +103,7 @@ class Banana(LLM):
             )
         params = self.model_kwargs or {}
         params = {**params, **kwargs}
-        api_key = self.banana_api_key
+        api_key = cast(SecretStr, self.banana_api_key)
         model_key = self.model_key
         model_url_slug = self.model_url_slug
         model_inputs = {
@@ -113,7 +113,7 @@ class Banana(LLM):
         }
         model = Client(
             # Found in main dashboard
-            api_key=api_key,
+            api_key=api_key.get_secret_value(),
             # Both found in model details page
             model_key=model_key,
             url=f"https://{model_url_slug}.run.banana.dev",
