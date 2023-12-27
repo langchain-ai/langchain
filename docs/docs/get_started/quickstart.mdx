@@ -11,6 +11,13 @@ In this quickstart we'll show you how to:
 That's a fair amount to cover! Let's dive in.
 
 ## Setup
+
+### Jupyter Notebook
+
+This guide (and most of the other guides in the documentation) use [Jupyter notebooks](https://jupyter.org/) and assume the reader is as well. Jupyter notebooks are perfect for learning how to work with LLM systems because often times things can go wrong (unexpected output, API down, etc) and going through guides in an interactive environment is a great way to better understand them.
+
+You do not NEED to go through the guide in a Jupyter Notebook, but it is recommended. See [here](https://jupyter.org/install) for instructions on how to install.
+
 ### Installation
 
 To install LangChain run:
@@ -225,6 +232,14 @@ First, let's set up the chain that takes a question and the retrieved documents 
 
 ```python
 from langchain.chains.combine_documents import create_stuff_documents_chain
+
+prompt = ChatPromptTemplate.from_template("""Answer the following question based only on the provided context:
+
+<context>
+{context}
+</context>
+
+Question: {input}""")
 
 document_chain = create_stuff_documents_chain(llm, prompt)
 ```
