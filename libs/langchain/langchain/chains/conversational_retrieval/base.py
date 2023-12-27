@@ -469,7 +469,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         )
 
 
-def create_chat_retriever_chain(
+def create_chat_history_retriever(
     llm: LanguageModelLike,
     retriever: RetrieverLike,
     prompt: BasePromptTemplate,
@@ -497,7 +497,7 @@ def create_chat_retriever_chain(
             # pip install -U langchain langchain-community
 
             from langchain_community.chat_models import ChatOpenAI
-            from langchain.chains import create_chat_retriever_chain
+            from langchain.chains import create_chat_history_retriever
             from langchain import hub
 
             rephrase_prompt = hub.pull("langchain-ai/chat-langchain-rephrase")
@@ -517,9 +517,12 @@ def create_chat_retriever_chain(
         )
     retrieve_documents = RunnableBranch(
         (
-            lambda x: len(x.get("chat_history", [])) == 0,
+            # Both empty string and empty list evaluate to False
+            lambda x: x.get("chat_history", False),
+            # If no chat history, then we just pass input to retriever
             (lambda x: x["input"]) | retriever,
         ),
+        # If chat history, then we pass inputs to LLM chain, then to retriever
         prompt | llm | StrOutputParser() | retriever,
     ).with_config(run_name="chat_retriever_chain")
     return retrieve_documents

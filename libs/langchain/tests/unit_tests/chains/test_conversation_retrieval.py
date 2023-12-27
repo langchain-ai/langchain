@@ -4,7 +4,7 @@ from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain.chains.conversational_retrieval.base import (
     ConversationalRetrievalChain,
-    create_chat_retriever_chain,
+    create_chat_history_retriever,
 )
 from langchain.llms.fake import FakeListLLM
 from langchain.memory.buffer import ConversationBufferMemory
@@ -109,7 +109,7 @@ def test_create() -> None:
     llm = FakeListLLM(responses=[answer])
     retriever = FakeParrotRetriever()
     question_gen_prompt = PromptTemplate.from_template("hi! {input} {chat_history}")
-    chain = create_chat_retriever_chain(llm, retriever, question_gen_prompt)
+    chain = create_chat_history_retriever(llm, retriever, question_gen_prompt)
     expected_output = [Document(page_content="What is the answer?")]
     output = chain.invoke({"input": "What is the answer?", "chat_history": []})
     assert output == expected_output

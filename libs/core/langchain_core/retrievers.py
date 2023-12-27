@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd
-from langchain_core.runnables import RunnableConfig, RunnableSerializable, Runnable
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -22,6 +22,7 @@ RetrieverInput = str
 RetrieverOutput = List[Document]
 RetrieverLike = Runnable[RetrieverInput, RetrieverOutput]
 RetrieverOutputLike = Runnable[Any, RetrieverOutput]
+
 
 class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     """Abstract base class for a Document retrieval system.

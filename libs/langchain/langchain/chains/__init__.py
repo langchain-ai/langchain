@@ -30,7 +30,7 @@ from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.conversational_retrieval.base import (
     ChatVectorDBChain,
     ConversationalRetrievalChain,
-    create_chat_retriever_chain,
+    create_chat_history_retriever,
 )
 from langchain.chains.example_generator import generate_example
 from langchain.chains.flare.base import FlareChain
@@ -138,6 +138,6 @@ __all__ = [
     "generate_example",
     "load_chain",
     "create_sql_query_chain",
-    "create_chat_retriever_chain",
+    "create_chat_history_retriever",
     "create_retrieval_chain",
 ]
