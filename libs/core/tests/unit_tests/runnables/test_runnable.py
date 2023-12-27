@@ -200,11 +200,11 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     typed_lambda = RunnableLambda(typed_lambda_impl)  # str -> int
 
     assert typed_lambda.input_schema.schema() == {
-        "title": "RunnableLambdaInput",
+        "title": "typed_lambda_impl_input",
         "type": "string",
     }
     assert typed_lambda.output_schema.schema() == {
-        "title": "RunnableLambdaOutput",
+        "title": "typed_lambda_impl_output",
         "type": "integer",
     }
 
@@ -214,11 +214,11 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     typed_async_lambda: Runnable = RunnableLambda(typed_async_lambda_impl)  # str -> int
 
     assert typed_async_lambda.input_schema.schema() == {
-        "title": "RunnableLambdaInput",
+        "title": "typed_async_lambda_impl_input",
         "type": "string",
     }
     assert typed_async_lambda.output_schema.schema() == {
-        "title": "RunnableLambdaOutput",
+        "title": "typed_async_lambda_impl_output",
         "type": "integer",
     }
 
@@ -571,7 +571,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "properties": {"name": {"title": "Name", "type": "string"}},
     }
     assert seq_w_map.output_schema.schema() == {
-        "title": "RunnableMapOutput",
+        "title": "RunnableParallelOutput",
         "type": "object",
         "properties": {
             "original": {"title": "Original", "type": "string"},
@@ -615,7 +615,7 @@ def test_passthrough_assign_schema() -> None:
     # expected dict input_schema
     assert invalid_seq_w_assign.input_schema.schema() == {
         "properties": {"question": {"title": "Question"}},
-        "title": "RunnableMapInput",
+        "title": "RunnableParallelInput",
         "type": "object",
     }
 
@@ -645,7 +645,7 @@ def test_lambda_schemas() -> None:
         return input["variable_name"]
 
     assert RunnableLambda(get_value).input_schema.schema() == {
-        "title": "RunnableLambdaInput",
+        "title": "get_value_input",
         "type": "object",
         "properties": {"variable_name": {"title": "Variable Name"}},
     }
@@ -654,7 +654,7 @@ def test_lambda_schemas() -> None:
         return (input["variable_name"], input.get("another"))
 
     assert RunnableLambda(aget_value).input_schema.schema() == {
-        "title": "RunnableLambdaInput",
+        "title": "aget_value_input",
         "type": "object",
         "properties": {
             "another": {"title": "Another"},
@@ -670,7 +670,7 @@ def test_lambda_schemas() -> None:
         }
 
     assert RunnableLambda(aget_values).input_schema.schema() == {
-        "title": "RunnableLambdaInput",
+        "title": "aget_values_input",
         "type": "object",
         "properties": {
             "variable_name": {"title": "Variable Name"},
@@ -697,7 +697,7 @@ def test_lambda_schemas() -> None:
     assert (
         RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
         == {
-            "title": "RunnableLambdaInput",
+            "title": "aget_values_typed_input",
             "$ref": "#/definitions/InputType",
             "definitions": {
                 "InputType": {
@@ -717,7 +717,7 @@ def test_lambda_schemas() -> None:
     )
 
     assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
-        "title": "RunnableLambdaOutput",
+        "title": "aget_values_typed_output",
         "$ref": "#/definitions/OutputType",
         "definitions": {
             "OutputType": {
@@ -760,7 +760,11 @@ def test_schema_complex_seq() -> None:
 
     model = FakeListChatModel(responses=[""])
 
-    chain1 = prompt1 | model | StrOutputParser()
+    chain1: Runnable = RunnableSequence(
+        prompt1, model, StrOutputParser(), name="city_chain"
+    )
+
+    assert chain1.name == "city_chain"
 
     chain2: Runnable = (
         {"city": chain1, "language": itemgetter("language")}
@@ -770,7 +774,7 @@ def test_schema_complex_seq() -> None:
     )
 
     assert chain2.input_schema.schema() == {
-        "title": "RunnableMapInput",
+        "title": "RunnableParallelInput",
         "type": "object",
         "properties": {
             "person": {"title": "Person", "type": "string"},
@@ -784,7 +788,7 @@ def test_schema_complex_seq() -> None:
     }
 
     assert chain2.with_types(input_type=str).input_schema.schema() == {
-        "title": "RunnableBindingInput",
+        "title": "RunnableSequenceInput",
         "type": "string",
     }
 
