@@ -1,10 +1,11 @@
 """Base interface for chains combining documents."""
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 from langchain_core.documents import Document
-from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.runnables.config import RunnableConfig
 
@@ -15,21 +16,60 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
-DEFAULT_DOCUMENT_SEPARATOR = "\n\n"
+""" --- Constants --- """
 DOCUMENTS_KEY = "context"
-DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template("{page_content}")
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
+""" --- Defaults --- """
+DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template("{page_content}")
+DEFAULT_DOCUMENT_SEPARATOR = "\n\n"
 
-def _validate_prompt(
-    prompt: BasePromptTemplate, expected_inputs: Sequence[str]
-) -> None:
+
+""" --- Utilities (private) --- """
+
+
+def validate_prompt(prompt: BasePromptTemplate, expected_inputs: Sequence[str]) -> None:
     missing_keys = set(expected_inputs).difference(prompt.input_variables)
     if missing_keys:
         raise ValueError(
             f"Prompt must accept {expected_inputs} as an input variables. Received "
             f"prompt with input variables: {prompt.input_variables}"
         )
+
+
+def format_documents(
+    documents: Sequence[Document],
+    document_prompt: BasePromptTemplate,
+    document_separator: str,
+) -> str:
+    return document_separator.join(
+        format_document(doc, document_prompt) for doc in documents
+    )
+
+
+def format_document_inputs(
+    inputs: Dict[str, Any],
+    document_prompt: BasePromptTemplate,
+    *,
+    document_separator: str = "\n\n",
+) -> Dict[str, Any]:
+    docs_val = inputs[DOCUMENTS_KEY]
+    docs = docs_val if isinstance(docs_val, list) else [docs_val]
+    inputs[DOCUMENTS_KEY] = format_documents(docs, document_prompt, document_separator)
+    return inputs
+
+
+def format_document_inputs_as_list(
+    inputs: Dict[str, Any],
+    document_prompt: BasePromptTemplate,
+) -> List[Dict[str, Any]]:
+    docs = inputs.pop(DOCUMENTS_KEY)
+    return [
+        {DOCUMENTS_KEY: format_document(doc, document_prompt), **inputs} for doc in docs
+    ]
+
+
+""" --- Legacy Chain --- """
 
 
 class BaseCombineDocumentsChain(Chain, ABC):

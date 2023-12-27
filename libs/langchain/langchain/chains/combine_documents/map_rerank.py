@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from functools import partial
 from typing import (
     Any,
     Dict,
@@ -11,7 +12,6 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TypedDict,
     Union,
     cast,
 )
@@ -20,7 +20,7 @@ from langchain_core.documents import Document
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
-from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import (
     BaseModel,
     Extra,
@@ -33,48 +33,23 @@ from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
+    DEFAULT_DOCUMENT_PROMPT,
     DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
-    _validate_prompt,
+    format_document_inputs_as_list,
+    validate_prompt,
 )
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.regex import RegexParser
-
-
-def _default_regex(text: str) -> dict:
-    regex = r"(?:Answer:\s)?(.*?)\s*Score:\s(.*)"
-    match = re.search(regex, text, re.IGNORECASE + re.DOTALL)
-    if match is None:
-        raise OutputParserException(
-            ValueError(
-                f"Model output did not match expected regex. Expected {regex}, "
-                f"received: {text}."
-            )
-        )
-    else:
-        return {"answer": match.group(1), "score": match.group(2)}
-
-
-class _ScoredAnswer(TypedDict):
-    score: Union[str, int, float]
-    answer: str
-
-
-class _MapRerankOutput(BaseModel):
-    top_answer: str = Field(..., description="The highest-scored answer.")
-    all_answers: List[_ScoredAnswer] = Field(
-        ...,
-        description="All answers and scores, in the same order as the input documents.",
-    )
 
 
 def create_map_rerank_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,
     *,
-    output_parser: Optional[BaseOutputParser[_ScoredAnswer]] = None,
+    output_parser: Optional[BaseOutputParser[Dict[str, Any]]] = None,
     document_prompt: Optional[BasePromptTemplate] = None,
-) -> Runnable[Dict[str, Any], Dict[str, Any]]:
+) -> Runnable[Dict[str, Any], _MapRerankOutput]:
     """Create a chain that writes candidates answers for each doc and selects the best one.
 
         Args:
@@ -146,36 +121,56 @@ def create_map_rerank_documents_chain(
                 #   'top_answer': 'Jamal loves green but not as much as he loves orange'
                 # }
     """  # noqa: E501
-    _validate_prompt(prompt, (DOCUMENTS_KEY,))
-    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+    validate_prompt(prompt, (DOCUMENTS_KEY,))
+    _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _output_parser = output_parser or (StrOutputParser() | _default_regex)
 
-    def format_inputs(inputs: dict) -> list:
-        docs = inputs.pop(DOCUMENTS_KEY)
-        return [
-            {DOCUMENTS_KEY: format_document(doc, _document_prompt), **inputs}
-            for doc in docs
-        ]
+    format_as_list = partial(
+        format_document_inputs_as_list, document_prompt=_document_prompt
+    )
 
-    map_chain = (
-        format_inputs
-        | (prompt | llm | _output_parser).with_config(run_name="answer_and_score").map()
-    ).with_config(run_name="answer_and_score_all")
+    answer_chain = prompt | llm | _output_parser
+    answer_chain = answer_chain.with_config(run_name="answer_and_score")
+    map_chain = (format_as_list | answer_chain.map()).with_config(
+        run_name="answer_and_score_all"
+    )
 
-    def top_answer(results: dict) -> str:
-        return max(results["all_answers"], key=lambda x: float(x["score"]))["answer"]
+    assign_all_answers: Runnable = RunnableParallel(all_answers=map_chain)
+    assign_all_answers = assign_all_answers.with_config(run_name="assign_all_answers")
+
+    assign_top_answer: Runnable = RunnablePassthrough.assign(top_answer=_top_answer)
+    assign_top_answer = assign_top_answer.with_config(run_name="assign_top_answer")
 
     return (
-        (
-            RunnableParallel(all_answers=map_chain).with_config(
-                run_name="return_answers_and_scores"
-            )
-            | RunnablePassthrough.assign(top_answer=top_answer).with_config(
-                run_name="return_top_answer"
-            )
-        )
+        (assign_all_answers | assign_top_answer)
         .with_config(run_name="map_rerank_documents_chain")
         .with_types(output_type=_MapRerankOutput)
+    )
+
+
+def _top_answer(results: Dict[str, Any]) -> str:
+    return max(results["all_answers"], key=lambda x: float(x["score"]))["answer"]
+
+
+def _default_regex(text: str) -> dict:
+    regex = r"(?:Answer:\s)?(.*?)\s*Score:\s(.*)"
+    match = re.search(regex, text, re.IGNORECASE + re.DOTALL)
+    if match is None:
+        raise OutputParserException(
+            ValueError(
+                f"Model output did not match expected regex. Expected {regex}, "
+                f"received: {text}."
+            )
+        )
+    else:
+        return {"answer": match.group(1), "score": match.group(2)}
+
+
+class _MapRerankOutput(BaseModel):
+    top_answer: str = Field(..., description="The highest-scored answer.")
+    all_answers: List[Dict[str, Any]] = Field(
+        ...,
+        description="All answers and scores, in the same order as the input documents.",
     )
 
 

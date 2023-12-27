@@ -14,7 +14,7 @@ from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_SEPARATOR,
     DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
-    _validate_prompt,
+    validate_prompt,
 )
 from langchain.chains.llm import LLMChain
 
@@ -77,7 +77,7 @@ def create_stuff_documents_chain(
             chain.invoke({"context": docs, "question": "What are everyone's favorite colors?"})
     """  # noqa: E501
 
-    _validate_prompt(prompt, (DOCUMENTS_KEY,))
+    validate_prompt(prompt, (DOCUMENTS_KEY,))
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _output_parser = output_parser or StrOutputParser()
 

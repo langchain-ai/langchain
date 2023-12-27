@@ -18,7 +18,7 @@ from langchain.chains.combine_documents.base import (
     DOCUMENTS_KEY,
     INTERMEDIATE_STEPS_KEY,
     BaseCombineDocumentsChain,
-    _validate_prompt,
+    validate_prompt,
 )
 from langchain.chains.llm import LLMChain
 
@@ -83,8 +83,8 @@ def create_refine_documents_chain(
             chain = create_refine_documents_chain(llm, initial_prompt, refine_prompt, llm,)
             # chain.invoke({"context": docs})
     """  # noqa: E501
-    _validate_prompt(initial_prompt, (DOCUMENTS_KEY,))
-    _validate_prompt(refine_prompt, (DOCUMENTS_KEY, OUTPUT_KEY))
+    validate_prompt(initial_prompt, (DOCUMENTS_KEY,))
+    validate_prompt(refine_prompt, (DOCUMENTS_KEY, OUTPUT_KEY))
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
 
     def format_doc(inputs: dict) -> dict:

@@ -2,13 +2,128 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, List, Optional, Protocol, Tuple
+from functools import partial
+from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, Tuple, Union
 
 from langchain_core.documents import Document
+from langchain_core.language_models import LanguageModelLike
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import Extra
+from langchain_core.runnables import Runnable, RunnableLambda, RunnableParallel, \
+    RunnablePassthrough
 
 from langchain.callbacks.manager import Callbacks
-from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.combine_documents.base import (
+    DEFAULT_DOCUMENT_SEPARATOR,
+    DOCUMENTS_KEY,
+    BaseCombineDocumentsChain,
+    format_document_inputs,
+    format_documents,
+    validate_prompt,
+)
+
+
+def create_collapse_documents_chain(
+    llm: LanguageModelLike,
+    prompt: BasePromptTemplate,
+    *,
+    token_max: int,
+    document_prompt: Optional[BasePromptTemplate] = None,
+    document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
+    token_len_func: Optional[Callable] = None,
+) -> Runnable[Dict[str, Any], List[Document]]:
+    """Create
+
+    Args:
+        llm:
+        prompt:
+        token_max:
+        document_prompt:
+        document_separator:
+        token_len_func:
+
+    Returns:
+        An LCEL `Runnable` chain.
+
+    Example:
+        .. code-block:: python
+
+
+    """
+    validate_prompt(prompt, (DOCUMENTS_KEY,))
+    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+    _token_len_func: Callable = token_len_func or getattr(llm, "get_num_tokens", len)  # type: ignore  # noqa: E501
+
+    _format = partial(
+        format_document_inputs,
+        document_prompt=_document_prompt,
+        document_separator=document_separator,
+    )
+
+    reduce_content_chain = (_format | prompt | llm | StrOutputParser()).with_config(
+        run_name="reduce_content"
+    )
+
+    reduce_chain = (
+        RunnableParallel(
+            page_content=reduce_content_chain,
+            metadata=_combine_metadata,
+        ).with_config(run_name="reduce_document")
+        | _dict_to_document
+    )
+
+    def partition_docs(inputs: dict) -> List[dict]:
+        docs = inputs.pop(DOCUMENTS_KEY)
+        partitions = split_list_of_docs(
+            docs,
+            _docs_len,
+            token_max,
+            token_len_func=_token_len_func,
+            document_prompt=_document_prompt,
+            document_separator=document_separator,
+        )
+        return [{DOCUMENTS_KEY: docs, **inputs} for docs in partitions]
+
+    def collapse(inputs: dict) -> Union[List[Document], Runnable]:
+        docs = inputs[DOCUMENTS_KEY]
+        curr_len = _docs_len(
+            docs, _token_len_func, _document_prompt, document_separator
+        )
+        if curr_len > token_max:
+            assign_collapsed_docs = RunnablePassthrough.assign(
+                context=partition_docs | reduce_chain.map()
+            ).with_config(run_name="assign_collapsed_docs")
+            return assign_collapsed_docs | collapse
+        else:
+            return docs
+
+    return RunnableLambda(collapse).with_config(run_name="collapse_documents_chain")  # type: ignore  # noqa: E501
+
+
+def _combine_metadata(inputs: Dict[str, Any]) -> Dict[Any, str]:
+    docs = inputs[DOCUMENTS_KEY]
+    combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
+    for doc in docs[1:]:
+        for k, v in doc.metadata.items():
+            if k in combined_metadata:
+                combined_metadata[k] += f", {v}"
+            else:
+                combined_metadata[k] = str(v)
+    return combined_metadata
+
+
+def _dict_to_document(inputs: Dict[str, Any]) -> Document:
+    return Document(page_content=inputs["page_content"], metadata=inputs["metadata"])
+
+
+def _docs_len(
+    docs: Sequence[Document],
+    token_len_func: Callable,
+    document_prompt: BasePromptTemplate,
+    document_separator: str,
+) -> int:
+    return token_len_func(format_documents(docs, document_prompt, document_separator))
 
 
 class CombineDocsProtocol(Protocol):

@@ -1,97 +1,29 @@
 """Combining documents by mapping a chain over them first, then combining results."""
-
 from __future__ import annotations
 
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
-from langchain_core.runnables import (
-    Runnable,
-    RunnableLambda,
-    RunnableParallel,
-    RunnablePassthrough,
-)
+from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
-    DEFAULT_DOCUMENT_SEPARATOR,
     DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
-    _validate_prompt,
+    format_document_inputs,
+    format_document_inputs_as_list,
+    validate_prompt,
 )
-from langchain.chains.combine_documents.reduce import (
-    ReduceDocumentsChain,
-    split_list_of_docs,
-)
+from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
 
-
-def _combine_metadata(inputs: Dict[str, Any]) -> Dict[Any, str]:
-    docs = inputs[DOCUMENTS_KEY]
-    combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
-    for doc in docs[1:]:
-        for k, v in doc.metadata.items():
-            if k in combined_metadata:
-                combined_metadata[k] += f", {v}"
-            else:
-                combined_metadata[k] = str(v)
-    return combined_metadata
-
-
-def format_documents(
-    documents: Sequence[Document],
-    document_prompt: BasePromptTemplate,
-    document_separator: str,
-) -> str:
-    return document_separator.join(
-        format_document(doc, document_prompt) for doc in documents
-    )
-
-
-def format_document_inputs(
-    inputs: Dict[str, Any],
-    document_prompt: BasePromptTemplate,
-    *,
-    document_separator: str = "\n\n",
-) -> Dict[str, Any]:
-    docs_val = inputs[DOCUMENTS_KEY]
-    docs = docs_val if isinstance(docs_val, list) else [docs_val]
-    inputs[DOCUMENTS_KEY] = format_documents(docs, document_prompt, document_separator)
-    return inputs
-
-
-def format_document_inputs_as_list(
-    inputs: Dict[str, Any],
-    document_prompt: BasePromptTemplate,
-) -> List[Dict[str, Any]]:
-    docs = inputs.pop(DOCUMENTS_KEY)
-    return [
-        {DOCUMENTS_KEY: format_document(doc, document_prompt), **inputs} for doc in docs
-    ]
-
-
-def _compile_document(inputs: Dict[str, Any]) -> Document:
-    doc = inputs[DOCUMENTS_KEY]
-    return Document(page_content=inputs["page_content"], metadata=doc.metadata)
-
-
-def _dict_to_document(inputs: Dict[str, Any]) -> Document:
-    return Document(page_content=inputs["page_content"], metadata=inputs["metadata"])
-
-
-def _docs_len(
-    docs: Sequence[Document],
-    token_len_func: Callable,
-    document_prompt: BasePromptTemplate,
-    document_separator: str,
-) -> int:
-    return token_len_func(format_documents(docs, document_prompt, document_separator))
+""" --- LCEL Runnable chains --- """
 
 
 def create_map_documents_chain(
@@ -147,7 +79,7 @@ def create_map_documents_chain(
 
             map_documents_chain.invoke({"context": docs, "question": "Who loves green?"})
     """  # noqa: E501
-    _validate_prompt(prompt, (DOCUMENTS_KEY,))
+    validate_prompt(prompt, (DOCUMENTS_KEY,))
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
 
     _format = partial(format_document_inputs, document_prompt=_document_prompt)
@@ -163,91 +95,10 @@ def create_map_documents_chain(
     map_doc_chain = assign_page_content | _compile_document
     map_docs_chain = map_doc_chain.with_config(run_name="map_document").map()
 
-    _format_as_list = partial(
+    format_as_list = partial(
         format_document_inputs_as_list, document_prompt=document_prompt
     )
-    return (_format_as_list | map_docs_chain).with_config(
-        run_name="map_documents_chain"
-    )
-
-
-def create_collapse_documents_chain(
-    llm: LanguageModelLike,
-    prompt: BasePromptTemplate,
-    *,
-    document_prompt: Optional[BasePromptTemplate] = None,
-    document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
-    token_max: int = 4000,
-    token_len_func: Optional[Callable] = None,
-) -> Runnable[Dict[str, Any], List[Document]]:
-    """Create
-
-    Args:
-        llm:
-        prompt:
-        document_prompt:
-        document_separator:
-        token_max:
-        token_len_func:
-
-    Returns:
-        An LCEL `Runnable` chain.
-
-    Example:
-        .. code-block:: python
-
-
-    """
-    _validate_prompt(prompt, (DOCUMENTS_KEY,))
-    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
-    _token_len_func: Callable = token_len_func or getattr(llm, "get_num_tokens", len)  # type: ignore  # noqa: E501
-
-    _format = partial(
-        format_document_inputs,
-        document_prompt=_document_prompt,
-        document_separator=document_separator,
-    )
-
-    reduce_content_chain = (_format | prompt | llm | StrOutputParser()).with_config(
-        run_name="reduce_content"
-    )
-
-    reduce_chain = (
-        RunnableParallel(
-            page_content=reduce_content_chain,
-            metadata=_combine_metadata,
-        ).with_config(run_name="reduce_document")
-        | _dict_to_document
-    )
-
-    def partition_docs(inputs: dict) -> List[dict]:
-        docs = inputs.pop(DOCUMENTS_KEY)
-        partitions = split_list_of_docs(
-            docs,
-            _docs_len,
-            token_max,
-            token_len_func=_token_len_func,
-            document_prompt=_document_prompt,
-            document_separator=document_separator,
-        )
-        return [{DOCUMENTS_KEY: docs, **inputs} for docs in partitions]
-
-    def collapse(inputs: dict) -> Union[List[Document], Runnable]:
-        docs = inputs[DOCUMENTS_KEY]
-        curr_len = _docs_len(
-            docs, _token_len_func, _document_prompt, document_separator
-        )
-        if curr_len > token_max:
-            return (
-                RunnableParallel(
-                    context=partition_docs | reduce_chain.map()
-                ).with_config(run_name="assign_reduced_documents")
-                | collapse
-            )
-        else:
-            return docs
-
-    return RunnableLambda(collapse).with_config(run_name="collapse_documents_chain")  # type: ignore  # noqa: E501
+    return (format_as_list | map_docs_chain).with_config(run_name="map_documents_chain")
 
 
 def create_map_reduce_documents_chain(
@@ -315,6 +166,17 @@ def create_map_reduce_documents_chain(
             run_name="assign_collapsed_docs"
         )
         return assign_mapped_docs | assign_collapsed_docs | reduce_documents_chain
+
+
+""" --- Helper methods for LCEL Runnable chains --- """
+
+
+def _compile_document(inputs: Dict[str, Any]) -> Document:
+    doc = inputs[DOCUMENTS_KEY]
+    return Document(page_content=inputs["page_content"], metadata=doc.metadata)
+
+
+""" --- Legacy Chain --- """
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
