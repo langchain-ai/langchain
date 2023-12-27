@@ -1478,10 +1478,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         Args:
             steps: The steps to include in the sequence.
         """
+        steps_flat: List[Runnable] = []
         if not steps:
             if first is not None and last is not None:
-                steps = [first] + (middle or []) + [last]
-        steps_flat = []
+                steps_flat = [first] + (middle or []) + [last]
         for step in steps:
             if isinstance(step, RunnableSequence):
                 steps_flat.extend(step.steps)
