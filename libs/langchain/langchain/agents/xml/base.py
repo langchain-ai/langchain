@@ -2,6 +2,7 @@ from typing import Any, List, Sequence, Tuple, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import AIMessagePromptTemplate, ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
@@ -105,7 +106,7 @@ class XMLAgent(BaseSingleActionAgent):
 
 
 def create_xml_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: BasePromptTemplate
 ) -> Runnable:
     """Create an agent that uses XML to format its logic.
 
@@ -156,7 +157,6 @@ def create_xml_agent(
 
     prompt = prompt.partial(
         tools=render_text_description(list(tools)),
-        tool_names=", ".join([t.name for t in tools]),
     )
     llm_with_stop = llm.bind(stop=["</tool_input>"])
 
