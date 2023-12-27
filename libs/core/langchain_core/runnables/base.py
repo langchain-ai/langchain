@@ -1471,7 +1471,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         name: Optional[str] = None,
         first: Optional[Runnable[Any, Any]] = None,
         middle: Optional[List[Runnable[Any, Any]]] = None,
-        last: Optional[Runnable[Any]] = None,
+        last: Optional[Runnable[Any, Any]] = None,
     ) -> None:
         """Create a new RunnableSequence.
 
