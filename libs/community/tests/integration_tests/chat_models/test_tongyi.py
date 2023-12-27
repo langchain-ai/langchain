@@ -23,6 +23,10 @@ def test_model() -> None:
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
+def test_model_init() -> None:
+    """Test model init with model_name"""
+    chat = ChatTongyi(model_name="qwen-plus")
+    assert chat.model_name == "qwen-plus"
 
 def test_multiple_history() -> None:
     """Tests multiple history works."""
