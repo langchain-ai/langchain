@@ -64,6 +64,7 @@ from langchain_core.runnables import (
     RunnableLambda,
     RunnableParallel,
     RunnablePassthrough,
+    RunnablePick,
     RunnableSequence,
     RunnableWithFallbacks,
     add,
@@ -2770,7 +2771,7 @@ def test_map_stream() -> None:
         {"question": "What is your name?"}
     )
 
-    chain_pick_one = chain | RunnablePassthrough.pick("llm")
+    chain_pick_one = chain.pick("llm")
 
     assert chain_pick_one.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -2791,10 +2792,8 @@ def test_map_stream() -> None:
     assert streamed_chunks[0] == "i"
     assert len(streamed_chunks) == len(llm_res)
 
-    chain_pick_two = (
-        chain
-        | RunnablePassthrough.assign(hello=RunnablePassthrough.pick("llm") | llm)
-        | RunnablePassthrough.pick(["llm", "hello"])
+    chain_pick_two = chain.assign(hello=RunnablePick("llm") | llm).pick(
+        ["llm", "hello"]
     )
 
     assert chain_pick_two.output_schema.schema() == {
@@ -3130,9 +3129,7 @@ def test_deep_stream_assign() -> None:
     assert len(chunks) == len("foo-lish")
     assert add(chunks) == {"str": "foo-lish"}
 
-    chain_with_assign = chain | RunnablePassthrough.assign(
-        hello=itemgetter("str") | llm
-    )
+    chain_with_assign = chain.assign(hello=itemgetter("str") | llm)
 
     assert chain_with_assign.input_schema.schema() == {
         "title": "PromptInput",
@@ -3179,7 +3176,7 @@ def test_deep_stream_assign() -> None:
         "hello": "foo-lish",
     }
 
-    chain_with_assign_shadow = chain | RunnablePassthrough.assign(
+    chain_with_assign_shadow = chain.assign(
         str=lambda _: "shadow",
         hello=itemgetter("str") | llm,
     )
@@ -3254,7 +3251,7 @@ async def test_deep_astream_assign() -> None:
     assert len(chunks) == len("foo-lish")
     assert add(chunks) == {"str": "foo-lish"}
 
-    chain_with_assign = chain | RunnablePassthrough.assign(
+    chain_with_assign = chain.assign(
         hello=itemgetter("str") | llm,
     )
 

@@ -202,21 +202,6 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         """
         return RunnableAssign(RunnableParallel(kwargs))
 
-    @classmethod
-    def pick(
-        cls,
-        keys: Union[str, List[str]],
-    ) -> "RunnablePick":
-        """Pick keys from the Dict input.
-
-        Args:
-            keys: A string or list of strings representing the keys to pick.
-
-        Returns:
-            A runnable that picks keys from the Dict input.
-        """
-        return RunnablePick(keys)
-
     def invoke(
         self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Other:
