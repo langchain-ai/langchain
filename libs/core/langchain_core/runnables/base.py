@@ -1465,12 +1465,22 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     last: Runnable[Any, Output]
     """The last runnable in the sequence."""
 
-    def __init__(self, *steps: RunnableLike, name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        *steps: RunnableLike,
+        name: Optional[str] = None,
+        first: Optional[Runnable[Any, Any]] = None,
+        middle: Optional[List[Runnable[Any, Any]]] = None,
+        last: Optional[Runnable[Any]] = None,
+    ) -> None:
         """Create a new RunnableSequence.
 
         Args:
             steps: The steps to include in the sequence.
         """
+        if not steps:
+            if first is not None and last is not None:
+                steps = [first] + (middle or []) + [last]
         steps_flat = []
         for step in steps:
             if isinstance(step, RunnableSequence):
@@ -1612,6 +1622,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 other.first,
                 *other.middle,
                 other.last,
+                name=self.name or other.name,
             )
         else:
             return RunnableSequence(
@@ -1619,6 +1630,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 *self.middle,
                 self.last,
                 coerce_to_runnable(other),
+                name=self.name,
             )
 
     def __ror__(
@@ -1638,6 +1650,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 self.first,
                 *self.middle,
                 self.last,
+                name=other.name or self.name,
             )
         else:
             return RunnableSequence(
@@ -1645,6 +1658,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 self.first,
                 *self.middle,
                 self.last,
+                name=self.name,
             )
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
