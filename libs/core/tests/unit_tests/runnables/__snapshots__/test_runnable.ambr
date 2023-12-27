@@ -4012,7 +4012,7 @@
     'items': dict({
       '$ref': '#/definitions/PromptTemplateOutput',
     }),
-    'title': 'RunnableEachOutput',
+    'title': 'RunnableEach<PromptTemplate>Output',
     'type': 'array',
   })
 # ---
