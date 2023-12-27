@@ -7,7 +7,7 @@ import functools
 import inspect
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -1050,7 +1050,9 @@ class _DatasetRunContainer:
                 logger.debug(f"Failed to print aggregate feedback: {repr(e)}")
         try:
             # Closing the project permits name changing and metric optimizations
-            self.client.update_project(self.project.id, end_time=datetime.utcnow())
+            self.client.update_project(
+                self.project.id, end_time=datetime.now(timezone.utc)
+            )
         except Exception as e:
             logger.debug(f"Failed to close project: {repr(e)}")
         return results
