@@ -59,18 +59,26 @@ def create_map_documents_chain(
     Example:
         .. code-block:: python
 
-        from langchain_community.chat_models import ChatOpenAI
-        from langchain_core.prompts import ChatPromptTemplate
-        from langchain.chains.combine_documents import create_map_documents_chain
+            from langchain_community.chat_models import ChatOpenAI
+            from langchain_core.documents import Document
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain.chains.combine_documents import create_map_documents_chain
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
-        extract_prompt = ChatPromptTemplate.from_template(
-            [
-                ("system", "Given a user question, extract the most relevant parts of the following context:\n\n{context}"),
-                ("human", "{question}"),
+            llm = ChatOpenAI(model="gpt-3.5-turbo")
+            extract_prompt = ChatPromptTemplate.from_template(
+                [
+                    ("system", "Given a user question, extract the most relevant parts of the following context:\n\n{context}"),
+                    ("human", "{question}"),
+                ]
+            )
+            map_documents_chain = create_map_documents_chain(llm, extract_prompt)
+
+            docs = [
+                Document(page_content="Jesse loves red but not yellow"),
+                Document(page_content = "Jamal loves green but not as much as he loves orange")
             ]
-        )
-        map_documents_chain = create_map_documents_chain(llm, extract_prompt)
+
+            map_documents_chain.invoke({"context": docs, "question": "Who loves green?"})
     """  # noqa: E501
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
 
@@ -209,37 +217,37 @@ def create_map_reduce_documents_chain(
     Example:
         .. code-block:: python
 
-        from langchain_community.chat_models import ChatOpenAI
-        from langchain_core.prompts import ChatPromptTemplate
-        from langchain.chains.combine_documents import (
-            create_collapse_documents_chain,
-            create_map_documents_chain,
-            create_map_reduce_documents_chain,
-            create_stuff_documents_chain,
-        )
+            from langchain_community.chat_models import ChatOpenAI
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain.chains.combine_documents import (
+                create_collapse_documents_chain,
+                create_map_documents_chain,
+                create_map_reduce_documents_chain,
+                create_stuff_documents_chain,
+            )
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
-        extract_prompt = ChatPromptTemplate.from_template(
-            [
-                ("system", "Given a user question, extract the most relevant parts of the following context:\n\n{context}"),
-                ("human", "{question}"),
-            ]
-        )
-        map_documents_chain = create_map_documents_chain(llm, extract_prompt)
-        collapse_documents_chain = create_collapse_documents_chain(llm, extract_prompt, token_max=4000)
+            llm = ChatOpenAI(model="gpt-3.5-turbo")
+            extract_prompt = ChatPromptTemplate.from_template(
+                [
+                    ("system", "Given a user question, extract the most relevant parts of the following context:\n\n{context}"),
+                    ("human", "{question}"),
+                ]
+            )
+            map_documents_chain = create_map_documents_chain(llm, extract_prompt)
+            collapse_documents_chain = create_collapse_documents_chain(llm, extract_prompt, token_max=4000)
 
-        answer_prompt = ChatPromptTemplate.from_template(
-            [
-                ("system", "Answer the user question using the following context:\n\n{context}"),
-                ("human", "{question}"),
-            ]
-        )
-        reduce_documents_chain = create_stuff_documents_chain(llm, answer_prompt)
-        map_reduce_documents_chain = create_map_reduce_documents_chain(
-            map_documents_chain,
-            reduce_documents_chain,
-            collapse_documents_chain=collapse_documents_chain
-        )
+            answer_prompt = ChatPromptTemplate.from_template(
+                [
+                    ("system", "Answer the user question using the following context:\n\n{context}"),
+                    ("human", "{question}"),
+                ]
+            )
+            reduce_documents_chain = create_stuff_documents_chain(llm, answer_prompt)
+            map_reduce_documents_chain = create_map_reduce_documents_chain(
+                map_documents_chain,
+                reduce_documents_chain,
+                collapse_documents_chain=collapse_documents_chain
+            )
     """  # noqa: E501
     if not collapse_documents_chain:
         return (
