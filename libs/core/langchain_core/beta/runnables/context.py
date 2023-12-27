@@ -109,8 +109,6 @@ def _config_with_context(
                 raise ValueError(
                     f"Deadlock detected between context keys {key} and {dep}"
                 )
-        if len(getters) < 1:
-            raise ValueError(f"Expected at least one getter for context key {key}")
         if len(setters) != 1:
             raise ValueError(f"Expected exactly one setter for context key {key}")
         setter_idx = setters[0][1]
@@ -119,7 +117,8 @@ def _config_with_context(
                 f"Context setter for key {key} must be defined after all getters."
             )
 
-        context_funcs[getters[0][0].id] = partial(getter, events[key], values)
+        if getters:
+            context_funcs[getters[0][0].id] = partial(getter, events[key], values)
         context_funcs[setters[0][0].id] = partial(setter, events[key], values)
 
     return patch_config(config, configurable=context_funcs)
