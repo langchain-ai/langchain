@@ -14,8 +14,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.retrievers import BaseRetriever, RetrieverLike, RetrieverOutputLike
-from langchain_core.runnables import Runnable, RunnableBranch, RunnableConfig
-from langchain_core.runnables.passthrough import RunnablePassthrough
+from langchain_core.runnables import RunnableBranch, RunnableConfig
 from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
