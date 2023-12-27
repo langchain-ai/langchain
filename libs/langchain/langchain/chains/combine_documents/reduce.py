@@ -91,6 +91,7 @@ def create_collapse_documents_chain(
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
     _token_len_func: Callable = token_len_func or getattr(llm, "get_num_tokens", len)  # type: ignore  # noqa: E501
 
+    # Runnable: Dict with many docs -> reduced string.
     _format = partial(
         format_document_inputs,
         document_prompt=_document_prompt,
@@ -99,6 +100,7 @@ def create_collapse_documents_chain(
     reduce_content_chain = _format | prompt | llm | StrOutputParser()
     reduce_content_chain = reduce_content_chain.with_name("reduce_content")
 
+    # Runnable: Dict with many docs -> single Document.
     reduce_chain = (
         RunnableParallel(
             page_content=reduce_content_chain,
@@ -120,6 +122,12 @@ def create_collapse_documents_chain(
         return [{DOCUMENTS_KEY: docs, **inputs} for docs in partitions]
 
     def collapse(inputs: dict) -> Union[List[Document], Runnable]:
+        """Recursive collapse loop.
+
+        If the cumulative token length of the documents exceeds the token_max,
+            append another partition and reduce step to the Runnable sequence. Otherwise
+            return the docs.
+        """
         docs = inputs[DOCUMENTS_KEY]
         curr_len = _docs_len(
             docs, _token_len_func, _document_prompt, document_separator

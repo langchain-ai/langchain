@@ -32,7 +32,7 @@ def create_map_documents_chain(
     *,
     document_prompt: Optional[BasePromptTemplate] = None,
 ) -> Runnable[Dict[str, Any], List[Document]]:
-    """Create a chain that updates the contents of a list of documents by passing them to a model.
+    """Create a chain that passes each Document to an LLM and creates a new list of Documents.
 
     Args:
         llm: Language model to use for mapping document contents.
@@ -84,16 +84,18 @@ def create_map_documents_chain(
     validate_prompt(prompt, (DOCUMENTS_KEY,))
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
 
+    # Runnable: Dict with single doc -> updated page content.
     _format = partial(format_document_inputs, document_prompt=_document_prompt)
     map_content_chain = _format | prompt | llm | StrOutputParser()
     map_content_chain = map_content_chain.with_name("map_content")
 
-    assign_page_content: Runnable = RunnablePassthrough.assign(
+    # Runnable: Dict with single doc -> updated doc.
+    assign_page_content = RunnablePassthrough.assign(
         page_content=map_content_chain
-    )
-    assign_page_content = assign_page_content.with_name("assign_page_content")
+    ).with_name("assign_page_content")
     map_doc_chain = (assign_page_content | _compile_document).with_name("map_document")
 
+    # Runnable: Dict with many docs -> updated docs.
     format_as_list = partial(
         format_document_inputs_as_list, document_prompt=document_prompt
     )

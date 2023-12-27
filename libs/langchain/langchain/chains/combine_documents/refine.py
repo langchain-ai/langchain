@@ -93,36 +93,37 @@ def create_refine_documents_chain(
     validate_prompt(refine_prompt, (DOCUMENTS_KEY, OUTPUT_KEY))
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
 
+    # Runnable: Dict with many docs -> answer string based on first doc
     format_doc = partial(_get_and_format_doc, document_prompt=_document_prompt)
     initial_chain = format_doc | initial_prompt | llm | StrOutputParser()
     initial_chain = initial_chain.with_name("initial_chain")
 
+    # Runnable: Dict with many docs, current answer, intermediate_steps
+    # -> updated answer based on next doc
     refine_chain = format_doc | refine_prompt | llm | StrOutputParser()
     refine_chain = refine_chain.with_name("refine_chain")
 
-    def loop(inputs: dict) -> Runnable:
-        if len(inputs[DOCUMENTS_KEY]) < 2:
-            return RunnablePassthrough()
-        chain: Runnable = RunnablePassthrough.assign(
-            intermediate_steps=lambda x: x.get(INTERMEDIATE_STEPS_KEY, [])
-            + [x[OUTPUT_KEY]],
-            output=refine_chain,
-        ).with_name("refine_step_1")
-        for iteration in range(2, len(inputs[DOCUMENTS_KEY])):
-            chain |= RunnablePassthrough.assign(
-                intermediate_steps=lambda x: x.get(INTERMEDIATE_STEPS_KEY, [])
-                + [x[OUTPUT_KEY]],
-                output=refine_chain,
-            ).with_name(f"refine_step_{iteration}")
-        return chain
+    # Runnable: Update intermediates_steps based on last output, in parallel update
+    # output.
+    refine_step = RunnablePassthrough.assign(
+        intermediate_steps=lambda x: x.get(INTERMEDIATE_STEPS_KEY, [])
+        + [x[OUTPUT_KEY]],
+        output=refine_chain,
+    )
 
+    # Function that returns a sequence of refine_steps equal to len(docs) - 1.
+    refine_loop = partial(
+        _runnable_loop, step=refine_step, step_name="refine_step_{iteration}"
+    )
+
+    return_outputs = RunnableParallel(
+        output=itemgetter(OUTPUT_KEY),
+        intermediate_steps=itemgetter(INTERMEDIATE_STEPS_KEY),
+    ).with_name("return_outputs")
     return (
         RunnablePassthrough.assign(output=initial_chain).with_name("assign_initial")
-        | loop
-        | RunnableParallel(
-            output=itemgetter(OUTPUT_KEY),
-            intermediate_steps=itemgetter(INTERMEDIATE_STEPS_KEY),
-        ).with_name("return_outputs")
+        | refine_loop
+        | return_outputs
     ).with_name("refine_documents_chain")
 
 
@@ -134,6 +135,15 @@ def _get_and_format_doc(inputs: dict, document_prompt: BasePromptTemplate) -> di
     doc = inputs[DOCUMENTS_KEY][len(intermediate_steps) + 1]
     inputs[DOCUMENTS_KEY] = format_document(doc, document_prompt)
     return inputs
+
+
+def _runnable_loop(inputs: dict, step: Runnable, step_name: str) -> Runnable:
+    if len(inputs[DOCUMENTS_KEY]) < 2:
+        return RunnablePassthrough()
+    chain: Runnable = step.with_name(step_name.format(iteration=1))
+    for iteration in range(2, len(inputs[DOCUMENTS_KEY])):
+        chain |= step.with_name(step_name.format(iteration=iteration))
+    return chain
 
 
 """ --- Legacy Chain --- """
