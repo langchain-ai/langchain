@@ -33,16 +33,45 @@ def create_map_documents_chain(
     *,
     document_prompt: Optional[BasePromptTemplate] = None,
 ) -> Runnable[Dict[str, Any], List[Document]]:
-    """Create
+    """Create a chain that updates the contents of a list of documents by passing them to a model.
 
     Args:
+        llm: Language model to use for mapping document contents.
+        prompt: Prompt to use for mapping document contents. Must accept "context" as
+            one of the input variables. Each document will be passed in as "context".
+        document_prompt: Prompt used for formatting each document into a string. Input
+            variables can be "page_content" or any metadata keys that are in all
+            documents. "page_content" will automatically retrieve the
+            `Document.page_content`, and all other inputs variables will be
+            automatically retrieved from the `Document.metadata` dictionary. Default to
+            a prompt that only contains `Document.page_content`.
 
     Returns:
         An LCEL `Runnable` chain.
 
+        Expects a dictionary as input. Input must contain "context" key with a list of
+        Documents.
+
+        Returns a list of Documents, with the contents of each document being the output
+        of passing the corresponding input document to the model. Document order is
+        preserved.
+
     Example:
         .. code-block:: python
-    """
+
+        from langchain_community.chat_models import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain.chains.combine_documents import create_map_documents_chain
+
+        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        extract_prompt = ChatPromptTemplate.from_template(
+            [
+                ("system", "Given a user question, extract the most relevant parts of the following context:\n\n{context}"),
+                ("human", "{question}"),
+            ]
+        )
+        map_documents_chain = create_map_documents_chain(llm, extract_prompt)
+    """  # noqa: E501
     _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
 
     def _format_document(inputs: dict) -> str:
