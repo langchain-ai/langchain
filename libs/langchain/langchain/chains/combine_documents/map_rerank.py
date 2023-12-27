@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from functools import partial
 from typing import (
     Any,
     Dict,
@@ -28,7 +27,11 @@ from langchain_core.pydantic_v1 import (
     create_model,
     root_validator,
 )
-from langchain_core.runnables import Runnable, RunnableParallel, RunnablePassthrough
+from langchain_core.runnables import (
+    Runnable,
+    RunnableLambda,
+    RunnableParallel,
+)
 from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import Callbacks
@@ -126,29 +129,22 @@ def create_map_rerank_documents_chain(
                 # }
     """  # noqa: E501
     validate_prompt(prompt, (DOCUMENTS_KEY,))
-    _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _output_parser = output_parser or (StrOutputParser() | _default_regex)
 
     # Runnable: Dict with single doc -> {"answer": ..., "score": ...}
-    answer_chain = (prompt | llm | _output_parser).with_name("answer_and_score")
+    answer_chain = prompt.pipe(llm, _output_parser, name="answer_and_score")
 
     # Runnable: Dict with many docs -> [{"answer": ..., "score": ...}, ...]
-    format_as_list = partial(
-        format_document_inputs_as_list, document_prompt=_document_prompt
+    map_chain = (
+        RunnableLambda(format_document_inputs_as_list)
+        .bind(document_prompt=document_prompt or DEFAULT_DOCUMENT_PROMPT)
+        .pipe(answer_chain.map(), name="answer_and_score_all")
     )
-    map_chain = (format_as_list | answer_chain.map()).with_name("answer_and_score_all")
-
-    # Runnable: Dict with many docs -> {"all_answers": [{"answer": ..., ...}, ...]}
-    assign_all_answers: Runnable = RunnableParallel(all_answers=map_chain)
-    assign_all_answers = assign_all_answers.with_name("assign_all_answers")
-
-    # Runnable: Dict with "all_answers" -> {"top_answer": "...", "all_answers": [...]}
-    assign_top_answer: Runnable = RunnablePassthrough.assign(top_answer=_top_answer)
-    assign_top_answer = assign_top_answer.with_name("assign_top_answer")
 
     # Runnable: Dict with many docs -> {"top_answer": "...", "all_answers": [...]}
     return (
-        (assign_all_answers | assign_top_answer)
+        RunnableParallel(all_answers=map_chain)
+        .assign(top_answer=_top_answer)
         .with_name("map_rerank_documents_chain")
         .with_types(output_type=_MapRerankOutput)
     )

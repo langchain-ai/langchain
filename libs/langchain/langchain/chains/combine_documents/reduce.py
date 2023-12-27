@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, Tuple, Union
 
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Extra
 from langchain_core.runnables import (
     Runnable,
@@ -19,6 +18,7 @@ from langchain_core.runnables import (
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
+    DEFAULT_DOCUMENT_PROMPT,
     DEFAULT_DOCUMENT_SEPARATOR,
     DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
@@ -26,6 +26,7 @@ from langchain.chains.combine_documents.base import (
     format_documents,
     validate_prompt,
 )
+from langchain.pydantic_v1 import BaseModel
 
 """ --- LCEL Runnable chains --- """
 
@@ -88,26 +89,26 @@ def create_collapse_documents_chain(
             collapse_documents_chain = create_collapse_documents_chain(llm, extract_prompt, token_max=4000)
     """  # noqa: E501
     validate_prompt(prompt, (DOCUMENTS_KEY,))
-    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+    _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _token_len_func: Callable = token_len_func or getattr(llm, "get_num_tokens", len)  # type: ignore  # noqa: E501
 
     # Runnable: Dict with many docs -> reduced string.
-    _format = partial(
-        format_document_inputs,
-        document_prompt=_document_prompt,
-        document_separator=document_separator,
+    reduce_content = (
+        RunnableLambda(
+            format_document_inputs,
+        )
+        .bind(
+            document_prompt=_document_prompt,
+            document_separator=document_separator,
+        )
+        .pipe(prompt, llm, StrOutputParser(), name="reduce_content")
     )
-    reduce_content_chain = _format | prompt | llm | StrOutputParser()
-    reduce_content_chain = reduce_content_chain.with_name("reduce_content")
 
     # Runnable: Dict with many docs -> single Document.
-    reduce_chain = (
-        RunnableParallel(
-            page_content=reduce_content_chain,
-            metadata=_combine_metadata,
-        ).with_name("reduce_document")
-        | _dict_to_document
-    )
+    reduce_docs = RunnableParallel(
+        page_content=reduce_content,
+        metadata=_combine_metadata,
+    ).pipe(_dict_to_document, name="reduce_documents")
 
     def partition_docs(inputs: dict) -> List[dict]:
         docs = inputs.pop(DOCUMENTS_KEY)
@@ -121,7 +122,11 @@ def create_collapse_documents_chain(
         )
         return [{DOCUMENTS_KEY: docs, **inputs} for docs in partitions]
 
-    def collapse(inputs: dict) -> Union[List[Document], Runnable]:
+    partition_and_reduce = RunnableLambda(partition_docs).pipe(
+        reduce_docs.map(), name="partition_and_reduce"
+    )
+
+    def collapse_loop(inputs: dict) -> Union[List[Document], Runnable]:
         """Recursive collapse loop.
 
         If the cumulative token length of the documents exceeds the token_max,
@@ -133,14 +138,17 @@ def create_collapse_documents_chain(
             docs, _token_len_func, _document_prompt, document_separator
         )
         if curr_len > token_max:
-            assign_collapsed_docs = RunnablePassthrough.assign(
-                context=partition_docs | reduce_chain.map()
-            ).with_name("assign_collapsed_docs")
-            return assign_collapsed_docs | collapse
+            return RunnablePassthrough.assign(context=partition_and_reduce).pipe(
+                collapse_loop, name="collapse_step"
+            )
         else:
             return docs
 
-    return RunnableLambda(collapse).with_name("collapse_documents_chain")  # type: ignore  # noqa: E501
+    return (
+        RunnableLambda(collapse_loop)  # type: ignore
+        .with_name("collapse_documents_chain")
+        .with_types(output_type=_CollapseOutputType)
+    )
 
 
 """ --- Helper methods for LCEL Runnable chains --- """
@@ -169,6 +177,10 @@ def _docs_len(
     document_separator: str,
 ) -> int:
     return token_len_func(format_documents(docs, document_prompt, document_separator))
+
+
+class _CollapseOutputType(BaseModel):
+    __root__: List[Document]
 
 
 """ --- Legacy Chain --- """

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from functools import partial
-from operator import itemgetter
 from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_core.documents import Document
@@ -11,8 +9,11 @@ from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.runnables import Runnable, RunnableParallel, RunnablePassthrough
-from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
+from langchain_core.runnables import (
+    Runnable,
+    RunnableLambda,
+    RunnablePassthrough,
+)
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
@@ -92,41 +93,41 @@ def create_refine_documents_chain(
     """  # noqa: E501
     validate_prompt(initial_prompt, (DOCUMENTS_KEY,))
     validate_prompt(refine_prompt, (DOCUMENTS_KEY, OUTPUT_KEY))
-    _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
+
+    format_doc: Runnable = RunnableLambda(_get_and_format_doc).bind(
+        document_prompt=document_prompt or DEFAULT_DOCUMENT_PROMPT
+    )
 
     # Runnable: Dict with many docs -> answer string based on first doc
-    format_doc = partial(_get_and_format_doc, document_prompt=_document_prompt)
-    initial_chain = format_doc | initial_prompt | llm | StrOutputParser()
-    initial_chain = initial_chain.with_name("initial_chain")
+    initial_response = format_doc.pipe(
+        initial_prompt, llm, StrOutputParser(), name="initial_response"
+    )
 
     # Runnable: Dict with many docs, current answer, intermediate_steps
     # -> updated answer based on next doc
-    refine_chain = format_doc | refine_prompt | llm | StrOutputParser()
-    refine_chain = refine_chain.with_name("refine_chain")
+    refine_response = format_doc.pipe(
+        refine_prompt, llm, StrOutputParser(), name="refine_response"
+    )
 
     # Runnable: Update intermediates_steps based on last output, in parallel update
     # output.
     refine_step = RunnablePassthrough.assign(
-        intermediate_steps=lambda x: x.get(INTERMEDIATE_STEPS_KEY, [])
-        + [x[OUTPUT_KEY]],
-        output=refine_chain,
+        intermediate_steps=_update_intermediate_steps,
+        output=refine_response,
     )
 
     # Function that returns a sequence of refine_steps equal to len(docs) - 1.
-    refine_loop = partial(
-        _runnable_loop, step=refine_step, step_name="refine_step_{iteration}"
-    )
-
-    assign_initial = RunnablePassthrough.assign(output=initial_chain).with_name(
-        "assign_initial"
-    )
-    pick_outputs = RunnablePick([OUTPUT_KEY, INTERMEDIATE_STEPS_KEY]).with_name(
-        "pick_outputs"
+    refine_loop = RunnableLambda(_runnable_loop).bind(
+        step=refine_step, step_name="refine_step_{iteration}"
     )
 
     # Runnable: Dict with many docs -> {"answer": "...", "intermediate_steps": [...]}
-    refine_documents_chain = assign_initial | refine_loop | pick_outputs
-    return refine_documents_chain.with_name("refine_documents_chain")
+    return (
+        RunnablePassthrough.assign(output=initial_response)
+        .pipe(refine_loop)
+        .pick([OUTPUT_KEY, INTERMEDIATE_STEPS_KEY])
+        .with_name("refine_documents_chain")
+    )
 
 
 """ --- Helpers for LCEL Runnable chain --- """
@@ -146,6 +147,10 @@ def _runnable_loop(inputs: dict, step: Runnable, step_name: str) -> Runnable:
     for iteration in range(2, len(inputs[DOCUMENTS_KEY])):
         chain |= step.with_name(step_name.format(iteration=iteration))
     return chain
+
+
+def _update_intermediate_steps(inputs: dict) -> list:
+    return inputs.get(INTERMEDIATE_STEPS_KEY, []) + [inputs[OUTPUT_KEY]]
 
 
 """ --- Legacy Chain --- """

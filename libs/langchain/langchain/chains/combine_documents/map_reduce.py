@@ -1,23 +1,22 @@
 """Combining documents by mapping a chain over them first, then combining results."""
 from __future__ import annotations
 
-from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
-from langchain_core.runnables import Runnable, RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
+    DEFAULT_DOCUMENT_PROMPT,
     DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
     format_document_inputs,
-    format_document_inputs_as_list,
     validate_prompt,
 )
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
@@ -82,24 +81,26 @@ def create_map_documents_chain(
             map_documents_chain.invoke({"context": docs, "question": "Who loves green?"})
     """  # noqa: E501
     validate_prompt(prompt, (DOCUMENTS_KEY,))
-    _document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
 
     # Runnable: Dict with single doc -> updated page content.
-    _format = partial(format_document_inputs, document_prompt=_document_prompt)
-    map_content_chain = _format | prompt | llm | StrOutputParser()
-    map_content_chain = map_content_chain.with_name("map_content")
+    map_content = (
+        RunnableLambda(format_document_inputs)
+        .bind(document_prompt=document_prompt or DEFAULT_DOCUMENT_PROMPT)
+        .pipe(prompt, llm, StrOutputParser(), name="map_content")
+    )
 
     # Runnable: Dict with single doc -> updated doc.
-    assign_page_content = RunnablePassthrough.assign(
-        page_content=map_content_chain
-    ).with_name("assign_page_content")
-    map_doc_chain = (assign_page_content | _compile_document).with_name("map_document")
+    map_doc = (
+        RunnablePassthrough.assign(page_content=map_content)
+        .with_name("assign_page_content")
+        .pipe(_compile_document, name="map_document")
+    )
+
+    # Runnable: Dict with many docs -> many dicts each with one doc.
+    format_as_list = RunnableLambda(_format_input_as_list)
 
     # Runnable: Dict with many docs -> updated docs.
-    format_as_list = partial(
-        format_document_inputs_as_list, document_prompt=document_prompt
-    )
-    return (format_as_list | (map_doc_chain.map())).with_name("map_documents_chain")
+    return format_as_list.pipe(map_doc.map(), name="map_documents_chain")
 
 
 def create_map_reduce_documents_chain(
@@ -122,7 +123,7 @@ def create_map_reduce_documents_chain(
             token limit. Should accept dictionary as input and is expected to read the
             list of Documents from the "context" key. If None, collapse step will not
             be included in final chain. Else will be run after the map_documents_chain
-            and before the reduec_documents_chain.
+            and before the reduce_documents_chain.
 
     Returns:
         An LCEL `Runnable` chain.
@@ -167,18 +168,15 @@ def create_map_reduce_documents_chain(
                 collapse_documents_chain=collapse_documents_chain
             )
     """  # noqa: E501
-    assign_mapped_docs: Runnable = RunnablePassthrough.assign(
-        context=map_documents_chain
-    )
-    assign_mapped_docs = assign_mapped_docs.with_name("assign_mapped_docs")
+    assign_mapped_docs = RunnablePassthrough.assign(context=map_documents_chain)
     if not collapse_documents_chain:
-        return assign_mapped_docs | reduce_documents_chain
-    else:
-        assign_collapsed_docs: Runnable = RunnablePassthrough.assign(
-            context=collapse_documents_chain
+        return assign_mapped_docs.pipe(
+            reduce_documents_chain, name="map_reduce_documents_chain"
         )
-        assign_collapsed_docs = assign_collapsed_docs.with_name("assign_collapsed_docs")
-        return assign_mapped_docs | assign_collapsed_docs | reduce_documents_chain
+    else:
+        return assign_mapped_docs.assign(context=collapse_documents_chain).pipe(
+            reduce_documents_chain, name="map_reduce_documents_chain"
+        )
 
 
 """ --- Helper methods for LCEL Runnable chains --- """
@@ -187,6 +185,11 @@ def create_map_reduce_documents_chain(
 def _compile_document(inputs: Dict[str, Any]) -> Document:
     doc = inputs[DOCUMENTS_KEY]
     return Document(page_content=inputs["page_content"], metadata=doc.metadata)
+
+
+def _format_input_as_list(inputs: Dict[str, Any]) -> List[dict]:
+    docs = inputs.pop(DOCUMENTS_KEY)
+    return [{DOCUMENTS_KEY: doc, **inputs} for doc in docs]
 
 
 """ --- Legacy Chain --- """
