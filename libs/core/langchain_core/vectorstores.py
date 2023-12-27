@@ -168,6 +168,12 @@ class VectorStore(ABC):
     ) -> List[Document]:
         """Return docs most similar to query."""
 
+    @abstractmethod
+    def similarity_search_with_override(
+        self, query: str, search_override: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to query."""
+
     @staticmethod
     def _euclidean_relevance_score_fn(distance: float) -> float:
         """Return a similarity score on a scale [0, 1]."""
@@ -609,7 +615,66 @@ class VectorStore(ABC):
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
         return VectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
+    def as_retriever_with_override(self, search_override:str, **kwargs: Any) -> VectorStoreRetriever:
+        """Return VectorStoreRetriever initialized from this VectorStore.
 
+        Args:
+            search_type (Optional[str]): Defines the type of search that
+                the Retriever should perform.
+                Can be "similarity" (default), "mmr", or
+                "similarity_score_threshold".
+            search_override (Optional[str]): Enables the retriever to specify a
+                search string that will be used instead of the query when
+                retrieving search contents from the vector store.
+            search_kwargs (Optional[Dict]): Keyword arguments to pass to the
+                search function. Can include things like:
+                    k: Amount of documents to return (Default: 4)
+                    score_threshold: Minimum relevance threshold
+                        for similarity_score_threshold
+                    fetch_k: Amount of documents to pass to MMR algorithm (Default: 20)
+                    lambda_mult: Diversity of results returned by MMR;
+                        1 for minimum diversity and 0 for maximum. (Default: 0.5)
+                    filter: Filter by document metadata
+
+        Returns:
+            VectorStoreRetriever: Retriever class for VectorStore.
+
+        Examples:
+
+        .. code-block:: python
+
+            # Retrieve more documents with higher diversity
+            # Useful if your dataset has many similar documents
+            docsearch.as_retriever(
+                search_type="mmr",
+                search_kwargs={'k': 6, 'lambda_mult': 0.25}
+            )
+
+            # Fetch more documents for the MMR algorithm to consider
+            # But only return the top 5
+            docsearch.as_retriever(
+                search_type="mmr",
+                search_kwargs={'k': 5, 'fetch_k': 50}
+            )
+
+            # Only retrieve documents that have a relevance score
+            # Above a certain threshold
+            docsearch.as_retriever(
+                search_type="similarity_score_threshold",
+                search_kwargs={'score_threshold': 0.8}
+            )
+
+            # Only get the single most similar document from the dataset
+            docsearch.as_retriever(search_kwargs={'k': 1})
+
+            # Use a filter to only retrieve documents from a specific paper
+            docsearch.as_retriever(
+                search_kwargs={'filter': {'paper_title':'GPT-4 Technical Report'}}
+            )
+        """
+        tags = kwargs.pop("tags", None) or []
+        tags.extend(self._get_retriever_tags())
+        return VectorStoreRetriever(vectorstore=self, search_override=search_override, **kwargs, tags=tags)
 
 class VectorStoreRetriever(BaseRetriever):
     """Base Retriever class for VectorStore."""
@@ -624,7 +689,9 @@ class VectorStoreRetriever(BaseRetriever):
         "similarity",
         "similarity_score_threshold",
         "mmr",
+        "similarity_with_override"
     )
+    search_override: str = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -665,6 +732,8 @@ class VectorStoreRetriever(BaseRetriever):
             docs = self.vectorstore.max_marginal_relevance_search(
                 query, **self.search_kwargs
             )
+        elif self.search_type == "similarity_with_override":
+            docs = self.vectorstore.similarity_search_with_override(query, self.search_override, **self.search_kwargs)
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs

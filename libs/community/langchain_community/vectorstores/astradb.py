@@ -128,20 +128,20 @@ class AstraDB(VectorStore):
             return {f"metadata.{mdk}": mdv for mdk, mdv in filter_dict.items()}
 
     def __init__(
-        self,
-        *,
-        embedding: Embeddings,
-        collection_name: str,
-        token: Optional[str] = None,
-        api_endpoint: Optional[str] = None,
-        astra_db_client: Optional[Any] = None,  # 'astrapy.db.AstraDB' if passed
-        namespace: Optional[str] = None,
-        metric: Optional[str] = None,
-        batch_size: Optional[int] = None,
-        bulk_insert_batch_concurrency: Optional[int] = None,
-        bulk_insert_overwrite_concurrency: Optional[int] = None,
-        bulk_delete_concurrency: Optional[int] = None,
-        pre_delete_collection: bool = False,
+            self,
+            *,
+            embedding: Embeddings,
+            collection_name: str,
+            token: Optional[str] = None,
+            api_endpoint: Optional[str] = None,
+            astra_db_client: Optional[Any] = None,  # 'astrapy.db.AstraDB' if passed
+            namespace: Optional[str] = None,
+            metric: Optional[str] = None,
+            batch_size: Optional[int] = None,
+            bulk_insert_batch_concurrency: Optional[int] = None,
+            bulk_insert_overwrite_concurrency: Optional[int] = None,
+            bulk_delete_concurrency: Optional[int] = None,
+            pre_delete_collection: bool = False,
     ) -> None:
         """
         Create an AstraDB vector store object. See class docstring for help.
@@ -175,14 +175,14 @@ class AstraDB(VectorStore):
         # Concurrency settings
         self.batch_size: int = batch_size or DEFAULT_BATCH_SIZE
         self.bulk_insert_batch_concurrency: int = (
-            bulk_insert_batch_concurrency or DEFAULT_BULK_INSERT_BATCH_CONCURRENCY
+                bulk_insert_batch_concurrency or DEFAULT_BULK_INSERT_BATCH_CONCURRENCY
         )
         self.bulk_insert_overwrite_concurrency: int = (
-            bulk_insert_overwrite_concurrency
-            or DEFAULT_BULK_INSERT_OVERWRITE_CONCURRENCY
+                bulk_insert_overwrite_concurrency
+                or DEFAULT_BULK_INSERT_OVERWRITE_CONCURRENCY
         )
         self.bulk_delete_concurrency: int = (
-            bulk_delete_concurrency or DEFAULT_BULK_DELETE_CONCURRENCY
+                bulk_delete_concurrency or DEFAULT_BULK_DELETE_CONCURRENCY
         )
         # "vector-related" settings
         self._embedding_dimension: Optional[int] = None
@@ -273,10 +273,10 @@ class AstraDB(VectorStore):
         ) == 1
 
     def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        concurrency: Optional[int] = None,
-        **kwargs: Any,
+            self,
+            ids: Optional[List[str]] = None,
+            concurrency: Optional[int] = None,
+            **kwargs: Any,
     ) -> Optional[bool]:
         """Delete by vector ids.
 
@@ -321,15 +321,15 @@ class AstraDB(VectorStore):
         return None
 
     def add_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
-        *,
-        batch_size: Optional[int] = None,
-        batch_concurrency: Optional[int] = None,
-        overwrite_concurrency: Optional[int] = None,
-        **kwargs: Any,
+            self,
+            texts: Iterable[str],
+            metadatas: Optional[List[dict]] = None,
+            ids: Optional[List[str]] = None,
+            *,
+            batch_size: Optional[int] = None,
+            batch_concurrency: Optional[int] = None,
+            overwrite_concurrency: Optional[int] = None,
+            **kwargs: Any,
     ) -> List[str]:
         """Run texts through the embeddings and add them to the vectorstore.
 
@@ -412,8 +412,8 @@ class AstraDB(VectorStore):
             batch_inserted = im_result["status"]["insertedIds"]
             # estimation of the preexisting documents that failed
             missed_inserted_ids = {
-                document["_id"] for document in document_batch
-            } - set(batch_inserted)
+                                      document["_id"] for document in document_batch
+                                  } - set(batch_inserted)
             errors = im_result.get("errors", [])
             # careful for other sources of error other than "doc already exists"
             num_errors = len(errors)
@@ -440,7 +440,7 @@ class AstraDB(VectorStore):
                 return replacement_result["data"]["document"]["_id"]
 
             _u_max_workers = (
-                overwrite_concurrency or self.bulk_insert_overwrite_concurrency
+                    overwrite_concurrency or self.bulk_insert_overwrite_concurrency
             )
             with ThreadPoolExecutor(max_workers=_u_max_workers) as tpe2:
                 batch_replaced = list(
@@ -468,10 +468,10 @@ class AstraDB(VectorStore):
         return all_ids
 
     def similarity_search_with_score_id_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        filter: Optional[Dict[str, str]] = None,
+            self,
+            embedding: List[float],
+            k: int = 4,
+            filter: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Document, float, str]]:
         """Return docs most similar to embedding vector.
 
@@ -509,10 +509,10 @@ class AstraDB(VectorStore):
         ]
 
     def similarity_search_with_score_id(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[Dict[str, str]] = None,
+            self,
+            query: str,
+            k: int = 4,
+            filter: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Document, float, str]]:
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_id_by_vector(
@@ -522,10 +522,10 @@ class AstraDB(VectorStore):
         )
 
     def similarity_search_with_score_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        filter: Optional[Dict[str, str]] = None,
+            self,
+            embedding: List[float],
+            k: int = 4,
+            filter: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to embedding vector.
 
@@ -545,11 +545,11 @@ class AstraDB(VectorStore):
         ]
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[Dict[str, str]] = None,
-        **kwargs: Any,
+            self,
+            query: str,
+            k: int = 4,
+            filter: Optional[Dict[str, str]] = None,
+            **kwargs: Any,
     ) -> List[Document]:
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_by_vector(
@@ -558,12 +558,27 @@ class AstraDB(VectorStore):
             filter=filter,
         )
 
+    def similarity_search_with_override(
+            self,
+            query: str,
+            search_override: str,
+            k: int = 4,
+            filter: Optional[Dict[str, str]] = None,
+            **kwargs: Any,
+    ) -> List[Document]:
+        embedding_vector = self.embedding.embed_query(search_override)
+        return self.similarity_search_by_vector(
+            embedding_vector,
+            k,
+            filter=filter,
+        )
+
     def similarity_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        filter: Optional[Dict[str, str]] = None,
-        **kwargs: Any,
+            self,
+            embedding: List[float],
+            k: int = 4,
+            filter: Optional[Dict[str, str]] = None,
+            **kwargs: Any,
     ) -> List[Document]:
         return [
             doc
@@ -575,10 +590,10 @@ class AstraDB(VectorStore):
         ]
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[Dict[str, str]] = None,
+            self,
+            query: str,
+            k: int = 4,
+            filter: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Document, float]]:
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
@@ -588,13 +603,13 @@ class AstraDB(VectorStore):
         )
 
     def max_marginal_relevance_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, str]] = None,
-        **kwargs: Any,
+            self,
+            embedding: List[float],
+            k: int = 4,
+            fetch_k: int = 20,
+            lambda_mult: float = 0.5,
+            filter: Optional[Dict[str, str]] = None,
+            **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -645,13 +660,13 @@ class AstraDB(VectorStore):
         ]
 
     def max_marginal_relevance_search(
-        self,
-        query: str,
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, str]] = None,
-        **kwargs: Any,
+            self,
+            query: str,
+            k: int = 4,
+            fetch_k: int = 20,
+            lambda_mult: float = 0.5,
+            filter: Optional[Dict[str, str]] = None,
+            **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -678,12 +693,12 @@ class AstraDB(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[ADBVST],
-        texts: List[str],
-        embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
+            cls: Type[ADBVST],
+            texts: List[str],
+            embedding: Embeddings,
+            metadatas: Optional[List[dict]] = None,
+            ids: Optional[List[str]] = None,
+            **kwargs: Any,
     ) -> ADBVST:
         """Create an Astra DB vectorstore from raw texts.
 
@@ -758,10 +773,10 @@ class AstraDB(VectorStore):
 
     @classmethod
     def from_documents(
-        cls: Type[ADBVST],
-        documents: List[Document],
-        embedding: Embeddings,
-        **kwargs: Any,
+            cls: Type[ADBVST],
+            documents: List[Document],
+            embedding: Embeddings,
+            **kwargs: Any,
     ) -> ADBVST:
         """Create an Astra DB vectorstore from a document list.
 

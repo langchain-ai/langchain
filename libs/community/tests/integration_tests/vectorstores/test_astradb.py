@@ -217,6 +217,97 @@ class TestAstraDB:
         finally:
             v_store_2.delete_collection()
 
+    def test_astradb_vectorstore_similarity_override(self) -> None:
+        """from_texts and from_documents methods."""
+        emb = SomeEmbeddings(dimension=2)
+        # from_texts
+        v_store = AstraDB.from_texts(
+            texts=["Hi", "Ho"],
+            embedding=emb,
+            collection_name="lc_test_ft",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+        )
+        try:
+            assert v_store.similarity_search_with_override("Ho", "Hi", k=1)[0].page_content == "Hi"
+        finally:
+            v_store.delete_collection()
+
+        # from_texts
+        v_store_2 = AstraDB.from_documents(
+            [
+                Document(page_content="Hee"),
+                Document(page_content="Hoi"),
+            ],
+            embedding=emb,
+            collection_name="lc_test_fd",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+        )
+        try:
+            assert v_store_2.similarity_search_with_override("Hoi", "Hee", k=1)[0].page_content == "Hee"
+        finally:
+            v_store_2.delete_collection()
+    def test_astradb_vectorstore_crud(self, store_someemb: AstraDB) -> None:
+        """Basic add/delete/update behaviour."""
+        res0 = store_someemb.similarity_search("Abc", k=2)
+        assert res0 == []
+        # write and check again
+        store_someemb.add_texts(
+            texts=["aa", "bb", "cc"],
+            metadatas=[
+                {"k": "a", "ord": 0},
+                {"k": "b", "ord": 1},
+                {"k": "c", "ord": 2},
+            ],
+            ids=["a", "b", "c"],
+        )
+        res1 = store_someemb.similarity_search("Abc", k=5)
+        assert {doc.page_content for doc in res1} == {"aa", "bb", "cc"}
+        # partial overwrite and count total entries
+        store_someemb.add_texts(
+            texts=["cc", "dd"],
+            metadatas=[
+                {"k": "c_new", "ord": 102},
+                {"k": "d_new", "ord": 103},
+            ],
+            ids=["c", "d"],
+        )
+        res2 = store_someemb.similarity_search("Abc", k=10)
+        assert len(res2) == 4
+        # pick one that was just updated and check its metadata
+        res3 = store_someemb.similarity_search_with_score_id(
+            query="cc", k=1, filter={"k": "c_new"}
+        )
+        print(str(res3))
+        doc3, score3, id3 = res3[0]
+        assert doc3.page_content == "cc"
+        assert doc3.metadata == {"k": "c_new", "ord": 102}
+        assert score3 > 0.999  # leaving some leeway for approximations...
+        assert id3 == "c"
+        # delete and count again
+        del1_res = store_someemb.delete(["b"])
+        assert del1_res is True
+        del2_res = store_someemb.delete(["a", "c", "Z!"])
+        assert del2_res is True  # a non-existing ID was supplied
+        assert len(store_someemb.similarity_search("xy", k=10)) == 1
+        # clear store
+        store_someemb.clear()
+        assert store_someemb.similarity_search("Abc", k=2) == []
+        # add_documents with "ids" arg passthrough
+        store_someemb.add_documents(
+            [
+                Document(page_content="vv", metadata={"k": "v", "ord": 204}),
+                Document(page_content="ww", metadata={"k": "w", "ord": 205}),
+            ],
+            ids=["v", "w"],
+        )
+        assert len(store_someemb.similarity_search("xy", k=10)) == 2
+        res4 = store_someemb.similarity_search("ww", k=1, filter={"k": "w"})
+        assert res4[0].metadata["ord"] == 205
+
     def test_astradb_vectorstore_crud(self, store_someemb: AstraDB) -> None:
         """Basic add/delete/update behaviour."""
         res0 = store_someemb.similarity_search("Abc", k=2)
