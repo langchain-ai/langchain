@@ -133,7 +133,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         Returns:
             List of input variable names.
         """
-        return [self.variable_name]
+        return [self.variable_name] if not self.optional else []
 
 
 MessagePromptTemplateT = TypeVar(
@@ -611,12 +611,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             elif isinstance(
                 message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
             ):
-                rel_params = {
-                    k: v
-                    for k, v in kwargs.items()
-                    if k in message_template.input_variables
-                }
-                message = message_template.format_messages(**rel_params)
+                message = message_template.format_messages(**kwargs)
                 result.extend(message)
             else:
                 raise ValueError(f"Unexpected input: {message_template}")
