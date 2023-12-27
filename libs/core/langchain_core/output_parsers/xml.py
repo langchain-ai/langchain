@@ -34,7 +34,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
     def parse(self, text: str) -> Dict[str, List[Any]]:
-        # Try to find JSON string within triple backticks
+        # Try to find XML string within triple backticks
         match = re.search(r"```(xml)?(.*)```", text, re.DOTALL)
         if match is not None:
             # If match found, use the content within the backticks
