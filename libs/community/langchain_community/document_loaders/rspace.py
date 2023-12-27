@@ -66,7 +66,7 @@ class RSpaceLoader(BaseLoader):
 
         except Exception:
             raise Exception(
-                f"Unable to initialise client - is url {self.url} or "
+                f"Unable to initialize client - is url {self.url} or "
                 f"api key  correct?"
             )
 

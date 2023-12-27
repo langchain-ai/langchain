@@ -13,7 +13,7 @@ _B64_string = """iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAABhGlDQ1BJQ0MgUHJ
 
 
 def test_chat_google_genai_stream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from Gemini."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
     for token in llm.stream("This is a test. Say 'foo'"):
@@ -21,7 +21,7 @@ def test_chat_google_genai_stream() -> None:
 
 
 async def test_chat_google_genai_astream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from Gemini."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
     async for token in llm.astream("This is a test. Say 'foo'"):
