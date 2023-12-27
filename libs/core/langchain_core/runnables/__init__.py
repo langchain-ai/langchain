@@ -31,7 +31,11 @@ from langchain_core.runnables.config import (
     patch_config,
 )
 from langchain_core.runnables.fallbacks import RunnableWithFallbacks
-from langchain_core.runnables.passthrough import RunnablePassthrough
+from langchain_core.runnables.passthrough import (
+    RunnableAssign,
+    RunnablePassthrough,
+    RunnablePick,
+)
 from langchain_core.runnables.router import RouterInput, RouterRunnable
 from langchain_core.runnables.utils import (
     AddableDict,
@@ -60,6 +64,8 @@ __all__ = [
     "RunnableMap",
     "RunnableParallel",
     "RunnablePassthrough",
+    "RunnableAssign",
+    "RunnablePick",
     "RunnableSequence",
     "RunnableWithFallbacks",
     "get_config_list",

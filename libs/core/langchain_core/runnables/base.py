@@ -220,9 +220,11 @@ class Runnable(Generic[Input, Output], ABC):
     name: Optional[str] = None
     """The name of the runnable. Used for debugging and tracing."""
 
-    def get_name(self, suffix: Optional[str] = None) -> str:
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
         """Get the name of the runnable."""
-        name = self.name or self.__class__.__name__
+        name = name or self.name or self.__class__.__name__
         if suffix:
             if name[0].isupper():
                 return name + suffix.title()
@@ -409,6 +411,38 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> RunnableSerializable[Other, Output]:
         """Compose this runnable with another object to create a RunnableSequence."""
         return RunnableSequence(coerce_to_runnable(other), self)
+
+    def pipe(
+        self,
+        *others: Union[Runnable[Any, Other], Callable[[Any], Other]],
+        name: Optional[str] = None,
+    ) -> RunnableSerializable[Input, Other]:
+        """Compose this runnable with another object to create a RunnableSequence."""
+        return RunnableSequence(self, *others, name=name)
+
+    def pick(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
+        """Pick keys from the dict output of this runnable.
+        Returns a new runnable."""
+        from langchain_core.runnables.passthrough import RunnablePick
+
+        return self | RunnablePick(keys)
+
+    def assign(
+        self,
+        **kwargs: Union[
+            Runnable[Dict[str, Any], Any],
+            Callable[[Dict[str, Any]], Any],
+            Mapping[
+                str,
+                Union[Runnable[Dict[str, Any], Any], Callable[[Dict[str, Any]], Any]],
+            ],
+        ],
+    ) -> RunnableSerializable[Any, Any]:
+        """Assigns new fields to the dict output of this runnable.
+        Returns a new runnable."""
+        from langchain_core.runnables.passthrough import RunnableAssign
+
+        return self | RunnableAssign(RunnableParallel(kwargs))
 
     """ --- Public API --- """
 
@@ -1669,7 +1703,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.name
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         # invoke all steps in sequence
@@ -1703,7 +1737,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.name
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         # invoke all steps in sequence
@@ -1760,7 +1794,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             cm.on_chain_start(
                 dumpd(self),
                 input,
-                name=config.get("run_name") or self.name,
+                name=config.get("run_name") or self.get_name(),
             )
             for cm, input, config in zip(callback_managers, inputs, configs)
         ]
@@ -1884,7 +1918,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 cm.on_chain_start(
                     dumpd(self),
                     input,
-                    name=config.get("run_name") or self.name,
+                    name=config.get("run_name") or self.get_name(),
                 )
                 for cm, input, config in zip(callback_managers, inputs, configs)
             )
@@ -2119,6 +2153,12 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     class Config:
         arbitrary_types_allowed = True
 
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
+        name = name or self.name or f"RunnableParallel<{','.join(self.steps.keys())}>"
+        return super().get_name(suffix, name=name)
+
     @property
     def InputType(self) -> Any:
         for step in self.steps.values():
@@ -2214,7 +2254,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         # gather results from all steps
@@ -2254,7 +2294,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         # gather results from all steps
@@ -3174,6 +3214,12 @@ class RunnableEach(RunnableEachBase[Input, Output]):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
+        name = name or self.name or f"RunnableEach<{self.bound.get_name()}>"
+        return super().get_name(suffix, name=name)
+
     def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
         return RunnableEach(bound=self.bound.bind(**kwargs))
 
@@ -3298,8 +3344,10 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             **other_kwargs,
         )
 
-    def get_name(self, suffix: Optional[str] = None) -> str:
-        return self.bound.get_name(suffix)
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
+        return self.bound.get_name(suffix, name=name)
 
     @property
     def InputType(self) -> Type[Input]:
