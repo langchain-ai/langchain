@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from typing import Any, Dict, Union
 
-from langchain_core.retrievers import BaseRetriever, RetrieverOutputLike
+from langchain_core.retrievers import (
+    BaseRetriever,
+    RetrieverOutput,
+)
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
 
 def create_retrieval_chain(
-    retriever: Union[BaseRetriever, RetrieverOutputLike],
+    retriever: Union[BaseRetriever, Runnable[dict, RetrieverOutput]],
     combine_docs_chain: Runnable[Dict[str, Any], str],
 ) -> Runnable:
     """Create retrieval chain that retrieves documents and then passes them on.
@@ -52,10 +55,10 @@ def create_retrieval_chain(
             chain.invoke({"input": "..."})
 
     """
-    if isinstance(retriever, BaseRetriever):
-        retrieval_docs = (lambda x: x["input"]) | retriever
+    if not isinstance(retriever, BaseRetriever):
+        retrieval_docs: Runnable[dict, RetrieverOutput] = retriever
     else:
-        retrieval_docs = retriever
+        retrieval_docs = (lambda x: x["input"]) | retriever
 
     retrieval_chain = (
         RunnablePassthrough.assign(
