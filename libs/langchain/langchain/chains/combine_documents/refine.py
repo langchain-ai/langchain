@@ -124,6 +124,7 @@ def create_refine_documents_chain(
         "pick_outputs"
     )
 
+    # Runnable: Dict with many docs -> {"answer": "...", "intermediate_steps": [...]}
     refine_documents_chain = assign_initial | refine_loop | pick_outputs
     return refine_documents_chain.with_name("refine_documents_chain")
 
