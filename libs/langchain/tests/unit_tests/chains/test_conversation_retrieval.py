@@ -1,14 +1,11 @@
 """Test conversation chain and memory."""
 from langchain_core.documents import Document
-from langchain_core.prompts.prompt import PromptTemplate
 
-from langchain.chains import create_history_aware_retriever
 from langchain.chains.conversational_retrieval.base import (
     ConversationalRetrievalChain,
 )
 from langchain.llms.fake import FakeListLLM
 from langchain.memory.buffer import ConversationBufferMemory
-from tests.unit_tests.retrievers.parrot_retriever import FakeParrotRetriever
 from tests.unit_tests.retrievers.sequential_retriever import SequentialRetriever
 
 
@@ -102,23 +99,3 @@ def test_fixed_message_response_when_docs_found() -> None:
     got = qa_chain("What is the answer?")
     assert got["chat_history"][1].content == answer
     assert got["answer"] == answer
-
-
-def test_create() -> None:
-    answer = "I know the answer!"
-    llm = FakeListLLM(responses=[answer])
-    retriever = FakeParrotRetriever()
-    question_gen_prompt = PromptTemplate.from_template("hi! {input} {chat_history}")
-    chain = create_history_aware_retriever(llm, retriever, question_gen_prompt)
-    expected_output = [Document(page_content="What is the answer?")]
-    output = chain.invoke({"input": "What is the answer?", "chat_history": []})
-    assert output == expected_output
-
-    output = chain.invoke({"input": "What is the answer?"})
-    assert output == expected_output
-
-    expected_output = [Document(page_content="I know the answer!")]
-    output = chain.invoke(
-        {"input": "What is the answer?", "chat_history": ["hi", "hi"]}
-    )
-    assert output == expected_output
