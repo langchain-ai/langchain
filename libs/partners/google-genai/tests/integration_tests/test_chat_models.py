@@ -1,6 +1,6 @@
 """Test ChatGoogleGenerativeAI chat model."""
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from langchain_google_genai.chat_models import (
     ChatGoogleGenerativeAI,
@@ -13,18 +13,18 @@ _B64_string = """iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAABhGlDQ1BJQ0MgUHJ
 
 
 def test_chat_google_genai_stream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from Gemini."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
-    for token in llm.stream("I'm Pickle Rick"):
+    for token in llm.stream("This is a test. Say 'foo'"):
         assert isinstance(token.content, str)
 
 
 async def test_chat_google_genai_astream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from Gemini."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
-    async for token in llm.astream("I'm Pickle Rick"):
+    async for token in llm.astream("This is a test. Say 'foo'"):
         assert isinstance(token.content, str)
 
 
@@ -32,7 +32,9 @@ async def test_chat_google_genai_abatch() -> None:
     """Test streaming tokens from ChatGoogleGenerativeAI."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
-    result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
+    result = await llm.abatch(
+        ["This is a test. Say 'foo'", "This is a test, say 'bar'"]
+    )
     for token in result:
         assert isinstance(token.content, str)
 
@@ -42,7 +44,7 @@ async def test_chat_google_genai_abatch_tags() -> None:
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
     result = await llm.abatch(
-        ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
+        ["This is a test", "This is another test"], config={"tags": ["foo"]}
     )
     for token in result:
         assert isinstance(token.content, str)
@@ -52,7 +54,7 @@ def test_chat_google_genai_batch() -> None:
     """Test batch tokens from ChatGoogleGenerativeAI."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
-    result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
+    result = llm.batch(["This is a test. Say 'foo'", "This is a test, say 'bar'"])
     for token in result:
         assert isinstance(token.content, str)
 
@@ -61,7 +63,7 @@ async def test_chat_google_genai_ainvoke() -> None:
     """Test invoke tokens from ChatGoogleGenerativeAI."""
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
-    result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
+    result = await llm.ainvoke("This is a test. Say 'foo'", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
 
 
@@ -70,7 +72,7 @@ def test_chat_google_genai_invoke() -> None:
     llm = ChatGoogleGenerativeAI(model=_MODEL)
 
     result = llm.invoke(
-        "I'm Pickle Rick",
+        "This is a test. Say 'foo'",
         config=dict(tags=["foo"]),
         generation_config=dict(top_k=2, top_p=1, temperature=0.7),
     )
@@ -147,3 +149,40 @@ def test_chat_google_genai_invoke_multimodal_invalid_model() -> None:
     llm = ChatGoogleGenerativeAI(model=_MODEL)
     with pytest.raises(ChatGoogleGenerativeAIError):
         llm.invoke(messages)
+
+
+def test_chat_google_genai_single_call_with_history() -> None:
+    model = ChatGoogleGenerativeAI(model=_MODEL)
+    text_question1, text_answer1 = "How much is 2+2?", "4"
+    text_question2 = "How much is 3+3?"
+    message1 = HumanMessage(content=text_question1)
+    message2 = AIMessage(content=text_answer1)
+    message3 = HumanMessage(content=text_question2)
+    response = model([message1, message2, message3])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+
+
+def test_chat_google_genai_system_message_error() -> None:
+    model = ChatGoogleGenerativeAI(model=_MODEL)
+    text_question1, text_answer1 = "How much is 2+2?", "4"
+    text_question2 = "How much is 3+3?"
+    system_message = SystemMessage(content="You're supposed to answer math questions.")
+    message1 = HumanMessage(content=text_question1)
+    message2 = AIMessage(content=text_answer1)
+    message3 = HumanMessage(content=text_question2)
+    with pytest.raises(ValueError):
+        model([system_message, message1, message2, message3])
+
+
+def test_chat_google_genai_system_message() -> None:
+    model = ChatGoogleGenerativeAI(model=_MODEL, convert_system_message_to_human=True)
+    text_question1, text_answer1 = "How much is 2+2?", "4"
+    text_question2 = "How much is 3+3?"
+    system_message = SystemMessage(content="You're supposed to answer math questions.")
+    message1 = HumanMessage(content=text_question1)
+    message2 = AIMessage(content=text_answer1)
+    message3 = HumanMessage(content=text_question2)
+    response = model([system_message, message1, message2, message3])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
