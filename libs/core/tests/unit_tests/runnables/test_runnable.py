@@ -2792,7 +2792,7 @@ def test_map_stream() -> None:
     assert streamed_chunks[0] == "i"
     assert len(streamed_chunks) == len(llm_res)
 
-    chain_pick_two = chain.assign(hello=RunnablePick("llm") | llm).pick(
+    chain_pick_two = chain.assign(hello=RunnablePick("llm").pipe(llm)).pick(
         ["llm", "hello"]
     )
 

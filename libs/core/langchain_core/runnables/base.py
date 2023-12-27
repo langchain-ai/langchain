@@ -410,6 +410,14 @@ class Runnable(Generic[Input, Output], ABC):
         """Compose this runnable with another object to create a RunnableSequence."""
         return RunnableSequence(coerce_to_runnable(other), self)
 
+    def pipe(
+        self,
+        *others: Union[Runnable[Any, Other], Callable[[Any], Other]],
+        name: Optional[str] = None,
+    ) -> RunnableSerializable[Input, Other]:
+        """Compose this runnable with another object to create a RunnableSequence."""
+        return RunnableSequence(self, *others, name=name)
+
     def pick(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
         """Pick keys from the dict output of this runnable.
         Returns a new runnable."""
