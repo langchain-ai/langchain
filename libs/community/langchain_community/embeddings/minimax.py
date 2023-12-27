@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -76,7 +76,7 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
 
     minimax_group_id: Optional[str] = None
     """Group ID for MiniMax API."""
-    minimax_api_key: Optional[str] = None
+    minimax_api_key: Optional[SecretStr] = None
     """API Key for MiniMax API."""
 
     class Config:
@@ -90,8 +90,8 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         minimax_group_id = get_from_dict_or_env(
             values, "minimax_group_id", "MINIMAX_GROUP_ID"
         )
-        minimax_api_key = get_from_dict_or_env(
-            values, "minimax_api_key", "MINIMAX_API_KEY"
+        minimax_api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "minimax_api_key", "MINIMAX_API_KEY")
         )
         values["minimax_group_id"] = minimax_group_id
         values["minimax_api_key"] = minimax_api_key
@@ -110,7 +110,7 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
 
         # HTTP headers for authorization
         headers = {
-            "Authorization": f"Bearer {self.minimax_api_key}",
+            "Authorization": f"Bearer {self.minimax_api_key.get_secret_value()}",
             "Content-Type": "application/json",
         }
 

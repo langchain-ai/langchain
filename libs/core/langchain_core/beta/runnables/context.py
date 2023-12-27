@@ -12,6 +12,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -108,8 +109,6 @@ def _config_with_context(
                 raise ValueError(
                     f"Deadlock detected between context keys {key} and {dep}"
                 )
-        if len(getters) < 1:
-            raise ValueError(f"Expected at least one getter for context key {key}")
         if len(setters) != 1:
             raise ValueError(f"Expected exactly one setter for context key {key}")
         setter_idx = setters[0][1]
@@ -118,7 +117,8 @@ def _config_with_context(
                 f"Context setter for key {key} must be defined after all getters."
             )
 
-        context_funcs[getters[0][0].id] = partial(getter, events[key], values)
+        if getters:
+            context_funcs[getters[0][0].id] = partial(getter, events[key], values)
         context_funcs[setters[0][0].id] = partial(setter, events[key], values)
 
     return patch_config(config, configurable=context_funcs)
@@ -162,6 +162,9 @@ class ContextGet(RunnableSerializable):
     prefix: str = ""
 
     key: Union[str, List[str]]
+
+    def __str__(self) -> str:
+        return f"ContextGet({_print_keys(self.key)})"
 
     @property
     def ids(self) -> List[str]:
@@ -242,6 +245,9 @@ class ContextSet(RunnableSerializable):
             },
             prefix=prefix,
         )
+
+    def __str__(self) -> str:
+        return f"ContextSet({_print_keys(list(self.keys.keys()))})"
 
     @property
     def ids(self) -> List[str]:
@@ -345,3 +351,10 @@ class PrefixContext:
         **kwargs: SetValue,
     ) -> ContextSet:
         return ContextSet(_key, _value, prefix=self.prefix, **kwargs)
+
+
+def _print_keys(keys: Union[str, Sequence[str]]) -> str:
+    if isinstance(keys, str):
+        return f"'{keys}'"
+    else:
+        return ", ".join(f"'{k}'" for k in keys)
