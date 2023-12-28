@@ -647,7 +647,7 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         self,
         input: Iterator[Dict[str, Any]],
         config: Optional[RunnableConfig] = None,
-        **kwargs: Any | None,
+        **kwargs: Any,
     ) -> Iterator[Dict[str, Any]]:
         yield from self._transform_stream_with_config(
             input, self._transform, config, **kwargs
