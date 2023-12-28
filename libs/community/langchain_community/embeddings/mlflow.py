@@ -63,12 +63,14 @@ class MlflowEmbeddings(Embeddings, BaseModel):
                 f"The scheme must be one of {allowed}."
             )
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: List[str], **kwargs: Any) -> List[List[float]]:
         embeddings: List[List[float]] = []
         for txt in _chunk(texts, 20):
-            resp = self._client.predict(endpoint=self.endpoint, inputs={"input": txt})
+            resp = self._client.predict(
+                endpoint=self.endpoint, inputs={"input": txt, **kwargs}
+            )
             embeddings.extend(r["embedding"] for r in resp["data"])
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
-        return self.embed_documents([text])[0]
+    def embed_query(self, text: str, **kwargs: Any) -> List[float]:
+        return self.embed_documents([text], **kwargs)[0]
