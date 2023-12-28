@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
+from contextvars import Context, copy_context
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -387,8 +388,15 @@ def get_async_callback_manager_for_config(
     )
 
 
+def _set_context(context: Context) -> None:
+    for var, value in context.items():
+        var.set(value)
+
+
 @contextmanager
-def get_executor_for_config(config: RunnableConfig) -> Generator[Executor, None, None]:
+def get_executor_for_config(
+    config: Optional[RunnableConfig]
+) -> Generator[Executor, None, None]:
     """Get an executor for a config.
 
     Args:
@@ -397,5 +405,10 @@ def get_executor_for_config(config: RunnableConfig) -> Generator[Executor, None,
     Yields:
         Generator[Executor, None, None]: The executor.
     """
-    with ThreadPoolExecutor(max_workers=config.get("max_concurrency")) as executor:
+    config = config or {}
+    with ThreadPoolExecutor(
+        max_workers=config.get("max_concurrency"),
+        initializer=_set_context,
+        initargs=(copy_context(),),
+    ) as executor:
         yield executor
