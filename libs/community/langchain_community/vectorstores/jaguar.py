@@ -176,7 +176,8 @@ class Jaguar(VectorStore):
                 podstore = self._pod + "." + self._store
                 q = "insert into " + podstore + " ("
                 q += vcol + "," + textcol + ") values ('" + values_comma
-                q += "','" + texts[i] + "')"
+                txt = texts[i].replace("'", "\\'")
+                q += "','" + txt + "')"
                 js = self.run(q, False)
                 ids.append(js["zid"])
                 i += 1
@@ -199,7 +200,8 @@ class Jaguar(VectorStore):
                 podstore = self._pod + "." + self._store
                 q = "insert into " + podstore + " ("
                 q += names_comma + "," + textcol + ") values (" + values_comma
-                q += ",'" + texts[i] + "')"
+                txt = texts[i].replace("'", "\\'")
+                q += ",'" + txt + "')"
                 if filecol != "":
                     js = self.run(q, True)
                 else:
