@@ -64,8 +64,7 @@ def create_retrieval_chain(
         RunnablePassthrough.assign(
             context=retrieval_docs.with_config(run_name="retrieve_documents"),
             chat_history=lambda x: x.get("chat_history", []),
-        )
-        | RunnablePassthrough.assign(answer=combine_docs_chain)
+        ).assign(answer=combine_docs_chain)
     ).with_config(run_name="retrieval_chain")
 
     return retrieval_chain
