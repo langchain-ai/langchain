@@ -22,7 +22,7 @@ _EMBEDDING_FUNCTION = FakeEmbeddings(size=1536)
 @pytest.mark.requires("pgvector")
 @mock.patch("sqlalchemy.create_engine")
 def test_given_a_connection_is_provided_then_no_engine_should_be_created(
-    create_engine: Mock
+    create_engine: Mock,
 ) -> None:
     """When a connection is provided then no engine should be created."""
     pgvector.PGVector(
@@ -36,7 +36,7 @@ def test_given_a_connection_is_provided_then_no_engine_should_be_created(
 @pytest.mark.requires("pgvector")
 @mock.patch("sqlalchemy.create_engine")
 def test_given_no_connection_or_engine_args_provided_default_engine_should_be_used(
-    create_engine: Mock
+    create_engine: Mock,
 ) -> None:
     """When no connection or engine arguments are provided then the default configuration must be used."""  # noqa: E501
     pgvector.PGVector(
@@ -51,7 +51,7 @@ def test_given_no_connection_or_engine_args_provided_default_engine_should_be_us
 @pytest.mark.requires("pgvector")
 @mock.patch("sqlalchemy.create_engine")
 def test_given_engine_args_are_provided_then_they_should_be_used(
-    create_engine: Mock
+    create_engine: Mock,
 ) -> None:
     """When engine arguments are provided then they must be used to create the underlying engine."""  # noqa: E501
     engine_args = {
