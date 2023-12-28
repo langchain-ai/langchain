@@ -4,11 +4,10 @@ from pathlib import Path
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
+from langchain_core.pydantic_v1 import Extra, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
-# TODO How do I add thirdai dependencies?
 
 class NeuralDBRetriever(BaseRetriever):
     """Document retriever that uses ThirdAI's NeuralDB.
@@ -149,6 +148,15 @@ class NeuralDBRetriever(BaseRetriever):
         fast_mode: bool = True,
         **kwargs,
     ):
+        """Inserts files / document sources into the retriever.
+        
+        Args:
+            train: When True this means that the underlying model in the 
+            NeuralDB will undergo unsupervised pretraining on the inserted files. 
+            Defaults to True.
+            fast_mode: Much faster insertion with a slight drop in performance.
+            Defaults to True.
+        """
         sources = self._preprocess_sources(sources)
         self.db.insert(
             sources=sources,
@@ -158,6 +166,13 @@ class NeuralDBRetriever(BaseRetriever):
         )
     
     def _preprocess_sources(self, sources):
+        """Checks if the provided sources are string paths. If they are, convert
+        to NeuralDB document objects.
+        
+        Args:
+            sources: list of either string paths to PDF, DOCX or CSV files, or
+            NeuralDB document objects.
+        """
         from thirdai import neural_db as ndb
         if not sources:
             return sources
@@ -181,16 +196,46 @@ class NeuralDBRetriever(BaseRetriever):
                     )
         return preprocessed_sources
 
-    def upvote(self, text: str, document_id: int):
-        self.db.text_to_result(text, document_id)
+    def upvote(self, query: str, document_id: int):
+        """The retriever upweights the score of a document for a specific query.
+        This is useful for fine-tuning the retriever to user behavior. 
 
-    def upvote_batch(self, text_id_pairs: List[Tuple[str, int]]):
-        self.db.text_to_result_batch(text_id_pairs)
+        Args:
+            query: text to associate with `document_id`
+            document_id: id of the document to associate query with.
+        """
+        self.db.text_to_result(query, document_id)
+
+    def upvote_batch(self, query_id_pairs: List[Tuple[str, int]]):
+        """Given a batch of (query, document id) pairs, the retriever upweights
+        the scores of the document for the corresponding queries.
+        This is useful for fine-tuning the retriever to user behavior.
+
+        Args:
+            query_id_pairs: list of (query, document id) pairs. For each pair in
+            this list, the model will upweight the document id for the query.
+        """
+        self.db.text_to_result_batch(query_id_pairs)
     
     def associate(self, source: str, target: str):
+        """The retriever associates a source phrase with a target phrase. 
+        When the retriever sees the source phrase, it will also consider results
+        that are relevant to the target phrase.
+
+        Args:
+            source: text to associate to `target`.
+            target: text to associate `source` to.
+        """
         self.db.associate(source, target)
     
     def associate_batch(self, text_pairs: List[Tuple[str, str]]):
+        """Given a batch of (source, target) pairs, the retriever associates 
+        each source phrase with the corresponding target phrase.
+
+        Args:
+            text_pairs: list of (source, target) text pairs. For each pair in
+            this list, the source will be associated with the target.
+        """
         self.db.associate_batch(text_pairs)
 
     def _get_relevant_documents(
@@ -226,5 +271,11 @@ class NeuralDBRetriever(BaseRetriever):
             raise ValueError(f"Error while retrieving documents: {e}") from e
     
     def save(self, path: str):
+        """Saves a NeuralDB instance to disk. Can be loaded into memory by 
+        calling NeuralDB.from_checkpoint(path)
+
+        Args:
+            path: path on disk to save the NeuralDB instance to.
+        """
         self.db.save(path)
         
