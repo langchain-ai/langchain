@@ -202,21 +202,6 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         """
         return RunnableAssign(RunnableParallel(kwargs))
 
-    @classmethod
-    def pick(
-        cls,
-        keys: Union[str, List[str]],
-    ) -> "RunnablePick":
-        """Pick keys from the Dict input.
-
-        Args:
-            keys: A string or list of strings representing the keys to pick.
-
-        Returns:
-            A runnable that picks keys from the Dict input.
-        """
-        return RunnablePick(keys)
-
     def invoke(
         self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Other:
@@ -334,6 +319,14 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
+
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
+        name = (
+            name or self.name or f"RunnableAssign<{','.join(self.mapper.steps.keys())}>"
+        )
+        return super().get_name(suffix, name=name)
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
@@ -588,6 +581,16 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
+
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
+        name = (
+            name
+            or self.name
+            or f"RunnablePick<{','.join([self.keys] if isinstance(self.keys, str) else self.keys)}>"  # noqa: E501
+        )
+        return super().get_name(suffix, name=name)
 
     def _pick(self, input: Dict[str, Any]) -> Any:
         assert isinstance(
