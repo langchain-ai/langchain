@@ -46,7 +46,7 @@ class BaseMessage(Serializable):
         if isinstance(self.content, str):
             return []
         return [
-            item["image_url"]["url"]
+            item["image_url"]["url"] if isinstance(item, dict) else item
             for item in self.content
             if isinstance(item, dict) and item["type"] == "image_url"
         ]
