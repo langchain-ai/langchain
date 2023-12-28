@@ -4,8 +4,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from langchain.embeddings import FakeEmbeddings
-from langchain.vectorstores import pgvector
+from langchain_community.embeddings import FakeEmbeddings
+from langchain_community.vectorstores import pgvector
 
 _CONNECTION_STRING = pgvector.PGVector.connection_string_from_db_params(
     driver="psycopg2",
@@ -21,7 +21,9 @@ _EMBEDDING_FUNCTION = FakeEmbeddings(size=1536)
 
 @pytest.mark.requires("pgvector")
 @mock.patch("sqlalchemy.create_engine")
-def test_given_a_connection_is_provided_then_no_engine_should_be_created(create_engine: Mock) -> None:
+def test_given_a_connection_is_provided_then_no_engine_should_be_created(
+    create_engine: Mock
+) -> None:
     """When a connection is provided then no engine should be created."""
     pgvector.PGVector(
         connection_string=_CONNECTION_STRING,
@@ -33,7 +35,9 @@ def test_given_a_connection_is_provided_then_no_engine_should_be_created(create_
 
 @pytest.mark.requires("pgvector")
 @mock.patch("sqlalchemy.create_engine")
-def test_given_no_connection_or_engine_args_provided_then_a_default_engine_should_be_used(create_engine: Mock) -> None:
+def test_given_no_connection_or_engine_args_provided_then_a_default_engine_should_be_used(
+    create_engine: Mock
+) -> None:
     """When no connection or engine arguments are provided then the default configuration must be used."""
     pgvector.PGVector(
         connection_string=_CONNECTION_STRING,
@@ -46,7 +50,9 @@ def test_given_no_connection_or_engine_args_provided_then_a_default_engine_shoul
 
 @pytest.mark.requires("pgvector")
 @mock.patch("sqlalchemy.create_engine")
-def test_given_engine_args_are_provided_then_they_should_be_used(create_engine: Mock) -> None:
+def test_given_engine_args_are_provided_then_they_should_be_used(
+    create_engine: Mock
+) -> None:
     """When engine arguments are provided then they must be used to create the underlying engine."""
     engine_args = {
         "pool_size": 5,
