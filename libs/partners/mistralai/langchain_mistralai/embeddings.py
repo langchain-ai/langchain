@@ -17,7 +17,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain_community.embeddings.mistralai import MistralAIEmbeddings
+            from langchain_mistralai import MistralAIEmbeddings
             mistral = MistralAIEmbeddings(
                 model="mistral-embed",
                 mistral_api_key="my-api-key"
