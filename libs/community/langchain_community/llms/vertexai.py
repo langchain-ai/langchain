@@ -298,7 +298,9 @@ class VertexAI(_VertexAICommon, BaseLLM):
     ) -> GenerationChunk:
         """Converts a stream response to a generation chunk."""
         try:
-            raw_candidate: dict = response._prediction_response.predictions[candidate_index]
+            raw_candidate: dict = response._prediction_response.predictions[
+                candidate_index
+            ]
             generation_info = {
                 "is_blocked": response.is_blocked,
                 "safety_attributes": response.safety_attributes,
