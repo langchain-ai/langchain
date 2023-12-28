@@ -1,5 +1,5 @@
 """Test MistralAI Embedding"""
-from langchain_community.embeddings.mistralai import MistralAIEmbeddings
+from langchain_mistralai import MistralAIEmbeddings
 
 def test_mistralai_embedding_documents() -> None:
     """Test MistralAI embeddings for documents."""
