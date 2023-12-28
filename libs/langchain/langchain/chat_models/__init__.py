@@ -17,8 +17,6 @@ an interface where "chat messages" are the inputs and outputs.
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
 
-from langchain_community.chat_models.xinference import ChatXinference
-
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.anyscale import ChatAnyscale
 from langchain.chat_models.azure_openai import AzureChatOpenAI
@@ -48,6 +46,7 @@ from langchain.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.vertexai import ChatVertexAI
 from langchain.chat_models.volcengine_maas import VolcEngineMaasChat
+from langchain.chat_models.xinference import ChatXinference
 from langchain.chat_models.yandex import ChatYandexGPT
 
 __all__ = [
