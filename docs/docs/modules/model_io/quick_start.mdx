@@ -154,20 +154,13 @@ There are a few main types of `OutputParser`s, including:
 
 For full information on this, see the [section on output parsers](/docs/modules/model_io/output_parsers).
 
-In this getting started guide, we will write our own output parser - one that converts a comma separated list into a list.
+In this getting started guide, we use a simple one that parses a list of comma seperated values.
 
 ```python
-from langchain.schema import BaseOutputParser
+from langchain.output_parsers import CommaSeparatedListOutputParser
 
-class CommaSeparatedListOutputParser(BaseOutputParser):
-    """Parse the output of an LLM call to a comma-separated list."""
-
-
-    def parse(self, text: str):
-        """Parse the output of an LLM call."""
-        return text.strip().split(", ")
-
-CommaSeparatedListOutputParser().parse("hi, bye")
+output_parser = CommaSeparatedListOutputParser()
+output_parser.parse("hi, bye")
 # >> ['hi', 'bye']
 ```
 
@@ -179,7 +172,11 @@ This is a convenient way to bundle up a modular piece of logic.
 Let's see it in action!
 
 ```python
-chain = chat_prompt | chat_model | CommaSeparatedListOutputParser()
+template = "Generate a list of 5 {text}.\n\n{format_instructions}"
+
+chat_prompt = ChatPromptTemplate.from_template(template)
+chat_prompt = chat_prompt.partial(format_instructions=output_parser.get_format_instructions())
+chain = chat_prompt | chat_model | output_parser
 chain.invoke({"text": "colors"})
 # >> ['red', 'blue', 'green', 'yellow', 'orange']
 ```
@@ -194,6 +191,6 @@ That's it for getting started with prompts, models, and output parsers! This jus
 
 - The [conceptual guide](./concepts) for information about the concepts presented here
 - The [prompt section](./prompts) for information on how to work with prompt templates
-- The [LLM section](./llm) for more information on the LLM interface
+- The [LLM section](./llms) for more information on the LLM interface
 - The [ChatModel section](./chat) for more information on the ChatModel interface
 - The [output parser section](./output_parsers) for information about the different types of output parsers.
