@@ -2149,7 +2149,7 @@ shapely = ">=1.7.1"
 
 [[package]]
 name = "gigachain-community"
-version = "0.0.4"
+version = "0.0.4.1"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -2203,13 +2203,13 @@ url = "../core"
 
 [[package]]
 name = "gigachat"
-version = "0.1.10"
+version = "0.1.12.1"
 description = "GigaChat. Python-library for GigaChain and LangChain"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "gigachat-0.1.10-py3-none-any.whl", hash = "sha256:87765688e0d2a3e3f673c45cd0acb597bf69acb9ec1850dcf5ab19db6ccd414b"},
-    {file = "gigachat-0.1.10.tar.gz", hash = "sha256:d8aa918d856a2895c7543bec7d14e097aa18fa9e6a7127d875767ece61193cfe"},
+    {file = "gigachat-0.1.12.1-py3-none-any.whl", hash = "sha256:82fd12535e982cfe4b58fc357eed68898531d4a30ad11ac205c34c788a9fdc41"},
+    {file = "gigachat-0.1.12.1.tar.gz", hash = "sha256:3b235255b1989cbd1c31e69e695198fa227c1499ed8a402da11fc11d06a406fc"},
 ]
 
 [package.dependencies]
@@ -9155,4 +9155,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "3a843f17e4f751dab9543ff6ca8f7f123e8b1f7b6b75b4dfde621abbfc702e89"
+content-hash = "f09aa494f3139333b11c9f86d469ed8c73e27a5aa6cd49f0645f42dd59b04ac2"

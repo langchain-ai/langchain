@@ -110,7 +110,6 @@ class _BaseGigaChat(Serializable):
                 "Please install it with `pip install gigachat`."
             )
         fields = set(cls.__fields__.keys())
-        fields.add("profanity")
         diff = set(values.keys()) - fields
         if diff:
             logger.warning(f"Extra fields {diff} in GigaChat class")
@@ -133,13 +132,11 @@ class _BaseGigaChat(Serializable):
             "max_tokens": self.max_tokens,
         }
 
-    def tokens_count(self, input_: List[str], model: str | None = None) -> List[Any]:
+    def tokens_count(self, input_: List[str], model=None) -> List[Any]:
         """Get tokens of string list"""
         return self._client.tokens_count(input_, model)
 
-    async def atokens_count(
-        self, input_: List[str], model: str | None = None
-    ) -> List[Any]:
+    async def atokens_count(self, input_: List[str], model=None) -> List[Any]:
         """Get tokens of strings list (async)"""
         return await self._client.atokens_count(input_, model)
 

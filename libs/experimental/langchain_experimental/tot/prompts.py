@@ -59,7 +59,8 @@ def get_propose_prompt() -> PromptTemplate:
         template_format="jinja2",
         input_variables=["problem_description", "thoughts", "n"],
         output_parser=JSONListOutputParser(),
-        template=dedent("""
+        template=dedent(
+            """
             Ты - интеллектуальный агент, который генерирует мысли в древовидной
             структуре мыслей.
 

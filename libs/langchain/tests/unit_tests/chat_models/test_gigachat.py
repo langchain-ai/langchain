@@ -13,8 +13,8 @@ from gigachat.models import (
     MessagesChunk,
     Usage,
 )
-from langchain.chat_models.gigachat import (
-    GigaChat,
+from langchain.chat_models.gigachat import GigaChat
+from langchain_community.chat_models.gigachat import (
     _convert_dict_to_message,
     _convert_message_to_dict,
 )
