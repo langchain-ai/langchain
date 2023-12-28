@@ -452,6 +452,7 @@ def _import_zilliz() -> Any:
 
 def _import_neuraldb() -> Any:
     from langchain_community.vectorstores.thirdai_neuraldb import NeuralDBVectorStore
+
     return NeuralDBVectorStore
 
 
@@ -670,5 +671,5 @@ __all__ = [
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
-    "NeuralDBVectorStore"
+    "NeuralDBVectorStore",
 ]

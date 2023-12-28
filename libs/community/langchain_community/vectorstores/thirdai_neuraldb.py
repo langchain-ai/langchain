@@ -1,14 +1,14 @@
 import importlib
 import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, Iterable
 import tempfile
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.vectorstores import VectorStore
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.vectorstores import VectorStore
 
 
 class NeuralDBVectorStore(VectorStore):
@@ -147,10 +147,10 @@ class NeuralDBVectorStore(VectorStore):
         from thirdai import neural_db as ndb
 
         return cls(db=ndb.NeuralDB.from_checkpoint(checkpoint))
-    
+
     @classmethod
     def from_texts(
-        cls, 
+        cls,
         texts: List[str],
         embedding: Embeddings,
         metadatas: List[dict] | None = None,
@@ -164,7 +164,7 @@ class NeuralDBVectorStore(VectorStore):
         vectorstore = cls.from_scratch(**model_kwargs)
         vectorstore.add_texts(texts, metadatas, **kwargs)
         return vectorstore
-    
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -183,6 +183,7 @@ class NeuralDBVectorStore(VectorStore):
         """
         import pandas as pd
         from thirdai import neural_db as ndb
+
         df = pd.DataFrame({"texts": texts})
         if metadatas:
             df = pd.concat([df, pd.DataFrame.from_records(metadatas)], axis=1)
@@ -279,10 +280,9 @@ class NeuralDBVectorStore(VectorStore):
             query_id_pairs: list of (query, document id) pairs. For each pair in
             this list, the model will upweight the document id for the query.
         """
-        self.db.text_to_result_batch([
-            (query, int(doc_id)) 
-            for query, doc_id in query_id_pairs
-        ])
+        self.db.text_to_result_batch(
+            [(query, int(doc_id)) for query, doc_id in query_id_pairs]
+        )
 
     def associate(self, source: str, target: str):
         """The vectorstore associates a source phrase with a target phrase.
@@ -315,9 +315,7 @@ class NeuralDBVectorStore(VectorStore):
             k: The max number of context results to retrieve. Defaults to 10.
         """
         try:
-            references = self.db.search(
-                query=query, top_k=k, **kwargs
-            )
+            references = self.db.search(query=query, top_k=k, **kwargs)
             return [
                 Document(
                     page_content=ref.text,
