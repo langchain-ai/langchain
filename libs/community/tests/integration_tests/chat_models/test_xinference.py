@@ -8,7 +8,7 @@ import pytest
 import pytest_asyncio
 
 from langchain.callbacks.manager import CallbackManager
-from langchain.chat_models.xinference import ChatXinference
+from langchain_community.chat_models.xinference import ChatXinference
 from langchain.schema import (
     ChatGeneration,
     LLMResult,
@@ -242,7 +242,7 @@ def test_chat_xinference_extra_kwargs(setup: Tuple) -> None:
         return {"prompt": "Hello."}
 
     with patch(
-        "langchain.chat_models.xinference._openai_kwargs_to_xinference_kwargs",
+        "langchain_community.chat_models.xinference._openai_kwargs_to_xinference_kwargs",
         _mock_patched_convert,
     ):
         llm([HumanMessage(content="Hello.")], generate_config={"max_tokens": 11})

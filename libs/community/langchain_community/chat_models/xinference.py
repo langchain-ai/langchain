@@ -25,12 +25,12 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import (
+from langchain_core.language_models.chat_models import (
     BaseChatModel,
-    _agenerate_from_stream,
-    _generate_from_stream,
+    agenerate_from_stream,
+    generate_from_stream,
 )
-from langchain.llms.base import create_base_retry_decorator
+from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
@@ -407,7 +407,7 @@ class ChatXinference(BaseChatModel):
                 run_manager=run_manager,
                 **kwargs,
             )
-            return _generate_from_stream(stream_iter)
+            return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(
             messages, stop, generate_config
         )
@@ -496,7 +496,7 @@ class ChatXinference(BaseChatModel):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return await _agenerate_from_stream(stream_iter)
+            return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(
             messages, stop, generate_config
