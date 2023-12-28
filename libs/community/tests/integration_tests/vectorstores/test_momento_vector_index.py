@@ -1,10 +1,12 @@
+import os
 import time
 import uuid
-from typing import Iterator, List
+from typing import Generator, Iterator, List
 
 import pytest
 from langchain_core.documents import Document
 
+from langchain_community.document_loaders import TextLoader
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import MomentoVectorIndex
 
@@ -22,6 +24,23 @@ def random_index_name() -> str:
 
 def wait() -> None:
     time.sleep(1)
+
+
+@pytest.fixture(scope="module")
+def embedding_openai() -> OpenAIEmbeddings:
+    if not os.environ.get("OPENAI_API_KEY"):
+        raise ValueError("OPENAI_API_KEY is not set")
+    return OpenAIEmbeddings()
+
+
+@pytest.fixture(scope="function")
+def texts() -> Generator[List[str], None, None]:
+    # Load the documents from a file located in the fixtures directory
+    documents = TextLoader(
+        os.path.join(os.path.dirname(__file__), "fixtures", "sharks.txt")
+    ).load()
+
+    yield [doc.page_content for doc in documents]
 
 
 @pytest.fixture(scope="function")
