@@ -2,8 +2,12 @@ import asyncio
 import json
 import os
 from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForEmbeddingRun,
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
@@ -145,7 +149,12 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Compute doc embeddings using a Bedrock model.
 
         Args:
@@ -160,7 +169,12 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             results.append(response)
         return results
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Compute query embeddings using a Bedrock model.
 
         Args:
@@ -171,7 +185,12 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         """
         return self._embedding_func(text)
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def _aembed_query(
+        self,
+        text: str,
+        *,
+        run_manager: AsyncCallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Asynchronous compute query embeddings using a Bedrock model.
 
         Args:
@@ -185,7 +204,12 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             None, partial(self.embed_query, text)
         )
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def _aembed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[AsyncCallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Asynchronous compute doc embeddings using a Bedrock model.
 
         Args:

@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -92,7 +95,12 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
             ] = f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed documents using a YandexGPT embeddings models.
 
         Args:
@@ -104,7 +112,12 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
 
         return _embed_with_retry(self, texts=texts)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed a query using a YandexGPT embeddings models.
 
         Args:

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Iterator, List
+from typing import Any, Iterator, List, Sequence
 from urllib.parse import urlparse
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
 
@@ -63,12 +66,22 @@ class MlflowEmbeddings(Embeddings, BaseModel):
                 f"The scheme must be one of {allowed}."
             )
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         embeddings: List[List[float]] = []
         for txt in _chunk(texts, 20):
             resp = self._client.predict(endpoint=self.endpoint, inputs={"input": txt})
             embeddings.extend(r["embedding"] for r in resp["data"])
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         return self.embed_documents([text])[0]

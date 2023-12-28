@@ -15,6 +15,10 @@ from typing import (
     Union,
 )
 
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForEmbeddingRun,
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
@@ -285,8 +289,12 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             )
         )["data"][0]["embedding"]
 
-    def embed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
+    def _embed_documents(
+        self,
+        texts: List[str],
+        chunk_size: Optional[int] = 0,
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
     ) -> List[List[float]]:
         """Call out to LocalAI's embedding endpoint for embedding search docs.
 
@@ -301,8 +309,12 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         # call _embedding_func for each text
         return [self._embedding_func(text, engine=self.deployment) for text in texts]
 
-    async def aembed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
+    async def _aembed_documents(
+        self,
+        texts: List[str],
+        chunk_size: Optional[int] = 0,
+        *,
+        run_managers: Sequence[AsyncCallbackManagerForEmbeddingRun],
     ) -> List[List[float]]:
         """Call out to LocalAI's embedding endpoint async for embedding search docs.
 
@@ -320,7 +332,12 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             embeddings.append(response)
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Call out to LocalAI's embedding endpoint for embedding query text.
 
         Args:

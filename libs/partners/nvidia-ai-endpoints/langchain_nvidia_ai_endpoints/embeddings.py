@@ -1,6 +1,8 @@
 """Embeddings Components Derived from NVEModel/Embeddings"""
-from typing import Any, List, Literal, Optional
 
+from typing import Any, List, Literal, Optional, Sequence
+
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
@@ -51,11 +53,21 @@ class NVIDIAEmbeddings(BaseModel, Embeddings):
         embedding_list = [(res["embedding"], res["index"]) for res in data]
         return [x[0] for x in sorted(embedding_list, key=lambda x: x[1])]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Input pathway for query embeddings."""
         return self._embed([text], model_type=self.model_type or "query")[0]
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Input pathway for document embeddings."""
         # From https://catalog.ngc.nvidia.com/orgs/nvidia/teams/ai-foundation/models/nvolve-40k/documentation
         # The input must not exceed the 2048 max input characters and inputs above 512

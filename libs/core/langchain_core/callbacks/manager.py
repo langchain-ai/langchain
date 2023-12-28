@@ -815,6 +815,82 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
         )
 
 
+class CallbackManagerForEmbeddingRun(ParentRunManager, ChainManagerMixin):
+    """Callback manager for embedding run."""
+
+    def on_embedding_end(
+        self,
+        vector: Sequence[float],
+        **kwargs: Any,
+    ) -> None:
+        """Run when embedding ends running."""
+        handle_event(
+            self.handlers,
+            "on_embedding_end",
+            "ignore_embedding",
+            vector,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+    def on_embedding_error(
+        self,
+        error: BaseException,
+        **kwargs: Any,
+    ) -> None:
+        """Run when embedding errors."""
+        handle_event(
+            self.handlers,
+            "on_embedding_error",
+            "ignore_embedding",
+            error,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+
+class AsyncCallbackManagerForEmbeddingRun(ParentRunManager, ChainManagerMixin):
+    """Callback manager for embedding run."""
+
+    async def on_embedding_end(
+        self,
+        vector: Sequence[float],
+        **kwargs: Any,
+    ) -> None:
+        """Run when embedding ends running."""
+        await ahandle_event(
+            self.handlers,
+            "on_embedding_end",
+            "ignore_embedding",
+            vector,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+    async def on_embedding_error(
+        self,
+        error: BaseException,
+        **kwargs: Any,
+    ) -> None:
+        """Run when embedding errors."""
+        await ahandle_event(
+            self.handlers,
+            "on_embedding_error",
+            "ignore_embedding",
+            error,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+
 class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
     """Async callback manager for chain run."""
 
@@ -1207,6 +1283,49 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    def on_embedding_start(
+        self,
+        serialized: Dict[str, Any],
+        texts: List[str],
+        **kwargs: Any,
+    ) -> List[CallbackManagerForEmbeddingRun]:
+        """Run when embeddings model starts running.
+        Args:
+            serialized (Dict[str, Any]): The serialized embeddings model.
+            texts (List[str]): The list of texts.
+        Returns:
+            List[CallbackManagerForEmbeddingsRun]: A callback manager for each
+                text as an embeddings run.
+        """
+        managers = []
+        for text in texts:
+            run_id_ = uuid.uuid4()
+            handle_event(
+                self.handlers,
+                "on_embedding_start",
+                "ignore_embedding",
+                serialized,
+                [text],
+                run_id=run_id_,
+                parent_run_id=self.parent_run_id,
+                tags=self.tags,
+                metadata=self.metadata,
+                **kwargs,
+            )
+            managers.append(
+                CallbackManagerForEmbeddingRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
+                )
+            )
+        return managers
+
     def on_tool_start(
         self,
         serialized: Dict[str, Any],
@@ -1553,6 +1672,55 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    async def on_embedding_start(
+        self,
+        serialized: Dict[str, Any],
+        inputs: List[str],
+        **kwargs: Any,
+    ) -> List[AsyncCallbackManagerForEmbeddingRun]:
+        """Run when embedding starts running.
+
+        Args:
+            serialized (Dict[str, Any]): The serialized embedding.
+            inputs (List[str]): The inputs to the embedding.
+
+        Returns:
+            AsyncCallbackManagerForEmbeddingRun: The callback manager for
+            the embedding run.
+        """
+        tasks = []
+        managers: List[AsyncCallbackManagerForEmbeddingRun] = []
+        for text in inputs:
+            run_id_ = uuid.uuid4()
+            tasks.append(
+                ahandle_event(
+                    self.handlers,
+                    "on_embedding_start",
+                    "ignore_embedding",
+                    serialized,
+                    [text],
+                    run_id=run_id_,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    metadata=self.metadata,
+                    **kwargs,
+                )
+            )
+            managers.append(
+                AsyncCallbackManagerForEmbeddingRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
+                )
+            )
+
+        return managers
+
     async def on_tool_start(
         self,
         serialized: Dict[str, Any],
@@ -1739,7 +1907,6 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
 
 
 T = TypeVar("T", CallbackManager, AsyncCallbackManager)
-
 
 H = TypeVar("H", bound=BaseCallbackHandler, covariant=True)
 

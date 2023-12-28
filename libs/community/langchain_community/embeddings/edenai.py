@@ -1,5 +1,8 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -86,7 +89,12 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
 
         return embeddings
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed a list of documents using EdenAI.
 
         Args:
@@ -98,7 +106,12 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
 
         return self._generate_embeddings(texts)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed a query using EdenAI.
 
         Args:

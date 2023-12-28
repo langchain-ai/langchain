@@ -1,6 +1,9 @@
 """Wrapper around Xinference embedding models."""
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 
 
@@ -92,7 +95,12 @@ class XinferenceEmbeddings(Embeddings):
 
         self.client = RESTfulClient(server_url)
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed a list of documents using Xinference.
         Args:
             texts: The list of texts to embed.
@@ -107,7 +115,12 @@ class XinferenceEmbeddings(Embeddings):
         ]
         return [list(map(float, e)) for e in embeddings]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed a query of documents using Xinference.
         Args:
             text: The text to embed.

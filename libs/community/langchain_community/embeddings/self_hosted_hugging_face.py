@@ -1,6 +1,10 @@
 import importlib
 import logging
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Sequence
+
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 
 from langchain_community.embeddings.self_hosted import SelfHostedEmbeddings
 
@@ -139,7 +143,12 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         load_fn_kwargs["device"] = load_fn_kwargs.get("device", 0)
         super().__init__(load_fn_kwargs=load_fn_kwargs, **kwargs)
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace instruct model.
 
         Args:
@@ -154,7 +163,12 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         embeddings = self.client(self.pipeline_ref, instruction_pairs)
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Compute query embeddings using a HuggingFace instruct model.
 
         Args:

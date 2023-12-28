@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import requests
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -134,7 +137,12 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
 
         return embeddings
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed documents using a MiniMax embedding endpoint.
 
         Args:
@@ -146,7 +154,12 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         embeddings = embed_with_retry(self, texts=texts, embed_type=self.embed_type_db)
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed a query using a MiniMax embedding endpoint.
 
         Args:

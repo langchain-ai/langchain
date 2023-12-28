@@ -2,11 +2,15 @@
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import aiohttp
 import numpy as np
 import requests
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForEmbeddingRun,
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -60,7 +64,12 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         )
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Call out to Infinity's embedding endpoint.
 
         Args:
@@ -75,7 +84,12 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         )
         return embeddings
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def _aembed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[AsyncCallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Async call out to Infinity's embedding endpoint.
 
         Args:
@@ -90,7 +104,12 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         )
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Call out to Infinity's embedding endpoint.
 
         Args:
@@ -101,7 +120,12 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         """
         return self.embed_documents([text])[0]
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def _aembed_query(
+        self,
+        text: str,
+        *,
+        run_manager: AsyncCallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Async call out to Infinity's embedding endpoint.
 
         Args:

@@ -331,6 +331,86 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._on_chain_error(chain_run)
         return chain_run
 
+    def on_embedding_start(
+        self,
+        serialized: Dict[str, Any],
+        inputs: Dict[str, Any],
+        *,
+        run_id: UUID,
+        tags: Optional[List[str]] = None,
+        parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        run_type: Optional[str] = None,
+        name: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Run:
+        """Start a trace for an embedding run."""
+        parent_run_id_ = str(parent_run_id) if parent_run_id else None
+        execution_order = self._get_execution_order(parent_run_id_)
+        start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
+        embedding_run = Run(
+            id=run_id,
+            parent_run_id=parent_run_id,
+            serialized=serialized,
+            inputs=inputs if isinstance(inputs, dict) else {"input": inputs},
+            extra=kwargs,
+            events=[{"name": "start", "time": start_time}],
+            start_time=start_time,
+            execution_order=execution_order,
+            child_execution_order=execution_order,
+            child_runs=[],
+            run_type=run_type or "embedding",
+            name=name,
+            tags=tags or [],
+        )
+        self._start_trace(embedding_run)
+        self._on_embedding_start(embedding_run)
+        return embedding_run
+
+    def on_embedding_end(
+        self,
+        vector: Sequence[float],
+        *,
+        run_id: UUID,
+        inputs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Run:
+        """End a trace for an embedding run."""
+        embedding_run = self._get_run(run_id)
+        embedding_run.outputs = {"vector": vector}
+        embedding_run.end_time = datetime.utcnow()
+        embedding_run.events.append({"name": "end", "time": embedding_run.end_time})
+        if inputs is not None:
+            embedding_run.inputs = (
+                inputs if isinstance(inputs, dict) else {"input": inputs}
+            )
+        self._end_trace(embedding_run)
+        self._on_embedding_end(embedding_run)
+        return embedding_run
+
+    def on_embedding_error(
+        self,
+        error: BaseException,
+        *,
+        inputs: Optional[Dict[str, Any]] = None,
+        run_id: UUID,
+        **kwargs: Any,
+    ) -> Run:
+        """Handle an error for a embedding run."""
+        embedding_run = self._get_run(run_id)
+        embedding_run.error = self._get_stacktrace(error)
+        embedding_run.end_time = datetime.utcnow()
+        embedding_run.events.append({"name": "error", "time": embedding_run.end_time})
+        if inputs is not None:
+            embedding_run.inputs = (
+                inputs if isinstance(inputs, dict) else {"input": inputs}
+            )
+        self._end_trace(embedding_run)
+        self._on_embedding_error(embedding_run)
+        return embedding_run
+
     def on_tool_start(
         self,
         serialized: Dict[str, Any],
@@ -498,6 +578,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def _on_chain_error(self, run: Run) -> None:
         """Process the Chain Run upon error."""
+
+    def _on_embedding_start(self, run: Run) -> None:
+        """Process the Embedding Run upon start."""
+
+    def _on_embedding_end(self, run: Run) -> None:
+        """Process the Embedding Run."""
+
+    def _on_embedding_error(self, run: Run) -> None:
+        """Process the Embedding Run upon error."""
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""

@@ -128,6 +128,30 @@ class ChainManagerMixin:
         """Run on agent end."""
 
 
+class EmbeddingManagerMixin:
+    """Mixin for Embeddings callbacks."""
+
+    def on_embedding_end(
+        self,
+        vector: Sequence[float],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when embedding ends running."""
+
+    def on_embedding_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when embedding errors."""
+
+
 class ToolManagerMixin:
     """Mixin for tool callbacks."""
 
@@ -252,6 +276,7 @@ class BaseCallbackHandler(
     LLMManagerMixin,
     ChainManagerMixin,
     ToolManagerMixin,
+    EmbeddingManagerMixin,
     RetrieverManagerMixin,
     CallbackManagerMixin,
     RunManagerMixin,
@@ -275,6 +300,11 @@ class BaseCallbackHandler(
     @property
     def ignore_chain(self) -> bool:
         """Whether to ignore chain callbacks."""
+        return False
+
+    @property
+    def ignore_embedding(self) -> bool:
+        """Whether to ignore embedding callbacks."""
         return False
 
     @property
@@ -399,6 +429,39 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run when chain errors."""
+
+    async def on_embedding_start(
+        self,
+        serialized: Dict[str, Any],
+        inputs: Dict[str, Any],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run when embedding starts running."""
+
+    async def on_embedding_end(
+        self,
+        vector: Sequence[float],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when embedding ends running."""
+
+    async def on_embedding_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when embedding errors."""
 
     async def on_tool_start(
         self,

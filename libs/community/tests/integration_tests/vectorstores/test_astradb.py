@@ -14,9 +14,10 @@ Required to run this test:
 import json
 import math
 import os
-from typing import Iterable, List
+from typing import Iterable, List, Sequence
 
 import pytest
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
@@ -34,13 +35,23 @@ class SomeEmbeddings(Embeddings):
     def __init__(self, dimension: int) -> None:
         self.dimension = dimension
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         return [self.embed_query(txt) for txt in texts]
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         return self.embed_documents(texts)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         unnormed0 = [ord(c) for c in text[: self.dimension]]
         unnormed = (unnormed0 + [1] + [0] * (self.dimension - 1 - len(unnormed0)))[
             : self.dimension
@@ -62,13 +73,23 @@ class ParserEmbeddings(Embeddings):
     def __init__(self, dimension: int) -> None:
         self.dimension = dimension
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         return [self.embed_query(txt) for txt in texts]
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         return self.embed_documents(texts)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         try:
             vals = json.loads(text)
             assert len(vals) == self.dimension

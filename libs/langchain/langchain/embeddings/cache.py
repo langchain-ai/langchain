@@ -14,6 +14,7 @@ import uuid
 from functools import partial
 from typing import Callable, List, Sequence, Union, cast
 
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.stores import BaseStore, ByteStore
 
@@ -94,7 +95,12 @@ class CacheBackedEmbeddings(Embeddings):
         self.document_embedding_store = document_embedding_store
         self.underlying_embeddings = underlying_embeddings
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed a list of texts.
 
         The method first checks the cache for the embeddings.
@@ -127,7 +133,12 @@ class CacheBackedEmbeddings(Embeddings):
             List[List[float]], vectors
         )  # Nones should have been resolved by now
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed query text.
 
         This method does not support caching at the moment.

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Iterator, List, Optional
+from typing import Any, Iterator, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForEmbeddingRun,
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -96,15 +100,35 @@ class JavelinAIGatewayEmbeddings(Embeddings, BaseModel):
 
         return embeddings
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         return self._query(texts)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         return self._query([text])[0]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def _aembed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[AsyncCallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         return await self._aquery(texts)
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def _aembed_query(
+        self,
+        text: str,
+        *,
+        run_manager: AsyncCallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         result = await self._aquery([text])
         return result[0]

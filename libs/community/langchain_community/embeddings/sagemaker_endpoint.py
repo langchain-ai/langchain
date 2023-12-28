@@ -1,5 +1,8 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
@@ -177,8 +180,12 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
 
         return self.content_handler.transform_output(response["Body"])
 
-    def embed_documents(
-        self, texts: List[str], chunk_size: int = 64
+    def _embed_documents(
+        self,
+        texts: List[str],
+        chunk_size: int = 64,
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
     ) -> List[List[float]]:
         """Compute doc embeddings using a SageMaker Inference Endpoint.
 
@@ -199,7 +206,12 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
             results.extend(response)
         return results
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Compute query embeddings using a SageMaker inference endpoint.
 
         Args:

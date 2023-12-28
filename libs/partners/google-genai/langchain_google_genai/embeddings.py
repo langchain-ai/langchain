@@ -1,7 +1,10 @@
-from typing import Dict, List, Optional
-
 # TODO: remove ignore once the google package is published with types
+from typing import Dict, List, Optional, Sequence
+
 import google.generativeai as genai  # type: ignore[import]
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -70,8 +73,12 @@ class GoogleGenerativeAIEmbeddings(BaseModel, Embeddings):
             raise GoogleGenerativeAIError(f"Error embedding content: {e}") from e
         return result["embedding"]
 
-    def embed_documents(
-        self, texts: List[str], batch_size: int = 5
+    def _embed_documents(
+        self,
+        texts: List[str],
+        batch_size: int = 5,
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
     ) -> List[List[float]]:
         """Embed a list of strings. Vertex AI currently
         sets a max batch size of 5 strings.
@@ -86,7 +93,12 @@ class GoogleGenerativeAIEmbeddings(BaseModel, Embeddings):
         task_type = self.task_type or "retrieval_document"
         return self._embed(texts, task_type=task_type)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed a text.
 
         Args:

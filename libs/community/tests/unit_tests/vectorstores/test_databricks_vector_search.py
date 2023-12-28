@@ -1,9 +1,10 @@
 import random
 import uuid
-from typing import List
+from typing import List, Sequence
 from unittest.mock import MagicMock
 
 import pytest
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 
 from langchain_community.vectorstores import DatabricksVectorSearch
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -21,14 +22,23 @@ class FakeEmbeddingsWithDimension(FakeEmbeddings):
         super().__init__()
         self.dimension = dimension
 
-    def embed_documents(self, embedding_texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Return simple embeddings."""
         return [
-            [float(1.0)] * (self.dimension - 1) + [float(i)]
-            for i in range(len(embedding_texts))
+            [float(1.0)] * (self.dimension - 1) + [float(i)] for i in range(len(texts))
         ]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Return simple embeddings."""
         return [float(1.0)] * (self.dimension - 1) + [float(0.0)]
 

@@ -1,6 +1,7 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import requests
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -56,7 +57,12 @@ class JinaEmbeddings(BaseModel, Embeddings):
         # Return just the embeddings
         return [result["embedding"] for result in sorted_embeddings]
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Call out to Jina's embedding endpoint.
         Args:
             texts: The list of texts to embed.
@@ -65,7 +71,12 @@ class JinaEmbeddings(BaseModel, Embeddings):
         """
         return self._embed(texts)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Call out to Jina's embedding endpoint.
         Args:
             text: The text to embed.

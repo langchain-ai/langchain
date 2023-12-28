@@ -1,7 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 
 
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
@@ -38,7 +39,12 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
             )
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         text_features = []
         for text in texts:
             # Tokenize the text
@@ -57,7 +63,12 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
 
         return text_features
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         return self.embed_documents([text])[0]
 
     def embed_image(self, uris: List[str]) -> List[List[float]]:

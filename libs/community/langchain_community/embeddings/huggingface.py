@@ -1,6 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import requests
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field
 
@@ -71,7 +74,12 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
 
         Args:
@@ -92,7 +100,12 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
         Args:
@@ -157,7 +170,12 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace instruct model.
 
         Args:
@@ -170,7 +188,12 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.encode(instruction_pairs, **self.encode_kwargs)
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Compute query embeddings using a HuggingFace instruct model.
 
         Args:
@@ -240,7 +263,12 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
 
         Args:
@@ -253,7 +281,12 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.encode(texts, **self.encode_kwargs)
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
         Args:
@@ -299,7 +332,12 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
     def _headers(self) -> dict:
         return {"Authorization": f"Bearer {self.api_key}"}
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Get the embeddings for a list of texts.
 
         Args:
@@ -331,7 +369,12 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
         )
         return response.json()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
         Args:

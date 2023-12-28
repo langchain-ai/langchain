@@ -1,5 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForEmbeddingRun,
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -100,7 +104,12 @@ class CohereEmbeddings(BaseModel, Embeddings):
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed a list of document texts.
 
         Args:
@@ -111,7 +120,12 @@ class CohereEmbeddings(BaseModel, Embeddings):
         """
         return self.embed(texts, input_type="search_document")
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def _aembed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[AsyncCallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Async call out to Cohere's embedding endpoint.
 
         Args:
@@ -122,7 +136,12 @@ class CohereEmbeddings(BaseModel, Embeddings):
         """
         return await self.aembed(texts, input_type="search_document")
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Call out to Cohere's embedding endpoint.
 
         Args:
@@ -133,7 +152,12 @@ class CohereEmbeddings(BaseModel, Embeddings):
         """
         return self.embed([text], input_type="search_query")[0]
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def _aembed_query(
+        self,
+        text: str,
+        *,
+        run_manager: AsyncCallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Async call out to Cohere's embedding endpoint.
 
         Args:

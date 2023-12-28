@@ -1,7 +1,10 @@
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
@@ -80,7 +83,12 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
             )
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Call out to HuggingFaceHub's embedding endpoint for embedding search docs.
 
         Args:
@@ -97,7 +105,12 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         )
         return json.loads(responses.decode())
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Call out to HuggingFaceHub's embedding endpoint for embedding query text.
 
         Args:

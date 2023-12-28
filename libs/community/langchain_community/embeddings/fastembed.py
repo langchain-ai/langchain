@@ -1,6 +1,9 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Sequence
 
 import numpy as np
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
@@ -78,7 +81,12 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
             ) from ie
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Generate embeddings for documents using FastEmbed.
 
         Args:
@@ -94,7 +102,12 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
             embeddings = self._model.embed(texts)
         return [e.tolist() for e in embeddings]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Generate query embeddings using FastEmbed.
 
         Args:

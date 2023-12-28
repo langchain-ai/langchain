@@ -1,5 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
@@ -35,7 +38,12 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
             )
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed a list of documents using GPT4All.
 
         Args:
@@ -48,7 +56,12 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
         embeddings = [self.client.embed(text) for text in texts]
         return [list(map(float, e)) for e in embeddings]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed a query using GPT4All.
 
         Args:

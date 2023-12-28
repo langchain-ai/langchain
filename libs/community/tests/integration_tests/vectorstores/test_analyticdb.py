@@ -1,7 +1,9 @@
 """Test PGVector functionality."""
-import os
-from typing import List
 
+import os
+from typing import List, Sequence
+
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores.analyticdb import AnalyticDB
@@ -16,20 +18,29 @@ CONNECTION_STRING = AnalyticDB.connection_string_from_db_params(
     password=os.environ.get("PG_PASSWORD", "postgres"),
 )
 
-
 ADA_TOKEN_COUNT = 1536
 
 
 class FakeEmbeddingsWithAdaDimension(FakeEmbeddings):
     """Fake embeddings functionality for testing."""
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Return simple embeddings."""
         return [
             [float(1.0)] * (ADA_TOKEN_COUNT - 1) + [float(i)] for i in range(len(texts))
         ]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Return simple embeddings."""
         return [float(1.0)] * (ADA_TOKEN_COUNT - 1) + [float(0.0)]
 

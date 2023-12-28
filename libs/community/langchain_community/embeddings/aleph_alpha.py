@@ -1,5 +1,8 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -105,7 +108,12 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
 
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Call out to Aleph Alpha's asymmetric Document endpoint.
 
         Args:
@@ -146,7 +154,12 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
 
         return document_embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Call out to Aleph Alpha's asymmetric, query embedding endpoint
         Args:
             text: The text to embed.
@@ -229,7 +242,12 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
 
         return query_response.embedding
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Call out to Aleph Alpha's Document endpoint.
 
         Args:
@@ -244,7 +262,12 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
             document_embeddings.append(self._embed(text))
         return document_embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Call out to Aleph Alpha's asymmetric, query embedding endpoint
         Args:
             text: The text to embed.

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -79,7 +82,12 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
 
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         if self.show_progress_bar:
             try:
                 from tqdm import tqdm
@@ -95,7 +103,12 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
             iter_ = texts
         return [self.embed_query(text) for text in iter_]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed query text."""
         embedding = embed_with_retry(self, self.model_name, text)
         return embedding["embedding"]

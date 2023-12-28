@@ -1,7 +1,8 @@
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 import together  # type: ignore
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
@@ -38,13 +39,23 @@ class TogetherEmbeddings(BaseModel, Embeddings):
         values["_client"] = together.Together()
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed search docs."""
         return [
             i.embedding
             for i in self._client.embeddings.create(input=texts, model=self.model).data
         ]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed query text."""
         return self.embed_documents([text])[0]

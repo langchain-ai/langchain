@@ -1,9 +1,12 @@
 """ This file is for LLMRails Embedding """
 import logging
 import os
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import requests
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
 
@@ -37,7 +40,12 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Call out to Cohere's embedding endpoint.
 
         Args:
@@ -59,7 +67,12 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
         )
         return [item["embedding"] for item in response.json()["data"]]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Call out to Cohere's embedding endpoint.
 
         Args:

@@ -3,8 +3,11 @@ import re
 import string
 import threading
 from concurrent.futures import ThreadPoolExecutor, wait
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.pydantic_v1 import root_validator
@@ -310,8 +313,12 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
             embeddings.extend(t.result())
         return embeddings
 
-    def embed_documents(
-        self, texts: List[str], batch_size: int = 0
+    def _embed_documents(
+        self,
+        texts: List[str],
+        batch_size: int = 0,
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
     ) -> List[List[float]]:
         """Embed a list of documents.
 
@@ -326,7 +333,12 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         """
         return self.embed(texts, batch_size, "RETRIEVAL_DOCUMENT")
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed a text.
 
         Args:

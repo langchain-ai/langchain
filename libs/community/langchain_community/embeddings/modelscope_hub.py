@@ -1,5 +1,8 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
 
@@ -44,7 +47,12 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Compute doc embeddings using a modelscope embedding model.
 
         Args:
@@ -58,7 +66,12 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
         embeddings = self.embed(input=inputs)["text_embedding"]
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Compute query embeddings using a modelscope embedding model.
 
         Args:

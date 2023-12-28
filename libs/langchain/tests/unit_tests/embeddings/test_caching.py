@@ -1,7 +1,9 @@
 """Embeddings tests."""
-from typing import List
+
+from typing import List, Sequence
 
 import pytest
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 from langchain_core.embeddings import Embeddings
 
 from langchain.embeddings import CacheBackedEmbeddings
@@ -9,14 +11,24 @@ from langchain.storage.in_memory import InMemoryStore
 
 
 class MockEmbeddings(Embeddings):
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         # Simulate embedding documents
         embeddings: List[List[float]] = []
         for text in texts:
             embeddings.append([len(text), len(text) + 1])
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         # Simulate embedding a query
         return [5.0, 6.0]
 

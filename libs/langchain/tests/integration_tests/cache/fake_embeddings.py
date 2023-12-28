@@ -1,7 +1,13 @@
 """Fake Embedding class for testing purposes."""
+import asyncio
 import math
-from typing import List
+from functools import partial
+from typing import List, Sequence
 
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForEmbeddingRun,
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 
 fake_texts = ["foo", "bar", "baz"]
@@ -10,23 +16,45 @@ fake_texts = ["foo", "bar", "baz"]
 class FakeEmbeddings(Embeddings):
     """Fake embeddings functionality for testing."""
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Return simple embeddings.
         Embeddings encode each text as its index."""
         return [[float(1.0)] * 9 + [float(i)] for i in range(len(texts))]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        return self.embed_documents(texts)
+    async def _aembed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[AsyncCallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
+        func = partial(self._embed_documents, texts, run_managers=run_managers)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Return constant query embeddings.
         Embeddings are identical to embed_documents(texts)[0].
         Distance to each text will be that text's index,
         as it was passed to embed_documents."""
         return [float(1.0)] * 9 + [float(0.0)]
 
-    async def aembed_query(self, text: str) -> List[float]:
-        return self.embed_query(text)
+    async def _aembed_query(
+        self,
+        text: str,
+        *,
+        run_manager: AsyncCallbackManagerForEmbeddingRun,
+    ) -> List[float]:
+        func = partial(self._embed_query, text, run_manager=run_manager)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
 
 class ConsistentFakeEmbeddings(FakeEmbeddings):
@@ -37,7 +65,12 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         self.known_texts: List[str] = []
         self.dimensionality = dimensionality
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Return consistent embeddings for each text seen so far."""
         out_vectors = []
         for text in texts:
@@ -49,7 +82,12 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
             out_vectors.append(vector)
         return out_vectors
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Return consistent embeddings for the text, if seen before, or a constant
         one if the text is unknown."""
         return self.embed_documents([text])[0]
@@ -60,13 +98,23 @@ class AngularTwoDimensionalEmbeddings(Embeddings):
     From angles (as strings in units of pi) to unit embedding vectors on a circle.
     """
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """
         Make a list of texts into a list of embedding vectors.
         """
         return [self.embed_query(text) for text in texts]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """
         Convert input text to a 'vector' (list of floats).
         If the text is a number, use it as the angle for the

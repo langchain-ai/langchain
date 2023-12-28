@@ -1,7 +1,10 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import requests
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
 
@@ -191,7 +194,12 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             iter_ = input
         return [self._process_emb_response(prompt) for prompt in iter_]
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed documents using an Ollama deployed embedding model.
 
         Args:
@@ -204,7 +212,12 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         embeddings = self._embed(instruction_pairs)
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed a query using a Ollama deployed embedding model.
 
         Args:

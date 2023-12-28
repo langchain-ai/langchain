@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterator, List, Optional
+from typing import Any, Iterator, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -68,8 +71,18 @@ class MlflowAIGatewayEmbeddings(Embeddings, BaseModel):
             embeddings.append(resp["embeddings"])
         return embeddings
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         return self._query(texts)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         return self._query([text])[0]

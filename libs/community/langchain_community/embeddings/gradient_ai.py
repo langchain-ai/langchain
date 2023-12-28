@@ -1,5 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForEmbeddingRun,
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -90,7 +94,12 @@ class GradientEmbeddings(BaseModel, Embeddings):
 
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Call out to Gradient's embedding endpoint.
 
         Args:
@@ -105,7 +114,12 @@ class GradientEmbeddings(BaseModel, Embeddings):
 
         return [e.embedding for e in result]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def _aembed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[AsyncCallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Async call out to Gradient's embedding endpoint.
 
         Args:
@@ -120,7 +134,12 @@ class GradientEmbeddings(BaseModel, Embeddings):
 
         return [e.embedding for e in result]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Call out to Gradient's embedding endpoint.
 
         Args:
@@ -136,7 +155,12 @@ class GradientEmbeddings(BaseModel, Embeddings):
         )
         return self.embed_documents([query])[0]
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def _aembed_query(
+        self,
+        text: str,
+        *,
+        run_manager: AsyncCallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Async call out to Gradient's embedding endpoint.
 
         Args:

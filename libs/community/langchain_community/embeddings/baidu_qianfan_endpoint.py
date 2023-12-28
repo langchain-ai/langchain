@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForEmbeddingRun,
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -104,11 +108,21 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
             )
         return values
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         resp = self.embed_documents([text])
         return resp[0]
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """
         Embeds a list of text documents using the AutoVOT algorithm.
 
@@ -129,11 +143,21 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
             lst.extend([res["embedding"] for res in resp["data"]])
         return lst
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def _aembed_query(
+        self,
+        text: str,
+        *,
+        run_manager: AsyncCallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         embeddings = await self.aembed_documents([text])
         return embeddings[0]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def _aembed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[AsyncCallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         text_in_chunks = [
             texts[i : i + self.chunk_size]
             for i in range(0, len(texts), self.chunk_size)

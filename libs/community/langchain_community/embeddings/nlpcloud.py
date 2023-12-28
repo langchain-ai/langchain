@@ -1,5 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -49,7 +52,12 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
             )
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed a list of documents using NLP Cloud.
 
         Args:
@@ -61,7 +69,12 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
 
         return self.client.embeddings(texts)["embeddings"]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed a query using NLP Cloud.
 
         Args:

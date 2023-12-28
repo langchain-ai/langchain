@@ -231,6 +231,20 @@ class LangChainTracer(BaseTracer):
         """Process the Chain Run upon error."""
         self._submit(self._update_run_single, _copy(run))
 
+    def _on_embedding_start(self, run: Run) -> None:
+        """Process the Embedding Run upon start."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
+        self._submit(self._persist_run_single, _copy(run))
+
+    def _on_embedding_end(self, run: Run) -> None:
+        """Process the Embedding Run."""
+        self._submit(self._update_run_single, _copy(run))
+
+    def _on_embedding_error(self, run: Run) -> None:
+        """Process the Embedding Run upon error."""
+        self._submit(self._update_run_single, _copy(run))
+
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""
         if run.parent_run_id is None:

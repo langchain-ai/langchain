@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.utils import get_from_env
 
 if TYPE_CHECKING:
@@ -195,7 +198,12 @@ class ElasticsearchEmbeddings(Embeddings):
         embeddings = [doc["predicted_value"] for doc in response["inference_results"]]
         return embeddings
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """
         Generate embeddings for a list of documents.
 
@@ -209,7 +217,12 @@ class ElasticsearchEmbeddings(Embeddings):
         """
         return self._embedding_func(texts)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """
         Generate an embedding for a single query text.
 

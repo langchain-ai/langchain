@@ -1,7 +1,10 @@
 import os
 import sys
-from typing import Any, List
+from typing import Any, List, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
 
@@ -63,7 +66,12 @@ class JohnSnowLabsEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Compute doc embeddings using a JohnSnowLabs transformer model.
 
         Args:
@@ -80,7 +88,12 @@ class JohnSnowLabsEmbeddings(BaseModel, Embeddings):
                 emb_col = c
         return [vec.tolist() for vec in df[emb_col].tolist()]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Compute query embeddings using a JohnSnowLabs transformer model.
 
         Args:

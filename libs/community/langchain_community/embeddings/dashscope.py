@@ -7,8 +7,12 @@ from typing import (
     Dict,
     List,
     Optional,
+    Sequence,
 )
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -123,7 +127,12 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
             )
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Call out to DashScope's embedding endpoint for embedding search docs.
 
         Args:
@@ -140,7 +149,12 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
         embedding_list = [item["embedding"] for item in embeddings]
         return embedding_list
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Call out to DashScope's embedding endpoint for embedding query text.
 
         Args:

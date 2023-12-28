@@ -1,7 +1,10 @@
 import hashlib
-from typing import List
+from typing import List, Sequence
 
 import numpy as np
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -15,10 +18,20 @@ class FakeEmbeddings(Embeddings, BaseModel):
     def _get_embedding(self) -> List[float]:
         return list(np.random.normal(size=self.size))
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         return [self._get_embedding() for _ in texts]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         return self._get_embedding()
 
 
@@ -42,8 +55,18 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
         """
         return int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16) % 10**8
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         return [self._get_embedding(seed=self._get_seed(_)) for _ in texts]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         return self._get_embedding(seed=self._get_seed(text))

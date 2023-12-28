@@ -1,9 +1,12 @@
 """Wrapper around Bookend AI embedding models."""
 
 import json
-from typing import Any, List
+from typing import Any, List, Sequence
 
 import requests
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field
 
@@ -46,7 +49,12 @@ class BookendEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
         self.auth_header = {"Authorization": "Basic {}".format(self.api_token)}
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed documents using a Bookend deployed embeddings model.
 
         Args:
@@ -78,7 +86,12 @@ class BookendEmbeddings(BaseModel, Embeddings):
 
         return result
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Embed a query using a Bookend deployed embeddings model.
 
         Args:

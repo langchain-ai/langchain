@@ -1,5 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
@@ -40,7 +43,12 @@ class AwaEmbeddings(BaseModel, Embeddings):
         self.model = model_name
         self.client.model_name = model_name
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Embed a list of documents using AwaEmbedding.
 
         Args:
@@ -51,7 +59,12 @@ class AwaEmbeddings(BaseModel, Embeddings):
         """
         return self.client.EmbeddingBatch(texts)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Compute query embeddings using AwaEmbedding.
 
         Args:

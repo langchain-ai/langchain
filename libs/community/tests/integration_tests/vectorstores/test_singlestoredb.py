@@ -1,8 +1,10 @@
 """Test SingleStoreDB functionality."""
-from typing import List
+
+from typing import List, Sequence
 
 import numpy as np
 import pytest
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores.singlestoredb import SingleStoreDB
@@ -36,10 +38,20 @@ class NormilizedFakeEmbeddings(FakeEmbeddings):
         """Normalize vector."""
         return [float(v / np.linalg.norm(vector)) for v in vector]
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         return [self.normalize(v) for v in super().embed_documents(texts)]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         return self.normalize(super().embed_query(text))
 
 

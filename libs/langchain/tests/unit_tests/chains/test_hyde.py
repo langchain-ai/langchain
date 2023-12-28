@@ -1,7 +1,9 @@
 """Test HyDE."""
-from typing import Any, List, Optional
+
+from typing import Any, List, Optional, Sequence
 
 import numpy as np
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
@@ -17,11 +19,21 @@ from langchain.chains.hyde.prompts import PROMPT_MAP
 class FakeEmbeddings(Embeddings):
     """Fake embedding class for tests."""
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Return random floats."""
         return [list(np.random.uniform(0, 1, 10)) for _ in range(10)]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Return random floats."""
         return list(np.random.uniform(0, 1, 10))
 

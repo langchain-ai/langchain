@@ -2,11 +2,13 @@
 
 https://arxiv.org/abs/2212.10496
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import numpy as np
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -43,7 +45,12 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         """Output keys for Hyde's LLM chain."""
         return self.llm_chain.output_keys
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Call the base embeddings."""
         return self.base_embeddings.embed_documents(texts)
 
@@ -51,7 +58,12 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         """Combine embeddings into final embeddings."""
         return list(np.array(embeddings).mean(axis=0))
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Generate a hypothetical document and embedded it."""
         var_name = self.llm_chain.input_keys[0]
         result = self.llm_chain.generate([{var_name: text}])

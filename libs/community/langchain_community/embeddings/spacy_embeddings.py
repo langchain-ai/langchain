@@ -1,6 +1,10 @@
 import importlib.util
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForEmbeddingRun,
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
@@ -62,7 +66,12 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             )
         return values  # Return the validated values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """
         Generates embeddings for a list of documents.
 
@@ -74,7 +83,12 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         """
         return [self.nlp(text).vector.tolist() for text in texts]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """
         Generates an embedding for a single piece of text.
 
@@ -86,7 +100,12 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         """
         return self.nlp(text).vector.tolist()
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def _aembed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[AsyncCallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """
         Asynchronously generates embeddings for a list of documents.
         This method is not implemented and raises a NotImplementedError.

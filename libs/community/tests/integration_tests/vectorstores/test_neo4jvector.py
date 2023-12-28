@@ -1,7 +1,9 @@
 """Test Neo4jVector functionality."""
+
 import os
 from typing import List
 
+from langchain_core.callbacks.manager import CallbackManagerForEmbeddingRun
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores.neo4j_vector import (
@@ -49,7 +51,12 @@ class FakeEmbeddingsWithOsDimension(FakeEmbeddings):
             for i in range(len(embedding_texts))
         ]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Return simple embeddings."""
         return [float(1.0)] * (OS_TOKEN_COUNT - 1) + [float(texts.index(text) + 1)]
 

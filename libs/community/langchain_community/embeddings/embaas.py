@@ -1,6 +1,9 @@
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import requests
+from langchain_core.callbacks.manager import (
+    CallbackManagerForEmbeddingRun,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -128,7 +131,12 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
                 )
             raise
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingRun],
+    ) -> List[List[float]]:
         """Get embeddings for a list of texts.
 
         Args:
@@ -144,7 +152,12 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
         # flatten the list of lists into a single list
         return [embedding for batch in embeddings for embedding in batch]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingRun,
+    ) -> List[float]:
         """Get embeddings for a single text.
 
         Args:
