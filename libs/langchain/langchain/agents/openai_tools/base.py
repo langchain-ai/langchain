@@ -62,7 +62,9 @@ def create_openai_tools_agent(
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
-    llm_with_stop = llm.bind(tools=[format_tool_to_openai_tool(tool) for tool in tools])
+    llm_with_tools = llm.bind(
+        tools=[format_tool_to_openai_tool(tool) for tool in tools]
+    )
 
     agent = (
         RunnablePassthrough.assign(
@@ -71,7 +73,7 @@ def create_openai_tools_agent(
             )
         )
         | prompt
-        | llm_with_stop
+        | llm_with_tools
         | OpenAIToolsAgentOutputParser()
     )
     return agent
