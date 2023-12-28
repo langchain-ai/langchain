@@ -278,7 +278,7 @@ def handle_event(
                 _run_coros(coros)
 
 
-def _set_context(context: Context):
+def _set_context(context: Context) -> None:
     for var, value in context.items():
         var.set(value)
 

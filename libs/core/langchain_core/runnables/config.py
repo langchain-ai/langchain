@@ -388,7 +388,7 @@ def get_async_callback_manager_for_config(
     )
 
 
-def _set_context(context: Context):
+def _set_context(context: Context) -> None:
     for var, value in context.items():
         var.set(value)
 
