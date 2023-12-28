@@ -388,7 +388,7 @@ def get_async_callback_manager_for_config(
     )
 
 
-def set_context(context: Context):
+def _set_context(context: Context):
     for var, value in context.items():
         var.set(value)
 
@@ -403,11 +403,9 @@ def get_executor_for_config(config: RunnableConfig) -> Generator[Executor, None,
     Yields:
         Generator[Executor, None, None]: The executor.
     """
-
-    context_copy = copy_context()
-
     with ThreadPoolExecutor(
         max_workers=config.get("max_concurrency"),
-        initializer=lambda: set_context(context_copy),
+        initializer=_set_context,
+        initargs=(copy_context(),),
     ) as executor:
         yield executor
