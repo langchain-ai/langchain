@@ -85,7 +85,13 @@ class GitHubAPIWrapper(BaseModel):
                 "https://docs.github.com/en/apps/using-"
                 "github-apps/installing-your-own-github-app"
             )
-        installation = installation[0]
+        try:
+            installation = installation[0]
+        except ValueError as e:
+            raise ValueError(
+                "Please make sure to give correct github parameters "
+                f"Error message: {e}"
+            )
         # create a GitHub instance:
         g = installation.get_github_for_installation()
         repo = g.get_repo(github_repository)
