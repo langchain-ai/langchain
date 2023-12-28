@@ -155,7 +155,9 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     successful_requests: int = 0
     total_cost: float = 0.0
 
-    _lock: threading.Lock = threading.Lock()
+    def __init__(self) -> None:
+        super().__init__()
+        self._lock = threading.Lock()
 
     def __repr__(self) -> str:
         return (
@@ -186,12 +188,12 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         if response.llm_output is None:
             return None
 
-        self._lock.acquire()
-
-        self.successful_requests += 1
         if "token_usage" not in response.llm_output:
-            self._lock.release()
+            with self._lock:
+                self.successful_requests += 1
             return None
+
+        # compute tokens and cost for this request
         token_usage = response.llm_output["token_usage"]
         completion_tokens = token_usage.get("completion_tokens", 0)
         prompt_tokens = token_usage.get("prompt_tokens", 0)
@@ -201,12 +203,17 @@ class OpenAICallbackHandler(BaseCallbackHandler):
                 model_name, completion_tokens, is_completion=True
             )
             prompt_cost = get_openai_token_cost_for_model(model_name, prompt_tokens)
-            self.total_cost += prompt_cost + completion_cost
-        self.total_tokens += token_usage.get("total_tokens", 0)
-        self.prompt_tokens += prompt_tokens
-        self.completion_tokens += completion_tokens
+        else:
+            completion_cost = 0
+            prompt_cost = 0
 
-        self._lock.release()
+        # update shared state behind lock
+        with self._lock:
+            self.total_cost += prompt_cost + completion_cost
+            self.total_tokens += token_usage.get("total_tokens", 0)
+            self.prompt_tokens += prompt_tokens
+            self.completion_tokens += completion_tokens
+            self.successful_requests += 1
 
     def __copy__(self) -> "OpenAICallbackHandler":
         """Return a copy of the callback handler."""
