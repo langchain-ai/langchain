@@ -114,7 +114,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
 
 
 def parse_json_markdown(
-    json_string: str, *, parser: Callable[[str], Any] = json.loads
+    json_string: str, *, parser: Callable[[str], Any] = parse_partial_json
 ) -> dict:
     """
     Parse a JSON string from a Markdown string.
@@ -190,7 +190,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     def parse(self, text: str) -> Any:
         text = text.strip()
         try:
-            return parse_json_markdown(text.strip(), parser=parse_partial_json)
+            return parse_json_markdown(text.strip())
         except JSONDecodeError as e:
             raise OutputParserException(f"Invalid json output: {text}") from e
 
