@@ -40,20 +40,13 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
     function_call = message.additional_kwargs.get("function_call", {})
 
     if function_call:
-        arguments = function_call["arguments"].strip()
-        if len(arguments) == 0:
-            arguments = {}
-        else:
-            try:
-                arguments = json.loads(function_call["arguments"])
-            except JSONDecodeError:
-                try:
-                    arguments = json.loads(arguments.replace("\n", "\\n"))
-                except JSONDecodeError:
-                    raise OutputParserException(
-                        f"Could not parse tool input: {function_call} because "
-                        f"the `arguments` is not valid JSON."
-                    )
+        try:
+            arguments = json.loads(function_call["arguments"], strict=False)
+        except JSONDecodeError:
+            raise OutputParserException(
+                f"Could not parse tool input: {function_call} because "
+                f"the `arguments` is not valid JSON."
+            )
 
         try:
             tools = arguments["actions"]
