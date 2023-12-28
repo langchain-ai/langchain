@@ -450,6 +450,11 @@ def _import_zilliz() -> Any:
     return Zilliz
 
 
+def _import_neuraldb() -> Any:
+    from langchain_community.vectorstores.thirdai_neuraldb import NeuralDBVectorStore
+    return NeuralDBVectorStore
+
+
 def __getattr__(name: str) -> Any:
     if name == "AnalyticDB":
         return _import_analyticdb()
@@ -589,6 +594,8 @@ def __getattr__(name: str) -> Any:
         return _import_zilliz()
     elif name == "VespaStore":
         return _import_vespa()
+    elif name == "NeuralDBVectorStore":
+        return _import_neuraldb()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -663,4 +670,5 @@ __all__ = [
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
+    "NeuralDBVectorStore"
 ]
