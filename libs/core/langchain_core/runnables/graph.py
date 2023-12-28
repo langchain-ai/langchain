@@ -135,3 +135,6 @@ class Graph:
             {node.id: node_data(node) for node in self.nodes.values()},
             [(edge.source, edge.target) for edge in self.edges],
         )
+
+    def print_ascii(self) -> None:
+        print(self.draw_ascii())
