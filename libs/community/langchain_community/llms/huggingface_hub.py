@@ -6,6 +6,7 @@ from langchain_core.pydantic_v1 import Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.llms.utils import enforce_stop_tokens
+from langchain_community.utils.huggingface_hub import is_inference_client_supported
 
 DEFAULT_REPO_ID = "gpt2"
 VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
@@ -18,8 +19,6 @@ class HuggingFaceHub(LLM):
     environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
     it as a named parameter to the constructor.
 
-    Only supports `text-generation`, `text2text-generation` and `summarization` for now.
-
     Example:
         .. code-block:: python
 
@@ -28,11 +27,19 @@ class HuggingFaceHub(LLM):
     """
 
     client: Any  #: :meta private:
-    repo_id: str = DEFAULT_REPO_ID
+    repo_id: Optional[str] = DEFAULT_REPO_ID
+    """(Deprecated) Model name to use
+    when huggingface_hub package is version 0.17 or below."""
+    model: Optional[str] = None
     """Model name to use."""
     task: Optional[str] = None
-    """Task to call the model with.
-    Should be a task that returns `generated_text` or `summary_text`."""
+    """Task to perform on the inference. Used only to default to a recommended model
+    if `model` is not provided. At least `model` or `task` must be provided.
+
+    When huggingface_hub package version is 0.17 or below,
+    it's a task to call the model with.
+    only `text-generation`, `text2text-generation` and `summarization` are supported.
+    The task should return `generated_text` or `summary_text`."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model."""
 
@@ -50,19 +57,30 @@ class HuggingFaceHub(LLM):
             values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
         )
         try:
-            from huggingface_hub.inference_api import InferenceApi
-
             repo_id = values["repo_id"]
-            client = InferenceApi(
-                repo_id=repo_id,
-                token=huggingfacehub_api_token,
-                task=values.get("task"),
-            )
-            if client.task not in VALID_TASKS:
-                raise ValueError(
-                    f"Got invalid task {client.task}, "
-                    f"currently only {VALID_TASKS} are supported"
+            repo_id_specified = DEFAULT_REPO_ID != repo_id
+
+            if repo_id_specified or not is_inference_client_supported():
+                from huggingface_hub import InferenceApi
+
+                client = InferenceApi(
+                    repo_id=repo_id,
+                    token=huggingfacehub_api_token,
+                    task=values.get("task"),
                 )
+
+                if client.task not in VALID_TASKS:
+                    raise ValueError(
+                        f"Got invalid task {client.task}, "
+                        f"currently only {VALID_TASKS} are supported"
+                    )
+            else:
+                from huggingface_hub import InferenceClient
+
+                client = InferenceClient(
+                    model=values.get("model"), token=huggingfacehub_api_token
+                )
+
             values["client"] = client
         except ImportError:
             raise ValueError(
@@ -76,7 +94,7 @@ class HuggingFaceHub(LLM):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"repo_id": self.repo_id, "task": self.task},
+            **{"repo_id": self.repo_id, "model": self.model, "task": self.task},
             **{"model_kwargs": _model_kwargs},
         }
 
@@ -86,6 +104,22 @@ class HuggingFaceHub(LLM):
         return "huggingface_hub"
 
     def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        if type(self.client).__name__ == "InferenceClient":
+            return self._call_with_inference_client(
+                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+            )
+        elif type(self.client).__name__ == "InferenceApi":
+            return self._call_with_inference_api(
+                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+            )
+
+    def _call_with_inference_api(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
@@ -128,3 +162,20 @@ class HuggingFaceHub(LLM):
             # stop tokens when making calls to huggingface_hub.
             text = enforce_stop_tokens(text, stop)
         return text
+
+    def _call_with_inference_client(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        _model_kwargs = self.model_kwargs or {}
+        json = {**_model_kwargs, **kwargs}
+
+        if prompt:
+            json["inputs"] = prompt
+
+        response = self.client.post(json=json, task=self.task)
+
+        return response.decode("utf-8")
