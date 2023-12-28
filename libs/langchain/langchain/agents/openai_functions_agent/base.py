@@ -15,6 +15,7 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
 )
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
 from langchain.agents import BaseSingleActionAgent
@@ -226,3 +227,73 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             callback_manager=callback_manager,
             **kwargs,
         )
+
+
+def create_openai_functions_agent(
+    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+) -> Runnable:
+    """Create an agent that uses OpenAI function calling.
+
+    Examples:
+
+        Creating an agent with no memory
+
+        .. code-block:: python
+
+            from langchain.chat_models import ChatOpenAI
+            from langchain.agents import AgentExecutor, create_openai_functions_agent
+            from langchain import hub
+
+            prompt = hub.pull("hwchase17/openai-functions-agent")
+            model = ChatOpenAI()
+            tools = ...
+
+            agent = create_openai_functions_agent(model, tools, prompt)
+            agent_executor = AgentExecutor(agent=agent, tools=tools)
+
+            agent_executor.invoke({"input": "hi"})
+
+            # Using with chat history
+            from langchain_core.messages import AIMessage, HumanMessage
+            agent_executor.invoke(
+                {
+                    "input": "what's my name?",
+                    "chat_history": [
+                        HumanMessage(content="hi! my name is bob"),
+                        AIMessage(content="Hello Bob! How can I assist you today?"),
+                    ],
+                }
+            )
+
+    Args:
+        llm: LLM to use as the agent. Should work with OpenAI function calling,
+            so either be an OpenAI model that supports that or a wrapper of
+            a different model that adds in equivalent support.
+        tools: Tools this agent has access to.
+        prompt: The prompt to use, must have an input key of `agent_scratchpad`.
+
+    Returns:
+        A runnable sequence representing an agent. It takes as input all the same input
+        variables as the prompt passed in does. It returns as output either an
+        AgentAction or AgentFinish.
+
+    """
+    if "agent_scratchpad" not in prompt.input_variables:
+        raise ValueError(
+            "Prompt must have input variable `agent_scratchpad`, but wasn't found. "
+            f"Found {prompt.input_variables} instead."
+        )
+    llm_with_tools = llm.bind(
+        functions=[format_tool_to_openai_function(t) for t in tools]
+    )
+    agent = (
+        RunnablePassthrough.assign(
+            agent_scratchpad=lambda x: format_to_openai_function_messages(
+                x["intermediate_steps"]
+            )
+        )
+        | prompt
+        | llm_with_tools
+        | OpenAIFunctionsAgentOutputParser()
+    )
+    return agent
