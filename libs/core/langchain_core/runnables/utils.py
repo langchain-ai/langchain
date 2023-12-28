@@ -107,14 +107,20 @@ class IsFunctionArgDict(ast.NodeVisitor):
         self.keys: Set[str] = set()
 
     def visit_Lambda(self, node: ast.Lambda) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node.body)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node)
 
