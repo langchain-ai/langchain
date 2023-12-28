@@ -1,7 +1,6 @@
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-
 from langchain_community.chat_models.wasm_chat import WasmChatService
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 
 @pytest.mark.enable_socket
@@ -9,7 +8,7 @@ def test_chat_wasm_service() -> None:
     """This test requires the port 8080 is not occupied."""
 
     # service url
-    service_url = "https://f370-50-112-58-64.ngrok-free.app"
+    service_url = "https://b008-54-186-154-209.ngrok-free.app"
 
     # create wasm-chat service instance
     chat = WasmChatService(service_url=service_url)
