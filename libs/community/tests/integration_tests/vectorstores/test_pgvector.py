@@ -3,7 +3,6 @@ import os
 from typing import List
 
 import sqlalchemy
-
 from langchain_core.documents import Document
 from sqlalchemy.orm import Session
 
