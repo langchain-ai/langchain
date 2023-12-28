@@ -56,6 +56,7 @@ from langchain_community.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
 from langchain_community.embeddings.llamacpp import LlamaCppEmbeddings
 from langchain_community.embeddings.localai import LocalAIEmbeddings
 from langchain_community.embeddings.minimax import MiniMaxEmbeddings
+from langchain_community.embeddings.mistralai import MistralAIEmbeddings
 from langchain_community.embeddings.mlflow import MlflowEmbeddings
 from langchain_community.embeddings.mlflow_gateway import MlflowAIGatewayEmbeddings
 from langchain_community.embeddings.modelscope_hub import ModelScopeEmbeddings
@@ -136,6 +137,7 @@ __all__ = [
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
     "BookendEmbeddings",
+    "MistralAIEmbeddings",
 ]
 
 
