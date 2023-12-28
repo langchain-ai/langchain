@@ -292,13 +292,17 @@ class VertexAI(_VertexAICommon, BaseLLM):
         return result.total_tokens
 
     def _response_to_generation(
-        self, response: TextGenerationResponse
+        self,
+        response: TextGenerationResponse,
+        candidate_index: int = 0,
     ) -> GenerationChunk:
         """Converts a stream response to a generation chunk."""
         try:
+            raw_candidate: dict = response._prediction_response.predictions[candidate_index]
             generation_info = {
                 "is_blocked": response.is_blocked,
                 "safety_attributes": response.safety_attributes,
+                "logprobs": raw_candidate.get("logprobs", None),
             }
         except Exception:
             generation_info = None
@@ -333,7 +337,10 @@ class VertexAI(_VertexAICommon, BaseLLM):
                     **params,
                 )
                 generations.append(
-                    [self._response_to_generation(r) for r in res.candidates]
+                    [
+                        self._response_to_generation(r, c_idx)
+                        for c_idx, r in enumerate(res.candidates)
+                    ]
                 )
         return LLMResult(generations=generations)
 
@@ -355,7 +362,10 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 **params,
             )
             generations.append(
-                [self._response_to_generation(r) for r in res.candidates]
+                [
+                    self._response_to_generation(r, c_idx)
+                    for c_idx, r in enumerate(res.candidates)
+                ]
             )
         return LLMResult(generations=generations)
 
@@ -375,7 +385,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
             run_manager=run_manager,
             **params,
         ):
-            chunk = self._response_to_generation(stream_resp)
+            chunk = self._response_to_generation(stream_resp, candidate_index=0)
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
