@@ -6,6 +6,7 @@ import logging
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
+from contextvars import Context, copy_context
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -271,10 +272,23 @@ def handle_event(
                 # we end up in a deadlock, as we'd have gotten here from a
                 # running coroutine, which we cannot interrupt to run this one.
                 # The solution is to create a new loop in a new thread.
-                with ThreadPoolExecutor(1) as executor:
+                with _executor_w_context(1) as executor:
                     executor.submit(_run_coros, coros).result()
             else:
                 _run_coros(coros)
+
+
+def _set_context(context: Context) -> None:
+    for var, value in context.items():
+        var.set(value)
+
+
+def _executor_w_context(max_workers: Optional[int] = None) -> ThreadPoolExecutor:
+    return ThreadPoolExecutor(
+        max_workers=max_workers,
+        initializer=_set_context,
+        initargs=(copy_context(),),
+    )
 
 
 def _run_coros(coros: List[Coroutine[Any, Any, Any]]) -> None:
@@ -301,6 +315,7 @@ def _run_coros(coros: List[Coroutine[Any, Any, Any]]) -> None:
 
 
 async def _ahandle_event_for_handler(
+    executor: ThreadPoolExecutor,
     handler: BaseCallbackHandler,
     event_name: str,
     ignore_condition_name: Optional[str],
@@ -317,12 +332,13 @@ async def _ahandle_event_for_handler(
                     event(*args, **kwargs)
                 else:
                     await asyncio.get_event_loop().run_in_executor(
-                        None, functools.partial(event, *args, **kwargs)
+                        executor, functools.partial(event, *args, **kwargs)
                     )
     except NotImplementedError as e:
         if event_name == "on_chat_model_start":
             message_strings = [get_buffer_string(m) for m in args[1]]
             await _ahandle_event_for_handler(
+                executor,
                 handler,
                 "on_llm_start",
                 "ignore_llm",
@@ -364,19 +380,25 @@ async def ahandle_event(
         *args: The arguments to pass to the event handler
         **kwargs: The keyword arguments to pass to the event handler
     """
-    for handler in [h for h in handlers if h.run_inline]:
-        await _ahandle_event_for_handler(
-            handler, event_name, ignore_condition_name, *args, **kwargs
-        )
-    await asyncio.gather(
-        *(
-            _ahandle_event_for_handler(
-                handler, event_name, ignore_condition_name, *args, **kwargs
+    with _executor_w_context() as executor:
+        for handler in [h for h in handlers if h.run_inline]:
+            await _ahandle_event_for_handler(
+                executor, handler, event_name, ignore_condition_name, *args, **kwargs
             )
-            for handler in handlers
-            if not handler.run_inline
+        await asyncio.gather(
+            *(
+                _ahandle_event_for_handler(
+                    executor,
+                    handler,
+                    event_name,
+                    ignore_condition_name,
+                    *args,
+                    **kwargs,
+                )
+                for handler in handlers
+                if not handler.run_inline
+            )
         )
-    )
 
 
 BRM = TypeVar("BRM", bound="BaseRunManager")
