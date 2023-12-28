@@ -32,6 +32,7 @@ from langchain.memory.buffer import (
 )
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
 from langchain.memory.chat_message_histories import (
+    AstraDBChatMessageHistory,
     CassandraChatMessageHistory,
     ChatMessageHistory,
     CosmosDBChatMessageHistory,
@@ -68,6 +69,7 @@ from langchain.memory.vectorstore import VectorStoreRetrieverMemory
 from langchain.memory.zep_memory import ZepMemory
 
 __all__ = [
+    "AstraDBChatMessageHistory",
     "CassandraChatMessageHistory",
     "ChatMessageHistory",
     "CombinedMemory",

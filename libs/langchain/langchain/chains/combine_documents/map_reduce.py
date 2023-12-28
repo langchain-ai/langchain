@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Type
 
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
+from langchain_core.runnables.config import RunnableConfig
+
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
-from langchain.docstore.document import Document
-from langchain.pydantic_v1 import BaseModel, Extra, create_model, root_validator
-from langchain.schema.runnable.config import RunnableConfig
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
@@ -31,7 +32,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 ReduceDocumentsChain,
                 MapReduceDocumentsChain,
             )
-            from langchain.prompts import PromptTemplate
+            from langchain_core.prompts import PromptTemplate
             from langchain.llms import OpenAI
 
             # This controls how each document will be formatted. Specifically,

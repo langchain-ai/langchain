@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-chroma"
 version = "0.1.0"
-description = ""
+description = "RAG using Chroma"
 authors = [
     "Erick Friis <erick@langchain.dev>",
 ]
@@ -20,6 +20,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "rag_chroma"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["OpenAI", "Chroma"]
+tags = ["vectordbs"]
 
 [build-system]
 requires = [

@@ -22,6 +22,12 @@ langchain-cli = ">=0.0.15"
 export_module = "rag_pinecone_rerank"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["OpenAI", "Pinecone", "Cohere"]
+tags = ["vectordbs","post-processing"]
+
 [build-system]
 requires = [
     "poetry-core",

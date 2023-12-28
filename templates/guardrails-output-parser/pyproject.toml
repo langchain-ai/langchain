@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "guardrails-output-parser"
 version = "0.0.1"
-description = ""
+description = "Use guardrails-ai to validate LLM output"
 authors = []
 readme = "README.md"
 
@@ -20,6 +20,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "guardrails_output_parser.chain"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "validation"
+author = "LangChain"
+integrations = ["Guardrails", "OpenAI"]
+tags = ["moderation"]
 
 [build-system]
 requires = [

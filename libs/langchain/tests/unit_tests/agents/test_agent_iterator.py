@@ -1,4 +1,7 @@
+from uuid import UUID
+
 import pytest
+from langchain_core.tools import Tool
 
 from langchain.agents import (
     AgentExecutor,
@@ -6,8 +9,8 @@ from langchain.agents import (
     AgentType,
     initialize_agent,
 )
-from langchain.agents.tools import Tool
 from langchain.llms import FakeListLLM
+from langchain.schema import RUN_KEY
 from tests.unit_tests.agents.test_agent import _get_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
@@ -57,7 +60,6 @@ def test_agent_iterator_stopped_early() -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_agent_async_iterator_stopped_early() -> None:
     """
     Test react chain async iterator when max iterations or
@@ -65,7 +67,7 @@ async def test_agent_async_iterator_stopped_early() -> None:
     """
     # iteration limit
     agent = _get_agent(max_iterations=1)
-    agent_async_iter = agent.iter(inputs="when was langchain made", async_=True)
+    agent_async_iter = agent.iter(inputs="when was langchain made")
 
     outputs = []
     assert isinstance(agent_async_iter, AgentExecutorIterator)
@@ -79,7 +81,7 @@ async def test_agent_async_iterator_stopped_early() -> None:
 
     # execution time limit
     agent = _get_agent(max_execution_time=1e-5)
-    agent_async_iter = agent.iter(inputs="when was langchain made", async_=True)
+    agent_async_iter = agent.iter(inputs="when was langchain made")
     assert isinstance(agent_async_iter, AgentExecutorIterator)
 
     outputs = []
@@ -116,15 +118,21 @@ def test_agent_iterator_with_callbacks() -> None:
     ]
 
     agent = initialize_agent(
-        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
     )
-    agent_iter = agent.iter(inputs="when was langchain made", callbacks=[handler1])
+    agent_iter = agent.iter(
+        inputs="when was langchain made", callbacks=[handler1], include_run_info=True
+    )
 
     outputs = []
     for step in agent_iter:
         outputs.append(step)
     assert isinstance(outputs[-1], dict)
     assert outputs[-1]["output"] == "curses foiled again"
+    assert isinstance(outputs[-1][RUN_KEY].run_id, UUID)
 
     # 1 top level chain run runs, 2 LLMChain runs, 2 LLM runs, 1 tool run
     assert handler1.chain_starts == handler1.chain_ends == 3
@@ -151,7 +159,6 @@ def test_agent_iterator_with_callbacks() -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_agent_async_iterator_with_callbacks() -> None:
     """Test react chain async iterator with callbacks by setting verbose globally."""
     handler1 = FakeCallbackHandler()
@@ -183,7 +190,7 @@ async def test_agent_async_iterator_with_callbacks() -> None:
     agent_async_iter = agent.iter(
         inputs="when was langchain made",
         callbacks=[handler1],
-        async_=True,
+        include_run_info=True,
     )
     assert isinstance(agent_async_iter, AgentExecutorIterator)
 
@@ -192,6 +199,7 @@ async def test_agent_async_iterator_with_callbacks() -> None:
         outputs.append(step)
 
     assert outputs[-1]["output"] == "curses foiled again"
+    assert isinstance(outputs[-1][RUN_KEY].run_id, UUID)
 
     # 1 top level chain run runs, 2 LLMChain runs, 2 LLM runs, 1 tool run
     assert handler1.chain_starts == handler1.chain_ends == 3
@@ -250,7 +258,8 @@ def test_agent_iterator_reset() -> None:
     assert isinstance(agent_iter, AgentExecutorIterator)
 
     # Perform one iteration
-    next(agent_iter)
+    iterator = iter(agent_iter)
+    next(iterator)
 
     # Check if properties are updated
     assert agent_iter.iterations == 1
@@ -281,7 +290,6 @@ def test_agent_iterator_output_structure() -> None:
             assert False, "Unexpected output structure"
 
 
-@pytest.mark.asyncio
 async def test_agent_async_iterator_output_structure() -> None:
     """Test the async output structure of AgentExecutorIterator."""
     agent = _get_agent()
@@ -353,8 +361,8 @@ def test_agent_iterator_failing_tool() -> None:
 
     agent_iter = agent.iter(inputs="when was langchain made")
     assert isinstance(agent_iter, AgentExecutorIterator)
-    # initialise iterator
-    iter(agent_iter)
+    # initialize iterator
+    iterator = iter(agent_iter)
 
     with pytest.raises(ZeroDivisionError):
-        next(agent_iter)
+        next(iterator)

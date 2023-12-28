@@ -14,15 +14,15 @@ from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VST, VectorStore
 
 import langchain.vectorstores
 from langchain.document_loaders.base import BaseLoader
-from langchain.embeddings.base import Embeddings
 from langchain.indexes import aindex, index
 from langchain.indexes._api import _abatch
 from langchain.indexes._sql_record_manager import SQLRecordManager
-from langchain.schema import Document
-from langchain.schema.vectorstore import VST, VectorStore
 
 
 class ToyLoader(BaseLoader):
@@ -58,9 +58,10 @@ class ToyLoader(BaseLoader):
 class InMemoryVectorStore(VectorStore):
     """In-memory implementation of VectorStore using a dictionary."""
 
-    def __init__(self) -> None:
+    def __init__(self, permit_upserts: bool = False) -> None:
         """Vector store interface for testing things in memory."""
         self.store: Dict[str, Document] = {}
+        self.permit_upserts = permit_upserts
 
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
@@ -80,7 +81,7 @@ class InMemoryVectorStore(VectorStore):
         *,
         ids: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> List[str]:
         """Add the given documents to the store (insert behavior)."""
         if ids and len(ids) != len(documents):
             raise ValueError(
@@ -91,11 +92,13 @@ class InMemoryVectorStore(VectorStore):
             raise NotImplementedError("This is not implemented yet.")
 
         for _id, document in zip(ids, documents):
-            if _id in self.store:
+            if _id in self.store and not self.permit_upserts:
                 raise ValueError(
                     f"Document with uid {_id} already exists in the store."
                 )
             self.store[_id] = document
+
+        return list(ids)
 
     async def aadd_documents(
         self,
@@ -113,7 +116,7 @@ class InMemoryVectorStore(VectorStore):
             raise NotImplementedError("This is not implemented yet.")
 
         for _id, document in zip(ids, documents):
-            if _id in self.store:
+            if _id in self.store and not self.permit_upserts:
                 raise ValueError(
                     f"Document with uid {_id} already exists in the store."
                 )
@@ -174,6 +177,12 @@ def vector_store() -> InMemoryVectorStore:
     return InMemoryVectorStore()
 
 
+@pytest.fixture
+def upserting_vector_store() -> InMemoryVectorStore:
+    """Vector store fixture."""
+    return InMemoryVectorStore(permit_upserts=True)
+
+
 def test_indexing_same_content(
     record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
@@ -208,7 +217,6 @@ def test_indexing_same_content(
         }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_same_content(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -321,7 +329,6 @@ def test_index_simple_delete_full(
         }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aindex_simple_delete_full(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -442,7 +449,6 @@ def test_incremental_fails_with_bad_source_ids(
         )
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aincremental_fails_with_bad_source_ids(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -566,7 +572,6 @@ def test_no_delete(
         }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_ano_delete(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -753,7 +758,6 @@ def test_incremental_delete(
     }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aincremental_delete(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -873,7 +877,6 @@ def test_indexing_with_no_docs(
     }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_with_no_docs(
     arecord_manager: SQLRecordManager, vector_store: VectorStore
@@ -915,7 +918,6 @@ def test_deduplication(
     }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_adeduplication(
     arecord_manager: SQLRecordManager, vector_store: VectorStore
@@ -978,7 +980,6 @@ def test_cleanup_with_different_batchsize(
     }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_async_cleanup_with_different_batchsize(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -1061,7 +1062,6 @@ async def _to_async_iter(it: Iterable[Any]) -> AsyncIterator[Any]:
         yield i
 
 
-@pytest.mark.asyncio
 async def test_abatch() -> None:
     """Test the abatch function."""
     batches = _abatch(5, _to_async_iter(range(12)))
@@ -1079,6 +1079,101 @@ async def test_abatch() -> None:
     batches = _abatch(2, _to_async_iter(range(5)))
     assert isinstance(batches, AsyncIterator)
     assert [batch async for batch in batches] == [[0, 1], [2, 3], [4]]
+
+
+def test_indexing_force_update(
+    record_manager: SQLRecordManager, upserting_vector_store: VectorStore
+) -> None:
+    """Test indexing with force update."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+    ]
+
+    assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
+
+    assert index(
+        docs, record_manager, upserting_vector_store, cleanup="full", force_update=True
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 2,
+    }
+
+
+@pytest.mark.requires("aiosqlite")
+async def test_aindexing_force_update(
+    arecord_manager: SQLRecordManager, upserting_vector_store: VectorStore
+) -> None:
+    """Test indexing with force update."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+    ]
+
+    assert await aindex(
+        docs, arecord_manager, upserting_vector_store, cleanup="full"
+    ) == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert await aindex(
+        docs, arecord_manager, upserting_vector_store, cleanup="full"
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
+
+    assert await aindex(
+        docs,
+        arecord_manager,
+        upserting_vector_store,
+        cleanup="full",
+        force_update=True,
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 2,
+    }
 
 
 def test_compatible_vectorstore_documentation() -> None:
@@ -1132,6 +1227,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Cassandra",
         "Chroma",
         "DashVector",
+        "DatabricksVectorSearch",
         "DeepLake",
         "Dingo",
         "ElasticVectorSearch",

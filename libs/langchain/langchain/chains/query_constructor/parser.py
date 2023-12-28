@@ -2,9 +2,8 @@ import datetime
 import warnings
 from typing import Any, Literal, Optional, Sequence, Union
 
+from langchain_core.utils import check_package_version
 from typing_extensions import TypedDict
-
-from langchain.utils import check_package_version
 
 try:
     check_package_version("lark", gte_version="1.1.5")

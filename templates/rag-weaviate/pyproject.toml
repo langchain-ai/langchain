@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-weaviate"
 version = "0.1.0"
-description = ""
+description = "RAG using Weaviate retriever"
 authors = [
     "Erika Cardenas <erika@weaviate.io>",
 ]
@@ -25,6 +25,12 @@ version = "^1.0.0"
 [tool.langserve]
 export_module = "rag_weaviate"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Weaviate"
+integrations = ["Weaviate", "OpenAI"]
+tags = ["vectordbs"]
 
 [build-system]
 requires = [

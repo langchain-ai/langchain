@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "neo4j-generation"
 version = "0.0.1"
-description = ""
+description = "Knowledge graph extraction with Neo4j AuraDB"
 authors = [
     "Tomaz Bratanic <tomaz.bratanic@neo4j.com>",
 ]
@@ -19,6 +19,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "neo4j_generation.chain"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "extraction"
+author = "Neo4j"
+integrations = ["Neo4j", "OpenAI"]
+tags = ["graph-database", "search"]
 
 [build-system]
 requires = [
