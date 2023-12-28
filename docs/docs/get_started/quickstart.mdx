@@ -121,7 +121,7 @@ Once you've installed and initialized the LLM of your choice, we can try using i
 Let's ask it what LangSmith is - this is something that wasn't present in the training data so it shouldn't have a very good response.
 
 ```python
-llm.invoke("What is LangSmith")
+llm.invoke("how can langsmith help with testing?")
 ```
 
 We can also guide it's response with a prompt template.
@@ -129,13 +129,21 @@ Prompt templates are used to convert raw user input to a better input to the LLM
 
 ```python
 from langchain.prompts import ChatPromptTemplate
-prompt = ChatPromptTemplate.from_message([
+prompt = ChatPromptTemplate.from_messages([
     ("system", "You are world class technical documentation writer."),
     ("user", "{input}")
 ])
 ```
 
-The output of a ChatModel is a message. However, it's often much more convenient to work with strings. Let's add a simple output parser to convert the chat message to a string.
+We can now combine these into a simple LLM chain:
+
+```python
+chain = prompt | llm 
+```
+
+We can now invoke it and ask the same question. It still won't know the answer, but it should respond in a more proper tone for a technical writer!
+
+The output of a ChatModel (and therefore, of this chain) is a message. However, it's often much more convenient to work with strings. Let's add a simple output parser to convert the chat message to a string.
 
 ```python
 from langchain_core.output_parsers import StrOutputParser
@@ -143,38 +151,34 @@ from langchain_core.output_parsers import StrOutputParser
 output_parser = StrOutputParser()
 ```
 
-We can now combine these into a simple LLM chain:
+We can now add this to the previous chain:
 
 ```python
 chain = prompt | llm | output_parser
 ```
 
-We can now invoke it and ask the same question. It still won't know the answer, but it should respond in a more proper tone for a technical writer!
+We can now invoke it and ask the same question. The answer will now be a string (rather than a ChatMessage).
 
 ```python
-chain.invoke({"input": "What is LangSmith"})
+chain.invoke({"input": "how can langsmith help with testing?"})
 ```
 
 ### Diving Deeper
 
 We've now successfully set up a basic LLM chain. We only touched on the basics of prompts, models, and output parsers - for a deeper dive into everything mentioned here, see [this section of documentation](/docs/modules/model_io).
 
-## Tracing with LangSmith
-
-Assuming we've set our environment variables as shown in the beginning, all of the model and chain calls we've been making will have been automatically logged to LangSmith.
-Once there, we can use LangSmith to debug and annotate our application traces, then turn them into datasets for evaluating future iterations of the application.
-
-For more on LangSmith [head here](/docs/langsmith/).
 
 ## Retrieval Chain
 
-In order to properly answer this question, we need to provide additional context to the LLM.
+In order to properly answer the original question ("how can langsmith help with testing?"), we need to provide additional context to the LLM.
 We can do this via *retrieval*.
+Retrieval is useful when you have **too much data** to pass to the LLM directly.
+You can then use a retriever to fetch only the most relevant pieces and pass those in.
 
 In this process, we will look up relevant documents from a *Retriever* and then pass them into the prompt.
-A Retriever can be backed by anything - a SQL table, the internet, etc - but in this instance we will populate a vector store and use that as a retriever. For more information on vectorstores, see [this documentation](/docs/modules/data_connection/vectorstores)
+A Retriever can be backed by anything - a SQL table, the internet, etc - but in this instance we will populate a vector store and use that as a retriever. For more information on vectorstores, see [this documentation](/docs/modules/data_connection/vectorstores).
 
-First, we need to load the data that we want to index.
+First, we need to load the data that we want to index:
 
 
 ```python
@@ -184,14 +188,14 @@ loader = WebBaseLoader("https://docs.smith.langchain.com/overview")
 docs = loader.load()
 ```
 
-Next, we need to index it into a vectorstore. This includes a few components, namely an [embedding model](/docs/modules/data_connection/text_embedding) and a [vectorstore](/docs/modules/data_connection/vectorstores).
+Next, we need to index it into a vectorstore. This requires a few components, namely an [embedding model](/docs/modules/data_connection/text_embedding) and a [vectorstore](/docs/modules/data_connection/vectorstores).
 
 For embedding models, we once again provide examples for accessing via OpenAI or via local models.
 
 <Tabs>
   <TabItem value="openai" label="OpenAI" default>
   
-Make sure you have the ``openai`` package installed an the appropriate environment variables set (these are the same as needed for the LLM).
+Make sure you have the openai package installed an the appropriate environment variables set (these are the same as needed for the LLM).
 
 ```python
 from langchain_community.embeddings import OpenAIEmbeddings
@@ -213,7 +217,15 @@ embeddings = OllamaEmbeddings()
 </Tabs>
 
 Now, we can use this embedding model to ingest documents into a vectorstore.
-We will use a simple local vectorstore for simplicity sake.
+We will use a simple local vectorstore, [DocArray InMemorySearch](/docs/integrations/vectorstores/docarray_in_memory), for simplicity's sake.
+
+First we need to install the required packages for that:
+
+```shell
+pip install docarray
+```
+
+Then we can build our index:
 
 ```python
 from langchain_community.vectorstores import DocArrayInMemorySearch
@@ -250,12 +262,13 @@ If we wanted to, we could run this ourselves by passing in documents directly:
 from langchain_core.documents import Document
 
 document_chain.invoke({
-    "input": "what is langsmith",
-    "context": [Document(page_content="langsmith is a platform")]
+    "input": "how can langsmith help with testing?",
+    "context": [Document(page_content="langsmith can let you visualize test results")]
 })
 ```
 
-But we don't want to pass in documents directly - instead we want the documents to come from a retriever. We can do this with a separate chain.
+However, we want the documents to first come from the retriever we just set up.
+That way, for a given question we can use the retriever to dynamically select the most relevant documents and pass those in.
 
 ```python
 from langchain.chains import create_retrieval_chain
@@ -267,10 +280,10 @@ retrieval_chain = create_retrieval_chain(retriever, document_chain)
 We can now invoke this chain. This returns a dictionary - the response from the LLM is in the `answer` key
 
 ```python
-response = retrieval_chain.invoke({"input": "what is langsmith"})
+response = retrieval_chain.invoke({"input": "how can langsmith help with testing?"})
 print(response["answer"])
 
->> Based on the provided context, LangSmith appears to be a tool or platform developed by LangChain...
+// LangSmith offers several features that can help with testing:...
 ```
 
 This answer should be much more accurate!
@@ -300,6 +313,7 @@ from langchain_core.prompts import MessagesPlaceholder
 
 prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name="chat_history"),
+    ("user", "{input}")
     ("user", "Given the above conversation, generate a search query to look up in order to get information relevant to the conversation")
 ])
 retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
@@ -326,7 +340,7 @@ prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name="chat_history"),
     ("user", "{input}"),
 ])
-document_chain = create_stuff_documents_chain(llm1, prompt)
+document_chain = create_stuff_documents_chain(llm, prompt)
 
 retrieval_chain = create_retrieval_chain(retriever_chain, document_chain)
 ```
@@ -368,7 +382,12 @@ retriever_tool = create_retriever_tool(
 ```
 
 
-The search tool that we will use is [Tavily](https://app.tavily.com/). This will require an API key (they have generous free tier). If you do not want to set up an API key, you can skip creating this tool.
+The search tool that we will use is [Tavily](/docs/integrations/retrievers/tavily). This will require an API key (they have generous free tier). After creating it on their platform, you need to set it as an environment variable:
+
+```shell
+export TAVILY_API_KEY=...
+```
+If you do not want to set up an API key, you can skip creating this tool.
 
 ```python
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -429,6 +448,8 @@ We've now successfully set up a basic agent. We only touched on the basics of ag
 Now that we've built an application, we need to serve it. That's where LangServe comes in.
 LangServe helps developers deploy LangChain chains as a REST API. You do not need to use LangServe to use LangChain, but in this guide we'll show how you can deploy your app with LangServe.
 
+While the first part of this guide was intended to be run in a Jupyter Notebook, we will now move out of that. We will be creating a Python file and then interacting with it from the command line.
+
 Install with:
 ```bash
 pip install "langserve[all]"
@@ -436,8 +457,8 @@ pip install "langserve[all]"
 
 ### Server
 
-To create a server for our application we'll make a `serve.py` file with three things:
-1. The definition of our chain (same as above)
+To create a server for our application we'll make a `serve.py` file. This will contain our logic for serving our application. It consists of three things:
+1. The definition of our chain that we just built above
 2. Our FastAPI app
 3. A definition of a route from which to serve the chain, which is done with `langserve.add_routes`
 
@@ -532,18 +553,18 @@ we should see our chain being served at localhost:8000.
 ### Playground
 
 Every LangServe service comes with a simple built-in UI for configuring and invoking the application with streaming output and visibility into intermediate steps.
-Head to http://localhost:8000/agent/playground/ to try it out!
+Head to http://localhost:8000/agent/playground/ to try it out! Pass in the same question as before - "how can langsmith help with testing?" - and it should respond same as before.
 
 ### Client
 
-Now let's set up a client for programmatically interacting with our service. We can easily do this with the `langserve.RemoteRunnable`.
+Now let's set up a client for programmatically interacting with our service. We can easily do this with the `[langserve.RemoteRunnable](/docs/langserve#client)`.
 Using this, we can interact with the served chain as if it were running client-side.
 
 ```python
 from langserve import RemoteRunnable
 
 remote_chain = RemoteRunnable("http://localhost:8000/agent/")
-remote_chain.invoke({"input": "what is langsmith?"})
+remote_chain.invoke({"input": "how can langsmith help with testing?"})
 ```
 
 To learn more about the many other features of LangServe [head here](/docs/langserve).
