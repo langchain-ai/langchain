@@ -61,10 +61,10 @@ from langchain_community.retrievers.qdrant_sparse_vector_retriever import (
     QdrantSparseVectorRetriever,
 )
 from langchain_community.retrievers.remote_retriever import RemoteLangChainRetriever
-from langchain_community.retrievers.thirdai_neuraldb import NeuralDBRetriever
 from langchain_community.retrievers.svm import SVMRetriever
 from langchain_community.retrievers.tavily_search_api import TavilySearchAPIRetriever
 from langchain_community.retrievers.tfidf import TFIDFRetriever
+from langchain_community.retrievers.thirdai_neuraldb import NeuralDBRetriever
 from langchain_community.retrievers.vespa_retriever import VespaRetriever
 from langchain_community.retrievers.weaviate_hybrid_search import (
     WeaviateHybridSearchRetriever,

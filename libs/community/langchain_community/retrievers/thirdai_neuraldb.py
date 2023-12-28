@@ -1,6 +1,7 @@
+import importlib
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -10,8 +11,7 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class NeuralDBRetriever(BaseRetriever):
-    """Document retriever that uses ThirdAI's NeuralDB.
-    """
+    """Document retriever that uses ThirdAI's NeuralDB."""
 
     db: Any = None  #: :meta private:
     """NeuralDB instance"""
@@ -21,18 +21,55 @@ class NeuralDBRetriever(BaseRetriever):
 
         extra = Extra.forbid
         underscore_attrs_are_private = True
-    
+
     @staticmethod
     def _verify_thirdai_library(thirdai_key: Optional[str] = None):
         try:
-            from thirdai import licensing, neural_db
+            from thirdai import licensing
+
+            importlib.util.find_spec("thirdai.neural_db")
+
             licensing.activate(thirdai_key or os.getenv("THIRDAI_KEY"))
         except ImportError:
             raise ModuleNotFoundError(
                 "Could not import thirdai python package and neuraldb dependencies. "
                 "Please install it with `pip install thirdai[neural_db]`."
             )
-        
+
+    @classmethod
+    def from_scratch(
+        cls,
+        thirdai_key: Optional[str] = None,
+        **model_kwargs,
+    ):
+        """
+        Create a NeuralDBRetriever from scratch.
+
+        To use, set the ``THIRDAI_KEY`` environment variable with your ThirdAI
+        API key, or pass ``thirdai_key`` as a named parameter.
+
+        Example:
+            .. code-block:: python
+
+                from langchain_community.retrievers import NeuralDBRetriever
+
+                retriever = NeuralDBRetriever.from_scratch(
+                    thirdai_key="your-thirdai-key",
+                )
+
+                retriever.insert([
+                    "/path/to/doc.pdf",
+                    "/path/to/doc.docx",
+                    "/path/to/doc.csv",
+                ])
+
+                documents = retriever.get_relevant_documents("AI-driven music therapy")
+        """
+        NeuralDBRetriever._verify_thirdai_library(thirdai_key)
+        from thirdai import neural_db as ndb
+
+        return cls(db=ndb.NeuralDB(**model_kwargs))
+
     @classmethod
     def from_bazaar(
         cls,
@@ -43,8 +80,8 @@ class NeuralDBRetriever(BaseRetriever):
         """
         Create a NeuralDBRetriever with a base model from the ThirdAI
         model bazaar.
-        
-        To use, set the ``THIRDAI_KEY`` environment variable with your ThirdAI 
+
+        To use, set the ``THIRDAI_KEY`` environment variable with your ThirdAI
         API key, or pass ``thirdai_key`` as a named parameter.
 
         Example:
@@ -56,20 +93,25 @@ class NeuralDBRetriever(BaseRetriever):
                     base="General QnA",
                     thirdai_key="your-thirdai-key",
                 )
-                
-                retriever.insert(["/path/to/doc.pdf", "/path/to/doc.docx", "/path/to/doc.csv"])
+
+                retriever.insert([
+                    "/path/to/doc.pdf",
+                    "/path/to/doc.docx",
+                    "/path/to/doc.csv",
+                ])
 
                 documents = retriever.get_relevant_documents("AI-driven music therapy")
         """
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
+
         cache = bazaar_cache or str(Path(os.getcwd()) / "model_bazaar")
         if not os.path.exists(cache):
             os.mkdir(cache)
         model_bazaar = ndb.Bazaar(cache)
         model_bazaar.fetch()
         return cls(db=model_bazaar.get_model(base))
-    
+
     @classmethod
     def from_checkpoint(
         cls,
@@ -78,8 +120,8 @@ class NeuralDBRetriever(BaseRetriever):
     ):
         """
         Create a NeuralDBRetriever with a base model from a saved checkpoint
-        
-        To use, set the ``THIRDAI_KEY`` environment variable with your ThirdAI 
+
+        To use, set the ``THIRDAI_KEY`` environment variable with your ThirdAI
         API key, or pass ``thirdai_key`` as a named parameter.
 
         Example:
@@ -91,43 +133,19 @@ class NeuralDBRetriever(BaseRetriever):
                     checkpoint="/path/to/checkpoint.ndb",
                     thirdai_key="your-thirdai-key",
                 )
-                
-                retriever.insert(["/path/to/doc.pdf", "/path/to/doc.docx", "/path/to/doc.csv"])
+
+                retriever.insert([
+                    "/path/to/doc.pdf",
+                    "/path/to/doc.docx",
+                    "/path/to/doc.csv",
+                ])
 
                 documents = retriever.get_relevant_documents("AI-driven music therapy")
         """
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
+
         return cls(db=ndb.NeuralDB.from_checkpoint(checkpoint))
-    
-    @classmethod
-    def from_scratch(
-        cls,
-        thirdai_key: Optional[str] = None,
-        **model_kwargs,
-    ):
-        """
-        Create a NeuralDBRetriever from scratch.
-        
-        To use, set the ``THIRDAI_KEY`` environment variable with your ThirdAI 
-        API key, or pass ``thirdai_key`` as a named parameter.
-
-        Example:
-            .. code-block:: python
-
-                from langchain_community.retrievers import NeuralDBRetriever
-
-                retriever = NeuralDBRetriever.from_scratch(
-                    thirdai_key="your-thirdai-key",
-                )
-                
-                retriever.insert(["/path/to/doc.pdf", "/path/to/doc.docx", "/path/to/doc.csv"])
-
-                documents = retriever.get_relevant_documents("AI-driven music therapy")
-        """
-        NeuralDBRetriever._verify_thirdai_library(thirdai_key)
-        from thirdai import neural_db as ndb
-        return cls(db=ndb.NeuralDB(**model_kwargs))
 
     @root_validator()
     def validate_environments(cls, values: Dict) -> Dict:
@@ -149,10 +167,10 @@ class NeuralDBRetriever(BaseRetriever):
         **kwargs,
     ):
         """Inserts files / document sources into the retriever.
-        
+
         Args:
-            train: When True this means that the underlying model in the 
-            NeuralDB will undergo unsupervised pretraining on the inserted files. 
+            train: When True this means that the underlying model in the
+            NeuralDB will undergo unsupervised pretraining on the inserted files.
             Defaults to True.
             fast_mode: Much faster insertion with a slight drop in performance.
             Defaults to True.
@@ -164,16 +182,17 @@ class NeuralDBRetriever(BaseRetriever):
             fast_approximation=fast_mode,
             **kwargs,
         )
-    
+
     def _preprocess_sources(self, sources):
         """Checks if the provided sources are string paths. If they are, convert
         to NeuralDB document objects.
-        
+
         Args:
             sources: list of either string paths to PDF, DOCX or CSV files, or
             NeuralDB document objects.
         """
         from thirdai import neural_db as ndb
+
         if not sources:
             return sources
         preprocessed_sources = []
@@ -198,7 +217,7 @@ class NeuralDBRetriever(BaseRetriever):
 
     def upvote(self, query: str, document_id: int):
         """The retriever upweights the score of a document for a specific query.
-        This is useful for fine-tuning the retriever to user behavior. 
+        This is useful for fine-tuning the retriever to user behavior.
 
         Args:
             query: text to associate with `document_id`
@@ -216,9 +235,9 @@ class NeuralDBRetriever(BaseRetriever):
             this list, the model will upweight the document id for the query.
         """
         self.db.text_to_result_batch(query_id_pairs)
-    
+
     def associate(self, source: str, target: str):
-        """The retriever associates a source phrase with a target phrase. 
+        """The retriever associates a source phrase with a target phrase.
         When the retriever sees the source phrase, it will also consider results
         that are relevant to the target phrase.
 
@@ -227,9 +246,9 @@ class NeuralDBRetriever(BaseRetriever):
             target: text to associate `source` to.
         """
         self.db.associate(source, target)
-    
+
     def associate_batch(self, text_pairs: List[Tuple[str, str]]):
-        """Given a batch of (source, target) pairs, the retriever associates 
+        """Given a batch of (source, target) pairs, the retriever associates
         each source phrase with the corresponding target phrase.
 
         Args:
@@ -249,12 +268,11 @@ class NeuralDBRetriever(BaseRetriever):
         """
         try:
             references = self.db.search(
-                query=query,
-                top_k=kwargs.get("top_k", 10),
-                **kwargs)
+                query=query, top_k=kwargs.get("top_k", 10), **kwargs
+            )
             return [
                 Document(
-                    page_content=ref.text, 
+                    page_content=ref.text,
                     metadata={
                         "id": ref.id,
                         "upvote_ids": ref.upvote_ids,
@@ -269,13 +287,12 @@ class NeuralDBRetriever(BaseRetriever):
             ]
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
-    
+
     def save(self, path: str):
-        """Saves a NeuralDB instance to disk. Can be loaded into memory by 
+        """Saves a NeuralDB instance to disk. Can be loaded into memory by
         calling NeuralDB.from_checkpoint(path)
 
         Args:
             path: path on disk to save the NeuralDB instance to.
         """
         self.db.save(path)
-        

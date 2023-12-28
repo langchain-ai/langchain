@@ -29,7 +29,6 @@ def test_neuraldb_retriever_from_scratch(test_csv):
     assert_result_correctness(documents)
 
 
-
 @pytest.mark.requires("thirdai[neural_db]")
 def test_neuraldb_retriever_from_checkpoint(test_csv):
     checkpoint = "thirdai-test-save.ndb"
@@ -45,7 +44,6 @@ def test_neuraldb_retriever_from_checkpoint(test_csv):
     finally:
         if os.path.exists(checkpoint):
             shutil.rmtree(checkpoint)
-
 
 
 @pytest.mark.requires("thirdai[neural_db]")
