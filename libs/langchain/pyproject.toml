@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain"
-version = "0.0.351.1"
+version = "0.0.352"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -99,7 +99,7 @@ motor = {version = "^3.3.1", optional = true}
 timescale-vector = {version = "^0.0.1", optional = true}
 typer = {version= "^0.9.0", optional = true}
 anthropic = {version = "^0.3.11", optional = true}
-gigachat = "^0.1.12"
+gigachat = "^0.1.12.1"
 aiosqlite = {version = "^0.19.0", optional = true}
 rspace_client = {version = "^2.5.0", optional = true}
 upstash-redis = {version = "^0.15.0", optional = true}
@@ -129,7 +129,7 @@ duckdb-engine = "^0.9.2"
 pytest-watcher = "^0.2.6"
 freezegun = "^1.2.2"
 responses = "^0.22.0"
-pytest-asyncio = "^0.20.3"
+pytest-asyncio = "^0.23.2"
 lark = "^1.1.5"
 pandas = "^2.0.0"
 pytest-mock  = "^3.10.0"

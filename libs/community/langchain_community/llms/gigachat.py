@@ -110,7 +110,6 @@ class _BaseGigaChat(Serializable):
                 "Please install it with `pip install gigachat`."
             )
         fields = set(cls.__fields__.keys())
-        fields.add("profanity")
         diff = set(values.keys()) - fields
         if diff:
             logger.warning(f"Extra fields {diff} in GigaChat class")

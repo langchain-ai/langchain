@@ -20,7 +20,7 @@ pytest-mock  = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-langchgigachainain-core = {path = "../../core", develop = true}
+gigachain-core = {path = "../../core", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true

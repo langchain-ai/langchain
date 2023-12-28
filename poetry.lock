@@ -962,9 +962,9 @@ develop = true
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
-gigachain-community = ">=0.0.4,<0.1"
+gigachain-community = ">=0.0.4.1,<0.1"
 gigachain-core = "^0.1"
-gigachat = "^0.1.12"
+gigachat = "^0.1.12.1"
 jsonpatch = "^1.33"
 langsmith = "~0.0.70"
 numpy = "^1"
@@ -995,7 +995,7 @@ url = "libs/langchain"
 
 [[package]]
 name = "gigachain-community"
-version = "0.0.4"
+version = "0.0.4.1"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1069,13 +1069,13 @@ url = "libs/experimental"
 
 [[package]]
 name = "gigachat"
-version = "0.1.12"
+version = "0.1.12.1"
 description = "GigaChat. Python-library for GigaChain and LangChain"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "gigachat-0.1.12-py3-none-any.whl", hash = "sha256:0f599e5adfd6e8921fef09af5b4010f319382b28a50dd559076e4665bbafe507"},
-    {file = "gigachat-0.1.12.tar.gz", hash = "sha256:6462039980d273213f84b9ebe577bd6cbd6aa1103f35ae1a8199cb902c4671ae"},
+    {file = "gigachat-0.1.12.1-py3-none-any.whl", hash = "sha256:82fd12535e982cfe4b58fc357eed68898531d4a30ad11ac205c34c788a9fdc41"},
+    {file = "gigachat-0.1.12.1.tar.gz", hash = "sha256:3b235255b1989cbd1c31e69e695198fa227c1499ed8a402da11fc11d06a406fc"},
 ]
 
 [package.dependencies]
