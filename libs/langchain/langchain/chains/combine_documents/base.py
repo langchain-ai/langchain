@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain_core.documents import Document
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.runnables.config import RunnableConfig
 
@@ -13,6 +14,18 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
+
+DEFAULT_DOCUMENT_SEPARATOR = "\n\n"
+DOCUMENTS_KEY = "context"
+DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template("{page_content}")
+
+
+def _validate_prompt(prompt: BasePromptTemplate) -> None:
+    if DOCUMENTS_KEY not in prompt.input_variables:
+        raise ValueError(
+            f"Prompt must accept {DOCUMENTS_KEY} as an input variable. Received prompt "
+            f"with input variables: {prompt.input_variables}"
+        )
 
 
 class BaseCombineDocumentsChain(Chain, ABC):
