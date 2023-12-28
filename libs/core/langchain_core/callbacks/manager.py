@@ -338,6 +338,7 @@ async def _ahandle_event_for_handler(
         if event_name == "on_chat_model_start":
             message_strings = [get_buffer_string(m) for m in args[1]]
             await _ahandle_event_for_handler(
+                executor,
                 handler,
                 "on_llm_start",
                 "ignore_llm",

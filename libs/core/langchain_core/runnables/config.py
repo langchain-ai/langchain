@@ -394,7 +394,9 @@ def _set_context(context: Context) -> None:
 
 
 @contextmanager
-def get_executor_for_config(config: RunnableConfig) -> Generator[Executor, None, None]:
+def get_executor_for_config(
+    config: Optional[RunnableConfig]
+) -> Generator[Executor, None, None]:
     """Get an executor for a config.
 
     Args:
@@ -403,6 +405,7 @@ def get_executor_for_config(config: RunnableConfig) -> Generator[Executor, None,
     Yields:
         Generator[Executor, None, None]: The executor.
     """
+    config = config or {}
     with ThreadPoolExecutor(
         max_workers=config.get("max_concurrency"),
         initializer=_set_context,
