@@ -685,11 +685,10 @@ class Runnable(Generic[Input, Output], ABC):
         # add each chunk to the output stream
         async def consume_astream() -> None:
             try:
-                prev_final_output: Optional[Output] = None
                 final_output: Optional[Output] = None
 
                 async for chunk in self.astream(input, config, **kwargs):
-                    prev_final_output = final_output
+                    prev_final_output: Optional[Output] = final_output
                     if final_output is None:
                         final_output = chunk
                     else:
