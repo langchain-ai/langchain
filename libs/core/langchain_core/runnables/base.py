@@ -5,6 +5,7 @@ import inspect
 import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
+from contextvars import copy_context
 from copy import deepcopy
 from functools import wraps
 from itertools import groupby, tee
@@ -48,6 +49,7 @@ from langchain_core.runnables.config import (
     merge_configs,
     patch_config,
     run_in_executor,
+    var_child_runnable_config,
 )
 from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
@@ -58,6 +60,7 @@ from langchain_core.runnables.utils import (
     Input,
     Output,
     accepts_config,
+    accepts_context,
     accepts_run_manager,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
@@ -950,8 +953,19 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name") or self.get_name(),
         )
         try:
-            output = call_func_with_variable_args(
-                func, input, config, run_manager, **kwargs
+            child_config = patch_config(config, callbacks=run_manager.get_child())
+            context = copy_context()
+            context.run(var_child_runnable_config.set, child_config)
+            output = cast(
+                Output,
+                context.run(
+                    call_func_with_variable_args,
+                    func,  # type: ignore[arg-type]
+                    input,  # type: ignore[arg-type]
+                    config,
+                    run_manager,
+                    **kwargs,
+                ),
             )
         except BaseException as e:
             run_manager.on_chain_error(e)
@@ -986,9 +1000,16 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name") or self.get_name(),
         )
         try:
-            output = await acall_func_with_variable_args(
+            child_config = patch_config(config, callbacks=run_manager.get_child())
+            context = copy_context()
+            context.run(var_child_runnable_config.set, child_config)
+            coro = acall_func_with_variable_args(
                 func, input, config, run_manager, **kwargs
             )
+            if accepts_context(asyncio.create_task):
+                output = await asyncio.create_task(coro, context=context)
+            else:
+                output = await coro
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
@@ -1178,24 +1199,29 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name") or self.get_name(),
         )
         try:
+            child_config = patch_config(config, callbacks=run_manager.get_child())
             if accepts_config(transformer):
-                kwargs["config"] = patch_config(
-                    config, callbacks=run_manager.get_child()
-                )
+                kwargs["config"] = child_config
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
-            iterator = transformer(input_for_transform, **kwargs)  # type: ignore[call-arg]
-            for chunk in iterator:
-                yield chunk
-                if final_output_supported:
-                    if final_output is None:
-                        final_output = chunk
-                    else:
-                        try:
-                            final_output = final_output + chunk  # type: ignore
-                        except TypeError:
-                            final_output = None
-                            final_output_supported = False
+            context = copy_context()
+            context.run(var_child_runnable_config.set, child_config)
+            iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            try:
+                while True:
+                    chunk: Output = context.run(next, iterator)  # type: ignore
+                    yield chunk
+                    if final_output_supported:
+                        if final_output is None:
+                            final_output = chunk
+                        else:
+                            try:
+                                final_output = final_output + chunk  # type: ignore
+                            except TypeError:
+                                final_output = None
+                                final_output_supported = False
+            except StopIteration:
+                pass
             for ichunk in input_for_tracing:
                 if final_input_supported:
                     if final_input is None:
@@ -1254,24 +1280,35 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name") or self.get_name(),
         )
         try:
+            child_config = patch_config(config, callbacks=run_manager.get_child())
             if accepts_config(transformer):
-                kwargs["config"] = patch_config(
-                    config, callbacks=run_manager.get_child()
-                )
+                kwargs["config"] = child_config
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
-            iterator = transformer(input_for_transform, **kwargs)  # type: ignore[call-arg]
-            async for chunk in iterator:
-                yield chunk
-                if final_output_supported:
-                    if final_output is None:
-                        final_output = chunk
+            context = copy_context()
+            context.run(var_child_runnable_config.set, child_config)
+            iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            try:
+                while True:
+                    if accepts_context(asyncio.create_task):
+                        chunk: Output = await asyncio.create_task(
+                            py_anext(iterator),  # type: ignore[arg-type]
+                            context=context,
+                        )
                     else:
-                        try:
-                            final_output = final_output + chunk  # type: ignore
-                        except TypeError:
-                            final_output = None
-                            final_output_supported = False
+                        chunk = cast(Output, await py_anext(iterator))
+                    yield chunk
+                    if final_output_supported:
+                        if final_output is None:
+                            final_output = chunk
+                        else:
+                            try:
+                                final_output = final_output + chunk  # type: ignore
+                            except TypeError:
+                                final_output = None
+                                final_output_supported = False
+            except StopAsyncIteration:
+                pass
             async for ichunk in input_for_tracing:
                 if final_input_supported:
                     if final_input is None:
@@ -2482,16 +2519,24 @@ class RunnableGenerator(Runnable[Input, Output]):
     ) -> None:
         if atransform is not None:
             self._atransform = atransform
+            func_for_name: Callable = atransform
 
         if inspect.isasyncgenfunction(transform):
             self._atransform = transform
+            func_for_name = transform
         elif inspect.isgeneratorfunction(transform):
             self._transform = transform
+            func_for_name = transform
         else:
             raise TypeError(
                 "Expected a generator function type for `transform`."
                 f"Instead got an unsupported type: {type(transform)}"
             )
+
+        try:
+            self.name = func_for_name.__name__
+        except AttributeError:
+            pass
 
     @property
     def InputType(self) -> Any:
@@ -3030,6 +3075,7 @@ class RunnableLambda(Runnable[Input, Output]):
         input: AsyncIterator[Input],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> AsyncIterator[Output]:
         final: Optional[Input] = None
         async for ichunk in input:
@@ -3052,7 +3098,7 @@ class RunnableLambda(Runnable[Input, Output]):
             afunc = f
 
         output = await acall_func_with_variable_args(
-            afunc, cast(Input, final), config, run_manager
+            afunc, cast(Input, final), config, run_manager, **kwargs
         )
 
         # If the output is a runnable, use its astream output
