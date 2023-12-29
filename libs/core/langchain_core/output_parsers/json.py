@@ -194,7 +194,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
                 return None
         else:
             try:
-                return parse_json_markdown(text.strip())
+                return parse_json_markdown(text)
             except JSONDecodeError as e:
                 raise OutputParserException(f"Invalid json output: {text}") from e
 
