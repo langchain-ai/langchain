@@ -260,7 +260,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if type(self)._astream == BaseChatModel._astream:
             # model doesn't implement streaming, so use default implementation
             yield cast(
-                BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
+                BaseMessageChunk,
+                await self.ainvoke(input, config=config, stop=stop, **kwargs),
             )
         else:
             config = config or {}
