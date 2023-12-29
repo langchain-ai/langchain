@@ -85,6 +85,8 @@ def tracing_v2_enabled(
             Defaults to None.
         tags (List[str], optional): The tags to add to the run.
             Defaults to None.
+        client (LangSmithClient, optional): The client of the langsmith.
+            Defaults to None.
 
     Returns:
         None

@@ -109,7 +109,7 @@ class Run(BaseRunV2):
     events: List[Dict[str, Any]] = Field(default_factory=list)
 
     @root_validator(pre=True)
-    def assign_name(cls, values: dict) -> dict:
+    def assign_name(self, values: dict) -> dict:
         """Assign name to the run."""
         if values.get("name") is None:
             if "name" in values["serialized"]:
