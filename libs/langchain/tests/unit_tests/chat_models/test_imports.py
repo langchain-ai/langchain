@@ -29,7 +29,6 @@ EXPECTED_ALL = [
     "ChatYandexGPT",
     "ChatBaichuan",
     "ChatHunyuan",
-    "ChatTongyi",
     "GigaChat",
     "VolcEngineMaasChat",
 ]
