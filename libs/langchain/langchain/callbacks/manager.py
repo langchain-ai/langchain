@@ -53,7 +53,6 @@ __all__ = [
     "CallbackManagerForChainGroup",
     "AsyncCallbackManager",
     "AsyncCallbackManagerForChainGroup",
-    "tracing_enabled",
     "tracing_v2_enabled",
     "collect_runs",
     "atrace_as_chain_group",
