@@ -39,7 +39,6 @@ In addition to controlling which characters you can split on, you can also contr
 - `chunk_overlap`: the maximum overlap between chunks. It can be nice to have some overlap to maintain some continuity between chunks (e.g. do a sliding window).
 - `add_start_index`: whether to include the starting position of each chunk within the original document in the metadata.
 
-
 ```python
 # This is a long document we can split up.
 with open('../../state_of_the_union.txt') as f:
@@ -77,6 +76,13 @@ print(texts[1])
 ```
 
 </CodeOutputBlock>
+
+
+### Evaluate text splitters
+
+You can evaluate text splitters with the [Chunkviz utility](https://www.chunkviz.com/) created by `Greg Kamradt`.
+`Chunkviz` is a great tool for visualizing how your text splitter is working. It will show you how your text is 
+being split up and help in tuning up the splitting parameters.
 
 
 ## Other transformations:

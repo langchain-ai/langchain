@@ -1,19 +1,51 @@
 
 # rag-chroma-multi-modal-multi-vector
 
-Presentations (slide decks, etc) contain visual content that challenges conventional RAG.
+Multi-modal LLMs enable visual assistants that can perform question-answering about images. 
 
-Multi-modal LLMs unlock new ways to build apps over visual content like presentations.
+This template create a visual assistant for slide decks, which often contain visuals such as graphs or figures.
+
+It uses GPT-4V to create image summaries for each slide, embeds the summaries, and stores them in Chroma.
  
-This template performs multi-modal RAG using Chroma with the multi-vector retriever (see [blog](https://blog.langchain.dev/multi-modal-rag-template/)):
+Given a question, relevat slides are retrieved and passed to GPT-4V for answer synthesis.
 
-* Extracts the slides as images
-* Uses GPT-4V to summarize each image
-* Embeds the image summaries with a link to the original images
-* Retrieves relevant image based on similarity between the image summary and the user input
-* Finally pass those images to GPT-4V for answer synthesis
+![mm-captioning](https://github.com/langchain-ai/langchain/assets/122662504/5277ef6b-d637-43c7-8dc1-9b1567470503)
+
+## Input
+
+Supply a slide deck as pdf in the `/docs` directory. 
+
+By default, this template has a slide deck about Q3 earnings from DataDog, a public techologyy company.
+
+Example questions to ask can be:
+```
+How many customers does Datadog have?
+What is Datadog platform % Y/Y growth in FY20, FY21, and FY22?
+```
+
+To create an index of the slide deck, run:
+```
+poetry install
+python ingest.py
+```
 
 ## Storage
+
+Here is the process the template will use to create an index of the slides (see [blog](https://blog.langchain.dev/multi-modal-rag-template/)):
+
+* Extract the slides as a collection of images
+* Use GPT-4V to summarize each image
+* Embed the image summaries using text embeddings with a link to the original images
+* Retrieve relevant image based on similarity between the image summary and the user input question
+* Pass those images to GPT-4V for answer synthesis
+
+By default, this will use [LocalFileStore](https://python.langchain.com/docs/integrations/stores/file_system) to store images and Chroma to store summaries.
+
+For production, it may be desirable to use a remote option such as Redis.
+
+You can set the `local_file_store` flag in `chain.py` and `ingest.py` to switch between the two options.
+
+For Redis, the template will use [UpstashRedisByteStore](https://python.langchain.com/docs/integrations/stores/upstash_redis).
 
 We will use Upstash to store the images, which offers Redis with a REST API.
 
@@ -21,33 +53,22 @@ Simply login [here](https://upstash.com/) and create a database.
 
 This will give you a REST API with:
 
-* UPSTASH_URL
-* UPSTASH_TOKEN
-
+* `UPSTASH_URL`
+* `UPSTASH_TOKEN`
+ 
 Set `UPSTASH_URL` and `UPSTASH_TOKEN` as environment variables to access your database.
 
 We will use Chroma to store and index the image summaries, which will be created locally in the template directory.
 
-## Input
-
-Supply a slide deck as pdf in the `/docs` directory. 
-
-Create your vectorstore (Chroma) and populae Upstash with: 
-
-```
-poetry install
-python ingest.py
-```
-
 ## LLM
 
-The app will retrieve images using multi-modal embeddings, and pass them to GPT-4V.
+The app will retrieve images based on similarity between the text input and the image summary, and pass the images to GPT-4V.
 
 ## Environment Setup
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI GPT-4V.
 
-Set `UPSTASH_URL` and `UPSTASH_TOKEN` as environment variables to access your database.
+Set `UPSTASH_URL` and `UPSTASH_TOKEN` as environment variables to access your database if you use `UpstashRedisByteStore`.
 
 ## Usage
 

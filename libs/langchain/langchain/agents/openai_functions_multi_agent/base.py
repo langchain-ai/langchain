@@ -41,7 +41,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
 
     if function_call:
         try:
-            arguments = json.loads(function_call["arguments"])
+            arguments = json.loads(function_call["arguments"], strict=False)
         except JSONDecodeError:
             raise OutputParserException(
                 f"Could not parse tool input: {function_call} because "

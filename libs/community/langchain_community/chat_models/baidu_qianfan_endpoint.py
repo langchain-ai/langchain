@@ -122,6 +122,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 values,
                 "qianfan_ak",
                 "QIANFAN_AK",
+                default="",
             )
         )
         values["qianfan_sk"] = convert_to_secret_str(
@@ -129,14 +130,17 @@ class QianfanChatEndpoint(BaseChatModel):
                 values,
                 "qianfan_sk",
                 "QIANFAN_SK",
+                default="",
             )
         )
         params = {
-            "ak": values["qianfan_ak"].get_secret_value(),
-            "sk": values["qianfan_sk"].get_secret_value(),
             "model": values["model"],
             "stream": values["streaming"],
         }
+        if values["qianfan_ak"].get_secret_value() != "":
+            params["ak"] = values["qianfan_ak"].get_secret_value()
+        if values["qianfan_sk"].get_secret_value() != "":
+            params["sk"] = values["qianfan_sk"].get_secret_value()
         if values["endpoint"] is not None and values["endpoint"] != "":
             params["endpoint"] = values["endpoint"]
         try:

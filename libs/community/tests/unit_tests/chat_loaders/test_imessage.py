@@ -1,3 +1,4 @@
+import datetime
 import pathlib
 
 from langchain_community.chat_loaders import imessage, utils
@@ -14,8 +15,27 @@ def test_imessage_chat_loader() -> None:
 
     assert chat_sessions[0]["messages"], "Chat messages should not be empty"
 
+    first_message = chat_sessions[0]["messages"][0]
+
     # message content in text field
-    assert "Yeh" in chat_sessions[0]["messages"][0].content, "Chat content mismatch"
+    assert "Yeh" in first_message.content, "Chat content mismatch"
+
+    # time parsed correctly
+    expected_message_time = 720845450393148160
+    assert (
+        first_message.additional_kwargs["message_time"] == expected_message_time
+    ), "unexpected time"
+
+    expected_parsed_time = datetime.datetime(2023, 11, 5, 2, 50, 50, 393148)
+    assert (
+        first_message.additional_kwargs["message_time_as_datetime"]
+        == expected_parsed_time
+    ), "date failed to parse"
+
+    # is_from_me parsed correctly
+    assert (
+        first_message.additional_kwargs["is_from_me"] is False
+    ), "is_from_me failed to parse"
 
     # short message content in attributedBody field
     assert (
