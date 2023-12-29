@@ -395,7 +395,7 @@ def _set_context(context: Context) -> None:
 
 @contextmanager
 def get_executor_for_config(
-    config: Optional[RunnableConfig]
+    config: Optional[RunnableConfig],
 ) -> Generator[Executor, None, None]:
     """Get an executor for a config.
 

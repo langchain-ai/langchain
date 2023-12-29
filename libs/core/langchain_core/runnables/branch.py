@@ -63,6 +63,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
             branch.invoke("hello") # "HELLO"
             branch.invoke(None) # "goodbye"
+
+            # A RunnableBranch constructed using the `|` operator
+            branch = branch | (lambda x: isinstance(x, bool), lambda x: f'{x}')
+            branch.invoke(true) # "true"
     """
 
     branches: Sequence[Tuple[Runnable[Input, bool], Runnable[Input, Output]]]
@@ -172,6 +176,19 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         ):
             raise ValueError("RunnableBranch cannot contain context setters.")
         return specs
+
+    def __or__(
+        self,
+        other: Tuple[
+            Union[
+                Runnable[Input, bool],
+                Callable[[Input], bool],
+                Callable[[Input], Awaitable[bool]],
+            ],
+            RunnableLike,
+        ],
+    ) -> Runnable[Input, Output]:
+        return RunnableBranch([*self.branches] + [other, self.default])
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
