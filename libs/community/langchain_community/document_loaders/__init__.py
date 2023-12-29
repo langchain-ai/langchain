@@ -103,6 +103,7 @@ from langchain_community.document_loaders.geodataframe import GeoDataFrameLoader
 from langchain_community.document_loaders.git import GitLoader
 from langchain_community.document_loaders.gitbook import GitbookLoader
 from langchain_community.document_loaders.github import GitHubIssuesLoader
+from langchain_community.document_loaders.github import GithubFileLoader
 from langchain_community.document_loaders.google_speech_to_text import (
     GoogleSpeechToTextLoader,
 )
@@ -296,6 +297,7 @@ __all__ = [
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GeoDataFrameLoader",
+    "GithubFileLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
