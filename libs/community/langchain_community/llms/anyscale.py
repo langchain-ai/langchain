@@ -11,31 +11,28 @@ from typing import (
     Set,
     Tuple,
 )
-from openai.resources import Completions
 
 import requests
-from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str
-
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+
 from langchain_community.llms.openai import (
     BaseOpenAI,
     acompletion_with_retry,
     completion_with_retry,
 )
-from langchain_core.utils import get_from_dict_or_env
 from langchain_community.utils.openai import is_openai_v1
 
 DEFAULT_BASE_URL = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
-COMPLETION_MODELS = [
-    "Meta-Llama/Llama-Guard-7b"
-    ]
+COMPLETION_MODELS = ["Meta-Llama/Llama-Guard-7b"]
+
 
 def update_token_usage(
     keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]
@@ -70,6 +67,7 @@ def create_llm_result(
     llm_output = {"token_usage": token_usage, "model_name": model_name}
     return LLMResult(generations=generations, llm_output=llm_output)
 
+
 class Anyscale(BaseOpenAI):
     """Anyscale large language models.
 
@@ -96,7 +94,7 @@ class Anyscale(BaseOpenAI):
     model_name: str = Field(default=DEFAULT_MODEL)
 
     prefix_messages: List = Field(default_factory=list)
-    
+
     def __new__(cls, **data: Any) -> BaseOpenAI:  # type: ignore
         """Initialize the OpenAI object."""
         model_name = data.get("model_name", "")
@@ -240,7 +238,10 @@ class Anyscale(BaseOpenAI):
             else:
                 response = completion_with_retry(
                     ## THis is the ONLY change from BaseOpenAI()._generate()
-                    self, prompt=_prompts[0], run_manager=run_manager, **params
+                    self,
+                    prompt=_prompts[0],
+                    run_manager=run_manager,
+                    **params,
                 )
                 if not isinstance(response, dict):
                     # V1 client returns the response in an PyDantic object instead of
@@ -304,7 +305,10 @@ class Anyscale(BaseOpenAI):
             else:
                 response = await acompletion_with_retry(
                     ## THis is the ONLY change from BaseOpenAI()._agenerate()
-                    self, prompt=_prompts[0], run_manager=run_manager, **params
+                    self,
+                    prompt=_prompts[0],
+                    run_manager=run_manager,
+                    **params,
                 )
                 if not isinstance(response, dict):
                     response = response.dict()
@@ -317,6 +321,7 @@ class Anyscale(BaseOpenAI):
             token_usage,
             system_fingerprint=system_fingerprint,
         )
+
 
 class AnyscaleChat(BaseOpenAI):
     """Anyscale large language models.
@@ -344,7 +349,7 @@ class AnyscaleChat(BaseOpenAI):
     model_name: str = Field(default=DEFAULT_MODEL)
 
     prefix_messages: List = Field(default_factory=list)
-    
+
     @staticmethod
     def get_available_models(
         anyscale_api_key: str = "",
