@@ -201,7 +201,7 @@ class BedrockBase(BaseModel, ABC):
         "cohere": "stop_sequences",
     }
 
-    guardrails: Optional[Mapping[str, str]] = {
+    guardrails: Optional[Mapping[str, Any]] = {
         "id" : None,
         "version" : None,
         "trace" : False
@@ -365,10 +365,13 @@ class BedrockBase(BaseModel, ABC):
             text = enforce_stop_tokens(text, stop)
 
         #Verify and raise a callback error if any intervention occurs or a signal is sent from a Bedrock service, such as when guardrails are triggered.
-        error, reason = self._inspect_bedrock_services_signal(body, run_manager).values()
+        result = self._inspect_bedrock_services_signal(body)
 
-        if error and run_manager is not None:
-            run_manager.on_llm_error(error, reason=reason)
+        signal = result.get("signal")
+        reason = result.get("reason")
+
+        if signal and run_manager is not None:
+            run_manager.on_llm_error(signal, reason=reason)
 
         return text
 
@@ -384,12 +387,12 @@ class BedrockBase(BaseModel, ABC):
         if self._guardrails_enabled and self.guardrails.get("trace"):
             if self._check_if_guardrails_intervened(body):
                 return {
-                    "error" : True,
+                    "signal" : True,
                     "reason" : "GUARDRAIL_INTERVENED"
                 }
 
         return {
-            "error" : False,
+            "signal" : False,
         }
 
 
@@ -472,8 +475,8 @@ class BedrockBase(BaseModel, ABC):
             if run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
-                if result.get("error"):
-                    run_manager.on_llm_error(result.get("error"), reason=result.get("reason"))
+                if result.get("signal"):
+                    run_manager.on_llm_error(result.get("signal"), reason=result.get("reason"))
 
 
 
