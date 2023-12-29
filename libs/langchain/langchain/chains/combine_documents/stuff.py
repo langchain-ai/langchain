@@ -182,8 +182,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     def _get_inputs(self, docs: List[Document], **kwargs: Any) -> dict:
         """Construct inputs from kwargs and docs.
 
-        Format and the join all the documents together into one input with name
-        `self.document_variable_name`. The pluck any additional variables
+        Format and then join all the documents together into one input with name
+        `self.document_variable_name`. Also pluck any additional variables
         from **kwargs.
 
         Args:

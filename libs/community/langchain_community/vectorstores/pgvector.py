@@ -203,8 +203,7 @@ class PGVector(VectorStore):
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
         self.engine_args = engine_args or {}
-        # Create a connection if not provided, otherwise use the provided connection
-        self._conn = connection if connection else self.connect()
+        self._bind = connection if connection else self._create_engine()
         self.__post_init__()
 
     def __post_init__(
@@ -220,21 +219,19 @@ class PGVector(VectorStore):
         self.create_collection()
 
     def __del__(self) -> None:
-        if self._conn:
-            self._conn.close()
+        if isinstance(self._bind, sqlalchemy.engine.Connection):
+            self._bind.close()
 
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
 
-    def connect(self) -> sqlalchemy.engine.Connection:
-        engine = sqlalchemy.create_engine(self.connection_string, **self.engine_args)
-        conn = engine.connect()
-        return conn
+    def _create_engine(self) -> sqlalchemy.engine.Engine:
+        return sqlalchemy.create_engine(url=self.connection_string, **self.engine_args)
 
     def create_vector_extension(self) -> None:
         try:
-            with Session(self._conn) as session:
+            with Session(self._bind) as session:
                 # The advisor lock fixes issue arising from concurrent
                 # creation of the vector extension.
                 # https://github.com/langchain-ai/langchain/issues/12933
@@ -252,24 +249,24 @@ class PGVector(VectorStore):
             raise Exception(f"Failed to create vector extension: {e}") from e
 
     def create_tables_if_not_exists(self) -> None:
-        with self._conn.begin():
-            Base.metadata.create_all(self._conn)
+        with Session(self._bind) as session, session.begin():
+            Base.metadata.create_all(session.get_bind())
 
     def drop_tables(self) -> None:
-        with self._conn.begin():
-            Base.metadata.drop_all(self._conn)
+        with Session(self._bind) as session, session.begin():
+            Base.metadata.drop_all(session.get_bind())
 
     def create_collection(self) -> None:
         if self.pre_delete_collection:
             self.delete_collection()
-        with Session(self._conn) as session:
+        with Session(self._bind) as session:
             self.CollectionStore.get_or_create(
                 session, self.collection_name, cmetadata=self.collection_metadata
             )
 
     def delete_collection(self) -> None:
         self.logger.debug("Trying to delete collection")
-        with Session(self._conn) as session:
+        with Session(self._bind) as session:
             collection = self.get_collection(session)
             if not collection:
                 self.logger.warning("Collection not found")
@@ -280,7 +277,7 @@ class PGVector(VectorStore):
     @contextlib.contextmanager
     def _make_session(self) -> Generator[Session, None, None]:
         """Create a context manager for the session, bind to _conn string."""
-        yield Session(self._conn)
+        yield Session(self._bind)
 
     def delete(
         self,
@@ -292,7 +289,7 @@ class PGVector(VectorStore):
         Args:
             ids: List of ids to delete.
         """
-        with Session(self._conn) as session:
+        with Session(self._bind) as session:
             if ids is not None:
                 self.logger.debug(
                     "Trying to delete vectors by ids (represented by the model "
@@ -366,7 +363,7 @@ class PGVector(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        with Session(self._conn) as session:
+        with Session(self._bind) as session:
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
@@ -496,7 +493,7 @@ class PGVector(VectorStore):
         filter: Optional[Dict[str, str]] = None,
     ) -> List[Any]:
         """Query the collection."""
-        with Session(self._conn) as session:
+        with Session(self._bind) as session:
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
