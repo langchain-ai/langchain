@@ -77,10 +77,12 @@ class RedisChatMessageHistoryWithTokenLimit(RedisChatMessageHistory):
         key_prefix: str = "message_store:",
         ttl: Optional[int] = None,
         max_token_limit=2000,
+        retain_messages=True,
     ):
         super().__init__(session_id=session_id, url=url, key_prefix=key_prefix, ttl=ttl)
         self.llm = llm
         self.max_token_limit = max_token_limit
+        self.retain_messages = retain_messages
 
     @property
     def messages(self) -> List[BaseMessage]:
@@ -88,5 +90,6 @@ class RedisChatMessageHistoryWithTokenLimit(RedisChatMessageHistory):
         messages = super().messages
         while self.llm.get_num_tokens_from_messages(messages) > self.max_token_limit:
             del messages[0]
-            self.redis_client.rpop(self.key)
+            if not self.retain_messages:
+                self.redis_client.rpop(self.key)
         return messages

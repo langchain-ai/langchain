@@ -41,11 +41,12 @@ def mock_llm_tokens_over_max_size():
     return mock_llm
 
 
-def test_history_larger_than_max_token_limit(
+def test_history_smaller_than_max_token_limit(
     mock_super_messages, mock_redis, mock_llm_tokens_below_max_size
 ) -> None:
     history = RedisChatMessageHistoryWithTokenLimit(
-        session_id="test_session_id", llm=mock_llm_tokens_below_max_size
+        session_id="test_session_id",
+        llm=mock_llm_tokens_below_max_size,
     )
     messages = history.messages
     mock_llm_tokens_below_max_size.get_num_tokens_from_messages.assert_called_once()
@@ -53,13 +54,29 @@ def test_history_larger_than_max_token_limit(
     assert messages == ["Message1", "Message2"]
 
 
-def test_history_smaller_than_max_token_limit(
+def test_history_larger_than_max_token_limit_remove_messages(
     mock_super_messages, mock_redis, mock_llm_tokens_over_max_size
 ) -> None:
     history = RedisChatMessageHistoryWithTokenLimit(
-        session_id="test_session_id", llm=mock_llm_tokens_over_max_size
+        session_id="test_session_id",
+        llm=mock_llm_tokens_over_max_size,
+        retain_messages=False,
     )
     messages = history.messages
     assert mock_llm_tokens_over_max_size.get_num_tokens_from_messages.call_count == 2
     mock_redis.rpop.assert_called_once()
+    assert messages == ["Message2"]
+
+
+def test_history_larger_than_max_token_limit_retain_messages(
+    mock_super_messages, mock_redis, mock_llm_tokens_over_max_size
+) -> None:
+    history = RedisChatMessageHistoryWithTokenLimit(
+        session_id="test_session_id",
+        llm=mock_llm_tokens_over_max_size,
+        retain_messages=True,
+    )
+    messages = history.messages
+    assert mock_llm_tokens_over_max_size.get_num_tokens_from_messages.call_count == 2
+    mock_redis.rpop.assert_not_called()
     assert messages == ["Message2"]
