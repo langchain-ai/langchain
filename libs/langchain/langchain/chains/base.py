@@ -249,7 +249,9 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        return await run_in_executor(None, self._call, inputs, run_manager)
+        return await run_in_executor(
+            None, self._call, inputs, run_manager.get_sync() if run_manager else None
+        )
 
     def __call__(
         self,
