@@ -1007,7 +1007,7 @@ class Runnable(Generic[Input, Output], ABC):
                 func, input, config, run_manager, **kwargs
             )
             if accepts_context(asyncio.create_task):
-                output = await asyncio.create_task(coro, context=context)
+                output = await asyncio.create_task(coro, context=context)  # type: ignore[call-arg]
             else:
                 output = await coro
         except BaseException as e:
@@ -1291,7 +1291,7 @@ class Runnable(Generic[Input, Output], ABC):
             try:
                 while True:
                     if accepts_context(asyncio.create_task):
-                        chunk: Output = await asyncio.create_task(
+                        chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
                             py_anext(iterator),  # type: ignore[arg-type]
                             context=context,
                         )
