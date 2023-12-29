@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+
 from langsmith.schemas import RunBase as BaseRunV2
 
 from langchain_core.pydantic_v1 import Field, root_validator
@@ -34,4 +35,3 @@ Run.update_forward_refs()
 __all__ = [
     "Run",
 ]
-
