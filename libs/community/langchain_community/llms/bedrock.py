@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.outputs import GenerationChunk
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
@@ -20,6 +20,7 @@ from langchain_community.utilities.anthropic import (
 if TYPE_CHECKING:
     from botocore.config import Config
 
+GUARDRAILS_BODY_KEY = "amazon-bedrock-guardrailAssessment"
 HUMAN_PROMPT = "\n\nHuman:"
 ASSISTANT_PROMPT = "\n\nAssistant:"
 ALTERNATION_ERROR = (
@@ -103,21 +104,27 @@ class LLMInputOutputAdapter:
         return input_body
 
     @classmethod
-    def prepare_output(cls, provider: str, response: Any) -> str:
+    def prepare_output(cls, provider: str, response: Any) -> dict:
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
-            return response_body.get("completion")
+            text = response_body.get("completion")
         else:
             response_body = json.loads(response.get("body").read())
 
-        if provider == "ai21":
-            return response_body.get("completions")[0].get("data").get("text")
-        elif provider == "cohere":
-            return response_body.get("generations")[0].get("text")
-        elif provider == "meta":
-            return response_body.get("generation")
-        else:
-            return response_body.get("results")[0].get("outputText")
+            if provider == "ai21":
+                text = response_body.get("completions")[0].get("data").get("text")
+            elif provider == "cohere":
+                text = response_body.get("generations")[0].get("text")
+            elif provider == "meta":
+                text = response_body.get("generation")
+            else:
+                text = response_body.get("results")[0].get("outputText")
+
+        return {
+            "text" : text,
+            "body" : response_body,
+        }
+
 
     @classmethod
     def prepare_output_stream(
@@ -146,7 +153,10 @@ class LLMInputOutputAdapter:
 
                 # chunk obj format varies with provider
                 yield GenerationChunk(
-                    text=chunk_obj[cls.provider_to_output_key_map[provider]]
+                    text=chunk_obj[cls.provider_to_output_key_map[provider]],
+                    generation_info={
+                        GUARDRAILS_BODY_KEY : chunk_obj.get(GUARDRAILS_BODY_KEY) if GUARDRAILS_BODY_KEY in chunk_obj else None,
+                    }
                 )
 
 
@@ -194,6 +204,7 @@ class BedrockBase(BaseModel, ABC):
     guardrails: Optional[Mapping[str, str]] = {
         "id" : None,
         "version" : None,
+        "trace" : False
     }
     """
     An optional dictionary to configure guardrails for Bedrock.
@@ -281,6 +292,7 @@ class BedrockBase(BaseModel, ABC):
         """
         Determines if guardrails are enabled and correctly configured.
         Checks if 'guardrails' is a dictionary with non-empty 'id' and 'version' keys.
+        Checks if 'guardrails.trace' is true.
 
         Returns:
             bool: True if guardrails are correctly configured, False otherwise.
@@ -288,6 +300,7 @@ class BedrockBase(BaseModel, ABC):
             TypeError: If 'guardrails' lacks 'id' or 'version' keys.
         """
         try:
+
             return isinstance(self.guardrails, dict) and bool(self.guardrails["id"]) and bool(self.guardrails["version"])
 
         except KeyError as e:
@@ -337,12 +350,13 @@ class BedrockBase(BaseModel, ABC):
 
         if self._guardrails_enabled:
             request_options["guardrail"] = "ENABLED"
-
+            if self.guardrails.get("trace"):
+                request_options["trace"] = "ENABLED"
 
         try:
             response = self.client.invoke_model(**request_options)
 
-            text = LLMInputOutputAdapter.prepare_output(provider, response)
+            text, body = LLMInputOutputAdapter.prepare_output(provider, response).values()
 
         except Exception as e:
             raise ValueError(f"Error raised by bedrock service: {e}")
@@ -350,7 +364,52 @@ class BedrockBase(BaseModel, ABC):
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
 
+        #Verify and raise a callback error if any intervention occurs or a signal is sent from a Bedrock service, such as when guardrails are triggered.
+        error, reason = self._inspect_bedrock_services_signal(body, run_manager).values()
+
+        if error and run_manager is not None:
+            run_manager.on_llm_error(error, reason=reason)
+
         return text
+
+
+    def _inspect_bedrock_services_signal(self, body: dict) -> dict:
+        """
+            This function checks the response body for an interrupt flag or message that indicates
+            whether any of the Bedrock services have intervened in the processing flow. It is
+            primarily used to identify modifications or interruptions imposed by these services
+            during the request-response cycle with a Large Language Model (LLM).
+            """
+
+        if self._guardrails_enabled and self.guardrails.get("trace"):
+            if self._check_if_guardrails_intervened(body):
+                return {
+                    "error" : True,
+                    "reason" : "GUARDRAIL_INTERVENED"
+                }
+
+        return {
+            "error" : False,
+        }
+
+
+
+
+    def _check_if_guardrails_intervened(self, body: dict) -> bool:
+        """
+        Determines if guardrails for Bedrock service intervened in the generation of response.
+
+        Args:
+           body dict():
+
+        Returns:
+           str: The text that was generated by the model.
+        """
+
+        if body.get(GUARDRAILS_BODY_KEY) == "GUARDRAIL_INTERVENED":
+            return True
+
+        return False
 
     def _prepare_input_and_invoke_stream(
         self,
@@ -404,9 +463,17 @@ class BedrockBase(BaseModel, ABC):
         for chunk in LLMInputOutputAdapter.prepare_output_stream(
             provider, response, stop
         ):
+
             yield chunk
+
+            # verify and raise callback error if any middleware intervened
+            result = self._inspect_bedrock_services_signal(chunk.generation_info)
+
             if run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+
+                if result.get("error"):
+                    run_manager.on_llm_error(result.get("error"), reason=result.get("reason"))
 
 
 
@@ -524,7 +591,7 @@ class Bedrock(LLM, BedrockBase):
                 completion += chunk.text
             return completion
 
-        return self._prepare_input_and_invoke(prompt=prompt, stop=stop, **kwargs)
+        return self._prepare_input_and_invoke(prompt=prompt, stop=stop,run_manager=run_manager, **kwargs)
 
     def get_num_tokens(self, text: str) -> int:
         if self._model_is_anthropic:
