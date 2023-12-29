@@ -134,6 +134,7 @@ def _tracing_v2_is_enabled() -> bool:
         env_var_is_set("LANGCHAIN_TRACING_V2")
         or tracing_v2_callback_var.get() is not None
         or get_run_tree_context() is not None
+        or env_var_is_set("LANGCHAIN_TRACING")
     )
 
 
