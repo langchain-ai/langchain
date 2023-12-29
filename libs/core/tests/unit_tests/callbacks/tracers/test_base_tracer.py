@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import pytest
 from freezegun import freeze_time
+
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import HumanMessage
 from langchain_core.outputs import LLMResult
@@ -35,12 +36,12 @@ def _compare_run_with_error(run: Run, expected_run: Run) -> None:
         assert len(expected_run.child_runs) == len(run.child_runs)
         for received, expected in zip(run.child_runs, expected_run.child_runs):
             _compare_run_with_error(received, expected)
-    received = run.dict(exclude={"child_runs"})
-    received_err = received.pop("error")
-    expected = expected_run.dict(exclude={"child_runs"})
-    expected_err = expected.pop("error")
+    received_dict = run.dict(exclude={"child_runs"})
+    received_err = received_dict.pop("error")
+    expected_dict = expected_run.dict(exclude={"child_runs"})
+    expected_err = expected_dict.pop("error")
 
-    assert received == expected
+    assert received_dict == expected_dict
     if expected_err is not None:
         assert received_err is not None
         assert expected_err in received_err
@@ -383,6 +384,7 @@ def test_tracer_llm_run_on_error_callback() -> None:
     tracer = FakeTracerWithLlmErrorCallback()
     tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
     tracer.on_llm_error(exception, run_id=uuid)
+    assert tracer.error_run is not None
     _compare_run_with_error(tracer.error_run, compare_run)
 
 
