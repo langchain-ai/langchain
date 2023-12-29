@@ -233,8 +233,8 @@ class GPTRouter(BaseChatModel):
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: CallbackManagerForLLMRun | None = None,
-        stream: bool | None = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
@@ -259,8 +259,8 @@ class GPTRouter(BaseChatModel):
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: AsyncCallbackManagerForLLMRun | None = None,
-        stream: bool | None = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming

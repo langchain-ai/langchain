@@ -118,7 +118,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         return parent_run.child_execution_order + 1
 
-    def _get_run(self, run_id: UUID, run_type: str | None = None) -> Run:
+    def _get_run(self, run_id: UUID, run_type: Optional[str] = None) -> Run:
         try:
             run = self.run_map[str(run_id)]
         except KeyError as exc:

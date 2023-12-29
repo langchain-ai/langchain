@@ -96,7 +96,7 @@ class BaseGenerationOutputParser(
 
     async def ainvoke(
         self,
-        input: str | BaseMessage,
+        input: Union[str, BaseMessage],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> T:
@@ -185,7 +185,7 @@ class BaseOutputParser(
 
     async def ainvoke(
         self,
-        input: str | BaseMessage,
+        input: Union[str, BaseMessage],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> T:
