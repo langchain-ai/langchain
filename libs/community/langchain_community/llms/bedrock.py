@@ -409,6 +409,7 @@ class BedrockBase(BaseModel, ABC):
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
 
+
 class Bedrock(LLM, BedrockBase):
     """Bedrock models.
 
