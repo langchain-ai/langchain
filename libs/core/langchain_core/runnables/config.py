@@ -14,13 +14,12 @@ from typing import (
     Generator,
     List,
     Optional,
-    ParamSpec,
     TypeVar,
     Union,
     cast,
 )
 
-from typing_extensions import TypedDict
+from typing_extensions import ParamSpec, TypedDict
 
 from langchain_core.runnables.utils import (
     Input,
