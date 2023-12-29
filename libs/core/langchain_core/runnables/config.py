@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import Context, copy_context
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,6 +14,8 @@ from typing import (
     Generator,
     List,
     Optional,
+    ParamSpec,
+    TypeVar,
     Union,
     cast,
 )
@@ -412,3 +416,36 @@ def get_executor_for_config(
         initargs=(copy_context(),),
     ) as executor:
         yield executor
+
+
+P = ParamSpec("P")
+T = TypeVar("T")
+
+
+async def run_in_executor(
+    executor_or_config: Optional[Union[Executor, RunnableConfig]],
+    func: Callable[P, T],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> T:
+    """Run a function in an executor.
+
+    Args:
+        executor (Executor): The executor.
+        func (Callable[P, Output]): The function.
+        *args (Any): The positional arguments to the function.
+        **kwargs (Any): The keyword arguments to the function.
+
+    Returns:
+        Output: The output of the function.
+    """
+    if executor_or_config is None or isinstance(executor_or_config, dict):
+        # Use default executor with context copied from current context
+        return await asyncio.get_running_loop().run_in_executor(
+            None,
+            cast(Callable[..., T], partial(copy_context().run, func, *args, **kwargs)),
+        )
+
+    return await asyncio.get_running_loop().run_in_executor(
+        executor_or_config, partial(func, **kwargs), *args
+    )
