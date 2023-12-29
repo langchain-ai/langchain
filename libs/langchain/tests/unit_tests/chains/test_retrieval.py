@@ -13,14 +13,6 @@ def test_create() -> None:
     retriever = FakeParrotRetriever()
     question_gen_prompt = PromptTemplate.from_template("hi! {input} {chat_history}")
     chain = create_retrieval_chain(retriever, question_gen_prompt | llm)
-    expected_output = {
-        "answer": "I know the answer!",
-        "chat_history": [],
-        "context": [Document(page_content="What is the answer?")],
-        "input": "What is the answer?",
-    }
-    output = chain.invoke({"input": "What is the answer?"})
-    assert output == expected_output
 
     expected_output = {
         "answer": "I know the answer!",

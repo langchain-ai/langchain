@@ -472,9 +472,10 @@ class Runnable(Generic[Input, Output], ABC):
 
         Subclasses should override this method if they can run asynchronously.
         """
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.invoke, **kwargs), input, config
-        )
+        with get_executor_for_config(config) as executor:
+            return await asyncio.get_running_loop().run_in_executor(
+                executor, partial(self.invoke, **kwargs), input, config
+            )
 
     def batch(
         self,
@@ -2882,9 +2883,10 @@ class RunnableLambda(Runnable[Input, Output]):
 
             @wraps(self.func)
             async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
-                return await asyncio.get_running_loop().run_in_executor(
-                    None, partial(self.func, **kwargs), *args
-                )
+                with get_executor_for_config(config) as executor:
+                    return await asyncio.get_running_loop().run_in_executor(
+                        executor, partial(self.func, **kwargs), *args
+                    )
 
             afunc = f
 

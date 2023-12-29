@@ -325,7 +325,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         try:
-            async for stream_resp in self._create_async_chat_stream(
+            async for stream_resp in self._acreate_chat_stream(
                 messages, stop, **kwargs
             ):
                 if stream_resp:
