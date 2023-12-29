@@ -82,6 +82,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return FunctionMessage(**message["data"])
     elif _type == "tool":
         return ToolMessage(**message["data"])
+    elif _type == "AIMessageChunk":
+        return AIMessageChunk(**message["data"])
     else:
         raise ValueError(f"Got unexpected message type: {_type}")
 
