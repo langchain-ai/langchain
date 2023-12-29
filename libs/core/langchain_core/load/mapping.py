@@ -220,6 +220,12 @@ SERIALIZABLE_MAPPING = {
         "base",
         "RunnableParallel",
     ),
+    ("langchain", "chat_models", "openai", "ChatAnyscale"): (
+        "langchain",
+        "chat_models",
+        "openai",
+        "ChatAnyscale",
+    ),
     ("langchain", "chat_models", "azure_openai", "AzureChatOpenAI"): (
         "langchain",
         "chat_models",
@@ -321,6 +327,12 @@ SERIALIZABLE_MAPPING = {
         "llms",
         "google_palm",
         "GooglePalm",
+    ),
+    ("langchain", "llms", "openai", "Anyscale"): (
+        "langchain",
+        "llms",
+        "openai",
+        "Anyscale",
     ),
     ("langchain", "llms", "openai", "AzureOpenAI"): (
         "langchain",
