@@ -134,6 +134,12 @@ def __getattr__(name: str) -> Any:
         _warn_on_import(name, replacement="langchain.llms.Anthropic")
 
         return Anthropic
+    elif name == "Anyscale":
+        from langchain.llms import Anyscale
+
+        _warn_on_import(name, replacement="langchain.llms.Anyscale")
+
+        return Anyscale
     elif name == "Banana":
         from langchain.llms import Banana
 
