@@ -16,7 +16,6 @@ from langchain_community.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
-
 from langchain_community.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
@@ -26,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
+
 
 class ChatAnyscale(ChatOpenAI):
     """`Anyscale` Chat large language models.
@@ -190,7 +190,8 @@ class ChatAnyscale(ChatOpenAI):
 
     def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
         """Calculate num tokens with tiktoken package.
-        Official documentation: https://github.com/openai/openai-cookbook/blob/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        Official documentation: https://github.com/openai/openai-cookbook/blob/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb
+        """
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
@@ -201,7 +202,7 @@ class ChatAnyscale(ChatOpenAI):
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
-                # Cast str(value) in case the message value is not a string	
+                # Cast str(value) in case the message value is not a string
                 # This occurs with function messages
                 num_tokens += len(encoding.encode(str(value)))
                 if key == "name":
