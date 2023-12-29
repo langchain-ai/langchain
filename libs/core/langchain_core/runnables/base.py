@@ -6,7 +6,7 @@ import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
 from copy import deepcopy
-from functools import partial, wraps
+from functools import wraps
 from itertools import groupby, tee
 from operator import itemgetter
 from typing import (
@@ -47,6 +47,7 @@ from langchain_core.runnables.config import (
     get_executor_for_config,
     merge_configs,
     patch_config,
+    run_in_executor,
 )
 from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
@@ -472,10 +473,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         Subclasses should override this method if they can run asynchronously.
         """
-        with get_executor_for_config(config) as executor:
-            return await asyncio.get_running_loop().run_in_executor(
-                executor, partial(self.invoke, **kwargs), input, config
-            )
+        return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
     def batch(
         self,
@@ -665,7 +663,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
 
         # Assign the stream handler to the config
-        config = config or {}
+        config = ensure_config(config)
         callbacks = config.get("callbacks")
         if callbacks is None:
             config["callbacks"] = [stream]
@@ -2883,10 +2881,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
             @wraps(self.func)
             async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
-                with get_executor_for_config(config) as executor:
-                    return await asyncio.get_running_loop().run_in_executor(
-                        executor, partial(self.func, **kwargs), *args
-                    )
+                return await run_in_executor(config, self.func, *args, **kwargs)
 
             afunc = f
 
@@ -2913,7 +2908,7 @@ class RunnableLambda(Runnable[Input, Output]):
     def _config(
         self, config: Optional[RunnableConfig], callable: Callable[..., Any]
     ) -> RunnableConfig:
-        config = config or {}
+        config = ensure_config(config)
 
         if config.get("run_name") is None:
             try:
@@ -3052,9 +3047,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
             @wraps(self.func)
             async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
-                return await asyncio.get_running_loop().run_in_executor(
-                    None, partial(self.func, **kwargs), *args
-                )
+                return await run_in_executor(config, self.func, *args, **kwargs)
 
             afunc = f
 

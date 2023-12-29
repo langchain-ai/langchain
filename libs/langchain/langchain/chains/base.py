@@ -1,5 +1,4 @@
 """Base interface that all chains should implement."""
-import asyncio
 import inspect
 import json
 import logging
@@ -19,7 +18,12 @@ from langchain_core.pydantic_v1 import (
     root_validator,
     validator,
 )
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.runnables import (
+    RunnableConfig,
+    RunnableSerializable,
+    ensure_config,
+    run_in_executor,
+)
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -85,7 +89,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        config = config or {}
+        config = ensure_config(config)
         return self(
             input,
             callbacks=config.get("callbacks"),
@@ -101,7 +105,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        config = config or {}
+        config = ensure_config(config)
         return await self.acall(
             input,
             callbacks=config.get("callbacks"),
@@ -245,8 +249,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self._call, inputs, run_manager
+        return await run_in_executor(
+            None, self._call, inputs, run_manager.get_sync() if run_manager else None
         )
 
     def __call__(
