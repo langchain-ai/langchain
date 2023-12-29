@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -18,8 +18,13 @@ if TYPE_CHECKING:
         Callbacks,
     )
 
+RetrieverInput = str
+RetrieverOutput = List[Document]
+RetrieverLike = Runnable[RetrieverInput, RetrieverOutput]
+RetrieverOutputLike = Runnable[Any, RetrieverOutput]
 
-class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
+
+class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     """Abstract base class for a Document retrieval system.
 
     A retrieval system is defined as something that can take string queries and return

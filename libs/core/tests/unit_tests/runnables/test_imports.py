@@ -18,6 +18,8 @@ EXPECTED_ALL = [
     "RunnableMap",
     "RunnableParallel",
     "RunnablePassthrough",
+    "RunnableAssign",
+    "RunnablePick",
     "RunnableSequence",
     "RunnableWithFallbacks",
     "get_config_list",

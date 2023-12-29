@@ -154,7 +154,7 @@ chat_model.invoke(messages)
 <details> <summary>Go deeper</summary>
 
 `LLM.invoke` and `ChatModel.invoke` actually both support as input any of `Union[str, List[BaseMessage], PromptValue]`.
-`PromptValue` is an object that defines it's own custom logic for returning it's inputs either as a string or as messages.
+`PromptValue` is an object that defines its own custom logic for returning its inputs either as a string or as messages.
 `LLM`s have logic for coercing any of these into a string, and `ChatModel`s have logic for coercing any of these to messages.
 The fact that `LLM` and `ChatModel` accept the same inputs means that you can directly swap them for one another in most chains without breaking anything,
 though it's of course important to think about how inputs are being coerced and how that may affect model performance.
@@ -166,7 +166,7 @@ To dive deeper on models head to the [Language models](/docs/modules/model_io/mo
 
 Most LLM applications do not pass user input directly into an LLM. Usually they will add the user input to a larger piece of text, called a prompt template, that provides additional context on the specific task at hand.
 
-In the previous example, the text we passed to the model contained instructions to generate a company name. For our application, it would be great if the user only had to provide the description of a company/product, without having to worry about giving the model instructions.
+In the previous example, the text we passed to the model contained instructions to generate a company name. For our application, it would be great if the user only had to provide the description of a company/product without worrying about giving the model instructions.
 
 PromptTemplates help with exactly this!
 They bundle up all the logic for going from user input into a fully formatted prompt.
@@ -220,8 +220,8 @@ ChatPromptTemplates can also be constructed in other ways - see the [section on 
 
 ### Output parsers
 
-`OutputParsers` convert the raw output of a language model into a format that can be used downstream.
-There are few main types of `OutputParser`s, including:
+`OutputParser`s convert the raw output of a language model into a format that can be used downstream.
+There are a few main types of `OutputParser`s, including:
 
 - Convert text from `LLM` into structured information (e.g. JSON)
 - Convert a `ChatMessage` into just a string
