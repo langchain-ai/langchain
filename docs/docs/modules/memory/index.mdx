@@ -39,7 +39,7 @@ from in-memory lists to persistent databases.
 Keeping a list of chat messages is fairly straight-forward.
 What is less straight-forward are the data structures and algorithms built on top of chat messages that serve a view of those messages that is most useful.
 
-A very simply memory system might just return the most recent messages each run. A slightly more complex memory system might return a succinct summary of the past K messages.
+A very simple memory system might just return the most recent messages each run. A slightly more complex memory system might return a succinct summary of the past K messages.
 An even more sophisticated system might extract entities from stored messages and only return information about entities referenced in the current run.
 
 Each application can have different requirements for how memory is queried. The memory module should make it easy to both get started with simple memory systems and write your own custom systems if needed.

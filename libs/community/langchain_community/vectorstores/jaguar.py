@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
-
-if TYPE_CHECKING:
-    from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
+from typing import Any, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -23,7 +20,7 @@ class Jaguar(VectorStore):
     Example:
        .. code-block:: python
 
-           from langchain.vectorstores import Jaguar
+           from langchain_community.vectorstores.jaguar import Jaguar
 
            vectorstore = Jaguar(
                pod = 'vdb',
@@ -53,6 +50,13 @@ class Jaguar(VectorStore):
         self._vector_dimension = vector_dimension
 
         self._embedding = embedding
+        try:
+            from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
+        except ImportError:
+            raise ValueError(
+                "Could not import jaguardb-http-client python package. "
+                "Please install it with `pip install -U jaguardb-http-client`"
+            )
 
         self._jag = JaguarHttpClient(url)
         self._token = ""

@@ -1,6 +1,14 @@
 {
   "redirects": [
     {
+      "source": "docs/docs/integrations/providers/alibabacloud_opensearch",
+      "destination": "docs/docs/integrations/providers/alibaba_cloud"
+    },
+    {
+      "source": "/docs/integrations/chat/pai_eas_chat_endpoint",
+      "destination": "/docs/integrations/chat/alibaba_cloud_pai_eas"
+    },
+    {
       "source": "/docs/integrations/providers/tencentvectordb",
       "destination": "/docs/integrations/providers/tencent"
     },
