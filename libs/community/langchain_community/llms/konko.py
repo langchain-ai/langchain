@@ -80,7 +80,7 @@ class Konko(LLM):
                 "Could not import konko python package. "
                 "Please install it with `pip install konko`."
             )
-        if not hasattr(konko, "Completion"):
+        if not hasattr(konko, "_is_legacy_openai"):
             warnings.warn(
                 "You are using an older version of the 'konko' package. "
                 "Please consider upgrading to access new features."
