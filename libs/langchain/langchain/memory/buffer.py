@@ -1,3 +1,6 @@
-from langchain_core.memory.buffer import ConversationBufferMemory
+from langchain_core.memory.buffer import (
+    ConversationBufferMemory,
+    ConversationStringBufferMemory,
+)
 
-__all__ = ["ConversationBufferMemory"]
+__all__ = ["ConversationBufferMemory", "ConversationStringBufferMemory"]
