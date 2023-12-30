@@ -1,7 +1,6 @@
 """Tracers that record execution of LangChain runs."""
 
 from langchain_core.tracers.langchain import LangChainTracer
-from langchain_core.tracers.langchain_v1 import LangChainTracerV1
 from langchain_core.tracers.stdout import (
     ConsoleCallbackHandler,
     FunctionCallbackHandler,
@@ -15,6 +14,5 @@ __all__ = [
     "FunctionCallbackHandler",
     "LoggingCallbackHandler",
     "LangChainTracer",
-    "LangChainTracerV1",
     "WandbTracer",
 ]

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import functools
 import uuid
 import warnings
@@ -25,6 +24,7 @@ from typing import (
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
@@ -58,10 +58,9 @@ def sync_call_fallback(method: Callable) -> Callable:
             # by removing the first letter from the method name. For example,
             # if the async method is called ``aaad_texts``, the synchronous method
             # will be called ``aad_texts``.
-            sync_method = functools.partial(
-                getattr(self, method.__name__[1:]), *args, **kwargs
+            return await run_in_executor(
+                None, getattr(self, method.__name__[1:]), *args, **kwargs
             )
-            return await asyncio.get_event_loop().run_in_executor(None, sync_method)
 
     return wrapper
 
