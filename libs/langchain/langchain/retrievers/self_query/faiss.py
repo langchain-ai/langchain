@@ -25,6 +25,7 @@ class FAISSTranslator(Visitor):
     def visit_operation(self, operation: Operation) -> Dict:
         comparison_dict = {}
         for arg in operation.arguments:
+            arg: Comparison
             if arg.attribute in comparison_dict:
                 comparison_dict[arg.attribute].append(arg.accept(self))
             else:
