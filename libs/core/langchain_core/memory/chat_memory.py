@@ -1,11 +1,13 @@
 from abc import ABC
-from typing import Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
-from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.memory.base import BaseMemory
 from langchain_core.memory.chat_message_history import ChatMessageHistory
 from langchain_core.memory.utils import get_prompt_input_key
 from langchain_core.pydantic_v1 import Field
+
+if TYPE_CHECKING:
+    from langchain_core.chat_history import BaseChatMessageHistory
 
 
 class BaseChatMemory(BaseMemory, ABC):
