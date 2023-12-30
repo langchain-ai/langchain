@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -23,9 +23,10 @@ class FAISSTranslator(Visitor):
         return ""
 
     def visit_operation(self, operation: Operation) -> Dict:
-        comparison_dict = {}
-        for arg in operation.arguments:
-            arg: Comparison
+        comparison_dict: Dict[str, Union[List, Any]] = {}
+        arguments = operation.arguments
+        for index in range(len(arguments)):
+            arg: Comparison = arguments[index]
             if arg.attribute in comparison_dict:
                 comparison_dict[arg.attribute].append(arg.accept(self))
             else:
