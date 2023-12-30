@@ -69,7 +69,6 @@ from langchain_core.runnables import (
     RunnableWithFallbacks,
     add,
 )
-from langchain_core.runnables.config import var_child_runnable_config
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
     BaseTracer,
@@ -4405,7 +4404,6 @@ async def test_runnable_gen_context_config() -> None:
     fake = RunnableLambda(len)
 
     def gen(input: Iterator[Any]) -> Iterator[int]:
-        print("inside gen", var_child_runnable_config.get())
         yield fake.invoke("a")
         yield fake.invoke("aa")
         yield fake.invoke("aaa")
@@ -4455,7 +4453,6 @@ async def test_runnable_gen_context_config() -> None:
         return
 
     async def agen(input: AsyncIterator[Any]) -> AsyncIterator[int]:
-        print("inside agen", var_child_runnable_config.get())
         yield await fake.ainvoke("a")
         yield await fake.ainvoke("aa")
         yield await fake.ainvoke("aaa")
@@ -4506,7 +4503,6 @@ async def test_runnable_lambda_context_config() -> None:
     fake = RunnableLambda(len)
 
     def fun(input: Any) -> int:
-        print("inside gen", var_child_runnable_config.get())
         output = fake.invoke("a")
         output += fake.invoke("aa")
         output += fake.invoke("aaa")
@@ -4557,13 +4553,12 @@ async def test_runnable_lambda_context_config() -> None:
         return
 
     async def afun(input: Any) -> int:
-        print("inside gen", var_child_runnable_config.get())
         output = await fake.ainvoke("a")
         output += await fake.ainvoke("aa")
         output += await fake.ainvoke("aaa")
         return output
 
-    arunnable = RunnableLambda(afun)
+    arunnable: Runnable = RunnableLambda(afun)
 
     tracer = FakeTracer()
     assert await arunnable.ainvoke(None, {"callbacks": [tracer]}) == 6
