@@ -43,5 +43,4 @@ class FAISSTranslator(Visitor):
             kwargs = {}
         else:
             kwargs = {"filter": structured_query.filter.accept(self)}
-        print(kwargs)
         return structured_query.query, kwargs
