@@ -15,7 +15,7 @@ class FAISSTranslator(Visitor):
 
     allowed_operators = [Operator.AND]
     """Subset of allowed logical operators."""
-    allowed_comparators = [Comparator.EQ, Comparator.CONTAIN]
+    allowed_comparators = [Comparator.EQ, Comparator.IN]
     """Subset of allowed logical comparators."""
 
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
@@ -26,15 +26,19 @@ class FAISSTranslator(Visitor):
         comparison_dict: Dict[str, Union[List, Any]] = {}
         arguments = operation.arguments
         for index in range(len(arguments)):
-            arg: Comparison = arguments[index]
-            if arg.attribute in comparison_dict:
-                comparison_dict[arg.attribute].append(arg.accept(self))
+            arg = arguments[index]
+            comparison_dict_instance: Dict = arg.accept(self)
+            comparison_attribute, comparision_value = list(
+                comparison_dict_instance.items()
+            )[0]
+            if comparison_attribute in comparison_dict:
+                comparison_dict[comparison_attribute].append(comparision_value)
             else:
-                comparison_dict[arg.attribute] = [arg.accept(self)]
+                comparison_dict[comparison_attribute] = [comparision_value]
         return comparison_dict
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
-        return comparison.value
+        return {comparison.attribute: comparison.value}
 
     def visit_structured_query(
         self, structured_query: StructuredQuery
@@ -43,4 +47,5 @@ class FAISSTranslator(Visitor):
             kwargs = {}
         else:
             kwargs = {"filter": structured_query.filter.accept(self)}
+        print(kwargs)
         return structured_query.query, kwargs
