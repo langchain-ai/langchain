@@ -29,7 +29,8 @@ if TYPE_CHECKING:
         TextGenerationResponse,
         _LanguageModel,
     )
-    from vertexai.preview.generative_models import Image
+    from vertexai.preview.generative_models import Candidate, Image
+
 
 # This is for backwards compatibility
 # We can remove after `langchain` stops importing it
@@ -64,8 +65,12 @@ def completion_with_retry(
         prompt: List[Union[str, "Image"]], is_gemini: bool = False, **kwargs: Any
     ) -> Any:
         if is_gemini:
+            safety_settings = kwargs.pop("safety_settings", None)
             return llm.client.generate_content(
-                prompt, stream=stream, generation_config=kwargs
+                prompt,
+                stream=stream,
+                generation_config=kwargs,
+                safety_settings=safety_settings,
             )
         else:
             if stream:
@@ -90,8 +95,9 @@ async def acompletion_with_retry(
         prompt: str, is_gemini: bool = False, **kwargs: Any
     ) -> Any:
         if is_gemini:
+            safety_settings = kwargs.pop("safety_settings", None)
             return await llm.client.generate_content_async(
-                prompt, generation_config=kwargs
+                prompt, generation_config=kwargs, safety_settings=safety_settings
             )
         return await llm.client.predict_async(prompt, **kwargs)
 
@@ -144,6 +150,14 @@ class _VertexAICommon(_VertexAIBase):
     """How many completions to generate for each prompt."""
     streaming: bool = False
     """Whether to stream the results or not."""
+    safety_settings: Union[List, Dict] = None
+    # it should apparently be replaced with
+    # `from vertexai.generative_models._generative_models.SafetySettingsType`
+    # when it gets available in vertexai package
+    """safety settings to use in context generation"""
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @property
     def _llm_type(self) -> str:
@@ -222,6 +236,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         """Validate that the python package exists in environment."""
         tuned_model_name = values.get("tuned_model_name")
         model_name = values["model_name"]
+        safety_settings = values["safety_settings"]
         is_gemini = is_gemini_model(values["model_name"])
         cls._try_init_vertexai(values)
         try:
@@ -258,8 +273,12 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 )
             else:
                 if is_gemini:
-                    values["client"] = model_cls(model_name=model_name)
-                    values["client_preview"] = preview_model_cls(model_name=model_name)
+                    values["client"] = model_cls(
+                        model_name=model_name, safety_settings=safety_settings
+                    )
+                    values["client_preview"] = preview_model_cls(
+                        model_name=model_name, safety_settings=safety_settings
+                    )
                 else:
                     values["client"] = model_cls.from_pretrained(model_name)
                     values["client_preview"] = preview_model_cls.from_pretrained(
@@ -292,17 +311,46 @@ class VertexAI(_VertexAICommon, BaseLLM):
         return result.total_tokens
 
     def _response_to_generation(
-        self, response: TextGenerationResponse
+        self, response: Union[TextGenerationResponse, Candidate]
     ) -> GenerationChunk:
         """Converts a stream response to a generation chunk."""
         try:
-            generation_info = {
-                "is_blocked": response.is_blocked,
-                "safety_attributes": response.safety_attributes,
-            }
+            if is_gemini_model(self.model_name):
+                generation_info = {
+                    "is_blocked": any([sr.blocked for sr in response.safety_ratings]),
+                    "safety_ratings": response.safety_ratings,
+                }
+            else:
+                generation_info = {
+                    "is_blocked": response.is_blocked,
+                    "safety_attributes": response.safety_attributes,
+                }
         except Exception:
             generation_info = None
-        return GenerationChunk(text=response.text, generation_info=generation_info)
+
+        try:
+            text = response.text
+        except ValueError:
+            text = ""
+
+        return GenerationChunk(text=text, generation_info=generation_info)
+
+    @staticmethod
+    def _get_prompt_blocked_response(
+        response: TextGenerationResponse,
+    ) -> List[GenerationChunk]:
+        feedback = getattr(response._raw_response, "prompt_feedback", None)  # noqa
+        if feedback is not None and len(getattr(response, "candidates", [])) == 0:  # noqa
+            return [
+                GenerationChunk(
+                    text="",
+                    generation_info={
+                        "is_blocked": bool(feedback.block_reason),
+                        "block_reason": feedback.block_reason.name,
+                        "safety_ratings": None,
+                    },
+                )
+            ]
 
     def _generate(
         self,
@@ -332,9 +380,14 @@ class VertexAI(_VertexAICommon, BaseLLM):
                     run_manager=run_manager,
                     **params,
                 )
-                generations.append(
-                    [self._response_to_generation(r) for r in res.candidates]
-                )
+                # there are prompts which are blocked by gemini api and
+                # safety_ratings aren't taken into account
+                if (blocked_resp := self._get_prompt_blocked_response(res)) is not None:
+                    generations.append(blocked_resp)
+                else:
+                    generations.append(
+                        [self._response_to_generation(r) for r in res.candidates]
+                    )
         return LLMResult(generations=generations)
 
     async def _agenerate(
@@ -354,9 +407,14 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 run_manager=run_manager,
                 **params,
             )
-            generations.append(
-                [self._response_to_generation(r) for r in res.candidates]
-            )
+            # there are prompts which are blocked by gemini api
+            # and safety_ratings aren't taken into account
+            if (blocked_resp := self._get_prompt_blocked_response(res)) is not None:
+                generations.append(blocked_resp)
+            else:
+                generations.append(
+                    [self._response_to_generation(r) for r in res.candidates]
+                )
         return LLMResult(generations=generations)
 
     def _stream(
