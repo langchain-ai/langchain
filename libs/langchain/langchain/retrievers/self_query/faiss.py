@@ -18,10 +18,6 @@ class FAISSTranslator(Visitor):
     allowed_comparators = [Comparator.EQ, Comparator.IN]
     """Subset of allowed logical comparators."""
 
-    def _format_func(self, func: Union[Operator, Comparator]) -> str:
-        self._validate_func(func)
-        return ""
-
     def visit_operation(self, operation: Operation) -> Dict:
         comparison_dict: Dict[str, Union[List, Any]] = {}
         arguments = operation.arguments
