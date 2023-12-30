@@ -138,6 +138,42 @@ class BaseQAWithSourcesChain(Chain, ABC):
         run_manager: CallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs to run questioning over."""
+    
+    def _verify_answer_with_sources(self, answer: str, docs: List[Document]) -> bool:
+        """
+        Verify if the answer is supported by the source documents.
+        
+        Args:
+        answer (str): The generated answer.
+        docs (List[Document]): The list of source documents.
+        
+        Returns:
+        bool: True if the answer is supported by the source documents, False otherwise.
+        """
+        key_phrases = self._extract_key_phrases(answer)
+
+        # Check if these key phrases are present in the source documents
+        for phrase in key_phrases:
+            if any(phrase in doc.source for doc in docs):
+                return True  # Found a matching phrase in the sources
+        return False  # No key phrases found in the sources
+
+    
+    def _extract_key_phrases(self, text: str, llm: BaseLanguageModel) -> List[str]:
+        """
+        Extract key phrases from a given text using the language model.
+
+        Args:
+        text (str): Text to extract key phrases from.
+        llm (BaseLanguageModel): The language model to use for extraction.
+
+        Returns:
+        List[str]: A list of key phrases.
+        """
+        prompt = f"Extract key phrases from the following text: {text}. Return in comma seperated format."
+        key_phrases_response = llm.generate(prompt)  # Generate response from the language model
+        key_phrases = key_phrases_response.split(',')
+        return [phrase.strip() for phrase in key_phrases]
 
     def _call(
         self,
@@ -157,9 +193,12 @@ class BaseQAWithSourcesChain(Chain, ABC):
             input_documents=docs, callbacks=_run_manager.get_child(), **inputs
         )
         answer, sources = self._split_sources(answer)
+        verification_result = self._verify_answer_with_sources(answer, docs)
+
         result: Dict[str, Any] = {
             self.answer_key: answer,
             self.sources_answer_key: sources,
+            'verification_result': verification_result,
         }
         if self.return_source_documents:
             result["source_documents"] = docs
@@ -191,9 +230,12 @@ class BaseQAWithSourcesChain(Chain, ABC):
             input_documents=docs, callbacks=_run_manager.get_child(), **inputs
         )
         answer, sources = self._split_sources(answer)
+        verification_result = self._verify_answer_with_sources(answer, docs)
+
         result: Dict[str, Any] = {
             self.answer_key: answer,
             self.sources_answer_key: sources,
+            'verification_result': verification_result,  # Add verification result here
         }
         if self.return_source_documents:
             result["source_documents"] = docs
