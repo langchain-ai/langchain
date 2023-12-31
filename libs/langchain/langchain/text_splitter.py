@@ -21,7 +21,6 @@ Note: **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive 
 
 from __future__ import annotations
 
-import asyncio
 import copy
 import logging
 import pathlib
@@ -29,7 +28,6 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from functools import partial
 from io import BytesIO, StringIO
 from typing import (
     AbstractSet,
@@ -282,14 +280,6 @@ class TextSplitter(BaseDocumentTransformer, ABC):
     ) -> Sequence[Document]:
         """Transform sequence of documents by splitting them."""
         return self.split_documents(list(documents))
-
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Asynchronously transform a sequence of documents by splitting them."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.transform_documents, **kwargs), documents
-        )
 
 
 class CharacterTextSplitter(TextSplitter):
