@@ -18,6 +18,7 @@ if os.environ.get("VECTARA_CORPUS_ID", None) is None:
 if os.environ.get("VECTARA_API_KEY", None) is None:
     raise Exception("Missing `VECTARA_API_KEY` environment variable.")
 
+
 def create_chain(
     llm: Optional[BaseLLM] = None,
     document_contents: str = defaults.DEFAULT_DOCUMENT_CONTENTS,
@@ -65,5 +66,6 @@ def create_chain(
         | StrOutputParser()
     )
     return chain
+
 
 chain = create_chain()
