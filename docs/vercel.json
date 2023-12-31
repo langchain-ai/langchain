@@ -1,8 +1,16 @@
 {
   "redirects": [
     {
-      "source": "docs/docs/integrations/providers/alibabacloud_opensearch",
-      "destination": "docs/docs/integrations/providers/alibaba_cloud"
+      "source": "/docs/use_cases/question_answering/code_understanding",
+      "destination": "/docs/use_cases/code_understanding"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/document-context-aware-QA",
+      "destination": "/docs/modules/data_connection/document_transformers/"
+    },
+    {
+      "source": "/docs/integrations/providers/alibabacloud_opensearch",
+      "destination": "/docs/integrations/providers/alibaba_cloud"
     },
     {
       "source": "/docs/integrations/chat/pai_eas_chat_endpoint",
