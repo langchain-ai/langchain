@@ -1,6 +1,74 @@
 {
   "redirects": [
     {
+      "source": "/docs/modules/agents/how_to/custom_llm_agent",
+      "destination": "/docs/modules/agents/how_to/custom_agent"
+    },
+    {
+      "source": "/docs/modules/agents/how_to/custom-functions-with-openai-functions-agent",
+      "destination": "/docs/modules/agents/how_to/custom_agent"
+    },
+    {
+      "source": "/docs/modules/agents/how_to/custom_llm_chat_agent",
+      "destination": "/docs/modules/agents/how_to/custom_agent"
+    },
+    {
+      "source": "/docs/modules/agents/how_to/custom_mrkl_agent",
+      "destination": "/docs/modules/agents/how_to/custom_agent"
+    },
+    {
+      "source": "/docs/modules/agents/how_to/streaming_stdout_final_only",
+      "destination": "/docs/modules/agents/how_to/streaming"
+    },
+    {
+      "source": "/docs/modules/data_connection/document_transformers/text_splitters(/?)",
+      "destination": "/docs/modules/data_connection/document_transformers/"
+    },
+    {
+      "source": "/docs/modules/data_connection/document_transformers/text_splitters/:path*",
+      "destination": "/docs/modules/data_connection/document_transformers/:path*"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/example_selectors/:path*",
+      "destination": "/docs/modules/model_io/prompts/example_selector_types/:path*"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/prompt_templates(/?)",
+      "destination": "/docs/modules/model_io/prompts/"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/prompts_pipelining",
+      "destination": "/docs/modules/model_io/prompts/composition"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/prompt_templates/:path*",
+      "destination": "/docs/modules/model_io/prompts/:path*"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/comma_separated",
+      "destination": "/docs/modules/model_io/output_parsers/types/comma_separated"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/enum",
+      "destination": "/docs/modules/model_io/output_parsers/types/enum"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/output_fixing_parser",
+      "destination": "/docs/modules/model_io/output_parsers/types/output_fixing_parser"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/pandas_dataframe",
+      "destination": "/docs/modules/model_io/output_parsers/types/pandas_dataframe"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/structured",
+      "destination": "/docs/modules/model_io/output_parsers/types/structured"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/xml",
+      "destination": "/docs/modules/model_io/output_parsers/types/xml"
+    },
+    {
       "source": "/docs/use_cases/question_answering/code_understanding",
       "destination": "/docs/use_cases/code_understanding"
     },
