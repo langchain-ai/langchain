@@ -7,6 +7,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
+from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Extra, root_validator
@@ -27,7 +28,6 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
     EXAMPLE_PROMPT,
     QUESTION_PROMPT,
 )
-from langchain.docstore.document import Document
 
 
 class BaseQAWithSourcesChain(Chain, ABC):

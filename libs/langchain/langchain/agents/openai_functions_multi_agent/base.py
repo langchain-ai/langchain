@@ -26,7 +26,6 @@ from langchain.agents.format_scratchpad.openai_functions import (
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
-from langchain.chat_models.openai import ChatOpenAI
 from langchain.tools import BaseTool
 
 # For backwards compatibility
@@ -42,7 +41,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
 
     if function_call:
         try:
-            arguments = json.loads(function_call["arguments"])
+            arguments = json.loads(function_call["arguments"], strict=False)
         except JSONDecodeError:
             raise OutputParserException(
                 f"Could not parse tool input: {function_call} because "
@@ -108,12 +107,6 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     def get_allowed_tools(self) -> List[str]:
         """Get allowed tools."""
         return [t.name for t in self.tools]
-
-    @root_validator
-    def validate_llm(cls, values: dict) -> dict:
-        if not isinstance(values["llm"], ChatOpenAI):
-            raise ValueError("Only supported with ChatOpenAI models.")
-        return values
 
     @root_validator
     def validate_prompt(cls, values: dict) -> dict:

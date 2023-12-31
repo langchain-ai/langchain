@@ -18,7 +18,7 @@ tool for the job.
 """
 from typing import Any
 
-from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
+from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 
 # Used for internal purposes
 _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
@@ -284,6 +284,18 @@ def _import_google_serper_tool_GoogleSerperRun() -> Any:
     return GoogleSerperRun
 
 
+def _import_searchapi_tool_SearchAPIResults() -> Any:
+    from langchain.tools.searchapi.tool import SearchAPIResults
+
+    return SearchAPIResults
+
+
+def _import_searchapi_tool_SearchAPIRun() -> Any:
+    from langchain.tools.searchapi.tool import SearchAPIRun
+
+    return SearchAPIRun
+
+
 def _import_graphql_tool() -> Any:
     from langchain.tools.graphql.tool import BaseGraphQLTool
 
@@ -326,10 +338,22 @@ def _import_json_tool_JsonListKeysTool() -> Any:
     return JsonListKeysTool
 
 
+def _import_merriam_webster_tool() -> Any:
+    from langchain.tools.merriam_webster.tool import MerriamWebsterQueryRun
+
+    return MerriamWebsterQueryRun
+
+
 def _import_metaphor_search() -> Any:
     from langchain.tools.metaphor_search import MetaphorSearchResults
 
     return MetaphorSearchResults
+
+
+def _import_nasa_tool() -> Any:
+    from langchain.tools.nasa.tool import NasaAction
+
+    return NasaAction
 
 
 def _import_office365_create_draft_message() -> Any:
@@ -360,12 +384,6 @@ def _import_office365_send_message() -> Any:
     from langchain.tools.office365.send_message import O365SendMessage
 
     return O365SendMessage
-
-
-def _import_office365_utils() -> Any:
-    from langchain.tools.office365.utils import authenticate
-
-    return authenticate
 
 
 def _import_openapi_utils_api_models() -> Any:
@@ -480,6 +498,12 @@ def _import_python_tool_PythonREPLTool() -> Any:
     )
 
 
+def _import_reddit_search_RedditSearchRun() -> Any:
+    from langchain.tools.reddit_search.tool import RedditSearchRun
+
+    return RedditSearchRun
+
+
 def _import_render() -> Any:
     from langchain.tools.render import format_tool_to_openai_function
 
@@ -522,6 +546,12 @@ def _import_requests_tool_RequestsPutTool() -> Any:
     return RequestsPutTool
 
 
+def _import_steam_webapi_tool() -> Any:
+    from langchain.tools.steam.tool import SteamWebAPIQueryRun
+
+    return SteamWebAPIQueryRun
+
+
 def _import_scenexplain_tool() -> Any:
     from langchain.tools.scenexplain.tool import SceneXplainTool
 
@@ -544,6 +574,30 @@ def _import_shell_tool() -> Any:
     from langchain.tools.shell.tool import ShellTool
 
     return ShellTool
+
+
+def _import_slack_get_channel() -> Any:
+    from langchain.tools.slack.get_channel import SlackGetChannel
+
+    return SlackGetChannel
+
+
+def _import_slack_get_message() -> Any:
+    from langchain.tools.slack.get_message import SlackGetMessage
+
+    return SlackGetMessage
+
+
+def _import_slack_schedule_message() -> Any:
+    from langchain.tools.slack.schedule_message import SlackScheduleMessage
+
+    return SlackScheduleMessage
+
+
+def _import_slack_send_message() -> Any:
+    from langchain.tools.slack.send_message import SlackSendMessage
+
+    return SlackSendMessage
 
 
 def _import_sleep_tool() -> Any:
@@ -610,6 +664,12 @@ def _import_sql_database_tool_QuerySQLDataBaseTool() -> Any:
     from langchain.tools.sql_database.tool import QuerySQLDataBaseTool
 
     return QuerySQLDataBaseTool
+
+
+def _import_stackexchange_tool() -> Any:
+    from langchain.tools.stackexchange.tool import StackExchangeTool
+
+    return StackExchangeTool
 
 
 def _import_steamship_image_generation() -> Any:
@@ -765,6 +825,10 @@ def __getattr__(name: str) -> Any:
         return _import_google_serper_tool_GoogleSerperResults()
     elif name == "GoogleSerperRun":
         return _import_google_serper_tool_GoogleSerperRun()
+    elif name == "SearchAPIResults":
+        return _import_searchapi_tool_SearchAPIResults()
+    elif name == "SearchAPIRun":
+        return _import_searchapi_tool_SearchAPIRun()
     elif name == "BaseGraphQLTool":
         return _import_graphql_tool()
     elif name == "HumanInputRun":
@@ -779,8 +843,12 @@ def __getattr__(name: str) -> Any:
         return _import_json_tool_JsonGetValueTool()
     elif name == "JsonListKeysTool":
         return _import_json_tool_JsonListKeysTool()
+    elif name == "MerriamWebsterQueryRun":
+        return _import_merriam_webster_tool()
     elif name == "MetaphorSearchResults":
         return _import_metaphor_search()
+    elif name == "NasaAction":
+        return _import_nasa_tool()
     elif name == "O365CreateDraftMessage":
         return _import_office365_create_draft_message()
     elif name == "O365SearchEvents":
@@ -791,8 +859,6 @@ def __getattr__(name: str) -> Any:
         return _import_office365_send_event()
     elif name == "O365SendMessage":
         return _import_office365_send_message()
-    elif name == "authenticate":
-        return _import_office365_utils()
     elif name == "APIOperation":
         return _import_openapi_utils_api_models()
     elif name == "OpenAPISpec":
@@ -827,6 +893,8 @@ def __getattr__(name: str) -> Any:
         return _import_python_tool_PythonAstREPLTool()
     elif name == "PythonREPLTool":
         return _import_python_tool_PythonREPLTool()
+    elif name == "RedditSearchRun":
+        return _import_reddit_search_RedditSearchRun()
     elif name == "format_tool_to_openai_function":
         return _import_render()
     elif name == "BaseRequestsTool":
@@ -841,6 +909,8 @@ def __getattr__(name: str) -> Any:
         return _import_requests_tool_RequestsPostTool()
     elif name == "RequestsPutTool":
         return _import_requests_tool_RequestsPutTool()
+    elif name == "SteamWebAPIQueryRun":
+        return _import_steam_webapi_tool()
     elif name == "SceneXplainTool":
         return _import_scenexplain_tool()
     elif name == "SearxSearchResults":
@@ -849,6 +919,14 @@ def __getattr__(name: str) -> Any:
         return _import_searx_search_tool_SearxSearchRun()
     elif name == "ShellTool":
         return _import_shell_tool()
+    elif name == "SlackGetChannel":
+        return _import_slack_get_channel
+    elif name == "SlackGetMessage":
+        return _import_slack_get_message
+    elif name == "SlackScheduleMessage":
+        return _import_slack_schedule_message
+    elif name == "SlackSendMessage":
+        return _import_slack_send_message
     elif name == "SleepTool":
         return _import_sleep_tool()
     elif name == "BaseSparkSQLTool":
@@ -871,6 +949,8 @@ def __getattr__(name: str) -> Any:
         return _import_sql_database_tool_QuerySQLCheckerTool()
     elif name == "QuerySQLDataBaseTool":
         return _import_sql_database_tool_QuerySQLDataBaseTool()
+    elif name == "StackExchangeTool":
+        return _import_stackexchange_tool()
     elif name == "SteamshipImageGenerationTool":
         return _import_steamship_image_generation()
     elif name == "VectorStoreQATool":
@@ -951,6 +1031,8 @@ __all__ = [
     "GoogleSearchRun",
     "GoogleSerperResults",
     "GoogleSerperRun",
+    "SearchAPIResults",
+    "SearchAPIRun",
     "HumanInputRun",
     "IFTTTWebhook",
     "InfoPowerBITool",
@@ -963,8 +1045,10 @@ __all__ = [
     "ListPowerBITool",
     "ListSQLDatabaseTool",
     "ListSparkSQLTool",
+    "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
     "MoveFileTool",
+    "NasaAction",
     "NavigateBackTool",
     "NavigateTool",
     "O365CreateDraftMessage",
@@ -975,6 +1059,7 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
@@ -986,12 +1071,18 @@ __all__ = [
     "RequestsPatchTool",
     "RequestsPostTool",
     "RequestsPutTool",
+    "SteamWebAPIQueryRun",
     "SceneXplainTool",
     "SearxSearchResults",
     "SearxSearchRun",
     "ShellTool",
+    "SlackGetChannel",
+    "SlackGetMessage",
+    "SlackScheduleMessage",
+    "SlackSendMessage",
     "SleepTool",
     "StdInInquireTool",
+    "StackExchangeTool",
     "SteamshipImageGenerationTool",
     "StructuredTool",
     "Tool",
@@ -1004,7 +1095,6 @@ __all__ = [
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "authenticate",
     "format_tool_to_openai_function",
     "tool",
 ]

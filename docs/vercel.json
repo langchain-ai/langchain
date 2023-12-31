@@ -1,6 +1,42 @@
 {
   "redirects": [
     {
+      "source": "/docs/use_cases/question_answering/code_understanding",
+      "destination": "/docs/use_cases/code_understanding"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/document-context-aware-QA",
+      "destination": "/docs/modules/data_connection/document_transformers/"
+    },
+    {
+      "source": "/docs/integrations/providers/alibabacloud_opensearch",
+      "destination": "/docs/integrations/providers/alibaba_cloud"
+    },
+    {
+      "source": "/docs/integrations/chat/pai_eas_chat_endpoint",
+      "destination": "/docs/integrations/chat/alibaba_cloud_pai_eas"
+    },
+    {
+      "source": "/docs/integrations/providers/tencentvectordb",
+      "destination": "/docs/integrations/providers/tencent"
+    },
+    {
+      "source": "/docs/integrations/chat/hunyuan",
+      "destination": "/docs/integrations/chat/tencent_hunyuan"
+    },
+    {
+      "source": "/docs/integrations/providers/aws_dynamodb",
+      "destination": "/docs/integrations/platforms/aws#aws-dynamodb"
+    },
+    {
+      "source": "/docs/integrations/providers/scann",
+      "destination": "/docs/integrations/platforms/google#google-scann"
+    },
+    {
+      "source": "/docs/integrations/toolkits/google_drive",
+      "destination": "/docs/integrations/tools/google_drive"
+    },
+    {
       "source": "/docs/use_cases/question_answering/analyze_document",
       "destination": "/cookbook"
     },
@@ -55,10 +91,6 @@
     {
       "source": "/docs/modules/model_io/chat/human_input_chat_model",
       "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/expression_language/why",
-      "destination": "/docs/expression_language/"
     },
     {
       "source": "/docs/modules/model_io/chat/llm_chain",
@@ -309,6 +341,10 @@
       "destination": "/docs/integrations/platforms/aws"
     },
     {
+      "source":  "/docs/integrations/providers/huggingface",
+      "destination": "/docs/integrations/platforms/huggingface"
+    },
+    {
       "source":  "/docs/integrations/providers/azure_blob_storage",
       "destination": "/docs/integrations/platforms/microsoft"
     },
@@ -493,6 +529,10 @@
       "destination": "/docs/integrations/providers/astradb"
     },
     {
+      "source": "/docs/integrations/providers/providers/semadb",
+      "destination": "/docs/integrations/providers/semadb"
+    },
+    {
       "source": "/docs/integrations/vectorstores/vectorstores/semadb",
       "destination": "/docs/integrations/vectorstores/semadb"
     },
@@ -503,6 +543,10 @@
     {
       "source": "/docs/integrations/vectorstores/async_faiss",
       "destination": "/docs/integrations/vectorstores/faiss_async"
+    },
+    {
+      "source": "/docs/integrations/vectorstores/matchingengine",
+      "destination": "/docs/integrations/vectorstores/google_vertex_ai_vector_search"
     },
     {
       "source": "/docs/integrations/cerebriumai",
@@ -1049,6 +1093,10 @@
       "destination": "/docs/modules/agents/how_to/custom_agent"
     },
     {
+      "source": "/docs/integrations/toolkits/vectorstore",
+      "destination": "/docs/modules/agents/how_to/vectorstore"
+    },
+    {
       "source": "/en/latest/modules/agents/agents/custom_agent_with_tool_retrieval.html",
       "destination": "/docs/modules/agents/how_to/custom_agent_with_tool_retrieval"
     },
@@ -1567,6 +1615,10 @@
     {
       "source": "/en/latest/modules/chains/generic/serialization.html",
       "destination": "/docs/modules/chains/how_to/serialization"
+    },
+    {
+      "source": "/docs/integrations/document_loaders/pdf-amazonTextractPDFLoader",
+      "destination": "/docs/integrations/document_loaders/amazon_textract"
     },
     {
       "source": "/en/latest/modules/indexes/document_loaders/examples/acreom.html",
@@ -2919,6 +2971,10 @@
     {
       "source": "/en/latest/modules/memory/examples/cassandra_chat_message_history.html",
       "destination": "/docs/integrations/memory/cassandra_chat_message_history"
+    },
+    {
+      "source": "/docs/guides/adapters/openai",
+      "destination": "/docs/integrations/adapters/openai"
     },
     {
       "source": "/docs/modules/memory/integrations/cassandra_chat_message_history",

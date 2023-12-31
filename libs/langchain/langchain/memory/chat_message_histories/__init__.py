@@ -1,3 +1,6 @@
+from langchain.memory.chat_message_histories.astradb import (
+    AstraDBChatMessageHistory,
+)
 from langchain.memory.chat_message_histories.cassandra import (
     CassandraChatMessageHistory,
 )
@@ -31,6 +34,7 @@ from langchain.memory.chat_message_histories.xata import XataChatMessageHistory
 from langchain.memory.chat_message_histories.zep import ZepChatMessageHistory
 
 __all__ = [
+    "AstraDBChatMessageHistory",
     "ChatMessageHistory",
     "CassandraChatMessageHistory",
     "CosmosDBChatMessageHistory",

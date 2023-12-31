@@ -43,6 +43,11 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         """Return whether or not the class is serializable."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs. Should return a list of BaseMessages.
@@ -82,8 +87,17 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     variable_name: str
     """Name of variable to use as messages."""
 
-    def __init__(self, variable_name: str, **kwargs: Any):
-        return super().__init__(variable_name=variable_name, **kwargs)
+    optional: bool = False
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
+    def __init__(self, variable_name: str, *, optional: bool = False, **kwargs: Any):
+        return super().__init__(
+            variable_name=variable_name, optional=optional, **kwargs
+        )
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
@@ -94,7 +108,11 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         Returns:
             List of BaseMessage.
         """
-        value = kwargs[self.variable_name]
+        value = (
+            kwargs.get(self.variable_name, [])
+            if self.optional
+            else kwargs[self.variable_name]
+        )
         if not isinstance(value, list):
             raise ValueError(
                 f"variable {self.variable_name} should be a list of base messages, "
@@ -115,7 +133,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         Returns:
             List of input variable names.
         """
-        return [self.variable_name]
+        return [self.variable_name] if not self.optional else []
 
 
 MessagePromptTemplateT = TypeVar(
@@ -131,6 +149,11 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     """String prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     @classmethod
     def from_template(
@@ -221,6 +244,11 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
     role: str
     """Role of the message."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
 
@@ -239,6 +267,11 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
 class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
 
@@ -254,6 +287,11 @@ class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
     """AI message prompt template. This is a message sent from the AI."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -272,6 +310,11 @@ class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
     """System message prompt template.
     This is a message that is not sent to the user.
     """
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -367,6 +410,11 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     """List of messages consisting of either message prompt templates or messages."""
     validate_template: bool = False
     """Whether or not to try validating the template."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
@@ -563,12 +611,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             elif isinstance(
                 message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
             ):
-                rel_params = {
-                    k: v
-                    for k, v in kwargs.items()
-                    if k in message_template.input_variables
-                }
-                message = message_template.format_messages(**rel_params)
+                message = message_template.format_messages(**kwargs)
                 result.extend(message)
             else:
                 raise ValueError(f"Unexpected input: {message_template}")

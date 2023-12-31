@@ -82,6 +82,16 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return FunctionMessage(**message["data"])
     elif _type == "tool":
         return ToolMessage(**message["data"])
+    elif _type == "AIMessageChunk":
+        return AIMessageChunk(**message["data"])
+    elif _type == "HumanMessageChunk":
+        return HumanMessageChunk(**message["data"])
+    elif _type == "FunctionMessageChunk":
+        return FunctionMessageChunk(**message["data"])
+    elif _type == "ToolMessageChunk":
+        return ToolMessageChunk(**message["data"])
+    elif _type == "SystemMessageChunk":
+        return SystemMessageChunk(**message["data"])
     else:
         raise ValueError(f"Got unexpected message type: {_type}")
 
@@ -96,6 +106,15 @@ def messages_from_dict(messages: Sequence[dict]) -> List[BaseMessage]:
         List of messages (BaseMessages).
     """
     return [_message_from_dict(m) for m in messages]
+
+
+def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
+    if not isinstance(chunk, BaseMessageChunk):
+        return chunk
+    # chunk classes always have the equivalent non-chunk class as their first parent
+    return chunk.__class__.__mro__[1](
+        **{k: v for k, v in chunk.__dict__.items() if k != "type"}
+    )
 
 
 __all__ = [
@@ -115,6 +134,7 @@ __all__ = [
     "ToolMessage",
     "ToolMessageChunk",
     "get_buffer_string",
+    "message_chunk_to_message",
     "messages_from_dict",
     "messages_to_dict",
     "message_to_dict",

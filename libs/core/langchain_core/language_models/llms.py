@@ -8,7 +8,6 @@ import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from pathlib import Path
 from typing import (
     Any,
@@ -52,7 +51,8 @@ from langchain_core.messages import AIMessage, BaseMessage, get_buffer_string
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator, validator
-from langchain_core.runnables import RunnableConfig, get_config_list
+from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
+from langchain_core.runnables.config import run_in_executor
 
 logger = logging.getLogger(__name__)
 
@@ -221,7 +221,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> str:
-        config = config or {}
+        config = ensure_config(config)
         return (
             self.generate_prompt(
                 [self._convert_input(input)],
@@ -244,7 +244,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> str:
-        config = config or {}
+        config = ensure_config(config)
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
             stop=stop,
@@ -362,7 +362,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
             prompt = self._convert_input(input).to_string()
-            config = config or {}
+            config = ensure_config(config)
             params = self.dict()
             params["stop"] = stop
             params = {**params, **kwargs}
@@ -382,9 +382,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
+            generation: Optional[GenerationChunk] = None
             try:
-                generation: Optional[GenerationChunk] = None
                 for chunk in self._stream(
                     prompt, stop=stop, run_manager=run_manager, **kwargs
                 ):
@@ -395,7 +396,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         generation += chunk
                 assert generation is not None
             except BaseException as e:
-                run_manager.on_llm_error(e)
+                run_manager.on_llm_error(
+                    e,
+                    response=LLMResult(
+                        generations=[[generation]] if generation else []
+                    ),
+                )
                 raise e
             else:
                 run_manager.on_llm_end(LLMResult(generations=[[generation]]))
@@ -413,7 +419,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
         else:
             prompt = self._convert_input(input).to_string()
-            config = config or {}
+            config = ensure_config(config)
             params = self.dict()
             params["stop"] = stop
             params = {**params, **kwargs}
@@ -433,9 +439,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
+            generation: Optional[GenerationChunk] = None
             try:
-                generation: Optional[GenerationChunk] = None
                 async for chunk in self._astream(
                     prompt, stop=stop, run_manager=run_manager, **kwargs
                 ):
@@ -446,7 +453,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         generation += chunk
                 assert generation is not None
             except BaseException as e:
-                await run_manager.on_llm_error(e)
+                await run_manager.on_llm_error(
+                    e,
+                    response=LLMResult(
+                        generations=[[generation]] if generation else []
+                    ),
+                )
                 raise e
             else:
                 await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
@@ -471,8 +483,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._generate, **kwargs), prompts, stop, run_manager
+        return await run_in_executor(
+            None,
+            self._generate,
+            prompts,
+            stop,
+            run_manager.get_sync() if run_manager else None,
+            **kwargs,
         )
 
     def _stream(
@@ -537,7 +554,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
         except BaseException as e:
             for run_manager in run_managers:
-                run_manager.on_llm_error(e)
+                run_manager.on_llm_error(e, response=LLMResult(generations=[]))
             raise e
         flattened_outputs = output.flatten()
         for manager, flattened_output in zip(run_managers, flattened_outputs):
@@ -645,6 +662,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     invocation_params=params,
                     options=options,
                     name=run_name,
+                    batch_size=len(prompts),
                 )[0]
                 for callback_manager, prompt, run_name in zip(
                     callback_managers, prompts, run_name_list
@@ -662,6 +680,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     invocation_params=params,
                     options=options,
                     name=run_name_list[idx],
+                    batch_size=len(missing_prompts),
                 )[0]
                 for idx in missing_prompt_idxs
             ]
@@ -703,7 +722,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
         except BaseException as e:
             await asyncio.gather(
-                *[run_manager.on_llm_error(e) for run_manager in run_managers]
+                *[
+                    run_manager.on_llm_error(e, response=LLMResult(generations=[]))
+                    for run_manager in run_managers
+                ]
             )
             raise e
         flattened_outputs = output.flatten()
@@ -810,6 +832,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         invocation_params=params,
                         options=options,
                         name=run_name,
+                        batch_size=len(prompts),
                     )
                     for callback_manager, prompt, run_name in zip(
                         callback_managers, prompts, run_name_list
@@ -830,6 +853,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         invocation_params=params,
                         options=options,
                         name=run_name_list[idx],
+                        batch_size=len(missing_prompts),
                     )
                     for idx in missing_prompt_idxs
                 ]
@@ -1030,8 +1054,13 @@ class LLM(BaseLLM):
         **kwargs: Any,
     ) -> str:
         """Run the LLM on the given prompt and input."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._call, **kwargs), prompt, stop, run_manager
+        return await run_in_executor(
+            None,
+            self._call,
+            prompt,
+            stop,
+            run_manager.get_sync() if run_manager else None,
+            **kwargs,
         )
 
     def _generate(

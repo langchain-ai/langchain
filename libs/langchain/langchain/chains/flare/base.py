@@ -29,6 +29,10 @@ class _ResponseChain(LLMChain):
 
     prompt: BasePromptTemplate = PROMPT
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     @property
     def input_keys(self) -> List[str]:
         return self.prompt.input_variables
@@ -76,6 +80,10 @@ class QuestionGeneratorChain(LLMChain):
 
     prompt: BasePromptTemplate = QUESTION_GENERATOR_PROMPT
     """Prompt template for the chain."""
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @property
     def input_keys(self) -> List[str]:

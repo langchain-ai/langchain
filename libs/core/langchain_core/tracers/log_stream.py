@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import math
 import threading
 from collections import defaultdict
@@ -42,6 +43,8 @@ class LogEntry(TypedDict):
 
     streamed_output_str: List[str]
     """List of LLM tokens streamed by this run, if applicable."""
+    streamed_output: List[Any]
+    """List of output chunks streamed by this run, if available."""
     final_output: Optional[Any]
     """Final output of this run.
     Only available after the run has finished successfully."""
@@ -59,7 +62,7 @@ class RunState(TypedDict):
     """List of output chunks streamed by Runnable.stream()"""
     final_output: Optional[Any]
     """Final output of the run, usually the result of aggregating (`+`) streamed_output.
-    Only available after the run has finished successfully."""
+    Updated throughout the run when supported by the Runnable."""
 
     logs: Dict[str, LogEntry]
     """Map of run names to sub-runs. If filters were supplied, this list will
@@ -82,7 +85,7 @@ class RunLogPatch:
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
         if type(other) == RunLogPatch:
             ops = self.ops + other.ops
-            state = jsonpatch.apply_patch(None, ops)
+            state = jsonpatch.apply_patch(None, copy.deepcopy(ops))
             return RunLog(*ops, state=state)
 
         raise TypeError(
@@ -151,9 +154,7 @@ class LogStreamCallbackHandler(BaseTracer):
 
         send_stream: Any
         receive_stream: Any
-        send_stream, receive_stream = create_memory_object_stream(
-            math.inf, item_type=RunLogPatch
-        )
+        send_stream, receive_stream = create_memory_object_stream(math.inf)
         self.lock = threading.Lock()
         self.send_stream = send_stream
         self.receive_stream = receive_stream
@@ -243,6 +244,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         tags=run.tags or [],
                         metadata=(run.extra or {}).get("metadata", {}),
                         start_time=run.start_time.isoformat(timespec="milliseconds"),
+                        streamed_output=[],
                         streamed_output_str=[],
                         final_output=None,
                         end_time=None,
@@ -278,15 +280,6 @@ class LogStreamCallbackHandler(BaseTracer):
             )
         finally:
             if run.id == self.root_id:
-                self.send_stream.send_nowait(
-                    RunLogPatch(
-                        {
-                            "op": "replace",
-                            "path": "/final_output",
-                            "value": load(run.outputs),
-                        }
-                    )
-                )
                 if self.auto_close:
                     self.send_stream.close()
 
@@ -308,6 +301,13 @@ class LogStreamCallbackHandler(BaseTracer):
                     "op": "add",
                     "path": f"/logs/{index}/streamed_output_str/-",
                     "value": token,
-                }
+                },
+                {
+                    "op": "add",
+                    "path": f"/logs/{index}/streamed_output/-",
+                    "value": chunk.message
+                    if isinstance(chunk, ChatGenerationChunk)
+                    else token,
+                },
             )
         )

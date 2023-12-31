@@ -1,9 +1,13 @@
 from langchain_core.runnables import __all__
 
 EXPECTED_ALL = [
+    "AddableDict",
     "ConfigurableField",
     "ConfigurableFieldSingleOption",
     "ConfigurableFieldMultiOption",
+    "ConfigurableFieldSpec",
+    "ensure_config",
+    "run_in_executor",
     "patch_config",
     "RouterInput",
     "RouterRunnable",
@@ -17,9 +21,12 @@ EXPECTED_ALL = [
     "RunnableMap",
     "RunnableParallel",
     "RunnablePassthrough",
+    "RunnableAssign",
+    "RunnablePick",
     "RunnableSequence",
     "RunnableWithFallbacks",
     "get_config_list",
+    "aadd",
     "add",
 ]
 

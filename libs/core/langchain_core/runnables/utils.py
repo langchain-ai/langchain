@@ -107,16 +107,69 @@ class IsFunctionArgDict(ast.NodeVisitor):
         self.keys: Set[str] = set()
 
     def visit_Lambda(self, node: ast.Lambda) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node.body)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node)
+
+
+class NonLocals(ast.NodeVisitor):
+    """Get nonlocal variables accessed."""
+
+    def __init__(self) -> None:
+        self.loads: Set[str] = set()
+        self.stores: Set[str] = set()
+
+    def visit_Name(self, node: ast.Name) -> Any:
+        if isinstance(node.ctx, ast.Load):
+            self.loads.add(node.id)
+        elif isinstance(node.ctx, ast.Store):
+            self.stores.add(node.id)
+
+    def visit_Attribute(self, node: ast.Attribute) -> Any:
+        if isinstance(node.ctx, ast.Load):
+            parent = node.value
+            attr_expr = node.attr
+            while isinstance(parent, ast.Attribute):
+                attr_expr = parent.attr + "." + attr_expr
+                parent = parent.value
+            if isinstance(parent, ast.Name):
+                self.loads.add(parent.id + "." + attr_expr)
+                self.loads.discard(parent.id)
+
+
+class FunctionNonLocals(ast.NodeVisitor):
+    """Get the nonlocal variables accessed of a function."""
+
+    def __init__(self) -> None:
+        self.nonlocals: Set[str] = set()
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        visitor = NonLocals()
+        visitor.visit(node)
+        self.nonlocals.update(visitor.loads - visitor.stores)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
+        visitor = NonLocals()
+        visitor.visit(node)
+        self.nonlocals.update(visitor.loads - visitor.stores)
+
+    def visit_Lambda(self, node: ast.Lambda) -> Any:
+        visitor = NonLocals()
+        visitor.visit(node)
+        self.nonlocals.update(visitor.loads - visitor.stores)
 
 
 class GetLambdaSource(ast.NodeVisitor):
@@ -156,13 +209,39 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         str: the source code of the lambda function
     """
     try:
+        name = func.__name__ if func.__name__ != "<lambda>" else None
+    except AttributeError:
+        name = None
+    try:
         code = inspect.getsource(func)
         tree = ast.parse(textwrap.dedent(code))
         visitor = GetLambdaSource()
         visitor.visit(tree)
-        return visitor.source if visitor.count == 1 else None
+        return visitor.source if visitor.count == 1 else name
     except (SyntaxError, TypeError, OSError):
-        return None
+        return name
+
+
+def get_function_nonlocals(func: Callable) -> List[Any]:
+    """Get the nonlocal variables accessed by a function."""
+    try:
+        code = inspect.getsource(func)
+        tree = ast.parse(textwrap.dedent(code))
+        visitor = FunctionNonLocals()
+        visitor.visit(tree)
+        values: List[Any] = []
+        for k, v in inspect.getclosurevars(func).nonlocals.items():
+            if k in visitor.nonlocals:
+                values.append(v)
+            for kk in visitor.nonlocals:
+                if "." in kk and kk.startswith(k):
+                    vv = v
+                    for part in kk.split(".")[1:]:
+                        vv = getattr(vv, part)
+                    values.append(vv)
+        return values
+    except (SyntaxError, TypeError, OSError):
+        return []
 
 
 def indent_lines_after_first(text: str, prefix: str) -> str:
@@ -257,6 +336,7 @@ class ConfigurableField(NamedTuple):
     name: Optional[str] = None
     description: Optional[str] = None
     annotation: Optional[Any] = None
+    is_shared: bool = False
 
     def __hash__(self) -> int:
         return hash((self.id, self.annotation))
@@ -271,6 +351,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
 
     name: Optional[str] = None
     description: Optional[str] = None
+    is_shared: bool = False
 
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), self.default))
@@ -285,6 +366,7 @@ class ConfigurableFieldMultiOption(NamedTuple):
 
     name: Optional[str] = None
     description: Optional[str] = None
+    is_shared: bool = False
 
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), tuple(self.default)))
@@ -299,18 +381,22 @@ class ConfigurableFieldSpec(NamedTuple):
     """A field that can be configured by the user. It is a specification of a field."""
 
     id: str
-    name: Optional[str]
-    description: Optional[str]
-
-    default: Any
     annotation: Any
+
+    name: Optional[str] = None
+    description: Optional[str] = None
+    default: Any = None
+    is_shared: bool = False
+    dependencies: Optional[List[str]] = None
 
 
 def get_unique_config_specs(
     specs: Iterable[ConfigurableFieldSpec],
 ) -> List[ConfigurableFieldSpec]:
     """Get the unique config specs from a sequence of config specs."""
-    grouped = groupby(sorted(specs, key=lambda s: s.id), lambda s: s.id)
+    grouped = groupby(
+        sorted(specs, key=lambda s: (s.id, *(s.dependencies or []))), lambda s: s.id
+    )
     unique: List[ConfigurableFieldSpec] = []
     for id, dupes in grouped:
         first = next(dupes)

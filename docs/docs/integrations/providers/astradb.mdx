@@ -29,6 +29,47 @@ vector_store = AstraDB(
 
 Learn more in the [example notebook](/docs/integrations/vectorstores/astradb).
 
+### LLM Cache
+
+```python
+from langchain.globals import set_llm_cache
+from langchain.cache import AstraDBCache
+set_llm_cache(AstraDBCache(
+    api_endpoint="...",
+    token="...",
+))
+```
+
+Learn more in the [example notebook](/docs/integrations/llms/llm_caching) (scroll to the Astra DB section).
+
+
+### Semantic LLM Cache
+
+```python
+from langchain.globals import set_llm_cache
+from langchain.cache import AstraDBSemanticCache
+set_llm_cache(AstraDBSemanticCache(
+    embedding=my_embedding,
+    api_endpoint="...",
+    token="...",
+))
+```
+
+Learn more in the [example notebook](/docs/integrations/llms/llm_caching) (scroll to the appropriate section).
+
+### Chat message history
+
+```python
+from langchain.memory import AstraDBChatMessageHistory
+message_history = AstraDBChatMessageHistory(
+    session_id="test-session"
+    api_endpoint="...",
+    token="...",
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/memory/astradb_chat_message_history).
+
 
 ## Apache Cassandra and Astra DB through CQL
 

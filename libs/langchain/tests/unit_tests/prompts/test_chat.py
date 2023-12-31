@@ -1,6 +1,9 @@
 from langchain.prompts.chat import __all__
 
 EXPECTED_ALL = [
+    "MessageLike",
+    "MessageLikeRepresentation",
+    "MessagePromptTemplateT",
     "AIMessagePromptTemplate",
     "BaseChatPromptTemplate",
     "BaseMessagePromptTemplate",
