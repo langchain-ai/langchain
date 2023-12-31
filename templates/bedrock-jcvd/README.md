@@ -6,7 +6,7 @@ LangChain template that uses [Anthropic's Claude on Amazon Bedrock](https://aws.
 
 > I am the Fred Astaire of Chatbots! 🕺
 
-'![JCVD](https://media.tenor.com/CVp9l7g3axwAAAAj/jean-claude-van-damme-jcvd.gif)
+'![](https://media.tenor.com/CVp9l7g3axwAAAAj/jean-claude-van-damme-jcvd.gif)
 
 ## Environment Setup
 

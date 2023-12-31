@@ -102,7 +102,7 @@ langchain serve
 This now gives a fully deployed LangServe application.
 For example, you get a playground out-of-the-box at [http://127.0.0.1:8000/pirate-speak/playground/](http://127.0.0.1:8000/pirate-speak/playground/):
 
-![playground.png](docs/playground.png)
+![](docs/playground.png)
 
 Access API documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
