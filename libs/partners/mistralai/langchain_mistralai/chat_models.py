@@ -16,6 +16,7 @@ from typing import (
 )
 
 from langchain_core.callbacks import (
+    AsyncCallbackHandler,
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
@@ -101,28 +102,69 @@ def _convert_mistral_chat_message_to_message(
         return ChatMessage(content=_message.content, role=role)
 
 
+class ClientManager(AsyncCallbackHandler):
+    """
+    Manages the client lifecycle by both providing a `close` method and
+    closing the client session automatically once the LLM stream ended.
+    """
+
+    _run_manager: Optional[AsyncCallbackManagerForLLMRun] = None
+
+    def __init__(
+        self,
+        client: MistralAsyncClient,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    ):
+        self._client = client
+        if run_manager is not None:
+            self._run_manager = run_manager
+            self._run_manager.handlers.append(self)
+
+    @property
+    def client(self) -> MistralAsyncClient:
+        return self._client
+
+    async def close(self) -> None:
+        await self._client.close()
+
+    async def on_llm_end(  # type: ignore[no-untyped-def]
+        self, *args, **kwargs
+    ) -> None:
+        await self._client.close()
+        if self._run_manager is not None:
+            self._run_manager.handlers.remove(self)
+
+
 async def acompletion_with_retry(
     llm: ChatMistralAI,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
+
+    client_attributes = {
+        "api_key": llm.mistral_api_key,
+        "endpoint": llm.endpoint,
+        "max_retries": llm.max_retries,
+        "timeout": llm.timeout,
+        "max_concurrent_requests": llm.max_concurrent_requests,
+    }
+    client_manager = ClientManager(
+        client=MistralAsyncClient(**client_attributes), run_manager=run_manager
+    )
+
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        client = MistralAsyncClient(
-            api_key=llm.mistral_api_key,
-            endpoint=llm.endpoint,
-            max_retries=llm.max_retries,
-            timeout=llm.timeout,
-            max_concurrent_requests=llm.max_concurrent_requests,
-        )
         stream = kwargs.pop("stream", False)
         if stream:
-            return client.chat_stream(**kwargs)
+            return client_manager.client.chat_stream(**kwargs)
         else:
-            return await client.chat(**kwargs)
+            try:
+                return await client_manager.client.chat(**kwargs)
+            finally:
+                await client_manager.close()
 
     return await _completion_with_retry(**kwargs)
 
@@ -286,10 +328,12 @@ class ChatMistralAI(BaseChatModel):
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[MistralChatMessage], Dict[str, Any]]:
         params = self._client_params
-        if stop is not None:
+        if stop is not None or "stop" in params:
             if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
+                params.pop("stop")
+            logger.warning(
+                "Parameter `stop` not yet supported (https://docs.mistral.ai/api)"
+            )
         message_dicts = [_convert_message_to_mistral_chat_message(m) for m in messages]
         return message_dicts, params
 
@@ -316,7 +360,7 @@ class ChatMistralAI(BaseChatModel):
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+                run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
 
     async def _astream(
         self,
@@ -341,7 +385,7 @@ class ChatMistralAI(BaseChatModel):
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk)
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content)
+                await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
 
     async def _agenerate(
         self,
