@@ -97,15 +97,15 @@ We will first follow the standard MongoDB Atlas setup instructions [here](https:
 
 This can be done by going to the deployement overview page and connecting to you database
 
-![](_images/connect.png)
+![Screenshot highlighting the 'Connect' button in MongoDB Atlas.](_images/connect.png "MongoDB Atlas Connect Button")
 
 We then look at the drivers available
 
-![driver.png](_images/driver.png)
+![Screenshot showing the MongoDB Atlas drivers section for connecting to the database.](_images/driver.png "MongoDB Atlas Drivers Section")
 
 Among which we will see our URI listed
 
-![uri.png](_images/uri.png)
+![Screenshot displaying an example of a MongoDB URI in the connection instructions.](_images/uri.png "MongoDB URI Example")
 
 Let's then set that as an environment variable locally:
 
