@@ -434,7 +434,7 @@ class SQLDatabase:
         # Convert columns values to string to avoid issues with sqlalchemy
         # truncating text
         res = [
-            tuple(truncate_word(c, length=self._max_string_length) for c in r.values())
+            {column: truncate_word(value, length=self._max_string_length) for column, value in r.items()}
             for r in result
         ]
         if not res:
