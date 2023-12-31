@@ -9,7 +9,7 @@ Taking [Chat Langchain](https://chat.langchain.com/) as a case study, only about
 
 This template helps solve this "feedback scarcity" problem. Below is an example invocation of this chat bot:
 
-[![Chat Interaction](./static/chat_interaction.png)](https://smith.langchain.com/public/3378daea-133c-4fe8-b4da-0a3044c5dbe8/r?runtab=1)
+[![](./static/chat_interaction.png)](https://smith.langchain.com/public/3378daea-133c-4fe8-b4da-0a3044c5dbe8/r?runtab=1)
 
 When the user responds to this ([link](https://smith.langchain.com/public/a7e2df54-4194-455d-9978-cecd8be0df1e/r)), the response evaluator is invoked, resulting in the following evaluationrun:
 

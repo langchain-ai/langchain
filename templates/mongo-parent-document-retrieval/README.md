@@ -99,7 +99,7 @@ We will first follow the standard MongoDB Atlas setup instructions [here](https:
 
 This can be done by going to the deployement overview page and connecting to you database
 
-![connect.png](_images/connect.png)
+![](_images/connect.png)
 
 We then look at the drivers available
 
