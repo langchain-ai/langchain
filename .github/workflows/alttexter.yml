@@ -1,0 +1,44 @@
+name: alttexter
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - '**.md'
+      - '**.mdx'
+      - '**.ipynb'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  alttexter-ghclient:
+    runs-on: ubuntu-latest
+    container: 
+      image: ghcr.io/jonathanalgar/alttexter-ghclient:v0.1
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Set ref for checkout
+        id: set_ref
+        run: |
+          echo "REF=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 1
+          ref: ${{ env.REF }}
+
+      - name: Run script
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          ALTTEXTER_ENDPOINT: ${{ secrets.ALTTEXTER_ENDPOINT }}
+          ALTTEXTER_TOKEN: ${{ secrets.ALTTEXTER_TOKEN }}
+          ALTTEXTER_RATEMINUTE: ${{ secrets.ALTTEXTER_RATEMINUTE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python /app/alttexter-ghclient.py
