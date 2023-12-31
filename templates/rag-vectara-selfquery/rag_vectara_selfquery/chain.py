@@ -45,7 +45,7 @@ def create_chain(
     #   factor for hybrid search (defaults to 0.025)
     # - filter: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview)
     #   to apply to the results (default None)
-    # - n_sentence_context: number of sentences to include before/after the actual 
+    # - n_sentence_context: number of sentences to include before/after the actual
     #   matching segment when returning results. This defaults to 2.
     # - mmr_config: can be used to specify MMR mode in the query.
     #   - is_enabled: True or False
