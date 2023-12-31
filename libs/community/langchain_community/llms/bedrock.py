@@ -222,6 +222,29 @@ class BedrockBase(BaseModel, ABC):
                   guardrails={
                         "id": "<guardrail_id>",
                         "version": "<guardrail_version>"})
+
+    To enable tracing for guardrails, set the 'trace' key to True and pass a callback handler to the 'run_manager' parameter of the 'generate', '_call' methods.
+
+    Example:
+    llm = Bedrock(model_id="<model_id>", client=<bedrock_client>,
+                  model_kwargs={},
+                  guardrails={
+                        "id": "<guardrail_id>",
+                        "version": "<guardrail_version>",
+                        "trace": True},
+                callbacks=[BedrockAsyncCallbackHandler()])
+
+    [https://python.langchain.com/docs/modules/callbacks/] for more information on callback handlers.
+
+    class BedrockAsyncCallbackHandler(AsyncCallbackHandler):
+        async def on_llm_error(
+            self,
+            error: BaseException,
+            **kwargs: Any,
+        ) -> Any:
+            reason = kwargs.get("reason")
+            if reason == "GUARDRAIL_INTERVENED":
+                ...Logic to handle guardrail intervention...
     """
 
     @root_validator()
