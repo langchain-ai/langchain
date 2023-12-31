@@ -22,7 +22,7 @@ class SummaryConfig:
     is_enabled: True if summary is enabled, False otherwise
     max_results: maximum number of results to summarize
     response_lang: requested language for the summary
-    prompt_name: name of the prompt to use for summarization 
+    prompt_name: name of the prompt to use for summarization
       (see https://docs.vectara.com/docs/learn/grounded-generation/select-a-summarizer)
     """
 
