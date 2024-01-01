@@ -1,7 +1,7 @@
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, List, Optional, Sequence, Tuple
-from urllib.parse import urlparse, urlunparse
-from copy import deepcopy
+
 
 def _retrieve_ref(path: str, schema: dict) -> dict:
     components = path.split("/")
@@ -87,7 +87,7 @@ class ReducedOpenAPISpec:
     endpoints: List[Tuple[str, str, dict]]
 
 
-def reduce_openapi_spec(url: str, spec: str) -> ReducedOpenAPISpec:
+def reduce_openapi_spec(url: str, spec: dict) -> ReducedOpenAPISpec:
     """Simplify OpenAPI spec to only required information for the agent"""
 
     # 1. Consider only GET and POST
@@ -132,9 +132,8 @@ def reduce_openapi_spec(url: str, spec: str) -> ReducedOpenAPISpec:
     ]
 
     return ReducedOpenAPISpec(
-        servers=[
-            {
-                url,
+        servers=[{
+                'url': url,
             }
         ],
         description=spec["info"].get("description", ""),
@@ -163,13 +162,10 @@ def get_required_param_descriptions(endpoint_spec: dict) -> str:
 
     return ", ".join(descriptions)
 
-def ensure_openapi_path(url):
-    parsed_url = urlparse(url)
-    if parsed_url.path.endswith('/openapi.json'):
+def ensure_openapi_path(url: str) -> str:
+    if url.endswith('/openapi.json'):
         return url
-    elif parsed_url.path.endswith('/'):
-        new_path = parsed_url.path + 'openapi.json'
+    elif url.endswith('/'):
+        return f'{url}openapi.json'
     else:
-        new_path = parsed_url.path + '/openapi.json'
-        
-    return urlunparse((parsed_url.scheme, parsed_url.netloc, new_path, parsed_url.params, parsed_url.query, parsed_url.fragment))
+        return f'{url}/openapi.json'

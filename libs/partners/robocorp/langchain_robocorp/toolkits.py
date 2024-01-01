@@ -1,30 +1,27 @@
 """Robocorp Action Server toolkit."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
-import requests
 import json
+from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.tools import BaseTool, Tool
-from langchain_core.tracers.context import _tracing_v2_is_enabled
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.prompts import PromptTemplate
+import requests
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.output_parsers import StrOutputParser
-
+from langchain_core.prompts import PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import Runnable, RunnablePassthrough
+from langchain_core.tools import BaseTool, Tool
+from langchain_core.tracers.context import _tracing_v2_is_enabled
 from langsmith import Client
 
 from langchain_robocorp._common import (
     ensure_openapi_path,
-    reduce_openapi_spec,
     get_required_param_descriptions,
+    reduce_openapi_spec,
 )
-
 from langchain_robocorp._prompts import (
     API_CONTROLLER_PROMPT,
     REQUEST_TOOL_DESCRIPTION,
@@ -60,7 +57,7 @@ class RequestTool(BaseTool):
 
     name: str = "requests_post"
     """Tool name."""
-    description = REQUEST_TOOL_DESCRIPTION
+    description: str = REQUEST_TOOL_DESCRIPTION
     """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
@@ -71,7 +68,10 @@ class RequestTool(BaseTool):
     report_trace: bool
     """Should requests to Action Server include Langsmith trace, if available"""
 
-    def _run(self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None,) -> str:
+    def _run(
+        self, query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -89,14 +89,19 @@ class RequestTool(BaseTool):
             if self.report_trace and "run_id" in self.run_details:
                 client = Client()
                 run = client.read_run(self.run_details["run_id"])
-                headers[LLM_TRACE_HEADER] = run.url
+                if run.url:
+                    headers[LLM_TRACE_HEADER] = run.url
         except Exception:
             pass
 
-        response = requests.post(data["url"], headers=headers, data= json.dumps(data["data"]))
-        response = response.text[: self.response_length]
+        response = requests.post(
+            data["url"],
+            headers=headers,
+            data= json.dumps(data["data"])
+        )
+        output = response.text[: self.response_length]
 
-        return response
+        return output
 
     async def _arun(self, text: str) -> str:
         raise NotImplementedError()
@@ -117,7 +122,7 @@ class ActionServerToolkit(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def get_tools(self, **kwargs) -> List[BaseTool]:
+    def get_tools(self, **kwargs: Any) -> List[BaseTool]:
         """Get the tools in the toolkit."""
         
         # Fetch and format the API spec
@@ -132,7 +137,7 @@ class ActionServerToolkit(BaseModel):
             )
             
         # Prepare request tools
-        run_details = {}
+        run_details: dict = {}
 
         request_tool = RequestTool(
             run_details=run_details,
@@ -144,7 +149,7 @@ class ActionServerToolkit(BaseModel):
         callback_manager = kwargs.get("callback_manager", CallbackManager([]))
         callbacks: List[BaseCallbackHandler] = []
 
-        if _tracing_v2_is_enabled:
+        if _tracing_v2_is_enabled():
             callbacks.append(RunDetailsCallbackHandler(run_details))
 
         for callback in callbacks:
@@ -176,7 +181,13 @@ class ActionServerToolkit(BaseModel):
                 partial_variables=prompt_variables,
             )
 
-            chain = {"input": RunnablePassthrough()} | prompt | self.llm | StrOutputParser() | request_tool
+            chain: Runnable = (
+                {"input": RunnablePassthrough()} |
+                prompt |
+                self.llm |
+                StrOutputParser() |
+                request_tool
+            )
 
             toolkit.append(
                 Tool(
