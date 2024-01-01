@@ -28,7 +28,6 @@ from langchain.chains.llm_math.base import LLMMathChain
 from langchain.utilities.dalle_image_generator import DallEAPIWrapper
 from langchain.utilities.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
-from langchain.tools.semanticscholar.tool import SemanticScholarQueryRun
 from langchain.tools.golden_query.tool import GoldenQueryRun
 from langchain.tools.pubmed.tool import PubmedQueryRun
 from langchain_core.tools import BaseTool
@@ -68,7 +67,6 @@ from langchain.tools.dataforseo_api_search import DataForSeoAPISearchResults
 from langchain.tools.memorize.tool import Memorize
 from langchain.tools.reddit_search.tool import RedditSearchRun
 from langchain.utilities.arxiv import ArxivAPIWrapper
-from langchain.utilities.semanticscholar import SemanticScholarAPIWrapper
 from langchain.utilities.golden_query import GoldenQueryAPIWrapper
 from langchain.utilities.pubmed import PubMedAPIWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
@@ -247,8 +245,6 @@ def _get_wikipedia(**kwargs: Any) -> BaseTool:
 def _get_arxiv(**kwargs: Any) -> BaseTool:
     return ArxivQueryRun(api_wrapper=ArxivAPIWrapper(**kwargs))
 
-def _get_semanticscholar(**kwargs: Any) -> BaseTool:
-    return SemanticScholarQueryRun(api_wrapper=SemanticScholarAPIWrapper(**kwargs))
 
 def _get_golden_query(**kwargs: Any) -> BaseTool:
     return GoldenQueryRun(api_wrapper=GoldenQueryAPIWrapper(**kwargs))
@@ -450,7 +446,6 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_arxiv,
         ["top_k_results", "load_max_docs", "load_all_available_meta"],
     ),
-    "semanticscholar": (_get_semanticscholar, ["top_k_results", "load_max_docs"]),
     "golden-query": (_get_golden_query, ["golden_api_key"]),
     "pubmed": (_get_pubmed, ["top_k_results"]),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
