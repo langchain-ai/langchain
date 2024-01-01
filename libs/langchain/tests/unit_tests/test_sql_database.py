@@ -126,9 +126,8 @@ def test_sql_database_run() -> None:
     assert partial_output == expected_partial_output
 
     full_output = db.run(command, include_columns=True)
-    expected_full_output = f"""
-    [{'user_id': '13', 'user_name': 'Harrison', 'user_bio': '{user_bio}'}]"
-    """
+    expected_full_output = \
+        "[{'user_id': 13, 'user_name': 'Harrison', 'user_bio': '%s'}]" % user_bio
     assert full_output == expected_full_output
 
 
