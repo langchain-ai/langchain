@@ -10,7 +10,7 @@ repository = "https://www.github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-ai21 = "2.0.0rc11"
+ai21 = "2.0.0rc5"
 
 [tool.poetry.group.docs.dependencies]
 langchain = { path = "libs/langchain/", develop = true }
@@ -35,7 +35,6 @@ langchain-core = { path = "libs/core/", develop = true }
 langchain-community = { path = "libs/community/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
-langchain-openai = { path = "libs/partners/openai", develop = true }
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -46,7 +45,6 @@ langchain-core = { path = "libs/core/", develop = true }
 langchain-community = { path = "libs/community/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
-langchain-openai = { path = "libs/partners/openai", develop = true }
 
 [tool.poetry.group.test.dependencies]
 

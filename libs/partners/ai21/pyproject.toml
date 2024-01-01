@@ -8,7 +8,6 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
-ai21 = "2.0.0rc9"
 
 [tool.poetry.group.test]
 optional = true
@@ -85,6 +84,5 @@ markers = [
   "requires: mark tests as requiring a specific library",
   "asyncio: mark tests as requiring asyncio",
   "compile: mark placeholder test used to compile integration tests without running them",
-  "scheduled: mark tests to run in scheduled testing",
 ]
 asyncio_mode = "auto"
