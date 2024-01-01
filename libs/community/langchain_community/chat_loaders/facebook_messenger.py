@@ -39,7 +39,7 @@ class SingleFileFacebookMessengerChatLoader(BaseChatLoader):
         messages = []
         for index, m in enumerate(sorted_data):
             if "content" not in m:
-                print(
+                logger.info(
                     f"""Skipping Message No.
                     {index+1} as no content is present in the message"""
                 )
