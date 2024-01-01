@@ -33,8 +33,6 @@ print("Hello fifty shades of gray mans!"[::-1])
     )
 
 
-
-
 def _test_convo_output(
     input: str, expected_tool: str, expected_tool_input: str
 ) -> None:
