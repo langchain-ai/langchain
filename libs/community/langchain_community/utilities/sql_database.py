@@ -427,7 +427,7 @@ class SQLDatabase:
         self,
         command: str,
         fetch: Union[Literal["all"], Literal["one"]] = "all",
-        full_response: bool = False
+        include_columns: bool = False
     ) -> str:
         """Execute a SQL command and return a string representing the results.
 
@@ -443,7 +443,7 @@ class SQLDatabase:
             for r in result
         ]
 
-        if not full_response:
+        if not include_columns:
             res = [tuple(row.values()) for row in res]
 
         if not res:
@@ -471,6 +471,7 @@ class SQLDatabase:
         self,
         command: str,
         fetch: Union[Literal["all"], Literal["one"]] = "all",
+        include_columns: bool = False
     ) -> str:
         """Execute a SQL command and return a string representing the results.
 
@@ -480,7 +481,7 @@ class SQLDatabase:
         If the statement throws an error, the error message is returned.
         """
         try:
-            return self.run(command, fetch)
+            return self.run(command, fetch, include_columns)
         except SQLAlchemyError as e:
             """Format the error message"""
             return f"Error: {e}"

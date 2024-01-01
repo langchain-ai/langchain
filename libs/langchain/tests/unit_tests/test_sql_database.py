@@ -125,7 +125,7 @@ def test_sql_database_run() -> None:
     expected_partial_output = f"[(13, 'Harrison', '{user_bio}')]"
     assert partial_output == expected_partial_output
 
-    full_output = db.run(command, full_response=True)
+    full_output = db.run(command, include_columns=True)
     expected_full_output = f"""
     [{'user_id': '13', 'user_name': 'Harrison', 'user_bio': '{user_bio}'}]"
     """
