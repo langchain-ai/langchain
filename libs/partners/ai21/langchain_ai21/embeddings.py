@@ -1,40 +1,34 @@
-from typing import List, Any
+from typing import List
 
-from ai21.models import EmbedType
-
-from langchain_ai21.ai21_base import AI21Base
 from langchain_core.embeddings import Embeddings
 
 
-class AI21Embeddings(Embeddings, AI21Base):
-    """AI21 Embeddings embedding model.
-    To use, you should have the 'AI21_API_KEY' environment variable set
-    or pass as a named parameter to the constructor.
+class AI21Embeddings(Embeddings):
+    """AI21Embeddings embedding model.
 
     Example:
         .. code-block:: python
 
             from langchain_ai21 import AI21Embeddings
 
-            embeddings = AI21Embeddings()
-            query_result = embeddings.embed_query("Hello embeddings world!")
+            model = AI21Embeddings()
     """
-    def embed_documents(self, texts: List[str], **kwargs: Any) -> List[List[float]]:
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        response = self.client.embed.create(
-            texts=texts,
-            type=EmbedType.SEGMENT,
-            **kwargs,
-        )
+        raise NotImplementedError
 
-        return [result.embedding for result in response.results]
-
-    def embed_query(self, text: str, **kwargs: Any) -> List[float]:
+    def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
-        response = self.client.embed.create(
-            texts=[text],
-            type=EmbedType.SEGMENT,
-            **kwargs,
-        )
+        raise NotImplementedError
 
-        return [result.embedding for result in response.results][0]
+    # only keep aembed_documents and aembed_query if they're implemented!
+    # delete them otherwise to use the base class' default
+    # implementation, which calls the sync version in an executor
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronous Embed search docs."""
+        raise NotImplementedError
+
+    async def aembed_query(self, text: str) -> List[float]:
+        """Asynchronous Embed query text."""
+        raise NotImplementedError
