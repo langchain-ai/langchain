@@ -2370,13 +2370,13 @@ requests = ["requests (>=2.20.0,<3.0.0.dev0)"]
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.37.0"
+version = "1.38.1"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "google-cloud-aiplatform-1.37.0.tar.gz", hash = "sha256:51cac0334fc7274142b50363dd10cbb3d303ff6354e5c06a7fb51e1b7db02dfb"},
-    {file = "google_cloud_aiplatform-1.37.0-py2.py3-none-any.whl", hash = "sha256:9b3d6e681084a60b7e4de7063d41ca2d354b3546a918609ddaf9d8d1f8b19c36"},
+    {file = "google-cloud-aiplatform-1.38.1.tar.gz", hash = "sha256:30439d914bb028443c0506cc0e6dd825cff5401aeb8233e13d8cfd77c3c87da1"},
+    {file = "google_cloud_aiplatform-1.38.1-py2.py3-none-any.whl", hash = "sha256:5e1fcd1068dd2c4f0fc89aa616e34a8b9434eaa72ea6216f5036ef26f08bd448"},
 ]
 
 [package.dependencies]

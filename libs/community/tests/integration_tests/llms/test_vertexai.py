@@ -148,13 +148,13 @@ SAFETY_CHECK_INPUTS = [
     ),
 ]
 
-
 @pytest.mark.parametrize(
     "input_text, class_or_method, safety_checks, expected_result",
     [n[1:] for n in SAFETY_CHECK_INPUTS],
     ids=[f"{n[0]}" for n in SAFETY_CHECK_INPUTS],
 )
 @pytest.mark.scheduled
+@pytest.mark.requires("google-cloud-aiplatform")
 def test_geminy_safety_settings_generate(
     input_text, class_or_method, safety_checks, expected_result
 ) -> None:
@@ -185,6 +185,7 @@ def test_geminy_safety_settings_generate(
     ids=[f"{n[0]}" for n in SAFETY_CHECK_INPUTS],
 )
 @pytest.mark.scheduled
+@pytest.mark.requires("google-cloud-aiplatform")
 async def test_geminy_safety_settings_agenerate(
     input_text, class_or_method, safety_checks, expected_result
 ) -> None:
