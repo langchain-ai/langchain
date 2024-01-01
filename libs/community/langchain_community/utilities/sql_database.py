@@ -427,6 +427,7 @@ class SQLDatabase:
         self,
         command: str,
         fetch: Union[Literal["all"], Literal["one"]] = "all",
+        full_response: bool = False
     ) -> str:
         """Execute a SQL command and return a string representing the results.
 
@@ -434,15 +435,17 @@ class SQLDatabase:
         If the statement returns no rows, an empty string is returned.
         """
         result = self._execute(command, fetch)
-        # Convert columns values to string to avoid issues with sqlalchemy
-        # truncating text
-        res = [
-            {
-                column: truncate_word(value, length=self._max_string_length)
-                for column, value in r.items()
-            }
+
+        res = [{
+            column: truncate_word(value, length=self._max_string_length)
+            for column, value in r.items()
+        }
             for r in result
         ]
+
+        if not full_response:
+            res = [tuple(row.values()) for row in res]
+
         if not res:
             return ""
         else:
