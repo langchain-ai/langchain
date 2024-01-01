@@ -223,6 +223,7 @@ First we need to install the required packages for that:
 
 ```shell
 pip install docarray
+pip install tiktoken
 ```
 
 Then we can build our index:
@@ -313,7 +314,7 @@ from langchain_core.prompts import MessagesPlaceholder
 
 prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name="chat_history"),
-    ("user", "{input}")
+    ("user", "{input}"),
     ("user", "Given the above conversation, generate a search query to look up in order to get information relevant to the conversation")
 ])
 retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
@@ -402,6 +403,13 @@ tools = [retriever_tool, search]
 ```
 
 Now that we have the tools, we can create an agent to use them. We will go over this pretty quickly - for a deeper dive into what exactly is going on, check out the [Agent's Getting Started documentation](/docs/modules/agents)
+
+Install langchain hub first
+```bash
+pip install langchainhub
+```
+
+Now we can use it to get a predefined prompt
 
 ```python
 from langchain.chat_models import ChatOpenAI
