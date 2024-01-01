@@ -427,7 +427,7 @@ class SQLDatabase:
         self,
         command: str,
         fetch: Union[Literal["all"], Literal["one"]] = "all",
-        include_columns: bool = False
+        include_columns: bool = False,
     ) -> str:
         """Execute a SQL command and return a string representing the results.
 
@@ -471,7 +471,7 @@ class SQLDatabase:
         self,
         command: str,
         fetch: Union[Literal["all"], Literal["one"]] = "all",
-        include_columns: bool = False
+        include_columns: bool = False,
     ) -> str:
         """Execute a SQL command and return a string representing the results.
 
