@@ -72,10 +72,13 @@ class SemanticScholarAPIWrapper(BaseModel):
         )
         documents = []
         for item in results[: self.top_k_results]:
+            authors = ", ".join(
+                author["name"] for author in getattr(item, "authors", [])
+            )
             documents.append(
                 f"Published year: {getattr(item, 'year', None)}\n"
                 f"Title: {getattr(item, 'title', None)}\n"
-                f"Authors: {', '.join(author['name'] for author in getattr(item, 'authors', []))}\n"
+                f"Authors: {authors}\n"
                 f"Astract: {getattr(item, 'abstract', None)}\n"
             )
 
