@@ -56,7 +56,7 @@ class OpenAIWhisperParser(BaseBlobParser):
         # Split the audio into chunk_duration_ms chunks
         for split_number, i in enumerate(range(0, len(audio), chunk_duration_ms)):
             # Audio chunk
-            chunk = audio[i: i + chunk_duration_ms]
+            chunk = audio[i : i + chunk_duration_ms]
             file_obj = io.BytesIO(chunk.export(format="mp3").read())
             if blob.source is not None:
                 file_obj.name = blob.source + f"_part_{split_number}.mp3"
@@ -113,12 +113,12 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
     """
 
     def __init__(
-            self,
-            device: str = "0",
-            lang_model: Optional[str] = None,
-            batch_size: int=8,
-            chunk_length: int=30,
-            forced_decoder_ids: Optional[Tuple[Dict]] = None,
+        self,
+        device: str = "0",
+        lang_model: Optional[str] = None,
+        batch_size: int = 8,
+        chunk_length: int = 30,
+        forced_decoder_ids: Optional[Tuple[Dict]] = None,
     ):
         """Initialize the parser.
 
@@ -158,9 +158,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
             self.lang_model = lang_model if lang_model else default_model
         else:
             # Set the language model based on the device and available memory
-            mem = torch.cuda.get_device_properties(self.device).total_memory / (
-                    1024 ** 2
-            )
+            mem = torch.cuda.get_device_properties(self.device).total_memory / (1024**2)
             if mem < 5000:
                 rec_model = "openai/whisper-base"
             elif mem < 7000:
@@ -235,12 +233,12 @@ class YandexSTTParser(BaseBlobParser):
     Audio transcription is with OpenAI Whisper model."""
 
     def __init__(
-            self,
-            *,
-            api_key: Optional[str] = None,
-            iam_token: Optional[str] = None,
-            model: str = "general",
-            language: str = "auto",
+        self,
+        *,
+        api_key: Optional[str] = None,
+        iam_token: Optional[str] = None,
+        model: str = "general",
+        language: str = "auto",
     ):
         """Initialize the parser.
 
