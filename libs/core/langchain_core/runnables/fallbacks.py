@@ -133,6 +133,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         yield self.runnable
         yield from self.fallbacks
 
+    def _configurable(self, error) -> dict[str, Any]:
+        return {"exception": error} if error else {}
+
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -148,7 +151,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             try:
                 output = runnable.invoke(
                     input,
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(config, callbacks=run_manager.get_child(),
+                                 configurable=self._configurable(first_error)),
                     **kwargs,
                 )
             except self.exceptions_to_handle as e:
@@ -184,7 +188,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             try:
                 output = await runnable.ainvoke(
                     input,
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    patch_config(config, callbacks=run_manager.get_child(),
+                                 configurable=self._configurable(first_error)),
                     **kwargs,
                 )
             except self.exceptions_to_handle as e:
@@ -248,7 +253,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     inputs,
                     [
                         # each step a child run of the corresponding root run
-                        patch_config(config, callbacks=rm.get_child())
+                        patch_config(config, callbacks=rm.get_child(),
+                                     configurable=self._configurable(first_error))
                         for rm, config in zip(run_managers, configs)
                     ],
                     return_exceptions=return_exceptions,
@@ -320,7 +326,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     inputs,
                     [
                         # each step a child run of the corresponding root run
-                        patch_config(config, callbacks=rm.get_child())
+                        patch_config(config, callbacks=rm.get_child(),
+                                     configurable=self._configurable(first_error))
                         for rm, config in zip(run_managers, configs)
                     ],
                     return_exceptions=return_exceptions,
