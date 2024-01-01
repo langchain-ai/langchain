@@ -437,8 +437,10 @@ class SQLDatabase:
         # Convert columns values to string to avoid issues with sqlalchemy
         # truncating text
         res = [
-            {column: truncate_word(value, length=self._max_string_length)
-             for column, value in r.items()}
+            {
+                column: truncate_word(value, length=self._max_string_length)
+                for column, value in r.items()
+            }
             for r in result
         ]
         if not res:
