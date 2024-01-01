@@ -2,8 +2,8 @@ import tempfile
 from typing import Generator, cast
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.schema import Document
 from langchain.storage._lc_store import create_kv_docstore, create_lc_store
 from langchain.storage.file_system import LocalFileStore
 

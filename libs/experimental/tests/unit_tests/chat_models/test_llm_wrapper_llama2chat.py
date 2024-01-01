@@ -68,7 +68,6 @@ def test_configured_system_message(
     assert actual == expected
 
 
-@pytest.mark.asyncio
 async def test_configured_system_message_async(
     model_cfg_sys_msg: Llama2Chat,
 ) -> None:

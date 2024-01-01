@@ -2,6 +2,10 @@
 
 from typing import Any, Dict, List, Optional, Union
 
+from langchain_core.embeddings import Embeddings
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langsmith import RunEvaluator
 
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
@@ -12,10 +16,6 @@ from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.evaluation.string_distance.base import (
     StringDistance as StringDistanceEnum,
 )
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.prompt_template import BasePromptTemplate
 
 
 class EvalConfig(BaseModel):
@@ -55,6 +55,8 @@ class EvalConfig(BaseModel):
 
 
 class SingleKeyEvalConfig(EvalConfig):
+    """Configuration for a run evaluator that only requires a single key."""
+
     reference_key: Optional[str] = None
     """The key in the dataset run to use as the reference string.
     If not provided, we will attempt to infer automatically."""

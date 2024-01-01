@@ -2,10 +2,10 @@ import os
 
 from langchain.llms.bedrock import Bedrock
 from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel
 from langchain.retrievers import AmazonKendraRetriever
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
 # Get region and profile from env
 region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")

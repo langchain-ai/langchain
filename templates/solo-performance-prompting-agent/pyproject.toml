@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "solo-performance-prompting-agent"
 version = "0.0.1"
-description = ""
+description = "Agent that transforms a single LLM into a cognitive synergist that has multiple points of view"
 authors = []
 readme = "README.md"
 
@@ -19,6 +19,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "solo_performance_prompting_agent.agent"
 export_attr = "agent_executor"
+
+[tool.templates-hub]
+use-case = "research"
+author = "LangChain"
+integrations = ["OpenAI"]
+tags = ["data", "agents"]
 
 [build-system]
 requires = ["poetry-core"]

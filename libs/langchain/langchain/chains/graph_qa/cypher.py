@@ -4,15 +4,16 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Field
+
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.graphs.graph_store import GraphStore
-from langchain.pydantic_v1 import Field
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
@@ -45,7 +46,7 @@ def construct_schema(
     def filter_func(x: str) -> bool:
         return x in include_types if include_types else x not in exclude_types
 
-    filtered_schema = {
+    filtered_schema: Dict[str, Any] = {
         "node_props": {
             k: v
             for k, v in structured_schema.get("node_props", {}).items()
@@ -63,16 +64,37 @@ def construct_schema(
         ],
     }
 
-    return (
-        f"Node properties are the following: \n {filtered_schema['node_props']}\n"
-        f"Relationships properties are the following: \n {filtered_schema['rel_props']}"
-        "\nRelationships are: \n"
-        + str(
-            [
-                f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
-                for el in filtered_schema["relationships"]
-            ]
+    # Format node properties
+    formatted_node_props = []
+    for label, properties in filtered_schema["node_props"].items():
+        props_str = ", ".join(
+            [f"{prop['property']}: {prop['type']}" for prop in properties]
         )
+        formatted_node_props.append(f"{label} {{{props_str}}}")
+
+    # Format relationship properties
+    formatted_rel_props = []
+    for rel_type, properties in filtered_schema["rel_props"].items():
+        props_str = ", ".join(
+            [f"{prop['property']}: {prop['type']}" for prop in properties]
+        )
+        formatted_rel_props.append(f"{rel_type} {{{props_str}}}")
+
+    # Format relationships
+    formatted_rels = [
+        f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
+        for el in filtered_schema["relationships"]
+    ]
+
+    return "\n".join(
+        [
+            "Node properties are the following:",
+            ",".join(formatted_node_props),
+            "Relationship properties are the following:",
+            ",".join(formatted_rel_props),
+            "The relationships are the following:",
+            ",".join(formatted_rels),
+        ]
     )
 
 

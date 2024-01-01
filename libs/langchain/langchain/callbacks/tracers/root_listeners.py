@@ -1,3 +1,3 @@
-from langchain.schema.callbacks.tracers.root_listeners import RootListenersTracer
+from langchain_core.tracers.root_listeners import RootListenersTracer
 
 __all__ = ["RootListenersTracer"]

@@ -1,3 +1,3 @@
-from langchain.schema.callbacks.tracers.run_collector import RunCollectorCallbackHandler
+from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 
 __all__ = ["RunCollectorCallbackHandler"]

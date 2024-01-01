@@ -5,9 +5,9 @@ from langchain.chains.openai_functions import create_structured_output_chain
 from langchain.chat_models import ChatOpenAI
 from langchain.graphs import Neo4jGraph
 from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import RunnablePassthrough
 
 # Connection to Neo4j
 graph = Neo4jGraph()

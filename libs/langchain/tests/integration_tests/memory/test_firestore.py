@@ -1,8 +1,9 @@
 import json
 
+from langchain_core.messages import message_to_dict
+
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import FirestoreChatMessageHistory
-from langchain.schema.messages import _message_to_dict
 
 
 def test_memory_with_message_store() -> None:
@@ -32,7 +33,7 @@ def test_memory_with_message_store() -> None:
         memory_key="baz", chat_memory=message_history, return_messages=True
     )
     messages = memory.chat_memory.messages
-    messages_json = json.dumps([_message_to_dict(msg) for msg in messages])
+    messages_json = json.dumps([message_to_dict(msg) for msg in messages])
 
     assert "This is me, the AI" in messages_json
     assert "This is me, the human" in messages_json

@@ -1,12 +1,12 @@
 """Integration test for embedding-based relevant doc filtering."""
 import numpy as np
+from langchain_core.documents import Document
 
 from langchain.document_transformers.embeddings_redundant_filter import (
     _DocumentWithState,
 )
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers.document_compressors import EmbeddingsFilter
-from langchain.schema import Document
 
 
 def test_embeddings_filter() -> None:

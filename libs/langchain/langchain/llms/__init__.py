@@ -19,7 +19,7 @@ access to the large language model (**LLM**) APIs and services.
 """  # noqa: E501
 from typing import Any, Callable, Dict, Type
 
-from langchain.llms.base import BaseLLM
+from langchain_core.language_models.llms import BaseLLM
 
 
 def _import_ai21() -> Any:
@@ -148,6 +148,12 @@ def _import_databricks() -> Any:
     return Databricks
 
 
+def _import_databricks_chat() -> Any:
+    from langchain.chat_models.databricks import ChatDatabricks
+
+    return ChatDatabricks
+
+
 def _import_deepinfra() -> Any:
     from langchain.llms.deepinfra import DeepInfra
 
@@ -274,6 +280,18 @@ def _import_minimax() -> Any:
     from langchain.llms.minimax import Minimax
 
     return Minimax
+
+
+def _import_mlflow() -> Any:
+    from langchain.llms.mlflow import Mlflow
+
+    return Mlflow
+
+
+def _import_mlflow_chat() -> Any:
+    from langchain.chat_models.mlflow import ChatMlflow
+
+    return ChatMlflow
 
 
 def _import_mlflow_ai_gateway() -> Any:
@@ -486,6 +504,12 @@ def _import_vllm_openai() -> Any:
     return VLLMOpenAI
 
 
+def _import_watsonxllm() -> Any:
+    from langchain.llms.watsonxllm import WatsonxLLM
+
+    return WatsonxLLM
+
+
 def _import_writer() -> Any:
     from langchain.llms.writer import Writer
 
@@ -502,6 +526,12 @@ def _import_yandex_gpt() -> Any:
     from langchain.llms.yandex import YandexGPT
 
     return YandexGPT
+
+
+def _import_volcengine_maas() -> Any:
+    from langchain.llms.volcengine_maas import VolcEngineMaasLLM
+
+    return VolcEngineMaasLLM
 
 
 def __getattr__(name: str) -> Any:
@@ -589,6 +619,8 @@ def __getattr__(name: str) -> Any:
         return _import_manifest()
     elif name == "Minimax":
         return _import_minimax()
+    elif name == "Mlflow":
+        return _import_mlflow()
     elif name == "MlflowAIGateway":
         return _import_mlflow_ai_gateway()
     elif name == "Modal":
@@ -659,12 +691,16 @@ def __getattr__(name: str) -> Any:
         return _import_vllm()
     elif name == "VLLMOpenAI":
         return _import_vllm_openai()
+    elif name == "WatsonxLLM":
+        return _import_watsonxllm()
     elif name == "Writer":
         return _import_writer()
     elif name == "Xinference":
         return _import_xinference()
     elif name == "YandexGPT":
         return _import_yandex_gpt()
+    elif name == "VolcEngineMaasLLM":
+        return _import_volcengine_maas()
     elif name == "type_to_cls_dict":
         # for backwards compatibility
         type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -749,12 +785,14 @@ __all__ = [
     "VertexAIModelGarden",
     "VLLM",
     "VLLMOpenAI",
+    "WatsonxLLM",
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
     "JavelinAIGateway",
     "QianfanLLMEndpoint",
     "YandexGPT",
+    "VolcEngineMaasLLM",
 ]
 
 
@@ -780,6 +818,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "ctransformers": _import_ctransformers,
         "ctranslate2": _import_ctranslate2,
         "databricks": _import_databricks,
+        "databricks-chat": _import_databricks_chat,
         "deepinfra": _import_deepinfra,
         "deepsparse": _import_deepsparse,
         "edenai": _import_edenai,
@@ -799,6 +838,8 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "llamacpp": _import_llamacpp,
         "textgen": _import_textgen,
         "minimax": _import_minimax,
+        "mlflow": _import_mlflow,
+        "mlflow-chat": _import_mlflow_chat,
         "mlflow-ai-gateway": _import_mlflow_ai_gateway,
         "modal": _import_modal,
         "mosaic": _import_mosaicml,
@@ -829,9 +870,11 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "openllm_client": _import_openllm,
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
+        "watsonxllm": _import_watsonxllm,
         "writer": _import_writer,
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,
         "qianfan_endpoint": _import_baidu_qianfan_endpoint,
         "yandex_gpt": _import_yandex_gpt,
+        "VolcEngineMaasLLM": _import_volcengine_maas,
     }

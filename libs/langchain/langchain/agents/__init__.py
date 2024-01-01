@@ -31,7 +31,8 @@ Agents select and use **Tools** and **Toolkits** for actions.
 from pathlib import Path
 from typing import Any
 
-from langchain._api.path import as_import_path
+from langchain_core._api.path import as_import_path
+
 from langchain.agents.agent import (
     Agent,
     AgentExecutor,
@@ -55,6 +56,7 @@ from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.initialize import initialize_agent
+from langchain.agents.json_chat.base import create_json_chat_agent
 from langchain.agents.load_tools import (
     get_all_tool_names,
     load_huggingface_tool,
@@ -62,13 +64,24 @@ from langchain.agents.load_tools import (
 )
 from langchain.agents.loading import load_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
-from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
+from langchain.agents.openai_functions_agent.base import (
+    OpenAIFunctionsAgent,
+    create_openai_functions_agent,
+)
 from langchain.agents.openai_functions_multi_agent.base import OpenAIMultiFunctionsAgent
+from langchain.agents.openai_tools.base import create_openai_tools_agent
+from langchain.agents.react.agent import create_react_agent
 from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
-from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
-from langchain.agents.structured_chat.base import StructuredChatAgent
+from langchain.agents.self_ask_with_search.base import (
+    SelfAskWithSearchChain,
+    create_self_ask_with_search_agent,
+)
+from langchain.agents.structured_chat.base import (
+    StructuredChatAgent,
+    create_structured_chat_agent,
+)
 from langchain.agents.tools import Tool, tool
-from langchain.agents.xml.base import XMLAgent
+from langchain.agents.xml.base import XMLAgent, create_xml_agent
 
 DEPRECATED_CODE = [
     "create_csv_agent",
@@ -81,7 +94,11 @@ DEPRECATED_CODE = [
 def __getattr__(name: str) -> Any:
     """Get attr name."""
     if name in DEPRECATED_CODE:
-        relative_path = as_import_path(Path(__file__).parent, suffix=name)
+        # Get directory of langchain package
+        HERE = Path(__file__).parents[1]
+        relative_path = as_import_path(
+            Path(__file__).parent, suffix=name, relative_to=HERE
+        )
         old_path = "langchain." + relative_path
         new_path = "langchain_experimental." + relative_path
         raise ImportError(
@@ -128,4 +145,11 @@ __all__ = [
     "load_tools",
     "tool",
     "XMLAgent",
+    "create_openai_functions_agent",
+    "create_xml_agent",
+    "create_react_agent",
+    "create_openai_tools_agent",
+    "create_self_ask_with_search_agent",
+    "create_json_chat_agent",
+    "create_structured_chat_agent",
 ]

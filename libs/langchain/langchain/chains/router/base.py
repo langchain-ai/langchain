@@ -4,13 +4,14 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
+from langchain_core.pydantic_v1 import Extra
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
     Callbacks,
 )
 from langchain.chains.base import Chain
-from langchain.pydantic_v1 import Extra
 
 
 class Route(NamedTuple):

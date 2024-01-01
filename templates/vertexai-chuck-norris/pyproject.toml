@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "vertexai-chuck-norris"
 version = "0.0.1"
-description = ""
+description = "This template makes jokes about Chuck Norris using Vertex AI PaLM2"
 authors = []
 readme = "README.md"
 
@@ -18,6 +18,12 @@ sse-starlette = "^1.6.5"
 [tool.langserve]
 export_module = "vertexai_chuck_norris.chain"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "chatbot"
+author = "LangChain"
+integrations = ["Google"]
+tags = ["conversation"]
 
 [build-system]
 requires = [

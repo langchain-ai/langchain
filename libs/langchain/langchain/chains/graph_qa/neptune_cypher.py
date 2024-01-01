@@ -3,6 +3,9 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
+from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.pydantic_v1 import Field
+
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -14,8 +17,6 @@ from langchain.chains.graph_qa.prompts import (
 from langchain.chains.llm import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.graphs import NeptuneGraph
-from langchain.prompts.base import BasePromptTemplate
-from langchain.pydantic_v1 import Field
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 

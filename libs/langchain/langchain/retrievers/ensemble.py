@@ -4,12 +4,14 @@ multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
 from typing import Any, Dict, List
 
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.retrievers import BaseRetriever
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import BaseRetriever, Document
 
 
 class EnsembleRetriever(BaseRetriever):
@@ -101,6 +103,13 @@ class EnsembleRetriever(BaseRetriever):
             for i, retriever in enumerate(self.retrievers)
         ]
 
+        # Enforce that retrieved docs are Documents for each list in retriever_docs
+        for i in range(len(retriever_docs)):
+            retriever_docs[i] = [
+                Document(page_content=doc) if not isinstance(doc, Document) else doc
+                for doc in retriever_docs[i]
+            ]
+
         # apply rank fusion
         fused_documents = self.weighted_reciprocal_rank(retriever_docs)
 
@@ -127,6 +136,13 @@ class EnsembleRetriever(BaseRetriever):
             )
             for i, retriever in enumerate(self.retrievers)
         ]
+
+        # Enforce that retrieved docs are Documents for each list in retriever_docs
+        for i in range(len(retriever_docs)):
+            retriever_docs[i] = [
+                Document(page_content=doc) if not isinstance(doc, Document) else doc
+                for doc in retriever_docs[i]
+            ]
 
         # apply rank fusion
         fused_documents = self.weighted_reciprocal_rank(retriever_docs)

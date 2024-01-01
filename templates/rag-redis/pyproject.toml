@@ -33,6 +33,12 @@ langchain-cli = ">=0.0.15"
 export_module = "rag_redis.chain"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "rag"
+author = "Redis"
+integrations = ["OpenAI", "Redis", "HuggingFace"]
+tags = ["vectordbs"]
+
 [tool.poe.tasks.start]
 cmd = "uvicorn langchain_cli.dev_scripts:create_demo_server --reload --port $port --host $host"
 args = [

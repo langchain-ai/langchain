@@ -1,20 +1,16 @@
-import asyncio
 import json
 from json import JSONDecodeError
 from typing import List, Union
 
-from langchain.agents.agent import AgentOutputParser
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    OutputParserException,
-)
-from langchain.schema.agent import AgentActionMessageLog
-from langchain.schema.messages import (
+from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
+from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
 )
-from langchain.schema.output import ChatGeneration, Generation
+from langchain_core.outputs import ChatGeneration, Generation
+
+from langchain.agents.agent import AgentOutputParser
 
 
 class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
@@ -49,7 +45,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
                     _tool_input = {}
                 else:
                     # otherwise it returns a json object
-                    _tool_input = json.loads(function_call["arguments"])
+                    _tool_input = json.loads(function_call["arguments"], strict=False)
             except JSONDecodeError:
                 raise OutputParserException(
                     f"Could not parse tool input: {function_call} because "
@@ -87,13 +83,6 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
             raise ValueError("This output parser only works on ChatGeneration output")
         message = result[0].message
         return self._parse_ai_message(message)
-
-    async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
-    ) -> Union[AgentAction, AgentFinish]:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self.parse_result, result
-        )
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         raise ValueError("Can only parse messages")

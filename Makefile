@@ -41,9 +41,10 @@ spell_fix:
 # LINTING AND FORMATTING
 ######################
 
-lint:
+lint lint_package lint_tests:
 	poetry run ruff docs templates cookbook
 	poetry run ruff format docs templates cookbook --diff
+	poetry run ruff --select I docs templates cookbook
 
 format format_diff:
 	poetry run ruff format docs templates cookbook

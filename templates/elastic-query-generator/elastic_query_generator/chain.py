@@ -1,7 +1,7 @@
 from elasticsearch import Elasticsearch
 from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.json import SimpleJsonOutputParser
-from langchain.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 
 from .elastic_index_info import get_indices_infos
 from .prompts import DSL_PROMPT

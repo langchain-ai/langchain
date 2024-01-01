@@ -1,9 +1,10 @@
 """Test Base Schema of documents."""
 from typing import Iterator
 
+from langchain_core.documents import Document
+
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document
 
 
 def test_base_blob_parser() -> None:
