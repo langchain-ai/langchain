@@ -1,7 +1,4 @@
 # flake8: noqa
-
-from langchain.prompts.prompt import PromptTemplate
-
 REQUEST_TOOL_DESCRIPTION = """Use this when you want to POST to an API.
 Input to the tool should be a json string with 3 keys: "url", "data", and "output_instructions".
 The value of "url" should be a string.

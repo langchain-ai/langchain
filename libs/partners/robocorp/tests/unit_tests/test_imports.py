@@ -1,10 +1,7 @@
 from langchain_robocorp import __all__
 
 EXPECTED_ALL = [
-    "ActionServerLLM",
-    "ChatActionServer",
-    "ActionServerVectorStore",
-    "ActionServerEmbeddings",
+    "ActionServerToolkit",
 ]
 
 
