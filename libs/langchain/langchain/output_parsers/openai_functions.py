@@ -78,17 +78,20 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                 raise OutputParserException(f"Could not parse function call: {exc}")
         try:
             if partial:
-                if self.args_only:
-                    return parse_partial_json(
-                        function_call["arguments"], strict=self.strict
-                    )
-                else:
-                    return {
-                        **function_call,
-                        "arguments": parse_partial_json(
+                try:
+                    if self.args_only:
+                        return parse_partial_json(
                             function_call["arguments"], strict=self.strict
-                        ),
-                    }
+                        )
+                    else:
+                        return {
+                            **function_call,
+                            "arguments": parse_partial_json(
+                                function_call["arguments"], strict=self.strict
+                            ),
+                        }
+                except json.JSONDecodeError:
+                    return None
             else:
                 if self.args_only:
                     try:

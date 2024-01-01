@@ -51,7 +51,7 @@ def test_numbered_list() -> None:
         "For example: \n\n1. foo\n\n2. bar\n\n3. baz"
     )
 
-    text2 = "Items:\n\n1. apple\n\n2. banana\n\n3. cherry"
+    text2 = "Items:\n\n1. apple\n\n    2. banana\n\n3. cherry"
 
     text3 = "No items in the list."
 
@@ -82,11 +82,11 @@ def test_numbered_list() -> None:
 def test_markdown_list() -> None:
     parser = MarkdownListOutputParser()
     text1 = (
-        "Your response should be a numbered list with each item on a new line."
+        "Your response should be a numbered - not a list item - list with each item on a new line."  # noqa: E501
         "For example: \n- foo\n- bar\n- baz"
     )
 
-    text2 = "Items:\n- apple\n- banana\n- cherry"
+    text2 = "Items:\n- apple\n     - banana\n- cherry"
 
     text3 = "No items in the list."
 
