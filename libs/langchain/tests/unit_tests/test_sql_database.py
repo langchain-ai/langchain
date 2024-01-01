@@ -122,7 +122,7 @@ def test_sql_database_run() -> None:
     command = "select user_id, user_name, user_bio from user where user_id = 13"
     output = db.run(command)
     user_bio = "That is my Bio " * 19 + "That is my..."
-    expected_output = f"[(13, 'Harrison', '{user_bio}')]"
+    expected_output = f"[{'user_id': '13', 'user_name': 'Harrison', 'user_bio': '{user_bio}'}]"
     assert output == expected_output
 
 

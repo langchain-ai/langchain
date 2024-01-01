@@ -89,5 +89,5 @@ def test_sql_database_run() -> None:
 
     command = 'select user_name from "user" where user_id = 13'
     output = db.run(command)
-    expected_output = "[('Harrison',)]"
+    expected_output = "[{'user_name': 'Harrison'}]"
     assert output == expected_output
