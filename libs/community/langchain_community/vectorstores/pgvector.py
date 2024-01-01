@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import asyncio
 import contextlib
 import enum
 import logging
 import uuid
-from functools import partial
 from typing import (
     Any,
     Callable,
@@ -31,6 +29,7 @@ except ImportError:
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
@@ -941,7 +940,8 @@ class PGVector(VectorStore):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(
+        return await run_in_executor(
+            None,
             self.max_marginal_relevance_search_by_vector,
             embedding,
             k=k,
@@ -950,4 +950,3 @@ class PGVector(VectorStore):
             filter=filter,
             **kwargs,
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
