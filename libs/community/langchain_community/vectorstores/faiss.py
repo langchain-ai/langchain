@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import operator
 import os
 import pickle
 import uuid
 import warnings
-from functools import partial
 from pathlib import Path
 from typing import (
     Any,
@@ -24,6 +22,7 @@ from typing import (
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.docstore.base import AddableMixin, Docstore
@@ -359,7 +358,8 @@ class FAISS(VectorStore):
         """
 
         # This is a temporary workaround to make the similarity search asynchronous.
-        func = partial(
+        return await run_in_executor(
+            None,
             self.similarity_search_with_score_by_vector,
             embedding,
             k=k,
@@ -367,7 +367,6 @@ class FAISS(VectorStore):
             fetch_k=fetch_k,
             **kwargs,
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def similarity_search_with_score(
         self,
@@ -640,7 +639,8 @@ class FAISS(VectorStore):
                 relevance and score for each.
         """
         # This is a temporary workaround to make the similarity search asynchronous.
-        func = partial(
+        return await run_in_executor(
+            None,
             self.max_marginal_relevance_search_with_score_by_vector,
             embedding,
             k=k,
@@ -648,7 +648,6 @@ class FAISS(VectorStore):
             lambda_mult=lambda_mult,
             filter=filter,
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def max_marginal_relevance_search_by_vector(
         self,

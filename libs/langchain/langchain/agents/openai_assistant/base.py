@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Un
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.load import dumpd
 from langchain_core.pydantic_v1 import Field
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensure_config
 from langchain_core.tools import BaseTool
 
 from langchain.callbacks.manager import CallbackManager
@@ -222,7 +222,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
 
-        config = config or {}
+        config = ensure_config(config)
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
             inheritable_tags=config.get("tags"),
