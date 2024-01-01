@@ -24,12 +24,12 @@ from langchain_robocorp._common import (
 )
 from langchain_robocorp._prompts import (
     API_CONTROLLER_PROMPT,
-    REQUEST_TOOL_DESCRIPTION,
     TOOLKIT_TOOL_DESCRIPTION,
 )
 
 MAX_RESPONSE_LENGTH = 5000
 LLM_TRACE_HEADER = "X-action-trace"
+
 
 class RunDetailsCallbackHandler(BaseCallbackHandler):
     def __init__(self, run_details: dict) -> None:
@@ -52,12 +52,12 @@ class ToolInputSchema(BaseModel):
     question: str = Field(...)
 
 
-class RequestTool(BaseTool):
+class ActionServerRequestTool(BaseTool):
     """Requests POST tool with LLM-instructed extraction of truncated responses."""
 
-    name: str = "requests_post"
+    name: str = "action_server_request"
     """Tool name."""
-    description: str = REQUEST_TOOL_DESCRIPTION
+    description: str = "Useful to make requests to Action Server API"
     """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
@@ -69,17 +69,15 @@ class RequestTool(BaseTool):
     """Should requests to Action Server include Langsmith trace, if available"""
 
     def _run(
-        self, query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-
         headers = {
             "Authorization": f"Bearer {self.api_key}",
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         }
 
         try:
-            json_text = query[query.find('{'):query.rfind('}') + 1]
+            json_text = query[query.find("{") : query.rfind("}") + 1]
             data = json.loads(json_text)
 
         except json.JSONDecodeError as e:
@@ -95,9 +93,7 @@ class RequestTool(BaseTool):
             pass
 
         response = requests.post(
-            data["url"],
-            headers=headers,
-            data= json.dumps(data["data"])
+            data["url"], headers=headers, data=json.dumps(data["data"])
         )
         output = response.text[: self.response_length]
 
@@ -124,7 +120,7 @@ class ActionServerToolkit(BaseModel):
 
     def get_tools(self, **kwargs: Any) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        
+
         # Fetch and format the API spec
         try:
             spec_url = ensure_openapi_path(self.url)
@@ -135,11 +131,11 @@ class ActionServerToolkit(BaseModel):
             raise ValueError(
                 f"Failed to fetch OpenAPI schema from Action Server - {self.url}"
             )
-            
+
         # Prepare request tools
         run_details: dict = {}
 
-        request_tool = RequestTool(
+        request_tool = ActionServerRequestTool(
             run_details=run_details,
             report_trace=self.report_trace,
             api_key=self.api_key,
@@ -174,7 +170,7 @@ class ActionServerToolkit(BaseModel):
             )
 
             prompt_variables["api_docs"] = f"{name}: \n{json.dumps(docs, indent=4)}"
-            
+
             prompt = PromptTemplate(
                 template=API_CONTROLLER_PROMPT,
                 input_variables=["input"],
@@ -182,11 +178,11 @@ class ActionServerToolkit(BaseModel):
             )
 
             chain: Runnable = (
-                {"input": RunnablePassthrough()} |
-                prompt |
-                self.llm |
-                StrOutputParser() |
-                request_tool
+                {"input": RunnablePassthrough()}
+                | prompt
+                | self.llm
+                | StrOutputParser()
+                | request_tool
             )
 
             toolkit.append(

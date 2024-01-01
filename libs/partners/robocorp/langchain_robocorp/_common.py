@@ -70,6 +70,7 @@ def dereference_refs(
     )
     return _dereference_refs_helper(schema_obj, full_schema, skip_keys)
 
+
 @dataclass(frozen=True)
 class ReducedOpenAPISpec:
     """A reduced OpenAPI spec.
@@ -132,8 +133,9 @@ def reduce_openapi_spec(url: str, spec: dict) -> ReducedOpenAPISpec:
     ]
 
     return ReducedOpenAPISpec(
-        servers=[{
-                'url': url,
+        servers=[
+            {
+                "url": url,
             }
         ],
         description=spec["info"].get("description", ""),
@@ -162,10 +164,11 @@ def get_required_param_descriptions(endpoint_spec: dict) -> str:
 
     return ", ".join(descriptions)
 
+
 def ensure_openapi_path(url: str) -> str:
-    if url.endswith('/openapi.json'):
+    if url.endswith("/openapi.json"):
         return url
-    elif url.endswith('/'):
-        return f'{url}openapi.json'
+    elif url.endswith("/"):
+        return f"{url}openapi.json"
     else:
-        return f'{url}/openapi.json'
+        return f"{url}/openapi.json"
