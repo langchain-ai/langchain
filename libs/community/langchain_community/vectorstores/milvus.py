@@ -114,7 +114,7 @@ class Milvus(VectorStore):
         primary_field: str = "pk",
         text_field: str = "text",
         vector_field: str = "vector",
-        metadata_field: Optional[str] = None
+        metadata_field: Optional[str] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -272,7 +272,9 @@ class Milvus(VectorStore):
                         raise ValueError(f"Unrecognized datatype for {key}.")
                     # Dataype is a string/varchar equivalent
                     elif dtype == DataType.VARCHAR:
-                        fields.append(FieldSchema(key, DataType.VARCHAR, max_length=65_535))
+                        fields.append(
+                            FieldSchema(key, DataType.VARCHAR, max_length=65_535)
+                        )
                     else:
                         fields.append(FieldSchema(key, dtype))
 
@@ -840,6 +842,6 @@ class Milvus(VectorStore):
 
     def _parse_document(self, data: dict) -> Document:
         return Document(
-                page_content=data.pop(self._text_field),
-                metadata= data.pop(self._metadata_field) if self._metadata_field else data
+            page_content=data.pop(self._text_field),
+            metadata=data.pop(self._metadata_field) if self._metadata_field else data,
         )
