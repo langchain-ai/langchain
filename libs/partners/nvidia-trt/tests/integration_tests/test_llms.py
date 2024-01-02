@@ -8,7 +8,7 @@ _MODEL_NAME = "ensemble"
 
 @pytest.mark.skip(reason="Need a working Triton server")
 def test_stream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from NVIDIA TRT."""
     llm = TritonTensorRTLLM(model_name=_MODEL_NAME)
 
     for token in llm.stream("I'm Pickle Rick"):
@@ -17,7 +17,7 @@ def test_stream() -> None:
 
 @pytest.mark.skip(reason="Need a working Triton server")
 async def test_astream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from NVIDIA TRT."""
     llm = TritonTensorRTLLM(model_name=_MODEL_NAME)
 
     async for token in llm.astream("I'm Pickle Rick"):

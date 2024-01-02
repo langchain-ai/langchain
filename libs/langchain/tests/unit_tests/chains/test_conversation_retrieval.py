@@ -1,5 +1,4 @@
 """Test conversation chain and memory."""
-import pytest
 from langchain_core.documents import Document
 
 from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
@@ -11,8 +10,7 @@ from langchain.prompts.prompt import PromptTemplate
 from tests.unit_tests.retrievers.sequential_retriever import SequentialRetriever
 
 
-@pytest.mark.asyncio
-async def atest_simple() -> None:
+async def test_simplea() -> None:
     fixed_resp = "I don't know"
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
@@ -34,8 +32,7 @@ async def atest_simple() -> None:
     assert got["answer"] == fixed_resp
 
 
-@pytest.mark.asyncio
-async def atest_fixed_message_response_when_docs_found() -> None:
+async def test_fixed_message_response_when_docs_founda() -> None:
     fixed_resp = "I don't know"
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
