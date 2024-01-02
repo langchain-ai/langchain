@@ -109,7 +109,7 @@ class LanguageParser(BaseBlobParser):
             else None
         )
 
-        if language is None or language not in LANGUAGE_SEGMENTERS:
+        if language is None:
             yield Document(
                 page_content=code,
                 metadata={
@@ -118,6 +118,9 @@ class LanguageParser(BaseBlobParser):
             )
             return
 
+        if language not in LANGUAGE_SEGMENTERS:
+            raise Exception(f"No parser available for {language}")
+    
         if self.parser_threshold >= len(code.splitlines()):
             yield Document(
                 page_content=code,
