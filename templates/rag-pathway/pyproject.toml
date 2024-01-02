@@ -9,7 +9,7 @@ readme = "README.md"
 python = ">=3.10,<4.0"
 langchain = ">=0.0.313, <0.1"
 openai = ">=1.2.4"
-pathway = ">=0.7.5"
+pathway = ">=0.7.7"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.4"
