@@ -15,7 +15,7 @@ from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
-from langchain.schema.messages import (
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
