@@ -167,8 +167,10 @@ def test_dereference_refs_integer_ref() -> None:
     expected = {
         "type": "object",
         "properties": {
-            "error_400": {"type": "object",
-                        "properties": {"description": "Bad Request"}},
+            "error_400": {
+                "type": "object",
+                "properties": {"description": "Bad Request"},
+            },
         },
         "$defs": {
             400: {
