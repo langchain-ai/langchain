@@ -28,7 +28,6 @@ DEFAULT_METADATA_COLUMN_NAME = "metadata"  # document metadata
 DEFAULT_CONTENT_COLUMN_NAME = "content"  # text content, do not rename
 DEFAULT_TOP_K = 4  # default number of documents returned from similarity search
 
-_MIN_INDEX_ROWS = 10000  # minimal number of rows for creating an index
 _SLOW_SEARCH_SECONDS = 2.5  # Search jobs longer than this are considered slow.
 _INDEX_CHECK_PERIOD_SECONDS = 120  # Do not check for index more often that this.
 
@@ -195,10 +194,6 @@ class BigQueryVectorSearch(VectorStore):
             # Already have an index or in the process of creating one.
             return
         table = self.bq_client.get_table(self.vectors_table)
-        if (table.num_rows or 0) < _MIN_INDEX_ROWS:
-            # Not enough rows to create index.
-            self._logger.debug("Not enough rows to create a vector index.")
-            return
         # Check if index exists, create if necessary
         check_query = (
             f"SELECT 1 FROM `{self.project_id}.{self.dataset_name}"
@@ -233,9 +228,6 @@ class BigQueryVectorSearch(VectorStore):
         from google.api_core.exceptions import ClientError
 
         table = self.bq_client.get_table(self.vectors_table)
-        if (table.num_rows or 0) < _MIN_INDEX_ROWS:
-            # Not enough rows to create index.
-            return
         if self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             distance_type = "EUCLIDEAN"
         elif self.distance_strategy == DistanceStrategy.COSINE:
