@@ -5,8 +5,8 @@ import os
 import warnings
 from typing import (
     Any,
-    Callable,
     Dict,
+    Iterable,
     List,
     Literal,
     Mapping,
@@ -262,7 +262,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         # If tiktoken flag set to False
         if not self.tiktoken_enabled:
             try:
-                from transformers import AutoTokenizer
+                from transformers import AutoTokenizer  # noqa: F401
             except ImportError:
                 raise ValueError(
                     "Could not import transformers python package. "
@@ -314,7 +314,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 from tqdm.auto import tqdm
 
-                _iter = tqdm(range(0, len(tokens), _chunk_size))
+                _iter: Iterable = tqdm(range(0, len(tokens), _chunk_size))
             except ImportError:
                 _iter = range(0, len(tokens), _chunk_size)
         else:

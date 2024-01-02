@@ -42,8 +42,9 @@ optional = true
 ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1.8.0"
 langchain-core = {path = "../../core", develop = true}
+types-tqdm = "^4.66.0.5"
 
 [tool.poetry.group.dev]
 optional = true
@@ -60,6 +61,10 @@ select = [
 
 [tool.mypy]
 disallow_untyped_defs = "True"
+
+[[tool.mypy.overrides]]
+module = "transformers"
+ignore_missing_imports = true
 
 [tool.coverage.run]
 omit = [
