@@ -2072,7 +2072,7 @@ async def test_prompt_with_llm(
                     "final_output": None,
                     "metadata": {},
                     "name": "ChatPromptTemplate",
-                    "start_time": "2023-01-01T00:00:00.000",
+                    "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
                     "streamed_output_str": [],
                     "tags": ["seq:step:1"],
@@ -2094,7 +2094,7 @@ async def test_prompt_with_llm(
             {
                 "op": "add",
                 "path": "/logs/ChatPromptTemplate/end_time",
-                "value": "2023-01-01T00:00:00.000",
+                "value": "2023-01-01T00:00:00.000+00:00",
             },
         ),
         RunLogPatch(
@@ -2106,7 +2106,7 @@ async def test_prompt_with_llm(
                     "final_output": None,
                     "metadata": {},
                     "name": "FakeListLLM",
-                    "start_time": "2023-01-01T00:00:00.000",
+                    "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
                     "streamed_output_str": [],
                     "tags": ["seq:step:2"],
@@ -2129,7 +2129,7 @@ async def test_prompt_with_llm(
             {
                 "op": "add",
                 "path": "/logs/FakeListLLM/end_time",
-                "value": "2023-01-01T00:00:00.000",
+                "value": "2023-01-01T00:00:00.000+00:00",
             },
         ),
         RunLogPatch(
