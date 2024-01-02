@@ -101,9 +101,9 @@ from langchain_community.document_loaders.gcs_directory import GCSDirectoryLoade
 from langchain_community.document_loaders.gcs_file import GCSFileLoader
 from langchain_community.document_loaders.geodataframe import GeoDataFrameLoader
 from langchain_community.document_loaders.git import GitLoader
+from langchain_community.document_loaders.github import GithubFileLoader
 from langchain_community.document_loaders.gitbook import GitbookLoader
 from langchain_community.document_loaders.github import GitHubIssuesLoader
-from langchain_community.document_loaders.github import GithubFileLoader
 from langchain_community.document_loaders.google_speech_to_text import (
     GoogleSpeechToTextLoader,
 )

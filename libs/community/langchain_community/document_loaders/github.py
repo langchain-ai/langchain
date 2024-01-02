@@ -232,7 +232,6 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
         documents = []
 
         files = self.get_file_paths()
-        print(files)
         for file in files:
             content = self.get_file_content_by_path(file["path"])
             metadata = {
