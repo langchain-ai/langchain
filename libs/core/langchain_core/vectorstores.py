@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -24,6 +22,7 @@ from typing import (
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -103,9 +102,7 @@ class VectorStore(ABC):
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.add_texts, **kwargs), texts, metadatas
-        )
+        return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Run more documents through the embeddings and add to the vectorstore.
@@ -224,8 +221,9 @@ class VectorStore(ABC):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_with_score, *args, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
+        return await run_in_executor(
+            None, self.similarity_search_with_score, *args, **kwargs
+        )
 
     def _similarity_search_with_relevance_scores(
         self,
@@ -383,8 +381,7 @@ class VectorStore(ABC):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search, query, k=k, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
+        return await run_in_executor(None, self.similarity_search, query, k=k, **kwargs)
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -408,8 +405,9 @@ class VectorStore(ABC):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_by_vector, embedding, k=k, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
+        return await run_in_executor(
+            None, self.similarity_search_by_vector, embedding, k=k, **kwargs
+        )
 
     def max_marginal_relevance_search(
         self,
@@ -450,7 +448,8 @@ class VectorStore(ABC):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(
+        return await run_in_executor(
+            None,
             self.max_marginal_relevance_search,
             query,
             k=k,
@@ -458,7 +457,6 @@ class VectorStore(ABC):
             lambda_mult=lambda_mult,
             **kwargs,
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -541,8 +539,8 @@ class VectorStore(ABC):
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(cls.from_texts, **kwargs), texts, embedding, metadatas
+        return await run_in_executor(
+            None, cls.from_texts, texts, embedding, metadatas, **kwargs
         )
 
     def _get_retriever_tags(self) -> List[str]:

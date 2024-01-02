@@ -9,13 +9,13 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AIMessage, HumanMessage, format_document
 from langchain.vectorstores import Pinecone
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import (
     RunnableBranch,
     RunnableLambda,
     RunnableParallel,
     RunnablePassthrough,
 )
-from pydantic import BaseModel, Field
 
 if os.environ.get("PINECONE_API_KEY", None) is None:
     raise Exception("Missing `PINECONE_API_KEY` environment variable.")
