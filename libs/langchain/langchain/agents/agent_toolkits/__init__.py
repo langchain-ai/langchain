@@ -16,7 +16,6 @@ See [Security](https://python.langchain.com/docs/security) for more information.
 from pathlib import Path
 from typing import Any
 
-from langchain_community.tools.retriever import create_retriever_tool
 from langchain_core._api.path import as_import_path
 
 from langchain.agents.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
@@ -60,6 +59,7 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreToolkit,
 )
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
+from langchain.tools.retriever import create_retriever_tool
 
 DEPRECATED_AGENTS = [
     "create_csv_agent",
