@@ -14,7 +14,8 @@ from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
-from langchain.schema.messages import (
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
@@ -22,7 +23,6 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.language_models import BaseChatModel
 
 logger = logging.getLogger(__name__)
 

@@ -4,16 +4,16 @@ from typing import Any
 import requests
 from bs4 import BeautifulSoup
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema.messages import SystemMessage
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import (
+from langchain.utilities import DuckDuckGoSearchAPIWrapper
+from langchain_community.chat_models import ChatOpenAI
+from langchain_core.messages import SystemMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import (
     Runnable,
     RunnableLambda,
     RunnableParallel,
     RunnablePassthrough,
 )
-from langchain.utilities import DuckDuckGoSearchAPIWrapper
-from langchain_community.chat_models import ChatOpenAI
 
 from sql_research_assistant.search.sql import sql_answer_chain
 
