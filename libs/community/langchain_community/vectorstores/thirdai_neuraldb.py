@@ -153,7 +153,7 @@ class NeuralDBVectorStore(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
-        metadatas: List[dict] | None = None,
+        metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> "NeuralDBVectorStore":
         """Return VectorStore initialized from texts and embeddings."""
