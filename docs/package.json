@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@docusaurus/core": "2.4.3",
+    "@docusaurus/plugin-content-docs": "^3.0.1",
     "@docusaurus/preset-classic": "2.4.3",
     "@docusaurus/remark-plugin-npm2yarn": "^2.4.3",
     "@docusaurus/theme-mermaid": "2.4.3",
