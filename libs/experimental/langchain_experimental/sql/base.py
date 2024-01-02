@@ -10,8 +10,8 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
-from langchain.tools.sql_database.prompt import QUERY_CHECKER
 from langchain.utilities.sql_database import SQLDatabase
+from langchain_community.tools.sql_database.prompt import QUERY_CHECKER
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
