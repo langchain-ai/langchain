@@ -101,6 +101,17 @@ class FakeTracer(BaseTracer):
         return self.uuids_map[uuid]
 
     def _copy_run(self, run: Run) -> Run:
+        if run.dotted_order:
+            levels = run.dotted_order.split(".")
+            processed_levels = []
+            for level in levels:
+                timestamp, run_id = level.split("Z")
+                new_run_id = self._replace_uuid(UUID(run_id))
+                processed_level = f"{timestamp}Z{new_run_id}"
+                processed_levels.append(processed_level)
+            new_dotted_order = ".".join(processed_levels)
+        else:
+            new_dotted_order = None
         return run.copy(
             update={
                 "id": self._replace_uuid(run.id),
@@ -110,6 +121,8 @@ class FakeTracer(BaseTracer):
                 "child_runs": [self._copy_run(child) for child in run.child_runs],
                 "execution_order": None,
                 "child_execution_order": None,
+                "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
+                "dotted_order": new_dotted_order,
             }
         )
 
