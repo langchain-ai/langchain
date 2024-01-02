@@ -10,7 +10,6 @@ from typing import (
 )
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -23,6 +22,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_community.chat_models.base import BaseChatModel
 
 logger = logging.getLogger(__name__)
 

@@ -14,7 +14,7 @@ This page covers how to use the `GPT4All` wrapper within LangChain. The tutorial
 To use the GPT4All wrapper, you need to provide the path to the pre-trained model file and the model's configuration.
 
 ```python
-from langchain.llms import GPT4All
+from langchain_community.llms import GPT4All
 
 # Instantiate the model. Callbacks support token-wise streaming
 model = GPT4All(model="./models/gpt4all-model.bin", n_ctx=512, n_threads=8)
@@ -28,7 +28,7 @@ You can also customize the generation parameters, such as n_predict, temp, top_p
 To stream the model's predictions, add in a CallbackManager.
 
 ```python
-from langchain.llms import GPT4All
+from langchain_community.llms import GPT4All
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 # There are many CallbackHandlers supported, such as

@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import List, Optional
 
 from langchain.chains.llm import LLMChain
-from langchain.chat_models.base import BaseChatModel
 from langchain.memory import ChatMessageHistory
 from langchain.schema import (
     BaseChatMessageHistory,
@@ -13,6 +12,7 @@ from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 from langchain.schema.vectorstore import VectorStoreRetriever
 from langchain.tools.base import BaseTool
 from langchain.tools.human.tool import HumanInputRun
+from langchain_community.chat_models.base import BaseChatModel
 
 from langchain_experimental.autonomous_agents.autogpt.output_parser import (
     AutoGPTOutputParser,
