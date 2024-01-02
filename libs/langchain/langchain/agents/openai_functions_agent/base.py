@@ -240,7 +240,7 @@ def create_openai_functions_agent(
 
         .. code-block:: python
 
-            from langchain.chat_models import ChatOpenAI
+            from langchain_community.chat_models import ChatOpenAI
             from langchain.agents import AgentExecutor, create_openai_functions_agent
             from langchain import hub
 

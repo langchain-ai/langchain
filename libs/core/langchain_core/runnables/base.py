@@ -3719,7 +3719,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
 
             # Create a runnable binding that invokes the ChatModel with the
             # additional kwarg `stop=['-']` when running it.
-            from langchain.chat_models import ChatOpenAI
+            from langchain_community.chat_models import ChatOpenAI
             model = ChatOpenAI()
             model.invoke('Say "Parrot-MAGIC"', stop=['-']) # Should return `Parrot`
             # Using it the easy way via `bind` method which returns a new

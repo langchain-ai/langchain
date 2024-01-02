@@ -236,7 +236,7 @@ def create_ernie_fn_runnable(
                 from typing import Optional
 
                 from langchain.chains.ernie_functions import create_ernie_fn_chain
-                from langchain.chat_models import ErnieBotChat
+                from langchain_community.chat_models import ErnieBotChat
                 from langchain.prompts import ChatPromptTemplate
                 from langchain.pydantic_v1 import BaseModel, Field
 
@@ -310,7 +310,7 @@ def create_structured_output_runnable(
                 from typing import Optional
 
                 from langchain.chains.ernie_functions import create_structured_output_chain
-                from langchain.chat_models import ErnieBotChat
+                from langchain_community.chat_models import ErnieBotChat
                 from langchain.prompts import ChatPromptTemplate
                 from langchain.pydantic_v1 import BaseModel, Field
 
@@ -407,7 +407,7 @@ def create_ernie_fn_chain(
                 from typing import Optional
 
                 from langchain.chains.ernie_functions import create_ernie_fn_chain
-                from langchain.chat_models import ErnieBotChat
+                from langchain_community.chat_models import ErnieBotChat
                 from langchain.prompts import ChatPromptTemplate
 
                 from langchain.pydantic_v1 import BaseModel, Field
@@ -494,7 +494,7 @@ def create_structured_output_chain(
                 from typing import Optional
 
                 from langchain.chains.ernie_functions import create_structured_output_chain
-                from langchain.chat_models import ErnieBotChat
+                from langchain_community.chat_models import ErnieBotChat
                 from langchain.prompts import ChatPromptTemplate
 
                 from langchain.pydantic_v1 import BaseModel, Field

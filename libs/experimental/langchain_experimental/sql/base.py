@@ -27,7 +27,7 @@ class SQLDatabaseChain(Chain):
         .. code-block:: python
 
             from langchain_experimental.sql import SQLDatabaseChain
-            from langchain.llms import OpenAI, SQLDatabase
+            from langchain_community.llms import OpenAI, SQLDatabase
             db = SQLDatabase(...)
             db_chain = SQLDatabaseChain.from_llm(OpenAI(), db)
 

@@ -25,7 +25,7 @@ class FallacyChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             from langchain.chains import LLMChain
             from langchain_experimental.fallacy import FallacyChain
             from langchain_experimental.fallacy_removal.models import LogicalFallacy
