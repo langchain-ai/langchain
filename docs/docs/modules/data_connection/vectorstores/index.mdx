@@ -44,7 +44,7 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 
 ```python
 from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import Chroma
 
@@ -76,7 +76,7 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 
 ```python
 from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import FAISS
 
@@ -108,7 +108,7 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 
 ```python
 from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import LanceDB
 
