@@ -32,7 +32,7 @@ class SurrealDBStore(VectorStore):
         .. code-block:: python
 
             from langchain.vectorstores.surrealdb import SurrealDBStore
-            from langchain.embeddings import HuggingFaceEmbeddings
+            from langchain_community.embeddings import HuggingFaceEmbeddings
 
             embedding_function = HuggingFaceEmbeddings()
             dburl = "ws://localhost:8000/rpc"

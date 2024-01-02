@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 
 import requests
 from langchain.document_loaders import JSONLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores.timescalevector import TimescaleVector
+from langchain_community.embeddings.openai import OpenAIEmbeddings
 from timescale_vector import client
 
 

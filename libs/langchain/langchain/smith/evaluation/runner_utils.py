@@ -1302,7 +1302,7 @@ Examples
 .. code-block:: python
 
     from langsmith import Client
-    from langchain.chat_models import ChatOpenAI
+    from langchain_community.chat_models import ChatOpenAI
     from langchain.chains import LLMChain
     from langchain.smith import smith_eval.RunEvalConfig, run_on_dataset
 

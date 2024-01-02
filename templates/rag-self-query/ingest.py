@@ -1,9 +1,9 @@
 import os
 
 from langchain.document_loaders import JSONLoader
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import ElasticsearchStore
+from langchain_community.embeddings import OpenAIEmbeddings
 
 ELASTIC_CLOUD_ID = os.getenv("ELASTIC_CLOUD_ID")
 ELASTIC_USERNAME = os.getenv("ELASTIC_USERNAME", "elastic")

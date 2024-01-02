@@ -1,6 +1,6 @@
 from elasticsearch import Elasticsearch
-from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.json import SimpleJsonOutputParser
+from langchain_community.chat_models import ChatOpenAI
 from langchain_core.pydantic_v1 import BaseModel
 
 from .elastic_index_info import get_indices_infos
