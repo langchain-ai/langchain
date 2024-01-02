@@ -183,7 +183,7 @@ Description: {tool.description}"""
 
     @staticmethod
     def get_agent_trajectory(
-        steps: Union[str, Sequence[Tuple[AgentAction, str]]]
+        steps: Union[str, Sequence[Tuple[AgentAction, str]]],
     ) -> str:
         """Get the agent trajectory as a formatted string.
 

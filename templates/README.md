@@ -57,7 +57,7 @@ add_routes(app, pirate_speak_chain, path="/pirate-speak")
 ```
 
 You can now edit the template you pulled down.
-You can change the code files in `package/pirate-speak` to use a different model, different prompt, different logic.
+You can change the code files in `packages/pirate-speak` to use a different model, different prompt, different logic.
 Note that the above code snippet always expects the final chain to be importable as `from pirate_speak.chain import chain`,
 so you should either keep the structure of the package similar enough to respect that or be prepared to update that code snippet.
 
