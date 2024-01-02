@@ -1,12 +1,50 @@
-from typing import Any, AsyncIterator, Iterator, List, Optional
+import os
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
 
+from ai21 import AI21Client
+from ai21.resources import Message, RoleType
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import BaseMessage, BaseMessageChunk
-from langchain_core.outputs import ChatGenerationChunk, ChatResult
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    BaseMessageChunk,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
+
+
+def _convert_to_ai21_message(
+    message: BaseMessage,
+) -> Message:
+    content = cast(str, message.content)
+
+    role = None
+
+    if isinstance(message, HumanMessage):
+        role = RoleType.USER
+    elif isinstance(message, AIMessage):
+        role = RoleType.ASSISTANT
+
+    if not role:
+        raise ValueError(f"Could not resolve role type from message {message}")
+
+    # TODO: don't use name field
+    return Message(role=role, text=content, name=None)
+
+
+def _pop_system_messages(messages: List[BaseMessage]) -> List[SystemMessage]:
+    system_message_indexes = [
+        i for i, message in enumerate(messages) if isinstance(message, SystemMessage)
+    ]
+
+    return [cast(SystemMessage, messages.pop(i)) for i in system_message_indexes]
 
 
 class ChatAI21(BaseChatModel):
@@ -20,6 +58,40 @@ class ChatAI21(BaseChatModel):
 
             model = ChatAI21()
     """
+
+    _client: AI21Client = Field(default_factory=AI21Client)
+
+    model: str = "j2-ultra"
+    api_key: Optional[SecretStr] = None
+    api_host: Optional[str] = None
+    timeout_sec: Optional[float] = None
+    num_retries: Optional[int] = None
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        # TODO: use from env
+        api_key = convert_to_secret_str(
+            values.get("api_key") or os.getenv("AI21_API_KEY")
+        )
+        values["api_key"] = api_key
+
+        api_host = (
+            values.get("api_host")
+            or os.getenv("AI21_API_URL")
+            or "https://api.ai21.com"
+        )
+        values["api_host"] = api_host
+
+        timeout_sec = values.get("timeout_sec") or os.getenv("AI21_TIMEOUT_SEC")
+        values["timeout_sec"] = timeout_sec
+
+        values["_client"] = AI21Client(
+            api_key=api_key.get_secret_value(),
+            api_host=api_host,
+            timeout_sec=timeout_sec,
+        )
+
+        return values
 
     @property
     def _llm_type(self) -> str:
@@ -56,7 +128,21 @@ class ChatAI21(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        raise NotImplementedError
+        messages = messages.copy()
+        system_messages = _pop_system_messages(messages)
+        last_system_message_str = system_messages[-1].content if system_messages else ""
+        ai21_messages = [_convert_to_ai21_message(message) for message in messages]
+
+        response = self._client.chat.create(
+            model=self.model,
+            messages=ai21_messages,
+            system=last_system_message_str,
+            **kwargs,
+        )
+
+        outputs = response.outputs
+        message = AIMessage(content=outputs[0].text)
+        return ChatResult(generations=[ChatGeneration(message=message)])
 
     async def _agenerate(
         self,
