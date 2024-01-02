@@ -19,10 +19,9 @@ const config = {
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
-
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "throw",
-
+  showLastUpdateTime: true,
   themes: ["@docusaurus/theme-mermaid"],
   markdown: {
     mermaid: true,
