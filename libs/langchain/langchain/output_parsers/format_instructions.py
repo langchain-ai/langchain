@@ -58,25 +58,10 @@ Please follow the standard YAML formatting conventions with an indent of 2 space
 
 Make sure to always enclose the YAML output in triple backticks (```). Please do not add anything other than valid YAML output!"""
 
-XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
-1. Output should conform to the tags below. 
-2. If tags are not given, make them on your own.
-3. Remember to always open and close all the tags.
-
-As an example, for the tags ["foo", "bar", "baz"]:
-1. String "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>" is a well-formatted instance of the schema. 
-2. String "<foo>\n   <bar>\n   </foo>" is a badly-formatted instance.
-3. String "<foo>\n   <tag>\n   </tag>\n</foo>" is a badly-formatted instance.
-
-Here are the output tags:
-```
-{tags}
-```"""
-
 
 PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS = """The output should be formatted as a string as the operation, followed by a colon, followed by the column or row to be queried on, followed by optional array parameters.
 1. The column names are limited to the possible columns below.
-2. Arrays must either be a comma-seperated list of numbers formatted as [1,3,5], or it must be in range of numbers formatted as [0..4].
+2. Arrays must either be a comma-separated list of numbers formatted as [1,3,5], or it must be in range of numbers formatted as [0..4].
 3. Remember that arrays are optional and not necessarily required.
 4. If the column is not in the possible columns or the operation is not a valid Pandas DataFrame operation, return why it is invalid as a sentence starting with either "Invalid column" or "Invalid operation".
 

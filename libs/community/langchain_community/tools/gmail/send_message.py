@@ -2,7 +2,7 @@
 import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -42,6 +42,7 @@ class GmailSendMessage(GmailBaseTool):
     description: str = (
         "Use this tool to send email messages." " The input is the message, recipients"
     )
+    args_schema: Type[SendMessageSchema] = SendMessageSchema
 
     def _prepare_message(
         self,

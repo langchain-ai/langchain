@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -18,6 +17,7 @@ from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load import load
 from langchain_core.pydantic_v1 import BaseModel, create_model
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
@@ -331,9 +331,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     async def _aenter_history(
         self, input: Dict[str, Any], config: RunnableConfig
     ) -> List[BaseMessage]:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self._enter_history, input, config
-        )
+        return await run_in_executor(config, self._enter_history, input, config)
 
     def _exit_history(self, run: Run, config: RunnableConfig) -> None:
         hist = config["configurable"]["message_history"]

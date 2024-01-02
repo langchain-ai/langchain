@@ -1,7 +1,6 @@
 """A tool for running python code in a REPL."""
 
 import ast
-import asyncio
 import re
 import sys
 from contextlib import redirect_stdout
@@ -14,6 +13,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.tools.base import BaseTool
+from langchain_core.runnables.config import run_in_executor
 
 from langchain_experimental.utilities.python import PythonREPL
 
@@ -72,10 +72,7 @@ class PythonREPLTool(BaseTool):
         if self.sanitize_input:
             query = sanitize_input(query)
 
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, self.run, query)
-
-        return result
+        return await run_in_executor(None, self.run, query)
 
 
 class PythonInputs(BaseModel):
@@ -144,7 +141,4 @@ class PythonAstREPLTool(BaseTool):
     ) -> Any:
         """Use the tool asynchronously."""
 
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, self._run, query)
-
-        return result
+        return await run_in_executor(None, self._run, query)
