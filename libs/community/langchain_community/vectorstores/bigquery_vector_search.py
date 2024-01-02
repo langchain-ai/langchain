@@ -455,10 +455,7 @@ class BigQueryVectorSearch(VectorStore):
         from google.cloud import bigquery
 
         # Create an index if no index exists.
-        if (
-            not self._have_index
-            and not self._creating_index
-        ):
+        if not self._have_index and not self._creating_index:
             self._initialize_vector_index()
         # Prepare filter
         filter_expr = "TRUE"
