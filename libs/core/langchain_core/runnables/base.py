@@ -1009,7 +1009,7 @@ class Runnable(Generic[Input, Output], ABC):
                 func, input, config, run_manager, **kwargs
             )
             if accepts_context(asyncio.create_task):
-                output: Output = await asyncio.create_task(coro, context=context)  # type: ignore[arg-type]
+                output: Output = await asyncio.create_task(coro, context=context)  # type: ignore
             else:
                 output = await coro
         except BaseException as e:
