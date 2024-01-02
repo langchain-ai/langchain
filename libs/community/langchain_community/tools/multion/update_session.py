@@ -1,8 +1,6 @@
-import asyncio
 from typing import TYPE_CHECKING, Optional, Type
 
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -74,15 +72,3 @@ Note: sessionId must be received from previous Browser window creation."""
                 return {"error": f"{e}", "Response": "retrying..."}
         except Exception as e:
             raise Exception(f"An error occurred: {e}")
-
-    async def _arun(
-        self,
-        sessionId: str,
-        query: str,
-        url: Optional[str] = "https://www.google.com/",
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> dict:
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, self._run, sessionId, query, url)
-
-        return result

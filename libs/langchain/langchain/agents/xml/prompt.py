@@ -1,4 +1,5 @@
 # flake8: noqa
+# TODO: deprecate
 agent_instructions = """You are a helpful assistant. Help the user answer any questions.
 
 You have access to the following tools:
