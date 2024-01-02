@@ -249,7 +249,7 @@ extended_testing = [
  "cohere",
  "azure-ai-documentintelligence",
  "oracle-ads",
- "lunary"
+ "lunary",
  "zhipuai",
 ]
 
