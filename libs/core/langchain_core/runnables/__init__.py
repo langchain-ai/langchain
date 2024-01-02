@@ -27,8 +27,10 @@ from langchain_core.runnables.base import (
 from langchain_core.runnables.branch import RunnableBranch
 from langchain_core.runnables.config import (
     RunnableConfig,
+    ensure_config,
     get_config_list,
     patch_config,
+    run_in_executor,
 )
 from langchain_core.runnables.fallbacks import RunnableWithFallbacks
 from langchain_core.runnables.passthrough import (
@@ -42,6 +44,7 @@ from langchain_core.runnables.utils import (
     ConfigurableField,
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
+    ConfigurableFieldSpec,
     aadd,
     add,
 )
@@ -51,6 +54,9 @@ __all__ = [
     "ConfigurableField",
     "ConfigurableFieldSingleOption",
     "ConfigurableFieldMultiOption",
+    "ConfigurableFieldSpec",
+    "ensure_config",
+    "run_in_executor",
     "patch_config",
     "RouterInput",
     "RouterRunnable",
