@@ -436,10 +436,11 @@ class SQLDatabase:
         """
         result = self._execute(command, fetch)
 
-        res = [{
-            column: truncate_word(value, length=self._max_string_length)
-            for column, value in r.items()
-        }
+        res = [
+            {
+                column: truncate_word(value, length=self._max_string_length)
+                for column, value in r.items()
+            }
             for r in result
         ]
 
