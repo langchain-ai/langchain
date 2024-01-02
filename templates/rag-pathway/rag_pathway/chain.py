@@ -6,7 +6,7 @@ from langchain.pydantic_v1 import BaseModel
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import PathwayVectorClient, PathwayVectorServer
+from langchain_community.vectorstores import PathwayVectorClient, PathwayVectorServer
 
 HOST = "127.0.0.1"
 PORT = 8780
