@@ -1,10 +1,9 @@
 """Test splitting with page numbers included."""
 import os
 
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.embeddings.openai import OpenAIEmbeddings
-
-from langchain.document_loaders import PyPDFLoader
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 
 
 def test_pdf_pagesplitter() -> None:

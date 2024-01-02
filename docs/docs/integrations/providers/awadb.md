@@ -13,7 +13,7 @@ pip install awadb
 
 
 ```python
-from langchain.vectorstores import AwaDB
+from langchain_community.vectorstores import AwaDB
 ```
 
 See a [usage example](/docs/integrations/vectorstores/awadb).

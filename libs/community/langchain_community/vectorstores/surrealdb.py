@@ -31,7 +31,7 @@ class SurrealDBStore(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain.vectorstores.surrealdb import SurrealDBStore
+            from langchain_community.vectorstores.surrealdb import SurrealDBStore
             from langchain_community.embeddings import HuggingFaceEmbeddings
 
             embedding_function = HuggingFaceEmbeddings()
