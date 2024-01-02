@@ -148,6 +148,7 @@ SAFETY_CHECK_INPUTS = [
     ),
 ]
 
+
 @pytest.mark.parametrize(
     "input_text, class_or_method, safety_checks, expected_result",
     [n[1:] for n in SAFETY_CHECK_INPUTS],
