@@ -25,7 +25,6 @@ from langchain_community.embeddings.baidu_qianfan_endpoint import (
 )
 from langchain_community.embeddings.bedrock import BedrockEmbeddings
 from langchain_community.embeddings.bookend import BookendEmbeddings
-from langchain_community.embeddings.cache import CacheBackedEmbeddings
 from langchain_community.embeddings.clarifai import ClarifaiEmbeddings
 from langchain_community.embeddings.cohere import CohereEmbeddings
 from langchain_community.embeddings.dashscope import DashScopeEmbeddings
@@ -81,6 +80,8 @@ from langchain_community.embeddings.tensorflow_hub import TensorflowHubEmbedding
 from langchain_community.embeddings.vertexai import VertexAIEmbeddings
 from langchain_community.embeddings.voyageai import VoyageEmbeddings
 from langchain_community.embeddings.xinference import XinferenceEmbeddings
+
+from langchain.embeddings.cache import CacheBackedEmbeddings
 
 logger = logging.getLogger(__name__)
 
