@@ -28,8 +28,7 @@ DEFAULT_METADATA_COLUMN_NAME = "metadata"  # document metadata
 DEFAULT_CONTENT_COLUMN_NAME = "content"  # text content, do not rename
 DEFAULT_TOP_K = 4  # default number of documents returned from similarity search
 
-_SLOW_SEARCH_SECONDS = 2.5  # Search jobs longer than this are considered slow.
-_INDEX_CHECK_PERIOD_SECONDS = 120  # Do not check for index more often that this.
+_INDEX_CHECK_PERIOD_SECONDS = 60  # Do not check for index more often that this.
 
 _vector_table_lock = Lock()  # process-wide BigQueryVectorSearch table lock
 
@@ -193,41 +192,42 @@ class BigQueryVectorSearch(VectorStore):
         if self._have_index or self._creating_index:
             # Already have an index or in the process of creating one.
             return
-        table = self.bq_client.get_table(self.vectors_table)
-        # Check if index exists, create if necessary
-        check_query = (
-            f"SELECT 1 FROM `{self.project_id}.{self.dataset_name}"
-            ".INFORMATION_SCHEMA.VECTOR_INDEXES` WHERE"
-            f" table_name = '{self.table_name}'"
-        )
-        job = self.bq_client.query(
-            check_query, api_method=bigquery.enums.QueryApiMethod.QUERY
-        )
-        if job.result().total_rows == 0:
-            # Need to create an index. Make it in a separate thread.
-            self._create_index_in_background()
-        else:
-            self._logger.debug("Vector index already exists.")
-            self._have_index = True
-
-    def _create_index_in_background(self):
+        if (
+            datetime.utcnow() - self._last_index_check
+        ).total_seconds() < _INDEX_CHECK_PERIOD_SECONDS:
+            return
         with _vector_table_lock:
-            if (
-                datetime.utcnow() - self._last_index_check
-            ).total_seconds() < _INDEX_CHECK_PERIOD_SECONDS:
-                return
             if self._creating_index or self._have_index:
                 return
             self._last_index_check = datetime.utcnow()
-            self._creating_index = True
-            self._logger.debug("Trying to create a vector index.")
-            thread = Thread(target=self._create_index, daemon=True)
-            thread.start()
+            # Check if index exists, create if necessary
+            check_query = (
+                f"SELECT 1 FROM `{self.project_id}.{self.dataset_name}"
+                ".INFORMATION_SCHEMA.VECTOR_INDEXES` WHERE"
+                f" table_name = '{self.table_name}'"
+            )
+            job = self.bq_client.query(
+                check_query, api_method=bigquery.enums.QueryApiMethod.QUERY
+            )
+            if job.result().total_rows == 0:
+                # Need to create an index. Make it in a separate thread.
+                self._create_index_in_background()
+            else:
+                self._logger.debug("Vector index already exists.")
+                self._have_index = True
+
+    def _create_index_in_background(self):
+        if self._have_index or self._creating_index:
+            # Already have an index or in the process of creating one.
+            return
+        self._creating_index = True
+        self._logger.debug("Trying to create a vector index.")
+        thread = Thread(target=self._create_index, daemon=True)
+        thread.start()
 
     def _create_index(self):
         from google.api_core.exceptions import ClientError
 
-        table = self.bq_client.get_table(self.vectors_table)
         if self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             distance_type = "EUCLIDEAN"
         elif self.distance_strategy == DistanceStrategy.COSINE:
@@ -239,7 +239,7 @@ class BigQueryVectorSearch(VectorStore):
         try:
             sql = f"""
                 CREATE VECTOR INDEX IF NOT EXISTS
-                `{self.project_id}.{self.dataset_name}.{index_name}`
+                `{index_name}`
                 ON `{self.full_table_id}`({self.text_embedding_field})
                 OPTIONS(distance_type="{distance_type}", index_type="IVF")
             """
@@ -288,7 +288,27 @@ class BigQueryVectorSearch(VectorStore):
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
-            texts: Iterable of strings to add to the vectorstore.
+            texts: List of strings to add to the vectorstore.
+            metadatas: Optional list of metadata associated with the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        embs = self.embedding_model.embed_documents(texts)
+        return self.add_texts_with_embeddings(texts, embs, metadatas, **kwargs)
+
+    def add_texts_with_embeddings(
+        self,
+        texts: List[str],
+        embs: List[List[float]],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: List of strings to add to the vectorstore.
+            embs: List of lists of floats with text embeddings for texts.
             metadatas: Optional list of metadata associated with the texts.
 
         Returns:
@@ -305,7 +325,6 @@ class BigQueryVectorSearch(VectorStore):
         add_meta = [None for _ in range(0, len_diff)]
         metadatas = [m if m is not None else {} for m in metadatas + add_meta]
         values_dict[self.metadata_field] = metadatas
-        embs = self.embedding_model.embed_documents(texts)
         values_dict[self.text_embedding_field] = embs
         self._persist(values_dict)
         return ids
@@ -435,6 +454,13 @@ class BigQueryVectorSearch(VectorStore):
     ) -> List[Tuple[Document, List[float], float]]:
         from google.cloud import bigquery
 
+        # Create an index if no index exists.
+        if (
+            not self._have_index
+            and not self._creating_index
+        ):
+            self._initialize_vector_index()
+        # Prepare filter
         filter_expr = "TRUE"
         if filter:
             filter_expressions = []
@@ -455,6 +481,7 @@ class BigQueryVectorSearch(VectorStore):
                 filter_expressions.append(expr)
             filter_expression_str = " AND ".join(filter_expressions)
             filter_expr += f" AND ({filter_expression_str})"
+        # Configure and run a query job.
         job_config = bigquery.QueryJobConfig(
             query_parameters=[
                 bigquery.ArrayQueryParameter("v", "FLOAT64", embedding),
@@ -498,12 +525,11 @@ class BigQueryVectorSearch(VectorStore):
             LIMIT {k}
         """
         document_tuples: List[Tuple[Document, List[float], float]] = []
-        started = datetime.utcnow()
         # TODO(vladkol): Use jobCreationMode=JOB_CREATION_OPTIONAL when available.
         job = self.bq_client.query(
             query, job_config=job_config, api_method=bigquery.enums.QueryApiMethod.QUERY
         )
-        ended = datetime.utcnow()
+        # Process job results.
         for row in job:
             metadata = row[self.metadata_field]
             if metadata:
@@ -515,15 +541,6 @@ class BigQueryVectorSearch(VectorStore):
             document_tuples.append(
                 (doc, row[self.text_embedding_field], row["_vector_search_distance"])
             )
-        # Updating job start and end time with real values if available.
-        started = job.started or started
-        ended = job.ended or ended
-        # Checking if the query was too slow.
-        if (
-            not self._have_index
-            and (ended - started).total_seconds() >= _SLOW_SEARCH_SECONDS
-        ):
-            self._create_index_in_background()
         return document_tuples
 
     def similarity_search_with_score_by_vector(
