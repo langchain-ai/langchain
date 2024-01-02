@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-import asyncio
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd
-from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
+from langchain_core.runnables import (
+    Runnable,
+    RunnableConfig,
+    RunnableSerializable,
+    ensure_config,
+)
+from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -113,7 +117,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None
     ) -> List[Document]:
-        config = config or {}
+        config = ensure_config(config)
         return self.get_relevant_documents(
             input,
             callbacks=config.get("callbacks"),
@@ -128,7 +132,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> List[Document]:
-        config = config or {}
+        config = ensure_config(config)
         return await self.aget_relevant_documents(
             input,
             callbacks=config.get("callbacks"),
@@ -159,8 +163,11 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Returns:
             List of relevant documents
         """
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._get_relevant_documents, run_manager=run_manager), query
+        return await run_in_executor(
+            None,
+            self._get_relevant_documents,
+            query,
+            run_manager=run_manager.get_sync(),
         )
 
     def get_relevant_documents(
