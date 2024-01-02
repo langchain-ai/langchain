@@ -6,10 +6,10 @@ import numpy as np
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.vectorstores import VectorStore
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from volcengine.viking_db import *
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +34,24 @@ class VikingDB(VectorStore):
             drop_old: Optional[bool] = False,
             **kwargs: Any,
     ):
+        try:
+            from volcengine.viking_db import VikingDBService, Collection
+        except ImportError:
+            raise ValueError(
+                "Could not import volcengine python package. "
+                "Please install it with `pip install --upgrade volcengine`."
+            )
         self.embedding_func = embedding_function
         self.collection_name = collection_name
         self.index_name = "LangChainIndex"
         self.connection_args = connection_args
         self.index_params = index_params
         self.drop_old = drop_old
-        self.service = VikingDBService(connection_args.host, connection_args.region, connection_args.ak,
-                                       connection_args.sk, connection_args.scheme)
+        self.service = VikingDBService(connection_args.host,
+                                       connection_args.region,
+                                       connection_args.ak,
+                                       connection_args.sk,
+                                       connection_args.scheme)
 
         try:
             col = self.service.get_collection(collection_name)
@@ -67,6 +77,13 @@ class VikingDB(VectorStore):
     def _create_collection(
             self, embeddings: list, metadatas: Optional[list[dict]] = None
     ) -> None:
+        try:
+            from volcengine.viking_db import Field, FieldType
+        except ImportError:
+            raise ValueError(
+                "Could not import volcengine python package. "
+                "Please install it with `pip install --upgrade volcengine`."
+            )
         dim = len(embeddings[0])
         fields = []
         if metadatas:
@@ -78,9 +95,15 @@ class VikingDB(VectorStore):
                     fields.append(Field(key, FieldType.Int64))
                 if isinstance(value, bool):
                     fields.append(Field(key, FieldType.Bool))
-                if isinstance(value, list) and all(isinstance(item, str) for item in value):
+                if (
+                    isinstance(value, list) and
+                    all(isinstance(item, str) for item in value)
+                ):
                     fields.append(Field(key, FieldType.List_String))
-                if isinstance(value, list) and all(isinstance(item, int) for item in value):
+                if (
+                    isinstance(value, list) and
+                    all(isinstance(item, int) for item in value)
+                ):
                     fields.append(Field(key, FieldType.List_Int64))
         fields.append(Field("text", FieldType.String))
 
@@ -91,6 +114,13 @@ class VikingDB(VectorStore):
         self.collection = self.service.create_collection(self.collection_name, fields)
 
     def _create_index(self) -> None:
+        try:
+            from volcengine.viking_db import VectorIndexParams
+        except ImportError:
+            raise ValueError(
+                "Could not import volcengine python package. "
+                "Please install it with `pip install --upgrade volcengine`."
+            )
         cpu_quota = 2
         vector_index = VectorIndexParams()
         partition_by = ""
@@ -105,8 +135,11 @@ class VikingDB(VectorStore):
             if self.index_params.get("scalar_index") is not None:
                 scalar_index = self.index_params["scalar_index"]
 
-        self.index = self.service.create_index(self.collection_name, self.index_name, vector_index=vector_index,
-                                               cpu_quota=cpu_quota, partition_by=partition_by,
+        self.index = self.service.create_index(self.collection_name,
+                                               self.index_name,
+                                               vector_index=vector_index,
+                                               cpu_quota=cpu_quota,
+                                               partition_by=partition_by,
                                                scalar_index=scalar_index)
 
     def add_texts(
@@ -116,6 +149,13 @@ class VikingDB(VectorStore):
             batch_size: int = 1000,
             **kwargs: Any,
     ) -> List[str]:
+        try:
+            from volcengine.viking_db import Data
+        except ImportError:
+            raise ValueError(
+                "Could not import volcengine python package. "
+                "Please install it with `pip install --upgrade volcengine`."
+            )
         texts = list(texts)
         try:
             embeddings = self.embedding_func.embed_documents(texts)
@@ -129,7 +169,7 @@ class VikingDB(VectorStore):
             self._create_index()
 
         # insert data
-        datas = []
+        data = []
         pks: list[str] = []
         for index in range(len(embeddings)):
             primary_key = str(uuid.uuid4())
@@ -143,12 +183,12 @@ class VikingDB(VectorStore):
                 names = list(metadatas[index].keys())
                 for name in names:
                     field[name] = metadatas[index].get(name)
-            datas.append(Data(field))
+            data.append(Data(field))
 
-        total_count = len(datas)
+        total_count = len(data)
         for i in range(0, total_count, batch_size):
             end = min(i + batch_size, total_count)
-            insert_data = datas[i:end]
+            insert_data = data[i:end]
             # print(insert_data)
             self.collection.upsert_data(insert_data)
         return pks
@@ -212,7 +252,10 @@ class VikingDB(VectorStore):
             if params.get("partition") is not None:
                 partition = params["partition"]
 
-        res = self.index.search_by_vector(embedding, filter=filter, limit=limit, output_fields=output_fields,
+        res = self.index.search_by_vector(embedding,
+                                          filter=filter,
+                                          limit=limit,
+                                          output_fields=output_fields,
                                           partition=partition)
 
         ret = []
@@ -268,7 +311,10 @@ class VikingDB(VectorStore):
             if params.get("partition") is not None:
                 partition = params["partition"]
 
-        res = self.index.search_by_vector(embedding, filter=filter, limit=limit, output_fields=output_fields,
+        res = self.index.search_by_vector(embedding,
+                                          filter=filter,
+                                          limit=limit,
+                                          output_fields=output_fields,
                                           partition=partition)
         documents = []
         ordered_result_embeddings = []
