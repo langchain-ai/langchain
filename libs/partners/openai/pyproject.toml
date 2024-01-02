@@ -42,7 +42,7 @@ optional = true
 ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^1.8.0"
+mypy = "^0.991"
 langchain-core = {path = "../../core", develop = true}
 types-tqdm = "^4.66.0.5"
 
