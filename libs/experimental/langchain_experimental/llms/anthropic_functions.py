@@ -16,7 +16,7 @@ from langchain.schema.messages import (
     SystemMessage,
 )
 from langchain_community.chat_models.anthropic import ChatAnthropic
-from langchain_community.chat_models.base import BaseChatModel
+from langchain_core.language_models import BaseChatModel
 
 from langchain_experimental.pydantic_v1 import root_validator
 

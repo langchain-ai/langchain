@@ -22,7 +22,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_community.chat_models.base import BaseChatModel
+from langchain_core.language_models import BaseChatModel
 
 logger = logging.getLogger(__name__)
 
