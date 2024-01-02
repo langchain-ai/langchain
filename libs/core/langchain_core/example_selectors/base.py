@@ -8,7 +8,7 @@ class BaseExampleSelector(ABC):
 
     @abstractmethod
     def add_example(self, example: Dict[str, str]) -> Any:
-        """Add new example to store for a key."""
+        """Add new example to store."""
 
     @abstractmethod
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:

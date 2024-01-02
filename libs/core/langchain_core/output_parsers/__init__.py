@@ -3,6 +3,7 @@ from langchain_core.output_parsers.base import (
     BaseLLMOutputParser,
     BaseOutputParser,
 )
+from langchain_core.output_parsers.json import JsonOutputParser, SimpleJsonOutputParser
 from langchain_core.output_parsers.list import (
     CommaSeparatedListOutputParser,
     ListOutputParser,
@@ -14,6 +15,7 @@ from langchain_core.output_parsers.transform import (
     BaseCumulativeTransformOutputParser,
     BaseTransformOutputParser,
 )
+from langchain_core.output_parsers.xml import XMLOutputParser
 
 __all__ = [
     "BaseLLMOutputParser",
@@ -26,4 +28,7 @@ __all__ = [
     "StrOutputParser",
     "BaseTransformOutputParser",
     "BaseCumulativeTransformOutputParser",
+    "SimpleJsonOutputParser",
+    "XMLOutputParser",
+    "JsonOutputParser",
 ]

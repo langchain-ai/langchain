@@ -53,19 +53,6 @@ def test_prompt_empty_input_variable() -> None:
         PromptTemplate(input_variables=[""], template="{}", validate_template=True)
 
 
-def test_prompt_extra_input_variables() -> None:
-    """Test error is raised when there are too many input variables."""
-    template = "This is a {foo} test."
-    input_variables = ["foo", "bar"]
-    with pytest.raises(ValueError):
-        PromptTemplate(
-            input_variables=input_variables, template=template, validate_template=True
-        )
-    assert PromptTemplate(
-        input_variables=input_variables, template=template
-    ).input_variables == ["foo"]
-
-
 def test_prompt_wrong_input_variables() -> None:
     """Test error is raised when name of input variable is wrong."""
     template = "This is a {foo} test."

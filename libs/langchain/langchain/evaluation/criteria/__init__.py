@@ -11,7 +11,7 @@ chain against specified criteria.
 
 Examples
 --------
-Using a pre-defined criterion:
+Using a predefined criterion:
 >>> from langchain.llms import OpenAI
 >>> from langchain.evaluation.criteria import CriteriaEvalChain
 
