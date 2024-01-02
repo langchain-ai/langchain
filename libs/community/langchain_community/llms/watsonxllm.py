@@ -47,7 +47,7 @@ class WatsonxLLM(BaseLLM):
     """Type of model to use."""
 
     deployment_id: str = ""
-    """Type od deployed model to use."""
+    """Type of deployed model to use."""
 
     project_id: str = ""
     """ID of the Watson Studio project."""
