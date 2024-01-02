@@ -52,4 +52,5 @@ if __name__ == "__main__":
             dirs_to_run.update(LANGCHAIN_DIRS)
         else:
             pass
-    print(json.dumps(list(dirs_to_run)))
+    json_output = json.dumps(list(dirs_to_run))
+    print(f"dirs-to-run={json_output}")
