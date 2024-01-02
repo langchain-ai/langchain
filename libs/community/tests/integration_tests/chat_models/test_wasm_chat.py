@@ -1,6 +1,7 @@
 import pytest
-from langchain_community.chat_models.wasm_chat import WasmChatService
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
+from langchain_community.chat_models.wasm_chat import WasmChatService
 
 
 @pytest.mark.enable_socket
