@@ -23,7 +23,7 @@ def create_openai_tools_agent(
         .. code-block:: python
 
             from langchain import hub
-            from langchain.chat_models import ChatOpenAI
+            from langchain_community.chat_models import ChatOpenAI
             from langchain.agents import AgentExecutor, create_openai_tools_agent
 
             prompt = hub.pull("hwchase17/openai-tools-agent")

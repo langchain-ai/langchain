@@ -46,8 +46,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             from typing import Optional
 
-            from langchain.chat_models import ChatAnthropic
-            from langchain.memory.chat_message_histories import RedisChatMessageHistory
+            from langchain_community.chat_models import ChatAnthropic
+            from langchain_community.chat_message_histories import RedisChatMessageHistory
 
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
             from langchain_core.runnables.history import RunnableWithMessageHistory
