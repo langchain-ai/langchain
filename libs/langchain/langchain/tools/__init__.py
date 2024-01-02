@@ -61,25 +61,33 @@ def _import_arxiv_tool() -> Any:
 
 
 def _import_azure_cognitive_services_AzureCogsFormRecognizerTool() -> Any:
-    from langchain_community.tools.azure_cognitive_services import AzureCogsFormRecognizerTool
+    from langchain_community.tools.azure_cognitive_services import (
+        AzureCogsFormRecognizerTool,
+    )
 
     return AzureCogsFormRecognizerTool
 
 
 def _import_azure_cognitive_services_AzureCogsImageAnalysisTool() -> Any:
-    from langchain_community.tools.azure_cognitive_services import AzureCogsImageAnalysisTool
+    from langchain_community.tools.azure_cognitive_services import (
+        AzureCogsImageAnalysisTool,
+    )
 
     return AzureCogsImageAnalysisTool
 
 
 def _import_azure_cognitive_services_AzureCogsSpeech2TextTool() -> Any:
-    from langchain_community.tools.azure_cognitive_services import AzureCogsSpeech2TextTool
+    from langchain_community.tools.azure_cognitive_services import (
+        AzureCogsSpeech2TextTool,
+    )
 
     return AzureCogsSpeech2TextTool
 
 
 def _import_azure_cognitive_services_AzureCogsText2SpeechTool() -> Any:
-    from langchain_community.tools.azure_cognitive_services import AzureCogsText2SpeechTool
+    from langchain_community.tools.azure_cognitive_services import (
+        AzureCogsText2SpeechTool,
+    )
 
     return AzureCogsText2SpeechTool
 
@@ -171,7 +179,9 @@ def _import_edenai_EdenaiTool() -> Any:
 
 
 def _import_eleven_labs_text2speech() -> Any:
-    from langchain_community.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
+    from langchain_community.tools.eleven_labs.text2speech import (
+        ElevenLabsText2SpeechTool,
+    )
 
     return ElevenLabsText2SpeechTool
 
@@ -249,7 +259,9 @@ def _import_gmail_GmailSendMessage() -> Any:
 
 
 def _import_google_cloud_texttospeech() -> Any:
-    from langchain_community.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
+    from langchain_community.tools.google_cloud.texttospeech import (
+        GoogleCloudTextToSpeechTool,
+    )
 
     return GoogleCloudTextToSpeechTool
 
@@ -357,7 +369,9 @@ def _import_nasa_tool() -> Any:
 
 
 def _import_office365_create_draft_message() -> Any:
-    from langchain_community.tools.office365.create_draft_message import O365CreateDraftMessage
+    from langchain_community.tools.office365.create_draft_message import (
+        O365CreateDraftMessage,
+    )
 
     return O365CreateDraftMessage
 
@@ -505,7 +519,9 @@ def _import_reddit_search_RedditSearchRun() -> Any:
 
 
 def _import_render() -> Any:
-    from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
+    from langchain_community.tools.convert_to_openai import (
+        format_tool_to_openai_function,
+    )
 
     return format_tool_to_openai_function
 
@@ -673,7 +689,9 @@ def _import_stackexchange_tool() -> Any:
 
 
 def _import_steamship_image_generation() -> Any:
-    from langchain_community.tools.steamship_image_generation import SteamshipImageGenerationTool
+    from langchain_community.tools.steamship_image_generation import (
+        SteamshipImageGenerationTool,
+    )
 
     return SteamshipImageGenerationTool
 

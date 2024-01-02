@@ -33,15 +33,23 @@ from langchain_community.tools.pubmed.tool import PubmedQueryRun
 from langchain_core.tools import BaseTool
 from langchain_community.tools.bing_search.tool import BingSearchRun
 from langchain_community.tools.ddg_search.tool import DuckDuckGoSearchRun
-from langchain_community.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
+from langchain_community.tools.google_cloud.texttospeech import (
+    GoogleCloudTextToSpeechTool,
+)
 from langchain_community.tools.google_lens.tool import GoogleLensQueryRun
-from langchain_community.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain_community.tools.google_search.tool import (
+    GoogleSearchResults,
+    GoogleSearchRun,
+)
 from langchain_community.tools.google_scholar.tool import GoogleScholarQueryRun
 from langchain_community.tools.google_finance.tool import GoogleFinanceQueryRun
 from langchain_community.tools.google_trends.tool import GoogleTrendsQueryRun
 from langchain_community.tools.metaphor_search.tool import MetaphorSearchResults
 from langchain_community.tools.google_jobs.tool import GoogleJobsQueryRun
-from langchain_community.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
+from langchain_community.tools.google_serper.tool import (
+    GoogleSerperResults,
+    GoogleSerperRun,
+)
 from langchain_community.tools.searchapi.tool import SearchAPIResults, SearchAPIRun
 from langchain_community.tools.graphql.tool import BaseGraphQLTool
 from langchain_community.tools.human.tool import HumanInputRun
@@ -54,7 +62,10 @@ from langchain_community.tools.requests.tool import (
 )
 from langchain_community.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
 from langchain_community.tools.scenexplain.tool import SceneXplainTool
-from langchain_community.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
+from langchain_community.tools.searx_search.tool import (
+    SearxSearchResults,
+    SearxSearchRun,
+)
 from langchain_community.tools.shell.tool import ShellTool
 from langchain_community.tools.sleep.tool import SleepTool
 from langchain_community.tools.stackexchange.tool import StackExchangeTool
