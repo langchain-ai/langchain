@@ -59,7 +59,7 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreToolkit,
 )
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
-from langchain.tools.retriever import create_retriever_tool
+from langchain_community.tools.retriever import create_retriever_tool
 
 DEPRECATED_AGENTS = [
     "create_csv_agent",

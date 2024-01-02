@@ -27,7 +27,7 @@ from langchain.agents.output_parsers.openai_functions import (
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
-from langchain.tools.render import format_tool_to_openai_function
+from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 
 
 class OpenAIFunctionsAgent(BaseSingleActionAgent):

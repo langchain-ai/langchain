@@ -12,7 +12,7 @@ from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensur
 from langchain_core.tools import BaseTool
 
 from langchain.callbacks.manager import CallbackManager
-from langchain.tools.render import format_tool_to_openai_tool
+from langchain_community.tools.convert_to_openai import format_tool_to_openai_tool
 
 if TYPE_CHECKING:
     import openai

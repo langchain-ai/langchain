@@ -9,7 +9,7 @@ from langchain.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,
 )
 from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
-from langchain.tools.render import format_tool_to_openai_tool
+from langchain_community.tools.convert_to_openai import format_tool_to_openai_tool
 
 
 def create_openai_tools_agent(

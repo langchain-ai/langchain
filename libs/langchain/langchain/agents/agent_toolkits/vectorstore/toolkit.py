@@ -8,7 +8,7 @@ from langchain_core.vectorstores import VectorStore
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
-from langchain.tools.vectorstore.tool import (
+from langchain_community.tools.vectorstore.tool import (
     VectorStoreQATool,
     VectorStoreQAWithSourcesTool,
 )

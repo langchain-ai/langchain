@@ -373,7 +373,7 @@ For this example, we will give the agent access two tools:
 First, let's set up a tool for the retriever we just created:
 
 ```python
-from langchain.tools.retriever import create_retriever_tool
+from langchain_community.tools.retriever import create_retriever_tool
 
 retriever_tool = create_retriever_tool(
     retriever,
@@ -481,7 +481,7 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import DocArrayInMemorySearch
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.tools.retriever import create_retriever_tool
+from langchain_community.tools.retriever import create_retriever_tool
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.chat_models import ChatOpenAI
 from langchain import hub
