@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.outputs import Generation, GenerationChunk, LLMResult
+from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
@@ -223,7 +223,8 @@ class BedrockBase(BaseModel, ABC):
                         "id": "<guardrail_id>",
                         "version": "<guardrail_version>"})
 
-    To enable tracing for guardrails, set the 'trace' key to True and pass a callback handler to the 'run_manager' parameter of the 'generate', '_call' methods.
+    To enable tracing for guardrails, set the 'trace' key to True and pass a callback handler to the
+    'run_manager' parameter of the 'generate', '_call' methods.
 
     Example:
     llm = Bedrock(model_id="<model_id>", client=<bedrock_client>,
@@ -327,7 +328,7 @@ class BedrockBase(BaseModel, ABC):
             return isinstance(self.guardrails, dict) and bool(self.guardrails["id"]) and bool(self.guardrails["version"])
 
         except KeyError as e:
-            raise TypeError(f"Guardrails must be a dictionary with 'id' and 'version' keys.") from e
+            raise TypeError("Guardrails must be a dictionary with 'id' and 'version' keys.") from e
 
 
     def _get_guardrails_canonical_form(self) -> Dict[str, Any]:
@@ -387,7 +388,8 @@ class BedrockBase(BaseModel, ABC):
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
 
-        #Verify and raise a callback error if any intervention occurs or a signal is sent from a Bedrock service, such as when guardrails are triggered.
+        #Verify and raise a callback error if any intervention occurs or a signal is sent from a Bedrock service,
+        #such as when guardrails are triggered.
         result = self._inspect_bedrock_services_signal(body)
 
         signal = result.get("signal")
