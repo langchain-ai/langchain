@@ -20,6 +20,7 @@ from langchain_community.utilities.anthropic import (
 if TYPE_CHECKING:
     from botocore.config import Config
 
+AMAZON_BEDROCK_TRACE_KEY = "amazon-bedrock-trace"
 GUARDRAILS_BODY_KEY = "amazon-bedrock-guardrailAssessment"
 HUMAN_PROMPT = "\n\nHuman:"
 ASSISTANT_PROMPT = "\n\nAssistant:"
@@ -390,13 +391,11 @@ class BedrockBase(BaseModel, ABC):
 
         #Verify and raise a callback error if any intervention occurs or a signal is sent from a Bedrock service,
         #such as when guardrails are triggered.
-        result = self._inspect_bedrock_services_signal(body)
+        services_trace = self._inspect_bedrock_services_signal(body)
 
-        signal = result.get("signal")
-        reason = result.get("reason")
-
-        if signal and run_manager is not None:
-            run_manager.on_llm_error(signal, reason=reason)
+        if services_trace.get("signal") and run_manager is not None:
+            run_manager.on_llm_error(Exception(f"Error raised by bedrock service: {services_trace.get('reason')}"),
+                                     **services_trace)
 
         return text
 
@@ -413,11 +412,14 @@ class BedrockBase(BaseModel, ABC):
             if self._check_if_guardrails_intervened(body):
                 return {
                     "signal" : True,
-                    "reason" : "GUARDRAIL_INTERVENED"
+                    "reason" : "GUARDRAIL_INTERVENED",
+                    "trace" : body.get(AMAZON_BEDROCK_TRACE_KEY)
                 }
 
         return {
             "signal" : False,
+            "reason" : None,
+            "trace" : None,
         }
 
 
@@ -480,7 +482,8 @@ class BedrockBase(BaseModel, ABC):
 
         if self._guardrails_enabled:
             request_options["guardrail"] = "ENABLED"
-
+            if self.guardrails.get("trace"):
+                request_options["trace"] = "ENABLED"
 
         try:
             response = self.client.invoke_model_with_response_stream(**request_options)
@@ -495,15 +498,16 @@ class BedrockBase(BaseModel, ABC):
             yield chunk
 
             # verify and raise callback error if any middleware intervened
-            result = self._inspect_bedrock_services_signal(chunk.generation_info)
+            services_trace = self._inspect_bedrock_services_signal(chunk.generation_info)
 
             if run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
-                if result.get("signal"):
-                    run_manager.on_llm_error(result.get("signal"), reason=result.get("reason"))
+                if services_trace.get("signal"):
 
-
+                    run_manager.on_llm_error(
+                        Exception(f"Error raised by bedrock service: {services_trace.get('reason')}"),
+                        **services_trace)
 
 class Bedrock(LLM, BedrockBase):
     """Bedrock models.
