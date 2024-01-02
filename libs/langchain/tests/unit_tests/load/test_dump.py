@@ -60,6 +60,13 @@ def test_person(snapshot: Any) -> None:
     assert Person.lc_id() == ["tests", "unit_tests", "load", "test_dump", "Person"]
 
 
+def test_typeerror() -> None:
+    assert (
+        dumps({(1, 2): 3})
+        == """{"lc": 1, "type": "not_implemented", "id": ["builtins", "dict"], "repr": "{(1, 2): 3}"}"""  # noqa: E501
+    )
+
+
 @pytest.mark.requires("openai")
 def test_serialize_openai_llm(snapshot: Any) -> None:
     llm = OpenAI(
