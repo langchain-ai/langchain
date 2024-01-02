@@ -19,9 +19,10 @@ const config = {
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
+
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "throw",
-  showLastUpdateTime: true,
+
   themes: ["@docusaurus/theme-mermaid"],
   markdown: {
     mermaid: true,
@@ -77,6 +78,7 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
+          showLastUpdateTime: true,
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           ],
