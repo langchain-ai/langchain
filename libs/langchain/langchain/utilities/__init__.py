@@ -5,7 +5,7 @@ and packages.
 """
 from typing import Any
 
-from langchain.utilities.requests import Requests, RequestsWrapper, TextRequestsWrapper, JsonRequestsWrapper
+from langchain.utilities.requests import Requests, RequestsWrapper, TextRequestsWrapper
 
 
 def _import_alpha_vantage() -> Any:
@@ -400,7 +400,6 @@ __all__ = [
     "StackExchangeAPIWrapper",
     "TensorflowDatasets",
     "TextRequestsWrapper",
-    "JsonRequestsWrapper",
     "TwilioAPIWrapper",
     "WikipediaAPIWrapper",
     "WolframAlphaAPIWrapper",
