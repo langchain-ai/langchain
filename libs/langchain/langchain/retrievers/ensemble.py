@@ -103,6 +103,13 @@ class EnsembleRetriever(BaseRetriever):
             for i, retriever in enumerate(self.retrievers)
         ]
 
+        # Enforce that retrieved docs are Documents for each list in retriever_docs
+        for i in range(len(retriever_docs)):
+            retriever_docs[i] = [
+                Document(page_content=doc) if not isinstance(doc, Document) else doc
+                for doc in retriever_docs[i]
+            ]
+
         # apply rank fusion
         fused_documents = self.weighted_reciprocal_rank(retriever_docs)
 
@@ -129,6 +136,13 @@ class EnsembleRetriever(BaseRetriever):
             )
             for i, retriever in enumerate(self.retrievers)
         ]
+
+        # Enforce that retrieved docs are Documents for each list in retriever_docs
+        for i in range(len(retriever_docs)):
+            retriever_docs[i] = [
+                Document(page_content=doc) if not isinstance(doc, Document) else doc
+                for doc in retriever_docs[i]
+            ]
 
         # apply rank fusion
         fused_documents = self.weighted_reciprocal_rank(retriever_docs)
