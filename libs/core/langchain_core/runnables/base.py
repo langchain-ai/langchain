@@ -74,6 +74,7 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
+    from langchain_core.prompts.base import BasePromptTemplate
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
@@ -388,6 +389,17 @@ class Runnable(Generic[Input, Output], ABC):
         graph.add_edge(input_node, runnable_node)
         graph.add_edge(runnable_node, output_node)
         return graph
+
+    def get_prompts(
+        self, config: Optional[RunnableConfig] = None
+    ) -> List[BasePromptTemplate]:
+        from langchain_core.prompts.base import BasePromptTemplate
+
+        prompts = []
+        for _, node in self.get_graph(config=config).nodes.items():
+            if isinstance(node.data, BasePromptTemplate):
+                prompts.append(node.data)
+        return prompts
 
     def __or__(
         self,
