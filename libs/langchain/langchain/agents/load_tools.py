@@ -94,17 +94,6 @@ from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 from langchain.utilities.reddit_search import RedditSearchAPIWrapper
 
 
-def _get_python_repl() -> BaseTool:
-    raise ImportError(
-        "This tool has been moved to langchain experiment. "
-        "This tool has access to a python REPL. "
-        "For best practices make sure to sandbox this tool. "
-        "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
-        "To keep using this code as is, install langchain experimental and "
-        "update relevant imports replacing 'langchain' with 'langchain_experimental'"
-    )
-
-
 def _get_tools_requests_get() -> BaseTool:
     return RequestsGetTool(requests_wrapper=TextRequestsWrapper())
 
