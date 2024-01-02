@@ -469,7 +469,8 @@ Supported examples:
 
     ## changes 
     safety_settings: Optional[List[dict]] = Field(description="""
-    safety settings are sent to unblock or block the model from answering to various dangerous prompts""")
+    safety settings are sent to unblock or block the model from 
+    answering to various dangerous prompts""")
 
     """
     The safety settings that go while sending the prompt to google's chat model
@@ -519,7 +520,8 @@ Supported examples:
             raise ValueError("top_k must be positive")
         model = values["model"]
         safety_settings = values["safety_settings"]
-        values["client"] = genai.GenerativeModel(model_name=model,safety_settings=safety_settings)
+        values["client"] = genai.GenerativeModel(model_name=model
+                            ,safety_settings=safety_settings)
         return values
 
 
