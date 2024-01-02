@@ -9,7 +9,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.llms.base import BaseLLM
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field, ValidationError, validator
-from langchain.schema.runnable import ConfigurableField, Runnable
+from langchain_core.runnables import ConfigurableField, Runnable
 
 
 def strip_python_markdown_tags(text: str) -> str:

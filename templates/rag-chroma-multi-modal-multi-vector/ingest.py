@@ -9,10 +9,10 @@ import pypdfium2 as pdfium
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.schema.document import Document
-from langchain.schema.messages import HumanMessage
 from langchain.storage import LocalFileStore, UpstashRedisByteStore
 from langchain.vectorstores import Chroma
+from langchain_core.documents import Document
+from langchain_core.messages import HumanMessage
 from PIL import Image
 
 
