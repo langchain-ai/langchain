@@ -2,7 +2,7 @@
 
 All functionality related to `Microsoft Azure` and other `Microsoft` products.
 
-## LLM
+## Chat Models
 ### Azure OpenAI
 
 >[Microsoft Azure](https://en.wikipedia.org/wiki/Microsoft_Azure), often referred to as `Azure` is a cloud computing platform run by `Microsoft`, which offers access, management, and development of applications and services through global data centers. It provides a range of capabilities, including software as a service (SaaS), platform as a service (PaaS), and infrastructure as a service (IaaS). `Microsoft Azure` supports many programming languages, tools, and frameworks, including Microsoft-specific and third-party software and systems.
@@ -18,16 +18,15 @@ Set the environment variables to get access to the `Azure OpenAI` service.
 ```python
 import os
 
-os.environ["OPENAI_API_TYPE"] = "azure"
-os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
-os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
-os.environ["OPENAI_API_VERSION"] = "2023-05-15"
+os.environ["AZURE_OPENAI_ENDPOINT"] = "https://<your-endpoint.openai.azure.com/"
+os.environ["AZURE_OPENAI_API_KEY"] = "your AzureOpenAI key"
 ```
 
-See a [usage example](/docs/integrations/llms/azure_openai_example).
+See a [usage example](/docs/integrations/chat/azure_chat_openai)
+
 
 ```python
-from langchain.llms import AzureOpenAI
+from langchain.chat_models import AzureChatOpenAI
 ```
 
 ## Text Embedding Models
@@ -36,16 +35,16 @@ from langchain.llms import AzureOpenAI
 See a [usage example](/docs/integrations/text_embedding/azureopenai)
 
 ```python
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.embeddings import AzureOpenAIEmbeddings
 ```
 
-## Chat Models
+## LLMs
 ### Azure OpenAI
 
-See a [usage example](/docs/integrations/chat/azure_chat_openai)
+See a [usage example](/docs/integrations/llms/azure_openai_example).
 
 ```python
-from langchain.chat_models import AzureChatOpenAI
+from langchain.llms import AzureOpenAI
 ```
 
 ## Document loaders
@@ -82,6 +81,7 @@ See a [usage example for the Azure Files](/docs/integrations/document_loaders/az
 from langchain.document_loaders import AzureBlobStorageFileLoader
 ```
 
+
 ### Microsoft OneDrive
 
 >[Microsoft OneDrive](https://en.wikipedia.org/wiki/OneDrive) (formerly `SkyDrive`) is a file-hosting service operated by Microsoft.
@@ -98,6 +98,7 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_onedrive).
 from langchain.document_loaders import OneDriveLoader
 ```
 
+
 ### Microsoft Word
 
 >[Microsoft Word](https://www.microsoft.com/en-us/microsoft-365/word) is a word processor developed by Microsoft.
@@ -106,6 +107,62 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_word).
 
 ```python
 from langchain.document_loaders import UnstructuredWordDocumentLoader
+```
+
+
+### Microsoft Excel
+
+>[Microsoft Excel](https://en.wikipedia.org/wiki/Microsoft_Excel) is a spreadsheet editor developed by 
+> Microsoft for Windows, macOS, Android, iOS and iPadOS. 
+> It features calculation or computation capabilities, graphing tools, pivot tables, and a macro programming 
+> language called Visual Basic for Applications (VBA). Excel forms part of the Microsoft 365 suite of software.
+
+The `UnstructuredExcelLoader` is used to load `Microsoft Excel` files. The loader works with both `.xlsx` and `.xls` files. 
+The page content will be the raw text of the Excel file. If you use the loader in `"elements"` mode, an HTML 
+representation of the Excel file will be available in the document metadata under the `text_as_html` key.
+
+See a [usage example](/docs/integrations/document_loaders/excel).
+
+```python
+from langchain.document_loaders import UnstructuredExcelLoader
+```
+
+
+### Microsoft SharePoint
+
+>[Microsoft SharePoint](https://en.wikipedia.org/wiki/SharePoint) is a website-based collaboration system 
+> that uses workflow applications, “list” databases, and other web parts and security features to 
+> empower business teams to work together developed by Microsoft.
+
+See a [usage example](/docs/integrations/document_loaders/microsoft_sharepoint).
+
+```python
+from langchain.document_loaders.sharepoint import SharePointLoader
+```
+
+
+### Microsoft PowerPoint
+
+>[Microsoft PowerPoint](https://en.wikipedia.org/wiki/Microsoft_PowerPoint) is a presentation program by Microsoft.
+
+See a [usage example](/docs/integrations/document_loaders/microsoft_powerpoint).
+
+```python
+from langchain.document_loaders import UnstructuredPowerPointLoader
+```
+
+### Microsoft OneNote
+
+First, let's install dependencies:
+
+```bash
+pip install bs4 msal
+```
+
+See a [usage example](/docs/integrations/document_loaders/onenote).
+
+```python
+from langchain.document_loaders.onenote import OneNoteLoader
 ```
 
 
@@ -165,6 +222,9 @@ from langchain.retrievers import AzureCognitiveSearchRetriever
 
 ### Bing Search API
 
+>[Microsoft Bing](https://www.bing.com/), commonly referred to as `Bing` or `Bing Search`, 
+> is a web search engine owned and operated by `Microsoft`.
+
 See a [usage example](/docs/integrations/tools/bing_search).
 
 ```python
@@ -216,4 +276,25 @@ from langchain.agents.agent_toolkits import PowerBIToolkit
 from langchain.utilities.powerbi import PowerBIDataset
 ```
 
+## More
+
+### Microsoft Presidio
+
+>[Presidio](https://microsoft.github.io/presidio/) (Origin from Latin praesidium ‘protection, garrison’) 
+> helps to ensure sensitive data is properly managed and governed. It provides fast identification and 
+> anonymization modules for private entities in text and images such as credit card numbers, names, 
+> locations, social security numbers, bitcoin wallets, US phone numbers, financial data and more.
+
+First, you need to install several python packages and download a `SpaCy` model.
+
+```bash
+pip install langchain-experimental openai presidio-analyzer presidio-anonymizer spacy Faker
+python -m spacy download en_core_web_lg
+```
+
+See [usage examples](/docs/guides/privacy/presidio_data_anonymization/).
+
+```python
+from langchain_experimental.data_anonymizer import PresidioAnonymizer, PresidioReversibleAnonymizer
+```
 

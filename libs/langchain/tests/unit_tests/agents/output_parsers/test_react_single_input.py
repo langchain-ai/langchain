@@ -1,10 +1,10 @@
 import pytest
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
 
 from langchain.agents.output_parsers.react_single_input import (
     ReActSingleInputOutputParser,
 )
-from langchain.schema.agent import AgentAction, AgentFinish
-from langchain.schema.output_parser import OutputParserException
 
 
 def test_action() -> None:

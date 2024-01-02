@@ -5,12 +5,12 @@ from pathlib import Path
 from typing import Any, List, Optional, Union
 
 import yaml
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain.agents.agent import BaseMultiActionAgent, BaseSingleActionAgent
 from langchain.agents.tools import Tool
 from langchain.agents.types import AGENT_TO_CLASS
 from langchain.chains.loading import load_chain, load_chain_from_config
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities.loading import try_load_from_hub
 
 logger = logging.getLogger(__file__)

@@ -18,22 +18,25 @@ from typing import (
     cast,
 )
 
+from langchain_core.agents import AgentAction
+from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.tools import BaseTool
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
     Callbacks,
 )
 from langchain.chains.llm import LLMChain
-from langchain.chat_models.base import BaseChatModel
 from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT,
     TOOL_FREE_EVAL_CHAT_PROMPT,
 )
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
-from langchain.pydantic_v1 import Extra, Field
-from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.tools.base import BaseTool
 
 
 class TrajectoryEval(TypedDict):
@@ -180,7 +183,7 @@ Description: {tool.description}"""
 
     @staticmethod
     def get_agent_trajectory(
-        steps: Union[str, Sequence[Tuple[AgentAction, str]]]
+        steps: Union[str, Sequence[Tuple[AgentAction, str]]],
     ) -> str:
         """Get the agent trajectory as a formatted string.
 

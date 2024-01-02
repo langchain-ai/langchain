@@ -4,7 +4,7 @@ import warnings
 from importlib import metadata
 from typing import Any, Optional
 
-from langchain._api.deprecation import surface_langchain_deprecation_warnings
+from langchain_core._api.deprecation import surface_langchain_deprecation_warnings
 
 try:
     __version__ = metadata.version(__package__)
@@ -233,7 +233,7 @@ def __getattr__(name: str) -> Any:
 
         return HuggingFacePipeline
     elif name == "FewShotPromptTemplate":
-        from langchain.prompts import FewShotPromptTemplate
+        from langchain_core.prompts import FewShotPromptTemplate
 
         _warn_on_import(name, replacement="langchain.prompts.FewShotPromptTemplate")
 
@@ -245,13 +245,13 @@ def __getattr__(name: str) -> Any:
 
         return Prompt
     elif name == "PromptTemplate":
-        from langchain.prompts import PromptTemplate
+        from langchain_core.prompts import PromptTemplate
 
         _warn_on_import(name, replacement="langchain.prompts.PromptTemplate")
 
         return PromptTemplate
     elif name == "BasePromptTemplate":
-        from langchain.schema.prompt_template import BasePromptTemplate
+        from langchain_core.prompts import BasePromptTemplate
 
         _warn_on_import(
             name, replacement="langchain.schema.prompt_template.BasePromptTemplate"

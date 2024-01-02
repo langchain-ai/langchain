@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "llama2-functions"
 version = "0.1.0"
-description = ""
+description = "Extraction with a JSON-output LLaMA2 model"
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]
@@ -18,6 +18,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "llama2_functions"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "extraction"
+author = "LangChain"
+integrations = ["Llama.cpp", "Replicate"]
+tags = ["local-llm", "function-calling"]
 
 [build-system]
 requires = [

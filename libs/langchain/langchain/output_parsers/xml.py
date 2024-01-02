@@ -2,8 +2,9 @@ import re
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
 
+from langchain_core.output_parsers import BaseOutputParser
+
 from langchain.output_parsers.format_instructions import XML_FORMAT_INSTRUCTIONS
-from langchain.schema import BaseOutputParser
 
 
 class XMLOutputParser(BaseOutputParser):
