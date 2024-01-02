@@ -210,7 +210,7 @@ class AgentExecutorIterator:
 
     async def __aiter__(self) -> AsyncIterator[AddableDict]:
         """
-        N.B. __aiter__ must be a normal method, so need to initialise async run manager
+        N.B. __aiter__ must be a normal method, so need to initialize async run manager
         on first __anext__ call where we can await it
         """
         logger.debug("Initialising AgentExecutorIterator (async)")
