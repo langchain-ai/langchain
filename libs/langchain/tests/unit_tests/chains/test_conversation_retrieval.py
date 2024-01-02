@@ -1,4 +1,5 @@
 """Test conversation chain and memory."""
+import pytest
 from langchain_core.documents import Document
 
 from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
