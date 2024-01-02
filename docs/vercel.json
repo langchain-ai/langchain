@@ -93,6 +93,14 @@
       "destination": "/docs/integrations/chat/tencent_hunyuan"
     },
     {
+      "source": "/docs/integrations/document_loaders/excel",
+      "destination": "/docs/integrations/document_loaders/microsoft_excel"
+    },
+    {
+      "source": "/docs/integrations/document_loaders/onenote",
+      "destination": "/docs/integrations/document_loaders/microsoft_onenote"
+    },
+    {
       "source": "/docs/integrations/providers/aws_dynamodb",
       "destination": "/docs/integrations/platforms/aws#aws-dynamodb"
     },
