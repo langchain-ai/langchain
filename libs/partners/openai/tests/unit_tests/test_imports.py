@@ -1,7 +1,7 @@
 from langchain_openai import __all__
 
 EXPECTED_ALL = [
-    "OpenAILLM",
+    "OpenAI",
     "ChatOpenAI",
     "OpenAIVectorStore",
     "OpenAIEmbeddings",
