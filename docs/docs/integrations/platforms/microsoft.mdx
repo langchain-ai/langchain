@@ -49,6 +49,50 @@ from langchain_community.llms import AzureOpenAI
 
 ## Document loaders
 
+### Azure AI Data
+
+>[Azure AI Studio](https://ai.azure.com/) provides the capability to upload data assets 
+> to cloud storage and register existing data assets from the following sources:
+>
+>- `Microsoft OneLake`
+>- `Azure Blob Storage`
+>- `Azure Data Lake gen 2`
+
+First, you need to install several python packages.
+
+```bash
+pip install azureml-fsspec, azure-ai-generative
+```
+
+See a [usage example](/docs/integrations/document_loaders/azure_ai_data).
+
+```python
+from langchain.document_loaders import AzureAIDataLoader
+```
+
+
+### Azure AI Document Intelligence
+
+>[Azure AI Document Intelligence](https://aka.ms/doc-intelligence) (formerly known
+> as `Azure Form Recognizer`) is machine-learning
+> based service that extracts text (including handwriting), tables or key-value-pairs
+> from scanned documents or images.
+>
+>Document Intelligence supports `PDF`, `JPEG`, `PNG`, `BMP`, or `TIFF`.
+
+First, you need to install a python package.
+
+```bash
+pip install azure-ai-documentintelligence
+```
+
+See a [usage example](/docs/integrations/document_loaders/azure_document_intelligence).
+
+```python
+from langchain.document_loaders import AzureAIDocumentIntelligenceLoader
+```
+
+
 ### Azure Blob Storage
 
 >[Azure Blob Storage](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction) is Microsoft's object storage solution for the cloud. Blob Storage is optimized for storing massive amounts of unstructured data. Unstructured data is data that doesn't adhere to a particular data model or definition, such as text or binary data.
