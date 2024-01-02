@@ -2,6 +2,8 @@ import logging
 import re
 from typing import List, Optional
 
+from langchain_community.document_loaders import AsyncHtmlLoader
+from langchain_community.document_transformers import Html2TextTransformer
 from langchain_community.llms import LlamaCpp
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLLM
@@ -16,8 +18,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
-from langchain.document_loaders import AsyncHtmlLoader
-from langchain.document_transformers import Html2TextTransformer
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.utilities import GoogleSearchAPIWrapper

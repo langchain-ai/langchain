@@ -1,10 +1,10 @@
 """Test RDF/ SPARQL Graph Database Chain."""
 import os
 
+from langchain_community.graphs import RdfGraph
 from langchain_community.llms.openai import OpenAI
 
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
-from langchain.graphs import RdfGraph
 
 
 def test_connect_file_rdf() -> None:

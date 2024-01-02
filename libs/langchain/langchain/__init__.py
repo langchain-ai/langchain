@@ -313,15 +313,17 @@ def __getattr__(name: str) -> Any:
 
         return SQLDatabase
     elif name == "FAISS":
-        from langchain.vectorstores import FAISS
+        from langchain_community.vectorstores import FAISS
 
-        _warn_on_import(name, replacement="langchain.vectorstores.FAISS")
+        _warn_on_import(name, replacement="langchain_community.vectorstores.FAISS")
 
         return FAISS
     elif name == "ElasticVectorSearch":
-        from langchain.vectorstores import ElasticVectorSearch
+        from langchain_community.vectorstores import ElasticVectorSearch
 
-        _warn_on_import(name, replacement="langchain.vectorstores.ElasticVectorSearch")
+        _warn_on_import(
+            name, replacement="langchain_community.vectorstores.ElasticVectorSearch"
+        )
 
         return ElasticVectorSearch
     # For backwards compatibility

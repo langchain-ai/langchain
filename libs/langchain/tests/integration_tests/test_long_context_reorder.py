@@ -1,8 +1,9 @@
 """Integration test for doc reordering."""
+from langchain_community.document_transformers.long_context_reorder import (
+    LongContextReorder,
+)
 from langchain_community.embeddings import OpenAIEmbeddings
-
-from langchain.document_transformers.long_context_reorder import LongContextReorder
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 
 
 def test_long_context_reorder() -> None:

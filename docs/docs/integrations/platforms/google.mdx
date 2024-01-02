@@ -84,7 +84,7 @@ pip install google-cloud-bigquery
 See a [usage example](/docs/integrations/document_loaders/google_bigquery).
 
 ```python
-from langchain.document_loaders import BigQueryLoader
+from langchain_community.document_loaders import BigQueryLoader
 ```
 
 ## LLMs
@@ -137,12 +137,12 @@ There are two loaders for the `Google Cloud Storage`: the `Directory` and the `F
 See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_directory).
 
 ```python
-from langchain.document_loaders import GCSDirectoryLoader
+from langchain_community.document_loaders import GCSDirectoryLoader
 ```
 See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_file).
 
 ```python
-from langchain.document_loaders import GCSFileLoader
+from langchain_community.document_loaders import GCSFileLoader
 ```
 
 ### Google Drive
@@ -160,7 +160,7 @@ pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_drive).
 
 ```python
-from langchain.document_loaders import GoogleDriveLoader
+from langchain_community.document_loaders import GoogleDriveLoader
 ```
 
 ### Speech-to-Text
@@ -178,7 +178,7 @@ pip install google-cloud-speech
 See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_speech_to_text).
 
 ```python
-from langchain.document_loaders import GoogleSpeechToTextLoader
+from langchain_community.document_loaders import GoogleSpeechToTextLoader
 ```
 
 ## Vector Stores
@@ -199,7 +199,7 @@ pip install tensorflow google-cloud-aiplatform tensorflow-hub tensorflow-text
 See a [usage example](/docs/integrations/vectorstores/matchingengine).
 
 ```python
-from langchain.vectorstores import MatchingEngine
+from langchain_community.vectorstores import MatchingEngine
 ```
 
 ### Google ScaNN
@@ -224,7 +224,7 @@ pip install scann
 See a [usage example](/docs/integrations/vectorstores/scann).
 
 ```python
-from langchain.vectorstores import ScaNN
+from langchain_community.vectorstores import ScaNN
 ```
 
 ## Retrievers
@@ -440,8 +440,8 @@ pip install google-cloud-documentai-toolbox
 See a [usage example](/docs/integrations/document_transformers/docai).
 
 ```python
-from langchain.document_loaders.blob_loaders import Blob
-from langchain.document_loaders.parsers import DocAIParser
+from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_community.document_loaders.parsers import DocAIParser
 ```
 
 ### Google Translate
@@ -463,7 +463,7 @@ pip install google-cloud-translate
 See a [usage example and authorization instructions](/docs/integrations/document_transformers/google_translate).
 
 ```python
-from langchain.document_transformers import GoogleTranslateTransformer
+from langchain_community.document_transformers import GoogleTranslateTransformer
 ```
 
 ## Toolkits
@@ -502,7 +502,7 @@ pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
 See a [usage example and authorization instructions](/docs/integrations/chat_loaders/gmail).
 
 ```python
-from langchain.chat_loaders.gmail import GMailLoader
+from langchain_community.chat_loaders.gmail import GMailLoader
 ```
 
 ## 3rd Party Integrations
@@ -570,8 +570,8 @@ pip install yt_dlp pydub librosa
 See a [usage example and authorization instructions](/docs/integrations/document_loaders/youtube_audio).
 
 ```python
-from langchain.document_loaders.blob_loaders.youtube_audio import YoutubeAudioLoader
-from langchain.document_loaders.parsers import OpenAIWhisperParser, OpenAIWhisperParserLocal
+from langchain_community.document_loaders.blob_loaders.youtube_audio import YoutubeAudioLoader
+from langchain_community.document_loaders.parsers import OpenAIWhisperParser, OpenAIWhisperParserLocal
 ```
 
 ### YouTube transcripts
@@ -587,5 +587,5 @@ pip install youtube-transcript-api
 See a [usage example](/docs/integrations/document_loaders/youtube_transcript).
 
 ```python
-from langchain.document_loaders import YoutubeLoader
+from langchain_community.document_loaders import YoutubeLoader
 ```
