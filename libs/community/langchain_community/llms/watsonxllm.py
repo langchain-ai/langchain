@@ -33,7 +33,7 @@ class WatsonxLLM(BaseLLM):
                 GenTextParamsMetaNames.TOP_P: 1,
             }
 
-            from langchain.llms import WatsonxLLM
+            from langchain_community.llms import WatsonxLLM
             watsonx_llm = WatsonxLLM(
                 model_id="google/flan-ul2",
                 url="https://us-south.ml.cloud.ibm.com",
