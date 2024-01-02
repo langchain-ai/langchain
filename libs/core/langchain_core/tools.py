@@ -1,11 +1,9 @@
 """Base implementation for tools or skills."""
 from __future__ import annotations
 
-import asyncio
 import inspect
 import warnings
 from abc import abstractmethod
-from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
@@ -26,7 +24,13 @@ from langchain_core.pydantic_v1 import (
     root_validator,
     validate_arguments,
 )
-from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
+from langchain_core.runnables import (
+    Runnable,
+    RunnableConfig,
+    RunnableSerializable,
+    ensure_config,
+)
+from langchain_core.runnables.config import run_in_executor
 
 
 class SchemaAnnotationError(TypeError):
@@ -202,7 +206,7 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         return self.run(
             input,
             callbacks=config.get("callbacks"),
@@ -218,7 +222,7 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         return await self.arun(
             input,
             callbacks=config.get("callbacks"),
@@ -280,11 +284,7 @@ class ChildTool(BaseTool):
         Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
         to child implementations to enable tracing,
         """
-        return await asyncio.get_running_loop().run_in_executor(
-            None,
-            partial(self._run, **kwargs),
-            *args,
-        )
+        return await run_in_executor(None, self._run, *args, **kwargs)
 
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
         # For backwards compatibility, if run_input is a string,
@@ -468,9 +468,7 @@ class Tool(BaseTool):
     ) -> Any:
         if not self.coroutine:
             # If the tool does not implement async, fall back to default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, **kwargs)
-            )
+            return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
         return await super().ainvoke(input, config, **kwargs)
 
@@ -538,8 +536,12 @@ class Tool(BaseTool):
                 else await self.coroutine(*args, **kwargs)
             )
         else:
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self._run, run_manager=run_manager, **kwargs), *args
+            return await run_in_executor(
+                None,
+                self._run,
+                run_manager=run_manager.get_sync() if run_manager else None,
+                *args,
+                **kwargs,
             )
 
     # TODO: this is for backwards compatibility, remove in future
@@ -599,9 +601,7 @@ class StructuredTool(BaseTool):
     ) -> Any:
         if not self.coroutine:
             # If the tool does not implement async, fall back to default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, **kwargs)
-            )
+            return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
         return await super().ainvoke(input, config, **kwargs)
 
@@ -652,10 +652,12 @@ class StructuredTool(BaseTool):
                 if new_argument_supported
                 else await self.coroutine(*args, **kwargs)
             )
-        return await asyncio.get_running_loop().run_in_executor(
+        return await run_in_executor(
             None,
-            partial(self._run, run_manager=run_manager, **kwargs),
+            self._run,
+            run_manager=run_manager.get_sync() if run_manager else None,
             *args,
+            **kwargs,
         )
 
     @classmethod

@@ -26,6 +26,7 @@ EXPECTED_ALL = [
     "ChatKonko",
     "PaiEasChatEndpoint",
     "QianfanChatEndpoint",
+    "ChatTongyi",
     "ChatFireworks",
     "ChatYandexGPT",
     "ChatBaichuan",
@@ -33,7 +34,7 @@ EXPECTED_ALL = [
     "GigaChat",
     "VolcEngineMaasChat",
     "GPTRouter",
-    "ChatTongyi",
+    "ChatZhipuAI",
 ]
 
 
