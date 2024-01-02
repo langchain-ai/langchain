@@ -38,7 +38,7 @@ def _create_function_message(
     """
     if not isinstance(observation, str):
         try:
-            content = json.dumps(observation, ensure_ascii=False, separators=(',', ':'))
+            content = json.dumps(observation, ensure_ascii=False, separators=(",", ":"))
         except Exception:
             content = str(observation)
     else:
