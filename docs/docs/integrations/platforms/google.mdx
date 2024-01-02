@@ -202,6 +202,28 @@ See a [usage example](/docs/integrations/vectorstores/matchingengine).
 from langchain_community.vectorstores import MatchingEngine
 ```
 
+### Google BigQuery Vector Search
+
+> [Google BigQuery](https://cloud.google.com/bigquery),
+> BigQuery is a serverless and cost-effective enterprise data warehouse in Google Cloud.
+>
+> Google BigQuery Vector Search 
+> BigQuery vector search lets you use GoogleSQL to do semantic search, using vector indexes for fast but approximate results, or using brute force for exact results.
+
+> It can calculate Euclidean or  Cosine distance. With LangChain, we default to use Euclidean distance.
+
+We need to install several python packages.
+
+```bash
+pip install google-cloud-bigquery
+```
+
+See a [usage example](/docs/integrations/vectorstores/bigquery_vector_search).
+
+```python
+from langchain.vectorstores import BigQueryVectorSearch
+```
+
 ### Google ScaNN
 
 >[Google ScaNN](https://github.com/google-research/google-research/tree/master/scann)
