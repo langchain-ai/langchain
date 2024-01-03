@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from langchain_core.utils.json_schema import dereference_refs
 
@@ -18,7 +18,7 @@ class ReducedOpenAPISpec:
 
     servers: List[dict]
     description: str
-    endpoints: List[Tuple[str, str, dict]]
+    endpoints: List[Tuple[str, Optional[str], dict]]
 
 
 def reduce_openapi_spec(url: str, spec: dict) -> ReducedOpenAPISpec:

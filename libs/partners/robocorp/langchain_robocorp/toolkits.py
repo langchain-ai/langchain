@@ -163,9 +163,10 @@ class ActionServerToolkit(BaseModel):
                 continue
 
             tool_name = f"robocorp_action_server_{docs['operationId']}"
+            summary = docs["summary"]
             tool_description = TOOLKIT_TOOL_DESCRIPTION.format(
-                name=docs["summary"],
-                description=docs["description"],
+                name=summary,
+                description=docs.get("description", summary),
                 required_params=get_required_param_descriptions(docs),
             )
 
