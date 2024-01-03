@@ -3,18 +3,29 @@ Ensemble retriever that ensemble the results of
 multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
 from collections import defaultdict
+from collections.abc import Callable, Hashable, Iterable, Iterator
 from itertools import chain
-from typing import Any, Dict, List
+from typing import Any, Dict, List, TypeVar
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.utils.utils import unique_by_key
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+
+T = TypeVar("T")
+H = TypeVar("H", bound=Hashable)
+
+
+def unique_by_key(iterable: Iterable[T], key: Callable[[T], H]) -> Iterator[T]:
+    seen = set()
+    for e in iterable:
+        if (k := key(e)) not in seen:
+            seen.add(k)
+            yield e
 
 
 class EnsembleRetriever(BaseRetriever):
