@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+sidebar_class_name: hidden
 ---
 
 # Retrieval
@@ -17,23 +18,23 @@ This encompasses several key modules.
 
 **[Document loaders](/docs/modules/data_connection/document_loaders/)**
 
-Load documents from many different sources.
+**Document loaders** load documents from many different sources.
 LangChain provides over 100 different document loaders as well as integrations with other major providers in the space,
 like AirByte and Unstructured.
-We provide integrations to load all types of documents (HTML, PDF, code) from all types of locations (private s3 buckets, public websites).
+LangChain provides integrations to load all types of documents (HTML, PDF, code) from all types of locations (private S3 buckets, public websites).
 
-**[Document transformers](/docs/modules/data_connection/document_transformers/)**
+**[Text Splitting](/docs/modules/data_connection/document_transformers/)**
 
 A key part of retrieval is fetching only the relevant parts of documents.
-This involves several transformation steps in order to best prepare the documents for retrieval.
+This involves several transformation steps to prepare the documents for retrieval.
 One of the primary ones here is splitting (or chunking) a large document into smaller chunks.
-LangChain provides several different algorithms for doing this, as well as logic optimized for specific document types (code, markdown, etc).
+LangChain provides several transformation algorithms for doing this, as well as logic optimized for specific document types (code, markdown, etc).
 
 **[Text embedding models](/docs/modules/data_connection/text_embedding/)**
 
-Another key part of retrieval has become creating embeddings for documents.
+Another key part of retrieval is creating embeddings for documents.
 Embeddings capture the semantic meaning of the text, allowing you to quickly and
-efficiently find other pieces of text that are similar.
+efficiently find other pieces of a text that are similar.
 LangChain provides integrations with over 25 different embedding providers and methods,
 from open-source to proprietary API,
 allowing you to choose the one best suited for your needs.
@@ -50,7 +51,7 @@ LangChain exposes a standard interface, allowing you to easily swap between vect
 
 Once the data is in the database, you still need to retrieve it.
 LangChain supports many different retrieval algorithms and is one of the places where we add the most value.
-We support basic methods that are easy to get started - namely simple semantic search.
+LangChain supports basic methods that are easy to get started - namely simple semantic search.
 However, we have also added a collection of algorithms on top of this to increase performance.
 These include:
 
@@ -59,3 +60,13 @@ These include:
 - [Ensemble Retriever](/docs/modules/data_connection/retrievers/ensemble): Sometimes you may want to retrieve documents from multiple different sources, or using multiple different algorithms. The ensemble retriever allows you to easily do this.
 - And more!
 
+**[Indexing](/docs/modules/data_connection/indexing)**
+
+The LangChain **Indexing API** syncs your data from any source into a vector store,
+helping you:
+
+- Avoid writing duplicated content into the vector store
+- Avoid re-writing unchanged content
+- Avoid re-computing embeddings over unchanged content
+
+All of which should save you time and money, as well as improve your vector search results.

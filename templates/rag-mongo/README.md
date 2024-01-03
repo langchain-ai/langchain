@@ -40,6 +40,13 @@ from rag_mongo import chain as rag_mongo_chain
 add_routes(app, rag_mongo_chain, path="/rag-mongo")
 ```
 
+If you want to set up an ingestion pipeline, you can add the following code to your `server.py` file:
+```python
+from rag_mongo import ingest as rag_mongo_ingest
+
+add_routes(app, rag_mongo_ingest, path="/rag-mongo-ingest")
+```
+
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
 LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 

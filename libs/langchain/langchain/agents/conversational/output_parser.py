@@ -1,9 +1,11 @@
 import re
 from typing import Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
+
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS
-from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 
 class ConvoOutputParser(AgentOutputParser):
@@ -20,8 +22,8 @@ class ConvoOutputParser(AgentOutputParser):
             return AgentFinish(
                 {"output": text.split(f"{self.ai_prefix}:")[-1].strip()}, text
             )
-        regex = r"Action: (.*?)[\n]*Action Input: (.*)"
-        match = re.search(regex, text)
+        regex = r"Action: (.*?)[\n]*Action Input: ([\s\S]*)"
+        match = re.search(regex, text, re.DOTALL)
         if not match:
             raise OutputParserException(f"Could not parse LLM output: `{text}`")
         action = match.group(1)

@@ -1,8 +1,9 @@
 import uuid
 from typing import List, Optional
 
+from langchain_core.documents import Document
+
 from langchain.retrievers import MultiVectorRetriever
-from langchain.schema.document import Document
 from langchain.text_splitter import TextSplitter
 
 
@@ -31,8 +32,8 @@ class ParentDocumentRetriever(MultiVectorRetriever):
         .. code-block:: python
 
             # Imports
-            from langchain.vectorstores import Chroma
-            from langchain.embeddings import OpenAIEmbeddings
+            from langchain_community.vectorstores import Chroma
+            from langchain_community.embeddings import OpenAIEmbeddings
             from langchain.text_splitter import RecursiveCharacterTextSplitter
             from langchain.storage import InMemoryStore
 

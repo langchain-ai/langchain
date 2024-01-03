@@ -1,5 +1,13 @@
-from langchain.schema import BaseRetriever
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.retrievers import BaseRetriever
+
 from langchain.tools import Tool
+
+
+class RetrieverInput(BaseModel):
+    """Input to the retriever."""
+
+    query: str = Field(description="query to look up in retriever")
 
 
 def create_retriever_tool(
@@ -22,4 +30,5 @@ def create_retriever_tool(
         description=description,
         func=retriever.get_relevant_documents,
         coroutine=retriever.aget_relevant_documents,
+        args_schema=RetrieverInput,
     )

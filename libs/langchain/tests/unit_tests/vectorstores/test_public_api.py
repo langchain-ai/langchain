@@ -11,11 +11,13 @@ _EXPECTED = [
     "AzureSearch",
     "Bagel",
     "Cassandra",
+    "AstraDB",
     "Chroma",
     "Clarifai",
     "Clickhouse",
     "ClickhouseSettings",
     "DashVector",
+    "DatabricksVectorSearch",
     "DeepLake",
     "Dingo",
     "DocArrayHnswSearch",
@@ -68,6 +70,7 @@ _EXPECTED = [
     "AzureCosmosDBVectorSearch",
     "VectorStore",
     "Lantern",
+    "Yellowbrick",
 ]
 
 

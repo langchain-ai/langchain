@@ -1,5 +1,4 @@
 """Base interface that all chains should implement."""
-import asyncio
 import inspect
 import json
 import logging
@@ -9,6 +8,22 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
+from langchain_core.load.dump import dumpd
+from langchain_core.memory import BaseMemory
+from langchain_core.outputs import RunInfo
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    create_model,
+    root_validator,
+    validator,
+)
+from langchain_core.runnables import (
+    RunnableConfig,
+    RunnableSerializable,
+    ensure_config,
+    run_in_executor,
+)
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -18,16 +33,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain.load.dump import dumpd
-from langchain.pydantic_v1 import (
-    BaseModel,
-    Field,
-    create_model,
-    root_validator,
-    validator,
-)
-from langchain.schema import RUN_KEY, BaseMemory, RunInfo
-from langchain.schema.runnable import RunnableConfig, RunnableSerializable
+from langchain.schema import RUN_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +89,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        config = config or {}
+        config = ensure_config(config)
         return self(
             input,
             callbacks=config.get("callbacks"),
@@ -99,7 +105,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        config = config or {}
+        config = ensure_config(config)
         return await self.acall(
             input,
             callbacks=config.get("callbacks"),
@@ -243,8 +249,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self._call, inputs, run_manager
+        return await run_in_executor(
+            None, self._call, inputs, run_manager.get_sync() if run_manager else None
         )
 
     def __call__(

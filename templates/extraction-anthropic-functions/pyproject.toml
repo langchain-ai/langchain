@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "extraction-anthropic-functions"
 version = "0.1.0"
-description = ""
+description = "Use Anthropic function calling for tasks like extraction or tagging"
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]
@@ -20,6 +20,12 @@ langchain-cli = ">=0.0.15"
 [tool.langserve]
 export_module = "extraction_anthropic_functions"
 export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "extraction"
+author = "LangChain"
+integrations = ["Anthropic", "Function Calling"]
+tags = ["function-calling", "tagging", "extraction"]
 
 [build-system]
 requires = [
