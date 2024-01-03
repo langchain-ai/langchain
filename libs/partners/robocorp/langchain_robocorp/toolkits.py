@@ -158,7 +158,7 @@ class ActionServerToolkit(BaseModel):
             "api_url": self.url,
         }
 
-        for name, _, docs in api_spec.endpoints:
+        for name, docs in api_spec.endpoints:
             if not name.startswith("/api/actions"):
                 continue
 

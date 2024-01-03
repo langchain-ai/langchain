@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 from langchain_core.utils.json_schema import dereference_refs
 
@@ -18,7 +18,7 @@ class ReducedOpenAPISpec:
 
     servers: List[dict]
     description: str
-    endpoints: List[Tuple[str, Optional[str], dict]]
+    endpoints: List[Tuple[str, dict]]
 
 
 def reduce_openapi_spec(url: str, spec: dict) -> ReducedOpenAPISpec:
@@ -26,7 +26,7 @@ def reduce_openapi_spec(url: str, spec: dict) -> ReducedOpenAPISpec:
 
     # 1. Consider only GET and POST
     endpoints = [
-        (route, docs.get("description"), docs)
+        (route, docs)
         for route, operation in spec["paths"].items()
         for operation_name, docs in operation.items()
         if operation_name in ["get", "post"]
@@ -34,10 +34,6 @@ def reduce_openapi_spec(url: str, spec: dict) -> ReducedOpenAPISpec:
 
     # 2. Replace any refs so that complete docs are retrieved.
     # Note: probably want to do this post-retrieval, it blows up the size of the spec.
-    endpoints = [
-        (name, description, dereference_refs(docs, full_schema=spec))
-        for name, description, docs in endpoints
-    ]
 
     # 3. Strip docs down to required request args + happy path response.
     def reduce_endpoint_docs(docs: dict) -> dict:
@@ -61,8 +57,8 @@ def reduce_openapi_spec(url: str, spec: dict) -> ReducedOpenAPISpec:
         return out
 
     endpoints = [
-        (name, description, reduce_endpoint_docs(docs))
-        for name, description, docs in endpoints
+        (name, reduce_endpoint_docs(dereference_refs(docs, full_schema=spec)))
+        for name, docs in endpoints
     ]
 
     return ReducedOpenAPISpec(
