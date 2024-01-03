@@ -5,7 +5,7 @@ import logging
 import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
 import yaml
 from langchain_core._api import deprecated
@@ -353,11 +353,16 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
+        config = {
+            "callbacks": callbacks,
+            "tags": tags,
+            "metadata": metadata,
+            "run_name": run_name,
+        }
+
         return self.invoke(
             inputs,
-            RunnableConfig(
-                callbacks=callbacks, tags=tags, metadata=metadata, run_name=run_name
-            ),
+            cast(RunnableConfig, {k: v for k, v in config.items() if v is not None}),
             return_only_outputs=return_only_outputs,
             include_run_info=include_run_info,
         )
@@ -399,11 +404,15 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
+        config = {
+            "callbacks": callbacks,
+            "tags": tags,
+            "metadata": metadata,
+            "run_name": run_name,
+        }
         return await self.ainvoke(
             inputs,
-            RunnableConfig(
-                callbacks=callbacks, tags=tags, metadata=metadata, run_name=run_name
-            ),
+            cast(RunnableConfig, {k: v for k, v in config.items() if k is not None}),
             return_only_outputs=return_only_outputs,
             include_run_info=include_run_info,
         )
