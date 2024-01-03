@@ -5,11 +5,10 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
 
 
 class AzureMLEndpointClient(object):
@@ -121,12 +120,14 @@ class ContentFormatterBase:
         deploying models using different hosting methods. Each method may have
         a different API structure."""
 
-        return [AzureMLEndpointApiType.realtime] 
+        return [AzureMLEndpointApiType.realtime]
 
     @abstractmethod
     def format_request_payload(
-        self, prompt: str, model_kwargs: Dict, 
-        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime
+        self,
+        prompt: str,
+        model_kwargs: Dict,
+        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime,
     ) -> bytes:
         """Formats the request body according to the input schema of
         the model. Returns bytes or seekable file like object in the
@@ -135,8 +136,9 @@ class ContentFormatterBase:
 
     @abstractmethod
     def format_response_payload(
-        self, output: bytes, 
-        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime
+        self,
+        output: bytes,
+        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime,
     ) -> str:
         """Formats the response body according to the output
         schema of the model. Returns the data type that is

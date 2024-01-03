@@ -1,6 +1,8 @@
 import json
 from typing import Any, Dict, List, Optional, cast
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.chat_models.base import SimpleChatModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -9,8 +11,6 @@ from langchain_core.messages import (
     SystemMessage,
 )
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import SimpleChatModel
 from langchain_community.llms.azureml_endpoint import (
     AzureMLBaseEndpoint,
     AzureMLEndpointApiType,
@@ -72,8 +72,10 @@ class LlamaChatContentFormatter(ContentFormatterBase):
         return [AzureMLEndpointApiType.realtime, AzureMLEndpointApiType.serverless]
 
     def format_request_payload(
-        self, messages: List[BaseMessage], model_kwargs: Dict, 
-        api_type: AzureMLEndpointApiType
+        self,
+        messages: List[BaseMessage],
+        model_kwargs: Dict,
+        api_type: AzureMLEndpointApiType,
     ) -> str:
         """Formats the request according to the chosen api"""
         chat_messages = [
