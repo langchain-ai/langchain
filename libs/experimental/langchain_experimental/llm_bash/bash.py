@@ -23,7 +23,7 @@ class BashProcess:
     Example:
         .. code-block:: python
 
-            from langchain.utilities.bash import BashProcess
+            from langchain_community.utilities.bash import BashProcess
 
             bash = BashProcess(
                 strip_newlines = False,

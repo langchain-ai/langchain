@@ -259,57 +259,73 @@ def __getattr__(name: str) -> Any:
 
         return BasePromptTemplate
     elif name == "ArxivAPIWrapper":
-        from langchain.utilities import ArxivAPIWrapper
+        from langchain_community.utilities import ArxivAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.ArxivAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.ArxivAPIWrapper"
+        )
 
         return ArxivAPIWrapper
     elif name == "GoldenQueryAPIWrapper":
-        from langchain.utilities import GoldenQueryAPIWrapper
+        from langchain_community.utilities import GoldenQueryAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.GoldenQueryAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.GoldenQueryAPIWrapper"
+        )
 
         return GoldenQueryAPIWrapper
     elif name == "GoogleSearchAPIWrapper":
-        from langchain.utilities import GoogleSearchAPIWrapper
+        from langchain_community.utilities import GoogleSearchAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.GoogleSearchAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.GoogleSearchAPIWrapper"
+        )
 
         return GoogleSearchAPIWrapper
     elif name == "GoogleSerperAPIWrapper":
-        from langchain.utilities import GoogleSerperAPIWrapper
+        from langchain_community.utilities import GoogleSerperAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.GoogleSerperAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.GoogleSerperAPIWrapper"
+        )
 
         return GoogleSerperAPIWrapper
     elif name == "PowerBIDataset":
-        from langchain.utilities import PowerBIDataset
+        from langchain_community.utilities import PowerBIDataset
 
-        _warn_on_import(name, replacement="langchain.utilities.PowerBIDataset")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.PowerBIDataset"
+        )
 
         return PowerBIDataset
     elif name == "SearxSearchWrapper":
-        from langchain.utilities import SearxSearchWrapper
+        from langchain_community.utilities import SearxSearchWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.SearxSearchWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.SearxSearchWrapper"
+        )
 
         return SearxSearchWrapper
     elif name == "WikipediaAPIWrapper":
-        from langchain.utilities import WikipediaAPIWrapper
+        from langchain_community.utilities import WikipediaAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.WikipediaAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.WikipediaAPIWrapper"
+        )
 
         return WikipediaAPIWrapper
     elif name == "WolframAlphaAPIWrapper":
-        from langchain.utilities import WolframAlphaAPIWrapper
+        from langchain_community.utilities import WolframAlphaAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.WolframAlphaAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.WolframAlphaAPIWrapper"
+        )
 
         return WolframAlphaAPIWrapper
     elif name == "SQLDatabase":
-        from langchain.utilities import SQLDatabase
+        from langchain_community.utilities import SQLDatabase
 
-        _warn_on_import(name, replacement="langchain.utilities.SQLDatabase")
+        _warn_on_import(name, replacement="langchain_community.utilities.SQLDatabase")
 
         return SQLDatabase
     elif name == "FAISS":
@@ -328,9 +344,11 @@ def __getattr__(name: str) -> Any:
         return ElasticVectorSearch
     # For backwards compatibility
     elif name == "SerpAPIChain" or name == "SerpAPIWrapper":
-        from langchain.utilities import SerpAPIWrapper
+        from langchain_community.utilities import SerpAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.SerpAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.SerpAPIWrapper"
+        )
 
         return SerpAPIWrapper
     elif name == "verbose":
