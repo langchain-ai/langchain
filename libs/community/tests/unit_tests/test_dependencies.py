@@ -1,6 +1,6 @@
 """A unit test meant to catch accidental introduction of non-optional dependencies."""
 from pathlib import Path
-from typing import Any, Dict, Mapping
+from typing import Any, Dict, List, Mapping, Union
 
 import pytest
 import toml
@@ -17,6 +17,18 @@ def poetry_conf() -> Dict[str, Any]:
         return toml.load(f)["tool"]["poetry"]
 
 
+def _is_required(requirements: Union[str, List[Dict], Dict]):
+    """Check if a dependency is required."""
+    if isinstance(requirements, str):
+        return True
+    elif isinstance(requirements, list):
+        return any(_is_required(requirement) for requirement in requirements)
+    elif isinstance(requirements, dict):
+        return not requirements.get("optional", False)
+    else:
+        raise TypeError(f"Unexpected type: {type(requirements)}")
+
+
 def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     """A test that checks if a new non-optional dependency is being introduced.
 
@@ -27,8 +39,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     dependencies = poetry_conf["dependencies"]
 
     is_required = {
-        package_name: isinstance(requirements, str)
-        or not requirements.get("optional", False)
+        package_name: _is_required(requirements)
         for package_name, requirements in dependencies.items()
     }
     required_dependencies = [
