@@ -3,6 +3,7 @@ from typing import List, Sequence, Tuple
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog
 from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
+from langchain.utils import get_from_env
 
 
 def _convert_agent_action_to_messages(
@@ -38,7 +39,9 @@ def _create_function_message(
     """
     if not isinstance(observation, str):
         try:
-            content = json.dumps(observation, ensure_ascii=False)
+            minified_json = get_from_env("json_output_minified", "JSON_OUTPUT_MINIFIED", "false").lower() == "true"
+            separators = (",", ":") if minified_json else None
+            content = json.dumps(observation, ensure_ascii=False, separators=separators)
         except Exception:
             content = str(observation)
     else:
