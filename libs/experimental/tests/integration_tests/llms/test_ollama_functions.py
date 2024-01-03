@@ -2,7 +2,7 @@
 
 import unittest
 
-from langchain.chat_models.ollama import ChatOllama
+from langchain_community.chat_models.ollama import ChatOllama
 
 from langchain_experimental.llms.ollama_functions import OllamaFunctions
 

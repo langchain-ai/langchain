@@ -1,5 +1,5 @@
-from langchain.llms import Replicate
-from langchain.prompts import ChatPromptTemplate
+from langchain_community.llms import Replicate
+from langchain_core.prompts import ChatPromptTemplate
 
 # LLM
 replicate_id = "andreasjansson/llama-2-13b-chat-gguf:60ec5dda9ff9ee0b6f786c9d1157842e6ab3cc931139ad98fe99e08a35c5d4d4"  # noqa: E501

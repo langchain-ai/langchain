@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
-
-if TYPE_CHECKING:
-    from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
+from typing import Any, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -23,7 +20,7 @@ class Jaguar(VectorStore):
     Example:
        .. code-block:: python
 
-           from langchain.vectorstores import Jaguar
+           from langchain_community.vectorstores.jaguar import Jaguar
 
            vectorstore = Jaguar(
                pod = 'vdb',
@@ -53,6 +50,13 @@ class Jaguar(VectorStore):
         self._vector_dimension = vector_dimension
 
         self._embedding = embedding
+        try:
+            from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
+        except ImportError:
+            raise ValueError(
+                "Could not import jaguardb-http-client python package. "
+                "Please install it with `pip install -U jaguardb-http-client`"
+            )
 
         self._jag = JaguarHttpClient(url)
         self._token = ""
@@ -172,7 +176,8 @@ class Jaguar(VectorStore):
                 podstore = self._pod + "." + self._store
                 q = "insert into " + podstore + " ("
                 q += vcol + "," + textcol + ") values ('" + values_comma
-                q += "','" + texts[i] + "')"
+                txt = texts[i].replace("'", "\\'")
+                q += "','" + txt + "')"
                 js = self.run(q, False)
                 ids.append(js["zid"])
                 i += 1
@@ -195,7 +200,8 @@ class Jaguar(VectorStore):
                 podstore = self._pod + "." + self._store
                 q = "insert into " + podstore + " ("
                 q += names_comma + "," + textcol + ") values (" + values_comma
-                q += ",'" + texts[i] + "')"
+                txt = texts[i].replace("'", "\\'")
+                q += ",'" + txt + "')"
                 if filecol != "":
                     js = self.run(q, True)
                 else:
@@ -211,7 +217,7 @@ class Jaguar(VectorStore):
         k: int = 3,
         fetch_k: int = -1,
         where: Optional[str] = None,
-        score_threshold: Optional[float] = -1.0,
+        args: Optional[str] = None,
         metadatas: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -223,9 +229,7 @@ class Jaguar(VectorStore):
             lambda_val: lexical match parameter for hybrid search.
             where: the where clause in select similarity. For example a
                 where can be "rating > 3.0 and (state = 'NV' or state = 'CA')"
-            score_threshold: minimal score threshold for the result.
-                If defined, results with score less than this value will be
-                filtered out.
+            args: extra options passed to select similarity
             kwargs:  vector_index=vcol, vector_type=cosine_fraction_float
         Returns:
             List of Documents most similar to the query and score for each.
@@ -250,7 +254,9 @@ class Jaguar(VectorStore):
             + ",type="
             + vtype
         )
-        q += ",with_score=yes,with_text=yes,score_threshold=" + str(score_threshold)
+        q += ",with_score=yes,with_text=yes"
+        if args is not None:
+            q += "," + args
 
         if metadatas is not None:
             meta = "&".join(metadatas)

@@ -4,6 +4,7 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional
 
+from langchain_community.llms.openai import OpenAI
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Extra, root_validator
 
@@ -11,7 +12,6 @@ from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.natbot.prompt import PROMPT
-from langchain.llms.openai import OpenAI
 
 
 class NatBotChain(Chain):

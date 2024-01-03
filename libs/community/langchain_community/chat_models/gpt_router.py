@@ -29,8 +29,8 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
@@ -150,7 +150,7 @@ class GPTRouter(BaseChatModel):
     models_priority_list: List[GPTRouterModel] = Field(min_items=1)
     gpt_router_api_base: str = Field(default=None)
     """WriteSonic GPTRouter custom endpoint"""
-    gpt_router_api_key: Optional[str] = None
+    gpt_router_api_key: Optional[SecretStr] = None
     """WriteSonic GPTRouter API Key"""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -173,10 +173,12 @@ class GPTRouter(BaseChatModel):
             DEFAULT_API_BASE_URL,
         )
 
-        values["gpt_router_api_key"] = get_from_dict_or_env(
-            values,
-            "gpt_router_api_key",
-            "GPT_ROUTER_API_KEY",
+        values["gpt_router_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "gpt_router_api_key",
+                "GPT_ROUTER_API_KEY",
+            )
         )
 
         try:
@@ -189,7 +191,8 @@ class GPTRouter(BaseChatModel):
             )
 
         gpt_router_client = GPTRouterClient(
-            values["gpt_router_api_base"], values["gpt_router_api_key"]
+            values["gpt_router_api_base"],
+            values["gpt_router_api_key"].get_secret_value(),
         )
         values["client"] = gpt_router_client
 
@@ -197,9 +200,7 @@ class GPTRouter(BaseChatModel):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {
-            "gpt_router_api_key": "GPT_ROUTER_API_KEY",
-        }
+        return {"gpt_router_api_key": "GPT_ROUTER_API_KEY"}
 
     @property
     def lc_serializable(self) -> bool:
@@ -233,8 +234,8 @@ class GPTRouter(BaseChatModel):
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: CallbackManagerForLLMRun | None = None,
-        stream: bool | None = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
@@ -259,8 +260,8 @@ class GPTRouter(BaseChatModel):
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: AsyncCallbackManagerForLLMRun | None = None,
-        stream: bool | None = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
