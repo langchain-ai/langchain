@@ -546,10 +546,10 @@ class DocumentIntelligenceParser(BaseBlobParser):
 
     def __init__(self, client: Any, model: str):
         warnings.warn(
-            "langchain.document_loaders.parsers.pdf.DocumentIntelligenceParser"
-            "and langchain.document_loaders.pdf.DocumentIntelligenceLoader"
+            "langchain_community.document_loaders.parsers.pdf.DocumentIntelligenceParser"
+            "and langchain_community.document_loaders.pdf.DocumentIntelligenceLoader"
             " are deprecated. Please upgrade to "
-            "langchain.document_loaders.DocumentIntelligenceLoader "
+            "langchain_community.document_loaders.DocumentIntelligenceLoader "
             "for any file parsing purpose using Azure Document Intelligence "
             "service."
         )

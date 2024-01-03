@@ -159,7 +159,7 @@ def create_structured_chat_agent(
         .. code-block:: python
 
             from langchain import hub
-            from langchain.chat_models import ChatOpenAI
+            from langchain_community.chat_models import ChatOpenAI
             from langchain.agents import AgentExecutor, create_structured_chat_agent
 
             prompt = hub.pull("hwchase17/structured-chat-agent")
