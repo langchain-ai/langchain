@@ -679,7 +679,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     ) -> AsyncIterator[ChatGenerationChunk]:
         raise NotImplementedError()
 
-    @deprecated("0.1.0", alternative="invoke")
+    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
     def __call__(
         self,
         messages: List[BaseMessage],
@@ -711,7 +711,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Unexpected generation type")
 
-    @deprecated("0.1.0", alternative="invoke")
+    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
     def call_as_llm(
         self, message: str, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> str:
