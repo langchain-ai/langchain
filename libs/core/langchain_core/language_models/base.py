@@ -61,17 +61,6 @@ class BaseLanguageModel(
     """Abstract base class for interfacing with language models.
 
     All language model wrappers inherit from BaseLanguageModel.
-
-    Exposes three main methods:
-    - generate_prompt: generate language model outputs for a sequence of prompt
-        values. A prompt value is a model input that can be converted to any language
-        model input format (string or messages).
-    - predict: pass in a single string to a language model and return a string
-        prediction.
-    - predict_messages: pass in a sequence of BaseMessages (corresponding to a single
-        model call) to a language model and return a BaseMessage prediction.
-
-    Each of these has an equivalent asynchronous method.
     """
 
     @property

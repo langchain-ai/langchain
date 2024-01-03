@@ -717,6 +717,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     ) -> str:
         return self.predict(message, stop=stop, **kwargs)
 
+    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -730,6 +731,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
+    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
     def predict_messages(
         self,
         messages: List[BaseMessage],
@@ -743,6 +745,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             _stop = list(stop)
         return self(messages, stop=_stop, **kwargs)
 
+    @deprecated("0.1.0", alternative="ainvoke", removal="0.2.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -758,6 +761,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
+    @deprecated("0.1.0", alternative="ainvoke", removal="0.2.0")
     async def apredict_messages(
         self,
         messages: List[BaseMessage],
