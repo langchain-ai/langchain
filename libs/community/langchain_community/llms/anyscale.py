@@ -25,6 +25,7 @@ from langchain_community.llms.openai import (
     acompletion_with_retry,
     completion_with_retry,
 )
+from langchain_community.utils.openai import get_openai_chat_completion
 
 
 def update_token_usage(
@@ -103,16 +104,8 @@ class Anyscale(BaseOpenAI):
             get_from_dict_or_env(values, "anyscale_api_key", "ANYSCALE_API_KEY")
         )
 
-        try:
-            import openai
-
-            ## Always create ChatComplete client, replacing the legacy Complete client
-            values["client"] = openai.ChatCompletion
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+        ## Always create ChatComplete client, replacing the legacy Complete client
+        values["client"] = get_openai_chat_completion()
         if values["streaming"] and values["n"] > 1:
             raise ValueError("Cannot stream results when n > 1.")
         if values["streaming"] and values["best_of"] > 1:

@@ -31,7 +31,7 @@ from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 from langchain_core.utils.utils import build_extra_kwargs
 
-from langchain_community.utils.openai import is_openai_v1
+from langchain_community.utils.openai import get_openai_chat_completion, is_openai_v1
 
 logger = logging.getLogger(__name__)
 
@@ -1046,14 +1046,7 @@ class OpenAIChat(BaseLLM):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        try:
-            values["client"] = openai.ChatCompletion
-        except AttributeError:
-            raise ValueError(
-                "`openai` has no `ChatCompletion` attribute, this is likely "
-                "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`."
-            )
+        values["client"] = get_openai_chat_completion()
         warnings.warn(
             "You are trying to use a chat model. This way of initializing it is "
             "no longer supported. Instead, please use: "

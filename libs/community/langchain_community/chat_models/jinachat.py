@@ -53,6 +53,8 @@ from tenacity import (
     wait_exponential,
 )
 
+from langchain_community.utils.openai import get_openai_chat_completion
+
 logger = logging.getLogger(__name__)
 
 
@@ -223,22 +225,7 @@ class JinaChat(BaseChatModel):
         values["jinachat_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "jinachat_api_key", "JINACHAT_API_KEY")
         )
-        try:
-            import openai
-
-        except ImportError:
-            raise ValueError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
-        try:
-            values["client"] = openai.ChatCompletion
-        except AttributeError:
-            raise ValueError(
-                "`openai` has no `ChatCompletion` attribute, this is likely "
-                "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`."
-            )
+        values["client"] = get_openai_chat_completion()
         return values
 
     @property

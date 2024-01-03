@@ -14,12 +14,12 @@ from langchain_community.chat_models.openai import (
     ChatOpenAI,
     _import_tiktoken,
 )
+from langchain_community.utils.openai import get_openai_chat_completion
 
 if TYPE_CHECKING:
     import tiktoken
 
 logger = logging.getLogger(__name__)
-
 
 DEFAULT_API_BASE = "https://everlyai.xyz/hosted"
 DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
@@ -84,23 +84,7 @@ class ChatEverlyAI(ChatOpenAI):
             "EVERLYAI_API_KEY",
         )
         values["openai_api_base"] = DEFAULT_API_BASE
-
-        try:
-            import openai
-
-        except ImportError as e:
-            raise ValueError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`.",
-            ) from e
-        try:
-            values["client"] = openai.ChatCompletion
-        except AttributeError as exc:
-            raise ValueError(
-                "`openai` has no `ChatCompletion` attribute, this is likely "
-                "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`.",
-            ) from exc
+        values["client"] = get_openai_chat_completion()
 
         if "model_name" not in values.keys():
             values["model_name"] = DEFAULT_MODEL
