@@ -2,7 +2,7 @@ import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
 
 from ai21 import AI21Client
-from ai21.resources import Message, RoleType
+from ai21.models import ChatMessage, RoleType
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -22,7 +22,7 @@ from langchain_core.utils import convert_to_secret_str
 
 def _convert_to_ai21_message(
     message: BaseMessage,
-) -> Message:
+) -> ChatMessage:
     content = cast(str, message.content)
 
     role = None
@@ -35,8 +35,7 @@ def _convert_to_ai21_message(
     if not role:
         raise ValueError(f"Could not resolve role type from message {message}")
 
-    # TODO: don't use name field
-    return Message(role=role, text=content, name=None)
+    return ChatMessage(role=role, text=content)
 
 
 def _pop_system_messages(messages: List[BaseMessage]) -> List[SystemMessage]:
@@ -71,7 +70,7 @@ class ChatAI21(BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         # TODO: use from env
         api_key = convert_to_secret_str(
-            values.get("api_key") or os.getenv("AI21_API_KEY")
+            values.get("api_key") or os.getenv("AI21_API_KEY") or ""
         )
         values["api_key"] = api_key
 
