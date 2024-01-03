@@ -2,9 +2,10 @@
 import os
 from typing import List, Tuple
 
-from langchain.docstore.document import Document
-from langchain.vectorstores import Lantern
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from langchain_core.documents import Document
+
+from langchain_community.embeddings import FakeEmbeddings
+from langchain_community.vectorstores import Lantern
 
 CONNECTION_STRING = Lantern.connection_string_from_db_params(
     driver=os.environ.get("TEST_LANTERN_DRIVER", "psycopg2"),
@@ -29,7 +30,8 @@ def fix_distance_precision(
 
 class FakeEmbeddingsWithAdaDimension(FakeEmbeddings):
     """Fake embeddings functionality for testing."""
-
+    def __init__(self):
+        super(FakeEmbeddingsWithAdaDimension, self).__init__(size=ADA_TOKEN_COUNT)
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Return simple embeddings."""
         return [

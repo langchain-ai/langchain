@@ -13,17 +13,17 @@ from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
 
-from langchain.vectorstores.utils import maximal_marginal_relevance
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-from langchain.docstore.document import Document
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.vectorstore import VectorStore
-from langchain.utils import get_from_dict_or_env
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+from langchain_core.utils import get_from_dict_or_env
 
 ADA_TOKEN_COUNT = 1536
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
@@ -246,9 +246,21 @@ class Lantern(VectorStore):
             return "dist_hamming_ops"
         else:
             raise ValueError(
-                "No supported normalization function"
+                "No supported operator class"
                 f" for distance_strategy of {self._distance_strategy}."
-                "Consider providing relevance_score_fn to Lantern constructor."
+            )
+            
+    def _get_operator(self) -> str:
+        if self.distance_strategy == DistanceStrategy.COSINE:
+            return "<=>"
+        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN:
+            return "<->"
+        elif self.distance_strategy == DistanceStrategy.HAMMING:
+            return "<+>"
+        else:
+            raise ValueError(
+                "No supported operator"
+                f" for distance_strategy of {self._distance_strategy}."
             )
 
     def _typed_arg_for_distance(
@@ -528,7 +540,7 @@ class Lantern(VectorStore):
 
             results: List[QueryResult] = (
                 query.order_by(
-                    self.EmbeddingStore.embedding.op("<->")(embedding)
+                    self.EmbeddingStore.embedding.op(self._get_operator())(embedding)
                 )  # Using PostgreSQL specific operator with the correct column name
                 .limit(k)
                 .all()
