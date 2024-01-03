@@ -68,6 +68,7 @@ from langchain_core.runnables import (
     RunnableSequence,
     RunnableWithFallbacks,
     add,
+    chain,
 )
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
@@ -101,6 +102,17 @@ class FakeTracer(BaseTracer):
         return self.uuids_map[uuid]
 
     def _copy_run(self, run: Run) -> Run:
+        if run.dotted_order:
+            levels = run.dotted_order.split(".")
+            processed_levels = []
+            for level in levels:
+                timestamp, run_id = level.split("Z")
+                new_run_id = self._replace_uuid(UUID(run_id))
+                processed_level = f"{timestamp}Z{new_run_id}"
+                processed_levels.append(processed_level)
+            new_dotted_order = ".".join(processed_levels)
+        else:
+            new_dotted_order = None
         return run.copy(
             update={
                 "id": self._replace_uuid(run.id),
@@ -110,6 +122,8 @@ class FakeTracer(BaseTracer):
                 "child_runs": [self._copy_run(child) for child in run.child_runs],
                 "execution_order": None,
                 "child_execution_order": None,
+                "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
+                "dotted_order": new_dotted_order,
             }
         )
 
@@ -2058,7 +2072,7 @@ async def test_prompt_with_llm(
                     "final_output": None,
                     "metadata": {},
                     "name": "ChatPromptTemplate",
-                    "start_time": "2023-01-01T00:00:00.000",
+                    "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
                     "streamed_output_str": [],
                     "tags": ["seq:step:1"],
@@ -2080,7 +2094,7 @@ async def test_prompt_with_llm(
             {
                 "op": "add",
                 "path": "/logs/ChatPromptTemplate/end_time",
-                "value": "2023-01-01T00:00:00.000",
+                "value": "2023-01-01T00:00:00.000+00:00",
             },
         ),
         RunLogPatch(
@@ -2092,7 +2106,7 @@ async def test_prompt_with_llm(
                     "final_output": None,
                     "metadata": {},
                     "name": "FakeListLLM",
-                    "start_time": "2023-01-01T00:00:00.000",
+                    "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
                     "streamed_output_str": [],
                     "tags": ["seq:step:2"],
@@ -2115,7 +2129,7 @@ async def test_prompt_with_llm(
             {
                 "op": "add",
                 "path": "/logs/FakeListLLM/end_time",
-                "value": "2023-01-01T00:00:00.000",
+                "value": "2023-01-01T00:00:00.000+00:00",
             },
         ),
         RunLogPatch(
@@ -4375,9 +4389,9 @@ async def test_runnable_gen() -> None:
 
     runnable = RunnableGenerator(gen)
 
-    assert runnable.input_schema.schema() == {"title": "RunnableGeneratorInput"}
+    assert runnable.input_schema.schema() == {"title": "gen_input"}
     assert runnable.output_schema.schema() == {
-        "title": "RunnableGeneratorOutput",
+        "title": "gen_output",
         "type": "integer",
     }
 
@@ -4395,6 +4409,315 @@ async def test_runnable_gen() -> None:
     assert await arunnable.ainvoke(None) == 6
     assert [p async for p in arunnable.astream(None)] == [1, 2, 3]
     assert await arunnable.abatch([None, None]) == [6, 6]
+
+
+async def test_runnable_gen_context_config() -> None:
+    """Test that a generator can call other runnables with config
+    propagated from the context."""
+
+    fake = RunnableLambda(len)
+
+    def gen(input: Iterator[Any]) -> Iterator[int]:
+        yield fake.invoke("a")
+        yield fake.invoke("aa")
+        yield fake.invoke("aaa")
+
+    runnable = RunnableGenerator(gen)
+
+    assert runnable.input_schema.schema() == {"title": "gen_input"}
+    assert runnable.output_schema.schema() == {
+        "title": "gen_output",
+        "type": "integer",
+    }
+
+    tracer = FakeTracer()
+    assert runnable.invoke(None, {"callbacks": [tracer]}) == 6
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    tracer.runs.clear()
+
+    assert list(runnable.stream(None)) == [1, 2, 3]
+    assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
+
+    tracer = FakeTracer()
+    assert list(runnable.stream(None, {"callbacks": [tracer]})) == [1, 2, 3]
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+
+    tracer = FakeTracer()
+    assert runnable.batch([None, None], {"callbacks": [tracer]}) == [6, 6]
+    assert len(tracer.runs) == 2
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert tracer.runs[1].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    assert len(tracer.runs[1].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[1].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
+
+    if sys.version_info < (3, 11):
+        # Python 3.10 and below don't support running async tasks in a specific context
+        return
+
+    async def agen(input: AsyncIterator[Any]) -> AsyncIterator[int]:
+        yield await fake.ainvoke("a")
+        yield await fake.ainvoke("aa")
+        yield await fake.ainvoke("aaa")
+
+    arunnable = RunnableGenerator(agen)
+
+    tracer = FakeTracer()
+    assert await arunnable.ainvoke(None, {"callbacks": [tracer]}) == 6
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    tracer.runs.clear()
+
+    assert [p async for p in arunnable.astream(None)] == [1, 2, 3]
+    assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
+
+    tracer = FakeTracer()
+    assert [p async for p in arunnable.astream(None, {"callbacks": [tracer]})] == [
+        1,
+        2,
+        3,
+    ]
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+
+    tracer = FakeTracer()
+    assert await arunnable.abatch([None, None], {"callbacks": [tracer]}) == [6, 6]
+    assert len(tracer.runs) == 2
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert tracer.runs[1].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    assert len(tracer.runs[1].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[1].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
+
+
+async def test_runnable_iter_context_config() -> None:
+    """Test that a generator can call other runnables with config
+    propagated from the context."""
+
+    fake = RunnableLambda(len)
+
+    @chain
+    def gen(input: str) -> Iterator[int]:
+        yield fake.invoke(input)
+        yield fake.invoke(input * 2)
+        yield fake.invoke(input * 3)
+
+    assert gen.input_schema.schema() == {
+        "title": "gen_input",
+        "type": "string",
+    }
+    assert gen.output_schema.schema() == {
+        "title": "gen_output",
+        "type": "integer",
+    }
+
+    tracer = FakeTracer()
+    assert gen.invoke("a", {"callbacks": [tracer]}) == 6
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    tracer.runs.clear()
+
+    assert list(gen.stream("a")) == [1, 2, 3]
+    assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
+
+    tracer = FakeTracer()
+    assert list(gen.stream("a", {"callbacks": [tracer]})) == [1, 2, 3]
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+
+    tracer = FakeTracer()
+    assert gen.batch(["a", "a"], {"callbacks": [tracer]}) == [6, 6]
+    assert len(tracer.runs) == 2
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert tracer.runs[1].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    assert len(tracer.runs[1].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[1].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
+
+    if sys.version_info < (3, 11):
+        # Python 3.10 and below don't support running async tasks in a specific context
+        return
+
+    @chain
+    async def agen(input: str) -> AsyncIterator[int]:
+        yield await fake.ainvoke(input)
+        yield await fake.ainvoke(input * 2)
+        yield await fake.ainvoke(input * 3)
+
+    assert agen.input_schema.schema() == {
+        "title": "agen_input",
+        "type": "string",
+    }
+    assert agen.output_schema.schema() == {
+        "title": "agen_output",
+        "type": "integer",
+    }
+
+    tracer = FakeTracer()
+    assert await agen.ainvoke("a", {"callbacks": [tracer]}) == 6
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    tracer.runs.clear()
+
+    assert [p async for p in agen.astream("a")] == [1, 2, 3]
+    assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
+
+    tracer = FakeTracer()
+    assert [p async for p in agen.astream("a", {"callbacks": [tracer]})] == [
+        1,
+        2,
+        3,
+    ]
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+
+    tracer = FakeTracer()
+    assert await agen.abatch(["a", "a"], {"callbacks": [tracer]}) == [6, 6]
+    assert len(tracer.runs) == 2
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert tracer.runs[1].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    assert len(tracer.runs[1].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[1].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
+
+
+async def test_runnable_lambda_context_config() -> None:
+    """Test that a function can call other runnables with config
+    propagated from the context."""
+
+    fake = RunnableLambda(len)
+
+    @chain
+    def fun(input: str) -> int:
+        output = fake.invoke(input)
+        output += fake.invoke(input * 2)
+        output += fake.invoke(input * 3)
+        return output
+
+    assert fun.input_schema.schema() == {"title": "fun_input", "type": "string"}
+    assert fun.output_schema.schema() == {
+        "title": "fun_output",
+        "type": "integer",
+    }
+
+    tracer = FakeTracer()
+    assert fun.invoke("a", {"callbacks": [tracer]}) == 6
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    tracer.runs.clear()
+
+    assert list(fun.stream("a")) == [6]
+    assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
+
+    tracer = FakeTracer()
+    assert list(fun.stream("a", {"callbacks": [tracer]})) == [6]
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+
+    tracer = FakeTracer()
+    assert fun.batch(["a", "a"], {"callbacks": [tracer]}) == [6, 6]
+    assert len(tracer.runs) == 2
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert tracer.runs[1].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    assert len(tracer.runs[1].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[1].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
+
+    if sys.version_info < (3, 11):
+        # Python 3.10 and below don't support running async tasks in a specific context
+        return
+
+    @chain
+    async def afun(input: str) -> int:
+        output = await fake.ainvoke(input)
+        output += await fake.ainvoke(input * 2)
+        output += await fake.ainvoke(input * 3)
+        return output
+
+    assert afun.input_schema.schema() == {"title": "afun_input", "type": "string"}
+    assert afun.output_schema.schema() == {
+        "title": "afun_output",
+        "type": "integer",
+    }
+
+    tracer = FakeTracer()
+    assert await afun.ainvoke("a", {"callbacks": [tracer]}) == 6
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    tracer.runs.clear()
+
+    assert [p async for p in afun.astream("a")] == [6]
+    assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
+
+    tracer = FakeTracer()
+    assert [p async for p in afun.astream("a", {"callbacks": [tracer]})] == [6]
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+
+    tracer = FakeTracer()
+    assert await afun.abatch(["a", "a"], {"callbacks": [tracer]}) == [6, 6]
+    assert len(tracer.runs) == 2
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert tracer.runs[1].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    assert len(tracer.runs[1].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[1].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
 
 
 async def test_runnable_gen_transform() -> None:
@@ -4421,19 +4744,19 @@ async def test_runnable_gen_transform() -> None:
     achain = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
 
     assert chain.input_schema.schema() == {
-        "title": "RunnableGeneratorInput",
+        "title": "gen_indexes_input",
         "type": "integer",
     }
     assert chain.output_schema.schema() == {
-        "title": "RunnableGeneratorOutput",
+        "title": "plus_one_output",
         "type": "integer",
     }
     assert achain.input_schema.schema() == {
-        "title": "RunnableGeneratorInput",
+        "title": "gen_indexes_input",
         "type": "integer",
     }
     assert achain.output_schema.schema() == {
-        "title": "RunnableGeneratorOutput",
+        "title": "aplus_one_output",
         "type": "integer",
     }
 

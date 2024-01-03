@@ -1,6 +1,9 @@
 """Chain that does self-ask with search."""
 from typing import Any, Sequence, Union
 
+from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain_community.utilities.searchapi import SearchApiAPIWrapper
+from langchain_community.utilities.serpapi import SerpAPIWrapper
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
@@ -14,9 +17,6 @@ from langchain.agents.self_ask_with_search.output_parser import SelfAskOutputPar
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
-from langchain.utilities.google_serper import GoogleSerperAPIWrapper
-from langchain.utilities.searchapi import SearchApiAPIWrapper
-from langchain.utilities.serpapi import SerpAPIWrapper
 
 
 class SelfAskWithSearchAgent(Agent):
@@ -94,7 +94,7 @@ def create_self_ask_with_search_agent(
         .. code-block:: python
 
             from langchain import hub
-            from langchain.chat_models import ChatAnthropic
+            from langchain_community.chat_models import ChatAnthropic
             from langchain.agents import (
                 AgentExecutor, create_self_ask_with_search_agent
             )

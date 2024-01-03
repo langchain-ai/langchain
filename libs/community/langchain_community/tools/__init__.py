@@ -525,7 +525,9 @@ def _import_reddit_search_RedditSearchRun() -> Any:
 
 
 def _import_render() -> Any:
-    from langchain_community.tools.render import format_tool_to_openai_function
+    from langchain_community.tools.convert_to_openai import (
+        format_tool_to_openai_function,
+    )
 
     return format_tool_to_openai_function
 

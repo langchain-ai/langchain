@@ -25,13 +25,15 @@ from langchain_core.vectorstores import VectorStore
 
 
 def _import_alibaba_cloud_open_search() -> Any:
-    from langchain.vectorstores.alibabacloud_opensearch import AlibabaCloudOpenSearch
+    from langchain_community.vectorstores.alibabacloud_opensearch import (
+        AlibabaCloudOpenSearch,
+    )
 
     return AlibabaCloudOpenSearch
 
 
 def _import_alibaba_cloud_open_search_settings() -> Any:
-    from langchain.vectorstores.alibabacloud_opensearch import (
+    from langchain_community.vectorstores.alibabacloud_opensearch import (
         AlibabaCloudOpenSearchSettings,
     )
 
@@ -39,397 +41,405 @@ def _import_alibaba_cloud_open_search_settings() -> Any:
 
 
 def _import_azure_cosmos_db() -> Any:
-    from langchain.vectorstores.azure_cosmos_db import AzureCosmosDBVectorSearch
+    from langchain_community.vectorstores.azure_cosmos_db import (
+        AzureCosmosDBVectorSearch,
+    )
 
     return AzureCosmosDBVectorSearch
 
 
 def _import_elastic_knn_search() -> Any:
-    from langchain.vectorstores.elastic_vector_search import ElasticKnnSearch
+    from langchain_community.vectorstores.elastic_vector_search import ElasticKnnSearch
 
     return ElasticKnnSearch
 
 
 def _import_elastic_vector_search() -> Any:
-    from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
+    from langchain_community.vectorstores.elastic_vector_search import (
+        ElasticVectorSearch,
+    )
 
     return ElasticVectorSearch
 
 
 def _import_analyticdb() -> Any:
-    from langchain.vectorstores.analyticdb import AnalyticDB
+    from langchain_community.vectorstores.analyticdb import AnalyticDB
 
     return AnalyticDB
 
 
 def _import_annoy() -> Any:
-    from langchain.vectorstores.annoy import Annoy
+    from langchain_community.vectorstores.annoy import Annoy
 
     return Annoy
 
 
 def _import_atlas() -> Any:
-    from langchain.vectorstores.atlas import AtlasDB
+    from langchain_community.vectorstores.atlas import AtlasDB
 
     return AtlasDB
 
 
 def _import_awadb() -> Any:
-    from langchain.vectorstores.awadb import AwaDB
+    from langchain_community.vectorstores.awadb import AwaDB
 
     return AwaDB
 
 
 def _import_azuresearch() -> Any:
-    from langchain.vectorstores.azuresearch import AzureSearch
+    from langchain_community.vectorstores.azuresearch import AzureSearch
 
     return AzureSearch
 
 
 def _import_bageldb() -> Any:
-    from langchain.vectorstores.bageldb import Bagel
+    from langchain_community.vectorstores.bageldb import Bagel
 
     return Bagel
 
 
 def _import_baiducloud_vector_search() -> Any:
-    from langchain.vectorstores.baiducloud_vector_search import BESVectorStore
+    from langchain_community.vectorstores.baiducloud_vector_search import BESVectorStore
 
     return BESVectorStore
 
 
 def _import_cassandra() -> Any:
-    from langchain.vectorstores.cassandra import Cassandra
+    from langchain_community.vectorstores.cassandra import Cassandra
 
     return Cassandra
 
 
 def _import_astradb() -> Any:
-    from langchain.vectorstores.astradb import AstraDB
+    from langchain_community.vectorstores.astradb import AstraDB
 
     return AstraDB
 
 
 def _import_chroma() -> Any:
-    from langchain.vectorstores.chroma import Chroma
+    from langchain_community.vectorstores.chroma import Chroma
 
     return Chroma
 
 
 def _import_clarifai() -> Any:
-    from langchain.vectorstores.clarifai import Clarifai
+    from langchain_community.vectorstores.clarifai import Clarifai
 
     return Clarifai
 
 
 def _import_clickhouse() -> Any:
-    from langchain.vectorstores.clickhouse import Clickhouse
+    from langchain_community.vectorstores.clickhouse import Clickhouse
 
     return Clickhouse
 
 
 def _import_clickhouse_settings() -> Any:
-    from langchain.vectorstores.clickhouse import ClickhouseSettings
+    from langchain_community.vectorstores.clickhouse import ClickhouseSettings
 
     return ClickhouseSettings
 
 
 def _import_dashvector() -> Any:
-    from langchain.vectorstores.dashvector import DashVector
+    from langchain_community.vectorstores.dashvector import DashVector
 
     return DashVector
 
 
 def _import_databricks_vector_search() -> Any:
-    from langchain.vectorstores.databricks_vector_search import DatabricksVectorSearch
+    from langchain_community.vectorstores.databricks_vector_search import (
+        DatabricksVectorSearch,
+    )
 
     return DatabricksVectorSearch
 
 
 def _import_deeplake() -> Any:
-    from langchain.vectorstores.deeplake import DeepLake
+    from langchain_community.vectorstores.deeplake import DeepLake
 
     return DeepLake
 
 
 def _import_dingo() -> Any:
-    from langchain.vectorstores.dingo import Dingo
+    from langchain_community.vectorstores.dingo import Dingo
 
     return Dingo
 
 
 def _import_docarray_hnsw() -> Any:
-    from langchain.vectorstores.docarray import DocArrayHnswSearch
+    from langchain_community.vectorstores.docarray import DocArrayHnswSearch
 
     return DocArrayHnswSearch
 
 
 def _import_docarray_inmemory() -> Any:
-    from langchain.vectorstores.docarray import DocArrayInMemorySearch
+    from langchain_community.vectorstores.docarray import DocArrayInMemorySearch
 
     return DocArrayInMemorySearch
 
 
 def _import_elasticsearch() -> Any:
-    from langchain.vectorstores.elasticsearch import ElasticsearchStore
+    from langchain_community.vectorstores.elasticsearch import ElasticsearchStore
 
     return ElasticsearchStore
 
 
 def _import_epsilla() -> Any:
-    from langchain.vectorstores.epsilla import Epsilla
+    from langchain_community.vectorstores.epsilla import Epsilla
 
     return Epsilla
 
 
 def _import_faiss() -> Any:
-    from langchain.vectorstores.faiss import FAISS
+    from langchain_community.vectorstores.faiss import FAISS
 
     return FAISS
 
 
 def _import_hologres() -> Any:
-    from langchain.vectorstores.hologres import Hologres
+    from langchain_community.vectorstores.hologres import Hologres
 
     return Hologres
 
 
 def _import_lancedb() -> Any:
-    from langchain.vectorstores.lancedb import LanceDB
+    from langchain_community.vectorstores.lancedb import LanceDB
 
     return LanceDB
 
 
 def _import_llm_rails() -> Any:
-    from langchain.vectorstores.llm_rails import LLMRails
+    from langchain_community.vectorstores.llm_rails import LLMRails
 
     return LLMRails
 
 
 def _import_marqo() -> Any:
-    from langchain.vectorstores.marqo import Marqo
+    from langchain_community.vectorstores.marqo import Marqo
 
     return Marqo
 
 
 def _import_matching_engine() -> Any:
-    from langchain.vectorstores.matching_engine import MatchingEngine
+    from langchain_community.vectorstores.matching_engine import MatchingEngine
 
     return MatchingEngine
 
 
 def _import_meilisearch() -> Any:
-    from langchain.vectorstores.meilisearch import Meilisearch
+    from langchain_community.vectorstores.meilisearch import Meilisearch
 
     return Meilisearch
 
 
 def _import_milvus() -> Any:
-    from langchain.vectorstores.milvus import Milvus
+    from langchain_community.vectorstores.milvus import Milvus
 
     return Milvus
 
 
 def _import_momento_vector_index() -> Any:
-    from langchain.vectorstores.momento_vector_index import MomentoVectorIndex
+    from langchain_community.vectorstores.momento_vector_index import MomentoVectorIndex
 
     return MomentoVectorIndex
 
 
 def _import_mongodb_atlas() -> Any:
-    from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
+    from langchain_community.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 
     return MongoDBAtlasVectorSearch
 
 
 def _import_myscale() -> Any:
-    from langchain.vectorstores.myscale import MyScale
+    from langchain_community.vectorstores.myscale import MyScale
 
     return MyScale
 
 
 def _import_myscale_settings() -> Any:
-    from langchain.vectorstores.myscale import MyScaleSettings
+    from langchain_community.vectorstores.myscale import MyScaleSettings
 
     return MyScaleSettings
 
 
 def _import_neo4j_vector() -> Any:
-    from langchain.vectorstores.neo4j_vector import Neo4jVector
+    from langchain_community.vectorstores.neo4j_vector import Neo4jVector
 
     return Neo4jVector
 
 
 def _import_opensearch_vector_search() -> Any:
-    from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
+    from langchain_community.vectorstores.opensearch_vector_search import (
+        OpenSearchVectorSearch,
+    )
 
     return OpenSearchVectorSearch
 
 
 def _import_pgembedding() -> Any:
-    from langchain.vectorstores.pgembedding import PGEmbedding
+    from langchain_community.vectorstores.pgembedding import PGEmbedding
 
     return PGEmbedding
 
 
 def _import_pgvector() -> Any:
-    from langchain.vectorstores.pgvector import PGVector
+    from langchain_community.vectorstores.pgvector import PGVector
 
     return PGVector
 
 
 def _import_pinecone() -> Any:
-    from langchain.vectorstores.pinecone import Pinecone
+    from langchain_community.vectorstores.pinecone import Pinecone
 
     return Pinecone
 
 
 def _import_qdrant() -> Any:
-    from langchain.vectorstores.qdrant import Qdrant
+    from langchain_community.vectorstores.qdrant import Qdrant
 
     return Qdrant
 
 
 def _import_redis() -> Any:
-    from langchain.vectorstores.redis import Redis
+    from langchain_community.vectorstores.redis import Redis
 
     return Redis
 
 
 def _import_rocksetdb() -> Any:
-    from langchain.vectorstores.rocksetdb import Rockset
+    from langchain_community.vectorstores.rocksetdb import Rockset
 
     return Rockset
 
 
 def _import_vespa() -> Any:
-    from langchain.vectorstores.vespa import VespaStore
+    from langchain_community.vectorstores.vespa import VespaStore
 
     return VespaStore
 
 
 def _import_scann() -> Any:
-    from langchain.vectorstores.scann import ScaNN
+    from langchain_community.vectorstores.scann import ScaNN
 
     return ScaNN
 
 
 def _import_semadb() -> Any:
-    from langchain.vectorstores.semadb import SemaDB
+    from langchain_community.vectorstores.semadb import SemaDB
 
     return SemaDB
 
 
 def _import_singlestoredb() -> Any:
-    from langchain.vectorstores.singlestoredb import SingleStoreDB
+    from langchain_community.vectorstores.singlestoredb import SingleStoreDB
 
     return SingleStoreDB
 
 
 def _import_sklearn() -> Any:
-    from langchain.vectorstores.sklearn import SKLearnVectorStore
+    from langchain_community.vectorstores.sklearn import SKLearnVectorStore
 
     return SKLearnVectorStore
 
 
 def _import_sqlitevss() -> Any:
-    from langchain.vectorstores.sqlitevss import SQLiteVSS
+    from langchain_community.vectorstores.sqlitevss import SQLiteVSS
 
     return SQLiteVSS
 
 
 def _import_starrocks() -> Any:
-    from langchain.vectorstores.starrocks import StarRocks
+    from langchain_community.vectorstores.starrocks import StarRocks
 
     return StarRocks
 
 
 def _import_supabase() -> Any:
-    from langchain.vectorstores.supabase import SupabaseVectorStore
+    from langchain_community.vectorstores.supabase import SupabaseVectorStore
 
     return SupabaseVectorStore
 
 
 def _import_tair() -> Any:
-    from langchain.vectorstores.tair import Tair
+    from langchain_community.vectorstores.tair import Tair
 
     return Tair
 
 
 def _import_tencentvectordb() -> Any:
-    from langchain.vectorstores.tencentvectordb import TencentVectorDB
+    from langchain_community.vectorstores.tencentvectordb import TencentVectorDB
 
     return TencentVectorDB
 
 
 def _import_tiledb() -> Any:
-    from langchain.vectorstores.tiledb import TileDB
+    from langchain_community.vectorstores.tiledb import TileDB
 
     return TileDB
 
 
 def _import_tigris() -> Any:
-    from langchain.vectorstores.tigris import Tigris
+    from langchain_community.vectorstores.tigris import Tigris
 
     return Tigris
 
 
 def _import_timescalevector() -> Any:
-    from langchain.vectorstores.timescalevector import TimescaleVector
+    from langchain_community.vectorstores.timescalevector import TimescaleVector
 
     return TimescaleVector
 
 
 def _import_typesense() -> Any:
-    from langchain.vectorstores.typesense import Typesense
+    from langchain_community.vectorstores.typesense import Typesense
 
     return Typesense
 
 
 def _import_usearch() -> Any:
-    from langchain.vectorstores.usearch import USearch
+    from langchain_community.vectorstores.usearch import USearch
 
     return USearch
 
 
 def _import_vald() -> Any:
-    from langchain.vectorstores.vald import Vald
+    from langchain_community.vectorstores.vald import Vald
 
     return Vald
 
 
 def _import_vearch() -> Any:
-    from langchain.vectorstores.vearch import Vearch
+    from langchain_community.vectorstores.vearch import Vearch
 
     return Vearch
 
 
 def _import_vectara() -> Any:
-    from langchain.vectorstores.vectara import Vectara
+    from langchain_community.vectorstores.vectara import Vectara
 
     return Vectara
 
 
 def _import_weaviate() -> Any:
-    from langchain.vectorstores.weaviate import Weaviate
+    from langchain_community.vectorstores.weaviate import Weaviate
 
     return Weaviate
 
 
 def _import_yellowbrick() -> Any:
-    from langchain.vectorstores.yellowbrick import Yellowbrick
+    from langchain_community.vectorstores.yellowbrick import Yellowbrick
 
     return Yellowbrick
 
 
 def _import_zep() -> Any:
-    from langchain.vectorstores.zep import ZepVectorStore
+    from langchain_community.vectorstores.zep import ZepVectorStore
 
     return ZepVectorStore
 
 
 def _import_zilliz() -> Any:
-    from langchain.vectorstores.zilliz import Zilliz
+    from langchain_community.vectorstores.zilliz import Zilliz
 
     return Zilliz
 
