@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from typing import Any, Dict, List, Optional
+from urllib.parse import urljoin
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
@@ -18,7 +19,6 @@ from langchain_core.tracers.context import _tracing_v2_is_enabled
 from langsmith import Client
 
 from langchain_robocorp._common import (
-    ensure_openapi_path,
     get_required_param_descriptions,
     reduce_openapi_spec,
 )
@@ -123,7 +123,7 @@ class ActionServerToolkit(BaseModel):
 
         # Fetch and format the API spec
         try:
-            spec_url = ensure_openapi_path(self.url)
+            spec_url = urljoin(self.url, 'openapi.json')
             response = requests.get(spec_url)
             json_spec = response.json()
             api_spec = reduce_openapi_spec(self.url, json_spec)
