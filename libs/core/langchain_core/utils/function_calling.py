@@ -6,30 +6,25 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,
     cast,
 )
 
-from langchain.output_parsers.openai_functions import (
-    JsonOutputFunctionsParser,
-    PydanticAttrOutputFunctionsParser,
-    PydanticOutputFunctionsParser,
-)
-from langchain.utils.openai_functions import convert_pydantic_to_openai_function
+from typing_extensions import TypedDict
 
-from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import (
-    BaseGenerationOutputParser,
-    BaseLLMOutputParser,
-    BaseOutputParser,
-)
-from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables import Runnable
+from langchain_core.utils.json_schema import dereference_refs
+
+PYTHON_TO_JSON_TYPES = {
+    "str": "string",
+    "int": "number",
+    "float": "number",
+    "bool": "boolean",
+}
 
 
 class FunctionDescription(TypedDict):

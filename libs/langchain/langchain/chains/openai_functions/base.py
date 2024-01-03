@@ -17,7 +17,10 @@ from langchain_core.output_parsers import (
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
-from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.function_calling import (
+    convert_to_openai_function,
+    PYTHON_TO_JSON_TYPES,
+)
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
@@ -26,13 +29,6 @@ from langchain.output_parsers.openai_functions import (
     PydanticAttrOutputFunctionsParser,
     PydanticOutputFunctionsParser,
 )
-
-PYTHON_TO_JSON_TYPES = {
-    "str": "string",
-    "int": "number",
-    "float": "number",
-    "bool": "boolean",
-}
 
 
 def get_openai_output_parser(
