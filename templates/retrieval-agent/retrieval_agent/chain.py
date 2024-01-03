@@ -5,7 +5,7 @@ from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import BaseRetriever, Document
 from langchain.tools.retriever import create_retriever_tool
 from langchain.utilities.arxiv import ArxivAPIWrapper

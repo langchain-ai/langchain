@@ -1,6 +1,6 @@
 import os
 
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.retrievers import GoogleVertexAISearchRetriever
 from langchain_community.chat_models import ChatVertexAI
 from langchain_core.output_parsers import StrOutputParser

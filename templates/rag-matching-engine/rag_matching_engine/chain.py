@@ -1,6 +1,6 @@
 import os
 
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_community.embeddings import VertexAIEmbeddings
 from langchain_community.llms import VertexAI
 from langchain_community.vectorstores import MatchingEngine

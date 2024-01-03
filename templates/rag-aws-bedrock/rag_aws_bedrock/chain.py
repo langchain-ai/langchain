@@ -1,6 +1,6 @@
 import os
 
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.embeddings import BedrockEmbeddings
 from langchain_community.llms.bedrock import Bedrock
 from langchain_community.vectorstores import FAISS

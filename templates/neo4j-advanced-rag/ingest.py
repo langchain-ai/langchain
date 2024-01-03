@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List
 
 from langchain.chains.openai_functions import create_structured_output_chain
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.text_splitter import TokenTextSplitter
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.document_loaders import TextLoader

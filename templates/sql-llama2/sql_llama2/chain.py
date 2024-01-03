@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.utilities import SQLDatabase
 from langchain_community.llms import Replicate
 from langchain_core.output_parsers import StrOutputParser

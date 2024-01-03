@@ -1,4 +1,4 @@
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.chat_models import ChatVertexAI
 
 _prompt = ChatPromptTemplate.from_template(

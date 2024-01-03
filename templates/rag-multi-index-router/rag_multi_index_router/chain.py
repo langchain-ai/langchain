@@ -2,7 +2,7 @@ from operator import itemgetter
 from typing import Literal
 
 from langchain.output_parsers.openai_functions import PydanticAttrOutputFunctionsParser
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.retrievers import (
     ArxivRetriever,
     KayAiRetriever,

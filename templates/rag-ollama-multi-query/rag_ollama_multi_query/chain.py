@@ -2,7 +2,7 @@ from typing import List
 
 from langchain.chains import LLMChain
 from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts import ChatPromptTemplate, PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.chat_models import ChatOllama, ChatOpenAI

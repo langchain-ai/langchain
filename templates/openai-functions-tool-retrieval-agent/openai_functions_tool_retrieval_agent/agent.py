@@ -6,7 +6,7 @@ from langchain.agents import (
 )
 from langchain.agents.format_scratchpad import format_to_openai_functions
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
-from langchain.prompts import (
+from langchain_core.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
 )

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import requests
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.utilities import SQLDatabase
 from langchain_community.llms import LlamaCpp
 from langchain_core.output_parsers import StrOutputParser

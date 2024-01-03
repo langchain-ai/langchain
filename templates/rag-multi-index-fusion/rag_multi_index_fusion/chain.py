@@ -1,7 +1,7 @@
 from operator import itemgetter
 
 import numpy as np
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.retrievers import (
     ArxivRetriever,
     KayAiRetriever,

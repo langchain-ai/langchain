@@ -4,7 +4,7 @@ import os
 from datetime import timedelta
 
 from langchain.chains.query_constructor.base import AttributeInfo
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings.openai import OpenAIEmbeddings

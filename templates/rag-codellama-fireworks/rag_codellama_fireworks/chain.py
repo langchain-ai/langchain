@@ -1,7 +1,7 @@
 import os
 
 from git import Repo
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.text_splitter import Language, RecursiveCharacterTextSplitter
 from langchain_community.document_loaders.generic import GenericLoader
 from langchain_community.document_loaders.parsers import LanguageParser

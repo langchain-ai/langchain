@@ -3,7 +3,7 @@ from typing import Any
 
 import requests
 from bs4 import BeautifulSoup
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.retrievers.tavily_search_api import TavilySearchAPIRetriever
 from langchain.utilities import DuckDuckGoSearchAPIWrapper
 from langchain_community.chat_models import ChatOpenAI
