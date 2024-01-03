@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence
 
 import sqlalchemy
 from langchain_core.utils import get_from_env
@@ -376,14 +376,14 @@ class SQLDatabase:
     def _execute(
         self,
         command: str,
-        fetch: Union[Literal["all"], Literal["one"]] = "all",
+        fetch: Literal["all", "one"] = "all",
     ) -> Sequence[Dict[str, Any]]:
         """
         Executes SQL command through underlying engine.
 
         If the statement returns no rows, an empty list is returned.
         """
-        with self._engine.begin() as connection:
+        with self._engine.begin() as connection:  # type: Connection
             if self._schema is not None:
                 if self.dialect == "snowflake":
                     connection.exec_driver_sql(
@@ -426,7 +426,7 @@ class SQLDatabase:
     def run(
         self,
         command: str,
-        fetch: Union[Literal["all"], Literal["one"]] = "all",
+        fetch: Literal["all", "one"] = "all",
         include_columns: bool = False,
     ) -> str:
         """Execute a SQL command and return a string representing the results.
@@ -471,7 +471,7 @@ class SQLDatabase:
     def run_no_throw(
         self,
         command: str,
-        fetch: Union[Literal["all"], Literal["one"]] = "all",
+        fetch: Literal["all", "one"] = "all",
         include_columns: bool = False,
     ) -> str:
         """Execute a SQL command and return a string representing the results.
