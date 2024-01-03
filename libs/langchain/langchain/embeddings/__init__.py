@@ -14,64 +14,74 @@ from different APIs and services.
 import logging
 from typing import Any
 
-from langchain.embeddings.aleph_alpha import (
+from langchain_community.embeddings.aleph_alpha import (
     AlephAlphaAsymmetricSemanticEmbedding,
     AlephAlphaSymmetricSemanticEmbedding,
 )
-from langchain.embeddings.awa import AwaEmbeddings
-from langchain.embeddings.azure_openai import AzureOpenAIEmbeddings
-from langchain.embeddings.baidu_qianfan_endpoint import QianfanEmbeddingsEndpoint
-from langchain.embeddings.bedrock import BedrockEmbeddings
-from langchain.embeddings.bookend import BookendEmbeddings
-from langchain.embeddings.cache import CacheBackedEmbeddings
-from langchain.embeddings.clarifai import ClarifaiEmbeddings
-from langchain.embeddings.cohere import CohereEmbeddings
-from langchain.embeddings.dashscope import DashScopeEmbeddings
-from langchain.embeddings.databricks import DatabricksEmbeddings
-from langchain.embeddings.deepinfra import DeepInfraEmbeddings
-from langchain.embeddings.edenai import EdenAiEmbeddings
-from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
-from langchain.embeddings.embaas import EmbaasEmbeddings
-from langchain.embeddings.ernie import ErnieEmbeddings
-from langchain.embeddings.fake import DeterministicFakeEmbedding, FakeEmbeddings
-from langchain.embeddings.fastembed import FastEmbedEmbeddings
-from langchain.embeddings.google_palm import GooglePalmEmbeddings
-from langchain.embeddings.gpt4all import GPT4AllEmbeddings
-from langchain.embeddings.gradient_ai import GradientEmbeddings
-from langchain.embeddings.huggingface import (
+from langchain_community.embeddings.awa import AwaEmbeddings
+from langchain_community.embeddings.azure_openai import AzureOpenAIEmbeddings
+from langchain_community.embeddings.baidu_qianfan_endpoint import (
+    QianfanEmbeddingsEndpoint,
+)
+from langchain_community.embeddings.bedrock import BedrockEmbeddings
+from langchain_community.embeddings.bookend import BookendEmbeddings
+from langchain_community.embeddings.clarifai import ClarifaiEmbeddings
+from langchain_community.embeddings.cohere import CohereEmbeddings
+from langchain_community.embeddings.dashscope import DashScopeEmbeddings
+from langchain_community.embeddings.databricks import DatabricksEmbeddings
+from langchain_community.embeddings.deepinfra import DeepInfraEmbeddings
+from langchain_community.embeddings.edenai import EdenAiEmbeddings
+from langchain_community.embeddings.elasticsearch import ElasticsearchEmbeddings
+from langchain_community.embeddings.embaas import EmbaasEmbeddings
+from langchain_community.embeddings.ernie import ErnieEmbeddings
+from langchain_community.embeddings.fake import (
+    DeterministicFakeEmbedding,
+    FakeEmbeddings,
+)
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+from langchain_community.embeddings.google_palm import GooglePalmEmbeddings
+from langchain_community.embeddings.gpt4all import GPT4AllEmbeddings
+from langchain_community.embeddings.gradient_ai import GradientEmbeddings
+from langchain_community.embeddings.huggingface import (
     HuggingFaceBgeEmbeddings,
     HuggingFaceEmbeddings,
     HuggingFaceInferenceAPIEmbeddings,
     HuggingFaceInstructEmbeddings,
 )
-from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
-from langchain.embeddings.infinity import InfinityEmbeddings
-from langchain.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings
-from langchain.embeddings.jina import JinaEmbeddings
-from langchain.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
-from langchain.embeddings.llamacpp import LlamaCppEmbeddings
-from langchain.embeddings.localai import LocalAIEmbeddings
-from langchain.embeddings.minimax import MiniMaxEmbeddings
-from langchain.embeddings.mlflow import MlflowEmbeddings
-from langchain.embeddings.mlflow_gateway import MlflowAIGatewayEmbeddings
-from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
-from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
-from langchain.embeddings.nlpcloud import NLPCloudEmbeddings
-from langchain.embeddings.octoai_embeddings import OctoAIEmbeddings
-from langchain.embeddings.ollama import OllamaEmbeddings
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
-from langchain.embeddings.self_hosted import SelfHostedEmbeddings
-from langchain.embeddings.self_hosted_hugging_face import (
+from langchain_community.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
+from langchain_community.embeddings.infinity import InfinityEmbeddings
+from langchain_community.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings
+from langchain_community.embeddings.jina import JinaEmbeddings
+from langchain_community.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
+from langchain_community.embeddings.llamacpp import LlamaCppEmbeddings
+from langchain_community.embeddings.localai import LocalAIEmbeddings
+from langchain_community.embeddings.minimax import MiniMaxEmbeddings
+from langchain_community.embeddings.mlflow import MlflowEmbeddings
+from langchain_community.embeddings.mlflow_gateway import MlflowAIGatewayEmbeddings
+from langchain_community.embeddings.modelscope_hub import ModelScopeEmbeddings
+from langchain_community.embeddings.mosaicml import MosaicMLInstructorEmbeddings
+from langchain_community.embeddings.nlpcloud import NLPCloudEmbeddings
+from langchain_community.embeddings.octoai_embeddings import OctoAIEmbeddings
+from langchain_community.embeddings.ollama import OllamaEmbeddings
+from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_community.embeddings.sagemaker_endpoint import (
+    SagemakerEndpointEmbeddings,
+)
+from langchain_community.embeddings.self_hosted import SelfHostedEmbeddings
+from langchain_community.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceEmbeddings,
     SelfHostedHuggingFaceInstructEmbeddings,
 )
-from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
-from langchain.embeddings.spacy_embeddings import SpacyEmbeddings
-from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
-from langchain.embeddings.vertexai import VertexAIEmbeddings
-from langchain.embeddings.voyageai import VoyageEmbeddings
-from langchain.embeddings.xinference import XinferenceEmbeddings
+from langchain_community.embeddings.sentence_transformer import (
+    SentenceTransformerEmbeddings,
+)
+from langchain_community.embeddings.spacy_embeddings import SpacyEmbeddings
+from langchain_community.embeddings.tensorflow_hub import TensorflowHubEmbeddings
+from langchain_community.embeddings.vertexai import VertexAIEmbeddings
+from langchain_community.embeddings.voyageai import VoyageEmbeddings
+from langchain_community.embeddings.xinference import XinferenceEmbeddings
+
+from langchain.embeddings.cache import CacheBackedEmbeddings
 
 logger = logging.getLogger(__name__)
 

@@ -205,7 +205,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             return input
         elif isinstance(input, str):
             return StringPromptValue(text=input)
-        elif isinstance(input, list):
+        elif isinstance(input, Sequence):
             return ChatPromptValue(messages=input)
         else:
             raise ValueError(

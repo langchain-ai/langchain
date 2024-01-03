@@ -1,6 +1,7 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
+from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import (
@@ -27,7 +28,6 @@ from langchain.agents.output_parsers.openai_functions import (
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
-from langchain.tools.render import format_tool_to_openai_function
 
 
 class OpenAIFunctionsAgent(BaseSingleActionAgent):
@@ -240,7 +240,7 @@ def create_openai_functions_agent(
 
         .. code-block:: python
 
-            from langchain.chat_models import ChatOpenAI
+            from langchain_community.chat_models import ChatOpenAI
             from langchain.agents import AgentExecutor, create_openai_functions_agent
             from langchain import hub
 
