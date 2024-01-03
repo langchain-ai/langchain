@@ -82,6 +82,16 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return FunctionMessage(**message["data"])
     elif _type == "tool":
         return ToolMessage(**message["data"])
+    elif _type == "AIMessageChunk":
+        return AIMessageChunk(**message["data"])
+    elif _type == "HumanMessageChunk":
+        return HumanMessageChunk(**message["data"])
+    elif _type == "FunctionMessageChunk":
+        return FunctionMessageChunk(**message["data"])
+    elif _type == "ToolMessageChunk":
+        return ToolMessageChunk(**message["data"])
+    elif _type == "SystemMessageChunk":
+        return SystemMessageChunk(**message["data"])
     else:
         raise ValueError(f"Got unexpected message type: {_type}")
 

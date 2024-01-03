@@ -4,6 +4,7 @@
 These functions do not depend on any other LangChain module.
 """
 
+from langchain_core.utils.env import get_from_dict_or_env, get_from_env
 from langchain_core.utils.formatting import StrictFormatter, formatter
 from langchain_core.utils.input import (
     get_bolded_text,
@@ -12,6 +13,7 @@ from langchain_core.utils.input import (
     print_text,
 )
 from langchain_core.utils.loading import try_load_from_hub
+from langchain_core.utils.strings import comma_list, stringify_dict, stringify_value
 from langchain_core.utils.utils import (
     build_extra_kwargs,
     check_package_version,
@@ -39,4 +41,9 @@ __all__ = [
     "xor_args",
     "try_load_from_hub",
     "build_extra_kwargs",
+    "get_from_env",
+    "get_from_dict_or_env",
+    "stringify_dict",
+    "comma_list",
+    "stringify_value",
 ]
