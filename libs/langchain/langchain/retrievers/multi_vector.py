@@ -67,7 +67,7 @@ class MultiVectorRetriever(BaseRetriever):
         # We do this to maintain the order of the ids that are returned
         ids = []
         for d in sub_docs:
-            if d.metadata[self.id_key] not in ids:
+            if self.id_key in d.metadata and d.metadata[self.id_key] not in ids:
                 ids.append(d.metadata[self.id_key])
         docs = self.docstore.mget(ids)
         return [d for d in docs if d is not None]

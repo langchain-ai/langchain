@@ -159,6 +159,12 @@ jobs:
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
+      - name: Run unit tests with minimum dependency versions
+        if: ${{ (inputs.working-directory == 'libs/langchain') || (inputs.working-directory == 'libs/community') || (inputs.working-directory == 'libs/experimental') }}
+        run: |
+          poetry run pip install -r _test_minimum_requirements.txt
+          make tests
+        working-directory: ${{ inputs.working-directory }}
 
   publish:
     needs:

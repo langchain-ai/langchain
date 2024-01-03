@@ -6,7 +6,9 @@ import logging
 import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
+from urllib.parse import urlparse
 
+import requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -87,6 +89,15 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
     return chat_history
 
 
+def _is_url(s: str) -> bool:
+    try:
+        result = urlparse(s)
+        return all([result.scheme, result.netloc])
+    except Exception as e:
+        logger.debug(f"Unable to parse URL: {e}")
+        return False
+
+
 def _parse_chat_history_gemini(
     history: List[BaseMessage], project: Optional[str]
 ) -> List["Content"]:
@@ -118,6 +129,10 @@ def _parse_chat_history_gemini(
                         "data:image/<image_type>;base64,<base64_encoded_image>."
                     )
                 image = Image.from_bytes(base64.b64decode(encoded))
+            elif _is_url(path):
+                response = requests.get(path)
+                response.raise_for_status()
+                image = Image.from_bytes(response.content)
             else:
                 image = Image.load_from_file(path)
         else:

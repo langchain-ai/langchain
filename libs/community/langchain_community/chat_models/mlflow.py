@@ -1,11 +1,8 @@
-import asyncio
 import logging
-from functools import partial
 from typing import Any, Dict, List, Mapping, Optional
 from urllib.parse import urlparse
 
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import BaseChatModel
@@ -124,18 +121,6 @@ class ChatMlflow(BaseChatModel):
             data["max_tokens"] = self.max_tokens
         resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return ChatMlflow._create_chat_result(resp)
-
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        func = partial(
-            self._generate, messages, stop=stop, run_manager=run_manager, **kwargs
-        )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

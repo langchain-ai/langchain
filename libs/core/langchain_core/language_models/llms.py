@@ -8,7 +8,6 @@ import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from pathlib import Path
 from typing import (
     Any,
@@ -52,7 +51,8 @@ from langchain_core.messages import AIMessage, BaseMessage, get_buffer_string
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator, validator
-from langchain_core.runnables import RunnableConfig, get_config_list
+from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
+from langchain_core.runnables.config import run_in_executor
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +205,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             return input
         elif isinstance(input, str):
             return StringPromptValue(text=input)
-        elif isinstance(input, list):
+        elif isinstance(input, Sequence):
             return ChatPromptValue(messages=input)
         else:
             raise ValueError(
@@ -221,7 +221,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> str:
-        config = config or {}
+        config = ensure_config(config)
         return (
             self.generate_prompt(
                 [self._convert_input(input)],
@@ -244,7 +244,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> str:
-        config = config or {}
+        config = ensure_config(config)
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
             stop=stop,
@@ -362,7 +362,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
             prompt = self._convert_input(input).to_string()
-            config = config or {}
+            config = ensure_config(config)
             params = self.dict()
             params["stop"] = stop
             params = {**params, **kwargs}
@@ -419,7 +419,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
         else:
             prompt = self._convert_input(input).to_string()
-            config = config or {}
+            config = ensure_config(config)
             params = self.dict()
             params["stop"] = stop
             params = {**params, **kwargs}
@@ -483,8 +483,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._generate, **kwargs), prompts, stop, run_manager
+        return await run_in_executor(
+            None,
+            self._generate,
+            prompts,
+            stop,
+            run_manager.get_sync() if run_manager else None,
+            **kwargs,
         )
 
     def _stream(
@@ -1049,8 +1054,13 @@ class LLM(BaseLLM):
         **kwargs: Any,
     ) -> str:
         """Run the LLM on the given prompt and input."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._call, **kwargs), prompt, stop, run_manager
+        return await run_in_executor(
+            None,
+            self._call,
+            prompt,
+            stop,
+            run_manager.get_sync() if run_manager else None,
+            **kwargs,
         )
 
     def _generate(

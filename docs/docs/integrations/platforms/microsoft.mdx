@@ -26,7 +26,7 @@ See a [usage example](/docs/integrations/chat/azure_chat_openai)
 
 
 ```python
-from langchain.chat_models import AzureChatOpenAI
+from langchain_community.chat_models import AzureChatOpenAI
 ```
 
 ## Text Embedding Models
@@ -35,7 +35,7 @@ from langchain.chat_models import AzureChatOpenAI
 See a [usage example](/docs/integrations/text_embedding/azureopenai)
 
 ```python
-from langchain.embeddings import AzureOpenAIEmbeddings
+from langchain_community.embeddings import AzureOpenAIEmbeddings
 ```
 
 ## LLMs
@@ -44,10 +44,54 @@ from langchain.embeddings import AzureOpenAIEmbeddings
 See a [usage example](/docs/integrations/llms/azure_openai_example).
 
 ```python
-from langchain.llms import AzureOpenAI
+from langchain_community.llms import AzureOpenAI
 ```
 
 ## Document loaders
+
+### Azure AI Data
+
+>[Azure AI Studio](https://ai.azure.com/) provides the capability to upload data assets 
+> to cloud storage and register existing data assets from the following sources:
+>
+>- `Microsoft OneLake`
+>- `Azure Blob Storage`
+>- `Azure Data Lake gen 2`
+
+First, you need to install several python packages.
+
+```bash
+pip install azureml-fsspec, azure-ai-generative
+```
+
+See a [usage example](/docs/integrations/document_loaders/azure_ai_data).
+
+```python
+from langchain.document_loaders import AzureAIDataLoader
+```
+
+
+### Azure AI Document Intelligence
+
+>[Azure AI Document Intelligence](https://aka.ms/doc-intelligence) (formerly known
+> as `Azure Form Recognizer`) is machine-learning
+> based service that extracts text (including handwriting), tables or key-value-pairs
+> from scanned documents or images.
+>
+>Document Intelligence supports `PDF`, `JPEG`, `PNG`, `BMP`, or `TIFF`.
+
+First, you need to install a python package.
+
+```bash
+pip install azure-ai-documentintelligence
+```
+
+See a [usage example](/docs/integrations/document_loaders/azure_document_intelligence).
+
+```python
+from langchain.document_loaders import AzureAIDocumentIntelligenceLoader
+```
+
 
 ### Azure Blob Storage
 
@@ -72,13 +116,13 @@ pip install azure-storage-blob
 See a [usage example for the Azure Blob Storage](/docs/integrations/document_loaders/azure_blob_storage_container).
 
 ```python
-from langchain.document_loaders import AzureBlobStorageContainerLoader
+from langchain_community.document_loaders import AzureBlobStorageContainerLoader
 ```
 
 See a [usage example for the Azure Files](/docs/integrations/document_loaders/azure_blob_storage_file).
 
 ```python
-from langchain.document_loaders import AzureBlobStorageFileLoader
+from langchain_community.document_loaders import AzureBlobStorageFileLoader
 ```
 
 
@@ -95,7 +139,7 @@ pip install o365
 See a [usage example](/docs/integrations/document_loaders/microsoft_onedrive).
 
 ```python
-from langchain.document_loaders import OneDriveLoader
+from langchain_community.document_loaders import OneDriveLoader
 ```
 
 
@@ -106,7 +150,7 @@ from langchain.document_loaders import OneDriveLoader
 See a [usage example](/docs/integrations/document_loaders/microsoft_word).
 
 ```python
-from langchain.document_loaders import UnstructuredWordDocumentLoader
+from langchain_community.document_loaders import UnstructuredWordDocumentLoader
 ```
 
 
@@ -124,7 +168,7 @@ representation of the Excel file will be available in the document metadata unde
 See a [usage example](/docs/integrations/document_loaders/excel).
 
 ```python
-from langchain.document_loaders import UnstructuredExcelLoader
+from langchain_community.document_loaders import UnstructuredExcelLoader
 ```
 
 
@@ -137,7 +181,7 @@ from langchain.document_loaders import UnstructuredExcelLoader
 See a [usage example](/docs/integrations/document_loaders/microsoft_sharepoint).
 
 ```python
-from langchain.document_loaders.sharepoint import SharePointLoader
+from langchain_community.document_loaders.sharepoint import SharePointLoader
 ```
 
 
@@ -148,7 +192,7 @@ from langchain.document_loaders.sharepoint import SharePointLoader
 See a [usage example](/docs/integrations/document_loaders/microsoft_powerpoint).
 
 ```python
-from langchain.document_loaders import UnstructuredPowerPointLoader
+from langchain_community.document_loaders import UnstructuredPowerPointLoader
 ```
 
 ### Microsoft OneNote
@@ -162,7 +206,7 @@ pip install bs4 msal
 See a [usage example](/docs/integrations/document_loaders/onenote).
 
 ```python
-from langchain.document_loaders.onenote import OneNoteLoader
+from langchain_community.document_loaders.onenote import OneNoteLoader
 ```
 
 
@@ -195,7 +239,7 @@ With Cosmos DB for MongoDB vCore, developers can enjoy the benefits of native Az
 See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db).
 
 ```python
-from langchain.vectorstores import AzureCosmosDBVectorSearch
+from langchain_community.vectorstores import AzureCosmosDBVectorSearch
 ```
 
 ## Retrievers
@@ -228,7 +272,7 @@ from langchain.retrievers import AzureCognitiveSearchRetriever
 See a [usage example](/docs/integrations/tools/bing_search).
 
 ```python
-from langchain.utilities import BingSearchAPIWrapper
+from langchain_community.utilities import BingSearchAPIWrapper
 ```
 
 ## Toolkits
@@ -244,7 +288,7 @@ pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-visi
 See a [usage example](/docs/integrations/toolkits/azure_cognitive_services).
 
 ```python
-from langchain.agents.agent_toolkits import O365Toolkit
+from langchain_community.agent_toolkits import O365Toolkit
 ```
 ### Microsoft Office 365 email and calendar
 
@@ -258,7 +302,7 @@ pip install O365
 See a [usage example](/docs/integrations/toolkits/office365).
 
 ```python
-from langchain.agents.agent_toolkits import O365Toolkit
+from langchain_community.agent_toolkits import O365Toolkit
 ```
 
 ### Microsoft Azure PowerBI
@@ -272,8 +316,8 @@ pip install azure-identity
 See a [usage example](/docs/integrations/toolkits/powerbi).
 
 ```python
-from langchain.agents.agent_toolkits import PowerBIToolkit
-from langchain.utilities.powerbi import PowerBIDataset
+from langchain_community.agent_toolkits import PowerBIToolkit
+from langchain_community.utilities.powerbi import PowerBIDataset
 ```
 
 ## More
