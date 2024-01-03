@@ -323,13 +323,17 @@ class MarkdownHeaderTextSplitter:
     """Splitting markdown files based on specified headers."""
 
     def __init__(
-        self, headers_to_split_on: List[Tuple[str, str]], return_each_line: bool = False
+        self,
+        headers_to_split_on: List[Tuple[str, str]],
+        return_each_line: bool = False,
+        strip_headers: bool = True,
     ):
         """Create a new MarkdownHeaderTextSplitter.
 
         Args:
             headers_to_split_on: Headers we want to track
             return_each_line: Return each line w/ associated headers
+            strip_headers: Strip split headers from the content of the chunk
         """
         # Output line-by-line or aggregated into chunks w/ common headers
         self.return_each_line = return_each_line
@@ -338,6 +342,8 @@ class MarkdownHeaderTextSplitter:
         self.headers_to_split_on = sorted(
             headers_to_split_on, key=lambda split: len(split[0]), reverse=True
         )
+        # Strip headers split headers from the content of the chunk
+        self.strip_headers = strip_headers
 
     def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Document]:
         """Combine lines with common metadata into chunks
@@ -355,6 +361,23 @@ class MarkdownHeaderTextSplitter:
                 # has the same metadata as the current line,
                 # append the current content to the last lines's content
                 aggregated_chunks[-1]["content"] += "  \n" + line["content"]
+            elif (
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] != line["metadata"]
+                # may be issues if other metadata is present
+                and len(aggregated_chunks[-1]["metadata"]) < len(line["metadata"])
+                and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
+                and not self.strip_headers
+            ):
+                # If the last line in the aggregated list
+                # has different metadata as the current line,
+                # and has shallower header level than the current line,
+                # and the last line is a header,
+                # and we are not stripping headers,
+                # append the current content to the last line's content
+                aggregated_chunks[-1]["content"] += "  \n" + line["content"]
+                # and update the last line's metadata
+                aggregated_chunks[-1]["metadata"] = line["metadata"]
             else:
                 # Otherwise, append the current line to the aggregated list
                 aggregated_chunks.append(line)
@@ -450,6 +473,9 @@ class MarkdownHeaderTextSplitter:
                             }
                         )
                         current_content.clear()
+
+                    if not self.strip_headers:
+                        current_content.append(stripped_line)
 
                     break
             else:

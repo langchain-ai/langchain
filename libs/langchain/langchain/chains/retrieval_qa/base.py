@@ -202,7 +202,7 @@ class RetrievalQA(BaseRetrievalQA):
 
             from langchain_community.llms import OpenAI
             from langchain.chains import RetrievalQA
-            from langchain.vectorstores import FAISS
+            from langchain_community.vectorstores import FAISS
             from langchain_core.vectorstores import VectorStoreRetriever
             retriever = VectorStoreRetriever(vectorstore=FAISS(...))
             retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)
