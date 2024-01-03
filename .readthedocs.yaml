@@ -10,9 +10,10 @@ build:
   tools:
     python: "3.11"
   commands:
-      - python -mvirtualenv $READTHEDOCS_VIRTUALENV_PATH
+      - python -m virtualenv $READTHEDOCS_VIRTUALENV_PATH
       - python -m pip install --upgrade --no-cache-dir pip setuptools
       - python -m pip install --upgrade --no-cache-dir sphinx readthedocs-sphinx-ext
+      - python -m pip install ./libs/partners/*
       - python -m pip install --exists-action=w --no-cache-dir -r docs/api_reference/requirements.txt
       - python docs/api_reference/create_api_rst.py
       - cat docs/api_reference/conf.py

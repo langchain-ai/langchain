@@ -95,7 +95,7 @@ Agents involve an LLM making decisions about which Actions to take, taking that 
 Please see [here](https://python.langchain.com) for full documentation, which includes:
 
 - [Getting started](https://python.langchain.com/docs/get_started/introduction): installation, setting up the environment, simple examples
-- Overview of the [interfaces](https://python.langchain.com/docs/expression_language/), [modules](https://python.langchain.com/docs/modules/) and [integrations](https://python.langchain.com/docs/integrations/providers)
+- Overview of the [interfaces](https://python.langchain.com/docs/expression_language/), [modules](https://python.langchain.com/docs/modules/), and [integrations](https://python.langchain.com/docs/integrations/providers)
 - [Use case](https://python.langchain.com/docs/use_cases/qa_structured/sql) walkthroughs and best practice [guides](https://python.langchain.com/docs/guides/adapters/openai)
 - [LangSmith](https://python.langchain.com/docs/langsmith/), [LangServe](https://python.langchain.com/docs/langserve), and [LangChain Template](https://python.langchain.com/docs/templates/) overviews
 - [Reference](https://api.python.langchain.com): full API docs
@@ -105,7 +105,7 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 
 As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
-For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).
+For detailed information on how to contribute, see [here](https://python.langchain.com/docs/contributing/).
 
 ## 🌟 Contributors
 
