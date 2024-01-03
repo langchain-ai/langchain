@@ -5,8 +5,8 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain_core.language_models import LLM
 
 from langchain_experimental.chat_models import Llama2Chat
 from langchain_experimental.chat_models.llm_wrapper import DEFAULT_SYSTEM_PROMPT

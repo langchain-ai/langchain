@@ -73,7 +73,7 @@ This examples showcases a quick way to create multiple tools from the same
 wrapper.
 
 ```python
-from langchain.tools.searx_search.tool import SearxSearchResults
+from langchain_community.tools.searx_search.tool import SearxSearchResults
 
 wrapper = SearxSearchWrapper(searx_host="**")
 github_tool = SearxSearchResults(name="Github", wrapper=wrapper,

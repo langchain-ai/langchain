@@ -3,6 +3,8 @@
 from typing import Any, Dict
 
 import pytest
+from langchain_community.chat_models.openai import ChatOpenAI
+from langchain_community.llms.openai import OpenAI
 from langchain_core.load.dump import dumps
 from langchain_core.load.serializable import Serializable
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
@@ -10,8 +12,6 @@ from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.langchain import LangChainTracer
 
 from langchain.chains.llm import LLMChain
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.llms.openai import OpenAI
 
 
 class Person(Serializable):
@@ -58,6 +58,13 @@ def test_person(snapshot: Any) -> None:
     sp = SpecialPerson(another_secret="Wooo", secret="Hmm")
     assert dumps(sp, pretty=True) == snapshot
     assert Person.lc_id() == ["tests", "unit_tests", "load", "test_dump", "Person"]
+
+
+def test_typeerror() -> None:
+    assert (
+        dumps({(1, 2): 3})
+        == """{"lc": 1, "type": "not_implemented", "id": ["builtins", "dict"], "repr": "{(1, 2): 3}"}"""  # noqa: E501
+    )
 
 
 @pytest.mark.requires("openai")
