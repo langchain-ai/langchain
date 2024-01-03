@@ -28,7 +28,7 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel, generate_from_stream, agenerate_from_stream
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -466,6 +466,8 @@ Supported examples:
     
     Gemini does not support system messages; any unsupported messages will 
     raise an error."""
+    streaming: bool = False
+    """Whether to stream the results or not."""
 
     class Config:
         allow_population_by_field_name = True
@@ -544,8 +546,15 @@ Supported examples:
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
         params, chat, message = self._prepare_chat(messages, stop=stop)
         response: genai.types.GenerateContentResponse = _chat_with_retry(
             content=message,
@@ -559,8 +568,15 @@ Supported examples:
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await agenerate_from_stream(stream_iter)
         params, chat, message = self._prepare_chat(messages, stop=stop)
         response: genai.types.GenerateContentResponse = await _achat_with_retry(
             content=message,
