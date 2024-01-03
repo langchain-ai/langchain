@@ -3,7 +3,6 @@ from langchain_openai import __all__
 EXPECTED_ALL = [
     "OpenAI",
     "ChatOpenAI",
-    "OpenAIVectorStore",
     "OpenAIEmbeddings",
 ]
 
