@@ -711,7 +711,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Unexpected generation type")
 
-    @deprecated("0.1.0", alternative="ainvoke")
+    @deprecated("0.1.0", alternative="invoke")
     def call_as_llm(
         self, message: str, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> str:

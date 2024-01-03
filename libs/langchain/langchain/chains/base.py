@@ -328,7 +328,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         run_name: Optional[str] = None,
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
-        """[DEPRECATED] Execute the chain.
+        """Execute the chain.
 
         Args:
             inputs: Dictionary of inputs, or single input if chain expects
@@ -374,7 +374,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         run_name: Optional[str] = None,
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
-        """[DEPRECATED] Asynchronously execute the chain.
+        """Asynchronously execute the chain.
 
         Args:
             inputs: Dictionary of inputs, or single input if chain expects
@@ -484,7 +484,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
-        """[DEPRECATED] Convenience method for executing chain.
+        """Convenience method for executing chain.
 
         The main difference between this method and `Chain.__call__` is that this
         method expects inputs to be passed directly in as positional arguments or
@@ -546,7 +546,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                 f" but not both. Got args: {args} and kwargs: {kwargs}."
             )
 
-    @deprecated("0.1.0", alternative="invoke")
+    @deprecated("0.1.0", alternative="ainvoke")
     async def arun(
         self,
         *args: Any,
@@ -555,7 +555,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
-        """[DEPRECATED] Convenience method for executing chain.
+        """Convenience method for executing chain.
 
         The main difference between this method and `Chain.__call__` is that this
         method expects inputs to be passed directly in as positional arguments or
@@ -688,5 +688,5 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     def apply(
         self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> List[Dict[str, str]]:
-        """[DEPRECATED] Call the chain on all inputs in the list."""
+        """Call the chain on all inputs in the list."""
         return [self(inputs, callbacks=callbacks) for inputs in input_list]
