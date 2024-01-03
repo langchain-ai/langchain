@@ -323,7 +323,7 @@ def call_func_with_variable_args(
     return func(input, **kwargs)  # type: ignore[call-arg]
 
 
-async def acall_func_with_variable_args(
+def acall_func_with_variable_args(
     func: Union[
         Callable[[Input], Awaitable[Output]],
         Callable[[Input, RunnableConfig], Awaitable[Output]],
@@ -337,7 +337,7 @@ async def acall_func_with_variable_args(
     config: RunnableConfig,
     run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     **kwargs: Any,
-) -> Output:
+) -> Awaitable[Output]:
     """Call function that may optionally accept a run_manager and/or config.
 
     Args:
@@ -361,7 +361,7 @@ async def acall_func_with_variable_args(
             kwargs["config"] = config
     if run_manager is not None and accepts_run_manager(func):
         kwargs["run_manager"] = run_manager
-    return await func(input, **kwargs)  # type: ignore[call-arg]
+    return func(input, **kwargs)  # type: ignore[call-arg]
 
 
 def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
