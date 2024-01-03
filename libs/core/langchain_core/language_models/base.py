@@ -48,7 +48,7 @@ def _get_token_ids_default_method(text: str) -> List[int]:
     return tokenizer.encode(text)
 
 
-LanguageModelInput = Union[PromptValue, str, List[BaseMessage]]
+LanguageModelInput = Union[PromptValue, str, Sequence[BaseMessage]]
 LanguageModelOutput = Union[BaseMessage, str]
 LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
 LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", BaseMessage, str)
