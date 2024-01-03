@@ -22,8 +22,8 @@ except ImportError:
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
 from langchain_core.utils import get_from_dict_or_env
+from langchain_core.vectorstores import VectorStore
 
 ADA_TOKEN_COUNT = 1536
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
@@ -249,7 +249,7 @@ class Lantern(VectorStore):
                 "No supported operator class"
                 f" for distance_strategy of {self._distance_strategy}."
             )
-            
+
     def _get_operator(self) -> str:
         if self.distance_strategy == DistanceStrategy.COSINE:
             return "<=>"
