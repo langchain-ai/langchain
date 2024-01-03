@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 import requests
-from langchain.memory.chat_memory import BaseChatMemory
+from langchain_core.memory import BaseChatMemory
 from langchain_core.messages import get_buffer_string
 
 MANAGED_URL = "https://api.getmetal.io/v1/motorhead"

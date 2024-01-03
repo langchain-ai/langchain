@@ -1,74 +1,11 @@
 from typing import Any, Dict, List, Optional
 
-from langchain_core.messages import BaseMessage, get_buffer_string
+from langchain_core.memory import (
+    BaseMemory,
+    ConversationBufferMemory,
+    get_prompt_input_key,
+)
 from langchain_core.pydantic_v1 import root_validator
-
-from langchain.memory.chat_memory import BaseChatMemory, BaseMemory
-from langchain.memory.utils import get_prompt_input_key
-
-
-class ConversationBufferMemory(BaseChatMemory):
-    """Buffer for storing conversation memory."""
-
-    human_prefix: str = "Human"
-    ai_prefix: str = "AI"
-    memory_key: str = "history"  #: :meta private:
-
-    @property
-    def buffer(self) -> Any:
-        """String buffer of memory."""
-        return self.buffer_as_messages if self.return_messages else self.buffer_as_str
-
-    async def abuffer(self) -> Any:
-        """String buffer of memory."""
-        return (
-            await self.abuffer_as_messages()
-            if self.return_messages
-            else await self.abuffer_as_str()
-        )
-
-    def _buffer_as_str(self, messages: List[BaseMessage]) -> str:
-        return get_buffer_string(
-            messages,
-            human_prefix=self.human_prefix,
-            ai_prefix=self.ai_prefix,
-        )
-
-    @property
-    def buffer_as_str(self) -> str:
-        """Exposes the buffer as a string in case return_messages is True."""
-        return self._buffer_as_str(self.chat_memory.messages)
-
-    async def abuffer_as_str(self) -> str:
-        """Exposes the buffer as a string in case return_messages is True."""
-        messages = await self.chat_memory.aget_messages()
-        return self._buffer_as_str(messages)
-
-    @property
-    def buffer_as_messages(self) -> List[BaseMessage]:
-        """Exposes the buffer as a list of messages in case return_messages is False."""
-        return self.chat_memory.messages
-
-    async def abuffer_as_messages(self) -> List[BaseMessage]:
-        """Exposes the buffer as a list of messages in case return_messages is False."""
-        return await self.chat_memory.aget_messages()
-
-    @property
-    def memory_variables(self) -> List[str]:
-        """Will always return list of memory variables.
-
-        :meta private:
-        """
-        return [self.memory_key]
-
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        """Return history buffer."""
-        return {self.memory_key: self.buffer}
-
-    async def aload_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        """Return key-value pairs given the text input to the chain."""
-        buffer = await self.abuffer()
-        return {self.memory_key: buffer}
 
 
 class ConversationStringBufferMemory(BaseMemory):
@@ -134,3 +71,6 @@ class ConversationStringBufferMemory(BaseMemory):
 
     async def aclear(self) -> None:
         self.clear()
+
+
+__all__ = ["ConversationBufferMemory", "ConversationStringBufferMemory"]
