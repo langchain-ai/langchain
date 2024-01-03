@@ -38,6 +38,10 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             This may also contain global and local secondary index keys.
         kms_key_id: an optional AWS KMS Key ID, AWS KMS Key ARN, or AWS KMS Alias for
             client-side encryption
+        ttl: Optional Time-to-live (TTL) for cached items in seconds.
+            If provided, it sets the time duration for how long cached
+            items will remain valid. If not provided, cached items will not
+            have an automatic expiration.
     """
 
     def __init__(
@@ -49,6 +53,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         key: Optional[Dict[str, str]] = None,
         boto3_session: Optional[Session] = None,
         kms_key_id: Optional[str] = None,
+        ttl: Optional[int] = None,
     ):
         if boto3_session:
             client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
@@ -66,6 +71,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         self.table = client.Table(table_name)
         self.session_id = session_id
         self.key: Dict = key or {primary_key_name: session_id}
+        self.ttl = ttl
 
         if kms_key_id:
             try:
@@ -134,7 +140,12 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         messages.append(_message)
 
         try:
-            self.table.put_item(Item={**self.key, "History": messages})
+            if self.ttl:
+                import time
+                expireAt=int(time.time()) + self.ttl
+                self.table.put_item(Item={**self.key, "History": messages, "expireAt":expireAt})
+            else:
+                self.table.put_item(Item={**self.key, "History": messages})
         except ClientError as err:
             logger.error(err)
 
