@@ -24,7 +24,7 @@ class HuggingFaceHub(LLM):
         .. code-block:: python
 
             from langchain_community.llms import HuggingFaceHub
-            hf = HuggingFaceHub(repo_id="gpt2", huggingfacehub_api_token="my-api-key")
+            hf = HuggingFaceHub(repo_id="huggingfaceh4/zephyr-7b-alpha", huggingfacehub_api_token="my-api-key")
     """
 
     client: Any  #: :meta private:
@@ -50,7 +50,7 @@ class HuggingFaceHub(LLM):
             values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
         )
         try:
-            from huggingface_hub.inference_api import InferenceApi
+            from huggingface_hub.inference_api import InferenceClient
 
             repo_id = values["repo_id"]
             client = InferenceApi(
