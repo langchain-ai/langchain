@@ -1,4 +1,5 @@
 """Integration test for embedding-based redundant doc filtering."""
+from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_core.documents import Document
 
 from langchain.document_transformers.embeddings_redundant_filter import (
@@ -6,7 +7,6 @@ from langchain.document_transformers.embeddings_redundant_filter import (
     EmbeddingsRedundantFilter,
     _DocumentWithState,
 )
-from langchain.embeddings import OpenAIEmbeddings
 
 
 def test_embeddings_redundant_filter() -> None:

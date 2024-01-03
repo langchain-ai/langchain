@@ -1,6 +1,7 @@
 """Integration test for Dall-E image generator agent."""
+from langchain_community.llms import OpenAI
+
 from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.llms import OpenAI
 
 
 def test_call() -> None:

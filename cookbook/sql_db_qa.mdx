@@ -9,7 +9,7 @@ To set it up, follow the instructions on https://database.guide/2-sample-databas
 
 
 ```python
-from langchain.llms import OpenAI
+from langchain_community.llms import OpenAI
 from langchain.utilities import SQLDatabase
 from langchain_experimental.sql import SQLDatabaseChain
 ```
@@ -200,7 +200,7 @@ result["intermediate_steps"]
 How to add memory to a SQLDatabaseChain:
 
 ```python
-from langchain.llms import OpenAI
+from langchain_community.llms import OpenAI
 from langchain.utilities import SQLDatabase
 from langchain_experimental.sql import SQLDatabaseChain
 ```
@@ -647,7 +647,7 @@ Sometimes you may not have the luxury of using OpenAI or other service-hosted la
 import logging
 import torch
 from transformers import AutoTokenizer, GPT2TokenizerFast, pipeline, AutoModelForSeq2SeqLM, AutoModelForCausalLM
-from langchain.llms import HuggingFacePipeline
+from langchain_community.llms import HuggingFacePipeline
 
 # Note: This model requires a large GPU, e.g. an 80GB A100. See documentation for other ways to run private non-OpenAI models.
 model_id = "google/flan-ul2"
@@ -994,7 +994,7 @@ Now that you have some examples (with manually corrected output SQL), you can do
 ```python
 from langchain.prompts import FewShotPromptTemplate, PromptTemplate
 from langchain.chains.sql_database.prompt import _sqlite_prompt, PROMPT_SUFFIX
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.prompts.example_selector.semantic_similarity import SemanticSimilarityExampleSelector
 from langchain.vectorstores import Chroma
 
