@@ -18,8 +18,8 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.utils.function_calling import (
-    convert_to_openai_function,
     PYTHON_TO_JSON_TYPES,
+    convert_to_openai_function,
 )
 
 from langchain.base_language import BaseLanguageModel
@@ -421,3 +421,14 @@ def create_structured_output_chain(
         output_parser=output_parser,
         **kwargs,
     )
+
+
+__all__ = [
+    "create_openai_fn_chain",
+    "create_openai_fn_runnable",
+    "create_structured_output_chain",
+    "create_structured_output_runnable",
+    "get_openai_output_parser",
+    "PYTHON_TO_JSON_TYPES",
+    "convert_to_openai_function",
+]
