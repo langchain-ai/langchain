@@ -102,6 +102,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     if is_inside_string:
         new_s += '"'
 
+    # Try to parse mods of string until we succeed or run out of characters.
     while new_s:
         final_s = new_s
 
@@ -118,8 +119,10 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
             # try removing the last character
             new_s = new_s[:-1]
 
-    # Attempt to parse the modified string as JSON.
-    return json.loads(new_s, strict=strict)
+    # If we got here, we ran out of characters to remove
+    # and still couldn't parse the string as JSON, so return the parse error
+    # for the original string.
+    return json.loads(s, strict=strict)
 
 
 def parse_json_markdown(
