@@ -1,8 +1,8 @@
-import os
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
+from typing import Any, AsyncIterator, Iterator, List, Optional, cast
 
-from ai21 import AI21Client
 from ai21.models import ChatMessage, RoleType
+
+from langchain_ai21.ai21_base import AI21Base
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -16,8 +16,6 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str
 
 
 def _convert_to_ai21_message(
@@ -46,7 +44,7 @@ def _pop_system_messages(messages: List[BaseMessage]) -> List[SystemMessage]:
     return [cast(SystemMessage, messages.pop(i)) for i in system_message_indexes]
 
 
-class ChatAI21(BaseChatModel):
+class ChatAI21(BaseChatModel, AI21Base):
     """ChatAI21 chat model.
 
     Example:
@@ -58,39 +56,7 @@ class ChatAI21(BaseChatModel):
             model = ChatAI21()
     """
 
-    _client: AI21Client = Field(default_factory=AI21Client)
-
     model: str = "j2-ultra"
-    api_key: Optional[SecretStr] = None
-    api_host: Optional[str] = None
-    timeout_sec: Optional[float] = None
-    num_retries: Optional[int] = None
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        # TODO: use from env
-        api_key = convert_to_secret_str(
-            values.get("api_key") or os.getenv("AI21_API_KEY") or ""
-        )
-        values["api_key"] = api_key
-
-        api_host = (
-            values.get("api_host")
-            or os.getenv("AI21_API_URL")
-            or "https://api.ai21.com"
-        )
-        values["api_host"] = api_host
-
-        timeout_sec = values.get("timeout_sec") or os.getenv("AI21_TIMEOUT_SEC")
-        values["timeout_sec"] = timeout_sec
-
-        values["_client"] = AI21Client(
-            api_key=api_key.get_secret_value(),
-            api_host=api_host,
-            timeout_sec=timeout_sec,
-        )
-
-        return values
 
     @property
     def _llm_type(self) -> str:
