@@ -3,6 +3,10 @@ import json
 from typing import Any, Dict, List, Optional, Type, Union
 
 import jsonpatch
+from langchain_core.output_parsers import (
+    BaseCumulativeTransformOutputParser,
+    BaseGenerationOutputParser,
+)
 
 from langchain.output_parsers.json import parse_partial_json
 from langchain.pydantic_v1 import BaseModel, root_validator
@@ -10,10 +14,6 @@ from langchain.schema import (
     ChatGeneration,
     Generation,
     OutputParserException,
-)
-from langchain.schema.output_parser import (
-    BaseCumulativeTransformOutputParser,
-    BaseGenerationOutputParser,
 )
 
 
@@ -72,12 +72,8 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                 "This output parser can only be used with a chat generation."
             )
         message = generation.message
-        message.additional_kwargs["function_call"] = {}
-        if "function_call" in message.content:
-            function_call = json.loads(str(message.content))
-            if "function_call" in function_call:
-                fc = function_call["function_call"]
-                message.additional_kwargs["function_call"] = fc
+        if "function_call" not in message.additional_kwargs:
+            return None
         try:
             function_call = message.additional_kwargs["function_call"]
         except KeyError as exc:
