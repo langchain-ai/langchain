@@ -210,7 +210,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
+def format_document(doc: Document, prompt: Optional[BasePromptTemplate] = None) -> str:
     """Format a document into a string based on a prompt template.
 
     First, this pulls information from the document from two sources:
@@ -244,16 +244,17 @@ def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
             format_document(doc, prompt)
             >>> "Page 1: This is a joke"
     """
+    _prompt = prompt or PromptTemplate.from_template("{page_content}")
     base_info = {"page_content": doc.page_content, **doc.metadata}
     missing_metadata = set(prompt.input_variables).difference(base_info)
     if len(missing_metadata) > 0:
         required_metadata = [
-            iv for iv in prompt.input_variables if iv != "page_content"
+            iv for iv in _prompt.input_variables if iv != "page_content"
         ]
         raise ValueError(
             f"Document prompt requires documents to have metadata variables: "
             f"{required_metadata}. Received document with missing metadata: "
             f"{list(missing_metadata)}."
         )
-    document_info = {k: base_info[k] for k in prompt.input_variables}
-    return prompt.format(**document_info)
+    document_info = {k: base_info[k] for k in _prompt.input_variables}
+    return _prompt.format(**document_info)

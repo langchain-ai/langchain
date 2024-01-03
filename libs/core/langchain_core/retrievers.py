@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd
+from langchain_core.prompts import format_document
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -285,3 +286,29 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 **kwargs,
             )
             return result
+
+    def return_str(
+        self, prompt: Optional[BasePromptTemplate] = None, separator: str = "\n\n"
+    ) -> RunnableSerializable[RetrieverInput, str]:
+        """
+
+        Example:
+            .. code-block:: python
+
+            from langchain_community.retrievers import FAISS
+
+            retriever = FAISS.from_texts(["hi", "bye"])
+            chain = {"context": retriever.return_str()} | prompt | llm | StrOutputParser()
+        """
+        return self | partial(_transform_docs, prompt=prompt, separator=separator)
+
+
+def _transform_docs(
+    doc_stream: Iterator[Document],
+    prompt: Optional[BasePromptTemplate],
+    separator: str,
+) -> Iterator[str]:
+    doc = next(doc_stream)
+    yield format_document(doc, prompt=prompt)
+    for doc in doc_stream:
+        yield separator + format_document(doc, prompt=prompt)
