@@ -217,3 +217,18 @@ def test_functions_call() -> None:
     chain = prompt | chat.bind(functions=_FUNCTIONS)
     resp = chain.invoke({})
     assert isinstance(resp, AIMessage)
+
+
+def test_rate_limit() -> None:
+    chat = QianfanChatEndpoint(model="ERNIE-Bot", init_kwargs={"query_per_second": 2})
+    assert chat.client._client._rate_limiter._sync_limiter._query_per_second == 2
+    responses = chat.batch(
+        [
+            [HumanMessage(content="Hello")],
+            [HumanMessage(content="who are you")],
+            [HumanMessage(content="what is baidu")],
+        ]
+    )
+    for res in responses:
+        assert isinstance(res, BaseMessage)
+        assert isinstance(res.content, str)

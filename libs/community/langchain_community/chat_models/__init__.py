@@ -51,6 +51,7 @@ from langchain_community.chat_models.tongyi import ChatTongyi
 from langchain_community.chat_models.vertexai import ChatVertexAI
 from langchain_community.chat_models.volcengine_maas import VolcEngineMaasChat
 from langchain_community.chat_models.yandex import ChatYandexGPT
+from langchain_community.chat_models.zhipuai import ChatZhipuAI
 
 __all__ = [
     "ChatOpenAI",
@@ -87,4 +88,5 @@ __all__ = [
     "ChatSparkLLM",
     "VolcEngineMaasChat",
     "GPTRouter",
+    "ChatZhipuAI",
 ]

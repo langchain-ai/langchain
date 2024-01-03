@@ -94,7 +94,7 @@ def create_self_ask_with_search_agent(
         .. code-block:: python
 
             from langchain import hub
-            from langchain.chat_models import ChatAnthropic
+            from langchain_community.chat_models import ChatAnthropic
             from langchain.agents import (
                 AgentExecutor, create_self_ask_with_search_agent
             )

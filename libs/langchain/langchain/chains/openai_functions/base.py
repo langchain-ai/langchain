@@ -243,7 +243,7 @@ def create_openai_fn_runnable(
                 from typing import Optional
 
                 from langchain.chains.openai_functions import create_openai_fn_chain
-                from langchain.chat_models import ChatOpenAI
+                from langchain_community.chat_models import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
                 from langchain_core.pydantic_v1 import BaseModel, Field
 
@@ -317,7 +317,7 @@ def create_structured_output_runnable(
                 from typing import Optional
 
                 from langchain.chains.openai_functions import create_structured_output_chain
-                from langchain.chat_models import ChatOpenAI
+                from langchain_community.chat_models import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
                 from langchain_core.pydantic_v1 import BaseModel, Field
 
@@ -418,7 +418,7 @@ def create_openai_fn_chain(
                 from typing import Optional
 
                 from langchain.chains.openai_functions import create_openai_fn_chain
-                from langchain.chat_models import ChatOpenAI
+                from langchain_community.chat_models import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
 
                 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -505,7 +505,7 @@ def create_structured_output_chain(
                 from typing import Optional
 
                 from langchain.chains.openai_functions import create_structured_output_chain
-                from langchain.chat_models import ChatOpenAI
+                from langchain_community.chat_models import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
 
                 from langchain_core.pydantic_v1 import BaseModel, Field
