@@ -143,7 +143,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             if self.ttl:
                 import time
                 expireAt=int(time.time()) + self.ttl
-                self.table.put_item(Item={**self.key, "History": messages, "expireAt":expireAt})
+                self.table.put_item(Item={**self.key, "History": messages, "expireAt": expireAt})
             else:
                 self.table.put_item(Item={**self.key, "History": messages})
         except ClientError as err:
