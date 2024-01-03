@@ -40,6 +40,8 @@ class Milvus(VectorStore):
         embedding_function (Embeddings): Function used to embed the text.
         collection_name (str): Which Milvus collection to use. Defaults to
             "LangChainCollection".
+        collection_description (str): The description of the collection. Defaults to
+            "".
         connection_args (Optional[dict[str, any]]): The connection args used for
             this class comes in the form of a dict.
         consistency_level (str): The consistency level to use for a collection.
@@ -106,6 +108,7 @@ class Milvus(VectorStore):
         self,
         embedding_function: Embeddings,
         collection_name: str = "LangChainCollection",
+        collection_description: str = "",
         connection_args: Optional[dict[str, Any]] = None,
         consistency_level: str = "Session",
         index_params: Optional[dict] = None,
@@ -142,6 +145,7 @@ class Milvus(VectorStore):
 
         self.embedding_func = embedding_function
         self.collection_name = collection_name
+        self.collection_description = collection_description
         self.index_params = index_params
         self.search_params = search_params
         self.consistency_level = consistency_level
@@ -298,7 +302,7 @@ class Milvus(VectorStore):
         )
 
         # Create the schema for the collection
-        schema = CollectionSchema(fields)
+        schema = CollectionSchema(fields, description=self.collection_description)
 
         # Create the collection
         try:
