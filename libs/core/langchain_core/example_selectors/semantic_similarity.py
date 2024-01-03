@@ -55,7 +55,9 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
             input_variables = {key: input_variables[key] for key in self.input_keys}
         vectorstore_kwargs = self.vectorstore_kwargs or {}
         query = " ".join(sorted_values(input_variables))
-        example_docs = self.vectorstore.similarity_search(query, k=self.k, **vectorstore_kwargs)
+        example_docs = self.vectorstore.similarity_search(
+            query, k=self.k, **vectorstore_kwargs
+        )
         # Get the examples from the metadata.
         # This assumes that examples are stored in metadata.
         examples = [dict(e.metadata) for e in example_docs]
