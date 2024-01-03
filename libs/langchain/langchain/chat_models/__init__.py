@@ -28,9 +28,11 @@ def __getattr__(name: str) -> None:
     # If not in interactive env, raise warning.
     if not hasattr(sys, "ps2"):
         warnings.warn(
-            "Importing chat models from langchain is no longer supported. "
-            "Please import from langchain-community like so:\n\n"
-            f"`from langchain_community.chat_models import {name}`.",
+            "Importing chat models from langchain is deprecated. Importing from "
+            "langchain will no longer be supported as of langchain==0.2.0. "
+            "Please import from langchain-community instead:\n\n"
+            f"`from langchain_community.chat_models import {name}`.\n\n"
+            "To install langchain-community run `pip install -U langchain-community`.",
             category=LangChainDeprecationWarning,
         )
 
