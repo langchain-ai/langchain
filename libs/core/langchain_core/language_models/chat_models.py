@@ -4,7 +4,6 @@ import asyncio
 import inspect
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -34,6 +33,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    message_chunk_to_message,
 )
 from langchain_core.outputs import (
     ChatGeneration,
@@ -44,6 +44,7 @@ from langchain_core.outputs import (
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.runnables.config import ensure_config, run_in_executor
 
 if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
@@ -55,7 +56,9 @@ def _get_verbosity() -> bool:
     return get_verbose()
 
 
-def _generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
+def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
+    """Generate from a stream."""
+
     generation: Optional[ChatGenerationChunk] = None
     for chunk in stream:
         if generation is None:
@@ -63,12 +66,21 @@ def _generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
         else:
             generation += chunk
     assert generation is not None
-    return ChatResult(generations=[generation])
+    return ChatResult(
+        generations=[
+            ChatGeneration(
+                message=message_chunk_to_message(generation.message),
+                generation_info=generation.generation_info,
+            )
+        ]
+    )
 
 
-async def _agenerate_from_stream(
+async def agenerate_from_stream(
     stream: AsyncIterator[ChatGenerationChunk],
 ) -> ChatResult:
+    """Async generate from a stream."""
+
     generation: Optional[ChatGenerationChunk] = None
     async for chunk in stream:
         if generation is None:
@@ -76,7 +88,14 @@ async def _agenerate_from_stream(
         else:
             generation += chunk
     assert generation is not None
-    return ChatResult(generations=[generation])
+    return ChatResult(
+        generations=[
+            ChatGeneration(
+                message=message_chunk_to_message(generation.message),
+                generation_info=generation.generation_info,
+            )
+        ]
+    )
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
@@ -123,7 +142,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             return input
         elif isinstance(input, str):
             return StringPromptValue(text=input)
-        elif isinstance(input, list):
+        elif isinstance(input, Sequence):
             return ChatPromptValue(messages=input)
         else:
             raise ValueError(
@@ -139,7 +158,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        config = config or {}
+        config = ensure_config(config)
         return cast(
             ChatGeneration,
             self.generate_prompt(
@@ -161,7 +180,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        config = config or {}
+        config = ensure_config(config)
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
             stop=stop,
@@ -187,7 +206,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
             )
         else:
-            config = config or {}
+            config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
@@ -206,9 +225,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
+            generation: Optional[ChatGenerationChunk] = None
             try:
-                generation: Optional[ChatGenerationChunk] = None
                 for chunk in self._stream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
@@ -219,12 +239,15 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         generation += chunk
                 assert generation is not None
             except BaseException as e:
-                run_manager.on_llm_error(e)
+                run_manager.on_llm_error(
+                    e,
+                    response=LLMResult(
+                        generations=[[generation]] if generation else []
+                    ),
+                )
                 raise e
             else:
-                run_manager.on_llm_end(
-                    LLMResult(generations=[[generation]]),
-                )
+                run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
     async def astream(
         self,
@@ -237,10 +260,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if type(self)._astream == BaseChatModel._astream:
             # model doesn't implement streaming, so use default implementation
             yield cast(
-                BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
+                BaseMessageChunk,
+                await self.ainvoke(input, config=config, stop=stop, **kwargs),
             )
         else:
-            config = config or {}
+            config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
@@ -259,9 +283,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                batch_size=1,
             )
+            generation: Optional[ChatGenerationChunk] = None
             try:
-                generation: Optional[ChatGenerationChunk] = None
                 async for chunk in self._astream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
@@ -272,7 +297,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         generation += chunk
                 assert generation is not None
             except BaseException as e:
-                await run_manager.on_llm_error(e)
+                await run_manager.on_llm_error(
+                    e,
+                    response=LLMResult(
+                        generations=[[generation]] if generation else []
+                    ),
+                )
                 raise e
             else:
                 await run_manager.on_llm_end(
@@ -334,6 +364,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             invocation_params=params,
             options=options,
             name=run_name,
+            batch_size=len(messages),
         )
         results = []
         for i, m in enumerate(messages):
@@ -348,7 +379,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 )
             except BaseException as e:
                 if run_managers:
-                    run_managers[i].on_llm_error(e)
+                    run_managers[i].on_llm_error(e, response=LLMResult(generations=[]))
                 raise e
         flattened_outputs = [
             LLMResult(generations=[res.generations], llm_output=res.llm_output)
@@ -396,6 +427,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             invocation_params=params,
             options=options,
             name=run_name,
+            batch_size=len(messages),
         )
 
         results = await asyncio.gather(
@@ -414,7 +446,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         for i, res in enumerate(results):
             if isinstance(res, BaseException):
                 if run_managers:
-                    await run_managers[i].on_llm_error(res)
+                    await run_managers[i].on_llm_error(
+                        res, response=LLMResult(generations=[])
+                    )
                 exceptions.append(res)
         if exceptions:
             if run_managers:
@@ -571,8 +605,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call"""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._generate, **kwargs), messages, stop, run_manager
+        return await run_in_executor(
+            None,
+            self._generate,
+            messages,
+            stop,
+            run_manager.get_sync() if run_manager else None,
+            **kwargs,
         )
 
     def _stream(
@@ -732,7 +771,11 @@ class SimpleChatModel(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        func = partial(
-            self._generate, messages, stop=stop, run_manager=run_manager, **kwargs
+        return await run_in_executor(
+            None,
+            self._generate,
+            messages,
+            stop=stop,
+            run_manager=run_manager.get_sync() if run_manager else None,
+            **kwargs,
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)

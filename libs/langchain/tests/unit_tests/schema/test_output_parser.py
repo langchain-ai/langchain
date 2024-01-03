@@ -9,6 +9,7 @@ EXPECTED_ALL = [
     "NoOpOutputParser",
     "OutputParserException",
     "StrOutputParser",
+    "T",
 ]
 
 

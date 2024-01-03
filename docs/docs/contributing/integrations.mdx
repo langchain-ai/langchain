@@ -1,0 +1,145 @@
+---
+sidebar_position: 5
+---
+# Contribute Integrations
+
+To begin, make sure you have all the dependencies outlined in guide on [Contributing Code](./code).
+
+There are a few different places you can contribute integrations for LangChain:
+
+- **Community**: For lighter-weight integrations that are primarily maintained by LangChain and the Open Source Community.
+- **Partner Packages**: For independent packages that are co-maintained by LangChain and a partner.
+
+For the most part, new integrations should be added to the Community package. Partner packages require more maintenance as separate packages, so please confirm with the LangChain team before creating a new partner package.
+
+In the following sections, we'll walk through how to contribute to each of these packages from a fake company, `Parrot Link AI`.
+
+## Community Package
+
+The `langchain-community` package is in `libs/community` and contains most integrations.
+
+It is installed by users with `pip install langchain-community`, and exported members can be imported with code like 
+
+```python
+from langchain_community.chat_models import ParrotLinkLLM
+from langchain_community.llms import ChatParrotLink
+from langchain_community.vectorstores import ParrotLinkVectorStore
+```
+
+The community package relies on manually-installed dependent packages, so you will see errors if you try to import a package that is not installed. In our fake example, if you tried to import `ParrotLinkLLM` without installing `parrot-link-sdk`, you will see an `ImportError` telling you to install it when trying to use it.
+
+Let's say we wanted to implement a chat model for Parrot Link AI. We would create a new file in `libs/community/langchain_community/chat_models/parrot_link.py` with the following code:
+
+```python
+from langchain_core.language_models.chat_models import BaseChatModel
+
+class ChatParrotLink(BaseChatModel):
+    """ChatParrotLink chat model.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_parrot_link import ChatParrotLink
+
+            model = ChatParrotLink()
+    """
+
+    ...
+```
+
+And we would write tests in:
+
+- Unit tests: `libs/community/tests/unit_tests/chat_models/test_parrot_link.py`
+- Integration tests: `libs/community/tests/integration_tests/chat_models/test_parrot_link.py`
+
+And add documentation to:
+- `docs/docs/integrations/chat/parrot_link.ipynb`
+
+- `docs/docs/
+## Partner Packages
+
+Partner packages are in `libs/partners/*` and are installed by users with `pip install langchain-{partner}`, and exported members can be imported with code like 
+
+```python
+from langchain_{partner} import X
+```
+
+### Set up a new package
+
+To set up a new partner package, use the latest version of the LangChain CLI. You can install or update it with:
+
+```bash
+pip install -U langchain-cli
+```
+
+Let's say you want to create a new partner package working for a company called Parrot Link AI.
+
+Then, run the following command to create a new partner package:
+
+```bash
+cd libs/partners
+langchain-cli integration new
+> Name: parrot-link
+> Name of integration in PascalCase [ParrotLink]: ParrotLink
+```
+
+This will create a new package in `libs/partners/parrot-link` with the following structure:
+
+```
+libs/partners/parrot-link/
+  langchain_parrot_link/ # folder containing your package
+    ...
+  tests/
+    ...
+  docs/ # bootstrapped docs notebooks, must be moved to /docs in monorepo root
+    ...
+  scripts/ # scripts for CI
+    ...
+  LICENSE
+  README.md # fill out with information about your package
+  Makefile # default commands for CI
+  pyproject.toml # package metadata, mostly managed by Poetry
+  poetry.lock # package lockfile, managed by Poetry
+  .gitignore
+```
+
+### Implement your package
+
+First, add any dependencies your package needs, such as your company's SDK:
+
+```bash
+poetry add parrot-link-sdk
+```
+
+If you need separate dependencies for type checking, you can add them to the `typing` group with:
+
+```bash
+poetry add --group typing types-parrot-link-sdk
+```
+
+Then, implement your package in `libs/partners/parrot-link/langchain_parrot_link`.
+
+By default, this will include stubs for a Chat Model, an LLM, and/or a Vector Store. You should delete any of the files you won't use and remove them from `__init__.py`.
+
+### Write Unit and Integration Tests
+
+Some basic tests are generated in the tests/ directory. You should add more tests to cover your package's functionality.
+
+For information on running and implementing tests, see the [Testing guide](./testing).
+
+### Write documentation
+
+Documentation is generated from Jupyter notebooks in the `docs/` directory. You should move the generated notebooks to the relevant `docs/docs/integrations` directory in the monorepo root.
+
+### Additional steps
+
+Contributor steps:
+
+- [ ] Add secret names to manual integrations workflow in `.github/workflows/_integration_test.yml`
+- [ ] Add secrets to release workflow (for pre-release testing) in `.github/workflows/_release.yml`
+
+Maintainer steps (Contributors should **not** do these):
+
+- [ ] set up pypi and test pypi projects
+- [ ] add credential secrets to Github Actions
+- [ ] add package to conda-forge

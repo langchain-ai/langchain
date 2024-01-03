@@ -27,6 +27,12 @@ version = "^1.0.0"
 export_module = "self_query_qdrant"
 export_attr = "chain"
 
+[tool.templates-hub]
+use-case = "rag"
+author = "Qdrant"
+integrations = ["Qdrant", "OpenAI"]
+tags = ["research", "agents"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

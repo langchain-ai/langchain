@@ -1,10 +1,10 @@
 from langchain import hub
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.load import dumps, loads
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.output_parser import StrOutputParser
-from langchain.vectorstores import Pinecone
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import Pinecone
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel
 
 
 def reciprocal_rank_fusion(results: list[list], k=60):

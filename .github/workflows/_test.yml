@@ -11,10 +11,6 @@ on:
         required: false
         type: string
         description: "Relative path to the langchain library folder"
-      langchain-core-location:
-        required: false
-        type: string
-        description: "Relative path to the langchain core library folder"
 
 env:
   POETRY_VERSION: "1.6.1"
@@ -46,7 +42,7 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: poetry install
+        run: poetry install --with test
 
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
@@ -55,14 +51,6 @@ jobs:
           LANGCHAIN_LOCATION: ${{ inputs.langchain-location }}
         run: |
           poetry run pip install -e "$LANGCHAIN_LOCATION"
-
-      - name: Install langchain core editable
-        working-directory: ${{ inputs.working-directory }}
-        if: ${{ inputs.langchain-core-location }}
-        env:
-          LANGCHAIN_CORE_LOCATION: ${{ inputs.langchain-core-location }}
-        run: |
-          poetry run pip install -e "$LANGCHAIN_CORE_LOCATION"
 
       - name: Run core tests
         shell: bash

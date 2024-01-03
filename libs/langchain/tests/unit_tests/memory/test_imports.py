@@ -1,6 +1,7 @@
 from langchain.memory import __all__
 
 EXPECTED_ALL = [
+    "AstraDBChatMessageHistory",
     "CassandraChatMessageHistory",
     "ChatMessageHistory",
     "CombinedMemory",
