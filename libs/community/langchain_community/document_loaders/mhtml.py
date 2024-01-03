@@ -19,7 +19,7 @@ class MHTMLLoader(BaseLoader):
         bs_kwargs: Union[dict, None] = None,
         get_text_separator: str = "",
     ) -> None:
-        """Initialise with path, and optionally, file encoding to use, and any kwargs
+        """initialize with path, and optionally, file encoding to use, and any kwargs
         to pass to the BeautifulSoup object.
 
         Args:

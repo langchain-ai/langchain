@@ -37,7 +37,7 @@ db = SQLDatabase.from_cnosdb()
 ```
 ```python
 # Creating a OpenAI Chat LLM Wrapper
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 
 llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
 ```
@@ -65,7 +65,7 @@ Answer:The average temperature of air at station XiaoMaiDao between October 19, 
 This example demonstrates the use of the SQL Database Agent for answering questions over a CnosDB.
 ```python
 from langchain.agents import create_sql_agent
-from langchain.agents.agent_toolkits import SQLDatabaseToolkit
+from langchain_community.agent_toolkits import SQLDatabaseToolkit
 
 toolkit = SQLDatabaseToolkit(db=db, llm=llm)
 agent = create_sql_agent(llm=llm, toolkit=toolkit, verbose=True)
