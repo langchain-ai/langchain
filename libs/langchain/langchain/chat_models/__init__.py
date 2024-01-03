@@ -16,37 +16,26 @@ an interface where "chat messages" are the inputs and outputs.
 
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
+import sys
+import warnings
 
-from langchain_community.chat_models.anthropic import ChatAnthropic
-from langchain_community.chat_models.anyscale import ChatAnyscale
-from langchain_community.chat_models.azure_openai import AzureChatOpenAI
-from langchain_community.chat_models.baichuan import ChatBaichuan
-from langchain_community.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
-from langchain_community.chat_models.bedrock import BedrockChat
-from langchain_community.chat_models.cohere import ChatCohere
-from langchain_community.chat_models.databricks import ChatDatabricks
-from langchain_community.chat_models.ernie import ErnieBotChat
-from langchain_community.chat_models.everlyai import ChatEverlyAI
-from langchain_community.chat_models.fake import FakeListChatModel
-from langchain_community.chat_models.fireworks import ChatFireworks
-from langchain_community.chat_models.gigachat import GigaChat
-from langchain_community.chat_models.google_palm import ChatGooglePalm
-from langchain_community.chat_models.human import HumanInputChatModel
-from langchain_community.chat_models.hunyuan import ChatHunyuan
-from langchain_community.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
-from langchain_community.chat_models.jinachat import JinaChat
-from langchain_community.chat_models.konko import ChatKonko
-from langchain_community.chat_models.litellm import ChatLiteLLM
-from langchain_community.chat_models.minimax import MiniMaxChat
-from langchain_community.chat_models.mlflow import ChatMlflow
-from langchain_community.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
-from langchain_community.chat_models.ollama import ChatOllama
-from langchain_community.chat_models.openai import ChatOpenAI
-from langchain_community.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
-from langchain_community.chat_models.promptlayer_openai import PromptLayerChatOpenAI
-from langchain_community.chat_models.vertexai import ChatVertexAI
-from langchain_community.chat_models.volcengine_maas import VolcEngineMaasChat
-from langchain_community.chat_models.yandex import ChatYandexGPT
+from langchain_core._api import LangChainDeprecationWarning
+
+
+def __getattr__(name: str) -> None:
+    from langchain_community import chat_models
+
+    # If not in interactive env, raise warning.
+    if not hasattr(sys, "ps2"):
+        warnings.warn(
+            "Importing chat models from langchain is no longer supported. "
+            "Please import from langchain-community like so:\n\n"
+            f"`from langchain_community.chat_models import {name}`.",
+            category=LangChainDeprecationWarning
+        )
+
+    return getattr(chat_models, name)
+
 
 __all__ = [
     "ChatOpenAI",
