@@ -166,7 +166,7 @@ class BaseLanguageModel(
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        """[DEPRECATED] Pass a single string input to the model and return a string.
+        """Pass a single string input to the model and return a string.
 
          Use this method when passing in raw text. If you want to pass in specific
             types of chat messages, use predict_messages.
@@ -191,7 +191,7 @@ class BaseLanguageModel(
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        """[DEPRECATED] Pass a message sequence to the model and return a message.
+        """Pass a message sequence to the model and return a message.
 
         Use this method when passing in chat messages. If you want to pass in raw text,
             use predict.
@@ -212,7 +212,7 @@ class BaseLanguageModel(
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        """[DEPRECATED] Asynchronously pass a string to the model and return a string.
+        """Asynchronously pass a string to the model and return a string.
 
         Use this method when calling pure text generation models and only the top
             candidate generation is needed.
@@ -237,7 +237,7 @@ class BaseLanguageModel(
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        """[DEPRECATED] Asynchronously pass messages to the model and return a message.
+        """Asynchronously pass messages to the model and return a message.
 
         Use this method when calling chat models and only the top
             candidate generation is needed.
