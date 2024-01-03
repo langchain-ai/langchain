@@ -443,7 +443,7 @@ Supported examples:
     top_k: Optional[int] = None
     """Decode using top-k sampling: consider the set of top_k most probable tokens.
        Must be positive."""
-    top_p: Optional[int] = None
+    top_p: Optional[float] = None
     """The maximum cumulative probability of tokens to consider when sampling.
 
         The model uses combined Top-k and nucleus sampling.
