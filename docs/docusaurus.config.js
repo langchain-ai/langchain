@@ -142,11 +142,11 @@ const config = {
       },
       image: "img/parrot-chainlink-icon.png",
       navbar: {
-        title: "🦜️🔗 LangChain",
+        title: "🦜️🔗",
         items: [
           {
             to: "/docs/get_started/introduction",
-            label: "Docs",
+            label: "Quickstart",
             position: "left",
           },
           {
@@ -158,14 +158,14 @@ const config = {
           {
             type: "docSidebar",
             position: "left",
-            sidebarId: "integrations",
-            label: "Integrations",
+            sidebarId: "guides",
+            label: "Advanced",
           },
           {
             type: "docSidebar",
             position: "left",
-            sidebarId: "guides",
-            label: "Guides",
+            sidebarId: "integrations",
+            label: "Integrations",
           },
           {
             href: "https://api.python.langchain.com",
