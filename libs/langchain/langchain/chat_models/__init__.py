@@ -16,17 +16,18 @@ an interface where "chat messages" are the inputs and outputs.
 
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
-import sys
 import warnings
 
 from langchain_core._api import LangChainDeprecationWarning
+
+from langchain.utils.interactive_env import is_interactive_env
 
 
 def __getattr__(name: str) -> None:
     from langchain_community import chat_models
 
     # If not in interactive env, raise warning.
-    if not hasattr(sys, "ps2"):
+    if not is_interactive_env():
         warnings.warn(
             "Importing chat models from langchain is deprecated. Importing from "
             "langchain will no longer be supported as of langchain==0.2.0. "

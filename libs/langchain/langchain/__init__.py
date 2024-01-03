@@ -14,16 +14,11 @@ except metadata.PackageNotFoundError:
 del metadata  # optional, avoids polluting the results of dir(__package__)
 
 
-def _is_interactive_env() -> bool:
-    """Determine if running within IPython or Jupyter."""
-    import sys
-
-    return hasattr(sys, "ps2")
-
-
 def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
     """Warn on import of deprecated module."""
-    if _is_interactive_env():
+    from langchain.utils.interactive_env import is_interactive_env
+
+    if is_interactive_env():
         # No warnings for interactive environments.
         # This is done to avoid polluting the output of interactive environments
         # where users rely on auto-complete and may trigger this warning
