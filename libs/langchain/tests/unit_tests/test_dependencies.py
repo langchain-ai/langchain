@@ -17,7 +17,7 @@ def poetry_conf() -> Dict[str, Any]:
         return toml.load(f)["tool"]["poetry"]
 
 
-def _is_required(requirements: Union[str, List[Dict], Dict]):
+def _is_required(requirements: Union[str, List[Dict], Dict]) -> bool:
     """Check if a dependency is required."""
     if isinstance(requirements, str):
         return True
