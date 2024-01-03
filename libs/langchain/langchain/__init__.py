@@ -173,7 +173,9 @@ def __getattr__(name: str) -> Any:
     elif name == "HuggingFaceTextGenInference":
         from langchain_community.llms import HuggingFaceTextGenInference
 
-        _warn_on_import(name, replacement="langchain_community.llms.HuggingFaceTextGenInference")
+        _warn_on_import(
+            name, replacement="langchain_community.llms.HuggingFaceTextGenInference"
+        )
 
         return HuggingFaceTextGenInference
     elif name == "LlamaCpp":
@@ -228,7 +230,8 @@ def __getattr__(name: str) -> Any:
         from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 
         _warn_on_import(
-            name, replacement="langchain_community.llms.huggingface_pipeline.HuggingFacePipeline"
+            name,
+            replacement="langchain_community.llms.huggingface_pipeline.HuggingFacePipeline",
         )
 
         return HuggingFacePipeline

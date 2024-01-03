@@ -31,7 +31,7 @@ def __getattr__(name: str) -> None:
             "Importing chat models from langchain is no longer supported. "
             "Please import from langchain-community like so:\n\n"
             f"`from langchain_community.chat_models import {name}`.",
-            category=LangChainDeprecationWarning
+            category=LangChainDeprecationWarning,
         )
 
     return getattr(chat_models, name)
