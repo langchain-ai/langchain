@@ -30,8 +30,9 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import AddableDict
+from langchain_core.tools import BaseTool
 from langchain_core.utils.input import get_color_mapping
 
 from langchain.agents.agent_iterator import AgentExecutorIterator
@@ -47,7 +48,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 
 logger = logging.getLogger(__name__)
@@ -1437,7 +1437,7 @@ class AgentExecutor(Chain):
         **kwargs: Any,
     ) -> Iterator[AddableDict]:
         """Enables streaming over steps taken to reach final output."""
-        config = config or {}
+        config = ensure_config(config)
         iterator = AgentExecutorIterator(
             self,
             input,
@@ -1458,7 +1458,7 @@ class AgentExecutor(Chain):
         **kwargs: Any,
     ) -> AsyncIterator[AddableDict]:
         """Enables streaming over steps taken to reach final output."""
-        config = config or {}
+        config = ensure_config(config)
         iterator = AgentExecutorIterator(
             self,
             input,
