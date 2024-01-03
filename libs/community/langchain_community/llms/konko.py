@@ -1,6 +1,4 @@
 """Wrapper around Konko AI's Completion API."""
-import asyncio
-import json
 import logging
 import warnings
 from typing import Any, Dict, List, Optional
@@ -11,7 +9,6 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.utils.openai import is_openai_v1
 
@@ -69,10 +66,7 @@ class Konko(LLM):
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate that api key and python package exists in environment."""
-        values["konko_api_key"] = get_from_dict_or_env(
-            values, "konko_api_key", "KONKO_API_KEY"
-        )
+        """Validate that python package exists in environment."""
         try:
             import konko
 
@@ -93,9 +87,6 @@ class Konko(LLM):
     def _llm_type(self) -> str:
         """Return type of model."""
         return "konko"
-
-    def _format_output(self, output: Dict[str, Any]) -> str:
-        return output["choices"][0]["text"]
 
     @staticmethod
     def get_user_agent() -> str:
@@ -143,12 +134,8 @@ class Konko(LLM):
         try:
             if is_openai_v1():
                 response = konko.completions.create(**payload)
-                response = response.json()
-                response = json.loads(response)
             else:
                 response = konko.Completion.create(**payload)
-
-            output = self._format_output(response)
 
         except AttributeError:
             raise ValueError(
@@ -156,6 +143,11 @@ class Konko(LLM):
                 "due to an old version of the konko package. Try upgrading it "
                 "with `pip install --upgrade konko`."
             )
+
+        if is_openai_v1():
+            output = response.choices[0].text
+        else:
+            output = response["choices"][0]["text"]
 
         return output
 
@@ -185,24 +177,23 @@ class Konko(LLM):
         }
         payload = {k: v for k, v in payload.items() if v is not None}
 
-        def sync_call():
-            try:
-                if is_openai_v1():
-                    response = konko.completions.create(**payload)
-                    response = response.json()
-                    response = json.loads(response)
-                else:
-                    response = konko.Completion.create(**payload)
+        try:
+            if is_openai_v1():
+                client = konko.AsyncKonko()
+                response = await client.completions.create(**payload)
+            else:
+                response = await konko.Completion.acreate(**payload)
 
-                return response
-            except AttributeError:
-                raise ValueError(
-                    "`konko` has no `Completion` attribute, this is likely "
-                    "due to an old version of the konko package. Try upgrading it "
-                    "with `pip install --upgrade konko`."
-                )
+        except AttributeError:
+            raise ValueError(
+                "`konko` has no `Completion` attribute, this is likely "
+                "due to an old version of the konko package. Try upgrading it "
+                "with `pip install --upgrade konko`."
+            )
 
-        data = await asyncio.to_thread(sync_call)
-        output = self._format_output(data)
+        if is_openai_v1():
+            output = response.choices[0].text
+        else:
+            output = response["choices"][0]["text"]
 
         return output
