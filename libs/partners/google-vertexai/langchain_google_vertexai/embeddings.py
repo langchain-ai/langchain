@@ -3,14 +3,24 @@ import re
 import string
 import threading
 from concurrent.futures import ThreadPoolExecutor, wait
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type
 
+from google.api_core.exceptions import (
+    Aborted,
+    DeadlineExceeded,
+    InvalidArgument,
+    ResourceExhausted,
+    ServiceUnavailable,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.pydantic_v1 import root_validator
+from vertexai.language_models import (  # type: ignore
+    TextEmbeddingInput,
+    TextEmbeddingModel,
+)
 
 from langchain_google_vertexai.llms import _VertexAICommon
-from langchain_google_vertexai.utils import raise_vertex_import_error
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +38,7 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""
-        cls._try_init_vertexai(values)
+        cls._init_vertexai(values)
         if values["model_name"] == "textembedding-gecko-default":
             logger.warning(
                 "Model_name will become a required arg for VertexAIEmbeddings "
@@ -36,10 +46,6 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
                 "textembedding-gecko@001"
             )
             values["model_name"] = "textembedding-gecko@001"
-        try:
-            from vertexai.language_models import TextEmbeddingModel
-        except ImportError:
-            raise_vertex_import_error()
         values["client"] = TextEmbeddingModel.from_pretrained(values["model_name"])
         return values
 
@@ -141,14 +147,8 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         self, texts: List[str], embeddings_type: Optional[str] = None
     ) -> List[List[float]]:
         """Makes a Vertex AI model request with retry logic."""
-        from google.api_core.exceptions import (
-            Aborted,
-            DeadlineExceeded,
-            ResourceExhausted,
-            ServiceUnavailable,
-        )
 
-        errors = [
+        errors: List[Type[BaseException]] = [
             ResourceExhausted,
             ServiceUnavailable,
             Aborted,
@@ -161,8 +161,6 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         @retry_decorator
         def _completion_with_retry(texts_to_process: List[str]) -> Any:
             if embeddings_type and self.instance["embeddings_task_type_supported"]:
-                from vertexai.language_models import TextEmbeddingInput
-
                 requests = [
                     TextEmbeddingInput(text=t, task_type=embeddings_type)
                     for t in texts_to_process
@@ -182,7 +180,6 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         # Returns embeddings of the first text batch that went through,
         # and text batches for the rest of the texts.
         """
-        from google.api_core.exceptions import InvalidArgument
 
         batches = VertexAIEmbeddings._prepare_batches(
             texts, self.instance["batch_size"]

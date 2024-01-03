@@ -1,8 +1,17 @@
 from __future__ import annotations
 
 from concurrent.futures import Executor, ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Iterator, List, Optional, Union
+from typing import Any, ClassVar, Dict, Iterator, List, Optional, Union
 
+import vertexai  # type: ignore
+from google.api_core.client_options import ClientOptions
+from google.cloud.aiplatform.gapic import (
+    PredictionServiceAsyncClient,
+    PredictionServiceClient,
+)
+from google.cloud.aiplatform.models import Prediction
+from google.protobuf import json_format
+from google.protobuf.struct_pb2 import Value
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -10,32 +19,22 @@ from langchain_core.callbacks.manager import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-
-from langchain_google_vertexai.utils import (
-    create_retry_decorator,
-    get_client_info,
-    init_vertexai,
-    raise_vertex_import_error,
+from vertexai.language_models import (  # type: ignore
+    CodeGenerationModel,
+    TextGenerationModel,
+)
+from vertexai.language_models._language_models import (  # type: ignore
+    TextGenerationResponse,
+)
+from vertexai.preview.generative_models import GenerativeModel, Image  # type: ignore
+from vertexai.preview.language_models import (  # type: ignore
+    CodeGenerationModel as PreviewCodeGenerationModel,
+)
+from vertexai.preview.language_models import (
+    TextGenerationModel as PreviewTextGenerationModel,
 )
 
-if TYPE_CHECKING:
-    from google.cloud.aiplatform.gapic import (
-        PredictionServiceAsyncClient,
-        PredictionServiceClient,
-    )
-    from google.cloud.aiplatform.models import Prediction
-    from google.protobuf.struct_pb2 import Value
-    from vertexai.language_models._language_models import (
-        TextGenerationResponse,
-        _LanguageModel,
-    )
-    from vertexai.preview.generative_models import Image
-
-# This is for backwards compatibility
-# We can remove after `langchain` stops importing it
-_response_to_generation = None
-completion_with_retry = None
-stream_completion_with_retry = None
+from langchain_google_vertexai.utils import create_retry_decorator, get_client_info
 
 
 def is_codey_model(model_name: str) -> bool:
@@ -50,7 +49,7 @@ def is_gemini_model(model_name: str) -> bool:
 
 def completion_with_retry(
     llm: VertexAI,
-    prompt: List[Union[str, "Image"]],
+    prompt: List[Union[str, Image]],
     stream: bool = False,
     is_gemini: bool = False,
     run_manager: Optional[CallbackManagerForLLMRun] = None,
@@ -61,7 +60,7 @@ def completion_with_retry(
 
     @retry_decorator
     def _completion_with_retry(
-        prompt: List[Union[str, "Image"]], is_gemini: bool = False, **kwargs: Any
+        prompt: List[Union[str, Image]], is_gemini: bool = False, **kwargs: Any
     ) -> Any:
         if is_gemini:
             return llm.client.generate_content(
@@ -122,8 +121,8 @@ class _VertexAIBase(BaseModel):
 
 
 class _VertexAICommon(_VertexAIBase):
-    client: "_LanguageModel" = None  #: :meta private:
-    client_preview: "_LanguageModel" = None  #: :meta private:
+    client: Any = None  #: :meta private:
+    client_preview: Any = None  #: :meta private:
     model_name: str
     "Underlying model name."
     temperature: float = 0.0
@@ -179,10 +178,12 @@ class _VertexAICommon(_VertexAIBase):
         return params
 
     @classmethod
-    def _try_init_vertexai(cls, values: Dict) -> None:
-        allowed_params = ["project", "location", "credentials"]
-        params = {k: v for k, v in values.items() if k in allowed_params}
-        init_vertexai(**params)
+    def _init_vertexai(cls, values: Dict) -> None:
+        vertexai.init(
+            project=values.get("project"),
+            location=values.get("location"),
+            credentials=values.get("credentials"),
+        )
         return None
 
     def _prepare_params(
@@ -223,51 +224,30 @@ class VertexAI(_VertexAICommon, BaseLLM):
         tuned_model_name = values.get("tuned_model_name")
         model_name = values["model_name"]
         is_gemini = is_gemini_model(values["model_name"])
-        cls._try_init_vertexai(values)
-        try:
-            from vertexai.language_models import (
-                CodeGenerationModel,
-                TextGenerationModel,
-            )
-            from vertexai.preview.language_models import (
-                CodeGenerationModel as PreviewCodeGenerationModel,
-            )
-            from vertexai.preview.language_models import (
-                TextGenerationModel as PreviewTextGenerationModel,
-            )
+        cls._init_vertexai(values)
 
+        if is_codey_model(model_name):
+            model_cls = CodeGenerationModel
+            preview_model_cls = PreviewCodeGenerationModel
+        elif is_gemini:
+            model_cls = GenerativeModel
+            preview_model_cls = GenerativeModel
+        else:
+            model_cls = TextGenerationModel
+            preview_model_cls = PreviewTextGenerationModel
+
+        if tuned_model_name:
+            values["client"] = model_cls.get_tuned_model(tuned_model_name)
+            values["client_preview"] = preview_model_cls.get_tuned_model(
+                tuned_model_name
+            )
+        else:
             if is_gemini:
-                from vertexai.preview.generative_models import (
-                    GenerativeModel,
-                )
-
-            if is_codey_model(model_name):
-                model_cls = CodeGenerationModel
-                preview_model_cls = PreviewCodeGenerationModel
-            elif is_gemini:
-                model_cls = GenerativeModel
-                preview_model_cls = GenerativeModel
+                values["client"] = model_cls(model_name=model_name)
+                values["client_preview"] = preview_model_cls(model_name=model_name)
             else:
-                model_cls = TextGenerationModel
-                preview_model_cls = PreviewTextGenerationModel
-
-            if tuned_model_name:
-                values["client"] = model_cls.get_tuned_model(tuned_model_name)
-                values["client_preview"] = preview_model_cls.get_tuned_model(
-                    tuned_model_name
-                )
-            else:
-                if is_gemini:
-                    values["client"] = model_cls(model_name=model_name)
-                    values["client_preview"] = preview_model_cls(model_name=model_name)
-                else:
-                    values["client"] = model_cls.from_pretrained(model_name)
-                    values["client_preview"] = preview_model_cls.from_pretrained(
-                        model_name
-                    )
-
-        except ImportError:
-            raise_vertex_import_error()
+                values["client"] = model_cls.from_pretrained(model_name)
+                values["client_preview"] = preview_model_cls.from_pretrained(model_name)
 
         if values["streaming"] and values["n"] > 1:
             raise ValueError("Only one candidate can be generated with streaming!")
@@ -284,11 +264,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         Returns:
             The integer number of tokens in the text.
         """
-        try:
-            result = self.client_preview.count_tokens([text])
-        except AttributeError:
-            raise_vertex_import_error()
-
+        result = self.client_preview.count_tokens([text])
         return result.total_tokens
 
     def _response_to_generation(
@@ -388,8 +364,8 @@ class VertexAI(_VertexAICommon, BaseLLM):
 class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     """Large language models served from Vertex AI Model Garden."""
 
-    client: "PredictionServiceClient" = None  #: :meta private:
-    async_client: "PredictionServiceAsyncClient" = None  #: :meta private:
+    client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     endpoint_id: str
     "A name of an endpoint where the model has been deployed."
     allowed_model_args: Optional[List[str]] = None
@@ -402,14 +378,6 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
-        try:
-            from google.api_core.client_options import ClientOptions
-            from google.cloud.aiplatform.gapic import (
-                PredictionServiceAsyncClient,
-                PredictionServiceClient,
-            )
-        except ImportError:
-            raise_vertex_import_error()
 
         if not values["project"]:
             raise ValueError(
@@ -431,7 +399,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     @property
     def endpoint_path(self) -> str:
         return self.client.endpoint_path(
-            project=self.project,
+            project=self.project,  # type: ignore
             location=self.location,
             endpoint=self.endpoint_id,
         )
@@ -441,14 +409,6 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
         return "vertexai_model_garden"
 
     def _prepare_request(self, prompts: List[str], **kwargs: Any) -> List["Value"]:
-        try:
-            from google.protobuf import json_format
-            from google.protobuf.struct_pb2 import Value
-        except ImportError:
-            raise ImportError(
-                "protobuf package not found, please install it with"
-                " `pip install protobuf`"
-            )
         instances = []
         for prompt in prompts:
             if self.allowed_model_args:

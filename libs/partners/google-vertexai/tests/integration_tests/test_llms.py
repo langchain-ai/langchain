@@ -19,6 +19,19 @@ model_names_to_test_with_default = [None] + model_names_to_test
     "model_name",
     model_names_to_test_with_default,
 )
+def test_vertex_initialization(model_name: str) -> None:
+    llm = VertexAI(model_name=model_name) if model_name else VertexAI()
+    assert llm._llm_type == "vertexai"
+    try:
+        assert llm.model_name == llm.client._model_id
+    except AttributeError:
+        assert llm.model_name == llm.client._model_name.split("/")[-1]
+
+
+@pytest.mark.parametrize(
+    "model_name",
+    model_names_to_test_with_default,
+)
 def test_vertex_call(model_name: str) -> None:
     llm = (
         VertexAI(model_name=model_name, temperature=0)

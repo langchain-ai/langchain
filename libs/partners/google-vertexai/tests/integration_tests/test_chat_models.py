@@ -14,6 +14,20 @@ model_names_to_test = [None, "codechat-bison", "chat-bison", "gemini-pro"]
 
 
 @pytest.mark.parametrize("model_name", model_names_to_test)
+def test_initialization(model_name: str) -> None:
+    """Test chat model initialization."""
+    if model_name:
+        model = ChatVertexAI(model_name=model_name)
+    else:
+        model = ChatVertexAI()
+    assert model._llm_type == "vertexai"
+    try:
+        assert model.model_name == model.client._model_id
+    except AttributeError:
+        assert model.model_name == model.client._model_name.split("/")[-1]
+
+
+@pytest.mark.parametrize("model_name", model_names_to_test)
 def test_vertexai_single_call(model_name: str) -> None:
     if model_name:
         model = ChatVertexAI(model_name=model_name)
@@ -150,3 +164,13 @@ def test_vertexai_single_call_with_history(model_name: str) -> None:
     response = model([message1, message2, message3])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+
+
+def test_vertexai_single_call_fails_no_message() -> None:
+    chat = ChatVertexAI()
+    with pytest.raises(ValueError) as exc_info:
+        _ = chat([])
+    assert (
+        str(exc_info.value)
+        == "You should provide at least one message to start the chat!"
+    )

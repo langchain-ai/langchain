@@ -5,7 +5,7 @@ import base64
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Union, cast
 from urllib.parse import urlparse
 
 import requests
@@ -26,6 +26,20 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import root_validator
+from vertexai.language_models import (  # type: ignore
+    ChatMessage,
+    ChatModel,
+    ChatSession,
+    CodeChatModel,
+    CodeChatSession,
+    InputOutputTextPair,
+)
+from vertexai.preview.generative_models import (  # type: ignore
+    Content,
+    GenerativeModel,
+    Image,
+    Part,
+)
 
 from langchain_google_vertexai.llms import (
     _VertexAICommon,
@@ -34,17 +48,7 @@ from langchain_google_vertexai.llms import (
 )
 from langchain_google_vertexai.utils import (
     load_image_from_gcs,
-    raise_vertex_import_error,
 )
-
-if TYPE_CHECKING:
-    from vertexai.language_models import (
-        ChatMessage,
-        ChatSession,
-        CodeChatSession,
-        InputOutputTextPair,
-    )
-    from vertexai.preview.generative_models import Content
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +57,7 @@ logger = logging.getLogger(__name__)
 class _ChatHistory:
     """Represents a context and a history of messages."""
 
-    history: List["ChatMessage"] = field(default_factory=list)
+    history: List[ChatMessage] = field(default_factory=list)
     context: Optional[str] = None
 
 
@@ -68,7 +72,6 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
         ValueError: If a sequence of message has a SystemMessage not at the
         first place.
     """
-    from vertexai.language_models import ChatMessage
 
     vertex_messages, context = [], None
     for i, message in enumerate(history):
@@ -100,9 +103,7 @@ def _is_url(s: str) -> bool:
 
 def _parse_chat_history_gemini(
     history: List[BaseMessage], project: Optional[str]
-) -> List["Content"]:
-    from vertexai.preview.generative_models import Content, Image, Part
-
+) -> List[Content]:
     def _convert_to_prompt(part: Union[str, Dict]) -> Part:
         if isinstance(part, str):
             return Part.from_text(part)
@@ -120,8 +121,9 @@ def _parse_chat_history_gemini(
             elif path.startswith("data:image/"):
                 # extract base64 component from image uri
                 try:
-                    encoded = re.search(r"data:image/\w{2,4};base64,(.*)", path).group(
-                        1
+                    regexp = r"data:image/\w{2,4};base64,(.*)"
+                    encoded = (
+                        re.search(regexp, path).group(1)  # type: ignore
                     )
                 except AttributeError:
                     raise ValueError(
@@ -161,9 +163,7 @@ def _parse_chat_history_gemini(
     return vertex_messages
 
 
-def _parse_examples(examples: List[BaseMessage]) -> List["InputOutputTextPair"]:
-    from vertexai.language_models import InputOutputTextPair
-
+def _parse_examples(examples: List[BaseMessage]) -> List[InputOutputTextPair]:
     if len(examples) % 2 != 0:
         raise ValueError(
             f"Expect examples to have an even amount of messages, got {len(examples)}."
@@ -223,16 +223,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         is_gemini = is_gemini_model(values["model_name"])
-        cls._try_init_vertexai(values)
-        try:
-            from vertexai.language_models import ChatModel, CodeChatModel
-
-            if is_gemini:
-                from vertexai.preview.generative_models import (
-                    GenerativeModel,
-                )
-        except ImportError:
-            raise_vertex_import_error()
+        cls._init_vertexai(values)
         if is_gemini:
             values["client"] = GenerativeModel(model_name=values["model_name"])
         else:

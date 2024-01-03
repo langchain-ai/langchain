@@ -8,6 +8,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from vertexai.language_models import ChatMessage, InputOutputTextPair  # type: ignore
 
 from langchain_google_vertexai.chat_models import (
     ChatVertexAI,
@@ -16,25 +17,7 @@ from langchain_google_vertexai.chat_models import (
 )
 
 
-@pytest.mark.parametrize(
-    "model_name", [None, "codechat-bison", "chat-bison", "gemini-pro"]
-)
-def test_initialization(model_name: str) -> None:
-    """Test chat model initialization."""
-    if model_name:
-        model = ChatVertexAI(model_name=model_name, project="fake")
-    else:
-        model = ChatVertexAI(project="fake")
-    assert model._llm_type == "vertexai"
-    try:
-        assert model.model_name == model.client._model_id
-    except AttributeError:
-        assert model.model_name == model.client._model_name.split("/")[-1]
-
-
 def test_parse_examples_correct() -> None:
-    from vertexai.language_models import InputOutputTextPair
-
     text_question = (
         "Hello, could you recommend a good movie for me to watch this evening, please?"
     )
@@ -55,7 +38,6 @@ def test_parse_examples_correct() -> None:
 def test_parse_examples_failes_wrong_sequence() -> None:
     with pytest.raises(ValueError) as exc_info:
         _ = _parse_examples([AIMessage(content="a")])
-    print(str(exc_info.value))
     assert (
         str(exc_info.value)
         == "Expect examples to have an even amount of messages, got 1."
@@ -74,17 +56,19 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
     }
 
     # Mock the library to ensure the args are passed correctly
-    with patch(
-        "vertexai.language_models._language_models.ChatModel.start_chat"
-    ) as start_chat:
+    with patch("vertexai._model_garden._model_garden_models._from_pretrained") as mg:
         mock_response = MagicMock()
         mock_response.candidates = [Mock(text=response_text)]
         mock_chat = MagicMock()
-        start_chat.return_value = mock_chat
         mock_send_message = MagicMock(return_value=mock_response)
         mock_chat.send_message = mock_send_message
 
-        model = ChatVertexAI(project="fake", **prompt_params)
+        mock_model = MagicMock()
+        mock_start_chat = MagicMock(return_value=mock_chat)
+        mock_model.start_chat = mock_start_chat
+        mg.return_value = mock_model
+
+        model = ChatVertexAI(**prompt_params)
         message = HumanMessage(content=user_prompt)
         if stop:
             response = model([message], stop=[stop])
@@ -94,7 +78,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
         assert response.content == response_text
         mock_send_message.assert_called_once_with(user_prompt, candidate_count=1)
         expected_stop_sequence = [stop] if stop else None
-        start_chat.assert_called_once_with(
+        mock_start_chat.assert_called_once_with(
             context=None,
             message_history=[],
             **prompt_params,
@@ -103,8 +87,6 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
 
 
 def test_parse_chat_history_correct() -> None:
-    from vertexai.language_models import ChatMessage
-
     text_context = (
         "My name is Ned. You are my personal assistant. My "
         "favorite movies are Lord of the Rings and Hobbit."
@@ -128,13 +110,3 @@ def test_parse_chat_history_correct() -> None:
         ChatMessage(content=text_question, author="user"),
         ChatMessage(content=text_answer, author="bot"),
     ]
-
-
-def test_vertexai_single_call_fails_no_message() -> None:
-    chat = ChatVertexAI(project="fake")
-    with pytest.raises(ValueError) as exc_info:
-        _ = chat([])
-    assert (
-        str(exc_info.value)
-        == "You should provide at least one message to start the chat!"
-    )

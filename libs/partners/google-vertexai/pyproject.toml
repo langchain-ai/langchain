@@ -9,6 +9,9 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
 google-cloud-aiplatform = "1.38.1"
+google-cloud-storage = "^2.14.0"
+types-requests = "^2.31.0.20231231"
+types-protobuf = "^4.24.0.4"
 
 [tool.poetry.group.test]
 optional = true
@@ -21,6 +24,8 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 langchain-core = {path = "../../core", develop = true}
+types-requests = "^2.31.0.20231231"
+types-protobuf = "^4.24.0.4"
 
 [tool.poetry.group.codespell]
 optional = true

@@ -8,6 +8,11 @@ import pytest
 from langchain_google_vertexai.embeddings import VertexAIEmbeddings
 
 
+def test_initialization() -> None:
+    """Test embedding model initialization."""
+    VertexAIEmbeddings()
+
+
 def test_langchain_google_vertexai_embedding_documents() -> None:
     documents = ["foo bar"]
     model = VertexAIEmbeddings()

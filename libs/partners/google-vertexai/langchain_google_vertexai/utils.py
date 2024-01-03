@@ -1,17 +1,16 @@
 """Utilities to init Vertex AI."""
 from importlib import metadata
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
+import google.api_core
+from google.api_core.gapic_v1.client_info import ClientInfo
+from google.cloud import storage  # type: ignore
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
-
-if TYPE_CHECKING:
-    from google.api_core.gapic_v1.client_info import ClientInfo
-    from google.auth.credentials import Credentials
-    from vertexai.preview.generative_models import Image
+from vertexai.preview.generative_models import Image  # type: ignore
 
 
 def create_retry_decorator(
@@ -23,7 +22,6 @@ def create_retry_decorator(
     ] = None,
 ) -> Callable[[Any], Any]:
     """Creates a retry decorator for Vertex / Palm LLMs."""
-    import google.api_core
 
     errors = [
         google.api_core.exceptions.ResourceExhausted,
@@ -52,35 +50,6 @@ def raise_vertex_import_error(minimum_expected_version: str = "1.38.0") -> None:
     )
 
 
-def init_vertexai(
-    project: Optional[str] = None,
-    location: Optional[str] = None,
-    credentials: Optional["Credentials"] = None,
-) -> None:
-    """Init vertexai.
-
-    Args:
-        project: The default GCP project to use when making Vertex API calls.
-        location: The default location to use when making API calls.
-        credentials: The default custom
-            credentials to use when making API calls. If not provided credentials
-            will be ascertained from the environment.
-
-    Raises:
-        ImportError: If importing vertexai SDK did not succeed.
-    """
-    try:
-        import vertexai
-    except ImportError:
-        raise_vertex_import_error()
-
-    vertexai.init(
-        project=project,
-        location=location,
-        credentials=credentials,
-    )
-
-
 def get_client_info(module: Optional[str] = None) -> "ClientInfo":
     r"""Returns a custom user agent header.
 
@@ -90,14 +59,6 @@ def get_client_info(module: Optional[str] = None) -> "ClientInfo":
     Returns:
         google.api_core.gapic_v1.client_info.ClientInfo
     """
-    try:
-        from google.api_core.gapic_v1.client_info import ClientInfo
-    except ImportError as exc:
-        raise ImportError(
-            "Could not import ClientInfo. Please, install it with "
-            "pip install google-api-core"
-        ) from exc
-
     langchain_version = metadata.version("langchain")
     client_library_version = (
         f"{langchain_version}-{module}" if module else langchain_version
@@ -108,14 +69,8 @@ def get_client_info(module: Optional[str] = None) -> "ClientInfo":
     )
 
 
-def load_image_from_gcs(path: str, project: Optional[str] = None) -> "Image":
+def load_image_from_gcs(path: str, project: Optional[str] = None) -> Image:
     """Loads im Image from GCS."""
-    try:
-        from google.cloud import storage
-    except ImportError:
-        raise ImportError("Could not import google-cloud-storage python package.")
-    from vertexai.preview.generative_models import Image
-
     gcs_client = storage.Client(project=project)
     pieces = path.split("/")
     blobs = list(gcs_client.list_blobs(pieces[2], prefix="/".join(pieces[3:])))
