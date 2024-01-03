@@ -17,7 +17,7 @@ from typing_extensions import TypeAlias
 
 from langchain_core.messages import AnyMessage, BaseMessage, get_buffer_string
 from langchain_core.prompt_values import PromptValue
-from langchain_core.runnables import RunnableSerializable
+from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
@@ -49,11 +49,13 @@ def _get_token_ids_default_method(text: str) -> List[int]:
 
 
 LanguageModelInput = Union[PromptValue, str, List[BaseMessage]]
-LanguageModelOutput = TypeVar("LanguageModelOutput")
+LanguageModelOutput = Union[BaseMessage, str]
+LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
+LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", BaseMessage, str)
 
 
 class BaseLanguageModel(
-    RunnableSerializable[LanguageModelInput, LanguageModelOutput], ABC
+    RunnableSerializable[LanguageModelInput, LanguageModelOutputVar], ABC
 ):
     """Abstract base class for interfacing with language models.
 

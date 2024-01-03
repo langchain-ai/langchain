@@ -1,4 +1,5 @@
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
+
 from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.vectorstores import Chroma
 

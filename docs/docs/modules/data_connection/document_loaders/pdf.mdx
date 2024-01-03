@@ -1,3 +1,7 @@
+---
+keywords: [PyPDFDirectoryLoader, PyMuPDFLoader]
+---
+
 # PDF
 
 >[Portable Document Format (PDF)](https://en.wikipedia.org/wiki/PDF), standardized as ISO 32000, is a file format developed by Adobe in 1992 to present documents, including text formatting and images, in a manner independent of application software, hardware, and operating systems.
@@ -57,7 +61,7 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 
 ```python
 from langchain.vectorstores import FAISS
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_community.embeddings.openai import OpenAIEmbeddings
 
 faiss_index = FAISS.from_documents(pages, OpenAIEmbeddings())
 docs = faiss_index.similarity_search("How will the community be engaged?", k=2)

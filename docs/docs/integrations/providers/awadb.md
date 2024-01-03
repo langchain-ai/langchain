@@ -22,7 +22,7 @@ See a [usage example](/docs/integrations/vectorstores/awadb).
 ## Text Embedding Model
 
 ```python
-from langchain.embeddings import AwaEmbeddings
+from langchain_community.embeddings import AwaEmbeddings
 ```
 
 See a [usage example](/docs/integrations/text_embedding/awadb).
