@@ -85,7 +85,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         )
 
 
-class SelfQueryRetriever(BaseRetriever, BaseModel):
+class SelfQueryRetriever(BaseRetriever):
     """Retriever that uses a vector store and an LLM to generate
     the vector store queries."""
 
