@@ -936,9 +936,7 @@ def _prepare_eval_run(
             project_metadata = project_metadata or {}
             project_metadata = {
                 **project_metadata,
-                # Note the double underscore here, it's a convention to
-                # namespace metadata keys
-                **{"git__" + k: v for k, v in git_info.items()},
+                "git": git_info,
             }
         project = client.create_project(
             project_name,
@@ -1088,9 +1086,8 @@ class _DatasetRunContainer:
             tags=tags,
         )
         tags = tags or []
-        for k, v in project.metadata.items():
-            if k.startswith("git__"):
-                tags.append(f"git:{k[5:]}={v}")
+        for k, v in (project.metadata.get("git") or {}).items():
+            tags.append(f"git:{k}={v}")
         wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
         run_evaluators = _setup_evaluation(
             wrapped_model, examples, evaluation, dataset.data_type or DataType.kv
