@@ -457,10 +457,12 @@ def _import_zilliz() -> Any:
 
     return Zilliz
 
+
 def _import_lantern() -> Any:
     from langchain_community.vectorstores.lantern import Lantern
 
     return Lantern
+
 
 def __getattr__(name: str) -> Any:
     if name == "AnalyticDB":
