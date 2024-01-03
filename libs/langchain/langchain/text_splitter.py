@@ -433,7 +433,8 @@ class MarkdownHeaderTextSplitter:
                 if stripped_line.startswith(sep) and (
                     # Header with no text OR header is followed by space
                     # Both are valid conditions that sep is being used a header
-                    len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
+                    len(stripped_line) == len(sep)
+                    or stripped_line[len(sep)] == " "
                 ):
                     # Ensure we are tracking the header as metadata
                     if name is not None:
@@ -759,7 +760,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             from sentence_transformers import SentenceTransformer
         except ImportError:
             raise ImportError(
-                "Could not import sentence_transformer python package. "
+                "Could not import sentence_transformers python package. "
                 "This is needed in order to for SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install sentence-transformers`."
             )
