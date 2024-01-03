@@ -3,9 +3,9 @@ Ensemble retriever that ensemble the results of
 multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
 from collections import defaultdict
-from collections.abc import Callable, Hashable, Iterable, Iterator
+from collections.abc import Hashable
 from itertools import chain
-from typing import Any, Dict, List, TypeVar
+from typing import Any, Callable, Dict, Iterable, Iterator, List, TypeVar
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
