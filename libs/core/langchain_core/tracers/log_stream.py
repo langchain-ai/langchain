@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import math
 import threading
 from collections import defaultdict
@@ -42,6 +43,8 @@ class LogEntry(TypedDict):
 
     streamed_output_str: List[str]
     """List of LLM tokens streamed by this run, if applicable."""
+    streamed_output: List[Any]
+    """List of output chunks streamed by this run, if available."""
     final_output: Optional[Any]
     """Final output of this run.
     Only available after the run has finished successfully."""
@@ -82,7 +85,7 @@ class RunLogPatch:
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
         if type(other) == RunLogPatch:
             ops = self.ops + other.ops
-            state = jsonpatch.apply_patch(None, ops)
+            state = jsonpatch.apply_patch(None, copy.deepcopy(ops))
             return RunLog(*ops, state=state)
 
         raise TypeError(
@@ -241,6 +244,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         tags=run.tags or [],
                         metadata=(run.extra or {}).get("metadata", {}),
                         start_time=run.start_time.isoformat(timespec="milliseconds"),
+                        streamed_output=[],
                         streamed_output_str=[],
                         final_output=None,
                         end_time=None,
@@ -297,6 +301,13 @@ class LogStreamCallbackHandler(BaseTracer):
                     "op": "add",
                     "path": f"/logs/{index}/streamed_output_str/-",
                     "value": token,
-                }
+                },
+                {
+                    "op": "add",
+                    "path": f"/logs/{index}/streamed_output/-",
+                    "value": chunk.message
+                    if isinstance(chunk, ChatGenerationChunk)
+                    else token,
+                },
             )
         )
