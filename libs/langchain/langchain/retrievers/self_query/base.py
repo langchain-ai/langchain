@@ -21,7 +21,7 @@ from langchain_community.vectorstores import (
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from langchain_core.vectorstores import VectorStore
