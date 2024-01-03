@@ -1,5 +1,6 @@
 from typing import Sequence
 
+from langchain_community.tools.convert_to_openai import format_tool_to_openai_tool
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
@@ -9,7 +10,6 @@ from langchain.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,
 )
 from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
-from langchain.tools.render import format_tool_to_openai_tool
 
 
 def create_openai_tools_agent(
@@ -23,7 +23,7 @@ def create_openai_tools_agent(
         .. code-block:: python
 
             from langchain import hub
-            from langchain.chat_models import ChatOpenAI
+            from langchain_community.chat_models import ChatOpenAI
             from langchain.agents import AgentExecutor, create_openai_tools_agent
 
             prompt = hub.pull("hwchase17/openai-tools-agent")

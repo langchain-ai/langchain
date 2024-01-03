@@ -2,6 +2,23 @@
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
+from langchain_community.vectorstores import (
+    Chroma,
+    DashVector,
+    DeepLake,
+    ElasticsearchStore,
+    Milvus,
+    MongoDBAtlasVectorSearch,
+    MyScale,
+    OpenSearchVectorSearch,
+    Pinecone,
+    Qdrant,
+    Redis,
+    SupabaseVectorStore,
+    TimescaleVector,
+    Vectara,
+    Weaviate,
+)
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
@@ -31,23 +48,6 @@ from langchain.retrievers.self_query.supabase import SupabaseVectorTranslator
 from langchain.retrievers.self_query.timescalevector import TimescaleVectorTranslator
 from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
-from langchain.vectorstores import (
-    Chroma,
-    DashVector,
-    DeepLake,
-    ElasticsearchStore,
-    Milvus,
-    MongoDBAtlasVectorSearch,
-    MyScale,
-    OpenSearchVectorSearch,
-    Pinecone,
-    Qdrant,
-    Redis,
-    SupabaseVectorStore,
-    TimescaleVector,
-    Vectara,
-    Weaviate,
-)
 
 logger = logging.getLogger(__name__)
 
