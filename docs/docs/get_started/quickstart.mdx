@@ -128,7 +128,7 @@ We can also guide it's response with a prompt template.
 Prompt templates are used to convert raw user input to a better input to the LLM.
 
 ```python
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 prompt = ChatPromptTemplate.from_messages([
     ("system", "You are world class technical documentation writer."),
     ("user", "{input}")
@@ -479,7 +479,7 @@ To create a server for our application we'll make a `serve.py` file. This will c
 from typing import List
 
 from fastapi import FastAPI
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.embeddings import OpenAIEmbeddings
