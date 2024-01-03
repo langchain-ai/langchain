@@ -1,15 +1,15 @@
+from __future__ import annotations
+
 import logging
+from typing import Any, List, Optional, Tuple
 import uuid
 
 import numpy as np
-
-
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.vectorstores import VectorStore
-from typing import Any, List, Optional, Tuple
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ class VikingDB(VectorStore):
         return self.embedding_func
 
     def _create_collection(
-            self, embeddings: list, metadatas: Optional[list[dict]] = None
+            self, embeddings: List, metadatas: Optional[List[dict]] = None
     ) -> None:
         try:
             from volcengine.viking_db import Field, FieldType
@@ -170,7 +170,7 @@ class VikingDB(VectorStore):
 
         # insert data
         data = []
-        pks: list[str] = []
+        pks: List[str] = []
         for index in range(len(embeddings)):
             primary_key = str(uuid.uuid4())
             pks.append(primary_key)
@@ -287,7 +287,7 @@ class VikingDB(VectorStore):
 
     def max_marginal_relevance_search_by_vector(
             self,
-            embedding: list[float],
+            embedding: List[float],
             k: int = 4,
             lambda_mult: float = 0.5,
             params: Optional[dict] = None,
