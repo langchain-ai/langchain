@@ -41,9 +41,12 @@ def _create_function_message(
     if not isinstance(observation, str):
         try:
             minified_json = get_from_env("json_output_minified", 
-                                         "JSON_OUTPUT_MINIFIED", "false").lower() == "true"
+                                         "JSON_OUTPUT_MINIFIED", 
+                                         "false").lower() == "true"
             separators = (",", ":") if minified_json else None
-            content = json.dumps(observation, ensure_ascii=False, separators=separators)
+            content = json.dumps(observation, 
+                                 ensure_ascii=False, 
+                                 separators=separators)
         except Exception:
             content = str(observation)
     else:
