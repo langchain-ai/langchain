@@ -1,10 +1,6 @@
-# Robocorp
+# Langchain - Robocorp Action Server
 
-TODO: What does this package do
-
-## Environment Setup
-
-TODO: What environment variables need to be set (if any)
+This template enables using [Robocorp Action Server](https://github.com/robocorp/robocorp) served actions as tools for an Agent.
 
 ## Usage
 
