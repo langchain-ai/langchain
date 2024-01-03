@@ -85,7 +85,7 @@ export OPENAI_API_KEY="..."
 We can then initialize the model:
 
 ```python
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 
 llm = ChatOpenAI()
 ```
@@ -93,7 +93,7 @@ llm = ChatOpenAI()
 If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 
 llm = ChatOpenAI(openai_api_key="...")
 ```
@@ -110,7 +110,7 @@ First, follow [these instructions](https://github.com/jmorganca/ollama) to set u
 
 Then, make sure the Ollama server is running. After that, you can do:
 ```python
-from langchain.llms import Ollama
+from langchain_community.llms import Ollama
 llm = Ollama(model="llama2")
 ```
 
@@ -412,7 +412,7 @@ pip install langchainhub
 Now we can use it to get a predefined prompt
 
 ```python
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain import hub
 from langchain.agents import create_openai_functions_agent
 from langchain.agents import AgentExecutor
@@ -476,14 +476,14 @@ from typing import List
 
 from fastapi import FastAPI
 from langchain.prompts import ChatPromptTemplate
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import DocArrayInMemorySearch
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain import hub
 from langchain.agents import create_openai_functions_agent
 from langchain.agents import AgentExecutor

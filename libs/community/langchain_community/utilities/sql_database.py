@@ -427,6 +427,7 @@ class SQLDatabase:
         self,
         command: str,
         fetch: Union[Literal["all"], Literal["one"]] = "all",
+        include_columns: bool = False,
     ) -> str:
         """Execute a SQL command and return a string representing the results.
 
@@ -434,12 +435,18 @@ class SQLDatabase:
         If the statement returns no rows, an empty string is returned.
         """
         result = self._execute(command, fetch)
-        # Convert columns values to string to avoid issues with sqlalchemy
-        # truncating text
+
         res = [
-            tuple(truncate_word(c, length=self._max_string_length) for c in r.values())
+            {
+                column: truncate_word(value, length=self._max_string_length)
+                for column, value in r.items()
+            }
             for r in result
         ]
+
+        if not include_columns:
+            res = [tuple(row.values()) for row in res]
+
         if not res:
             return ""
         else:
@@ -465,6 +472,7 @@ class SQLDatabase:
         self,
         command: str,
         fetch: Union[Literal["all"], Literal["one"]] = "all",
+        include_columns: bool = False,
     ) -> str:
         """Execute a SQL command and return a string representing the results.
 
@@ -474,7 +482,7 @@ class SQLDatabase:
         If the statement throws an error, the error message is returned.
         """
         try:
-            return self.run(command, fetch)
+            return self.run(command, fetch, include_columns)
         except SQLAlchemyError as e:
             """Format the error message"""
             return f"Error: {e}"
