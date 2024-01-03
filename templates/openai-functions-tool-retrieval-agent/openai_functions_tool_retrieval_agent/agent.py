@@ -11,11 +11,11 @@ from langchain.prompts import (
     MessagesPlaceholder,
 )
 from langchain.schema import Document
-from langchain.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.vectorstores import FAISS
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
