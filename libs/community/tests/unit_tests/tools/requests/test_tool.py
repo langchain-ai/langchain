@@ -152,7 +152,7 @@ def mock_json_requests_wrapper() -> JsonRequestsWrapper:
 
 
 def test_requests_get_tool_json(
-    mock_json_requests_wrapper: JsonRequestsWrapper
+    mock_json_requests_wrapper: JsonRequestsWrapper,
 ) -> None:
     tool = RequestsGetTool(requests_wrapper=mock_json_requests_wrapper)
     assert tool.run("https://example.com") == {"response": "get_response"}
@@ -162,7 +162,7 @@ def test_requests_get_tool_json(
 
 
 def test_requests_post_tool_json(
-    mock_json_requests_wrapper: JsonRequestsWrapper
+    mock_json_requests_wrapper: JsonRequestsWrapper,
 ) -> None:
     tool = RequestsPostTool(requests_wrapper=mock_json_requests_wrapper)
     input_text = '{"url": "https://example.com", "data": {"key": "value"}}'
@@ -171,7 +171,7 @@ def test_requests_post_tool_json(
 
 
 def test_requests_patch_tool_json(
-    mock_json_requests_wrapper: JsonRequestsWrapper
+    mock_json_requests_wrapper: JsonRequestsWrapper,
 ) -> None:
     tool = RequestsPatchTool(requests_wrapper=mock_json_requests_wrapper)
     input_text = '{"url": "https://example.com", "data": {"key": "value"}}'
@@ -180,7 +180,7 @@ def test_requests_patch_tool_json(
 
 
 def test_requests_put_tool_json(
-    mock_json_requests_wrapper: JsonRequestsWrapper
+    mock_json_requests_wrapper: JsonRequestsWrapper,
 ) -> None:
     tool = RequestsPutTool(requests_wrapper=mock_json_requests_wrapper)
     input_text = '{"url": "https://example.com", "data": {"key": "value"}}'
@@ -189,7 +189,7 @@ def test_requests_put_tool_json(
 
 
 def test_requests_delete_tool_json(
-    mock_json_requests_wrapper: JsonRequestsWrapper
+    mock_json_requests_wrapper: JsonRequestsWrapper,
 ) -> None:
     tool = RequestsDeleteTool(requests_wrapper=mock_json_requests_wrapper)
     assert tool.run("https://example.com") == {"response": "delete_response"}
