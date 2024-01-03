@@ -1,4 +1,4 @@
-from langchain.utilities import __all__
+from langchain_community.utilities import __all__
 
 EXPECTED_ALL = [
     "AlphaVantageAPIWrapper",

@@ -2,12 +2,12 @@ import os
 import time
 from typing import Optional
 
+from langchain_community.chat_message_histories.cassandra import (
+    CassandraChatMessageHistory,
+)
 from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories.cassandra import (
-    CassandraChatMessageHistory,
-)
 
 
 def _chat_message_history(
