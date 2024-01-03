@@ -17,11 +17,11 @@ class Yuan2(LLM):
     Example:
         .. code-block:: python
 
-            yuan_llm = Yuan2(infer_api="http://127.0.0.1:8900/yuan", max_tokens=1024, temp=1.0, top_p=0.9, top_k=40)
+            yuan_llm = Yuan2(infer_api="http://127.0.0.1:8000/yuan", max_tokens=1024, temp=1.0, top_p=0.9, top_k=40)
             print(yuan_llm)
             print(yuan_llm("你是谁？"))
     """
-    infer_api: str
+    infer_api: str = "http://127.0.0.1:8000/yuan"
     """Yuan2.0 inference api"""
 
     max_tokens: int = Field(1024, alias="max_token")
