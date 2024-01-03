@@ -22,10 +22,6 @@ from typing import (
 
 import openai
 import tiktoken
-from langchain_community.adapters.openai import (
-    convert_dict_to_message,
-    convert_message_to_dict,
-)
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -37,13 +33,19 @@ from langchain_core.language_models.chat_models import (
     generate_from_stream,
 )
 from langchain_core.messages import (
+    AIMessage,
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
+    ChatMessage,
     ChatMessageChunk,
+    FunctionMessage,
     FunctionMessageChunk,
+    HumanMessage,
     HumanMessageChunk,
+    SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
     ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
@@ -55,6 +57,92 @@ from langchain_core.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+    """Convert a dictionary to a LangChain message.
+
+    Args:
+        _dict: The dictionary.
+
+    Returns:
+        The LangChain message.
+    """
+    role = _dict.get("role")
+    if role == "user":
+        return HumanMessage(content=_dict.get("content", ""))
+    elif role == "assistant":
+        # Fix for azure
+        # Also OpenAI returns None for tool invocations
+        content = _dict.get("content", "") or ""
+        additional_kwargs: Dict = {}
+        if function_call := _dict.get("function_call"):
+            additional_kwargs["function_call"] = dict(function_call)
+        if tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = tool_calls
+        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+    elif role == "system":
+        return SystemMessage(content=_dict.get("content", ""))
+    elif role == "function":
+        return FunctionMessage(content=_dict.get("content", ""), name=_dict.get("name"))
+    elif role == "tool":
+        additional_kwargs = {}
+        if "name" in _dict:
+            additional_kwargs["name"] = _dict["name"]
+        return ToolMessage(
+            content=_dict.get("content", ""),
+            tool_call_id=_dict.get("tool_call_id"),
+            additional_kwargs=additional_kwargs,
+        )
+    else:
+        return ChatMessage(content=_dict.get("content", ""), role=role)
+
+
+def _convert_message_to_dict(message: BaseMessage) -> dict:
+    """Convert a LangChain message to a dictionary.
+
+    Args:
+        message: The LangChain message.
+
+    Returns:
+        The dictionary.
+    """
+    message_dict: Dict[str, Any]
+    if isinstance(message, ChatMessage):
+        message_dict = {"role": message.role, "content": message.content}
+    elif isinstance(message, HumanMessage):
+        message_dict = {"role": "user", "content": message.content}
+    elif isinstance(message, AIMessage):
+        message_dict = {"role": "assistant", "content": message.content}
+        if "function_call" in message.additional_kwargs:
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
+            # If function call only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+            # If tool calls only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
+    elif isinstance(message, SystemMessage):
+        message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, FunctionMessage):
+        message_dict = {
+            "role": "function",
+            "content": message.content,
+            "name": message.name,
+        }
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "tool_call_id": message.tool_call_id,
+        }
+    else:
+        raise TypeError(f"Got unknown type {message}")
+    if "name" in message.additional_kwargs:
+        message_dict["name"] = message.additional_kwargs["name"]
+    return message_dict
 
 
 async def acompletion_with_retry(
@@ -374,7 +462,7 @@ class ChatOpenAI(BaseChatModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [convert_message_to_dict(m) for m in messages]
+        message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
     def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
@@ -382,7 +470,7 @@ class ChatOpenAI(BaseChatModel):
         if not isinstance(response, dict):
             response = response.dict()
         for res in response["choices"]:
-            message = convert_dict_to_message(res["message"])
+            message = _convert_dict_to_message(res["message"])
             generation_info = dict(finish_reason=res.get("finish_reason"))
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -532,7 +620,7 @@ class ChatOpenAI(BaseChatModel):
                 " for information on how messages are converted to tokens."
             )
         num_tokens = 0
-        messages_dict = [convert_message_to_dict(m) for m in messages]
+        messages_dict = [_convert_message_to_dict(m) for m in messages]
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
