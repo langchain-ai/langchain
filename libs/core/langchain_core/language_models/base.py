@@ -15,6 +15,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
+from langchain_core._api import deprecated
 from langchain_core.messages import AnyMessage, BaseMessage, get_buffer_string
 from langchain_core.prompt_values import PromptValue
 from langchain_core.runnables import Runnable, RunnableSerializable
@@ -160,11 +161,12 @@ class BaseLanguageModel(
                 prompt and additional model provider-specific output.
         """
 
+    @deprecated("0.1.0", alternative="invoke")
     @abstractmethod
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        """Pass a single string input to the model and return a string prediction.
+        """[DEPRECATED] Pass a single string input to the model and return a string.
 
          Use this method when passing in raw text. If you want to pass in specific
             types of chat messages, use predict_messages.
@@ -180,6 +182,7 @@ class BaseLanguageModel(
             Top model prediction as a string.
         """
 
+    @deprecated("0.1.0", alternative="invoke")
     @abstractmethod
     def predict_messages(
         self,
@@ -188,7 +191,7 @@ class BaseLanguageModel(
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        """Pass a message sequence to the model and return a message prediction.
+        """[DEPRECATED] Pass a message sequence to the model and return a message.
 
         Use this method when passing in chat messages. If you want to pass in raw text,
             use predict.
@@ -204,11 +207,12 @@ class BaseLanguageModel(
             Top model prediction as a message.
         """
 
+    @deprecated("0.1.0", alternative="ainvoke")
     @abstractmethod
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        """Asynchronously pass a string to the model and return a string prediction.
+        """[DEPRECATED] Asynchronously pass a string to the model and return a string.
 
         Use this method when calling pure text generation models and only the top
             candidate generation is needed.
@@ -224,6 +228,7 @@ class BaseLanguageModel(
             Top model prediction as a string.
         """
 
+    @deprecated("0.1.0", alternative="ainvoke")
     @abstractmethod
     async def apredict_messages(
         self,
@@ -232,7 +237,7 @@ class BaseLanguageModel(
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        """Asynchronously pass messages to the model and return a message prediction.
+        """[DEPRECATED] Asynchronously pass messages to the model and return a message.
 
         Use this method when calling chat models and only the top
             candidate generation is needed.
