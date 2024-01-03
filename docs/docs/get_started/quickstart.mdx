@@ -143,6 +143,10 @@ chain = prompt | llm
 
 We can now invoke it and ask the same question. It still won't know the answer, but it should respond in a more proper tone for a technical writer!
 
+```python
+chain.invoke({"input": "how can langsmith help with testing?"})
+```
+
 The output of a ChatModel (and therefore, of this chain) is a message. However, it's often much more convenient to work with strings. Let's add a simple output parser to convert the chat message to a string.
 
 ```python
@@ -204,7 +208,7 @@ embeddings = OpenAIEmbeddings()
 ```
 
 </TabItem>
-<TabItem value="local" label="Ollama">
+<TabItem value="local" label="Local">
 
 Make sure you have Ollama running (same set up as with the LLM).
 
@@ -284,7 +288,7 @@ We can now invoke this chain. This returns a dictionary - the response from the 
 response = retrieval_chain.invoke({"input": "how can langsmith help with testing?"})
 print(response["answer"])
 
-// LangSmith offers several features that can help with testing:...
+# LangSmith offers several features that can help with testing:...
 ```
 
 This answer should be much more accurate!
@@ -326,7 +330,7 @@ We can test this out by passing in an instance where the user is asking a follow
 from langchain_core.messages import HumanMessage, AIMessage
 
 chat_history = [HumanMessage(content="Can LangSmith help test my LLM applications?"), AIMessage(content="Yes!")]
-retrieval_chain.invoke({
+retriever_chain.invoke({
     "chat_history": chat_history,
     "input": "Tell me how"
 })

@@ -10,7 +10,7 @@ To set it up, follow the instructions on https://database.guide/2-sample-databas
 
 ```python
 from langchain_community.llms import OpenAI
-from langchain.utilities import SQLDatabase
+from langchain_community.utilities import SQLDatabase
 from langchain_experimental.sql import SQLDatabaseChain
 ```
 
@@ -201,7 +201,7 @@ How to add memory to a SQLDatabaseChain:
 
 ```python
 from langchain_community.llms import OpenAI
-from langchain.utilities import SQLDatabase
+from langchain_community.utilities import SQLDatabase
 from langchain_experimental.sql import SQLDatabaseChain
 ```
 
@@ -679,7 +679,7 @@ local_llm = HuggingFacePipeline(pipeline=pipe)
 
 
 ```python
-from langchain.utilities import SQLDatabase
+from langchain_community.utilities import SQLDatabase
 from langchain_experimental.sql import SQLDatabaseChain
 
 db = SQLDatabase.from_uri("sqlite:///../../../../notebooks/Chinook.db", include_tables=['Customer'])
