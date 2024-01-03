@@ -54,7 +54,8 @@ class Milvus(VectorStore):
         text_field (str): Name of the text field. Defaults to "text".
         vector_field (str): Name of the vector field. Defaults to "vector".
         metadata_field (str): Name of the metadta field. Defaults to None.
-            When metadata_field is specified, the document's metadata will store as json.
+            When metadata_field is specified,
+            the document's metadata will store as json.
 
     The connection args used for this class comes in the form of a dict,
     here are a few of the options:
@@ -266,7 +267,10 @@ class Milvus(VectorStore):
                     # Datatype isn't compatible
                     if dtype == DataType.UNKNOWN or dtype == DataType.NONE:
                         logger.error(
-                            "Failure to create collection, unrecognized dtype for key: %s",
+                            (
+                                "Failure to create collection, "
+                                "unrecognized dtype for key: %s"
+                            ),
                             key,
                         )
                         raise ValueError(f"Unrecognized datatype for {key}.")
