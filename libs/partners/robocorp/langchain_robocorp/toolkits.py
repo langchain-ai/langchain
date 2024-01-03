@@ -123,7 +123,7 @@ class ActionServerToolkit(BaseModel):
 
         # Fetch and format the API spec
         try:
-            spec_url = urljoin(self.url, 'openapi.json')
+            spec_url = urljoin(self.url, "openapi.json")
             response = requests.get(spec_url)
             json_spec = response.json()
             api_spec = reduce_openapi_spec(self.url, json_spec)

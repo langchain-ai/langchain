@@ -96,4 +96,3 @@ def get_required_param_descriptions(endpoint_spec: dict) -> str:
                 descriptions.append(value.get("description"))
 
     return ", ".join(descriptions)
-
