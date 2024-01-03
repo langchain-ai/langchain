@@ -85,7 +85,7 @@ export OPENAI_API_KEY="..."
 We can then initialize the model:
 
 ```python
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI()
 ```
@@ -93,7 +93,7 @@ llm = ChatOpenAI()
 If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(openai_api_key="...")
 ```
@@ -416,7 +416,7 @@ pip install langchainhub
 Now we can use it to get a predefined prompt
 
 ```python
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain import hub
 from langchain.agents import create_openai_functions_agent
 from langchain.agents import AgentExecutor
@@ -480,14 +480,14 @@ from typing import List
 
 from fastapi import FastAPI
 from langchain.prompts import ChatPromptTemplate
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import DocArrayInMemorySearch
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain import hub
 from langchain.agents import create_openai_functions_agent
 from langchain.agents import AgentExecutor
