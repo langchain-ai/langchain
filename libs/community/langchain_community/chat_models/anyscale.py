@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_BASE_URL = "https://api.endpoints.anyscale.com/v1"
+DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
 
@@ -59,7 +59,7 @@ class ChatAnyscale(ChatOpenAI):
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
-    anyscale_api_base: str = Field(default=DEFAULT_BASE_URL)
+    anyscale_api_base: str = Field(default=DEFAULT_API_BASE)
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
     anyscale_proxy: Optional[str] = None
@@ -70,7 +70,7 @@ class ChatAnyscale(ChatOpenAI):
     @staticmethod
     def get_available_models(
         anyscale_api_key: Optional[str] = None,
-        anyscale_api_base: str = DEFAULT_BASE_URL,
+        anyscale_api_base: str = DEFAULT_API_BASE,
     ) -> Set[str]:
         """Get available models from Anyscale API."""
         try:
@@ -111,7 +111,7 @@ class ChatAnyscale(ChatOpenAI):
             values,
             "anyscale_api_base",
             "ANYSCALE_API_BASE",
-            default=DEFAULT_BASE_URL,
+            default=DEFAULT_API_BASE,
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values,
@@ -170,7 +170,7 @@ class ChatAnyscale(ChatOpenAI):
 
             values["available_models"] = available_models
         else:
-            values["available_models"] = "test_models"
+            values["available_models"] = set(["test_models"])
         return values
 
     def _get_encoding_model(self) -> tuple[str, tiktoken.Encoding]:
