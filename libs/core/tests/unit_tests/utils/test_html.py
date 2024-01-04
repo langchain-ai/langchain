@@ -166,13 +166,12 @@ def test_prevent_outside() -> None:
         '<a href="https://foobar.com:9999">BAD</a>'
         '<a href="http://foobar.com:9999/">BAD</a>'
         '<a href="https://foobar.com/OK">OK</a>'
-        '<a href="http://foobar.com/OK">OK</a>'  # Change in scheme is OK
+        '<a href="http://foobar.com/BAD">BAD</a>'  # Change in scheme is not OK here
     )
 
     expected = sorted(
         [
             "https://foobar.com/OK",
-            "http://foobar.com/OK",
         ]
     )
     actual = sorted(
