@@ -316,7 +316,7 @@ class ChatTongyi(BaseChatModel):
             resp = await asyncio.get_running_loop().run_in_executor(
                 None,
                 functools.partial(
-                    self.completion_with_retry, **{"run_manager": run_manager, **params}
+                    self.completion_with_retry, **params
                 ),
             )
             generations.append(
@@ -383,7 +383,8 @@ class ChatTongyi(BaseChatModel):
         system_message_indices = [
             i for i, m in enumerate(message_dicts) if m["role"] == "system"
         ]
-        if len(system_message_indices) != 1 or system_message_indices[0] != 0:
+
+        if len(system_message_indices) > 0 and system_message_indices[0] != 0:
             raise ValueError("System message can only be the first message.")
 
         params["messages"] = message_dicts
