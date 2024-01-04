@@ -2199,15 +2199,8 @@ develop = false
 
 [package.dependencies]
 google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
-proto-plus = [
-    {version = ">=1.22.2,<2.0.0dev", markers = "python_version >= \"3.11\""},
-    {version = ">=1.22.0,<2.0.0dev", markers = "python_version < \"3.11\""},
-]
+proto-plus = ">=1.22.3,<2.0.0dev"
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
-
-[package.source]
-type = "directory"
-url = "../../../ai-generativelanguage-v1beta4-py"
 
 [[package]]
 name = "google-api-core"
