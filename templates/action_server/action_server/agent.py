@@ -8,7 +8,7 @@ from langchain_robocorp import ActionServerToolkit
 llm = ChatOpenAI(model="gpt-4", temperature=0)
 
 # Initialize Action Server Toolkit
-toolkit = ActionServerToolkit(url="http://localhost:8080", llm=llm)
+toolkit = ActionServerToolkit(url="http://localhost:8080")
 tools = toolkit.get_tools()
 
 # Initialize Agent

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TypedDict
 from urllib.parse import urljoin
 
 import requests
@@ -12,13 +12,14 @@ from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field, PrivateAttr, create_model
 from langchain_core.runnables import Runnable, RunnablePassthrough
-from langchain_core.tools import BaseTool, Tool
+from langchain_core.tools import BaseTool, StructuredTool, Tool
 from langchain_core.tracers.context import _tracing_v2_is_enabled
 from langsmith import Client
 
 from langchain_robocorp._common import (
+    get_param_fields,
     get_required_param_descriptions,
     reduce_openapi_spec,
 )
@@ -52,6 +53,12 @@ class ToolInputSchema(BaseModel):
     question: str = Field(...)
 
 
+class ToolArgs(TypedDict):
+    name: str
+    description: str
+    callback_manager: CallbackManager
+
+
 class ActionServerRequestTool(BaseTool):
     """Requests POST tool with LLM-instructed extraction of truncated responses."""
 
@@ -59,45 +66,22 @@ class ActionServerRequestTool(BaseTool):
     """Tool name."""
     description: str = "Useful to make requests to Action Server API"
     """Tool description."""
-    response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    """Maximum length of the response to be returned."""
-    run_details: dict
-    """Request API key"""
-    api_key: str
-    """Action Server API key"""
-    report_trace: bool
-    """Should requests to Action Server include Langsmith trace, if available"""
+    endpoint: str
+    """"Action API endpoint"""
+    action_request: Callable[[str], str]
+    """Action request execution"""
 
     def _run(
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-
         try:
             json_text = query[query.find("{") : query.rfind("}") + 1]
-            data = json.loads(json_text)
+            payload = json.loads(json_text)
 
         except json.JSONDecodeError as e:
             raise e
 
-        try:
-            if self.report_trace and "run_id" in self.run_details:
-                client = Client()
-                run = client.read_run(self.run_details["run_id"])
-                if run.url:
-                    headers[LLM_TRACE_HEADER] = run.url
-        except Exception:
-            pass
-
-        response = requests.post(
-            data["url"], headers=headers, data=json.dumps(data["data"])
-        )
-        output = response.text[: self.response_length]
-
-        return output
+        return self.action_request(self.endpoint, **payload["data"])
 
     async def _arun(self, text: str) -> str:
         raise NotImplementedError()
@@ -108,17 +92,20 @@ class ActionServerToolkit(BaseModel):
 
     url: str = Field(exclude=True)
     """Action Server URL"""
-    llm: BaseChatModel
-    """Chat model to be used for the Toolkit agent"""
     api_key: str = Field(exclude=True, default="")
     """Action Server request API key"""
     report_trace: bool = Field(exclude=True, default=False)
     """Enable reporting Langsmith trace to Action Server runs"""
+    _run_details: dict = PrivateAttr({})
 
     class Config:
         arbitrary_types_allowed = True
 
-    def get_tools(self, **kwargs: Any) -> List[BaseTool]:
+    def get_tools(
+        self,
+        llm: Optional[BaseChatModel] = None,
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> List[BaseTool]:
         """Get the tools in the toolkit."""
 
         # Fetch and format the API spec
@@ -133,67 +120,119 @@ class ActionServerToolkit(BaseModel):
             )
 
         # Prepare request tools
-        run_details: dict = {}
-
-        request_tool = ActionServerRequestTool(
-            run_details=run_details,
-            report_trace=self.report_trace,
-            api_key=self.api_key,
-        )
+        self._run_details: dict = {}
 
         # Prepare callback manager
-        callback_manager = kwargs.get("callback_manager", CallbackManager([]))
+        if callback_manager is None:
+            callback_manager = CallbackManager([])
         callbacks: List[BaseCallbackHandler] = []
 
         if _tracing_v2_is_enabled():
-            callbacks.append(RunDetailsCallbackHandler(run_details))
+            callbacks.append(RunDetailsCallbackHandler(self._run_details))
 
         for callback in callbacks:
             callback_manager.add_handler(callback)
 
-        # Prepare the toolkit
         toolkit: List[BaseTool] = []
 
-        prompt_variables = {
-            "api_url": self.url,
-        }
-
-        for name, docs in api_spec.endpoints:
-            if not name.startswith("/api/actions"):
+        # Prepare tools
+        for endpoint, docs in api_spec.endpoints:
+            if not endpoint.startswith("/api/actions"):
                 continue
 
-            tool_name = f"robocorp_action_server_{docs['operationId']}"
             summary = docs["summary"]
+
             tool_description = TOOLKIT_TOOL_DESCRIPTION.format(
                 name=summary,
                 description=docs.get("description", summary),
                 required_params=get_required_param_descriptions(docs),
             )
 
-            prompt_variables["api_docs"] = f"{name}: \n{json.dumps(docs, indent=4)}"
+            tool_args: ToolArgs = {
+                "name": f"robocorp_action_server_{docs['operationId']}",
+                "description": tool_description,
+                "callback_manager": callback_manager,
+            }
 
-            prompt = PromptTemplate(
-                template=API_CONTROLLER_PROMPT,
-                input_variables=["input"],
-                partial_variables=prompt_variables,
-            )
+            if llm:
+                tool = self._get_unstructured_tool(endpoint, docs, tool_args, llm)
+            else:
+                tool = self._get_structured_tool(endpoint, docs, tool_args)
 
-            chain: Runnable = (
-                {"input": RunnablePassthrough()}
-                | prompt
-                | self.llm
-                | StrOutputParser()
-                | request_tool
-            )
-
-            toolkit.append(
-                Tool(
-                    name=tool_name,
-                    func=chain.invoke,
-                    description=tool_description,
-                    args_schema=ToolInputSchema,
-                    callback_manager=callback_manager,
-                )
-            )
+            toolkit.append(tool)
 
         return toolkit
+
+    def _get_unstructured_tool(
+        self,
+        endpoint: str,
+        docs: dict,
+        tool_args: ToolArgs,
+        llm: BaseChatModel,
+    ) -> BaseTool:
+        request_tool = ActionServerRequestTool(
+            action_request=self._action_request, endpoint=endpoint
+        )
+
+        prompt_variables = {
+            "api_url": self.url,
+        }
+
+        tool_name = tool_args["name"]
+        tool_docs = json.dumps(docs, indent=4)
+        prompt_variables["api_docs"] = f"{tool_name}: \n{tool_docs}"
+
+        prompt = PromptTemplate(
+            template=API_CONTROLLER_PROMPT,
+            input_variables=["input"],
+            partial_variables=prompt_variables,
+        )
+
+        chain: Runnable = (
+            {"input": RunnablePassthrough()}
+            | prompt
+            | llm
+            | StrOutputParser()
+            | request_tool
+        )
+
+        return Tool(func=chain.invoke, args_schema=ToolInputSchema, **tool_args)
+
+    def _get_structured_tool(
+        self, endpoint: str, docs: dict, tools_args: ToolArgs
+    ) -> BaseTool:
+        fields = get_param_fields(docs)
+
+        def create_function(endpoint: str) -> Callable:
+            def func(**data: dict[str, Any]) -> str:
+                return self._action_request(endpoint, **data)
+
+            return func
+
+        return StructuredTool(
+            func=create_function(endpoint),
+            args_schema=create_model("DynamicToolInputSchema", **fields),
+            **tools_args,
+        )
+
+    def _action_request(self, endpoint: str, **data: dict[str, Any]) -> str:
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        try:
+            if self.report_trace and "run_id" in self._run_details:
+                client = Client()
+                run = client.read_run(self._run_details["run_id"])
+                if run.url:
+                    headers[LLM_TRACE_HEADER] = run.url
+        except Exception:
+            pass
+
+        url = urljoin(self.url, endpoint)
+
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        output = response.text[:MAX_RESPONSE_LENGTH]
+
+        return output

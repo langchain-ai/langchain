@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from langchain_core.utils.json_schema import dereference_refs
 
@@ -92,3 +92,38 @@ def get_required_param_descriptions(endpoint_spec: dict) -> str:
                 descriptions.append(value.get("description"))
 
     return ", ".join(descriptions)
+
+
+type_mapping = {
+    "string": str,
+    "integer": int,
+    "number": float,
+    "object": dict,
+    "array": list,
+    "boolean": bool,
+    "null": type(None),
+}
+
+
+def get_param_fields(endpoint_spec: dict) -> dict:
+    """Get an OpenAPI endpoint parameter details"""
+    fields = {}
+
+    schema = (
+        endpoint_spec.get("requestBody", {})
+        .get("content", {})
+        .get("application/json", {})
+        .get("schema", {})
+    )
+    properties = schema.get("properties", {})
+    required_fields = schema.get("required", [])
+
+    for key, value in properties.items():
+        details = {
+            "description": value.get("description", ""),
+            "required": key in required_fields,
+        }
+        field_type = type_mapping[value.get("type", "string")]
+        fields[key] = (field_type, details)
+
+    return fields
