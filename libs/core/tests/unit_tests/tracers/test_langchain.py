@@ -6,10 +6,11 @@ from typing import Any, Dict
 from uuid import UUID
 
 import pytest
+from langsmith import Client
+
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.schemas import Run
-from langsmith import Client
 
 
 def test_example_id_assignment_threadsafe() -> None:

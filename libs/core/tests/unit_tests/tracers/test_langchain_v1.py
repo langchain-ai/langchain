@@ -1,12 +1,13 @@
 """Test Tracer classes."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Union
 from uuid import uuid4
 
 import pytest
 from freezegun import freeze_time
+
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import HumanMessage
 from langchain_core.outputs import LLMResult
@@ -29,14 +30,16 @@ SERIALIZED_CHAT = {"id": ["chat_model"]}
 def load_session(session_name: str) -> TracerSessionV1:
     """Load a tracing session."""
     return TracerSessionV1(
-        id=TEST_SESSION_ID, name=session_name, start_time=datetime.utcnow()
+        id=TEST_SESSION_ID, name=session_name, start_time=datetime.now(timezone.utc)
     )
 
 
 def new_session(name: Optional[str] = None) -> TracerSessionV1:
     """Create a new tracing session."""
     return TracerSessionV1(
-        id=TEST_SESSION_ID, name=name or "default", start_time=datetime.utcnow()
+        id=TEST_SESSION_ID,
+        name=name or "default",
+        start_time=datetime.now(timezone.utc),
     )
 
 
@@ -48,7 +51,7 @@ def _persist_session(session: TracerSessionV1Base) -> TracerSessionV1:
 def load_default_session() -> TracerSessionV1:
     """Load a tracing session."""
     return TracerSessionV1(
-        id=TEST_SESSION_ID, name="default", start_time=datetime.utcnow()
+        id=TEST_SESSION_ID, name="default", start_time=datetime.now(timezone.utc)
     )
 
 
@@ -114,8 +117,8 @@ def test_tracer_llm_run() -> None:
     compare_run = LLMRun(
         uuid=str(uuid),
         parent_uuid=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -146,8 +149,8 @@ def test_tracer_chat_model_run() -> None:
     compare_run = LLMRun(
         uuid=str(run_managers[0].run_id),
         parent_uuid=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -179,8 +182,8 @@ def test_tracer_multiple_llm_runs() -> None:
     compare_run = LLMRun(
         uuid=str(uuid),
         parent_uuid=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -208,8 +211,8 @@ def test_tracer_chain_run() -> None:
     compare_run = ChainRun(
         uuid=str(uuid),
         parent_uuid=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -234,8 +237,8 @@ def test_tracer_tool_run() -> None:
     compare_run = ToolRun(
         uuid=str(uuid),
         parent_uuid=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -294,8 +297,8 @@ def test_tracer_nested_run() -> None:
     compare_run = ChainRun(
         uuid=str(chain_uuid),
         error=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         extra={},
         execution_order=1,
         child_execution_order=4,
@@ -308,8 +311,8 @@ def test_tracer_nested_run() -> None:
             ToolRun(
                 uuid=str(tool_uuid),
                 parent_uuid=str(chain_uuid),
-                start_time=datetime.utcnow(),
-                end_time=datetime.utcnow(),
+                start_time=datetime.now(timezone.utc),
+                end_time=datetime.now(timezone.utc),
                 extra={},
                 execution_order=2,
                 child_execution_order=3,
@@ -326,8 +329,8 @@ def test_tracer_nested_run() -> None:
                         uuid=str(llm_uuid1),
                         parent_uuid=str(tool_uuid),
                         error=None,
-                        start_time=datetime.utcnow(),
-                        end_time=datetime.utcnow(),
+                        start_time=datetime.now(timezone.utc),
+                        end_time=datetime.now(timezone.utc),
                         extra={},
                         execution_order=3,
                         child_execution_order=3,
@@ -344,8 +347,8 @@ def test_tracer_nested_run() -> None:
                 uuid=str(llm_uuid2),
                 parent_uuid=str(chain_uuid),
                 error=None,
-                start_time=datetime.utcnow(),
-                end_time=datetime.utcnow(),
+                start_time=datetime.now(timezone.utc),
+                end_time=datetime.now(timezone.utc),
                 extra={},
                 execution_order=4,
                 child_execution_order=4,
@@ -369,8 +372,8 @@ def test_tracer_llm_run_on_error() -> None:
     compare_run = LLMRun(
         uuid=str(uuid),
         parent_uuid=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -397,8 +400,8 @@ def test_tracer_chain_run_on_error() -> None:
     compare_run = ChainRun(
         uuid=str(uuid),
         parent_uuid=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -425,8 +428,8 @@ def test_tracer_tool_run_on_error() -> None:
     compare_run = ToolRun(
         uuid=str(uuid),
         parent_uuid=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -461,8 +464,8 @@ def test_convert_run(
         name="llm_run",
         execution_order=1,
         child_execution_order=1,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         session_id=TEST_SESSION_ID,
         inputs={"prompts": []},
         outputs=LLMResult(generations=[[]]).dict(),
@@ -474,8 +477,8 @@ def test_convert_run(
         id="57a08cc4-73d2-4236-8371-549099d07fad",
         name="chain_run",
         execution_order=1,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         child_execution_order=1,
         serialized={},
         inputs={},
@@ -491,8 +494,8 @@ def test_convert_run(
         execution_order=1,
         child_execution_order=1,
         inputs={"input": "test"},
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         outputs=None,
         serialized={},
         child_runs=[],
@@ -505,8 +508,8 @@ def test_convert_run(
         name="llm_run",
         execution_order=1,
         child_execution_order=1,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         session_id=2,
         prompts=[],
         response=LLMResult(generations=[[]]),
@@ -519,8 +522,8 @@ def test_convert_run(
         name="chain_run",
         execution_order=1,
         child_execution_order=1,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         session_id=2,
         serialized={},
         inputs={},
@@ -536,8 +539,8 @@ def test_convert_run(
         execution_order=1,
         child_execution_order=1,
         session_id=2,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
         tool_input="test",
         action="{}",
         serialized={},
