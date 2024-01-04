@@ -7,14 +7,15 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 import numpy as np
+from langchain_core.embeddings import Embeddings
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Extra
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.chains.llm import LLMChain
-from langchain.pydantic_v1 import Extra
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class HypotheticalDocumentEmbedder(Chain, Embeddings):
@@ -72,11 +73,21 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         cls,
         llm: BaseLanguageModel,
         base_embeddings: Embeddings,
-        prompt_key: str,
+        prompt_key: Optional[str] = None,
+        custom_prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> HypotheticalDocumentEmbedder:
-        """Load and use LLMChain for a specific prompt key."""
-        prompt = PROMPT_MAP[prompt_key]
+        """Load and use LLMChain with either a specific prompt key or custom prompt."""
+        if custom_prompt is not None:
+            prompt = custom_prompt
+        elif prompt_key is not None and prompt_key in PROMPT_MAP:
+            prompt = PROMPT_MAP[prompt_key]
+        else:
+            raise ValueError(
+                f"Must specify prompt_key if custom_prompt not provided. Should be one "
+                f"of {list(PROMPT_MAP.keys())}."
+            )
+
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(base_embeddings=base_embeddings, llm_chain=llm_chain, **kwargs)
 

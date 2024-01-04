@@ -12,7 +12,7 @@ from langchain.tools.spark_unitycatalog.tool import (
     SqlQueryValidatorTool,
 )
 from langchain.tools.sql_database.tool import QuerySQLCheckerTool
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 
 
 class UCSQLDatabaseToolkit(BaseToolkit):
@@ -75,5 +75,5 @@ class UCSQLDatabaseToolkit(BaseToolkit):
                 db_warehouse_id=self.db_warehouse_id,
             ),
             QuerySQLCheckerTool(db=self.db, llm=self.llm),
-            SqlQueryValidatorTool(llm = self.llm),
+            SqlQueryValidatorTool(llm=self.llm),
         ]

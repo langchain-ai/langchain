@@ -89,7 +89,6 @@ def test_generate_synthetic(synthetic_data_generator: SyntheticDataGenerator) ->
 
 
 @pytest.mark.requires("openai")
-@pytest.mark.asyncio
 async def test_agenerate_synthetic(
     synthetic_data_generator: SyntheticDataGenerator,
 ) -> None:

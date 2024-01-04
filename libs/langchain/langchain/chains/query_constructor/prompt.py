@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 SONG_DATA_SOURCE = """\
 ```json
@@ -141,7 +141,7 @@ A logical operation statement takes the form `op(statement1, statement2, ...)`:
 Make sure that you only use the comparators and logical operators listed above and no others.
 Make sure that filters only refer to attributes that exist in the data source.
 Make sure that filters only use the attributed names with its function names if there are functions applied on them.
-Make sure that filters only use format `YYYY-MM-DD` when handling timestamp data typed values.
+Make sure that filters only use format `YYYY-MM-DD` when handling date data typed values.
 Make sure that filters take into account the descriptions of attributes and only make comparisons that are feasible given the type of data being stored.
 Make sure that filters are only used as needed. If there are no filters that should be applied return "NO_FILTER" for the filter value.\
 """
@@ -175,7 +175,7 @@ A logical operation statement takes the form `op(statement1, statement2, ...)`:
 Make sure that you only use the comparators and logical operators listed above and no others.
 Make sure that filters only refer to attributes that exist in the data source.
 Make sure that filters only use the attributed names with its function names if there are functions applied on them.
-Make sure that filters only use format `YYYY-MM-DD` when handling timestamp data typed values.
+Make sure that filters only use format `YYYY-MM-DD` when handling date data typed values.
 Make sure that filters take into account the descriptions of attributes and only make comparisons that are feasible given the type of data being stored.
 Make sure that filters are only used as needed. If there are no filters that should be applied return "NO_FILTER" for the filter value.
 Make sure the `limit` is always an int value. It is an optional parameter so leave it blank if it does not make sense.

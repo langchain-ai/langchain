@@ -1,9 +1,9 @@
 from typing import Any, Optional
 
-from langchain.schema.runnable.base import Input, Output, RunnableBinding
+from langchain_core.runnables.base import Input, Output, RunnableBindingBase
 
 
-class HubRunnable(RunnableBinding[Input, Output]):
+class HubRunnable(RunnableBindingBase[Input, Output]):
     """
     An instance of a runnable stored in the LangChain Hub.
     """

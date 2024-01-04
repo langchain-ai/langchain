@@ -3,10 +3,9 @@ import json
 from typing import Any
 from unittest import mock
 
-import pytest
+from langchain_core.documents import Document
 
 from langchain.document_transformers.nuclia_text_transform import NucliaTextTransformer
-from langchain.schema.document import Document
 from langchain.tools.nuclia.tool import NucliaUnderstandingAPI
 
 
@@ -33,7 +32,6 @@ def fakerun(**args: Any) -> Any:
     return run
 
 
-@pytest.mark.asyncio
 async def test_nuclia_loader() -> None:
     with mock.patch(
         "langchain.tools.nuclia.tool.NucliaUnderstandingAPI._arun", new_callable=fakerun

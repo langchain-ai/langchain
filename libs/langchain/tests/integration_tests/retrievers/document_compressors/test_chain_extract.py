@@ -1,7 +1,8 @@
 """Integration test for LLMChainExtractor."""
+from langchain_core.documents import Document
+
 from langchain.chat_models import ChatOpenAI
 from langchain.retrievers.document_compressors import LLMChainExtractor
-from langchain.schema import Document
 
 
 def test_llm_construction_with_kwargs() -> None:

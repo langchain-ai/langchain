@@ -7,6 +7,11 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Extra, root_validator
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -23,10 +28,6 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
     EXAMPLE_PROMPT,
     QUESTION_PROMPT,
 )
-from langchain.docstore.document import Document
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class BaseQAWithSourcesChain(Chain, ABC):
@@ -118,16 +119,26 @@ class BaseQAWithSourcesChain(Chain, ABC):
             values["combine_documents_chain"] = values.pop("combine_document_chain")
         return values
 
-    def _split_sources(self, answer: str) -> Tuple[str, str]:
+    def _split_sources(self, raw_answer: str) -> Tuple[str, str]:
         """Split sources from answer."""
-        if re.search(r"SOURCES?:", answer, re.IGNORECASE):
-            answer, sources = re.split(
-                r"SOURCES?:|QUESTION:\s", answer, flags=re.IGNORECASE
-            )[:2]
-            sources = re.split(r"\n", sources)[0].strip()
+        if re.search(r"SOURCES?:", raw_answer, re.IGNORECASE):
+            try:
+                answer, raw_sources = re.split(
+                    r"SOURCES?:|QUESTION:\s", raw_answer, flags=re.IGNORECASE
+                )[:2]
+                sources = re.split(r"\n", raw_sources)[0].strip()
+                if sources == "":
+                    regex = r"- \s*(.+\.pdf)"
+                    sources_list = re.findall(regex, raw_sources)
+                    sources = ', '.join(sources_list)
+            except Exception as e:
+                print(f"An Exception has occured for answer : {raw_answer}",e)
+                sources = ""
         else:
             sources = ""
+
         return answer, sources
+
 
     @abstractmethod
     def _get_docs(

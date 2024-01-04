@@ -26,16 +26,15 @@ As shown, the evaluator sees that the user is increasingly frustrated, indicatin
 The user feedback is inferred by custom `RunEvaluator`. This evaluator is called using the `EvaluatorCallbackHandler`, which run it in a separate thread to avoid interfering with the chat bot's runtime. You can use this custom evaluator on any compatible chat bot by calling the following function on your LangChain object:
 
 ```python
-my_chain
-.with_config(
-        callbacks=[
-            EvaluatorCallbackHandler(
-                evaluators=[
-                    ResponseEffectivenessEvaluator(evaluate_response_effectiveness)
-                ]
-            )
-        ],
-    )
+my_chain.with_config(
+    callbacks=[
+        EvaluatorCallbackHandler(
+            evaluators=[
+                ResponseEffectivenessEvaluator(evaluate_response_effectiveness)
+            ]
+        )
+    ],
+)
 ```
 
 The evaluator instructs an LLM, specifically `gpt-3.5-turbo`, to evaluate the AI's most recent chat message based on the user's followup response. It generates a score and accompanying reasoning that is converted to feedback in LangSmith, applied to the value provided as the `last_run_id`.

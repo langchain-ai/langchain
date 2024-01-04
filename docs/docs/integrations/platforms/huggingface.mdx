@@ -1,0 +1,147 @@
+# Hugging Face
+
+All functionality related to the [Hugging Face Platform](https://huggingface.co/).
+
+## LLMs
+
+### Hugging Face Hub
+
+>The [Hugging Face Hub](https://huggingface.co/docs/hub/index) is a platform 
+> with over 350k models, 75k datasets, and 150k demo apps (Spaces), all open source 
+> and publicly available, in an online platform where people can easily 
+> collaborate and build ML together. The Hub works as a central place where anyone 
+> can explore, experiment, collaborate, and build technology with Machine Learning.
+
+To use, we should have the `huggingface_hub` python [package installed](https://huggingface.co/docs/huggingface_hub/installation).
+
+```bash
+pip install huggingface_hub
+```
+
+See a [usage example](/docs/integrations/llms/huggingface_hub).
+
+```python
+from langchain.llms import HuggingFaceHub
+```
+
+### Hugging Face Local Pipelines
+
+Hugging Face models can be run locally through the `HuggingFacePipeline` class.
+
+We need to install `transformers` python package.
+
+```bash
+pip install transformers
+```
+
+See a [usage example](/docs/integrations/llms/huggingface_pipelines).
+
+```python
+from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+```
+
+### Hugging Face TextGen Inference
+
+>[Text Generation Inference](https://github.com/huggingface/text-generation-inference) is 
+> a Rust, Python and gRPC server for text generation inference. Used in production at 
+> [HuggingFace](https://huggingface.co/) to power LLMs api-inference widgets.
+
+We need to install `text_generation` python package.
+
+```bash
+pip install text_generation
+```
+
+See a [usage example](/docs/integrations/llms/huggingface_textgen_inference).
+
+```python
+from langchain.llms import HuggingFaceTextGenInference
+```
+
+
+
+## Document Loaders
+
+### Hugging Face dataset
+
+>[Hugging Face Hub](https://huggingface.co/docs/hub/index) is home to over 75,000 
+> [datasets](https://huggingface.co/docs/hub/index#datasets) in more than 100 languages 
+> that can be used for a broad range of tasks across NLP, Computer Vision, and Audio.
+> They used for a diverse range of tasks such as translation, automatic speech 
+> recognition, and image classification.
+
+We need to install `datasets` python package.
+
+```bash
+pip install datasets
+```
+
+See a [usage example](/docs/integrations/document_loaders/hugging_face_dataset).
+
+```python
+from langchain.document_loaders.hugging_face_dataset import HuggingFaceDatasetLoader
+```
+
+
+## Embedding Models
+
+### Hugging Face Hub
+
+>The [Hugging Face Hub](https://huggingface.co/docs/hub/index) is a platform 
+> with over 350k models, 75k datasets, and 150k demo apps (Spaces), all open source 
+> and publicly available, in an online platform where people can easily 
+> collaborate and build ML together. The Hub works as a central place where anyone 
+> can explore, experiment, collaborate, and build technology with Machine Learning.
+
+We need to install the `sentence_transformers` python package.
+
+```bash
+pip install sentence_transformers
+```
+
+
+#### HuggingFaceEmbeddings
+
+See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
+
+```python
+from langchain.embeddings import HuggingFaceEmbeddings
+```
+#### HuggingFaceInstructEmbeddings
+
+See a [usage example](/docs/integrations/text_embedding/instruct_embeddings).
+
+```python
+from langchain.embeddings import HuggingFaceInstructEmbeddings
+```
+
+#### HuggingFaceBgeEmbeddings
+
+>[BGE models on the HuggingFace](https://huggingface.co/BAAI/bge-large-en) are [the best open-source embedding models](https://huggingface.co/spaces/mteb/leaderboard).
+>BGE model is created by the [Beijing Academy of Artificial Intelligence (BAAI)](https://www.baai.ac.cn/english.html). `BAAI` is a private non-profit organization engaged in AI research and development.
+
+See a [usage example](/docs/integrations/text_embedding/bge_huggingface).
+
+```python
+from langchain.embeddings import HuggingFaceBgeEmbeddings
+```
+
+
+## Tools
+
+### Hugging Face Hub Tools
+
+>[Hugging Face Tools](https://huggingface.co/docs/transformers/v4.29.0/en/custom_tools) 
+> support text I/O and are loaded using the `load_huggingface_tool` function.
+
+We need to install several python packages.
+
+```bash
+pip install transformers huggingface_hub
+```
+
+See a [usage example](/docs/integrations/tools/huggingface_tools).
+
+```python
+from langchain.agents import load_huggingface_tool
+```

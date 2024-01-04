@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 import pandas as pd
+from langchain_core.prompts import PromptTemplate
 
 from langchain.chains.graph_qa.cypher import (
     GraphCypherQAChain,
@@ -12,7 +13,6 @@ from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_Q
 from langchain.graphs.graph_document import GraphDocument
 from langchain.graphs.graph_store import GraphStore
 from langchain.memory import ConversationBufferMemory, ReadOnlySharedMemory
-from langchain.prompts import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -152,16 +152,18 @@ def test_graph_cypher_qa_chain() -> None:
     readonlymemory = ReadOnlySharedMemory(memory=memory)
     prompt1 = (
         "You are a nice chatbot having a conversation with a human.\n\n    "
-        "Schema:\n    Node properties are the following: \n {}\nRelationships "
-        "properties are the following: \n {}\nRelationships are: \n[]\n\n    "
+        "Schema:\n    Node properties are the following:\n\nRelationship "
+        "properties are the following:\n\nThe relationships are the "
+        "following:\n\n\n    "
         "Previous conversation:\n    \n\n    New human question: "
         "Test question\n    Response:"
     )
 
     prompt2 = (
         "You are a nice chatbot having a conversation with a human.\n\n    "
-        "Schema:\n    Node properties are the following: \n {}\nRelationships "
-        "properties are the following: \n {}\nRelationships are: \n[]\n\n    "
+        "Schema:\n    Node properties are the following:\n\nRelationship "
+        "properties are the following:\n\nThe relationships are the "
+        "following:\n\n\n    "
         "Previous conversation:\n    Human: Test question\nAI: foo\n\n    "
         "New human question: Test new question\n    Response:"
     )
@@ -213,12 +215,11 @@ def test_exclude_types() -> None:
     exclude_types = ["Person", "DIRECTED"]
     output = construct_schema(structured_schema, [], exclude_types)
     expected_schema = (
-        "Node properties are the following: \n"
-        " {'Movie': [{'property': 'title', 'type': 'STRING'}], "
-        "'Actor': [{'property': 'name', 'type': 'STRING'}]}\n"
-        "Relationships properties are the following: \n"
-        " {}\nRelationships are: \n"
-        "['(:Actor)-[:ACTED_IN]->(:Movie)']"
+        "Node properties are the following:\n"
+        "Movie {title: STRING},Actor {name: STRING}\n"
+        "Relationship properties are the following:\n\n"
+        "The relationships are the following:\n"
+        "(:Actor)-[:ACTED_IN]->(:Movie)"
     )
     assert output == expected_schema
 
@@ -239,12 +240,11 @@ def test_include_types() -> None:
     include_types = ["Movie", "Actor", "ACTED_IN"]
     output = construct_schema(structured_schema, include_types, [])
     expected_schema = (
-        "Node properties are the following: \n"
-        " {'Movie': [{'property': 'title', 'type': 'STRING'}], "
-        "'Actor': [{'property': 'name', 'type': 'STRING'}]}\n"
-        "Relationships properties are the following: \n"
-        " {}\nRelationships are: \n"
-        "['(:Actor)-[:ACTED_IN]->(:Movie)']"
+        "Node properties are the following:\n"
+        "Movie {title: STRING},Actor {name: STRING}\n"
+        "Relationship properties are the following:\n\n"
+        "The relationships are the following:\n"
+        "(:Actor)-[:ACTED_IN]->(:Movie)"
     )
     assert output == expected_schema
 
@@ -265,12 +265,10 @@ def test_include_types2() -> None:
     include_types = ["Movie", "Actor"]
     output = construct_schema(structured_schema, include_types, [])
     expected_schema = (
-        "Node properties are the following: \n"
-        " {'Movie': [{'property': 'title', 'type': 'STRING'}], "
-        "'Actor': [{'property': 'name', 'type': 'STRING'}]}\n"
-        "Relationships properties are the following: \n"
-        " {}\nRelationships are: \n"
-        "[]"
+        "Node properties are the following:\n"
+        "Movie {title: STRING},Actor {name: STRING}\n"
+        "Relationship properties are the following:\n\n"
+        "The relationships are the following:\n"
     )
     assert output == expected_schema
 
@@ -291,12 +289,11 @@ def test_include_types3() -> None:
     include_types = ["Movie", "Actor", "ACTED_IN"]
     output = construct_schema(structured_schema, include_types, [])
     expected_schema = (
-        "Node properties are the following: \n"
-        " {'Movie': [{'property': 'title', 'type': 'STRING'}], "
-        "'Actor': [{'property': 'name', 'type': 'STRING'}]}\n"
-        "Relationships properties are the following: \n"
-        " {}\nRelationships are: \n"
-        "['(:Actor)-[:ACTED_IN]->(:Movie)']"
+        "Node properties are the following:\n"
+        "Movie {title: STRING},Actor {name: STRING}\n"
+        "Relationship properties are the following:\n\n"
+        "The relationships are the following:\n"
+        "(:Actor)-[:ACTED_IN]->(:Movie)"
     )
     assert output == expected_schema
 
