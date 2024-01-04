@@ -47,6 +47,15 @@ def merge_content(
     first_content: Union[str, List[Union[str, Dict]]],
     second_content: Union[str, List[Union[str, Dict]]],
 ) -> Union[str, List[Union[str, Dict]]]:
+    """Merge two message contents.
+
+    Args:
+        first_content: The first content.
+        second_content: The second content.
+
+    Returns:
+        The merged content.
+    """
     # If first chunk is a string
     if isinstance(first_content, str):
         # If the second chunk is also a string, then merge them naively
@@ -98,8 +107,12 @@ class BaseMessageChunk(BaseMessage):
                 merged[k] = v
             elif merged[k] is None and v:
                 merged[k] = v
+            elif v is None:
+                continue
+            elif merged[k] == v:
+                continue
             elif type(merged[k]) != type(v):
-                raise ValueError(
+                raise TypeError(
                     f'additional_kwargs["{k}"] already exists in this message,'
                     " but with a different type."
                 )
@@ -107,8 +120,17 @@ class BaseMessageChunk(BaseMessage):
                 merged[k] += v
             elif isinstance(merged[k], dict):
                 merged[k] = self._merge_kwargs_dict(merged[k], v)
+            elif isinstance(merged[k], list):
+                merged[k] = merged[k].copy()
+                for i, e in enumerate(v):
+                    if isinstance(e, dict) and isinstance(e.get("index"), int):
+                        i = e["index"]
+                    if i < len(merged[k]):
+                        merged[k][i] = self._merge_kwargs_dict(merged[k][i], e)
+                    else:
+                        merged[k] = merged[k] + [e]
             else:
-                raise ValueError(
+                raise TypeError(
                     f"Additional kwargs key {k} already exists in this message."
                 )
         return merged
@@ -133,6 +155,14 @@ class BaseMessageChunk(BaseMessage):
 
 
 def message_to_dict(message: BaseMessage) -> dict:
+    """Convert a Message to a dictionary.
+
+    Args:
+        message: Message to convert.
+
+    Returns:
+        Message as a dict.
+    """
     return {"type": message.type, "data": message.dict()}
 
 

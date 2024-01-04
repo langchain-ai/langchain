@@ -12,14 +12,14 @@ from typing import (
 )
 from unittest.mock import patch
 
+import langchain_community.vectorstores
 import pytest
 import pytest_asyncio
+from langchain_community.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
 
-import langchain.vectorstores
-from langchain.document_loaders.base import BaseLoader
 from langchain.indexes import aindex, index
 from langchain.indexes._api import _abatch
 from langchain.indexes._sql_record_manager import SQLRecordManager
@@ -58,9 +58,10 @@ class ToyLoader(BaseLoader):
 class InMemoryVectorStore(VectorStore):
     """In-memory implementation of VectorStore using a dictionary."""
 
-    def __init__(self) -> None:
+    def __init__(self, permit_upserts: bool = False) -> None:
         """Vector store interface for testing things in memory."""
         self.store: Dict[str, Document] = {}
+        self.permit_upserts = permit_upserts
 
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
@@ -91,7 +92,7 @@ class InMemoryVectorStore(VectorStore):
             raise NotImplementedError("This is not implemented yet.")
 
         for _id, document in zip(ids, documents):
-            if _id in self.store:
+            if _id in self.store and not self.permit_upserts:
                 raise ValueError(
                     f"Document with uid {_id} already exists in the store."
                 )
@@ -115,7 +116,7 @@ class InMemoryVectorStore(VectorStore):
             raise NotImplementedError("This is not implemented yet.")
 
         for _id, document in zip(ids, documents):
-            if _id in self.store:
+            if _id in self.store and not self.permit_upserts:
                 raise ValueError(
                     f"Document with uid {_id} already exists in the store."
                 )
@@ -174,6 +175,12 @@ async def arecord_manager() -> SQLRecordManager:
 def vector_store() -> InMemoryVectorStore:
     """Vector store fixture."""
     return InMemoryVectorStore()
+
+
+@pytest.fixture
+def upserting_vector_store() -> InMemoryVectorStore:
+    """Vector store fixture."""
+    return InMemoryVectorStore(permit_upserts=True)
 
 
 def test_indexing_same_content(
@@ -1074,6 +1081,101 @@ async def test_abatch() -> None:
     assert [batch async for batch in batches] == [[0, 1], [2, 3], [4]]
 
 
+def test_indexing_force_update(
+    record_manager: SQLRecordManager, upserting_vector_store: VectorStore
+) -> None:
+    """Test indexing with force update."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+    ]
+
+    assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
+
+    assert index(
+        docs, record_manager, upserting_vector_store, cleanup="full", force_update=True
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 2,
+    }
+
+
+@pytest.mark.requires("aiosqlite")
+async def test_aindexing_force_update(
+    arecord_manager: SQLRecordManager, upserting_vector_store: VectorStore
+) -> None:
+    """Test indexing with force update."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+    ]
+
+    assert await aindex(
+        docs, arecord_manager, upserting_vector_store, cleanup="full"
+    ) == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert await aindex(
+        docs, arecord_manager, upserting_vector_store, cleanup="full"
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
+
+    assert await aindex(
+        docs,
+        arecord_manager,
+        upserting_vector_store,
+        cleanup="full",
+        force_update=True,
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 2,
+    }
+
+
 def test_compatible_vectorstore_documentation() -> None:
     """Test which vectorstores are compatible with the indexing API.
 
@@ -1105,9 +1207,9 @@ def test_compatible_vectorstore_documentation() -> None:
 
     # Check all vector store classes for compatibility
     compatible = set()
-    for class_name in langchain.vectorstores.__all__:
+    for class_name in langchain_community.vectorstores.__all__:
         # Get the definition of the class
-        cls = getattr(langchain.vectorstores, class_name)
+        cls = getattr(langchain_community.vectorstores, class_name)
 
         # If the class corresponds to a vectorstore, check its compatibility
         if issubclass(cls, VectorStore):
@@ -1140,6 +1242,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "ScaNN",
         "SemaDB",
         "SupabaseVectorStore",
+        "SurrealDBStore",
         "TileDB",
         "TimescaleVector",
         "Vald",
