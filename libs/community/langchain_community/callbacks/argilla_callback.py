@@ -134,7 +134,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                     " default API key in Argilla Quickstart."
                 ),
             )
-            api_url = self.DEFAULT_API_URL
+            api_key = self.DEFAULT_API_KEY
 
         # Connect to Argilla with the provided credentials, if applicable
         try:
