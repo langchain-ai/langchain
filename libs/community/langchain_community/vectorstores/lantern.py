@@ -12,6 +12,7 @@ from sqlalchemy import delete, func
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import quoted_name
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -280,29 +281,34 @@ class Lantern(VectorStore):
         m: int = 8,
         ef_construction: int = 16,
         ef_search: int = 16,
+        **_kwargs: Any,
     ) -> None:
         create_index_query = sqlalchemy.text(
             "CREATE INDEX IF NOT EXISTS {} "
             "ON {} USING hnsw (embedding {}) "
             "WITH ("
-            "dim = {}, "
-            "m = {}, "
-            "ef_construction = {}, "
-            "ef = {}"
+            "dim = :dim, "
+            "m = :m, "
+            "ef_construction = :ef_construction, "
+            "ef = :ef"
             ");".format(
-                self._index_name,
-                self.collection_name,
+                quoted_name(self._index_name, True),
+                quoted_name(self.collection_name, True),
                 self._get_op_class(),
-                dims,
-                m,
-                ef_construction,
-                ef_search,
             )
         )
 
         with Session(self._conn) as session:
             # Create the HNSW index
-            session.execute(create_index_query)
+            session.execute(
+                create_index_query,
+                {
+                    "dim": dims,
+                    "m": m,
+                    "ef_construction": ef_construction,
+                    "ef": ef_search,
+                },
+            )
             session.commit()
         self.logger.info("HNSW extension and index created successfully.")
 
@@ -310,7 +316,11 @@ class Lantern(VectorStore):
         with Session(self._conn) as session:
             # Drop the HNSW index
             session.execute(
-                sqlalchemy.text("DROP INDEX IF EXISTS {}".format(self._index_name))
+                sqlalchemy.text(
+                    "DROP INDEX IF EXISTS {}".format(
+                        quoted_name(self._index_name, True)
+                    )
+                )
             )
             session.commit()
 
@@ -393,7 +403,7 @@ class Lantern(VectorStore):
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
 
-        store.create_hnsw_index()
+        store.create_hnsw_index(**kwargs)
 
         return store
 
@@ -502,9 +512,9 @@ class Lantern(VectorStore):
     ) -> List[Any]:
         with Session(self._conn) as session:
             set_enable_seqscan_stmt = sqlalchemy.text("SET enable_seqscan = off")
-            set_init_k = sqlalchemy.text("SET hnsw.init_k = {}".format(k))
+            set_init_k = sqlalchemy.text("SET hnsw.init_k = :k")
             session.execute(set_enable_seqscan_stmt)
-            session.execute(set_init_k)
+            session.execute(set_init_k, {"k": k})
 
             filter_by = None
             if filter is not None:
