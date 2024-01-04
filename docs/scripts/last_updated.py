@@ -17,7 +17,7 @@ def update_contents(md, last_updated):
             body = md[first_header:] + f"\n{last_updated_str}"
         return md[:first_header] + body
     else:
-        return f"{last_updated_str}\n{md}"
+        return f"{last_updated_str}\n\n{md}"
 
 
 def last_updated(path):
