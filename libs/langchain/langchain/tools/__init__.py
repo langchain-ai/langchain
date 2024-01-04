@@ -18,7 +18,7 @@ tool for the job.
 """
 from typing import Any
 
-from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
+from langchain.tools.base import BaseTool, StateTool, StructuredTool, Tool, tool
 
 # Used for internal purposes
 _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
@@ -544,6 +544,18 @@ def _import_sleep_tool() -> Any:
     return SleepTool
 
 
+def _import_retriever_qatool() -> Any:
+    from langchain.tools.retriever.tool import RetrievalQA
+
+    return RetrievalQA
+
+
+def _import_retriever_with_sources_qatool() -> Any:
+    from langchain.tools.retriever.tool import RetrieverQAWithSourcesTool
+
+    return RetrieverQAWithSourcesTool
+
+
 def _import_spark_sql_tool_BaseSparkSQLTool() -> Any:
     from langchain.tools.spark_sql.tool import BaseSparkSQLTool
 
@@ -602,6 +614,30 @@ def _import_sql_database_tool_QuerySQLDataBaseTool() -> Any:
     from langchain.tools.sql_database.tool import QuerySQLDataBaseTool
 
     return QuerySQLDataBaseTool
+
+
+def _import_spark_unitycatalog_tool_InfoUnityCatalogTool() -> Any:
+    from langchain.tools.spark_unitycatalog.tool import InfoUnityCatalogTool
+
+    return InfoUnityCatalogTool
+
+
+def _import_spark_unitycatalog_tool_ListUnityCatalogTablesTool() -> Any:
+    from langchain.tools.spark_unitycatalog.tool import ListUnityCatalogTablesTool
+
+    return ListUnityCatalogTablesTool
+
+
+def _import_spark_unitycatalog_tool_QueryUCSQLDataBaseTool() -> Any:
+    from langchain.tools.spark_unitycatalog.tool import QueryUCSQLDataBaseTool
+
+    return QueryUCSQLDataBaseTool
+
+
+def _import_spark_unitycatalog_tool_SqlQueryValidatorTool() -> Any:
+    from langchain.tools.spark_unitycatalog.tool import SqlQueryValidatorTool
+
+    return SqlQueryValidatorTool
 
 
 def _import_steamship_image_generation() -> Any:
@@ -833,6 +869,10 @@ def __getattr__(name: str) -> Any:
         return _import_requests_tool_RequestsPutTool()
     elif name == "SceneXplainTool":
         return _import_scenexplain_tool()
+    elif name == "RetrievalQA":
+        return _import_retriever_qatool()
+    elif name == "RetrieverQAWithSourcesTool":
+        return _import_retriever_with_sources_qatool()
     elif name == "SearxSearchResults":
         return _import_searx_search_tool_SearxSearchResults()
     elif name == "SearxSearchRun":
@@ -843,6 +883,14 @@ def __getattr__(name: str) -> Any:
         return _import_sleep_tool()
     elif name == "BaseSparkSQLTool":
         return _import_spark_sql_tool_BaseSparkSQLTool()
+    elif name == "InfoUnityCatalogTablesTool":
+        return _import_spark_unitycatalog_tool_InfoUnityCatalogTool()
+    elif name == "ListUnityCatalogTablesTool":
+        return _import_spark_unitycatalog_tool_ListUnityCatalogTablesTool()
+    elif name == "QueryUCSQLDataBaseTool":
+        return _import_spark_unitycatalog_tool_QueryUCSQLDataBaseTool()
+    elif name == "SqlQueryValidatorTool":
+        return _import_spark_unitycatalog_tool_SqlQueryValidatorTool()
     elif name == "InfoSparkSQLTool":
         return _import_spark_sql_tool_InfoSparkSQLTool()
     elif name == "ListSparkSQLTool":
@@ -975,6 +1023,8 @@ __all__ = [
     "RequestsPatchTool",
     "RequestsPostTool",
     "RequestsPutTool",
+    "RetrievalQA",
+    "RetrieverQAWithSourcesTool",
     "SceneXplainTool",
     "SearxSearchResults",
     "SearxSearchRun",
@@ -982,6 +1032,7 @@ __all__ = [
     "SleepTool",
     "StdInInquireTool",
     "SteamshipImageGenerationTool",
+    "StateTool",
     "StructuredTool",
     "Tool",
     "VectorStoreQATool",
