@@ -95,13 +95,6 @@ class Anyscale(BaseOpenAI):
 
     prefix_messages: List = Field(default_factory=list)
 
-    def __new__(cls, **data: Any) -> BaseOpenAI:  # type: ignore
-        """Initialize the OpenAI object."""
-        model_name = data.get("model_name", "")
-        if model_name not in COMPLETION_MODELS:
-            return AnyscaleChat(**data)
-        return super().__new__(cls)
-
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
