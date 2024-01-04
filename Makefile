@@ -20,6 +20,9 @@ docs_clean:
 docs_linkcheck:
 	poetry run linkchecker _dist/docs/ --ignore-url node_modules
 
+docs_last_updated:
+	poetry run python docs/scripts/last_updated.py
+
 api_docs_build:
 	poetry run python docs/api_reference/create_api_rst.py
 	cd docs/api_reference && poetry run make html
