@@ -1,0 +1,2 @@
+"""Interfaces for standard types.
+"""
