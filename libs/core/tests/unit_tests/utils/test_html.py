@@ -163,6 +163,8 @@ def test_prevent_outside() -> None:
     html = (
         '<a href="https://foobar.comic.com">BAD</a>'
         '<a href="https://foobar.comic:9999">BAD</a>'
+        '<a href="https://foobar.com:9999">BAD</a>'
+        '<a href="http://foobar.com:9999/">BAD</a>'
         '<a href="https://foobar.com/OK">OK</a>'
         '<a href="http://foobar.com/OK">OK</a>'  # Change in scheme is OK
     )
