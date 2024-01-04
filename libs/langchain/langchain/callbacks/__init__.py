@@ -44,6 +44,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.tracers.context import (
     collect_runs,
+    tracing_enabled,
     tracing_v2_enabled,
 )
 from langchain_core.tracers.langchain import LangChainTracer
@@ -79,6 +80,7 @@ __all__ = [
     "WandbCallbackHandler",
     "WhyLabsCallbackHandler",
     "get_openai_callback",
+    "tracing_enabled",
     "tracing_v2_enabled",
     "collect_runs",
     "wandb_tracing_enabled",
