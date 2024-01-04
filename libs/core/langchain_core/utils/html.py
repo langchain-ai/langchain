@@ -92,7 +92,7 @@ def extract_sub_links(
             parsed_path = urlparse(path)
 
             if parsed_base_url.netloc != parsed_path.netloc:
-                pass
+                continue
 
             # Will take care of verifying rest of path after netloc
             # if it's more specific
