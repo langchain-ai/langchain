@@ -1,9 +1,8 @@
 """Interface to access to place that stores documents."""
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Dict, List, Union
+from typing import Dict, List, Union
 
-if TYPE_CHECKING:
-    from langchain_core.documents import Document
+from langchain_core.documents import Document
 
 
 class DocstoreInterface(ABC):

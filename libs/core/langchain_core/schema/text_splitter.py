@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import (
-    TYPE_CHECKING,
     Any,
     Iterable,
     List,
@@ -8,8 +7,7 @@ from typing import (
     Sequence,
 )
 
-if TYPE_CHECKING:
-    from langchain_core.documents import BaseDocumentTransformer, Document
+from langchain_core.documents import BaseDocumentTransformer, Document
 
 
 class TextSplitterInterface(

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Iterable,
@@ -11,11 +10,9 @@ from typing import (
     TypeVar,
 )
 
-if TYPE_CHECKING:
-    from langchain_core.documents import Document
-    from langchain_core.embeddings import Embeddings
-    from langchain_core.vectorstores import VectorStoreRetriever
-
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStoreRetriever
 
 VST = TypeVar("VST", bound="VectorStoreInterface")
 

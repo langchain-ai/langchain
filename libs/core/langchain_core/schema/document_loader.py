@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterator, List, Optional
+from typing import Iterator, List, Optional
 
-if TYPE_CHECKING:
-    from langchain_core.documents import Document
-    from langchain_core.schema.text_splitter import TextSplitterInterface
+from langchain_core.documents import Document
+from langchain_core.schema.text_splitter import TextSplitterInterface
 
 
 class DocumentLoaderInterface(ABC):

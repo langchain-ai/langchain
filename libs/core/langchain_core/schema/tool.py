@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -11,17 +10,16 @@ from typing import (
     Union,
 )
 
-if TYPE_CHECKING:
-    from langchain_core.callbacks import (
-        BaseCallbackManager,
-        Callbacks,
-    )
-    from langchain_core.pydantic_v1 import (
-        BaseModel,
-        Field,
-    )
-    from langchain_core.runnables import RunnableConfig
-    from langchain_core.tools import ToolException
+from langchain_core.callbacks import (
+    BaseCallbackManager,
+    Callbacks,
+)
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+)
+from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import ToolException
 
 
 class BaseToolInterface(ABC):

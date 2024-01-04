@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterator, List
+from typing import Iterator, List
 
-if TYPE_CHECKING:
-    from langchain_core.chat_sessions import ChatSession
+from langchain_core.chat_sessions import ChatSession
 
 
 class ChatLoaderInterface(ABC):

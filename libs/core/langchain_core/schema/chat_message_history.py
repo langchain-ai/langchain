@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Union
+from typing import List, Union
 
-if TYPE_CHECKING:
-    from langchain_core.messages import (
-        AIMessage,
-        BaseMessage,
-        HumanMessage,
-    )
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+)
 
 
 class ChatMessageHistoryInterface(ABC):

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import Any, Sequence
 
-if TYPE_CHECKING:
-    from langchain_core.documents import Document
+from langchain_core.documents import Document
 
 
 class DocumentTransformerInterface(ABC):
