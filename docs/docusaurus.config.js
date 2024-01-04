@@ -100,6 +100,7 @@ const config = {
             });
             return sidebarItems;
           },
+          showLastUpdateTime: true,
         },
         pages: {
           remarkPlugins: [require("@docusaurus/remark-plugin-npm2yarn")],
