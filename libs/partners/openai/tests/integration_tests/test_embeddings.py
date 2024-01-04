@@ -1,5 +1,5 @@
 """Test OpenAI embeddings."""
-from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain_openai.embeddings.base import OpenAIEmbeddings
 
 
 def test_langchain_openai_embedding_documents() -> None:
