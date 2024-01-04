@@ -9,12 +9,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
+from langchain_core.language_models.llms import create_base_retry_decorator
 from vertexai.preview.generative_models import Image  # type: ignore
 
 
 def create_retry_decorator(
-    llm: BaseLLM,
     *,
     max_retries: int = 1,
     run_manager: Optional[

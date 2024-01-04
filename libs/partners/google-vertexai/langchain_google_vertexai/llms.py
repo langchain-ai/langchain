@@ -51,7 +51,7 @@ def _completion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = create_retry_decorator(llm, run_manager=run_manager)
+    retry_decorator = create_retry_decorator(run_manager=run_manager)
 
     @retry_decorator
     def _completion_with_retry_inner(
@@ -77,7 +77,7 @@ async def _acompletion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = create_retry_decorator(llm, run_manager=run_manager)
+    retry_decorator = create_retry_decorator(run_manager=run_manager)
 
     @retry_decorator
     async def _acompletion_with_retry_inner(
