@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import List
+from typing import Any, List
 from uuid import uuid4
 
 import pytest
@@ -31,7 +31,7 @@ class FakeTracer(BaseTracer):
         self.runs.append(run)
 
 
-def _compare_run_with_error(run: Run, expected_run: Run) -> None:
+def _compare_run_with_error(run: Any, expected_run: Any) -> None:
     if run.child_runs:
         assert len(expected_run.child_runs) == len(run.child_runs)
         for received, expected in zip(run.child_runs, expected_run.child_runs):

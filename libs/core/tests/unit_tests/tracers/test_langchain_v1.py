@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 from uuid import uuid4
 
 import pytest
@@ -101,7 +101,7 @@ class FakeTracer(BaseTracer):
         return load_default_session()
 
 
-def _compare_run_with_error(run: Run, expected_run: Run) -> None:
+def _compare_run_with_error(run: Any, expected_run: Any) -> None:
     received = run.dict()
     received_err = received.pop("error")
     expected = expected_run.dict()
