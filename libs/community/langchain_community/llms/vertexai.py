@@ -527,6 +527,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
 
 class VertexAIModelGardenLlama2(VertexAIModelGarden):
     """Llama2-7b models served from Vertex AI Model Garden."""
+
     allowed_model_args: Optional[List[str]] = [
         "max_tokens",
         "temperature",
@@ -555,6 +556,11 @@ class VertexAIModelGardenLlama2(VertexAIModelGarden):
                 _, output = result.split("Output:", 1)
                 generations.append([Generation(text=self._parse_prediction(output))])
             else:
-                generations.append([Generation(text=self._parse_prediction(prediction)) for prediction in result])
+                generations.append(
+                    [
+                        Generation(text=self._parse_prediction(prediction))
+                        for prediction in result
+                    ]
+                )
 
         return LLMResult(generations=generations)
