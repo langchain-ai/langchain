@@ -1,5 +1,6 @@
 import glob
 import subprocess
+import re
 from pathlib import Path
 
 import nbformat
@@ -8,8 +9,10 @@ _DOCS_DIR = str(Path(__file__).parent.absolute() / ".." / "docs")
 
 
 def update_contents(md, last_updated):
-    first_header = md.find("# ")
     last_updated_str = f"*Last updated: {last_updated}*"
+    if re.search("\*Last updated: \d\d\d\d-\d\d-\d\d\*", md) is not None:
+        return re.sub("\*Last updated: \d\d\d\d-\d\d-\d\d\*", last_updated_str, md)
+    first_header = md.find("# ")
     if first_header >= 0:
         if "\n" in md[first_header:]:
             body = md[first_header:].replace("\n", f"\n{last_updated_str}\n", 1)
