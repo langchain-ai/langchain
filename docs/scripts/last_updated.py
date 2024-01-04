@@ -9,13 +9,13 @@ _DOCS_DIR = str(Path(__file__).parent.absolute() / ".." / "docs")
 
 def update_contents(md, last_updated):
     if "\n" not in md:
-        md += "\n"
+        md = "\n" + md
     first_header = md.find("#")
     if first_header >= 0:
         body = md[first_header:].replace("\n", f"\nLast updated: {last_updated}\n", 1)
         return md[:first_header] + body
     else:
-        return f"Last updated: {last_updated}\n{md}
+        return f"Last updated: {last_updated}\n{md}"
 
 
 def last_updated(path):
