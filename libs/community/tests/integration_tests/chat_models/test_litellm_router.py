@@ -11,8 +11,8 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_community.chat_models.litellm_router import ChatLiteLLMRouter
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
-answer_text = "answer1"
-chunk_texts = ["chunk1", "chunk2"]
+fake_chunks = ["This is ", "a fake answer."]
+fake_answer = "".join(fake_chunks)
 token_usage_key_name = "token_usage"
 
 model_list = [
@@ -51,12 +51,12 @@ def fake_completion_fn(**kwargs):
         }
     if kwargs["stream"]:
         results = []
-        for chunk_index in range(0, len(chunk_texts)):
+        for chunk_index in range(0, len(fake_chunks)):
             result = deepcopy(base_result)
             choice = result["choices"][0]
             choice["delta"] = {
                     "role": "assistent",
-                    "content": chunk_texts[chunk_index],
+                    "content": fake_chunks[chunk_index],
                     "function_call": None,
                 }
             choice["finish_reason"] = None
@@ -65,7 +65,7 @@ def fake_completion_fn(**kwargs):
             results.append(result)
 
         result = deepcopy(base_result)
-        choice = results["choices"][0]
+        choice = result["choices"][0]
         choice["delta"] = {}
         choice["finish_reason"] = "stop"
         # no usage here, since no usage from OpenAI API for streaming yet
@@ -77,7 +77,7 @@ def fake_completion_fn(**kwargs):
         result = base_result
         choice = result["choices"][0]
         choice["message"] = {
-            "content": answer_text,
+            "content": fake_answer,
             "role": "assistant",
         }
         choice["finish_reason"] = "stop"
@@ -127,10 +127,13 @@ def test_litellm_router_call() -> None:
     router = get_test_router()
     chat = ChatLiteLLMRouter(metadata={"router": router})
     message = HumanMessage(content="Hello")
+
     response = chat([message])
+
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert response.content == answer_text
+    assert response.content == fake_answer
+    # no usage check here, since response is only an AIMessage
 
 
 @pytest.mark.scheduled
@@ -144,13 +147,17 @@ def test_litellm_router_generate() -> None:
         [HumanMessage(content="How many toes do dogs have?")]
     ]
     messages_copy = [messages.copy() for messages in chat_messages]
+
     result: LLMResult = chat.generate(chat_messages)
+
     assert isinstance(result, LLMResult)
-    for response in result.generations[0]:
-        assert isinstance(response, ChatGeneration)
-        assert isinstance(response.text, str)
-        assert response.message.content == response.text
-        assert response.message.content == answer_text
+    for generations in result.generations:
+        assert len(generations) == 1
+        for generation in generations:
+            assert isinstance(generation, ChatGeneration)
+            assert isinstance(generation.text, str)
+            assert generation.message.content == generation.text
+            assert generation.message.content == fake_answer
     assert chat_messages == messages_copy
     assert result.llm_output[token_usage_key_name] == Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
 
@@ -162,10 +169,13 @@ def test_litellm_router_streaming() -> None:
     router = get_test_router()
     chat = ChatLiteLLMRouter(metadata={"router": router}, streaming=True)
     message = HumanMessage(content="Hello")
+
     response = chat([message])
+
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert response.content == chunk1_text
+    assert response.content == fake_answer
+    # no usage check here, since response is only an AIMessage
 
 
 @pytest.mark.scheduled
@@ -180,8 +190,14 @@ def test_litellm_router_streaming_callback() -> None:
         verbose=True,
     )
     message = HumanMessage(content="Write me a sentence with 10 words.")
-    chat([message])
+
+    response = chat([message])
+
     assert callback_handler.llm_streams > 1
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert response.content == fake_answer
+    # no usage check here, since response is only an AIMessage
 
 @pytest.mark.scheduled
 async def test_async_litellm_router() -> None:
@@ -191,7 +207,9 @@ async def test_async_litellm_router() -> None:
     router = get_test_router()
     chat = ChatLiteLLMRouter(metadata={"router": router})
     message = HumanMessage(content="Hello")
+
     response = await chat.agenerate([[message], [message]])
+
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 2
     for generations in response.generations:
@@ -200,8 +218,8 @@ async def test_async_litellm_router() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.message.content == generation.text
-            assert generation.message.content == answer_text
-    assert response.llm_output[token_usage_key_name] == Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
+            assert generation.message.content == fake_answer
+    assert response.llm_output[token_usage_key_name] == Usage(completion_tokens=2, prompt_tokens=4, total_tokens=6)
 
 
 @pytest.mark.scheduled
@@ -216,7 +234,9 @@ async def test_async_litellm_router_streaming() -> None:
         verbose=True,
     )
     message = HumanMessage(content="Hello")
+
     response = await chat.agenerate([[message], [message]])
+
     assert callback_handler.llm_streams > 0
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 2
@@ -226,4 +246,6 @@ async def test_async_litellm_router_streaming() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.message.content == generation.text
-            assert generation.message.content == chunk1_text
+            assert generation.message.content == fake_answer
+    # no usage check here, since no usage from OpenAI API for streaming yet
+    # https://community.openai.com/t/usage-info-in-api-responses/18862
