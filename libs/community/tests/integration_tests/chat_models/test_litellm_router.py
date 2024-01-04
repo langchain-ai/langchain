@@ -11,8 +11,8 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_community.chat_models.litellm_router import ChatLiteLLMRouter
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
-answer1_text = "answer1"
-chunk1_text = "chunk1"
+answer_text = "answer1"
+chunk_texts = ["chunk1", "chunk2"]
 token_usage_key_name = "token_usage"
 
 model_list = [
@@ -50,30 +50,34 @@ def fake_completion_fn(**kwargs):
             "object": "chat.completion",
         }
     if kwargs["stream"]:
-        results = [deepcopy(base_result), deepcopy(base_result)]
+        results = []
+        for chunk_index in range(0, len(chunk_texts)):
+            result = deepcopy(base_result)
+            choice = result["choices"][0]
+            choice["delta"] = {
+                    "role": "assistent",
+                    "content": chunk_texts[chunk_index],
+                    "function_call": None,
+                }
+            choice["finish_reason"] = None
+            # no usage here, since no usage from OpenAI API for streaming yet
+            # https://community.openai.com/t/usage-info-in-api-responses/18862
+            results.append(result)
 
-        result_0_choice = results[0]["choices"][0]
-        result_0_choice["delta"] = {
-                "role": "assistent",
-                "content": chunk1_text,
-                "function_call": None,
-            }
-        result_0_choice["finish_reason"] = None
+        result = deepcopy(base_result)
+        choice = results["choices"][0]
+        choice["delta"] = {}
+        choice["finish_reason"] = "stop"
         # no usage here, since no usage from OpenAI API for streaming yet
         # https://community.openai.com/t/usage-info-in-api-responses/18862
-
-        result_1_choice = results[1]["choices"][0]
-        result_1_choice["delta"] = {}
-        result_1_choice["finish_reason"] = "stop"
-        # no usage here, since no usage from OpenAI API for streaming yet
-        # https://community.openai.com/t/usage-info-in-api-responses/18862
+        results.append(result)
 
         return results
     else:
         result = base_result
         choice = result["choices"][0]
         choice["message"] = {
-            "content": answer1_text,
+            "content": answer_text,
             "role": "assistant",
         }
         choice["finish_reason"] = "stop"
@@ -126,7 +130,7 @@ def test_litellm_router_call() -> None:
     response = chat([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert response.content == answer1_text
+    assert response.content == answer_text
 
 
 @pytest.mark.scheduled
@@ -146,7 +150,7 @@ def test_litellm_router_generate() -> None:
         assert isinstance(response, ChatGeneration)
         assert isinstance(response.text, str)
         assert response.message.content == response.text
-        assert response.message.content == answer1_text
+        assert response.message.content == answer_text
     assert chat_messages == messages_copy
     assert result.llm_output[token_usage_key_name] == Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
 
@@ -196,7 +200,7 @@ async def test_async_litellm_router() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.message.content == generation.text
-            assert generation.message.content == answer1_text
+            assert generation.message.content == answer_text
     assert response.llm_output[token_usage_key_name] == Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
 
 
