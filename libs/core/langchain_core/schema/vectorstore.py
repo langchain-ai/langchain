@@ -17,6 +17,8 @@ from langchain_core.vectorstores import VectorStoreRetriever
 VST = TypeVar("VST", bound="VectorStoreInterface")
 
 
+# TODO: this is a work in progress
+# TODO: there should be only essential methods and fields here.
 class VectorStoreInterface(ABC):
     """Interface for vector store."""
 
@@ -58,6 +60,7 @@ class VectorStoreInterface(ABC):
 
         raise NotImplementedError("delete method must be implemented by subclass.")
 
+    @abstractmethod
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
     ) -> Optional[bool]:
@@ -92,9 +95,6 @@ class VectorStoreInterface(ABC):
             List[str]: List of IDs of the added texts.
         """
         # TODO: Handle the case where the user doesn't provide ids on the Collection
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return self.add_texts(texts, metadatas, **kwargs)
 
     @abstractmethod
     async def aadd_documents(
