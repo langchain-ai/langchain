@@ -17,6 +17,7 @@ EXPECTED_ALL = [
     "HuggingFaceHubEmbeddings",
     "MlflowAIGatewayEmbeddings",
     "MlflowEmbeddings",
+    "MlflowCohereEmbeddings",
     "ModelScopeEmbeddings",
     "TensorflowHubEmbeddings",
     "SagemakerEndpointEmbeddings",
