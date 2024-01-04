@@ -90,9 +90,8 @@ SERIALIZABLE_MAPPING = {
         "MessagesPlaceholder",
     ),
     ("langchain", "llms", "openai", "OpenAI"): (
-        "langchain",
+        "langchain_openai",
         "llms",
-        "openai",
         "OpenAI",
     ),
     ("langchain", "prompts", "chat", "ChatPromptTemplate"): (
@@ -203,9 +202,8 @@ SERIALIZABLE_MAPPING = {
         "StrOutputParser",
     ),
     ("langchain", "chat_models", "openai", "ChatOpenAI"): (
-        "langchain",
+        "langchain_openai",
         "chat_models",
-        "openai",
         "ChatOpenAI",
     ),
     ("langchain", "output_parsers", "list", "CommaSeparatedListOutputParser"): (

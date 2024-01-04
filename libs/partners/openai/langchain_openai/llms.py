@@ -88,11 +88,6 @@ class BaseOpenAI(BaseLLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
 
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "llms", "openai"]
-
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
@@ -106,10 +101,6 @@ class BaseOpenAI(BaseLLM):
             attributes["openai_proxy"] = self.openai_proxy
 
         return attributes
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        return True
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
