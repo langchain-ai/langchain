@@ -27,7 +27,7 @@ model_list = [
             "model": fake_model_prefix + "1",
             "api_key": fake_api_key,
             "api_version": fake_api_version,
-            "api_base": fake_api_base
+            "api_base": fake_api_base,
         },
     },
     {
@@ -36,10 +36,11 @@ model_list = [
             "model": fake_model_prefix + "2",
             "api_key": fake_api_key,
             "api_version": fake_api_version,
-            "api_base": fake_api_base
+            "api_base": fake_api_base,
         },
-    }
+    },
 ]
+
 
 def fake_completion_fn(**kwargs):
     from litellm import Usage
@@ -53,26 +54,26 @@ def fake_completion_fn(**kwargs):
     assert metadata["deployment"].startswith(fake_model_prefix)
 
     base_result = {
-            "choices": [
-                    {
-                        "index": 0,
-                    }
-            ],
-            "created": 0,
-            "id": "",
-            "model": model_group,
-            "object": "chat.completion",
-        }
+        "choices": [
+            {
+                "index": 0,
+            }
+        ],
+        "created": 0,
+        "id": "",
+        "model": model_group,
+        "object": "chat.completion",
+    }
     if kwargs["stream"]:
         results = []
         for chunk_index in range(0, len(fake_chunks)):
             result = deepcopy(base_result)
             choice = result["choices"][0]
             choice["delta"] = {
-                    "role": "assistent",
-                    "content": fake_chunks[chunk_index],
-                    "function_call": None,
-                }
+                "role": "assistent",
+                "content": fake_chunks[chunk_index],
+                "function_call": None,
+            }
             choice["finish_reason"] = None
             # no usage here, since no usage from OpenAI API for streaming yet
             # https://community.openai.com/t/usage-info-in-api-responses/18862
@@ -95,8 +96,9 @@ def fake_completion_fn(**kwargs):
             "role": "assistant",
         }
         choice["finish_reason"] = "stop"
-        result["usage"] = (Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3))
+        result["usage"] = Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
         return result
+
 
 class AsyncIterator:
     def __init__(self, seq):
@@ -111,28 +113,36 @@ class AsyncIterator:
         except StopIteration:
             raise StopAsyncIteration
 
+
 async def fake_acompletion_fn(**kwargs):
     loop = asyncio.get_event_loop()
-    results = await loop.run_in_executor(None, functools.partial(fake_completion_fn, **kwargs))
+    results = await loop.run_in_executor(
+        None, functools.partial(fake_completion_fn, **kwargs)
+    )
     if kwargs["stream"]:
         return AsyncIterator(results)
     else:
         return results
 
+
 def setup_fakes() -> None:
     """Setup fakes."""
     import litellm
+
     # Turn off LiteLLM's built-in telemetry
     litellm.telemetry = False
     litellm.completion = fake_completion_fn
     litellm.acompletion = fake_acompletion_fn
 
+
 def get_test_router() -> None:
     """Get router for testing."""
     from litellm import Router
+
     return Router(
-            model_list=model_list,
-        )
+        model_list=model_list,
+    )
+
 
 @pytest.mark.scheduled
 def test_litellm_router_call() -> None:
@@ -154,6 +164,7 @@ def test_litellm_router_call() -> None:
 def test_litellm_router_generate() -> None:
     """Test generate method of LiteLLM Router."""
     from litellm import Usage
+
     setup_fakes()
     router = get_test_router()
     chat = ChatLiteLLMRouter(metadata={"router": router})
@@ -173,7 +184,9 @@ def test_litellm_router_generate() -> None:
             assert generation.message.content == generation.text
             assert generation.message.content == fake_answer
     assert chat_messages == messages_copy
-    assert result.llm_output[token_usage_key_name] == Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
+    assert result.llm_output[token_usage_key_name] == Usage(
+        completion_tokens=1, prompt_tokens=2, total_tokens=3
+    )
 
 
 @pytest.mark.scheduled
@@ -214,10 +227,12 @@ def test_litellm_router_streaming_callback() -> None:
     assert response.content == fake_answer
     # no usage check here, since response is only an AIMessage
 
+
 @pytest.mark.scheduled
 async def test_async_litellm_router() -> None:
     """Test async generation."""
     from litellm import Usage
+
     setup_fakes()
     router = get_test_router()
     chat = ChatLiteLLMRouter(metadata={"router": router})
@@ -234,7 +249,9 @@ async def test_async_litellm_router() -> None:
             assert isinstance(generation.text, str)
             assert generation.message.content == generation.text
             assert generation.message.content == fake_answer
-    assert response.llm_output[token_usage_key_name] == Usage(completion_tokens=2, prompt_tokens=4, total_tokens=6)
+    assert response.llm_output[token_usage_key_name] == Usage(
+        completion_tokens=2, prompt_tokens=4, total_tokens=6
+    )
 
 
 @pytest.mark.scheduled

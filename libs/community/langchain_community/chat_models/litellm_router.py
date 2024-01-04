@@ -17,11 +17,6 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_community.chat_models.litellm import (
-    ChatLiteLLM,
-    _convert_dict_to_message,
-    _convert_delta_to_message_chunk,
-)
 from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
@@ -30,6 +25,12 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     ChatResult,
+)
+
+from langchain_community.chat_models.litellm import (
+    ChatLiteLLM,
+    _convert_delta_to_message_chunk,
+    _convert_dict_to_message,
 )
 
 token_usage_key_name = "token_usage"
@@ -92,7 +93,9 @@ class ChatLiteLLMRouter(ChatLiteLLM):
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
-            stream_iter = self._stream(messages, stop=stop, run_manager=run_manager, **kwargs)
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
             return generate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
@@ -207,8 +210,11 @@ class ChatLiteLLMRouter(ChatLiteLLM):
             combined["system_fingerprint"] = system_fingerprint
         return combined
 
-    def _create_chat_result(self, response: Mapping[str, Any], **params: Any) -> ChatResult:
+    def _create_chat_result(
+        self, response: Mapping[str, Any], **params: Any
+    ) -> ChatResult:
         from litellm.utils import Usage
+
         generations = []
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
