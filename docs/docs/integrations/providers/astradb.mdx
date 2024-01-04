@@ -18,7 +18,7 @@ pip install "astrapy>=0.5.3"
 ### Vector Store
 
 ```python
-from langchain.vectorstores import AstraDB
+from langchain_community.vectorstores import AstraDB
 vector_store = AstraDB(
   embedding=my_embedding,
   collection_name="my_store",
@@ -83,7 +83,7 @@ Hence, a different set of connectors, outlined below, shall be used.
 ### Vector Store
 
 ```python
-from langchain.vectorstores import Cassandra
+from langchain_community.vectorstores import Cassandra
 vector_store = Cassandra(
   embedding=my_embedding,
   table_name="my_store",

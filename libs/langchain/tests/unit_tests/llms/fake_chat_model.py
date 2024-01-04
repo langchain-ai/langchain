@@ -1,6 +1,7 @@
 """Fake Chat Model wrapper for testing purposes."""
 from typing import Any, Dict, List, Optional
 
+from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
@@ -8,7 +9,6 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import SimpleChatModel
 
 
 class FakeChatModel(SimpleChatModel):

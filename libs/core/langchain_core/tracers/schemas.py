@@ -107,6 +107,8 @@ class Run(BaseRunV2):
     child_runs: List[Run] = Field(default_factory=list)
     tags: Optional[List[str]] = Field(default_factory=list)
     events: List[Dict[str, Any]] = Field(default_factory=list)
+    trace_id: Optional[UUID] = None
+    dotted_order: Optional[str] = None
 
     @root_validator(pre=True)
     def assign_name(cls, values: dict) -> dict:
