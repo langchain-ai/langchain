@@ -12,9 +12,7 @@ def update_contents(md, last_updated):
     last_updated_str = f"*Last updated: {last_updated}*"
     if first_header >= 0:
         if "\n" in md[first_header:]:
-            body = md[first_header:].replace(
-                "\n", f"\n{last_updated_str}\n", 1
-            )
+            body = md[first_header:].replace("\n", f"\n{last_updated_str}\n", 1)
         else:
             body = md[first_header:] + f"\n{last_updated_str}"
         return md[:first_header] + body
