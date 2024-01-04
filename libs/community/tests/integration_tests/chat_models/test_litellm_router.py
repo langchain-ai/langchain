@@ -35,7 +35,7 @@ model_list = [
     }
 ]
 
-def mock_completion_fn(**kwargs):
+def fake_completion_fn(**kwargs):
     from litellm import Usage
     base_result = {
             "choices": [
@@ -92,19 +92,19 @@ class AsyncIterator:
         except StopIteration:
             raise StopAsyncIteration
 
-async def mock_acompletion_fn(**kwargs):
+async def fake_acompletion_fn(**kwargs):
     loop = asyncio.get_event_loop()
-    results = await loop.run_in_executor(None, functools.partial(mock_completion_fn, **kwargs))
+    results = await loop.run_in_executor(None, functools.partial(fake_completion_fn, **kwargs))
     if kwargs["stream"]:
         return AsyncIterator(results)
     else:
         return results
 
-def setup_mocks() -> None:
-    """Setup mocks."""
+def setup_fakes() -> None:
+    """Setup fakes."""
     import litellm
-    litellm.completion = mock_completion_fn
-    litellm.acompletion = mock_acompletion_fn
+    litellm.completion = fake_completion_fn
+    litellm.acompletion = fake_acompletion_fn
 
 def get_test_router() -> None:
     """Get router for testing."""
@@ -116,7 +116,7 @@ def get_test_router() -> None:
 @pytest.mark.scheduled
 def test_litellm_router_call() -> None:
     """Test valid call to LiteLLM Router."""
-    setup_mocks()
+    setup_fakes()
     router = get_test_router()
     chat = ChatLiteLLMRouter(metadata={"router": router})
     message = HumanMessage(content="Hello")
@@ -130,7 +130,7 @@ def test_litellm_router_call() -> None:
 def test_litellm_router_generate() -> None:
     """Test generate method of LiteLLM Router."""
     from litellm import Usage
-    setup_mocks()
+    setup_fakes()
     router = get_test_router()
     chat = ChatLiteLLMRouter(metadata={"router": router})
     chat_messages: List[List[BaseMessage]] = [
@@ -151,7 +151,7 @@ def test_litellm_router_generate() -> None:
 @pytest.mark.scheduled
 def test_litellm_router_streaming() -> None:
     """Test streaming tokens from LiteLLM Router."""
-    setup_mocks()
+    setup_fakes()
     router = get_test_router()
     chat = ChatLiteLLMRouter(metadata={"router": router}, streaming=True)
     message = HumanMessage(content="Hello")
@@ -165,7 +165,7 @@ def test_litellm_router_streaming() -> None:
 def test_litellm_router_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
-    setup_mocks()
+    setup_fakes()
     router = get_test_router()
     chat = ChatLiteLLMRouter(metadata={"router": router},
         streaming=True,
@@ -180,7 +180,7 @@ def test_litellm_router_streaming_callback() -> None:
 async def test_async_litellm_router() -> None:
     """Test async generation."""
     from litellm import Usage
-    setup_mocks()
+    setup_fakes()
     router = get_test_router()
     chat = ChatLiteLLMRouter(metadata={"router": router})
     message = HumanMessage(content="Hello")
@@ -201,7 +201,7 @@ async def test_async_litellm_router() -> None:
 async def test_async_litellm_router_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
-    setup_mocks()
+    setup_fakes()
     router = get_test_router()
     chat = ChatLiteLLMRouter(metadata={"router": router},
         streaming=True,
