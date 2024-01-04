@@ -42,7 +42,7 @@ class ChatAnyscale(ChatOpenAI):
     Example:
         .. code-block:: python
 
-            from langchain.chat_models import ChatAnyscale
+            from langchain_community.chat_models import ChatAnyscale
             chat = ChatAnyscale(model_name="meta-llama/Llama-2-7b-chat-hf")
     """
 
@@ -54,6 +54,10 @@ class ChatAnyscale(ChatOpenAI):
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"anyscale_api_key": "ANYSCALE_API_KEY"}
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     anyscale_api_key: SecretStr = Field(default=None)
     """AnyScale Endpoints API keys."""
