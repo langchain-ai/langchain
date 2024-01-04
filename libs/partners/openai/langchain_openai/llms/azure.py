@@ -2,36 +2,19 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
 import warnings
 from typing import (
-    AbstractSet,
     Any,
-    AsyncIterator,
     Callable,
-    Collection,
     Dict,
-    Iterator,
     List,
-    Literal,
     Mapping,
-    Optional,
-    Set,
-    Tuple,
     Union,
 )
 
 import openai
-import tiktoken
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models.llms import BaseLLM
-from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
-from langchain_core.utils.utils import build_extra_kwargs
+from langchain_core.utils import get_from_dict_or_env
 
 from .base import BaseOpenAI
 

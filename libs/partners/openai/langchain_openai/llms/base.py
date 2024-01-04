@@ -3,12 +3,10 @@ from __future__ import annotations
 import logging
 import os
 import sys
-import warnings
 from typing import (
     AbstractSet,
     Any,
     AsyncIterator,
-    Callable,
     Collection,
     Dict,
     Iterator,
@@ -21,7 +19,6 @@ from typing import (
     Union,
 )
 
-import openai
 import tiktoken
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
