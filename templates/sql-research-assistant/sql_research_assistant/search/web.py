@@ -3,11 +3,11 @@ from typing import Any
 
 import requests
 from bs4 import BeautifulSoup
-from langchain.prompts import ChatPromptTemplate
+from langchain.utilities import DuckDuckGoSearchAPIWrapper
 from langchain_community.chat_models import ChatOpenAI
-from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import (
     Runnable,
     RunnableLambda,
