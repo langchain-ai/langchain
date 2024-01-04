@@ -167,7 +167,12 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         results = []
         for text in texts:
             response = self._embedding_func(text)
+
+            if self.normalize:
+                response = self._normalize_vector(response)
+
             results.append(response)
+
         return results
 
     def embed_query(self, text: str) -> List[float]:
