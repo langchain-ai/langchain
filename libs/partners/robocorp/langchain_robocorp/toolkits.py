@@ -106,7 +106,12 @@ class ActionServerToolkit(BaseModel):
         llm: Optional[BaseChatModel] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
+        """
+        Get Action Server actions as a toolkit
+        
+        :param llm: Optionally pass a model to return single input tools
+        :param callback_manager: Callback manager to be passed to tools
+        """
 
         # Fetch and format the API spec
         try:
