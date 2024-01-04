@@ -32,3 +32,17 @@ def test_openai_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
         llm = OpenAI(foo="bar")
     assert llm.model_kwargs == {"foo": "bar"}
+
+
+@pytest.fixture
+def mock_completion() -> dict:
+    return {
+        "id": "cmpl-3evkmQda5Hu7fcZavknQda3SQ",
+        "object": "text_completion",
+        "created": 1689989000,
+        "model": "text-davinci-003",
+        "choices": [
+            {"text": "Bar Baz", "index": 0, "logprobs": None, "finish_reason": "length"}
+        ],
+        "usage": {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3},
+    }
