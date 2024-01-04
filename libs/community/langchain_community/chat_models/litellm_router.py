@@ -177,36 +177,27 @@ class ChatLiteLLMRouter(ChatLiteLLM):
 
     # from
     # https://github.com/langchain-ai/langchain/blob/master/libs/community/langchain_community/chat_models/openai.py
+    # but modified to handle LiteLLM Usage class
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
-        combined: dict = {}
+        system_fingerprint = None
         for output in llm_outputs:
             if output is None:
                 # Happens in streaming
                 continue
-            for output_key, output_value in output.items():
-                if output_key == token_usage_key_name:
-                    if output_key in combined:
-                        # sum the usage values from different outputs
-                        # to produce a set of totals
-                        if hasattr(output_value, model_extra_key_name):
-                            for usage_key, usage_value in output_value[model_extra_key_name].items():
-                                if usage_key in overall_token_usage:
-                                    overall_token_usage[usage_key] += usage_value
-                                else:
-                                    overall_token_usage[usage_key] = usage_value
-                        combined[output_key] = overall_token_usage
+            token_usage = output["token_usage"]
+            if token_usage is not None:
+                # get dict from LiteLLM Usage class
+                for k, v in token_usage.dict().items():
+                    if k in overall_token_usage:
+                        overall_token_usage[k] += v
                     else:
-                        # set initial usage values
-                        overall_token_usage = output_value
-                        combined[output_key] = overall_token_usage
-                elif output_key in combined:
-                    # values for this key cannot be combined,
-                    # so ignore subsequent values for it
-                    pass
-                else:
-                    # set the initial value for this key
-                    combined[output_key] = output_value
+                        overall_token_usage[k] = v
+            if system_fingerprint is None:
+                system_fingerprint = output.get("system_fingerprint")
+        combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
+        if system_fingerprint:
+            combined["system_fingerprint"] = system_fingerprint
         return combined
 
     def _create_chat_result(self, response: Mapping[str, Any], **params: Any) -> ChatResult:
