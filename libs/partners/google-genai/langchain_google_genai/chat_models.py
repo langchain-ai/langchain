@@ -476,7 +476,7 @@ Supported examples:
     # sense to accept a `Transport` object here even though the client classes can.
     # We could accept a dict since all the `Transport` classes take the same args,
     # but that seems rare. Users that need it can just switch to the low level API.
-    transport: str | None = None,
+    transport: Optional[str] = None
 
     class Config:
         allow_population_by_field_name = True
