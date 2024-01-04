@@ -13,6 +13,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 answer1_text = "answer1"
 chunk1_text = "chunk1"
+token_usage_key_name = "token_usage"
 
 model_list = [
     {
@@ -103,6 +104,8 @@ async def fake_acompletion_fn(**kwargs):
 def setup_fakes() -> None:
     """Setup fakes."""
     import litellm
+    # Turn off LiteLLM's built-in telemetry
+    litellm.telemetry = False
     litellm.completion = fake_completion_fn
     litellm.acompletion = fake_acompletion_fn
 
@@ -145,7 +148,7 @@ def test_litellm_router_generate() -> None:
         assert response.message.content == response.text
         assert response.message.content == answer1_text
     assert chat_messages == messages_copy
-    assert result.llm_output["token_usage"] == Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
+    assert result.llm_output[token_usage_key_name] == Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
 
 
 @pytest.mark.scheduled
@@ -194,7 +197,7 @@ async def test_async_litellm_router() -> None:
             assert isinstance(generation.text, str)
             assert generation.message.content == generation.text
             assert generation.message.content == answer1_text
-    assert response.llm_output["token_usage"] == Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
+    assert response.llm_output[token_usage_key_name] == Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
 
 
 @pytest.mark.scheduled
