@@ -92,5 +92,6 @@ markers = [
   "requires: mark tests as requiring a specific library",
   "asyncio: mark tests as requiring asyncio",
   "compile: mark placeholder test used to compile integration tests without running them",
+  "scheduled: mark tests to run in scheduled testing",
 ]
 asyncio_mode = "auto"
