@@ -35,6 +35,29 @@ class Run(BaseRunV2):
 
 Run.update_forward_refs()
 
+
+# Legacy variables, kept for backwards compatibility.
+BaseRun = None
+ChainRun = None
+LLMRun = None
+RunTypeEnum = None
+ToolRun = None
+TracerSession = None
+TracerSessionBase = None
+TracerSessionV1 = None
+TracerSessionV1Base = None
+TracerSessionV1Create = None
+
 __all__ = [
+    "BaseRun",
+    "ChainRun",
+    "LLMRun",
     "Run",
+    "RunTypeEnum",
+    "ToolRun",
+    "TracerSession",
+    "TracerSessionBase",
+    "TracerSessionV1",
+    "TracerSessionV1Base",
+    "TracerSessionV1Create",
 ]

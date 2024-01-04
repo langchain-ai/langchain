@@ -208,3 +208,6 @@ def register_configure_hook(
 
 
 register_configure_hook(run_collector_var, False)
+
+# Legacy variable, kept for backwards compatibility.
+tracing_enabled = None
