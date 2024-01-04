@@ -66,7 +66,7 @@ pip install google-cloud-aiplatform
 See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 
 ```python
-from langchain.chat_models import ChatVertexAI
+from langchain_community.chat_models import ChatVertexAI
 ```
 
 ## Document Loaders
@@ -84,7 +84,7 @@ pip install google-cloud-bigquery
 See a [usage example](/docs/integrations/document_loaders/google_bigquery).
 
 ```python
-from langchain.document_loaders import BigQueryLoader
+from langchain_community.document_loaders import BigQueryLoader
 ```
 
 ## LLMs
@@ -102,7 +102,7 @@ pip install google-cloud-aiplatform
 See a [usage example](/docs/integrations/llms/google_vertex_ai_palm).
 
 ```python
-from langchain.llms import VertexAI
+from langchain_community.llms import VertexAI
 ```
 
 ### Model Garden
@@ -118,7 +118,7 @@ pip install google-cloud-aiplatform
 See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
 
 ```python
-from langchain.llms import VertexAIModelGarden
+from langchain_community.llms import VertexAIModelGarden
 ```
 
 
@@ -137,12 +137,12 @@ There are two loaders for the `Google Cloud Storage`: the `Directory` and the `F
 See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_directory).
 
 ```python
-from langchain.document_loaders import GCSDirectoryLoader
+from langchain_community.document_loaders import GCSDirectoryLoader
 ```
 See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_file).
 
 ```python
-from langchain.document_loaders import GCSFileLoader
+from langchain_community.document_loaders import GCSFileLoader
 ```
 
 ### Google Drive
@@ -160,7 +160,7 @@ pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_drive).
 
 ```python
-from langchain.document_loaders import GoogleDriveLoader
+from langchain_community.document_loaders import GoogleDriveLoader
 ```
 
 ### Speech-to-Text
@@ -178,7 +178,7 @@ pip install google-cloud-speech
 See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_speech_to_text).
 
 ```python
-from langchain.document_loaders import GoogleSpeechToTextLoader
+from langchain_community.document_loaders import GoogleSpeechToTextLoader
 ```
 
 ## Vector Stores
@@ -199,7 +199,29 @@ pip install tensorflow google-cloud-aiplatform tensorflow-hub tensorflow-text
 See a [usage example](/docs/integrations/vectorstores/matchingengine).
 
 ```python
-from langchain.vectorstores import MatchingEngine
+from langchain_community.vectorstores import MatchingEngine
+```
+
+### Google BigQuery Vector Search
+
+> [Google BigQuery](https://cloud.google.com/bigquery),
+> BigQuery is a serverless and cost-effective enterprise data warehouse in Google Cloud.
+>
+> Google BigQuery Vector Search 
+> BigQuery vector search lets you use GoogleSQL to do semantic search, using vector indexes for fast but approximate results, or using brute force for exact results.
+
+> It can calculate Euclidean or  Cosine distance. With LangChain, we default to use Euclidean distance.
+
+We need to install several python packages.
+
+```bash
+pip install google-cloud-bigquery
+```
+
+See a [usage example](/docs/integrations/vectorstores/bigquery_vector_search).
+
+```python
+from langchain.vectorstores import BigQueryVectorSearch
 ```
 
 ### Google ScaNN
@@ -224,7 +246,7 @@ pip install scann
 See a [usage example](/docs/integrations/vectorstores/scann).
 
 ```python
-from langchain.vectorstores import ScaNN
+from langchain_community.vectorstores import ScaNN
 ```
 
 ## Retrievers
@@ -311,8 +333,8 @@ pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 See a [usage example and authorization instructions](/docs/integrations/tools/google_drive).
 
 ```python
-from langchain.utilities.google_drive import GoogleDriveAPIWrapper
-from langchain.tools.google_drive.tool import GoogleDriveSearchTool
+from langchain_community.utilities.google_drive import GoogleDriveAPIWrapper
+from langchain_community.tools.google_drive.tool import GoogleDriveSearchTool
 ```
 
 ### Google Places
@@ -336,7 +358,7 @@ from langchain.tools import GooglePlacesTool
 `GOOGLE_API_KEY` and `GOOGLE_CSE_ID` respectively.
 
 ```python
-from langchain.utilities import GoogleSearchAPIWrapper
+from langchain_community.utilities import GoogleSearchAPIWrapper
 ```
 
 For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/google_search).
@@ -359,8 +381,8 @@ pip install google-search-results
 See a [usage example and authorization instructions](/docs/integrations/tools/google_finance).
 
 ```python
-from langchain.tools.google_finance import GoogleFinanceQueryRun
-from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
+from langchain_community.tools.google_finance import GoogleFinanceQueryRun
+from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
 ```
 
 ### Google Jobs
@@ -374,8 +396,8 @@ pip install google-search-results
 See a [usage example and authorization instructions](/docs/integrations/tools/google_jobs).
 
 ```python
-from langchain.tools.google_jobs import GoogleJobsQueryRun
-from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
+from langchain_community.tools.google_jobs import GoogleJobsQueryRun
+from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
 ```
 
 ### Google Lens
@@ -383,8 +405,8 @@ from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
 See a [usage example and authorization instructions](/docs/integrations/tools/google_lens).
 
 ```python
-from langchain.tools.google_lens import GoogleLensQueryRun
-from langchain.utilities.google_lens import GoogleLensAPIWrapper
+from langchain_community.tools.google_lens import GoogleLensQueryRun
+from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
 ```
 
 ### Google Scholar
@@ -398,8 +420,8 @@ pip install google-search-results
 See a [usage example and authorization instructions](/docs/integrations/tools/google_scholar).
 
 ```python
-from langchain.tools.google_scholar import GoogleScholarQueryRun
-from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
+from langchain_community.tools.google_scholar import GoogleScholarQueryRun
+from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
 ```
 
 ### Google Trends
@@ -413,8 +435,8 @@ pip install google-search-results
 See a [usage example and authorization instructions](/docs/integrations/tools/google_trends).
 
 ```python
-from langchain.tools.google_trends import GoogleTrendsQueryRun
-from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
+from langchain_community.tools.google_trends import GoogleTrendsQueryRun
+from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
 ```
 
 
@@ -440,8 +462,8 @@ pip install google-cloud-documentai-toolbox
 See a [usage example](/docs/integrations/document_transformers/docai).
 
 ```python
-from langchain.document_loaders.blob_loaders import Blob
-from langchain.document_loaders.parsers import DocAIParser
+from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_community.document_loaders.parsers import DocAIParser
 ```
 
 ### Google Translate
@@ -463,7 +485,7 @@ pip install google-cloud-translate
 See a [usage example and authorization instructions](/docs/integrations/document_transformers/google_translate).
 
 ```python
-from langchain.document_transformers import GoogleTranslateTransformer
+from langchain_community.document_transformers import GoogleTranslateTransformer
 ```
 
 ## Toolkits
@@ -482,7 +504,7 @@ pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
 See a [usage example and authorization instructions](/docs/integrations/toolkits/gmail).
 
 ```python
-from langchain.agents.agent_toolkits import GmailToolkit
+from langchain_community.agent_toolkits import GmailToolkit
 ```
 
 
@@ -502,7 +524,7 @@ pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
 See a [usage example and authorization instructions](/docs/integrations/chat_loaders/gmail).
 
 ```python
-from langchain.chat_loaders.gmail import GMailLoader
+from langchain_community.chat_loaders.gmail import GMailLoader
 ```
 
 ## 3rd Party Integrations
@@ -514,7 +536,7 @@ from langchain.chat_loaders.gmail import GMailLoader
 See [usage examples and authorization instructions](/docs/integrations/tools/searchapi).
 
 ```python
-from langchain.utilities import SearchApiAPIWrapper
+from langchain_community.utilities import SearchApiAPIWrapper
 ```
 
 ### SerpAPI
@@ -524,7 +546,7 @@ from langchain.utilities import SearchApiAPIWrapper
 See a [usage example and authorization instructions](/docs/integrations/tools/serpapi).
 
 ```python
-from langchain.utilities import SerpAPIWrapper
+from langchain_community.utilities import SerpAPIWrapper
 ```
 
 ### Serper.dev
@@ -532,7 +554,7 @@ from langchain.utilities import SerpAPIWrapper
 See a [usage example and authorization instructions](/docs/integrations/tools/google_serper).
 
 ```python
-from langchain.utilities import GoogleSerperAPIWrapper
+from langchain_community.utilities import GoogleSerperAPIWrapper
 ```
 
 ### YouTube
@@ -570,8 +592,8 @@ pip install yt_dlp pydub librosa
 See a [usage example and authorization instructions](/docs/integrations/document_loaders/youtube_audio).
 
 ```python
-from langchain.document_loaders.blob_loaders.youtube_audio import YoutubeAudioLoader
-from langchain.document_loaders.parsers import OpenAIWhisperParser, OpenAIWhisperParserLocal
+from langchain_community.document_loaders.blob_loaders.youtube_audio import YoutubeAudioLoader
+from langchain_community.document_loaders.parsers import OpenAIWhisperParser, OpenAIWhisperParserLocal
 ```
 
 ### YouTube transcripts
@@ -587,5 +609,5 @@ pip install youtube-transcript-api
 See a [usage example](/docs/integrations/document_loaders/youtube_transcript).
 
 ```python
-from langchain.document_loaders import YoutubeLoader
+from langchain_community.document_loaders import YoutubeLoader
 ```

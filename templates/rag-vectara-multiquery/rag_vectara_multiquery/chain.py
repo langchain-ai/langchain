@@ -1,8 +1,8 @@
 import os
 
-from langchain.chat_models import ChatOpenAI
 from langchain.retrievers.multi_query import MultiQueryRetriever
-from langchain.vectorstores import Vectara
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.vectorstores import Vectara
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
