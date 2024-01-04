@@ -1,4 +1,5 @@
 # Pydantic compatibility
+*Last updated: 2023-12-11*
 
 - Pydantic v2 was released in June, 2023 (https://docs.pydantic.dev/2.0/blog/pydantic-v2-final/)
 - v2 contains has a number of breaking changes (https://docs.pydantic.dev/2.0/migration/)
