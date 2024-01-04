@@ -25,7 +25,8 @@ def update_contents(md, last_updated):
 
 def last_updated(path):
     process = subprocess.Popen(
-        ["git", "log", "-n", "1", "--pretty=format:%cs", path], stdout=subprocess.PIPE
+        # ["git", "log", "-n", "1", "--pretty=format:%cs", path], stdout=subprocess.PIPE
+        ["stat", path], stdout=subprocess.PIPE
     )
     output = process.communicate()
     return output[0].decode()
