@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.0.12"
+langchain-core = ">=0.1,<0.2"
 google-cloud-aiplatform = "1.38.1"
 google-cloud-storage = "^2.14.0"
 types-requests = "^2.31.0.20231231"
