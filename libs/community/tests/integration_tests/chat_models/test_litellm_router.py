@@ -11,33 +11,47 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_community.chat_models.litellm_router import ChatLiteLLMRouter
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
+model_group = "gpt-4"
+fake_model_prefix = "azure/fake-deployment-name-"
+fake_api_key = "fakekeyvalue"
+fake_api_version = "XXXX-XX-XX"
+fake_api_base = "https://faketesturl/"
 fake_chunks = ["This is ", "a fake answer."]
 fake_answer = "".join(fake_chunks)
 token_usage_key_name = "token_usage"
 
 model_list = [
     {
-        "model_name": "azure-gpt-3.5-turbo",
+        "model_name": model_group,
         "litellm_params": {
-            "model": "azure/fake-deployment-name-1",
-            "api_key": "fakekeyvalue",
-            "api_version": "",
-            "api_base": "https://faketesturl/"
+            "model": fake_model_prefix + "1",
+            "api_key": fake_api_key,
+            "api_version": fake_api_version,
+            "api_base": fake_api_base
         },
     },
     {
-        "model_name": "azure-gpt-3.5-turbo",
+        "model_name": model_group,
         "litellm_params": {
-            "model": "azure/fake-deployment-name-2",
-            "api_key": "fakekeyvalue",
-            "api_version": "",
-            "api_base": "https://faketesturl/"
+            "model": fake_model_prefix + "2",
+            "api_key": fake_api_key,
+            "api_version": fake_api_version,
+            "api_base": fake_api_base
         },
     }
 ]
 
 def fake_completion_fn(**kwargs):
     from litellm import Usage
+
+    assert kwargs["model"].startswith(fake_model_prefix)
+    assert kwargs["api_key"] == fake_api_key
+    assert kwargs["api_version"] == fake_api_version
+    assert kwargs["api_base"] == fake_api_base
+    metadata = kwargs["metadata"]
+    assert metadata["model_group"] == model_group
+    assert metadata["deployment"].startswith(fake_model_prefix)
+
     base_result = {
             "choices": [
                     {
@@ -46,7 +60,7 @@ def fake_completion_fn(**kwargs):
             ],
             "created": 0,
             "id": "",
-            "model": "gpt-3.5-turbo-0301",
+            "model": model_group,
             "object": "chat.completion",
         }
     if kwargs["stream"]:
@@ -184,7 +198,8 @@ def test_litellm_router_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     setup_fakes()
     router = get_test_router()
-    chat = ChatLiteLLMRouter(metadata={"router": router},
+    chat = ChatLiteLLMRouter(
+        metadata={"router": router},
         streaming=True,
         callbacks=[callback_handler],
         verbose=True,
@@ -228,7 +243,8 @@ async def test_async_litellm_router_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     setup_fakes()
     router = get_test_router()
-    chat = ChatLiteLLMRouter(metadata={"router": router},
+    chat = ChatLiteLLMRouter(
+        metadata={"router": router},
         streaming=True,
         callbacks=[callback_handler],
         verbose=True,

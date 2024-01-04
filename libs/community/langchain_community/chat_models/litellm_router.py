@@ -13,14 +13,14 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models.chat_models import (
+    agenerate_from_stream,
+    generate_from_stream,
+)
 from langchain_community.chat_models.litellm import (
     ChatLiteLLM,
     _convert_dict_to_message,
     _convert_delta_to_message_chunk,
-)
-from langchain_core.language_models.chat_models import (
-    agenerate_from_stream,
-    generate_from_stream,
 )
 from langchain_core.messages import (
     AIMessageChunk,
@@ -71,6 +71,17 @@ class ChatLiteLLMRouter(ChatLiteLLM):
     def _llm_type(self) -> str:
         return "LiteLLMRouter"
 
+    def _prepare_params_for_router(self, params):
+        params["model"] = self.model
+
+        # allow the router to set api_base based on its model choice
+        api_base_key_name = "api_base"
+        if api_base_key_name in params and params[api_base_key_name] is None:
+            del params[api_base_key_name]
+
+        # add metadata so router can fill it below
+        params.setdefault("metadata", {})
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -88,9 +99,8 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         params = {**params, **kwargs}
         router = _get_router(self)
         self.model = _get_model_for_completion(router)
-        params["model"] = self.model
-        # add metadata so router can fill it below
-        params.setdefault("metadata", {})
+        self._prepare_params_for_router(params)
+
         response = router.completion(
             messages=message_dicts,
             **params,
@@ -109,9 +119,8 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         params = {**params, **kwargs, "stream": True}
         router = _get_router(self)
         self.model = _get_model_for_completion(router)
-        params["model"] = self.model
-        # add metadata so router can fill it below
-        params.setdefault("metadata", {})
+        self._prepare_params_for_router(params)
+
         for chunk in router.completion(messages=message_dicts, **params):
             if len(chunk["choices"]) == 0:
                 continue
@@ -134,9 +143,8 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         params = {**params, **kwargs, "stream": True}
         router = _get_router(self)
         self.model = _get_model_for_completion(router)
-        params["model"] = self.model
-        # add metadata so router can fill it below
-        params.setdefault("metadata", {})
+        self._prepare_params_for_router(params)
+
         async for chunk in await router.acompletion(messages=message_dicts, **params):
             if len(chunk["choices"]) == 0:
                 continue
@@ -166,9 +174,8 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         params = {**params, **kwargs}
         router = _get_router(self)
         self.model = _get_model_for_completion(router)
-        params["model"] = self.model
-        # add metadata so router can fill it below
-        params.setdefault("metadata", {})
+        self._prepare_params_for_router(params)
+
         response = await router.acompletion(
             messages=message_dicts,
             **params,
