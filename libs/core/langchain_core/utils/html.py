@@ -67,23 +67,33 @@ def extract_sub_links(
     Returns:
         List[str]: sub links
     """
-    base_url = base_url if base_url is not None else url
+    parsed_base_url = urlparse(base_url) if base_url is not None else urlparse(url)
     all_links = find_all_links(raw_html, pattern=pattern)
     absolute_paths = set()
     for link in all_links:
+        parsed_link = urlparse(link)
         # Some may be absolute links like https://to/path
-        if link.startswith("http"):
+        if parsed_link.scheme == "http" or parsed_link.scheme == "https":
             absolute_paths.add(link)
         # Some may have omitted the protocol like //to/path
-        elif link.startswith("//"):
+        elif parsed_link.scheme == "":
             absolute_paths.add(f"{urlparse(url).scheme}:{link}")
         else:
-            absolute_paths.add(urljoin(url, link))
-    res = []
+            absolute_paths.add(urljoin(url, parsed_link.path))
+
+    results = []
     for path in absolute_paths:
-        if any(path.startswith(exclude) for exclude in exclude_prefixes):
+        parsed_path = urlparse(path)
+
+        if any(
+            parsed_path.netloc == urlparse(exclude).netloc
+            for exclude in exclude_prefixes
+        ):
             continue
-        if prevent_outside and not path.startswith(base_url):
-            continue
-        res.append(path)
-    return res
+
+        if prevent_outside:
+            if parsed_path.netloc != parsed_base_url.netloc:
+                continue
+
+        results.append(path)
+    return results
