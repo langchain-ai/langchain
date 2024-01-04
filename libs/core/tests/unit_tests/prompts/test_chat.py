@@ -503,4 +503,3 @@ def test_messages_placeholder() -> None:
         prompt.format_messages()
     prompt = MessagesPlaceholder("history", optional=True)
     assert prompt.format_messages() == []
-
