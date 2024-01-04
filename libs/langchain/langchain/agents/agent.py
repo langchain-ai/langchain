@@ -21,6 +21,7 @@ from typing import (
 )
 
 import yaml
+from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish, AgentStep
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
@@ -53,6 +54,7 @@ from langchain.utilities.asyncio import asyncio_timeout
 logger = logging.getLogger(__name__)
 
 
+@deprecated("0.1.0", removal="0.2.0")
 class BaseSingleActionAgent(BaseModel):
     """Base Single Action Agent class."""
 
@@ -194,6 +196,7 @@ class BaseSingleActionAgent(BaseModel):
         return {}
 
 
+@deprecated("0.1.0", removal="0.2.0")
 class BaseMultiActionAgent(BaseModel):
     """Base Multi Action Agent class."""
 
@@ -486,6 +489,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         return output
 
 
+@deprecated("0.1.0", removal="0.2.0")
 class LLMSingleActionAgent(BaseSingleActionAgent):
     """Base class for single action agents."""
 
@@ -568,6 +572,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         }
 
 
+@deprecated("0.1.0", removal="0.2.0")
 class Agent(BaseSingleActionAgent):
     """Agent that calls the language model and deciding the action.
 
