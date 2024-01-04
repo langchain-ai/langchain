@@ -3,10 +3,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
-    from langchain_core.pydantic_v1 import Field
-
 
 from langchain_core.load.serializable import Serializable
+from langchain_core.pydantic_v1 import Field
 
 
 class Node(Serializable):
