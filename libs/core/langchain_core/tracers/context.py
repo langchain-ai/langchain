@@ -19,9 +19,7 @@ from langsmith import utils as ls_utils
 from langsmith.run_helpers import get_run_tree_context
 
 from langchain_core.tracers.langchain import LangChainTracer
-from langchain_core.tracers.langchain_v1 import LangChainTracerV1
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
-from langchain_core.tracers.schemas import TracerSessionV1
 from langchain_core.utils.env import env_var_is_set
 
 if TYPE_CHECKING:
@@ -30,42 +28,12 @@ if TYPE_CHECKING:
     from langchain_core.callbacks.base import BaseCallbackHandler, Callbacks
     from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 
-tracing_callback_var: ContextVar[Optional[LangChainTracerV1]] = ContextVar(  # noqa: E501
-    "tracing_callback", default=None
-)
-
 tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
     "tracing_callback_v2", default=None
 )
 run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVar(  # noqa: E501
     "run_collector", default=None
 )
-
-
-@contextmanager
-def tracing_enabled(
-    session_name: str = "default",
-) -> Generator[TracerSessionV1, None, None]:
-    """Get the Deprecated LangChainTracer in a context manager.
-
-    Args:
-        session_name (str, optional): The name of the session.
-          Defaults to "default".
-
-    Returns:
-        TracerSessionV1: The LangChainTracer session.
-
-    Example:
-        >>> with tracing_enabled() as session:
-        ...     # Use the LangChainTracer session
-    """
-    cb = LangChainTracerV1()
-    session = cast(TracerSessionV1, cb.load_session(session_name))
-    try:
-        tracing_callback_var.set(cb)
-        yield session
-    finally:
-        tracing_callback_var.set(None)
 
 
 @contextmanager
@@ -84,6 +52,8 @@ def tracing_v2_enabled(
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
         tags (List[str], optional): The tags to add to the run.
+            Defaults to None.
+        client (LangSmithClient, optional): The client of the langsmith.
             Defaults to None.
 
     Returns:
@@ -166,6 +136,7 @@ def _tracing_v2_is_enabled() -> bool:
         env_var_is_set("LANGCHAIN_TRACING_V2")
         or tracing_v2_callback_var.get() is not None
         or get_run_tree_context() is not None
+        or env_var_is_set("LANGCHAIN_TRACING")
     )
 
 

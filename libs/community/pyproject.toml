@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.0.6"
+version = "0.0.8"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -9,7 +9,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1"
+langchain-core = ">=0.1.5,<0.2"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -86,6 +86,7 @@ dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
 azure-ai-documentintelligence = {version = "^1.0.0b1", optional = true}
 oracle-ads = {version = "^2.9.1", optional = true}
+zhipuai = {version = "^1.0.7", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -247,6 +248,7 @@ extended_testing = [
  "cohere",
  "azure-ai-documentintelligence",
  "oracle-ads",
+ "zhipuai",
 ]
 
 [tool.ruff]

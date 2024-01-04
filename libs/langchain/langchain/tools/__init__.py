@@ -25,67 +25,75 @@ _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
 
 
 def _import_ainetwork_app() -> Any:
-    from langchain.tools.ainetwork.app import AINAppOps
+    from langchain_community.tools.ainetwork.app import AINAppOps
 
     return AINAppOps
 
 
 def _import_ainetwork_owner() -> Any:
-    from langchain.tools.ainetwork.owner import AINOwnerOps
+    from langchain_community.tools.ainetwork.owner import AINOwnerOps
 
     return AINOwnerOps
 
 
 def _import_ainetwork_rule() -> Any:
-    from langchain.tools.ainetwork.rule import AINRuleOps
+    from langchain_community.tools.ainetwork.rule import AINRuleOps
 
     return AINRuleOps
 
 
 def _import_ainetwork_transfer() -> Any:
-    from langchain.tools.ainetwork.transfer import AINTransfer
+    from langchain_community.tools.ainetwork.transfer import AINTransfer
 
     return AINTransfer
 
 
 def _import_ainetwork_value() -> Any:
-    from langchain.tools.ainetwork.value import AINValueOps
+    from langchain_community.tools.ainetwork.value import AINValueOps
 
     return AINValueOps
 
 
 def _import_arxiv_tool() -> Any:
-    from langchain.tools.arxiv.tool import ArxivQueryRun
+    from langchain_community.tools.arxiv.tool import ArxivQueryRun
 
     return ArxivQueryRun
 
 
 def _import_azure_cognitive_services_AzureCogsFormRecognizerTool() -> Any:
-    from langchain.tools.azure_cognitive_services import AzureCogsFormRecognizerTool
+    from langchain_community.tools.azure_cognitive_services import (
+        AzureCogsFormRecognizerTool,
+    )
 
     return AzureCogsFormRecognizerTool
 
 
 def _import_azure_cognitive_services_AzureCogsImageAnalysisTool() -> Any:
-    from langchain.tools.azure_cognitive_services import AzureCogsImageAnalysisTool
+    from langchain_community.tools.azure_cognitive_services import (
+        AzureCogsImageAnalysisTool,
+    )
 
     return AzureCogsImageAnalysisTool
 
 
 def _import_azure_cognitive_services_AzureCogsSpeech2TextTool() -> Any:
-    from langchain.tools.azure_cognitive_services import AzureCogsSpeech2TextTool
+    from langchain_community.tools.azure_cognitive_services import (
+        AzureCogsSpeech2TextTool,
+    )
 
     return AzureCogsSpeech2TextTool
 
 
 def _import_azure_cognitive_services_AzureCogsText2SpeechTool() -> Any:
-    from langchain.tools.azure_cognitive_services import AzureCogsText2SpeechTool
+    from langchain_community.tools.azure_cognitive_services import (
+        AzureCogsText2SpeechTool,
+    )
 
     return AzureCogsText2SpeechTool
 
 
 def _import_azure_cognitive_services_AzureCogsTextAnalyticsHealthTool() -> Any:
-    from langchain.tools.azure_cognitive_services import (
+    from langchain_community.tools.azure_cognitive_services import (
         AzureCogsTextAnalyticsHealthTool,
     )
 
@@ -93,385 +101,391 @@ def _import_azure_cognitive_services_AzureCogsTextAnalyticsHealthTool() -> Any:
 
 
 def _import_bing_search_tool_BingSearchResults() -> Any:
-    from langchain.tools.bing_search.tool import BingSearchResults
+    from langchain_community.tools.bing_search.tool import BingSearchResults
 
     return BingSearchResults
 
 
 def _import_bing_search_tool_BingSearchRun() -> Any:
-    from langchain.tools.bing_search.tool import BingSearchRun
+    from langchain_community.tools.bing_search.tool import BingSearchRun
 
     return BingSearchRun
 
 
 def _import_brave_search_tool() -> Any:
-    from langchain.tools.brave_search.tool import BraveSearch
+    from langchain_community.tools.brave_search.tool import BraveSearch
 
     return BraveSearch
 
 
 def _import_ddg_search_tool_DuckDuckGoSearchResults() -> Any:
-    from langchain.tools.ddg_search.tool import DuckDuckGoSearchResults
+    from langchain_community.tools.ddg_search.tool import DuckDuckGoSearchResults
 
     return DuckDuckGoSearchResults
 
 
 def _import_ddg_search_tool_DuckDuckGoSearchRun() -> Any:
-    from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
+    from langchain_community.tools.ddg_search.tool import DuckDuckGoSearchRun
 
     return DuckDuckGoSearchRun
 
 
 def _import_edenai_EdenAiExplicitImageTool() -> Any:
-    from langchain.tools.edenai import EdenAiExplicitImageTool
+    from langchain_community.tools.edenai import EdenAiExplicitImageTool
 
     return EdenAiExplicitImageTool
 
 
 def _import_edenai_EdenAiObjectDetectionTool() -> Any:
-    from langchain.tools.edenai import EdenAiObjectDetectionTool
+    from langchain_community.tools.edenai import EdenAiObjectDetectionTool
 
     return EdenAiObjectDetectionTool
 
 
 def _import_edenai_EdenAiParsingIDTool() -> Any:
-    from langchain.tools.edenai import EdenAiParsingIDTool
+    from langchain_community.tools.edenai import EdenAiParsingIDTool
 
     return EdenAiParsingIDTool
 
 
 def _import_edenai_EdenAiParsingInvoiceTool() -> Any:
-    from langchain.tools.edenai import EdenAiParsingInvoiceTool
+    from langchain_community.tools.edenai import EdenAiParsingInvoiceTool
 
     return EdenAiParsingInvoiceTool
 
 
 def _import_edenai_EdenAiSpeechToTextTool() -> Any:
-    from langchain.tools.edenai import EdenAiSpeechToTextTool
+    from langchain_community.tools.edenai import EdenAiSpeechToTextTool
 
     return EdenAiSpeechToTextTool
 
 
 def _import_edenai_EdenAiTextModerationTool() -> Any:
-    from langchain.tools.edenai import EdenAiTextModerationTool
+    from langchain_community.tools.edenai import EdenAiTextModerationTool
 
     return EdenAiTextModerationTool
 
 
 def _import_edenai_EdenAiTextToSpeechTool() -> Any:
-    from langchain.tools.edenai import EdenAiTextToSpeechTool
+    from langchain_community.tools.edenai import EdenAiTextToSpeechTool
 
     return EdenAiTextToSpeechTool
 
 
 def _import_edenai_EdenaiTool() -> Any:
-    from langchain.tools.edenai import EdenaiTool
+    from langchain_community.tools.edenai import EdenaiTool
 
     return EdenaiTool
 
 
 def _import_eleven_labs_text2speech() -> Any:
-    from langchain.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
+    from langchain_community.tools.eleven_labs.text2speech import (
+        ElevenLabsText2SpeechTool,
+    )
 
     return ElevenLabsText2SpeechTool
 
 
 def _import_file_management_CopyFileTool() -> Any:
-    from langchain.tools.file_management import CopyFileTool
+    from langchain_community.tools.file_management import CopyFileTool
 
     return CopyFileTool
 
 
 def _import_file_management_DeleteFileTool() -> Any:
-    from langchain.tools.file_management import DeleteFileTool
+    from langchain_community.tools.file_management import DeleteFileTool
 
     return DeleteFileTool
 
 
 def _import_file_management_FileSearchTool() -> Any:
-    from langchain.tools.file_management import FileSearchTool
+    from langchain_community.tools.file_management import FileSearchTool
 
     return FileSearchTool
 
 
 def _import_file_management_ListDirectoryTool() -> Any:
-    from langchain.tools.file_management import ListDirectoryTool
+    from langchain_community.tools.file_management import ListDirectoryTool
 
     return ListDirectoryTool
 
 
 def _import_file_management_MoveFileTool() -> Any:
-    from langchain.tools.file_management import MoveFileTool
+    from langchain_community.tools.file_management import MoveFileTool
 
     return MoveFileTool
 
 
 def _import_file_management_ReadFileTool() -> Any:
-    from langchain.tools.file_management import ReadFileTool
+    from langchain_community.tools.file_management import ReadFileTool
 
     return ReadFileTool
 
 
 def _import_file_management_WriteFileTool() -> Any:
-    from langchain.tools.file_management import WriteFileTool
+    from langchain_community.tools.file_management import WriteFileTool
 
     return WriteFileTool
 
 
 def _import_gmail_GmailCreateDraft() -> Any:
-    from langchain.tools.gmail import GmailCreateDraft
+    from langchain_community.tools.gmail import GmailCreateDraft
 
     return GmailCreateDraft
 
 
 def _import_gmail_GmailGetMessage() -> Any:
-    from langchain.tools.gmail import GmailGetMessage
+    from langchain_community.tools.gmail import GmailGetMessage
 
     return GmailGetMessage
 
 
 def _import_gmail_GmailGetThread() -> Any:
-    from langchain.tools.gmail import GmailGetThread
+    from langchain_community.tools.gmail import GmailGetThread
 
     return GmailGetThread
 
 
 def _import_gmail_GmailSearch() -> Any:
-    from langchain.tools.gmail import GmailSearch
+    from langchain_community.tools.gmail import GmailSearch
 
     return GmailSearch
 
 
 def _import_gmail_GmailSendMessage() -> Any:
-    from langchain.tools.gmail import GmailSendMessage
+    from langchain_community.tools.gmail import GmailSendMessage
 
     return GmailSendMessage
 
 
 def _import_google_cloud_texttospeech() -> Any:
-    from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
+    from langchain_community.tools.google_cloud.texttospeech import (
+        GoogleCloudTextToSpeechTool,
+    )
 
     return GoogleCloudTextToSpeechTool
 
 
 def _import_google_places_tool() -> Any:
-    from langchain.tools.google_places.tool import GooglePlacesTool
+    from langchain_community.tools.google_places.tool import GooglePlacesTool
 
     return GooglePlacesTool
 
 
 def _import_google_search_tool_GoogleSearchResults() -> Any:
-    from langchain.tools.google_search.tool import GoogleSearchResults
+    from langchain_community.tools.google_search.tool import GoogleSearchResults
 
     return GoogleSearchResults
 
 
 def _import_google_search_tool_GoogleSearchRun() -> Any:
-    from langchain.tools.google_search.tool import GoogleSearchRun
+    from langchain_community.tools.google_search.tool import GoogleSearchRun
 
     return GoogleSearchRun
 
 
 def _import_google_serper_tool_GoogleSerperResults() -> Any:
-    from langchain.tools.google_serper.tool import GoogleSerperResults
+    from langchain_community.tools.google_serper.tool import GoogleSerperResults
 
     return GoogleSerperResults
 
 
 def _import_google_serper_tool_GoogleSerperRun() -> Any:
-    from langchain.tools.google_serper.tool import GoogleSerperRun
+    from langchain_community.tools.google_serper.tool import GoogleSerperRun
 
     return GoogleSerperRun
 
 
 def _import_searchapi_tool_SearchAPIResults() -> Any:
-    from langchain.tools.searchapi.tool import SearchAPIResults
+    from langchain_community.tools.searchapi.tool import SearchAPIResults
 
     return SearchAPIResults
 
 
 def _import_searchapi_tool_SearchAPIRun() -> Any:
-    from langchain.tools.searchapi.tool import SearchAPIRun
+    from langchain_community.tools.searchapi.tool import SearchAPIRun
 
     return SearchAPIRun
 
 
 def _import_graphql_tool() -> Any:
-    from langchain.tools.graphql.tool import BaseGraphQLTool
+    from langchain_community.tools.graphql.tool import BaseGraphQLTool
 
     return BaseGraphQLTool
 
 
 def _import_human_tool() -> Any:
-    from langchain.tools.human.tool import HumanInputRun
+    from langchain_community.tools.human.tool import HumanInputRun
 
     return HumanInputRun
 
 
 def _import_ifttt() -> Any:
-    from langchain.tools.ifttt import IFTTTWebhook
+    from langchain_community.tools.ifttt import IFTTTWebhook
 
     return IFTTTWebhook
 
 
 def _import_interaction_tool() -> Any:
-    from langchain.tools.interaction.tool import StdInInquireTool
+    from langchain_community.tools.interaction.tool import StdInInquireTool
 
     return StdInInquireTool
 
 
 def _import_jira_tool() -> Any:
-    from langchain.tools.jira.tool import JiraAction
+    from langchain_community.tools.jira.tool import JiraAction
 
     return JiraAction
 
 
 def _import_json_tool_JsonGetValueTool() -> Any:
-    from langchain.tools.json.tool import JsonGetValueTool
+    from langchain_community.tools.json.tool import JsonGetValueTool
 
     return JsonGetValueTool
 
 
 def _import_json_tool_JsonListKeysTool() -> Any:
-    from langchain.tools.json.tool import JsonListKeysTool
+    from langchain_community.tools.json.tool import JsonListKeysTool
 
     return JsonListKeysTool
 
 
 def _import_merriam_webster_tool() -> Any:
-    from langchain.tools.merriam_webster.tool import MerriamWebsterQueryRun
+    from langchain_community.tools.merriam_webster.tool import MerriamWebsterQueryRun
 
     return MerriamWebsterQueryRun
 
 
 def _import_metaphor_search() -> Any:
-    from langchain.tools.metaphor_search import MetaphorSearchResults
+    from langchain_community.tools.metaphor_search import MetaphorSearchResults
 
     return MetaphorSearchResults
 
 
 def _import_nasa_tool() -> Any:
-    from langchain.tools.nasa.tool import NasaAction
+    from langchain_community.tools.nasa.tool import NasaAction
 
     return NasaAction
 
 
 def _import_office365_create_draft_message() -> Any:
-    from langchain.tools.office365.create_draft_message import O365CreateDraftMessage
+    from langchain_community.tools.office365.create_draft_message import (
+        O365CreateDraftMessage,
+    )
 
     return O365CreateDraftMessage
 
 
 def _import_office365_events_search() -> Any:
-    from langchain.tools.office365.events_search import O365SearchEvents
+    from langchain_community.tools.office365.events_search import O365SearchEvents
 
     return O365SearchEvents
 
 
 def _import_office365_messages_search() -> Any:
-    from langchain.tools.office365.messages_search import O365SearchEmails
+    from langchain_community.tools.office365.messages_search import O365SearchEmails
 
     return O365SearchEmails
 
 
 def _import_office365_send_event() -> Any:
-    from langchain.tools.office365.send_event import O365SendEvent
+    from langchain_community.tools.office365.send_event import O365SendEvent
 
     return O365SendEvent
 
 
 def _import_office365_send_message() -> Any:
-    from langchain.tools.office365.send_message import O365SendMessage
+    from langchain_community.tools.office365.send_message import O365SendMessage
 
     return O365SendMessage
 
 
 def _import_openapi_utils_api_models() -> Any:
-    from langchain.tools.openapi.utils.api_models import APIOperation
+    from langchain_community.tools.openapi.utils.api_models import APIOperation
 
     return APIOperation
 
 
 def _import_openapi_utils_openapi_utils() -> Any:
-    from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
+    from langchain_community.tools.openapi.utils.openapi_utils import OpenAPISpec
 
     return OpenAPISpec
 
 
 def _import_openweathermap_tool() -> Any:
-    from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
+    from langchain_community.tools.openweathermap.tool import OpenWeatherMapQueryRun
 
     return OpenWeatherMapQueryRun
 
 
 def _import_playwright_ClickTool() -> Any:
-    from langchain.tools.playwright import ClickTool
+    from langchain_community.tools.playwright import ClickTool
 
     return ClickTool
 
 
 def _import_playwright_CurrentWebPageTool() -> Any:
-    from langchain.tools.playwright import CurrentWebPageTool
+    from langchain_community.tools.playwright import CurrentWebPageTool
 
     return CurrentWebPageTool
 
 
 def _import_playwright_ExtractHyperlinksTool() -> Any:
-    from langchain.tools.playwright import ExtractHyperlinksTool
+    from langchain_community.tools.playwright import ExtractHyperlinksTool
 
     return ExtractHyperlinksTool
 
 
 def _import_playwright_ExtractTextTool() -> Any:
-    from langchain.tools.playwright import ExtractTextTool
+    from langchain_community.tools.playwright import ExtractTextTool
 
     return ExtractTextTool
 
 
 def _import_playwright_GetElementsTool() -> Any:
-    from langchain.tools.playwright import GetElementsTool
+    from langchain_community.tools.playwright import GetElementsTool
 
     return GetElementsTool
 
 
 def _import_playwright_NavigateBackTool() -> Any:
-    from langchain.tools.playwright import NavigateBackTool
+    from langchain_community.tools.playwright import NavigateBackTool
 
     return NavigateBackTool
 
 
 def _import_playwright_NavigateTool() -> Any:
-    from langchain.tools.playwright import NavigateTool
+    from langchain_community.tools.playwright import NavigateTool
 
     return NavigateTool
 
 
 def _import_plugin() -> Any:
-    from langchain.tools.plugin import AIPluginTool
+    from langchain_community.tools.plugin import AIPluginTool
 
     return AIPluginTool
 
 
 def _import_powerbi_tool_InfoPowerBITool() -> Any:
-    from langchain.tools.powerbi.tool import InfoPowerBITool
+    from langchain_community.tools.powerbi.tool import InfoPowerBITool
 
     return InfoPowerBITool
 
 
 def _import_powerbi_tool_ListPowerBITool() -> Any:
-    from langchain.tools.powerbi.tool import ListPowerBITool
+    from langchain_community.tools.powerbi.tool import ListPowerBITool
 
     return ListPowerBITool
 
 
 def _import_powerbi_tool_QueryPowerBITool() -> Any:
-    from langchain.tools.powerbi.tool import QueryPowerBITool
+    from langchain_community.tools.powerbi.tool import QueryPowerBITool
 
     return QueryPowerBITool
 
 
 def _import_pubmed_tool() -> Any:
-    from langchain.tools.pubmed.tool import PubmedQueryRun
+    from langchain_community.tools.pubmed.tool import PubmedQueryRun
 
     return PubmedQueryRun
 
@@ -499,241 +513,245 @@ def _import_python_tool_PythonREPLTool() -> Any:
 
 
 def _import_reddit_search_RedditSearchRun() -> Any:
-    from langchain.tools.reddit_search.tool import RedditSearchRun
+    from langchain_community.tools.reddit_search.tool import RedditSearchRun
 
     return RedditSearchRun
 
 
 def _import_render() -> Any:
-    from langchain.tools.render import format_tool_to_openai_function
+    from langchain_community.tools.convert_to_openai import (
+        format_tool_to_openai_function,
+    )
 
     return format_tool_to_openai_function
 
 
 def _import_requests_tool_BaseRequestsTool() -> Any:
-    from langchain.tools.requests.tool import BaseRequestsTool
+    from langchain_community.tools.requests.tool import BaseRequestsTool
 
     return BaseRequestsTool
 
 
 def _import_requests_tool_RequestsDeleteTool() -> Any:
-    from langchain.tools.requests.tool import RequestsDeleteTool
+    from langchain_community.tools.requests.tool import RequestsDeleteTool
 
     return RequestsDeleteTool
 
 
 def _import_requests_tool_RequestsGetTool() -> Any:
-    from langchain.tools.requests.tool import RequestsGetTool
+    from langchain_community.tools.requests.tool import RequestsGetTool
 
     return RequestsGetTool
 
 
 def _import_requests_tool_RequestsPatchTool() -> Any:
-    from langchain.tools.requests.tool import RequestsPatchTool
+    from langchain_community.tools.requests.tool import RequestsPatchTool
 
     return RequestsPatchTool
 
 
 def _import_requests_tool_RequestsPostTool() -> Any:
-    from langchain.tools.requests.tool import RequestsPostTool
+    from langchain_community.tools.requests.tool import RequestsPostTool
 
     return RequestsPostTool
 
 
 def _import_requests_tool_RequestsPutTool() -> Any:
-    from langchain.tools.requests.tool import RequestsPutTool
+    from langchain_community.tools.requests.tool import RequestsPutTool
 
     return RequestsPutTool
 
 
 def _import_steam_webapi_tool() -> Any:
-    from langchain.tools.steam.tool import SteamWebAPIQueryRun
+    from langchain_community.tools.steam.tool import SteamWebAPIQueryRun
 
     return SteamWebAPIQueryRun
 
 
 def _import_scenexplain_tool() -> Any:
-    from langchain.tools.scenexplain.tool import SceneXplainTool
+    from langchain_community.tools.scenexplain.tool import SceneXplainTool
 
     return SceneXplainTool
 
 
 def _import_searx_search_tool_SearxSearchResults() -> Any:
-    from langchain.tools.searx_search.tool import SearxSearchResults
+    from langchain_community.tools.searx_search.tool import SearxSearchResults
 
     return SearxSearchResults
 
 
 def _import_searx_search_tool_SearxSearchRun() -> Any:
-    from langchain.tools.searx_search.tool import SearxSearchRun
+    from langchain_community.tools.searx_search.tool import SearxSearchRun
 
     return SearxSearchRun
 
 
 def _import_shell_tool() -> Any:
-    from langchain.tools.shell.tool import ShellTool
+    from langchain_community.tools.shell.tool import ShellTool
 
     return ShellTool
 
 
 def _import_slack_get_channel() -> Any:
-    from langchain.tools.slack.get_channel import SlackGetChannel
+    from langchain_community.tools.slack.get_channel import SlackGetChannel
 
     return SlackGetChannel
 
 
 def _import_slack_get_message() -> Any:
-    from langchain.tools.slack.get_message import SlackGetMessage
+    from langchain_community.tools.slack.get_message import SlackGetMessage
 
     return SlackGetMessage
 
 
 def _import_slack_schedule_message() -> Any:
-    from langchain.tools.slack.schedule_message import SlackScheduleMessage
+    from langchain_community.tools.slack.schedule_message import SlackScheduleMessage
 
     return SlackScheduleMessage
 
 
 def _import_slack_send_message() -> Any:
-    from langchain.tools.slack.send_message import SlackSendMessage
+    from langchain_community.tools.slack.send_message import SlackSendMessage
 
     return SlackSendMessage
 
 
 def _import_sleep_tool() -> Any:
-    from langchain.tools.sleep.tool import SleepTool
+    from langchain_community.tools.sleep.tool import SleepTool
 
     return SleepTool
 
 
 def _import_spark_sql_tool_BaseSparkSQLTool() -> Any:
-    from langchain.tools.spark_sql.tool import BaseSparkSQLTool
+    from langchain_community.tools.spark_sql.tool import BaseSparkSQLTool
 
     return BaseSparkSQLTool
 
 
 def _import_spark_sql_tool_InfoSparkSQLTool() -> Any:
-    from langchain.tools.spark_sql.tool import InfoSparkSQLTool
+    from langchain_community.tools.spark_sql.tool import InfoSparkSQLTool
 
     return InfoSparkSQLTool
 
 
 def _import_spark_sql_tool_ListSparkSQLTool() -> Any:
-    from langchain.tools.spark_sql.tool import ListSparkSQLTool
+    from langchain_community.tools.spark_sql.tool import ListSparkSQLTool
 
     return ListSparkSQLTool
 
 
 def _import_spark_sql_tool_QueryCheckerTool() -> Any:
-    from langchain.tools.spark_sql.tool import QueryCheckerTool
+    from langchain_community.tools.spark_sql.tool import QueryCheckerTool
 
     return QueryCheckerTool
 
 
 def _import_spark_sql_tool_QuerySparkSQLTool() -> Any:
-    from langchain.tools.spark_sql.tool import QuerySparkSQLTool
+    from langchain_community.tools.spark_sql.tool import QuerySparkSQLTool
 
     return QuerySparkSQLTool
 
 
 def _import_sql_database_tool_BaseSQLDatabaseTool() -> Any:
-    from langchain.tools.sql_database.tool import BaseSQLDatabaseTool
+    from langchain_community.tools.sql_database.tool import BaseSQLDatabaseTool
 
     return BaseSQLDatabaseTool
 
 
 def _import_sql_database_tool_InfoSQLDatabaseTool() -> Any:
-    from langchain.tools.sql_database.tool import InfoSQLDatabaseTool
+    from langchain_community.tools.sql_database.tool import InfoSQLDatabaseTool
 
     return InfoSQLDatabaseTool
 
 
 def _import_sql_database_tool_ListSQLDatabaseTool() -> Any:
-    from langchain.tools.sql_database.tool import ListSQLDatabaseTool
+    from langchain_community.tools.sql_database.tool import ListSQLDatabaseTool
 
     return ListSQLDatabaseTool
 
 
 def _import_sql_database_tool_QuerySQLCheckerTool() -> Any:
-    from langchain.tools.sql_database.tool import QuerySQLCheckerTool
+    from langchain_community.tools.sql_database.tool import QuerySQLCheckerTool
 
     return QuerySQLCheckerTool
 
 
 def _import_sql_database_tool_QuerySQLDataBaseTool() -> Any:
-    from langchain.tools.sql_database.tool import QuerySQLDataBaseTool
+    from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 
     return QuerySQLDataBaseTool
 
 
 def _import_stackexchange_tool() -> Any:
-    from langchain.tools.stackexchange.tool import StackExchangeTool
+    from langchain_community.tools.stackexchange.tool import StackExchangeTool
 
     return StackExchangeTool
 
 
 def _import_steamship_image_generation() -> Any:
-    from langchain.tools.steamship_image_generation import SteamshipImageGenerationTool
+    from langchain_community.tools.steamship_image_generation import (
+        SteamshipImageGenerationTool,
+    )
 
     return SteamshipImageGenerationTool
 
 
 def _import_vectorstore_tool_VectorStoreQATool() -> Any:
-    from langchain.tools.vectorstore.tool import VectorStoreQATool
+    from langchain_community.tools.vectorstore.tool import VectorStoreQATool
 
     return VectorStoreQATool
 
 
 def _import_vectorstore_tool_VectorStoreQAWithSourcesTool() -> Any:
-    from langchain.tools.vectorstore.tool import VectorStoreQAWithSourcesTool
+    from langchain_community.tools.vectorstore.tool import VectorStoreQAWithSourcesTool
 
     return VectorStoreQAWithSourcesTool
 
 
 def _import_wikipedia_tool() -> Any:
-    from langchain.tools.wikipedia.tool import WikipediaQueryRun
+    from langchain_community.tools.wikipedia.tool import WikipediaQueryRun
 
     return WikipediaQueryRun
 
 
 def _import_wolfram_alpha_tool() -> Any:
-    from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+    from langchain_community.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 
     return WolframAlphaQueryRun
 
 
 def _import_yahoo_finance_news() -> Any:
-    from langchain.tools.yahoo_finance_news import YahooFinanceNewsTool
+    from langchain_community.tools.yahoo_finance_news import YahooFinanceNewsTool
 
     return YahooFinanceNewsTool
 
 
 def _import_youtube_search() -> Any:
-    from langchain.tools.youtube.search import YouTubeSearchTool
+    from langchain_community.tools.youtube.search import YouTubeSearchTool
 
     return YouTubeSearchTool
 
 
 def _import_zapier_tool_ZapierNLAListActions() -> Any:
-    from langchain.tools.zapier.tool import ZapierNLAListActions
+    from langchain_community.tools.zapier.tool import ZapierNLAListActions
 
     return ZapierNLAListActions
 
 
 def _import_zapier_tool_ZapierNLARunAction() -> Any:
-    from langchain.tools.zapier.tool import ZapierNLARunAction
+    from langchain_community.tools.zapier.tool import ZapierNLARunAction
 
     return ZapierNLARunAction
 
 
 def _import_bearly_tool() -> Any:
-    from langchain.tools.bearly.tool import BearlyInterpreterTool
+    from langchain_community.tools.bearly.tool import BearlyInterpreterTool
 
     return BearlyInterpreterTool
 
 
 def _import_e2b_data_analysis() -> Any:
-    from langchain.tools.e2b_data_analysis.tool import E2BDataAnalysisTool
+    from langchain_community.tools.e2b_data_analysis.tool import E2BDataAnalysisTool
 
     return E2BDataAnalysisTool
 

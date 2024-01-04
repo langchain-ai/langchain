@@ -1,6 +1,7 @@
 # flake8: noqa=E501
 """Test SQL database wrapper."""
 
+from langchain_community.utilities.sql_database import SQLDatabase, truncate_word
 from sqlalchemy import (
     Column,
     Integer,
@@ -11,8 +12,6 @@ from sqlalchemy import (
     create_engine,
     insert,
 )
-
-from langchain.utilities.sql_database import SQLDatabase, truncate_word
 
 metadata_obj = MetaData()
 
@@ -120,10 +119,16 @@ def test_sql_database_run() -> None:
         conn.execute(stmt)
     db = SQLDatabase(engine)
     command = "select user_id, user_name, user_bio from user where user_id = 13"
-    output = db.run(command)
+    partial_output = db.run(command)
     user_bio = "That is my Bio " * 19 + "That is my..."
-    expected_output = f"[(13, 'Harrison', '{user_bio}')]"
-    assert output == expected_output
+    expected_partial_output = f"[(13, 'Harrison', '{user_bio}')]"
+    assert partial_output == expected_partial_output
+
+    full_output = db.run(command, include_columns=True)
+    expected_full_output = (
+        "[{'user_id': 13, 'user_name': 'Harrison', 'user_bio': '%s'}]" % user_bio
+    )
+    assert full_output == expected_full_output
 
 
 def test_sql_database_run_update() -> None:

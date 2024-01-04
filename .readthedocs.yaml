@@ -10,7 +10,7 @@ build:
   tools:
     python: "3.11"
   commands:
-      - python -mvirtualenv $READTHEDOCS_VIRTUALENV_PATH
+      - python -m virtualenv $READTHEDOCS_VIRTUALENV_PATH
       - python -m pip install --upgrade --no-cache-dir pip setuptools
       - python -m pip install --upgrade --no-cache-dir sphinx readthedocs-sphinx-ext
       - python -m pip install ./libs/partners/*
