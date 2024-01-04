@@ -8,7 +8,7 @@ _DOCS_DIR = str(Path(__file__).parent.absolute() / ".." / "docs")
 
 
 def update_contents(md, last_updated):
-    first_header = md.find("#")
+    first_header = md.find("# ")
     last_updated_str = f"*Last updated: {last_updated}*"
     if first_header >= 0:
         if "\n" in md[first_header:]:
