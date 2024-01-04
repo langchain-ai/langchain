@@ -12,12 +12,10 @@ def update_contents(md, last_updated):
         md += "\n"
     first_header = md.find("#")
     if first_header >= 0:
-        prefix = md[:first_header]
-        body = md[first_header:]
+        body = md[first_header:].replace("\n", f"\nLast updated: {last_updated}\n", 1)
+        return md[:first_header] + body
     else:
-        prefix = ""
-        body = md
-    return prefix + body.replace("\n", f"\nLast updated: {last_updated}\n", 1)
+        return f"Last updated: {last_updated}\n{md}
 
 
 def last_updated(path):
