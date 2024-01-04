@@ -41,13 +41,13 @@ from vertexai.preview.generative_models import (  # type: ignore
     Part,
 )
 
-from langchain_google_vertexai.llms import (
-    _VertexAICommon,
+from langchain_google_vertexai._utils import (
     is_codey_model,
     is_gemini_model,
-)
-from langchain_google_vertexai.utils import (
     load_image_from_gcs,
+)
+from langchain_google_vertexai.llms import (
+    _VertexAICommon,
 )
 
 logger = logging.getLogger(__name__)
@@ -122,9 +122,7 @@ def _parse_chat_history_gemini(
                 # extract base64 component from image uri
                 try:
                     regexp = r"data:image/\w{2,4};base64,(.*)"
-                    encoded = (
-                        re.search(regexp, path).group(1)  # type: ignore
-                    )
+                    encoded = re.search(regexp, path).group(1)  # type: ignore
                 except AttributeError:
                     raise ValueError(
                         "Invalid image uri. It should be in the format "

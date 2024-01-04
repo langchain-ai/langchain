@@ -34,20 +34,15 @@ from vertexai.preview.language_models import (
     TextGenerationModel as PreviewTextGenerationModel,
 )
 
-from langchain_google_vertexai.utils import create_retry_decorator, get_client_info
+from langchain_google_vertexai._utils import (
+    create_retry_decorator,
+    get_client_info,
+    is_codey_model,
+    is_gemini_model,
+)
 
 
-def is_codey_model(model_name: str) -> bool:
-    """Returns True if the model name is a Codey model."""
-    return "code" in model_name
-
-
-def is_gemini_model(model_name: str) -> bool:
-    """Returns True if the model name is a Gemini model."""
-    return model_name is not None and "gemini" in model_name
-
-
-def completion_with_retry(
+def _completion_with_retry(
     llm: VertexAI,
     prompt: List[Union[str, Image]],
     stream: bool = False,
@@ -59,7 +54,7 @@ def completion_with_retry(
     retry_decorator = create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
-    def _completion_with_retry(
+    def _completion_with_retry_inner(
         prompt: List[Union[str, Image]], is_gemini: bool = False, **kwargs: Any
     ) -> Any:
         if is_gemini:
@@ -71,10 +66,10 @@ def completion_with_retry(
                 return llm.client.predict_streaming(prompt[0], **kwargs)
             return llm.client.predict(prompt[0], **kwargs)
 
-    return _completion_with_retry(prompt, is_gemini, **kwargs)
+    return _completion_with_retry_inner(prompt, is_gemini, **kwargs)
 
 
-async def acompletion_with_retry(
+async def _acompletion_with_retry(
     llm: VertexAI,
     prompt: str,
     is_gemini: bool = False,
@@ -85,7 +80,7 @@ async def acompletion_with_retry(
     retry_decorator = create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
-    async def _acompletion_with_retry(
+    async def _acompletion_with_retry_inner(
         prompt: str, is_gemini: bool = False, **kwargs: Any
     ) -> Any:
         if is_gemini:
@@ -94,7 +89,7 @@ async def acompletion_with_retry(
             )
         return await llm.client.predict_async(prompt, **kwargs)
 
-    return await _acompletion_with_retry(prompt, is_gemini, **kwargs)
+    return await _acompletion_with_retry_inner(prompt, is_gemini, **kwargs)
 
 
 class _VertexAIBase(BaseModel):
@@ -300,7 +295,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
                     generation += chunk
                 generations.append([generation])
             else:
-                res = completion_with_retry(
+                res = _completion_with_retry(
                     self,
                     [prompt],
                     stream=should_stream,
@@ -323,7 +318,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         params = self._prepare_params(stop=stop, **kwargs)
         generations = []
         for prompt in prompts:
-            res = await acompletion_with_retry(
+            res = await _acompletion_with_retry(
                 self,
                 prompt,
                 is_gemini=self._is_gemini_model,
@@ -343,7 +338,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         params = self._prepare_params(stop=stop, stream=True, **kwargs)
-        for stream_resp in completion_with_retry(
+        for stream_resp in _completion_with_retry(
             self,
             [prompt],
             stream=True,

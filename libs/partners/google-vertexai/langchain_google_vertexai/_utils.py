@@ -77,3 +77,13 @@ def load_image_from_gcs(path: str, project: Optional[str] = None) -> Image:
     if len(blobs) > 1:
         raise ValueError(f"Found more than one candidate for {path}!")
     return Image.from_bytes(blobs[0].download_as_bytes())
+
+
+def is_codey_model(model_name: str) -> bool:
+    """Returns True if the model name is a Codey model."""
+    return "code" in model_name
+
+
+def is_gemini_model(model_name: str) -> bool:
+    """Returns True if the model name is a Gemini model."""
+    return model_name is not None and "gemini" in model_name
