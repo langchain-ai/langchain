@@ -1,9 +1,10 @@
 import glob
-from pathlib import Path
-import nbformat
 import subprocess
+from pathlib import Path
 
-_DOCS_DIR = str(Path(__file__).parent.absolute() / ".." / "docs" )
+import nbformat
+
+_DOCS_DIR = str(Path(__file__).parent.absolute() / ".." / "docs")
 
 
 def update_contents(md, last_updated):
@@ -20,7 +21,9 @@ def update_contents(md, last_updated):
 
 
 def last_updated(path):
-    process = subprocess.Popen(["git", "log", '-n', '1', '--pretty=format:%cs', path], stdout=subprocess.PIPE)
+    process = subprocess.Popen(
+        ["git", "log", "-n", "1", "--pretty=format:%cs", path], stdout=subprocess.PIPE
+    )
     output = process.communicate()
     return output[0].decode()
 
@@ -34,13 +37,15 @@ def update_nb(path):
             break
     if first_md is None:
         first_md = nbformat.from_dict(
-            {"cell_type": "markdown", "source": "", "metadata": {}})
+            {"cell_type": "markdown", "source": "", "metadata": {}}
+        )
         nb.cells = [first_md] + nb.cells
 
     _last_updated = last_updated(path)
     first_md.source = update_contents(first_md.source, _last_updated)
     nbformat.validate(nb)
     nbformat.write(nb, path)
+
 
 def update_md(path):
     with open(path, "r") as f:
