@@ -1,18 +1,16 @@
 from abc import ABC, abstractmethod
 from typing import (
-    Any,
     Iterable,
     List,
     Optional,
-    Sequence,
 )
 
-from langchain_core.documents import BaseDocumentTransformer, Document
+from langchain_core.documents import Document
 
 
-class TextSplitterInterface(
-    BaseDocumentTransformer, ABC
-):  # TODO Do we need ABC since we have BaseDocumentTransformer?
+# TODO: this is a work in progress
+# TODO: do we need to derive from DocumentTransformer?
+class TextSplitterInterface(ABC):
     """Interface for splitting text into chunks."""
 
     @abstractmethod
@@ -28,9 +26,3 @@ class TextSplitterInterface(
     @abstractmethod
     def split_documents(self, documents: Iterable[Document]) -> List[Document]:
         """Split documents."""
-
-    @abstractmethod
-    def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Transform sequence of documents by splitting them."""

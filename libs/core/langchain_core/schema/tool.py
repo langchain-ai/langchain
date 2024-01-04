@@ -22,7 +22,9 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import ToolException
 
 
-class BaseToolInterface(ABC):
+# TODO: this is a work in progress
+# TODO: do we need only _run fun or other fields and funcs?
+class ToolInterface(ABC):
     """Interface LangChain tools must implement."""
 
     name: str
@@ -79,24 +81,6 @@ class BaseToolInterface(ABC):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         """The tool's input schema."""
-
-    @abstractmethod
-    def invoke(
-        self,
-        input: Union[str, Dict],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """Invoke the tool."""
-
-    @abstractmethod
-    async def ainvoke(
-        self,
-        input: Union[str, Dict],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """Invoke the tool asynchronously."""
 
     @abstractmethod
     def _parse_input(
