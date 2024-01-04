@@ -176,7 +176,7 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         return self._create_chat_result(response, **params)
 
     # from
-    # https://github.com/langchain-ai/langchain/blob/master/libs/langchain/langchain/chat_models/openai.py
+    # https://github.com/langchain-ai/langchain/blob/master/libs/community/langchain_community/chat_models/openai.py
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
         combined: dict = {}
