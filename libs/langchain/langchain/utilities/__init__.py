@@ -5,263 +5,269 @@ and packages.
 """
 from typing import Any
 
-from langchain.utilities.requests import Requests, RequestsWrapper, TextRequestsWrapper
+from langchain_community.utilities.requests import (
+    Requests,
+    RequestsWrapper,
+    TextRequestsWrapper,
+)
 
 
 def _import_alpha_vantage() -> Any:
-    from langchain.utilities.alpha_vantage import AlphaVantageAPIWrapper
+    from langchain_community.utilities.alpha_vantage import AlphaVantageAPIWrapper
 
     return AlphaVantageAPIWrapper
 
 
 def _import_apify() -> Any:
-    from langchain.utilities.apify import ApifyWrapper
+    from langchain_community.utilities.apify import ApifyWrapper
 
     return ApifyWrapper
 
 
 def _import_arcee() -> Any:
-    from langchain.utilities.arcee import ArceeWrapper
+    from langchain_community.utilities.arcee import ArceeWrapper
 
     return ArceeWrapper
 
 
 def _import_arxiv() -> Any:
-    from langchain.utilities.arxiv import ArxivAPIWrapper
+    from langchain_community.utilities.arxiv import ArxivAPIWrapper
 
     return ArxivAPIWrapper
 
 
 def _import_awslambda() -> Any:
-    from langchain.utilities.awslambda import LambdaWrapper
+    from langchain_community.utilities.awslambda import LambdaWrapper
 
     return LambdaWrapper
 
 
 def _import_bibtex() -> Any:
-    from langchain.utilities.bibtex import BibtexparserWrapper
+    from langchain_community.utilities.bibtex import BibtexparserWrapper
 
     return BibtexparserWrapper
 
 
 def _import_bing_search() -> Any:
-    from langchain.utilities.bing_search import BingSearchAPIWrapper
+    from langchain_community.utilities.bing_search import BingSearchAPIWrapper
 
     return BingSearchAPIWrapper
 
 
 def _import_brave_search() -> Any:
-    from langchain.utilities.brave_search import BraveSearchWrapper
+    from langchain_community.utilities.brave_search import BraveSearchWrapper
 
     return BraveSearchWrapper
 
 
 def _import_duckduckgo_search() -> Any:
-    from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
+    from langchain_community.utilities.duckduckgo_search import (
+        DuckDuckGoSearchAPIWrapper,
+    )
 
     return DuckDuckGoSearchAPIWrapper
 
 
 def _import_golden_query() -> Any:
-    from langchain.utilities.golden_query import GoldenQueryAPIWrapper
+    from langchain_community.utilities.golden_query import GoldenQueryAPIWrapper
 
     return GoldenQueryAPIWrapper
 
 
 def _import_google_lens() -> Any:
-    from langchain.utilities.google_lens import GoogleLensAPIWrapper
+    from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
 
     return GoogleLensAPIWrapper
 
 
 def _import_google_places_api() -> Any:
-    from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
+    from langchain_community.utilities.google_places_api import GooglePlacesAPIWrapper
 
     return GooglePlacesAPIWrapper
 
 
 def _import_google_jobs() -> Any:
-    from langchain.utilities.google_jobs import GoogleJobsAPIWrapper
+    from langchain_community.utilities.google_jobs import GoogleJobsAPIWrapper
 
     return GoogleJobsAPIWrapper
 
 
 def _import_google_scholar() -> Any:
-    from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
+    from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
 
     return GoogleScholarAPIWrapper
 
 
 def _import_google_trends() -> Any:
-    from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
+    from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
 
     return GoogleTrendsAPIWrapper
 
 
 def _import_google_finance() -> Any:
-    from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
+    from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
 
     return GoogleFinanceAPIWrapper
 
 
 def _import_google_search() -> Any:
-    from langchain.utilities.google_search import GoogleSearchAPIWrapper
+    from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
 
     return GoogleSearchAPIWrapper
 
 
 def _import_google_serper() -> Any:
-    from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+    from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper
 
     return GoogleSerperAPIWrapper
 
 
 def _import_graphql() -> Any:
-    from langchain.utilities.graphql import GraphQLAPIWrapper
+    from langchain_community.utilities.graphql import GraphQLAPIWrapper
 
     return GraphQLAPIWrapper
 
 
 def _import_jira() -> Any:
-    from langchain.utilities.jira import JiraAPIWrapper
+    from langchain_community.utilities.jira import JiraAPIWrapper
 
     return JiraAPIWrapper
 
 
 def _import_max_compute() -> Any:
-    from langchain.utilities.max_compute import MaxComputeAPIWrapper
+    from langchain_community.utilities.max_compute import MaxComputeAPIWrapper
 
     return MaxComputeAPIWrapper
 
 
 def _import_merriam_webster() -> Any:
-    from langchain.utilities.merriam_webster import MerriamWebsterAPIWrapper
+    from langchain_community.utilities.merriam_webster import MerriamWebsterAPIWrapper
 
     return MerriamWebsterAPIWrapper
 
 
 def _import_metaphor_search() -> Any:
-    from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
+    from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapper
 
     return MetaphorSearchAPIWrapper
 
 
 def _import_openweathermap() -> Any:
-    from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
+    from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
 
     return OpenWeatherMapAPIWrapper
 
 
 def _import_outline() -> Any:
-    from langchain.utilities.outline import OutlineAPIWrapper
+    from langchain_community.utilities.outline import OutlineAPIWrapper
 
     return OutlineAPIWrapper
 
 
 def _import_portkey() -> Any:
-    from langchain.utilities.portkey import Portkey
+    from langchain_community.utilities.portkey import Portkey
 
     return Portkey
 
 
 def _import_powerbi() -> Any:
-    from langchain.utilities.powerbi import PowerBIDataset
+    from langchain_community.utilities.powerbi import PowerBIDataset
 
     return PowerBIDataset
 
 
 def _import_pubmed() -> Any:
-    from langchain.utilities.pubmed import PubMedAPIWrapper
+    from langchain_community.utilities.pubmed import PubMedAPIWrapper
 
     return PubMedAPIWrapper
 
 
 def _import_python() -> Any:
-    from langchain.utilities.python import PythonREPL
+    from langchain_community.utilities.python import PythonREPL
 
     return PythonREPL
 
 
 def _import_scenexplain() -> Any:
-    from langchain.utilities.scenexplain import SceneXplainAPIWrapper
+    from langchain_community.utilities.scenexplain import SceneXplainAPIWrapper
 
     return SceneXplainAPIWrapper
 
 
 def _import_searchapi() -> Any:
-    from langchain.utilities.searchapi import SearchApiAPIWrapper
+    from langchain_community.utilities.searchapi import SearchApiAPIWrapper
 
     return SearchApiAPIWrapper
 
 
 def _import_searx_search() -> Any:
-    from langchain.utilities.searx_search import SearxSearchWrapper
+    from langchain_community.utilities.searx_search import SearxSearchWrapper
 
     return SearxSearchWrapper
 
 
 def _import_serpapi() -> Any:
-    from langchain.utilities.serpapi import SerpAPIWrapper
+    from langchain_community.utilities.serpapi import SerpAPIWrapper
 
     return SerpAPIWrapper
 
 
 def _import_spark_sql() -> Any:
-    from langchain.utilities.spark_sql import SparkSQL
+    from langchain_community.utilities.spark_sql import SparkSQL
 
     return SparkSQL
 
 
 def _import_sql_database() -> Any:
-    from langchain.utilities.sql_database import SQLDatabase
+    from langchain_community.utilities.sql_database import SQLDatabase
 
     return SQLDatabase
 
 
 def _import_steam_webapi() -> Any:
-    from langchain.utilities.steam import SteamWebAPIWrapper
+    from langchain_community.utilities.steam import SteamWebAPIWrapper
 
     return SteamWebAPIWrapper
 
 
 def _import_stackexchange() -> Any:
-    from langchain.utilities.stackexchange import StackExchangeAPIWrapper
+    from langchain_community.utilities.stackexchange import StackExchangeAPIWrapper
 
     return StackExchangeAPIWrapper
 
 
 def _import_tensorflow_datasets() -> Any:
-    from langchain.utilities.tensorflow_datasets import TensorflowDatasets
+    from langchain_community.utilities.tensorflow_datasets import TensorflowDatasets
 
     return TensorflowDatasets
 
 
 def _import_twilio() -> Any:
-    from langchain.utilities.twilio import TwilioAPIWrapper
+    from langchain_community.utilities.twilio import TwilioAPIWrapper
 
     return TwilioAPIWrapper
 
 
 def _import_wikipedia() -> Any:
-    from langchain.utilities.wikipedia import WikipediaAPIWrapper
+    from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
 
     return WikipediaAPIWrapper
 
 
 def _import_wolfram_alpha() -> Any:
-    from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+    from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
     return WolframAlphaAPIWrapper
 
 
 def _import_zapier() -> Any:
-    from langchain.utilities.zapier import ZapierNLAWrapper
+    from langchain_community.utilities.zapier import ZapierNLAWrapper
 
     return ZapierNLAWrapper
 
 
 def _import_nasa() -> Any:
-    from langchain.utilities.nasa import NasaAPIWrapper
+    from langchain_community.utilities.nasa import NasaAPIWrapper
 
     return NasaAPIWrapper
 
