@@ -1,6 +1,6 @@
 """Test azure openai embeddings."""
 import os
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import openai
@@ -109,8 +109,7 @@ def test_azure_openai_embedding_with_empty_string() -> None:
         openai.AzureOpenAI(
             api_version=OPENAI_API_VERSION,
             api_key=OPENAI_API_KEY,
-            azure_deployment=DEPLOYMENT_NAME,
-            base_url=embedding.openai_api_base,
+            azure_endpoint=cast(str, embedding.openai_api_base),
         )
         .embeddings.create(input="", model="text-embedding-ada-002")
         .data[0]
