@@ -156,3 +156,30 @@ def test_extract_sub_links_exclude() -> None:
         )
     )
     assert actual == expected
+
+
+def test_prevent_outside() -> None:
+    """Test that prevent outside compares against full base URL."""
+    html = (
+        '<a href="https://foobar.comic.com">BAD</a>'
+        '<a href="https://foobar.comic:9999">BAD</a>'
+        '<a href="https://foobar.com:9999">BAD</a>'
+        '<a href="http://foobar.com:9999/">BAD</a>'
+        '<a href="https://foobar.com/OK">OK</a>'
+        '<a href="http://foobar.com/BAD">BAD</a>'  # Change in scheme is not OK here
+    )
+
+    expected = sorted(
+        [
+            "https://foobar.com/OK",
+        ]
+    )
+    actual = sorted(
+        extract_sub_links(
+            html,
+            "https://foobar.com/hello/bill.html",
+            base_url="https://foobar.com",
+            prevent_outside=True,
+        )
+    )
+    assert actual == expected
