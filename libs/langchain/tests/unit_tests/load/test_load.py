@@ -13,7 +13,7 @@ class NotSerializable:
     pass
 
 
-@pytest.mark.requires("openai", "langchain-openai")
+@pytest.mark.requires("openai", "langchain_openai")
 def test_loads_openai_llm() -> None:
     from langchain_openai import OpenAI
 
