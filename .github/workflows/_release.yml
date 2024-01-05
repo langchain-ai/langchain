@@ -1,5 +1,5 @@
 name: release
-
+run-name: Release ${{ inputs.working-directory }} by @${{ github.actor }}
 on:
   workflow_call:
     inputs:
