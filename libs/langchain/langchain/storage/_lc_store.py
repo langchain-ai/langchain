@@ -2,7 +2,8 @@
 from typing import Callable, Optional
 
 from langchain_core.documents import Document
-from langchain_core.load import Serializable, dumps, loads
+from langchain_core.load import Serializable, dumps
+from langchain_core.load.load import _loads_suppress_warning
 from langchain_core.stores import BaseStore, ByteStore
 
 from langchain.storage.encoder_backed import EncoderBackedStore
@@ -22,7 +23,7 @@ def _dump_document_as_bytes(obj: Document) -> bytes:
 
 def _load_document_from_bytes(serialized: bytes) -> Document:
     """Return a document from a bytes representation."""
-    obj = loads(serialized.decode("utf-8"))
+    obj = _loads_suppress_warning(serialized.decode("utf-8"))
     if not isinstance(obj, Document):
         raise TypeError(f"Expected a Document instance. Got {type(obj)}")
     return obj
@@ -30,7 +31,7 @@ def _load_document_from_bytes(serialized: bytes) -> Document:
 
 def _load_from_bytes(serialized: bytes) -> Serializable:
     """Return a document from a bytes representation."""
-    return loads(serialized.decode("utf-8"))
+    return _loads_suppress_warning(serialized.decode("utf-8"))
 
 
 def _identity(x: str) -> str:

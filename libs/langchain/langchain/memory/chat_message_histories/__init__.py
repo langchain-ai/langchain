@@ -2,8 +2,7 @@ import warnings
 from typing import Any
 
 from langchain_core._api import LangChainDeprecationWarning
-
-from langchain.utils.interactive_env import is_interactive_env
+from langchain_core.utils.interactive_env import is_interactive_env
 
 
 def __getattr__(name: str) -> Any:
