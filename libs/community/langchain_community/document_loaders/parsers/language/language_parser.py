@@ -97,6 +97,8 @@ class LanguageParser(BaseBlobParser):
             language: If None (default), it will try to infer language from source.
             parser_threshold: Minimum lines needed to activate parsing (0 by default).
         """
+        if language not in LANGUAGE_SEGMENTERS:
+            raise Exception(f"No parser available for {language}")
         self.language = language
         self.parser_threshold = parser_threshold
 
@@ -117,9 +119,6 @@ class LanguageParser(BaseBlobParser):
                 },
             )
             return
-
-        if language not in LANGUAGE_SEGMENTERS:
-            raise Exception(f"No parser available for {language}")
     
         if self.parser_threshold >= len(code.splitlines()):
             yield Document(
