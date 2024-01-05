@@ -13,7 +13,7 @@ Databricks embraces the LangChain ecosystem in various ways:
 Databricks connector for the SQLDatabase Chain
 ----------------------------------------------
 You can connect to [Databricks runtimes](https://docs.databricks.com/runtime/index.html) and [Databricks SQL](https://www.databricks.com/product/databricks-sql) using the SQLDatabase wrapper of LangChain. 
-See the notebook [Connect to Databricks](/docs/use_cases/qa_structured/integrations/databricks) for details.
+
 
 Databricks MLflow integrates with LangChain
 -------------------------------------------
