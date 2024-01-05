@@ -9,7 +9,7 @@ on:
         description: "From which folder this pipeline executes"
 
 env:
-  POETRY_VERSION: "1.6.1"
+  POETRY_VERSION: "1.7.1"
 
 jobs:
   build:
@@ -24,6 +24,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
     name: Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4

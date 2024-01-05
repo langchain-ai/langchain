@@ -5,6 +5,11 @@ from test_utils import MockEncoder
 
 import langchain_experimental.rl_chain.base as base
 
+try:
+    import vowpal_wabbit_next  # noqa: F401
+except ImportError:
+    pytest.skip("Requires vowpal_wabbit_next", allow_module_level=True)
+
 encoded_keyword = "[encoded]"
 
 
