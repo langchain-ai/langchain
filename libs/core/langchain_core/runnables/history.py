@@ -14,7 +14,7 @@ from typing import (
 )
 
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.load import load
+from langchain_core.load.load import _load_suppress_warning
 from langchain_core.pydantic_v1 import BaseModel, create_model
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain_core.runnables.config import run_in_executor
@@ -337,7 +337,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         hist = config["configurable"]["message_history"]
 
         # Get the input messages
-        inputs = load(run.inputs)
+        inputs = _load_suppress_warning(run.inputs)
         input_val = inputs[self.input_messages_key or "input"]
         input_messages = self._get_input_messages(input_val)
 
@@ -348,7 +348,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
-        output_val = load(run.outputs)
+        output_val = _load_suppress_warning(run.outputs)
         output_messages = self._get_output_messages(output_val)
 
         for m in input_messages + output_messages:
