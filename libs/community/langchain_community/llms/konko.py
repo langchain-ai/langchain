@@ -82,6 +82,21 @@ class Konko(LLM):
                 "including the completion endpoint."
             )
         return values
+    
+    def _construct_payload(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        stop_to_use = stop[0] if stop and len(stop) == 1 else stop
+        payload: Dict[str, Any] = {
+            **self.default_params,
+            "prompt": prompt,
+            "stop": stop_to_use,
+            **kwargs,
+        }
+        return {k: v for k, v in payload.items() if v is not None}
 
     @property
     def _llm_type(self) -> str:
@@ -123,13 +138,7 @@ class Konko(LLM):
         import konko
 
         stop_to_use = stop[0] if stop and len(stop) == 1 else stop
-        payload: Dict[str, Any] = {
-            **self.default_params,
-            "prompt": prompt,
-            "stop": stop_to_use,
-            **kwargs,
-        }
-        payload = {k: v for k, v in payload.items() if v is not None}
+        payload = self._construct_payload(prompt, stop, **kwargs)
 
         try:
             if is_openai_v1():
@@ -169,13 +178,7 @@ class Konko(LLM):
         import konko
 
         stop_to_use = stop[0] if stop and len(stop) == 1 else stop
-        payload: Dict[str, Any] = {
-            **self.default_params,
-            "prompt": prompt,
-            "stop": stop_to_use,
-            **kwargs,
-        }
-        payload = {k: v for k, v in payload.items() if v is not None}
+        payload = self._construct_payload(prompt, stop, **kwargs)
 
         try:
             if is_openai_v1():
