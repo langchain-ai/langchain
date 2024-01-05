@@ -83,7 +83,7 @@ class FakeCompletion:
                 result, choices = self._get_new_result_and_choices(base_result)
                 choice = choices[0]
                 choice["delta"] = {
-                    "role": "assistent",
+                    "role": "assistant",
                     "content": fake_chunks[chunk_index],
                     "function_call": None,
                 }
