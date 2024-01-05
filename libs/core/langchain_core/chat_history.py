@@ -7,6 +7,7 @@ from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
+    SystemMessage,
     get_buffer_string,
 )
 
