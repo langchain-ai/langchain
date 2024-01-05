@@ -362,12 +362,6 @@ class ChatOpenAI(BaseChatModel):
             params["max_tokens"] = self.max_tokens
         return params
 
-    def completion_with_retry(
-        self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
-    ) -> Any:
-        """Use tenacity to retry the completion call."""
-        return self.client.create(**kwargs)
-
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
         system_fingerprint = None
@@ -439,9 +433,7 @@ class ChatOpenAI(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
-        response = self.completion_with_retry(
-            messages=message_dicts, run_manager=run_manager, **params
-        )
+        response = self.client.create(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
     def _create_message_dicts(

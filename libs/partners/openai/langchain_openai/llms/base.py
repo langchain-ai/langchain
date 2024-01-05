@@ -60,15 +60,6 @@ def _stream_response_to_generation_chunk(
     )
 
 
-def completion_with_retry(
-    llm: BaseOpenAI,
-    run_manager: Optional[CallbackManagerForLLMRun] = None,
-    **kwargs: Any,
-) -> Any:
-    """Use tenacity to retry the completion call."""
-    return llm.client.create(**kwargs)
-
-
 class BaseOpenAI(BaseLLM):
     """Base OpenAI large language model class."""
 
