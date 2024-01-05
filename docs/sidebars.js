@@ -142,7 +142,7 @@ module.exports = {
       link: { type: 'doc', id: "templates/index" }
     },
   ],
-  templates: [
+  changelog: [
     {
       type: "category",
       label: "Changelog",
